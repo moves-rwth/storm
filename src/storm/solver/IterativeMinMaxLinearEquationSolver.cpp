@@ -674,6 +674,49 @@ namespace storm {
             
             template<OptimizationDirection dir>
             void performIterationStep(storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType> const& b) {
+                if (!decisionValueBlocks) {
+                    performIterationStepUpdateDecisionValue<dir>(A, b);
+                } else {
+                    assert(decisionValue == getPrimaryBound());
+                    auto xIt = x.rbegin();
+                    auto yIt = y.rbegin();
+                    auto groupStartIt = A.getRowGroupIndices().rbegin();
+                    uint64_t groupEnd = *groupStartIt;
+                    ++groupStartIt;
+                    for (auto groupStartIte = A.getRowGroupIndices().rend(); groupStartIt != groupStartIte; groupEnd = *(groupStartIt++), ++xIt, ++yIt) {
+                        // Perform the iteration for the first row in the group
+                        uint64_t row = *groupStartIt;
+                        ValueType xBest, yBest;
+                        multiplyRow(row, A, b[row], xBest, yBest);
+                        ++row;
+                        // Only do more work if there are still rows in this row group
+                        if (row != groupEnd) {
+                            ValueType xi, yi;
+                            ValueType bestValue = xBest + yBest * getPrimaryBound<dir>();
+                            for (;row < groupEnd; ++row) {
+                                // Get the multiplication results
+                                multiplyRow(row, A, b[row], xi, yi);
+                                ValueType currentValue = xi + yi * getPrimaryBound<dir>();
+                                // Check if the current row is better then the previously found one
+                                if (better<dir>(currentValue, bestValue)) {
+                                    xBest = std::move(xi);
+                                    yBest = std::move(yi);
+                                    bestValue = std::move(currentValue);
+                                } else if (currentValue == bestValue && yBest > yi) {
+                                    // If the value for this row is not strictly better, it might still be equal and have a better y value
+                                    xBest = std::move(xi);
+                                    yBest = std::move(yi);
+                                }
+                            }
+                        }
+                        *xIt = std::move(xBest);
+                        *yIt = std::move(yBest);
+                    }
+                }
+            }
+            
+            template<OptimizationDirection dir>
+            void performIterationStepUpdateDecisionValue(storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType> const& b) {
                 auto xIt = x.rbegin();
                 auto yIt = y.rbegin();
                 auto groupStartIt = A.getRowGroupIndices().rbegin();
