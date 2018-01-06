@@ -19,13 +19,7 @@ namespace storm {
             public:
 
                 /*!
-                 * Computes TBU according to the UnifPlus algorithm
-                 *
-                 * @param boundsPair With precondition that the first component is 0, the second one gives the time bound
-                 * @param exitRateVector the exit-rates of the given MA
-                 * @param transitionMatrix the transitions of the given MA
-                 * @param markovianStates bitvector refering to the markovian states
-                 * @param psiStates bitvector refering to the goal states
+                 * Computes time-bounded reachability according to the UnifPlus algorithm
                  *
                  * @return the probability vector
                  *
@@ -59,12 +53,21 @@ namespace storm {
                 static std::vector<ValueType> computeReachabilityTimes(Environment const& env, OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType> const& exitRateVector, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory);
                 
             private:
+                /*
+                 * calculating the unifVectors uv, ow according to Unif+ for MA
+                 */
                 template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type=0>
-                static void calculateUnifPlusVector(Environment const& env, uint64_t k, uint64_t node, uint64_t const kind, ValueType lambda, uint64_t probSize, std::vector<std::vector<ValueType>> const& relativeReachability, OptimizationDirection dir, std::vector<std::vector<std::vector<ValueType>>>& unifVectors, storm::storage::SparseMatrix<ValueType> const& fullTransitionMatrix, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates, std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> const& solver, std::ofstream& logfile, storm::utility::numerical::FoxGlynnResult<ValueType> const & poisson, bool cycleFree);
+                static void calculateUnifPlusVector(Environment const& env, uint64_t k, uint64_t node, uint64_t const kind, ValueType lambda, uint64_t probSize, std::vector<std::vector<ValueType>> const& relativeReachability, OptimizationDirection dir, std::vector<std::vector<std::vector<ValueType>>>& unifVectors, storm::storage::SparseMatrix<ValueType> const& fullTransitionMatrix, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates, std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> const& solver, storm::utility::numerical::FoxGlynnResult<ValueType> const & poisson, bool cycleFree);
 
+                /*
+                 * deleting the probabilistic Diagonals
+                 */
                 template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type=0>
                 static void deleteProbDiagonals(storm::storage::SparseMatrix<ValueType>& transitionMatrix, storm::storage::BitVector const& markovianStates);
 
+                /*
+                 * with having only a subset of the originalMatrix/vector, we need to transform indice
+                 */
                 static uint64_t transformIndice(storm::storage::BitVector const& subset, uint64_t fakeId){
                     uint64_t id =0;
                     uint64_t counter =0;
@@ -78,11 +81,11 @@ namespace storm {
                 }
 
                 /*
-                 * Computes vu vector according to UnifPlus
+                 * Computes vu vector according to Unif+ for MA
                  *
                  */
                 template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type=0>
-                static void calculateVu(Environment const& env, std::vector<std::vector<ValueType>> const& relativeReachability, OptimizationDirection dir, uint64_t k, uint64_t node, uint64_t const kind, ValueType lambda, uint64_t probSize, std::vector<std::vector<std::vector<ValueType>>>& unifVectors, storm::storage::SparseMatrix<ValueType> const& fullTransitionMatrix, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates, std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> const& solver, std::ofstream& logfile, storm::utility::numerical::FoxGlynnResult<ValueType> const & poisson, bool cycleFree);
+                static void calculateVu(Environment const& env, std::vector<std::vector<ValueType>> const& relativeReachability, OptimizationDirection dir, uint64_t k, uint64_t node, uint64_t const kind, ValueType lambda, uint64_t probSize, std::vector<std::vector<std::vector<ValueType>>>& unifVectors, storm::storage::SparseMatrix<ValueType> const& fullTransitionMatrix, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates, std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> const& solver, storm::utility::numerical::FoxGlynnResult<ValueType> const & poisson, bool cycleFree);
 
                 /*!
                  * Prints the TransitionMatrix and the vectors vd, vu, wu to the logfile
