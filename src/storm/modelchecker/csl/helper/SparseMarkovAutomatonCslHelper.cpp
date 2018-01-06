@@ -372,19 +372,19 @@ namespace storm {
                                                                             storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const &minMaxLinearEquationSolverFactory) {
                 STORM_LOG_TRACE("Using UnifPlus to compute bounded until probabilities.");
 
-                bool cycleFree;
+
 
                 std::ofstream logfile("U+logfile.txt", std::ios::app);
                 //logfile << "Using U+\n";
                 ValueType maxNorm = storm::utility::zero<ValueType>();
-                ValueType oldDiff = -storm::utility::zero<ValueType>();
 
                 //bitvectors to identify different kind of states
                 storm::storage::BitVector markovianStates = markovStates;
                 storm::storage::BitVector allStates(markovianStates.size(), true);
                 storm::storage::BitVector probabilisticStates = ~markovianStates;
 
-
+                storm::storage::StronglyConnectedComponentDecomposition<double> sccList(transitionMatrix, probabilisticStates, true, false);
+                bool cycleFree = sccList.size() == 0;
                 //vectors to save calculation
                 std::vector<std::vector<std::vector<ValueType>>> unifVectors{};
 
