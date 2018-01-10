@@ -677,8 +677,7 @@ namespace storm {
                                 ++setIterator;
                             }
                         } else {
-                            throw storm::exceptions::InvalidStateException() << "Choice label set is empty.";
-                            STORM_LOG_DEBUG("Choice label set is empty.");
+                            STORM_LOG_ASSERT(false, "Choice label set is empty.");
                         }
                         
                         STORM_LOG_DEBUG("About to assert disjunction of negated guards.");
@@ -780,7 +779,9 @@ namespace storm {
                 for (auto const& labelSetImplicationsPair : backwardImplications) {
                     for (auto const& set : labelSetImplicationsPair.second) {
                         if (std::includes(relevancyInformation.knownLabels.begin(), relevancyInformation.knownLabels.end(), set.begin(), set.end())) {
-                            hasKnownPredecessor.insert(set);
+                            // Should this be labelSetImplicationsPair.first???
+                            // hasKnownPredecessor.insert(set);
+                            hasKnownPredecessor.insert(labelSetImplicationsPair.first);
                             break;
                         }
                     }
@@ -801,12 +802,12 @@ namespace storm {
                             formulae.push_back(!variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(label)));
                         }
                         
-                        for (auto const& precedingSet : labelSetImplicationsPair.second) {
+                        for (auto const& preceedingSet : labelSetImplicationsPair.second) {
                             boost::container::flat_set<uint_fast64_t> tmpSet;
                             
                             // Check which labels of the current following set are not known. This set must be non-empty, because
                             // otherwise a predecessor combination would already be known and control cannot reach this point.
-                            std::set_difference(precedingSet.begin(), precedingSet.end(), relevancyInformation.knownLabels.begin(), relevancyInformation.knownLabels.end(), std::inserter(tmpSet, tmpSet.end()));
+                            std::set_difference(preceedingSet.begin(), preceedingSet.end(), relevancyInformation.knownLabels.begin(), relevancyInformation.knownLabels.end(), std::inserter(tmpSet, tmpSet.end()));
                             
                             // Construct an expression that enables all unknown labels of the current following set.
                             storm::expressions::Expression conj = variableInformation.manager->boolean(true);
@@ -847,9 +848,9 @@ namespace storm {
                                         storm::expressions::Expression disjunctionOverPredecessors = variableInformation.manager->boolean(false);
                                         auto precedingLabelSetsIterator = precedingLabelSets.find(synchSet);
                                         if (precedingLabelSetsIterator != precedingLabelSets.end()) {
-                                            for (auto precedingSet : precedingLabelSetsIterator->second) {
+                                            for (auto preceedingSet : precedingLabelSetsIterator->second) {
                                                 storm::expressions::Expression conjunctionOverLabels = variableInformation.manager->boolean(true);
-                                                for (auto label : precedingSet) {
+                                                for (auto label : preceedingSet) {
                                                     if (relevancyInformation.knownLabels.find(label) == relevancyInformation.knownLabels.end()) {
                                                         conjunctionOverLabels = conjunctionOverLabels && variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(label));
                                                     }
