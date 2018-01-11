@@ -24,10 +24,10 @@ namespace storm {
         }
             
         template <typename SparseModelType>
-        typename GoalStateMerger<SparseModelType>::ReturnType GoalStateMerger<SparseModelType>::mergeTargetAndSinkStates(storm::storage::BitVector const& maybeStates, storm::storage::BitVector const& targetStates, storm::storage::BitVector const& sinkStates, std::vector<std::string> const& selectedRewardModels) const {
+        typename GoalStateMerger<SparseModelType>::ReturnType GoalStateMerger<SparseModelType>::mergeTargetAndSinkStates(storm::storage::BitVector const& maybeStates, storm::storage::BitVector const& targetStates, storm::storage::BitVector const& sinkStates, std::vector<std::string> const& selectedRewardModels, boost::optional<storm::storage::BitVector> const& choiceFilter) const {
             STORM_LOG_THROW(maybeStates.isDisjointFrom(targetStates) && targetStates.isDisjointFrom(sinkStates) && sinkStates.isDisjointFrom(maybeStates), storm::exceptions::InvalidArgumentException, "maybestates, targetstates, and sinkstates are assumed to be disjoint when creating the submodel. However, this is not the case.");
   
-            auto result = initialize(maybeStates, targetStates, sinkStates);
+            auto result = initialize(maybeStates, targetStates, sinkStates, choiceFilter);
             
             auto transitionMatrix = buildTransitionMatrix(maybeStates, result.first, result.second);
             auto labeling = buildStateLabeling(maybeStates, targetStates, sinkStates, result.first);
@@ -39,7 +39,7 @@ namespace storm {
         }
         
         template <typename SparseModelType>
-        std::pair<typename GoalStateMerger<SparseModelType>::ReturnType, uint_fast64_t> GoalStateMerger<SparseModelType>::initialize(storm::storage::BitVector const& maybeStates, storm::storage::BitVector const& targetStates, storm::storage::BitVector const& sinkStates) const {
+        std::pair<typename GoalStateMerger<SparseModelType>::ReturnType, uint_fast64_t> GoalStateMerger<SparseModelType>::initialize(storm::storage::BitVector const& maybeStates, storm::storage::BitVector const& targetStates, storm::storage::BitVector const& sinkStates, boost::optional<storm::storage::BitVector> const& choiceFilter) const {
             
             storm::storage::SparseMatrix<typename SparseModelType::ValueType> const& origMatrix = originalModel.getTransitionMatrix();
             
@@ -58,33 +58,35 @@ namespace storm {
                 for (uint_fast64_t row = origMatrix.getRowGroupIndices()[state]; row < endOfRowGroup; ++row) {
                     uint_fast64_t transitionsToMaybeStates = 0;
                     bool keepThisRow(true), hasTransitionToTarget(false), hasTransitionToSink(false);
-                    for (auto const& entry : origMatrix.getRow(row)) {
-                        if (maybeStates.get(entry.getColumn())) {
-                            ++transitionsToMaybeStates;
-                        } else if (targetStates.get(entry.getColumn())) {
-                            hasTransitionToTarget = true;
-                        } else if (sinkStates.get(entry.getColumn())) {
-                            hasTransitionToSink = true;
-                        } else {
-                            keepThisRow = false;
-                            break;
+                    if (!choiceFilter || choiceFilter.get().get(row)) {
+                        for (auto const& entry : origMatrix.getRow(row)) {
+                            if (maybeStates.get(entry.getColumn())) {
+                                ++transitionsToMaybeStates;
+                            } else if (targetStates.get(entry.getColumn())) {
+                                hasTransitionToTarget = true;
+                            } else if (sinkStates.get(entry.getColumn())) {
+                                hasTransitionToSink = true;
+                            } else {
+                                keepThisRow = false;
+                                break;
+                            }
+                        }
+                        if (keepThisRow) {
+                            stateIsDeadlock = false;
+                            result.keptChoices.set(row, true);
+                            transitionCount += transitionsToMaybeStates;
+                            if (hasTransitionToTarget) {
+                                ++transitionCount;
+                                targetStateRequired = true;
+                            }
+                            if (hasTransitionToSink) {
+                                ++transitionCount;
+                                sinkStateRequired = true;
+                            }
                         }
                     }
-                    if (keepThisRow) {
-                        stateIsDeadlock = false;
-                        result.keptChoices.set(row, true);
-                        transitionCount += transitionsToMaybeStates;
-                        if (hasTransitionToTarget) {
-                            ++transitionCount;
-                            targetStateRequired = true;
-                        }
-                        if (hasTransitionToSink) {
-                            ++transitionCount;
-                            sinkStateRequired = true;
-                        }
-                    }
-                    STORM_LOG_THROW(!stateIsDeadlock, storm::exceptions::InvalidArgumentException, "Merging goal states leads to deadlocks!");
                 }
+                STORM_LOG_THROW(!stateIsDeadlock, storm::exceptions::InvalidArgumentException, "Merging goal states leads to deadlocks!");
                 ++stateCount;
             }
             

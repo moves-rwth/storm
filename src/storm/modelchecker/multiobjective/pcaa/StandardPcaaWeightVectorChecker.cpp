@@ -42,12 +42,13 @@ namespace storm {
                 // Build a subsystem of the preprocessor result model that discards states that yield infinite reward for all schedulers.
                 // We can also merge the states that will have reward zero anyway.
                 storm::storage::BitVector maybeStates = preprocessorResult.rewardLessInfinityEStates.get() & ~preprocessorResult.reward0AStates;
+                storm::storage::BitVector finiteRewardChoices = preprocessorResult.preprocessedModel->getTransitionMatrix().getRowFilter(preprocessorResult.rewardLessInfinityEStates.get(), preprocessorResult.rewardLessInfinityEStates.get());
                 std::set<std::string> relevantRewardModels;
                 for (auto const& obj : this->objectives) {
                     obj.formula->gatherReferencedRewardModels(relevantRewardModels);
                 }
                 storm::transformer::GoalStateMerger<SparseModelType> merger(*preprocessorResult.preprocessedModel);
-                auto mergerResult = merger.mergeTargetAndSinkStates(maybeStates, preprocessorResult.reward0AStates, storm::storage::BitVector(maybeStates.size(), false), std::vector<std::string>(relevantRewardModels.begin(), relevantRewardModels.end()));
+                auto mergerResult = merger.mergeTargetAndSinkStates(maybeStates, preprocessorResult.reward0AStates, storm::storage::BitVector(maybeStates.size(), false), std::vector<std::string>(relevantRewardModels.begin(), relevantRewardModels.end()), finiteRewardChoices);
                 
                 // Initialize data specific for the considered model type
                 initializeModelTypeSpecificData(*mergerResult.model);
