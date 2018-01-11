@@ -271,7 +271,16 @@ namespace storm {
         typename SparseMatrixBuilder<ValueType>::index_type SparseMatrixBuilder<ValueType>::getLastRow() const {
             return lastRow;
         }
-        
+
+        template<typename ValueType>
+        typename SparseMatrixBuilder<ValueType>::index_type SparseMatrixBuilder<ValueType>::getLastRowGroup() const {
+            if (this->hasCustomRowGrouping) {
+                return currentRowGroup;
+            } else {
+                return getLastRow();
+            }
+        }
+
         template<typename ValueType>
         typename SparseMatrixBuilder<ValueType>::index_type SparseMatrixBuilder<ValueType>::getLastColumn() const {
             return lastColumn;

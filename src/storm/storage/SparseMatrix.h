@@ -220,6 +220,13 @@ namespace storm {
             index_type getLastRow() const;
 
             /*!
+             * Retrieves the most recently used row group.
+             *
+             * @return The most recently used row group.
+             */
+            index_type getLastRowGroup() const;
+
+            /*!
              * Retrieves the most recently used row.
              *
              * @return The most recently used row.
