@@ -677,7 +677,7 @@ namespace storm {
                 if (!decisionValueBlocks) {
                     performIterationStepUpdateDecisionValue<dir>(A, b);
                 } else {
-                    assert(decisionValue == getPrimaryBound());
+                    assert(decisionValue == getPrimaryBound<dir>());
                     auto xIt = x.rbegin();
                     auto yIt = y.rbegin();
                     auto groupStartIt = A.getRowGroupIndices().rbegin();
