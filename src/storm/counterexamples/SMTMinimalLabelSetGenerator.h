@@ -1017,8 +1017,16 @@ namespace storm {
              * result bit.
              */
             static std::pair<storm::expressions::Expression, storm::expressions::Expression> createFullAdder(storm::expressions::Expression in1, storm::expressions::Expression in2, storm::expressions::Expression carryIn) {
-                storm::expressions::Expression resultBit = (in1 && !in2 && !carryIn) || (!in1 && in2 && !carryIn) || (!in1 && !in2 && carryIn) || (in1 && in2 && carryIn);
-                storm::expressions::Expression carryBit = in1 && in2 || in1 && carryIn || in2 && carryIn;
+                storm::expressions::Expression resultBit;
+                storm::expressions::Expression carryBit;
+
+                if (carryIn.isFalse()) {
+                    resultBit = (in1 && !in2) || (!in1 && in2);
+                    carryBit = in1 && in2;
+                } else {
+                    resultBit = (in1 && !in2 && !carryIn) || (!in1 && in2 && !carryIn) || (!in1 && !in2 && carryIn) || (in1 && in2 && carryIn);
+                    carryBit = in1 && in2 || in1 && carryIn || in2 && carryIn;
+                }
                 
                 return std::make_pair(carryBit, resultBit);
             }
@@ -1090,8 +1098,6 @@ namespace storm {
              * @return A bit vector representing the number of literals that are set to true.
              */
             static std::vector<storm::expressions::Expression> createCounterCircuit(VariableInformation const& variableInformation, std::vector<storm::expressions::Variable> const& literals) {
-                STORM_LOG_DEBUG("Creating counter circuit for " << literals.size() << " literals.");
-
                 if (literals.empty()) {
                     return std::vector<storm::expressions::Expression>();
                 }
@@ -1106,7 +1112,9 @@ namespace storm {
                 while (aux.size() > 1) {
                     aux = createAdderPairs(variableInformation, aux);
                 }
-                
+
+                STORM_LOG_DEBUG("Created counter circuit for " << literals.size() << " literals.");
+
                 return aux.front();
             }
             
@@ -1307,6 +1315,7 @@ namespace storm {
              * @param variableInformation A structure with information about the variables of the solver.
              */
             static std::vector<storm::expressions::Variable> assertAdder(storm::solver::SmtSolver& solver, VariableInformation const& variableInformation) {
+                auto start = std::chrono::high_resolution_clock::now();
                 std::stringstream variableName;
                 std::vector<storm::expressions::Variable> result;
                 
@@ -1317,8 +1326,13 @@ namespace storm {
                     variableName << "adder" << i;
                     result.push_back(variableInformation.manager->declareBooleanVariable(variableName.str()));
                     solver.add(storm::expressions::implies(adderVariables[i], result.back()));
+                    STORM_LOG_TRACE("Added bit " << i << " of adder.");
                 }
-                
+
+                auto end = std::chrono::high_resolution_clock::now();
+                uint64_t duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+                STORM_LOG_DEBUG("Asserted adder in " << duration << "ms.");
+
                 return result;
             }
             
