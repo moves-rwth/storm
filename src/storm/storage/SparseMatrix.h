@@ -220,11 +220,11 @@ namespace storm {
             index_type getLastRow() const;
 
             /*!
-             * Retrieves the most recently used row group.
+             * Retrieves the current row group count.
              *
-             * @return The most recently used row group.
+             * @return The current row group count.
              */
-            index_type getLastRowGroup() const;
+            index_type getCurrentRowGroupCount() const;
 
             /*!
              * Retrieves the most recently used row.
@@ -303,7 +303,7 @@ namespace storm {
             
             // Stores the currently active row group. This is used for correctly constructing the row grouping of the
             // matrix.
-            index_type currentRowGroup;
+            index_type currentRowGroupCount;
         };
         
         /*!
