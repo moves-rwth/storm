@@ -1,5 +1,6 @@
 #pragma once
 
+#include "storm/solver/AbstractEquationSolver.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/Scheduler.h"
@@ -93,6 +94,11 @@ namespace storm {
                 
                 void updateEcQuotient(std::vector<ValueType> const& weightedRewardVector);
                 
+                
+                void setBoundsToSolver(storm::solver::AbstractEquationSolver<ValueType>& solver, bool requiresLower, bool requiresUpper, uint64_t objIndex, storm::storage::SparseMatrix<ValueType> const& transitions, storm::storage::BitVector const& rowsWithSumLessOne, std::vector<ValueType> const& rewards) const;
+                void setBoundsToSolver(storm::solver::AbstractEquationSolver<ValueType>& solver, bool requiresLower, bool requiresUpper, std::vector<ValueType> const& weightVector, storm::storage::BitVector const& objectiveFilter, storm::storage::SparseMatrix<ValueType> const& transitions, storm::storage::BitVector const& rowsWithSumLessOne, std::vector<ValueType> const& rewards) const;
+                void computeAndSetBoundsToSolver(storm::solver::AbstractEquationSolver<ValueType>& solver, bool requiresLower, bool requiresUpper, storm::storage::SparseMatrix<ValueType> const& transitions, storm::storage::BitVector const& rowsWithSumLessOne, std::vector<ValueType> const& rewards) const;
+
                 /*!
                  * Transforms the results of a min-max-solver that considers a reduced model (without end components) to a result for the original (unreduced) model
                  */
@@ -141,6 +147,7 @@ namespace storm {
                     std::vector<uint_fast64_t> ecqToOriginalChoiceMapping;
                     std::vector<uint_fast64_t> originalToEcqStateMapping;
                     storm::storage::BitVector origReward0Choices;
+                    storm::storage::BitVector rowsWithSumLessOne;
                     
                     std::vector<ValueType> auxStateValues;
                     std::vector<ValueType> auxChoiceValues;
