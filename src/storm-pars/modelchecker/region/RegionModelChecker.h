@@ -22,12 +22,14 @@ namespace storm {
         public:
             
             typedef typename storm::storage::ParameterRegion<ParametricType>::CoefficientType CoefficientType;
+            typedef typename storm::storage::ParameterRegion<ParametricType>::VariableType VariableType;
 
             RegionModelChecker();
             virtual ~RegionModelChecker() = default;
             
             virtual bool canHandle(std::shared_ptr<storm::models::ModelBase> parametricModel, CheckTask<storm::logic::Formula, ParametricType> const& checkTask) const = 0;
-            virtual void specify(Environment const& env, std::shared_ptr<storm::models::ModelBase> parametricModel, CheckTask<storm::logic::Formula, ParametricType> const& checkTask) = 0;
+            virtual void specify(Environment const& env, std::shared_ptr<storm::models::ModelBase> parametricModel, CheckTask<storm::logic::Formula, ParametricType> const& checkTask, bool generateRegionSplitEstimates, bool allowModelSimplifications = true) = 0;
+
             
             /*!
              * Analyzes the given region.
@@ -44,7 +46,7 @@ namespace storm {
              * If supported by this model checker, it is possible to sample the vertices of the regions whenever AllSat/AllViolated could not be shown.
              */
             std::unique_ptr<storm::modelchecker::RegionCheckResult<ParametricType>> analyzeRegions(Environment const& env, std::vector<storm::storage::ParameterRegion<ParametricType>> const& regions, std::vector<RegionResultHypothesis> const& hypotheses, bool sampleVerticesOfRegion = false) ;
-            
+
             virtual ParametricType getBoundAtInitState(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForParameters);
             
             /*!
@@ -56,6 +58,17 @@ namespace storm {
              *
              */
             std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ParametricType>> performRegionRefinement(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, boost::optional<ParametricType> const& coverageThreshold, boost::optional<uint64_t> depthThreshold = boost::none, RegionResultHypothesis const& hypothesis = RegionResultHypothesis::Unknown);
+            
+            /*!
+             * Returns true if region split estimation (a) was enabled when model and check task have been specified and (b) is supported by this region model checker.
+             */
+            virtual bool isRegionSplitEstimateSupported() const;
+            
+            /*!
+             * Returns an estimate of the benefit of splitting the last checked region with respect to each parameter. This method should only be called if region split estimation is supported and enabled.
+             * If a parameter is assigned a high value, we should prefer splitting with respect to this parameter.
+             */
+            virtual std::map<VariableType, double> getRegionSplitEstimate() const;
             
         };
 

@@ -8,6 +8,8 @@
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
+#include "storm/modelchecker/prctl/helper/DsMpiUpperRewardBoundsComputer.h"
+#include "storm/modelchecker/prctl/helper/BaierUpperRewardBoundsComputer.h"
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
@@ -42,12 +44,13 @@ namespace storm {
                 // Build a subsystem of the preprocessor result model that discards states that yield infinite reward for all schedulers.
                 // We can also merge the states that will have reward zero anyway.
                 storm::storage::BitVector maybeStates = preprocessorResult.rewardLessInfinityEStates.get() & ~preprocessorResult.reward0AStates;
+                storm::storage::BitVector finiteRewardChoices = preprocessorResult.preprocessedModel->getTransitionMatrix().getRowFilter(preprocessorResult.rewardLessInfinityEStates.get(), preprocessorResult.rewardLessInfinityEStates.get());
                 std::set<std::string> relevantRewardModels;
                 for (auto const& obj : this->objectives) {
                     obj.formula->gatherReferencedRewardModels(relevantRewardModels);
                 }
                 storm::transformer::GoalStateMerger<SparseModelType> merger(*preprocessorResult.preprocessedModel);
-                auto mergerResult = merger.mergeTargetAndSinkStates(maybeStates, preprocessorResult.reward0AStates, storm::storage::BitVector(maybeStates.size(), false), std::vector<std::string>(relevantRewardModels.begin(), relevantRewardModels.end()));
+                auto mergerResult = merger.mergeTargetAndSinkStates(maybeStates, preprocessorResult.reward0AStates, storm::storage::BitVector(maybeStates.size(), false), std::vector<std::string>(relevantRewardModels.begin(), relevantRewardModels.end()), finiteRewardChoices);
                 
                 // Initialize data specific for the considered model type
                 initializeModelTypeSpecificData(*mergerResult.model);
@@ -175,20 +178,17 @@ namespace storm {
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = solverFactory.create(env, ecQuotient->matrix);
                 solver->setTrackScheduler(true);
                 solver->setHasUniqueSolution(true);
+                solver->setOptimizationDirection(storm::solver::OptimizationDirection::Maximize);
                 auto req = solver->getRequirements(env, storm::solver::OptimizationDirection::Maximize, true);
-                boost::optional<ValueType> lowerBound = this->computeWeightedResultBound(true, weightVector, objectivesWithNoUpperTimeBound);
-                if (lowerBound) {
-                    solver->setLowerBound(lowerBound.get());
+                setBoundsToSolver(*solver, req.requiresLowerBounds(), req.requiresUpperBounds(), weightVector, objectivesWithNoUpperTimeBound, ecQuotient->matrix, ecQuotient->rowsWithSumLessOne, ecQuotient->auxChoiceValues);
+                if (solver->hasLowerBound()) {
                     req.clearLowerBounds();
                 }
-                boost::optional<ValueType> upperBound = this->computeWeightedResultBound(false, weightVector, objectivesWithNoUpperTimeBound);
-                if (upperBound) {
-                    solver->setUpperBound(upperBound.get());
+                if (solver->hasUpperBound()) {
                     req.clearUpperBounds();
                 }
                 STORM_LOG_THROW(req.empty(), storm::exceptions::UncheckedRequirementException, "At least one requirement was not checked.");
                 solver->setRequirementsChecked(true);
-                solver->setOptimizationDirection(storm::solver::OptimizationDirection::Maximize);
                 
                 // Use the (0...0) vector as initial guess for the solution.
                 std::fill(ecQuotient->auxStateValues.begin(), ecQuotient->auxStateValues.end(), storm::utility::zero<ValueType>());
@@ -208,11 +208,11 @@ namespace storm {
                    if (storm::solver::minimize(this->objectives[objIndex].formula->getOptimalityType())) {
                        storm::utility::vector::scaleVectorInPlace(objectiveResults[objIndex], -storm::utility::one<ValueType>());
                    }
-                    for (uint_fast64_t objIndex2 = 0; objIndex2 < this->objectives.size(); ++objIndex2) {
-			            if (objIndex != objIndex2) {
-                            objectiveResults[objIndex2] = std::vector<ValueType>(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
-                        }
-                    }
+                   for (uint_fast64_t objIndex2 = 0; objIndex2 < this->objectives.size(); ++objIndex2) {
+                       if (objIndex != objIndex2) {
+                           objectiveResults[objIndex2] = std::vector<ValueType>(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
+                       }
+                   }
                 } else {
                    storm::storage::SparseMatrix<ValueType> deterministicMatrix = transitionMatrix.selectRowsFromRowGroups(this->optimalChoices, true);
                    storm::storage::SparseMatrix<ValueType> deterministicBackwardTransitions = deterministicMatrix.transpose();
@@ -262,17 +262,19 @@ namespace storm {
                                std::vector<ValueType> b = storm::utility::vector::filterVector(deterministicStateRewards, maybeStates);
 
                                // Now solve the resulting equation system.
-                               std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(env, std::move(submatrix));
+                               std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(env, submatrix);
                                auto req = solver->getRequirements(env);
                                solver->clearBounds();
-                               if (obj.lowerResultBound) {
+                               storm::storage::BitVector submatrixRowsWithSumLessOne = deterministicMatrix.getRowFilter(maybeStates, maybeStates) % maybeStates;
+                               submatrixRowsWithSumLessOne.complement();
+                               this->setBoundsToSolver(*solver, req.requiresLowerBounds(), req.requiresUpperBounds(), objIndex, submatrix, submatrixRowsWithSumLessOne, b);
+                               if (solver->hasLowerBound()) {
                                    req.clearLowerBounds();
-                                   solver->setLowerBound(*obj.lowerResultBound);
                                }
-                               if (obj.upperResultBound) {
-                                   solver->setUpperBound(*obj.upperResultBound);
+                               if (solver->hasUpperBound()) {
                                    req.clearUpperBounds();
                                }
+
                                STORM_LOG_THROW(req.empty(), storm::exceptions::UncheckedRequirementException, "At least one requirement of the LinearEquationSolver was not met.");
                                solver->solveEquations(env, x, b);
 
@@ -311,11 +313,26 @@ namespace storm {
                     // Remove neutral end components, i.e., ECs in which no reward is earned.
                     auto ecElimResult = storm::transformer::EndComponentEliminator<ValueType>::transform(transitionMatrix, subsystemStates, ecChoicesHint & newReward0Choices, reward0EStates);
                     
+                    storm::storage::BitVector rowsWithSumLessOne(ecElimResult.matrix.getRowCount(), false);
+                    for (uint64_t row = 0; row < rowsWithSumLessOne.size(); ++row) {
+                        if (ecElimResult.matrix.getRow(row).getNumberOfEntries() == 0) {
+                            rowsWithSumLessOne.set(row, true);
+                        } else {
+                            for (auto const& entry : transitionMatrix.getRow(ecElimResult.newToOldRowMapping[row])) {
+                                if (!subsystemStates.get(entry.getColumn())) {
+                                    rowsWithSumLessOne.set(row, true);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    
                     ecQuotient = EcQuotient();
                     ecQuotient->matrix = std::move(ecElimResult.matrix);
                     ecQuotient->ecqToOriginalChoiceMapping = std::move(ecElimResult.newToOldRowMapping);
                     ecQuotient->originalToEcqStateMapping = std::move(ecElimResult.oldToNewStateMapping);
                     ecQuotient->origReward0Choices = std::move(newReward0Choices);
+                    ecQuotient->rowsWithSumLessOne = std::move(rowsWithSumLessOne);
                     ecQuotient->auxStateValues.reserve(transitionMatrix.getRowGroupCount());
                     ecQuotient->auxStateValues.resize(ecQuotient->matrix.getRowGroupCount());
                     ecQuotient->auxChoiceValues.reserve(transitionMatrix.getRowCount());
@@ -323,6 +340,91 @@ namespace storm {
                 }
             }
 
+            template <class SparseModelType>
+            void StandardPcaaWeightVectorChecker<SparseModelType>::setBoundsToSolver(storm::solver::AbstractEquationSolver<ValueType>& solver, bool requiresLower, bool requiresUpper, uint64_t objIndex, storm::storage::SparseMatrix<ValueType> const& transitions, storm::storage::BitVector const& rowsWithSumLessOne, std::vector<ValueType> const& rewards) const {
+                
+                // Check whether bounds are already available
+                if (this->objectives[objIndex].lowerResultBound) {
+                    solver.setLowerBound(this->objectives[objIndex].lowerResultBound.get());
+                }
+                if (this->objectives[objIndex].upperResultBound) {
+                    solver.setUpperBound(this->objectives[objIndex].upperResultBound.get());
+                }
+                
+                if ((requiresLower && !solver.hasLowerBound()) || (requiresUpper && !solver.hasUpperBound())) {
+                    computeAndSetBoundsToSolver(solver, requiresLower, requiresUpper, transitions, rowsWithSumLessOne, rewards);
+                }
+            }
+            
+            template <class SparseModelType>
+            void StandardPcaaWeightVectorChecker<SparseModelType>::setBoundsToSolver(storm::solver::AbstractEquationSolver<ValueType>& solver, bool requiresLower, bool requiresUpper, std::vector<ValueType> const& weightVector, storm::storage::BitVector const& objectiveFilter, storm::storage::SparseMatrix<ValueType> const& transitions, storm::storage::BitVector const& rowsWithSumLessOne, std::vector<ValueType> const& rewards) const {
+                
+                // Check whether bounds are already available
+                boost::optional<ValueType> lowerBound = this->computeWeightedResultBound(true, weightVector, objectiveFilter);
+                if (lowerBound) {
+                    solver.setLowerBound(lowerBound.get());
+                }
+                boost::optional<ValueType> upperBound = this->computeWeightedResultBound(false, weightVector, objectiveFilter);
+                if (upperBound) {
+                    solver.setUpperBound(upperBound.get());
+                }
+                
+                if ((requiresLower && !solver.hasLowerBound()) || (requiresUpper && !solver.hasUpperBound())) {
+                    computeAndSetBoundsToSolver(solver, requiresLower, requiresUpper, transitions, rowsWithSumLessOne, rewards);
+                }
+            }
+            
+            template <class SparseModelType>
+            void StandardPcaaWeightVectorChecker<SparseModelType>::computeAndSetBoundsToSolver(storm::solver::AbstractEquationSolver<ValueType>& solver, bool requiresLower, bool requiresUpper, storm::storage::SparseMatrix<ValueType> const& transitions, storm::storage::BitVector const& rowsWithSumLessOne, std::vector<ValueType> const& rewards) const {
+
+                // Compute the one step target probs
+                std::vector<ValueType> oneStepTargetProbs(transitions.getRowCount(), storm::utility::zero<ValueType>());
+                for (auto const& row : rowsWithSumLessOne) {
+                    oneStepTargetProbs[row] = storm::utility::one<ValueType>() - transitions.getRowSum(row);
+                }
+                
+                if (requiresLower && !solver.hasLowerBound()) {
+                    // Compute lower bounds
+                    std::vector<ValueType> negativeRewards;
+                    negativeRewards.reserve(transitions.getRowCount());
+                    uint64_t row = 0;
+                    for (auto const& rew : rewards) {
+                        if (rew < storm::utility::zero<ValueType>()) {
+                            negativeRewards.resize(row, storm::utility::zero<ValueType>());
+                            negativeRewards.push_back(-rew);
+                        }
+                        ++row;
+                    }
+                    if (!negativeRewards.empty()) {
+                        negativeRewards.resize(row, storm::utility::zero<ValueType>());
+                        std::vector<ValueType> lowerBounds = storm::modelchecker::helper::DsMpiMdpUpperRewardBoundsComputer<ValueType>(transitions, negativeRewards, oneStepTargetProbs).computeUpperBounds();
+                        storm::utility::vector::scaleVectorInPlace(lowerBounds, -storm::utility::one<ValueType>());
+                        solver.setLowerBounds(std::move(lowerBounds));
+                    } else {
+                        solver.setLowerBound(storm::utility::zero<ValueType>());
+                    }
+                }
+                
+                // Compute upper bounds
+                if (requiresUpper && !solver.hasUpperBound()) {
+                    std::vector<ValueType> positiveRewards;
+                    positiveRewards.reserve(transitions.getRowCount());
+                    uint64_t row = 0;
+                    for (auto const& rew : rewards) {
+                        if (rew > storm::utility::zero<ValueType>()) {
+                            positiveRewards.resize(row, storm::utility::zero<ValueType>());
+                            positiveRewards.push_back(rew);
+                        }
+                        ++row;
+                    }
+                    if (!positiveRewards.empty()) {
+                        positiveRewards.resize(row, storm::utility::zero<ValueType>());
+                        solver.setUpperBound(storm::modelchecker::helper::BaierUpperRewardBoundsComputer<ValueType>(transitions, positiveRewards, oneStepTargetProbs).computeUpperBound());
+                    } else {
+                        solver.setUpperBound(storm::utility::zero<ValueType>());
+                    }
+                }
+            }
             
             template <class SparseModelType>
             void StandardPcaaWeightVectorChecker<SparseModelType>::transformReducedSolutionToOriginalModel(storm::storage::SparseMatrix<ValueType> const& reducedMatrix,

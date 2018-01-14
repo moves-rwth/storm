@@ -11,13 +11,12 @@
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
 
-#include "storm/exceptions/NotSupportedException.h"
-#include "storm/exceptions/InvalidStateException.h"
-#include "storm/exceptions/InvalidArgumentException.h"
-
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/exceptions/NotImplementedException.h"
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/InvalidStateException.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 
 
 namespace storm {
@@ -152,6 +151,18 @@ namespace storm {
                 auto regionCopyForResult = region;
                 return std::make_unique<storm::modelchecker::RegionRefinementCheckResult<ParametricType>>(std::move(result), std::move(regionCopyForResult));
             }
+
+        template <typename ParametricType>
+        bool RegionModelChecker<ParametricType>::isRegionSplitEstimateSupported() const {
+            return false;
+        }
+        
+        template <typename ParametricType>
+        std::map<typename RegionModelChecker<ParametricType>::VariableType, double> RegionModelChecker<ParametricType>::getRegionSplitEstimate() const {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Region split estimation is not supported by this region model checker.");
+            return std::map<typename RegionModelChecker<ParametricType>::VariableType, double>();
+        }
+
     
 #ifdef STORM_HAVE_CARL
             template class RegionModelChecker<storm::RationalFunction>;

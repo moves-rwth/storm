@@ -71,7 +71,14 @@ namespace storm {
              * @return The number of (non-zero) transitions of the model.
              */
             virtual uint_fast64_t getNumberOfTransitions() const = 0;
-                        
+
+            /*!
+             * Returns the number of choices ine the model.
+             *
+             * @return The number of choices in of the model.
+             */
+            virtual uint_fast64_t getNumberOfChoices() const = 0;
+
             /*!
              * Prints information about the model to the specified stream.
              *

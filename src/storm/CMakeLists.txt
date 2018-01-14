@@ -74,3 +74,5 @@ add_dependencies(binaries storm-main)
 # installation
 install(TARGETS storm RUNTIME DESTINATION bin LIBRARY DESTINATION lib)
 install(TARGETS storm-main RUNTIME DESTINATION bin LIBRARY DESTINATION lib OPTIONAL)
+install(DIRECTORY ${CMAKE_BINARY_DIR}/include/ DESTINATION include/storm
+		FILES_MATCHING PATTERN "*.h")

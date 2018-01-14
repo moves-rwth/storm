@@ -8,7 +8,8 @@
 #include "storm/modelchecker/prctl/helper/rewardbounded/EpochManager.h"
 #include "storm/modelchecker/prctl/helper/rewardbounded/ProductModel.h"
 #include "storm/modelchecker/prctl/helper/rewardbounded/Dimension.h"
-#include "storm/models/sparse/Mdp.h"
+#include "storm/models/sparse/Model.h"
+#include "storm/solver/LinearEquationSolverProblemFormat.h"
 #include "storm/utility/vector.h"
 #include "storm/storage/memorystructure/MemoryStructure.h"
 #include "storm/utility/Stopwatch.h"
@@ -43,8 +44,8 @@ namespace storm {
                      * @param objectives The (preprocessed) objectives
                      *
                      */
-                    MultiDimensionalRewardUnfolding(storm::models::sparse::Mdp<ValueType> const& model, std::vector<storm::modelchecker::multiobjective::Objective<ValueType>> const& objectives);
-                    MultiDimensionalRewardUnfolding(storm::models::sparse::Mdp<ValueType> const& model, std::shared_ptr<storm::logic::OperatorFormula const> objectiveFormula);
+                    MultiDimensionalRewardUnfolding(storm::models::sparse::Model<ValueType> const& model, std::vector<storm::modelchecker::multiobjective::Objective<ValueType>> const& objectives);
+                    MultiDimensionalRewardUnfolding(storm::models::sparse::Model<ValueType> const& model, std::shared_ptr<storm::logic::OperatorFormula const> objectiveFormula);
                     
                     ~MultiDimensionalRewardUnfolding() = default;
                     
@@ -52,6 +53,8 @@ namespace storm {
                     std::vector<Epoch> getEpochComputationOrder(Epoch const& startEpoch);
                     
                     EpochModel& setCurrentEpoch(Epoch const& epoch);
+                    
+                    void setEquationSystemFormatForEpochModel(storm::solver::LinearEquationSolverProblemFormat eqSysFormat);
                     
                     /*!
                      * Returns the precision required for the analyzis of each epoch model in order to achieve the given overall precision
@@ -106,7 +109,7 @@ namespace storm {
                     EpochSolution const& getEpochSolution(std::map<Epoch, EpochSolution const*> const& solutions, Epoch const& epoch);
                     SolutionType const& getStateSolution(EpochSolution const& epochSolution, uint64_t const& productState);
                     
-                    storm::models::sparse::Mdp<ValueType> const& model;
+                    storm::models::sparse::Model<ValueType> const& model;
                     std::vector<storm::modelchecker::multiobjective::Objective<ValueType>> objectives;
                     
                     std::unique_ptr<ProductModel<ValueType>> productModel;
@@ -117,6 +120,9 @@ namespace storm {
                     
                     EpochModel epochModel;
                     boost::optional<Epoch> currentEpoch;
+                    
+                    // In case of DTMCs we have different options for the equation problem format the epoch model will have.
+                    boost::optional<storm::solver::LinearEquationSolverProblemFormat> equationSolverProblemFormatForEpochModel;
                     
                     EpochManager epochManager;
                     

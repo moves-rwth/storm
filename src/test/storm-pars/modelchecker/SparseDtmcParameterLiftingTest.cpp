@@ -79,6 +79,36 @@ namespace {
         EXPECT_EQ(storm::modelchecker::RegionResult::AllViolated, regionChecker->analyzeRegion(this->env(), allVioRegion, storm::modelchecker::RegionResultHypothesis::Unknown,storm::modelchecker::RegionResult::Unknown, true));
     
     }
+
+    TYPED_TEST(SparseDtmcParameterLiftingTest, Brp_Prob_no_simplification) {
+        typedef typename TestFixture::ValueType ValueType;
+
+        std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/brp16_2.pm";
+        std::string formulaAsString = "P<=0.84 [F s=5 ]";
+        std::string constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
+
+        // Program and formula
+        storm::prism::Program program = storm::api::parseProgram(programFile);
+        program = storm::utility::prism::preprocess(program, constantsAsString);
+        std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
+        std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+
+        auto modelParameters = storm::models::sparse::getProbabilityParameters(*model);
+        auto rewParameters = storm::models::sparse::getRewardParameters(*model);
+        modelParameters.insert(rewParameters.begin(), rewParameters.end());
+
+        auto regionChecker = storm::api::initializeParameterLiftingRegionModelChecker<storm::RationalFunction, ValueType>(this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true), false, false);
+
+        //start testing
+        auto allSatRegion=storm::api::parseRegion<storm::RationalFunction>("0.7<=pL<=0.9,0.75<=pK<=0.95", modelParameters);
+        auto exBothRegion=storm::api::parseRegion<storm::RationalFunction>("0.4<=pL<=0.65,0.75<=pK<=0.95", modelParameters);
+        auto allVioRegion=storm::api::parseRegion<storm::RationalFunction>("0.1<=pL<=0.73,0.2<=pK<=0.715", modelParameters);
+
+        EXPECT_EQ(storm::modelchecker::RegionResult::AllSat, regionChecker->analyzeRegion(this->env(), allSatRegion, storm::modelchecker::RegionResultHypothesis::Unknown, storm::modelchecker::RegionResult::Unknown, true));
+        EXPECT_EQ(storm::modelchecker::RegionResult::ExistsBoth, regionChecker->analyzeRegion(this->env(), exBothRegion, storm::modelchecker::RegionResultHypothesis::Unknown,storm::modelchecker::RegionResult::Unknown, true));
+        EXPECT_EQ(storm::modelchecker::RegionResult::AllViolated, regionChecker->analyzeRegion(this->env(), allVioRegion, storm::modelchecker::RegionResultHypothesis::Unknown,storm::modelchecker::RegionResult::Unknown, true));
+
+    }
     
     TYPED_TEST(SparseDtmcParameterLiftingTest, Brp_Rew) {
         typedef typename TestFixture::ValueType ValueType;

@@ -5,7 +5,7 @@ namespace storm {
         namespace sparse {
                         
             template <typename StateType>
-            StateStorage<StateType>::StateStorage(uint64_t bitsPerState) : stateToId(bitsPerState, 10000000), initialStateIndices(), deadlockStateIndices(), bitsPerState(bitsPerState) {
+            StateStorage<StateType>::StateStorage(uint64_t bitsPerState) : stateToId(bitsPerState, 100000), initialStateIndices(), deadlockStateIndices(), bitsPerState(bitsPerState) {
                 // Intentionally left empty.
             }
 

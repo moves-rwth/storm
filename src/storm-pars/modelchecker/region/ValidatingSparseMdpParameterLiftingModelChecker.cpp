@@ -16,7 +16,7 @@ namespace storm {
         
         
         template <typename SparseModelType, typename ImpreciseType, typename PreciseType>
-        void ValidatingSparseMdpParameterLiftingModelChecker<SparseModelType, ImpreciseType, PreciseType>::specify(Environment const& env, std::shared_ptr<storm::models::ModelBase> parametricModel, CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask) {
+        void ValidatingSparseMdpParameterLiftingModelChecker<SparseModelType, ImpreciseType, PreciseType>::specify(Environment const& env, std::shared_ptr<storm::models::ModelBase> parametricModel, CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask, bool generateRegionSplitEstimates, bool allowModelSimplifications) {
             STORM_LOG_ASSERT(this->canHandle(parametricModel, checkTask), "specified model and formula can not be handled by this.");
         
             auto mdp = parametricModel->template as<SparseModelType>();
@@ -28,8 +28,8 @@ namespace storm {
             
             auto simplifiedTask = checkTask.substituteFormula(*simplifier.getSimplifiedFormula());
             
-            impreciseChecker.specify(env, simplifier.getSimplifiedModel(), simplifiedTask, true);
-            preciseChecker.specify(env, simplifier.getSimplifiedModel(), simplifiedTask, true);
+            impreciseChecker.specify(env, simplifier.getSimplifiedModel(), simplifiedTask, false, true);
+            preciseChecker.specify(env, simplifier.getSimplifiedModel(), simplifiedTask, false, true);
         }
         
         template <typename SparseModelType, typename ImpreciseType, typename PreciseType>

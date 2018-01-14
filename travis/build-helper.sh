@@ -50,13 +50,7 @@ run() {
     # Test all
     travis_fold start test_all
     cd build
-    # Hack to avoid memout problem with jit and sylvan
-    # 1. Run other tests without builder tests
-    ctest test --output-on-failure -E run-test-builder
-    # 2. Run builder tests without sylvan tests
-    ./bin/test-builder --gtest_filter=-"DdJaniModelBuilderTest_Sylvan.*"
-    # 3. Just run sylvan tests
-    ./bin/test-builder --gtest_filter="DdJaniModelBuilderTest_Sylvan.*"
+    ctest test --output-on-failure
     travis_fold end test_all
     ;;
 
