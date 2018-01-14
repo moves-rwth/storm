@@ -9,16 +9,81 @@
 namespace storm {
     namespace gspn {
 
-        size_t GspnJsonExporter::currentId = 0;
-
         void GspnJsonExporter::toStream(storm::gspn::GSPN const& gspn, std::ostream& os) {
             os << translate(gspn).dump(4) << std::endl;
         }
 
         modernjson::json GspnJsonExporter::translate(storm::gspn::GSPN const& gspn) {
             modernjson::json jsonGspn;
-            currentId = 0;
+
+            // Export places
+            for (const auto &place : gspn.getPlaces()) {
+                modernjson::json jsonPlace = translatePlace(place);
+                jsonGspn.push_back(jsonPlace);
+            }
+
+            // Export immediate transitions
+            for (const auto &transition : gspn.getImmediateTransitions()) {
+                modernjson::json jsonImmediateTransition = translateImmediateTransition(transition);
+                jsonGspn.push_back(jsonImmediateTransition);
+            }
+
+            // Export timed transitions
+            for (const auto &transition : gspn.getTimedTransitions()) {
+                modernjson::json jsonTimedTransition = translateTimedTransition(transition);
+                jsonGspn.push_back(jsonTimedTransition);
+            }
+
             return jsonGspn;
         }
+
+
+        modernjson::json GspnJsonExporter::translatePlace(storm::gspn::Place const& place) {
+            modernjson::json data;
+            std::stringstream stream;
+            stream << "p" << place.getID();
+            data["id"] = stream.str();
+            data["name"] = place.getName();
+            data["marking"] = place.getNumberOfInitialTokens();
+
+            modernjson::json jsonPlace;
+            jsonPlace["data"] = data;
+            jsonPlace["group"] = "nodes";
+            jsonPlace["classes"] = "place";
+            return jsonPlace;
+        }
+
+        modernjson::json GspnJsonExporter::translateImmediateTransition(storm::gspn::ImmediateTransition<double> const& transition) {
+            modernjson::json data;
+            std::stringstream stream;
+            stream << "i" << transition.getID();
+            data["id"] = stream.str();
+            data["name"] = transition.getName();
+            data["priority"] = transition.getPriority();
+            data["weight"] = transition.getWeight();
+
+            modernjson::json jsonTrans;
+            jsonTrans["data"] = data;
+            jsonTrans["group"] = "nodes";
+            jsonTrans["classes"] = "trans_im";
+            return jsonTrans;
+        }
+
+         modernjson::json GspnJsonExporter::translateTimedTransition(storm::gspn::TimedTransition<double> const& transition) {
+             modernjson::json data;
+             std::stringstream stream;
+             stream << "t" << transition.getID();
+             data["id"] = stream.str();
+             data["name"] = transition.getName();
+             data["rate"] = transition.getRate();
+             data["priority"] = transition.getPriority();
+
+             modernjson::json jsonTrans;
+             jsonTrans["data"] = data;
+             jsonTrans["group"] = "nodes";
+             jsonTrans["classes"] = "trans_time";
+             return jsonTrans;
+         }
+
     }
 }

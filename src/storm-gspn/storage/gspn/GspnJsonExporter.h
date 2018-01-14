@@ -24,8 +24,11 @@ namespace storm {
             static modernjson::json translate(storm::gspn::GSPN const& gspn);
 
         private:
-            static size_t currentId;
+            static modernjson::json translatePlace(storm::gspn::Place const& place);
 
+            static modernjson::json translateImmediateTransition(storm::gspn::ImmediateTransition<double> const& transition);
+
+            static modernjson::json translateTimedTransition(storm::gspn::TimedTransition<double> const& transition);
         };
        
     }
