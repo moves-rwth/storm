@@ -27,7 +27,7 @@ namespace storm {
             
             std::shared_ptr<storm::logic::Formula const> subformula = formula.asOperatorFormula().getSubformula().asSharedPointer();
             // If necessary, convert the subformula to a more general case
-            if (subformula->isEventuallyFormula() && subformula->asEventuallyFormula().isProbabilityPathFormula()) {
+            if (subformula->isEventuallyFormula() && formula.isProbabilityOperatorFormula()) {
                 subformula = std::make_shared<storm::logic::UntilFormula>(storm::logic::Formula::getTrueFormula(), subformula->asEventuallyFormula().getSubformula().asSharedPointer());
             }
             
