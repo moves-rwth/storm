@@ -168,7 +168,14 @@ namespace storm {
             void toPnpro(std::ostream& stream) const;
             // TODO doc
             void toPnml(std::ostream& stream) const;
-            
+
+            /*!
+             * Export GSPN in Json format.
+             *
+             * @param stream Outputstream.
+             */
+            void toJson(std::ostream& stream) const;
+
             void writeStatsToStream(std::ostream& stream) const;
         private:
             storm::gspn::Place* getPlace(uint64_t id);

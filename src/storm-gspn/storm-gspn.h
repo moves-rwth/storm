@@ -41,6 +41,13 @@ namespace storm {
             gspn.toPnml(fs);
             storm::utility::closeFile(fs);
         }
+
+        if (exportSettings.isWriteToJsonSet()) {
+            std::ofstream fs;
+            storm::utility::openFile(exportSettings.getWriteToJsonFilename(), fs);
+            gspn.toJson(fs);
+            storm::utility::closeFile(fs);
+        }
         
         if (exportSettings.isDisplayStatsSet()) {
             std::cout << "============GSPN Statistics==============" << std::endl;

@@ -117,7 +117,7 @@ void processOptions() {
             storm::builder::JaniGSPNBuilder builder(*gspn);
             storm::jani::Model* model =  builder.build();
             storm::jani::Variable const& topfailedVar = builder.getPlaceVariable(toplevelFailedPlace);
-            
+
             storm::expressions::Expression targetExpression = exprManager->integer(1) == topfailedVar.getExpressionVariable().getExpression();
             auto evtlFormula = std::make_shared<storm::logic::AtomicExpressionFormula>(targetExpression);
             auto tbFormula = std::make_shared<storm::logic::BoundedUntilFormula>(std::make_shared<storm::logic::BooleanLiteralFormula>(true), evtlFormula, storm::logic::TimeBound(false, exprManager->integer(0)), storm::logic::TimeBound(false, exprManager->integer(10)), storm::logic::TimeBoundReference(storm::logic::TimeBoundType::Time));

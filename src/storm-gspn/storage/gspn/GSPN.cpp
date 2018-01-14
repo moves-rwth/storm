@@ -6,8 +6,7 @@
 
 #include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidArgumentException.h"
-
-
+#include "storm-gspn/storage/gspn/GspnJsonExporter.h"
 
 namespace storm {
     namespace gspn {
@@ -610,6 +609,11 @@ namespace storm {
             stream << space << "</net>" << std::endl;
             stream << "</pnml>" << std::endl;
         }
+
+        void GSPN::toJson(std::ostream &stream) const {
+            return storm::gspn::GspnJsonExporter::toStream(*this, stream);
+        }
+
         
         void GSPN::writeStatsToStream(std::ostream& stream) const {
             stream << "Number of places: " << getNumberOfPlaces() << std::endl;
