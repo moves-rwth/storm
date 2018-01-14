@@ -22,6 +22,22 @@
 #include <boost/lexical_cast.hpp>
 #include <memory>
 
+template<typename ValueType>
+std::shared_ptr<storm::storage::DFT<ValueType>> loadDFT() {
+    storm::settings::modules::DftIOSettings const& dftIOSettings = storm::settings::getModule<storm::settings::modules::DftIOSettings>();
+
+    // Build DFT from given file.
+    if (dftIOSettings.isDftJsonFileSet()) {
+        storm::parser::DFTJsonParser<ValueType> parser;
+        STORM_LOG_DEBUG("Loading DFT from file " << dftIOSettings.getDftJsonFilename());
+        return std::make_shared<storm::storage::DFT<ValueType>>(parser.parseJson(dftIOSettings.getDftJsonFilename()));
+    } else {
+        storm::parser::DFTGalileoParser<ValueType> parser;
+        STORM_LOG_DEBUG("Loading DFT from file " << dftIOSettings.getDftFilename());
+        return std::make_shared<storm::storage::DFT<ValueType>>(parser.parseDFT(dftIOSettings.getDftFilename()));
+    }
+}
+
 /*!
  * Analyse the given DFT according to the given properties.
  * We first load the DFT from the given file, then build the corresponding model and last check against the given properties.
@@ -34,19 +50,7 @@
  */
 template <typename ValueType>
 void analyzeDFT(std::vector<std::string> const& properties, bool symred, bool allowModularisation, bool enableDC, double approximationError) {
-    storm::settings::modules::DftIOSettings const& dftIOSettings = storm::settings::getModule<storm::settings::modules::DftIOSettings>();
-    std::shared_ptr<storm::storage::DFT<ValueType>> dft;
-
-    // Build DFT from given file.
-    if (dftIOSettings.isDftJsonFileSet()) {
-        storm::parser::DFTJsonParser<ValueType> parser;
-        std::cout << "Loading DFT from file " << dftIOSettings.getDftJsonFilename() << std::endl;
-        dft = std::make_shared<storm::storage::DFT<ValueType>>(parser.parseJson(dftIOSettings.getDftJsonFilename()));
-    } else {
-        storm::parser::DFTGalileoParser<ValueType> parser;
-        std::cout << "Loading DFT from file " << dftIOSettings.getDftFilename() << std::endl;
-        dft = std::make_shared<storm::storage::DFT<ValueType>>(parser.parseDFT(dftIOSettings.getDftFilename()));
-    }
+    std::shared_ptr<storm::storage::DFT<ValueType>> dft = loadDFT<ValueType>();
 
     // Build properties
     std::string propString = properties[0];
@@ -69,12 +73,9 @@ void analyzeDFT(std::vector<std::string> const& properties, bool symred, bool al
  * @param filename Path to DFT file in Galileo format.
  */
 template<typename ValueType>
-void analyzeWithSMT(std::string filename) {
-    std::cout << "Running DFT analysis on file " << filename << " with use of SMT" << std::endl;
-    
-    storm::parser::DFTGalileoParser<ValueType> parser;
-    storm::storage::DFT<ValueType> dft = parser.parseDFT(filename);
-    storm::modelchecker::DFTASFChecker asfChecker(dft);
+void analyzeWithSMT(std::shared_ptr<storm::storage::DFT<ValueType>> dft) {
+    STORM_LOG_DEBUG("Running DFT analysis with use of SMT");
+    storm::modelchecker::DFTASFChecker asfChecker(*dft);
     asfChecker.convert();
     asfChecker.toFile("test.smt2");
     //bool sat = dftSmtBuilder.check();
@@ -85,8 +86,6 @@ void processOptions() {
         // Start by setting some urgent options (log levels, resources, etc.)
         storm::cli::setUrgentOptions();
 
-       // storm::cli::processOptions();
-        
         storm::settings::modules::DftIOSettings const& dftIOSettings = storm::settings::getModule<storm::settings::modules::DftIOSettings>();
         storm::settings::modules::FaultTreeSettings const& faultTreeSettings = storm::settings::getModule<storm::settings::modules::FaultTreeSettings>();
         storm::settings::modules::GeneralSettings const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
@@ -97,24 +96,16 @@ void processOptions() {
 
         if (dftIOSettings.isExportToJson()) {
             STORM_LOG_THROW(dftIOSettings.isDftFileSet(), storm::exceptions::InvalidSettingsException, "No input model in Galileo format given.");
-            storm::parser::DFTGalileoParser<double> parser;
-            storm::storage::DFT<double> dft = parser.parseDFT(dftIOSettings.getDftFilename());
+            std::shared_ptr<storm::storage::DFT<double>> dft = loadDFT<double>();
             // Export to json
-            storm::storage::DftJsonExporter<double>::toFile(dft, dftIOSettings.getExportJsonFilename());
+            storm::storage::DftJsonExporter<double>::toFile(*dft, dftIOSettings.getExportJsonFilename());
             storm::utility::cleanUp();
             return;
         }
 
         
         if (dftIOSettings.isTransformToGspn()) {
-            std::shared_ptr<storm::storage::DFT<double>> dft;
-            if (dftIOSettings.isDftJsonFileSet()) {
-                storm::parser::DFTJsonParser<double> parser;
-                dft = std::make_shared<storm::storage::DFT<double>>(parser.parseJson(dftIOSettings.getDftJsonFilename()));
-            } else {
-                storm::parser::DFTGalileoParser<double> parser(true, false);
-                dft = std::make_shared<storm::storage::DFT<double>>(parser.parseDFT(dftIOSettings.getDftFilename()));
-            }
+            std::shared_ptr<storm::storage::DFT<double>> dft = loadDFT<double>();
             storm::transformations::dft::DftToGspnTransformator<double> gspnTransformator(*dft);
             gspnTransformator.transform();
             storm::gspn::GSPN* gspn = gspnTransformator.obtainGSPN();
@@ -156,9 +147,11 @@ void processOptions() {
         if (faultTreeSettings.solveWithSMT()) {
             // Solve with SMT
             if (parametric) {
+            //    std::shared_ptr<storm::storage::DFT<double>> dft = loadDFT<double>();
             //    analyzeWithSMT<storm::RationalFunction>(dftSettings.getDftFilename());
             } else {
-                analyzeWithSMT<double>(dftIOSettings.getDftFilename());
+                std::shared_ptr<storm::storage::DFT<double>> dft = loadDFT<double>();
+                analyzeWithSMT<double>(dft);
             }
             storm::utility::cleanUp();
             return;
