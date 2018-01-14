@@ -99,13 +99,13 @@ void processOptions() {
             std::shared_ptr<storm::storage::DFT<double>> dft = loadDFT<double>();
             // Export to json
             storm::storage::DftJsonExporter<double>::toFile(*dft, dftIOSettings.getExportJsonFilename());
-            storm::utility::cleanUp();
             return;
         }
 
         
         if (dftIOSettings.isTransformToGspn()) {
             std::shared_ptr<storm::storage::DFT<double>> dft = loadDFT<double>();
+            // Transform to GSPN
             storm::transformations::dft::DftToGspnTransformator<double> gspnTransformator(*dft);
             gspnTransformator.transform();
             storm::gspn::GSPN* gspn = gspnTransformator.obtainGSPN();
@@ -118,7 +118,6 @@ void processOptions() {
             storm::jani::Model* model =  builder.build();
             storm::jani::Variable const& topfailedVar = builder.getPlaceVariable(toplevelFailedPlace);
             
-
             storm::expressions::Expression targetExpression = exprManager->integer(1) == topfailedVar.getExpressionVariable().getExpression();
             auto evtlFormula = std::make_shared<storm::logic::AtomicExpressionFormula>(targetExpression);
             auto tbFormula = std::make_shared<storm::logic::BoundedUntilFormula>(std::make_shared<storm::logic::BooleanLiteralFormula>(true), evtlFormula, storm::logic::TimeBound(false, exprManager->integer(0)), storm::logic::TimeBound(false, exprManager->integer(10)), storm::logic::TimeBoundReference(storm::logic::TimeBoundType::Time));
@@ -134,7 +133,6 @@ void processOptions() {
             
             delete model;
             delete gspn;
-            storm::utility::cleanUp();
             return;
         }
         
@@ -153,7 +151,6 @@ void processOptions() {
                 std::shared_ptr<storm::storage::DFT<double>> dft = loadDFT<double>();
                 analyzeWithSMT<double>(dft);
             }
-            storm::utility::cleanUp();
             return;
         }
 #endif
@@ -234,7 +231,6 @@ int main(const int argc, const char** argv) {
         }
 
         processOptions();
-        //storm::pars::processOptions();
 
         totalTimer.stop();
         if (storm::settings::getModule<storm::settings::modules::ResourceSettings>().isPrintTimeAndMemorySet()) {
