@@ -10,6 +10,7 @@ namespace storm {
         class Composition {
         public:
             Composition() = default;
+            virtual ~Composition() = default;
             
             friend std::ostream& operator<<(std::ostream& stream, Composition const& composition);
             

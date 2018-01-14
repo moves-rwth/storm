@@ -2,57 +2,28 @@
 
 #include "storm/solver/LinearEquationSolver.h"
 #include "storm/solver/GameSolver.h"
+#include "SolverSelectionOptions.h"
 
 namespace storm {
     namespace solver {
         
         template<typename ValueType>
-        class StandardGameSolverSettings {
-        public:
-            StandardGameSolverSettings();
-            
-            enum class SolutionMethod {
-                ValueIteration, PolicyIteration
-            };
-            
-            void setSolutionMethod(SolutionMethod const& solutionMethod);
-            void setMaximalNumberOfIterations(uint64_t maximalNumberOfIterations);
-            void setRelativeTerminationCriterion(bool value);
-            void setPrecision(ValueType precision);
-
-            SolutionMethod const& getSolutionMethod() const;
-            uint64_t getMaximalNumberOfIterations() const;
-            ValueType getPrecision() const;
-            bool getRelativeTerminationCriterion() const;
-
-        private:
-            SolutionMethod solutionMethod;
-            uint64_t maximalNumberOfIterations;
-            ValueType precision;
-            bool relative;
-        };
-       
-        template<typename ValueType>
         class StandardGameSolver : public GameSolver<ValueType> {
         public:
-            StandardGameSolver(storm::storage::SparseMatrix<storm::storage::sparse::state_type> const& player1Matrix, storm::storage::SparseMatrix<ValueType> const& player2Matrix, std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory, StandardGameSolverSettings<ValueType> const& settings = StandardGameSolverSettings<ValueType>());
+            StandardGameSolver(storm::storage::SparseMatrix<storm::storage::sparse::state_type> const& player1Matrix, storm::storage::SparseMatrix<ValueType> const& player2Matrix, std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory);
             
-            StandardGameSolver(storm::storage::SparseMatrix<storm::storage::sparse::state_type>&& player1Matrix, storm::storage::SparseMatrix<ValueType>&& player2Matrix, std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory, StandardGameSolverSettings<ValueType> const& settings = StandardGameSolverSettings<ValueType>());
+            StandardGameSolver(storm::storage::SparseMatrix<storm::storage::sparse::state_type>&& player1Matrix, storm::storage::SparseMatrix<ValueType>&& player2Matrix, std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory);
             
-            virtual bool solveGame(OptimizationDirection player1Dir, OptimizationDirection player2Dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const override;
-            virtual void repeatedMultiply(OptimizationDirection player1Dir, OptimizationDirection player2Dir, std::vector<ValueType>& x, std::vector<ValueType> const* b, uint_fast64_t n = 1) const override;
+            virtual bool solveGame(Environment const& env, OptimizationDirection player1Dir, OptimizationDirection player2Dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const override;
+            virtual void repeatedMultiply(Environment const& env, OptimizationDirection player1Dir, OptimizationDirection player2Dir, std::vector<ValueType>& x, std::vector<ValueType> const* b, uint_fast64_t n = 1) const override;
 
-            StandardGameSolverSettings<ValueType> const& getSettings() const;
-            void setSettings(StandardGameSolverSettings<ValueType> const& newSettings);
-            
             virtual void clearCache() const override;
 
-            virtual ValueType getPrecision() const override;
-            virtual bool getRelative() const override;
-            
         private:
-            bool solveGamePolicyIteration(OptimizationDirection player1Dir, OptimizationDirection player2Dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
-            bool solveGameValueIteration(OptimizationDirection player1Dir, OptimizationDirection player2Dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
+            GameMethod getMethod(Environment const& env, bool isExactMode) const;
+            
+            bool solveGamePolicyIteration(Environment const& env, OptimizationDirection player1Dir, OptimizationDirection player2Dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
+            bool solveGameValueIteration(Environment const& env, OptimizationDirection player1Dir, OptimizationDirection player2Dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
 
             // Computes p2Matrix * x + b, reduces the result w.r.t. player 2 choices, and then reduces the result w.r.t. player 1 choices.
             void multiplyAndReduce(OptimizationDirection player1Dir, OptimizationDirection player2Dir, std::vector<ValueType>& x, std::vector<ValueType> const* b,
@@ -77,11 +48,8 @@ namespace storm {
             mutable std::unique_ptr<std::vector<ValueType>> auxiliaryP2RowGroupVector; // player2Matrix.rowGroupCount() entries
             mutable std::unique_ptr<std::vector<ValueType>> auxiliaryP1RowGroupVector; // player1Matrix.rowGroupCount() entries
 
-            Status updateStatusIfNotConverged(Status status, std::vector<ValueType> const& x, uint64_t iterations) const;
+            Status updateStatusIfNotConverged(Status status, std::vector<ValueType> const& x, uint64_t iterations, uint64_t maximalNumberOfIterations) const;
             void reportStatus(Status status, uint64_t iterations) const;
-            
-            /// The settings of this solver.
-            StandardGameSolverSettings<ValueType> settings;
             
             /// The factory used to obtain linear equation solvers.
             std::unique_ptr<LinearEquationSolverFactory<ValueType>> linearEquationSolverFactory;

@@ -21,6 +21,9 @@
 #include "storm/utility/cli.h"
 
 namespace storm {
+    
+    class Environment;
+    
     namespace counterexamples {
         
         /*!
@@ -451,7 +454,7 @@ namespace storm {
                             // This is because it could be that the commands are taken to enable other synchronizations. Therefore, we need
                             // to add an additional clause that says that the right-hand side of the implication is also true if all commands
                             // of the current choice have enabled synchronization options.
-                            storm::expressions::Expression finalDisjunct = variableInformation.manager->boolean(false);
+                            storm::expressions::Expression finalDisjunct = variableInformation.manager->boolean(true);
                             for (auto label : labelSetFollowingSetsPair.first) {
                                 storm::expressions::Expression alternativeExpressionForLabel = variableInformation.manager->boolean(false);
                                 std::set<boost::container::flat_set<uint_fast64_t>> const& synchsForCommand = synchronizingLabels.at(label);
@@ -1648,7 +1651,7 @@ namespace storm {
              * @param checkThresholdFeasible If set, it is verified that the model can actually achieve/exceed the given probability value. If this check
              * is made and fails, an exception is thrown.
              */
-            static boost::container::flat_set<uint_fast64_t> getMinimalCommandSet(storm::prism::Program program, storm::models::sparse::Mdp<T> const& mdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, double probabilityThreshold, bool strictBound, bool checkThresholdFeasible = false, bool includeReachabilityEncoding = false) {
+            static boost::container::flat_set<uint_fast64_t> getMinimalCommandSet(Environment const& env,storm::prism::Program program, storm::models::sparse::Mdp<T> const& mdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, double probabilityThreshold, bool strictBound, bool checkThresholdFeasible = false, bool includeReachabilityEncoding = false) {
 #ifdef STORM_HAVE_Z3
                 // Set up all clocks used for time measurement.
                 auto totalClock = std::chrono::high_resolution_clock::now();
@@ -1683,7 +1686,7 @@ namespace storm {
                 if (checkThresholdFeasible) {
                     storm::modelchecker::helper::SparseMdpPrctlHelper<T> modelCheckerHelper;
                     STORM_LOG_DEBUG("Invoking model checker.");
-                    std::vector<T> result = std::move(modelCheckerHelper.computeUntilProbabilities(false, mdp.getTransitionMatrix(), mdp.getBackwardTransitions(), phiStates, psiStates, false, false, storm::solver::GeneralMinMaxLinearEquationSolverFactory<T>()).values);
+                    std::vector<T> result = std::move(modelCheckerHelper.computeUntilProbabilities(env, false, mdp.getTransitionMatrix(), mdp.getBackwardTransitions(), phiStates, psiStates, false, false, storm::solver::GeneralMinMaxLinearEquationSolverFactory<T>()).values);
                     for (auto state : mdp.getInitialStates()) {
                         maximalReachabilityProbability = std::max(maximalReachabilityProbability, result[state]);
                     }
@@ -1750,7 +1753,7 @@ namespace storm {
   
                     storm::modelchecker::helper::SparseMdpPrctlHelper<T> modelCheckerHelper;
                     STORM_LOG_DEBUG("Invoking model checker.");
-                    std::vector<T> result = std::move(modelCheckerHelper.computeUntilProbabilities(false, subMdp.getTransitionMatrix(), subMdp.getBackwardTransitions(), phiStates, psiStates, false, false, storm::solver::GeneralMinMaxLinearEquationSolverFactory<T>()).values);
+                    std::vector<T> result = std::move(modelCheckerHelper.computeUntilProbabilities(env, false, subMdp.getTransitionMatrix(), subMdp.getBackwardTransitions(), phiStates, psiStates, false, false, storm::solver::GeneralMinMaxLinearEquationSolverFactory<T>()).values);
                     STORM_LOG_DEBUG("Computed model checking results.");
                     totalModelCheckingTime += std::chrono::high_resolution_clock::now() - modelCheckingClock;
 
@@ -1808,7 +1811,7 @@ namespace storm {
 #endif
             }
             
-            static std::shared_ptr<PrismHighLevelCounterexample> computeCounterexample(storm::prism::Program program, storm::models::sparse::Mdp<T> const& mdp, std::shared_ptr<storm::logic::Formula const> const& formula) {
+            static std::shared_ptr<PrismHighLevelCounterexample> computeCounterexample(Environment const& env,storm::prism::Program program, storm::models::sparse::Mdp<T> const& mdp, std::shared_ptr<storm::logic::Formula const> const& formula) {
 #ifdef STORM_HAVE_Z3
                 std::cout << std::endl << "Generating minimal label counterexample for formula " << *formula << std::endl;
                 
@@ -1829,8 +1832,8 @@ namespace storm {
                 if (probabilityOperator.getSubformula().isUntilFormula()) {
                     storm::logic::UntilFormula const& untilFormula = probabilityOperator.getSubformula().asUntilFormula();
                     
-                    std::unique_ptr<storm::modelchecker::CheckResult> leftResult = modelchecker.check(untilFormula.getLeftSubformula());
-                    std::unique_ptr<storm::modelchecker::CheckResult> rightResult = modelchecker.check(untilFormula.getRightSubformula());
+                    std::unique_ptr<storm::modelchecker::CheckResult> leftResult = modelchecker.check(env, untilFormula.getLeftSubformula());
+                    std::unique_ptr<storm::modelchecker::CheckResult> rightResult = modelchecker.check(env, untilFormula.getRightSubformula());
                     
                     storm::modelchecker::ExplicitQualitativeCheckResult const& leftQualitativeResult = leftResult->asExplicitQualitativeCheckResult();
                     storm::modelchecker::ExplicitQualitativeCheckResult const& rightQualitativeResult = rightResult->asExplicitQualitativeCheckResult();
@@ -1840,7 +1843,7 @@ namespace storm {
                 } else if (probabilityOperator.getSubformula().isEventuallyFormula()) {
                     storm::logic::EventuallyFormula const& eventuallyFormula = probabilityOperator.getSubformula().asEventuallyFormula();
                     
-                    std::unique_ptr<storm::modelchecker::CheckResult> subResult = modelchecker.check(eventuallyFormula.getSubformula());
+                    std::unique_ptr<storm::modelchecker::CheckResult> subResult = modelchecker.check(env, eventuallyFormula.getSubformula());
                     
                     storm::modelchecker::ExplicitQualitativeCheckResult const& subQualitativeResult = subResult->asExplicitQualitativeCheckResult();
                     
@@ -1850,7 +1853,7 @@ namespace storm {
                 
                 // Delegate the actual computation work to the function of equal name.
                 auto startTime = std::chrono::high_resolution_clock::now();
-                auto commandSet = getMinimalCommandSet(program, mdp, phiStates, psiStates, threshold, strictBound, true, storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>().isEncodeReachabilitySet());
+                auto commandSet = getMinimalCommandSet(env, program, mdp, phiStates, psiStates, threshold, strictBound, true, storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>().isEncodeReachabilitySet());
                 auto endTime = std::chrono::high_resolution_clock::now();
                 std::cout << std::endl << "Computed minimal command set of size " << commandSet.size() << " in " << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << "ms." << std::endl;
                 

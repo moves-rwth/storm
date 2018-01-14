@@ -24,6 +24,8 @@ namespace storm {
             SymbolicParetoCurveCheckResult& operator=(SymbolicParetoCurveCheckResult&& other) = default;
             virtual ~SymbolicParetoCurveCheckResult() = default;
 
+            virtual std::unique_ptr<CheckResult> clone() const override;
+            
             virtual bool isSymbolicParetoCurveCheckResult() const override;
             virtual bool isSymbolic() const override;
 

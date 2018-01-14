@@ -6,17 +6,11 @@
 
 #include "storm/storage/expressions/ExpressionEvaluatorBase.h"
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunused-variable"
-
-#pragma GCC diagnostic push
-
-#include "exprtk.hpp"
-
-#pragma GCC diagnostic pop
-#pragma clang diagnostic pop
+#include "storm/utility/exprtk.h"
 
 #include "storm/storage/expressions/ToExprtkStringVisitor.h"
+
+#include "storm/storage/expressions/ExprtkCompiledExpression.h"
 
 namespace storm {
     namespace expressions {
@@ -34,15 +28,14 @@ namespace storm {
 
         protected:
             typedef double ValueType;
-            typedef exprtk::expression<ValueType> CompiledExpressionType;
-            typedef std::unordered_map<std::shared_ptr<BaseExpression const>, CompiledExpressionType> CacheType;
+            typedef ExprtkCompiledExpression::CompiledExpressionType CompiledExpressionType;
             
             /*!
-             * Adds a compiled version of the given expression to the internal storage.
+             * Retrieves a compiled version of the given expression.
              *
              * @param expression The expression that is to be compiled.
              */
-            CompiledExpressionType& getCompiledExpression(storm::expressions::Expression const& expression) const;
+            CompiledExpressionType const& getCompiledExpression(storm::expressions::Expression const& expression) const;
             
             // The parser used.
             mutable std::unique_ptr<exprtk::parser<ValueType>> parser;
@@ -54,9 +47,6 @@ namespace storm {
             std::vector<ValueType> booleanValues;
             std::vector<ValueType> integerValues;
             std::vector<ValueType> rationalValues;
-            
-            // A mapping of expressions to their compiled counterpart.
-            mutable CacheType compiledExpressions;
         };
         
         class ExprtkExpressionEvaluator : public ExprtkExpressionEvaluatorBase<double> {

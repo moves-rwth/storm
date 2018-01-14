@@ -85,7 +85,7 @@ void processOptions() {
         // Start by setting some urgent options (log levels, resources, etc.)
         storm::cli::setUrgentOptions();
 
-        storm::cli::processOptions();
+       // storm::cli::processOptions();
         
         storm::settings::modules::DftIOSettings const& dftIOSettings = storm::settings::getModule<storm::settings::modules::DftIOSettings>();
         storm::settings::modules::FaultTreeSettings const& faultTreeSettings = storm::settings::getModule<storm::settings::modules::FaultTreeSettings>();

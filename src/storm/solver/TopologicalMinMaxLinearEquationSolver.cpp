@@ -1,17 +1,16 @@
 #include "storm/solver/TopologicalMinMaxLinearEquationSolver.h"
 
-#include <utility>
 #include "storm/utility/vector.h"
 #include "storm/utility/graph.h"
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
 #include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/exceptions/InvalidStateException.h"
+#include "storm/exceptions/InvalidEnvironmentException.h"
 
+#include "storm/environment/solver/MinMaxSolverEnvironment.h"
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/CoreSettings.h"
-#include "storm/settings/modules/NativeEquationSolverSettings.h"
-#include "storm/settings/modules/TopologicalValueIterationEquationSolverSettings.h"
 
 #include "storm/utility/macros.h"
 #include "storm-config.h"
@@ -23,7 +22,7 @@ namespace storm {
     namespace solver {
         
         template<typename ValueType>
-        TopologicalMinMaxLinearEquationSolver<ValueType>::TopologicalMinMaxLinearEquationSolver(double precision, uint_fast64_t maximalNumberOfIterations, bool relative) : precision(precision), maximalNumberOfIterations(maximalNumberOfIterations), relative(relative) {
+        TopologicalMinMaxLinearEquationSolver<ValueType>::TopologicalMinMaxLinearEquationSolver() {
             // Get the settings object to customize solving.
             this->enableCuda = storm::settings::getModule<storm::settings::modules::CoreSettings>().isUseCudaSet();
 #ifdef STORM_HAVE_CUDA
@@ -32,7 +31,7 @@ namespace storm {
         }
 
         template<typename ValueType>
-        TopologicalMinMaxLinearEquationSolver<ValueType>::TopologicalMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, double precision, uint_fast64_t maximalNumberOfIterations, bool relative) : TopologicalMinMaxLinearEquationSolver(precision, maximalNumberOfIterations, relative) {
+        TopologicalMinMaxLinearEquationSolver<ValueType>::TopologicalMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A) : TopologicalMinMaxLinearEquationSolver() {
             this->setMatrix(A);
         }
         
@@ -49,7 +48,12 @@ namespace storm {
         }
         
         template<typename ValueType>
-		bool TopologicalMinMaxLinearEquationSolver<ValueType>::internalSolveEquations(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+		bool TopologicalMinMaxLinearEquationSolver<ValueType>::internalSolveEquations(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+			STORM_LOG_THROW(env.solver().minMax().getMethod() == MinMaxMethod::Topological, storm::exceptions::InvalidEnvironmentException, "This min max solver does not support the selected technique.");
+			
+			ValueType precision = storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision());
+			uint64_t maxIters = env.solver().minMax().getMaximalNumberOfIterations();
+			bool relative = env.solver().minMax().getMaximalNumberOfIterations();
 			
 #ifdef GPU_USE_FLOAT
 #define __FORCE_FLOAT_CALCULATION true
@@ -60,12 +64,12 @@ namespace storm {
                 // FIXME: This actually allocates quite some storage, because of this conversion, is it really necessary?
 				storm::storage::SparseMatrix<float> newA = this->A->template toValueType<float>();
                 
-                TopologicalMinMaxLinearEquationSolver<float> newSolver(newA, this->precision, this->maximalNumberOfIterations, this->relative);
+                TopologicalMinMaxLinearEquationSolver<float> newSolver(newA);
 
 				std::vector<float> new_x = storm::utility::vector::toValueType<float>(x);
 				std::vector<float> const new_b = storm::utility::vector::toValueType<float>(b);
 
-				bool callConverged = newSolver.solveEquations(dir, new_x, new_b);
+				bool callConverged = newSolver.solveEquations(env, dir, new_x, new_b);
 
 				for (size_t i = 0, size = new_x.size(); i < size; ++i) {
 					x.at(i) = new_x.at(i);
@@ -106,9 +110,9 @@ namespace storm {
 				bool result = false;
 				size_t globalIterations = 0;
 				if (dir == OptimizationDirection::Minimize) {
-					result = __basicValueIteration_mvReduce_minimize<uint_fast64_t, ValueType>(this->maximalNumberOfIterations, this->precision, this->relative, A->rowIndications, A->columnsAndValues, x, b, nondeterministicChoiceIndices, globalIterations);
+					result = __basicValueIteration_mvReduce_minimize<uint_fast64_t, ValueType>(maxIters, precision, relative, A->rowIndications, A->columnsAndValues, x, b, nondeterministicChoiceIndices, globalIterations);
 				} else {
-					result = __basicValueIteration_mvReduce_maximize<uint_fast64_t, ValueType>(this->maximalNumberOfIterations, this->precision, this->relative, A->rowIndications, A->columnsAndValues, x, b, nondeterministicChoiceIndices, globalIterations);
+					result = __basicValueIteration_mvReduce_maximize<uint_fast64_t, ValueType>(maxIters, precision, relative, A->rowIndications, A->columnsAndValues, x, b, nondeterministicChoiceIndices, globalIterations);
 				}
 				STORM_LOG_INFO("Executed " << globalIterations << " of max. " << maximalNumberOfIterations << " Iterations on GPU.");
 
@@ -208,9 +212,9 @@ namespace storm {
 						bool result = false;
 						localIterations = 0;
 						if (dir == OptimizationDirection::Minimum) {
-							result = __basicValueIteration_mvReduce_minimize<uint_fast64_t, ValueType>(this->maximalNumberOfIterations, this->precision, this->relative, sccSubmatrix.rowIndications, sccSubmatrix.columnsAndValues, *currentX, sccSubB, sccSubNondeterministicChoiceIndices, localIterations);
+							result = __basicValueIteration_mvReduce_minimize<uint_fast64_t, ValueType>(maxIters, precision, relative, sccSubmatrix.rowIndications, sccSubmatrix.columnsAndValues, *currentX, sccSubB, sccSubNondeterministicChoiceIndices, localIterations);
 						} else {
-							result = __basicValueIteration_mvReduce_maximize<uint_fast64_t, ValueType>(this->maximalNumberOfIterations, this->precision, this->relative, sccSubmatrix.rowIndications, sccSubmatrix.columnsAndValues, *currentX, sccSubB, sccSubNondeterministicChoiceIndices, localIterations);
+							result = __basicValueIteration_mvReduce_maximize<uint_fast64_t, ValueType>(maxIters, precision, relative, sccSubmatrix.rowIndications, sccSubmatrix.columnsAndValues, *currentX, sccSubB, sccSubNondeterministicChoiceIndices, localIterations);
 						}
 						STORM_LOG_INFO("Executed " << localIterations << " of max. " << maximalNumberOfIterations << " Iterations on GPU.");
 
@@ -237,7 +241,7 @@ namespace storm {
 						STORM_LOG_INFO("Performance Warning: Using CPU based TopoSolver! (double)");
 						localIterations = 0;
 						converged = false;
-						while (!converged && localIterations < this->maximalNumberOfIterations) {
+						while (!converged && localIterations < maxIters) {
 							// Compute x' = A*x + b.
 							sccSubmatrix.multiplyWithVector(*currentX, sccMultiplyResult);
 							storm::utility::vector::addVectors<ValueType>(sccMultiplyResult, sccSubB, sccMultiplyResult);
@@ -258,7 +262,7 @@ namespace storm {
 							// TODO: It seems that the equalModuloPrecision call that compares all values should have a higher
 							// running time. In fact, it is faster. This has to be investigated.
 							// converged = storm::utility::equalModuloPrecision(*currentX, *newX, scc, precision, relative);
-							converged = storm::utility::vector::equalModuloPrecision<ValueType>(*currentX, *swap, static_cast<ValueType>(this->precision), this->relative);
+							converged = storm::utility::vector::equalModuloPrecision<ValueType>(*currentX, *swap, precision, relative);
 
 							// Update environment variables.
 							std::swap(currentX, swap);
@@ -266,7 +270,7 @@ namespace storm {
 							++localIterations;
 							++globalIterations;
 						}
-						STORM_LOG_INFO("Executed " << localIterations << " of max. " << this->maximalNumberOfIterations << " Iterations.");
+						STORM_LOG_INFO("Executed " << localIterations << " of max. " << maxIters << " Iterations.");
 					}
 
 
@@ -443,18 +447,8 @@ namespace storm {
 			return result;
 		}
 
-		template<typename ValueType>
-		ValueType TopologicalMinMaxLinearEquationSolver<ValueType>::getPrecision() const {
-			return this->precision;
-		}
-
-		template<typename ValueType>
-		bool TopologicalMinMaxLinearEquationSolver<ValueType>::getRelative() const {
-			return this->relative;
-		}
-        
         template<typename ValueType>
-        void TopologicalMinMaxLinearEquationSolver<ValueType>::repeatedMultiply(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const* b, uint_fast64_t n) const {
+        void TopologicalMinMaxLinearEquationSolver<ValueType>::repeatedMultiply(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const* b, uint_fast64_t n) const {
             std::unique_ptr<std::vector<ValueType>> multiplyResult = std::make_unique<std::vector<ValueType>>(this->A->getRowCount());
             
             // Now perform matrix-vector multiplication as long as we meet the bound of the formula.
@@ -473,12 +467,13 @@ namespace storm {
         }
 
         template<typename ValueType>
-        TopologicalMinMaxLinearEquationSolverFactory<ValueType>::TopologicalMinMaxLinearEquationSolverFactory(bool trackScheduler) : MinMaxLinearEquationSolverFactory<ValueType>(MinMaxMethodSelection::Topological, trackScheduler) {
+        TopologicalMinMaxLinearEquationSolverFactory<ValueType>::TopologicalMinMaxLinearEquationSolverFactory(bool trackScheduler) {
             // Intentionally left empty.
         }
         
         template<typename ValueType>
-        std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> TopologicalMinMaxLinearEquationSolverFactory<ValueType>::create() const {
+        std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> TopologicalMinMaxLinearEquationSolverFactory<ValueType>::create(Environment const& env) const {
+			STORM_LOG_THROW(env.solver().minMax().getMethod() == MinMaxMethod::Topological, storm::exceptions::InvalidEnvironmentException, "This min max solver does not support the selected technique.");
             return std::make_unique<TopologicalMinMaxLinearEquationSolver<ValueType>>();
         }
 

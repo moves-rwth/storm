@@ -6,7 +6,6 @@
 
 #include "storm/solver/SmtSolver.h"
 
-
 #include "storm/storage/jani/Edge.h"
 #include "storm/storage/jani/EdgeDestination.h"
 #include "storm/storage/jani/Model.h"
@@ -15,6 +14,8 @@
 #include "storm/storage/jani/AutomatonComposition.h"
 #include "storm/storage/jani/ParallelComposition.h"
 #include "storm/storage/jani/CompositionInformationVisitor.h"
+
+#include "storm/builder/jit/Distribution.h"
 
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
@@ -419,36 +420,32 @@ namespace storm {
                 iteratorList[i] = edgeCombination[i].second.cbegin();
             }
             
+            storm::builder::jit::Distribution<CompressedState, ValueType> currentDistribution;
+            storm::builder::jit::Distribution<CompressedState, ValueType> nextDistribution;
+
             // As long as there is one feasible combination of commands, keep on expanding it.
             bool done = false;
             while (!done) {
-                boost::container::flat_map<CompressedState, ValueType>* currentTargetStates = new boost::container::flat_map<CompressedState, ValueType>();
-                boost::container::flat_map<CompressedState, ValueType>* newTargetStates = new boost::container::flat_map<CompressedState, ValueType>();
                 std::vector<ValueType> stateActionRewards(rewardVariables.size(), storm::utility::zero<ValueType>());
                 
-                currentTargetStates->emplace(state, storm::utility::one<ValueType>());
+                currentDistribution.add(state, storm::utility::one<ValueType>());
                 
                 for (uint_fast64_t i = 0; i < iteratorList.size(); ++i) {
                     storm::jani::Edge const& edge = **iteratorList[i];
                     
                     for (auto const& destination : edge.getDestinations()) {
-                        for (auto const& stateProbabilityPair : *currentTargetStates) {
+                        for (auto const& stateProbability : currentDistribution) {
                             // Compute the new state under the current update and add it to the set of new target states.
-                            CompressedState newTargetState = applyUpdate(stateProbabilityPair.first, destination, this->variableInformation.locationVariables[edgeCombination[i].first]);
+                            CompressedState newTargetState = applyUpdate(stateProbability.getState(), destination, this->variableInformation.locationVariables[edgeCombination[i].first]);
                             
                             // If the new state was already found as a successor state, update the probability
                             // and otherwise insert it.
-                            ValueType probability = stateProbabilityPair.second * this->evaluator->asRational(destination.getProbability());
+                            ValueType probability = stateProbability.getValue() * this->evaluator->asRational(destination.getProbability());
                             if (edge.hasRate()) {
                                 probability *= this->evaluator->asRational(edge.getRate());
                             }
                             if (probability != storm::utility::zero<ValueType>()) {
-                                auto targetStateIt = newTargetStates->find(newTargetState);
-                                if (targetStateIt != newTargetStates->end()) {
-                                    targetStateIt->second += probability;
-                                } else {
-                                    newTargetStates->emplace(newTargetState, probability);
-                                }
+                                nextDistribution.add(newTargetState, probability);
                             }
                         }
                         
@@ -457,11 +454,11 @@ namespace storm {
                         performTransientAssignments(edge.getAssignments().getTransientAssignments(), [&valueIt] (ValueType const& value) { *valueIt += value; ++valueIt; } );
                     }
                     
+                    nextDistribution.compress();
+                    
                     // If there is one more command to come, shift the target states one time step back.
                     if (i < iteratorList.size() - 1) {
-                        delete currentTargetStates;
-                        currentTargetStates = newTargetStates;
-                        newTargetStates = new boost::container::flat_map<CompressedState, ValueType>();
+                        currentDistribution = std::move(nextDistribution);
                     }
                 }
                 
@@ -478,12 +475,12 @@ namespace storm {
                 
                 // Add the probabilities/rates to the newly created choice.
                 ValueType probabilitySum = storm::utility::zero<ValueType>();
-                for (auto const& stateProbabilityPair : *newTargetStates) {
-                    StateType actualIndex = stateToIdCallback(stateProbabilityPair.first);
-                    choice.addProbability(actualIndex, stateProbabilityPair.second);
+                for (auto const& stateProbability : nextDistribution) {
+                    StateType actualIndex = stateToIdCallback(stateProbability.getState());
+                    choice.addProbability(actualIndex, stateProbability.getValue());
                     
                     if (this->options.isExplorationChecksSet()) {
-                        probabilitySum += stateProbabilityPair.second;
+                        probabilitySum += stateProbability.getValue();
                     }
                 }
                 
@@ -491,10 +488,6 @@ namespace storm {
                     // Check that the resulting distribution is in fact a distribution.
                     STORM_LOG_THROW(!this->isDiscreteTimeModel() || !this->comparator.isConstant(probabilitySum) || this->comparator.isOne(probabilitySum), storm::exceptions::WrongFormatException, "Sum of update probabilities do not sum to one for some command (actually sum to " << probabilitySum << ").");
                 }
-                
-                // Dispose of the temporary maps.
-                delete currentTargetStates;
-                delete newTargetStates;
                 
                 // Now, check whether there is one more command combination to consider.
                 bool movedIterator = false;
@@ -613,7 +606,7 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
-        storm::models::sparse::StateLabeling JaniNextStateGenerator<ValueType, StateType>::label(storm::storage::BitVectorHashMap<StateType> const& states, std::vector<StateType> const& initialStateIndices, std::vector<StateType> const& deadlockStateIndices) {
+        storm::models::sparse::StateLabeling JaniNextStateGenerator<ValueType, StateType>::label(storm::storage::sparse::StateStorage<StateType> const& stateStorage, std::vector<StateType> const& initialStateIndices, std::vector<StateType> const& deadlockStateIndices) {
             // As in JANI we can use transient boolean variable assignments in locations to identify states, we need to
             // create a list of boolean transient variables and the expressions that define them.
             std::unordered_map<storm::expressions::Variable, storm::expressions::Expression> transientVariableToExpressionMap;
@@ -630,7 +623,7 @@ namespace storm {
                 transientVariableExpressions.push_back(std::make_pair(element.first.getName(), element.second));
             }
             
-            return NextStateGenerator<ValueType, StateType>::label(states, initialStateIndices, deadlockStateIndices, transientVariableExpressions);
+            return NextStateGenerator<ValueType, StateType>::label(stateStorage, initialStateIndices, deadlockStateIndices, transientVariableExpressions);
         }
         
         template<typename ValueType, typename StateType>

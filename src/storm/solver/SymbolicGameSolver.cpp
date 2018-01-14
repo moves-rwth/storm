@@ -7,6 +7,8 @@
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/NativeEquationSolverSettings.h"
 
+#include "storm/environment/solver/GameSolverEnvironment.h"
+
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 #include "storm/exceptions/IllegalFunctionCallException.h"
@@ -17,20 +19,17 @@ namespace storm {
         template<storm::dd::DdType Type, typename ValueType>
         SymbolicGameSolver<Type, ValueType>::SymbolicGameSolver(storm::dd::Add<Type, ValueType> const& A, storm::dd::Bdd<Type> const& allRows, storm::dd::Bdd<Type> const& illegalPlayer1Mask, storm::dd::Bdd<Type> const& illegalPlayer2Mask, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs, std::set<storm::expressions::Variable> const& player1Variables, std::set<storm::expressions::Variable> const& player2Variables) : A(A), allRows(allRows), illegalPlayer1Mask(illegalPlayer1Mask.ite(A.getDdManager().getConstant(storm::utility::infinity<ValueType>()), A.getDdManager().template getAddZero<ValueType>())), illegalPlayer2Mask(illegalPlayer2Mask.ite(A.getDdManager().getConstant(storm::utility::infinity<ValueType>()), A.getDdManager().template getAddZero<ValueType>())), rowMetaVariables(rowMetaVariables), columnMetaVariables(columnMetaVariables), rowColumnMetaVariablePairs(rowColumnMetaVariablePairs), player1Variables(player1Variables), player2Variables(player2Variables), generatePlayer1Strategy(false), generatePlayer2Strategy(false) {
             // Get the default settings
-            storm::settings::modules::NativeEquationSolverSettings const& settings = storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>();
-            maximalNumberOfIterations = settings.getMaximalIterationCount();
-            precision = storm::utility::convertNumber<ValueType>(settings.getPrecision());
-            relative = settings.getConvergenceCriterion() == storm::settings::modules::NativeEquationSolverSettings::ConvergenceCriterion::Relative;
         }
         
         template<storm::dd::DdType Type, typename ValueType>
-        SymbolicGameSolver<Type, ValueType>::SymbolicGameSolver(storm::dd::Add<Type, ValueType> const& A, storm::dd::Bdd<Type> const& allRows, storm::dd::Bdd<Type> const& illegalPlayer1Mask, storm::dd::Bdd<Type> const& illegalPlayer2Mask, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs, std::set<storm::expressions::Variable> const& player1Variables, std::set<storm::expressions::Variable> const& player2Variables, ValueType precision, uint_fast64_t maximalNumberOfIterations, bool relative) : A(A), allRows(allRows), illegalPlayer1Mask(illegalPlayer1Mask.ite(A.getDdManager().getConstant(storm::utility::infinity<ValueType>()), A.getDdManager().template getAddZero<ValueType>())), illegalPlayer2Mask(illegalPlayer2Mask.ite(A.getDdManager().getConstant(storm::utility::infinity<ValueType>()), A.getDdManager().template getAddZero<ValueType>())), rowMetaVariables(rowMetaVariables), columnMetaVariables(columnMetaVariables), rowColumnMetaVariablePairs(rowColumnMetaVariablePairs), player1Variables(player1Variables), player2Variables(player2Variables), generatePlayer1Strategy(false), generatePlayer2Strategy(false), precision(precision), maximalNumberOfIterations(maximalNumberOfIterations), relative(relative) {
-            // Intentionally left empty.
-        }
-        
-        template<storm::dd::DdType Type, typename ValueType>
-        storm::dd::Add<Type, ValueType> SymbolicGameSolver<Type, ValueType>::solveGame(OptimizationDirection player1Goal, OptimizationDirection player2Goal, storm::dd::Add<Type, ValueType> const& x, storm::dd::Add<Type, ValueType> const& b, boost::optional<storm::dd::Bdd<Type>> const& basePlayer1Strategy, boost::optional<storm::dd::Bdd<Type>> const& basePlayer2Strategy) {
+        storm::dd::Add<Type, ValueType> SymbolicGameSolver<Type, ValueType>::solveGame(Environment const& env, OptimizationDirection player1Goal, OptimizationDirection player2Goal, storm::dd::Add<Type, ValueType> const& x, storm::dd::Add<Type, ValueType> const& b, boost::optional<storm::dd::Bdd<Type>> const& basePlayer1Strategy, boost::optional<storm::dd::Bdd<Type>> const& basePlayer2Strategy) {
+            
+            STORM_LOG_WARN_COND(env.solver().game().getMethod() == GameMethod::ValueIteration, "Switching game method to Value iteration since the selected method is not supported by this solver.");
+            
             // Set up the environment.
+            ValueType precision = storm::utility::convertNumber<ValueType>(env.solver().game().getPrecision());
+            bool relative = env.solver().game().getRelativeTerminationCriterion();
+            uint64_t maxIter = env.solver().game().getMaximalNumberOfIterations();
             storm::dd::Add<Type, ValueType> xCopy = x;
             uint_fast64_t iterations = 0;
             bool converged = false;
@@ -108,7 +107,7 @@ namespace storm {
                 }
 
                 // Now check if the process already converged within our precision.
-                converged = xCopy.equalModuloPrecision(tmp, this->precision, this->relative);
+                converged = xCopy.equalModuloPrecision(tmp, precision, relative);
                 
                 // If the method did not converge yet, we prepare the x vector for the next iteration.
                 if (!converged) {
@@ -116,7 +115,7 @@ namespace storm {
                 }
                 
                 ++iterations;
-            } while (!converged && iterations < this->maximalNumberOfIterations);
+            } while (!converged && iterations < maxIter);
             STORM_LOG_INFO("Numerically solving the game took " << iterations << " iterations.");
             
             return xCopy;
@@ -150,9 +149,16 @@ namespace storm {
             return player2Strategy.get();
         }
 
+        template<storm::dd::DdType Type, typename ValueType>
+        std::unique_ptr<storm::solver::SymbolicGameSolver<Type, ValueType>> SymbolicGameSolverFactory<Type, ValueType>::create(storm::dd::Add<Type, ValueType> const& A, storm::dd::Bdd<Type> const& allRows, storm::dd::Bdd<Type> const& illegalPlayer1Mask, storm::dd::Bdd<Type> const& illegalPlayer2Mask, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs, std::set<storm::expressions::Variable> const& player1Variables, std::set<storm::expressions::Variable> const& player2Variables) const {
+            return std::unique_ptr<storm::solver::SymbolicGameSolver<Type, ValueType>>(new storm::solver::SymbolicGameSolver<Type, ValueType>(A, allRows, illegalPlayer1Mask, illegalPlayer2Mask, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs, player1Variables, player2Variables));
+        }
         
         template class SymbolicGameSolver<storm::dd::DdType::CUDD, double>;
         template class SymbolicGameSolver<storm::dd::DdType::Sylvan, double>;
+        
+        template class SymbolicGameSolverFactory<storm::dd::DdType::CUDD, double>;
+        template class SymbolicGameSolverFactory<storm::dd::DdType::Sylvan, double>;
         
     }
 }

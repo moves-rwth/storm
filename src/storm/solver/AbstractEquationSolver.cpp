@@ -4,7 +4,6 @@
 #include "storm/adapters/RationalFunctionAdapter.h"
 
 #include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/IOSettings.h"
 #include "storm/settings/modules/GeneralSettings.h"
 
 #include "storm/utility/constants.h"
@@ -16,9 +15,9 @@ namespace storm {
         
         template<typename ValueType>
         AbstractEquationSolver<ValueType>::AbstractEquationSolver() {
-            auto const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
-            showProgressFlag = generalSettings.isVerboseSet();
-            showProgressDelay = generalSettings.getShowProgressDelay();
+            if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isVerboseSet()) {
+                this->progressMeasurement = storm::utility::ProgressMeasurement("iterations");
+            }
         }
         
         template<typename ValueType>
@@ -157,6 +156,30 @@ namespace storm {
         }
         
         template<typename ValueType>
+        void AbstractEquationSolver<ValueType>::setBoundsFromOtherSolver(AbstractEquationSolver<ValueType> const& other) {
+            if (other.hasLowerBound(BoundType::Global)) {
+                this->setLowerBound(other.getLowerBound());
+            }
+            if (other.hasLowerBound(BoundType::Local)) {
+                this->setLowerBounds(other.getLowerBounds());
+            }
+            if (other.hasUpperBound(BoundType::Global)) {
+                this->setUpperBound(other.getUpperBound());
+            }
+            if (other.hasUpperBound(BoundType::Local)) {
+                this->setUpperBounds(other.getUpperBounds());
+            }
+        }
+        
+        template<typename ValueType>
+        void AbstractEquationSolver<ValueType>::clearBounds() {
+            lowerBound = boost::none;
+            upperBound = boost::none;
+            lowerBounds = boost::none;
+            upperBounds = boost::none;
+        }
+        
+        template<typename ValueType>
         void AbstractEquationSolver<ValueType>::createLowerBoundsVector(std::vector<ValueType>& lowerBoundsVector) const {
             if (this->hasLowerBound(BoundType::Local)) {
                 lowerBoundsVector = this->getLowerBounds();
@@ -165,6 +188,16 @@ namespace storm {
                 for (auto& e : lowerBoundsVector) {
                     e = lowerBound;
                 }
+            }
+        }
+        
+        template<typename ValueType>
+        void AbstractEquationSolver<ValueType>::createUpperBoundsVector(std::vector<ValueType>& upperBoundsVector) const {
+            STORM_LOG_ASSERT(this->hasUpperBound(), "Expecting upper bound(s).");
+            if (this->hasUpperBound(BoundType::Global)) {
+                upperBoundsVector.assign(upperBoundsVector.size(), this->getUpperBound());
+            } else {
+                upperBoundsVector.assign(this->getUpperBounds().begin(), this->getUpperBounds().end());
             }
         }
         
@@ -179,54 +212,43 @@ namespace storm {
                     upperBoundsVector = std::make_unique<std::vector<ValueType>>(length, this->getUpperBound());
                 }
             } else {
-                if (this->hasUpperBound(BoundType::Global)) {
-                    for (auto& e : *upperBoundsVector) {
-                        e = this->getUpperBound();
-                    }
-                } else {
-                    auto upperBoundsIt = this->getUpperBounds().begin();
-                    for (auto& e : *upperBoundsVector) {
-                        e = *upperBoundsIt;
-                        ++upperBoundsIt;
-                    }
-                }
+                createUpperBoundsVector(*upperBoundsVector);
             }
         }
         
         template<typename ValueType>
         bool AbstractEquationSolver<ValueType>::isShowProgressSet() const {
-            return showProgressFlag;
+            return this->progressMeasurement.is_initialized();
         }
         
         template<typename ValueType>
         uint64_t AbstractEquationSolver<ValueType>::getShowProgressDelay() const {
-            return showProgressDelay;
+            STORM_LOG_ASSERT(this->isShowProgressSet(), "Tried to get the progress message delay but progress is not shown.");
+            return this->progressMeasurement->getShowProgressDelay();
         }
         
         template<typename ValueType>
         void AbstractEquationSolver<ValueType>::startMeasureProgress(uint64_t startingIteration) const {
-            timeOfStart = std::chrono::high_resolution_clock::now();
-            timeOfLastMessage = timeOfStart;
-            iterationOfLastMessage = startingIteration;
+            if (this->isShowProgressSet()) {
+                this->progressMeasurement->startNewMeasurement(startingIteration);
+            }
         }
         
         template<typename ValueType>
         void AbstractEquationSolver<ValueType>::showProgressIterative(uint64_t iteration, boost::optional<uint64_t> const& bound) const {
             if (this->isShowProgressSet()) {
-                auto now = std::chrono::high_resolution_clock::now();
-                auto durationSinceLastMessage = static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::seconds>(now - timeOfLastMessage).count());
-                if (durationSinceLastMessage >= this->getShowProgressDelay()) {
-                    uint64_t numberOfIterationsSinceLastMessage = iteration - iterationOfLastMessage;
-                    STORM_LOG_INFO("Completed " << iteration << " iterations "
-                                   << (bound ? "(out of " + std::to_string(bound.get()) + ") " : "")
-                                   << "in " << std::chrono::duration_cast<std::chrono::seconds>(now - timeOfStart).count() << "s (currently " << (static_cast<double>(numberOfIterationsSinceLastMessage) / durationSinceLastMessage) << " per second)."
-                                   );
-                    timeOfLastMessage = std::chrono::high_resolution_clock::now();
-                    iterationOfLastMessage = iteration;
+                if (bound) {
+                    this->progressMeasurement->setMaxCount(bound.get());
                 }
+                this->progressMeasurement->updateProgress(iteration);
             }
         }
         
+        template<typename ValueType>
+        void AbstractEquationSolver<ValueType>::setPrecision(ValueType const& precision) {
+            STORM_LOG_DEBUG("Setting solver precision for a solver that does not support precisions.");
+        }
+
         template class AbstractEquationSolver<double>;
         template class AbstractEquationSolver<float>;
 

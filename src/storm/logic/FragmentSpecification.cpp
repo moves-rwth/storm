@@ -60,6 +60,8 @@ namespace storm {
             prctl.setInstantaneousFormulasAllowed(true);
             prctl.setReachabilityRewardFormulasAllowed(true);
             prctl.setLongRunAverageOperatorsAllowed(true);
+            prctl.setStepBoundedCumulativeRewardFormulasAllowed(true);
+            prctl.setTimeBoundedCumulativeRewardFormulasAllowed(true);
             
             return prctl;
         }
@@ -80,6 +82,7 @@ namespace storm {
             csrl.setInstantaneousFormulasAllowed(true);
             csrl.setReachabilityRewardFormulasAllowed(true);
             csrl.setLongRunAverageOperatorsAllowed(true);
+            csrl.setTimeBoundedCumulativeRewardFormulasAllowed(true);
             
             return csrl;
         }
@@ -89,7 +92,9 @@ namespace storm {
             
             multiObjective.setMultiObjectiveFormulasAllowed(true);
             multiObjective.setMultiObjectiveFormulaAtTopLevelRequired(true);
+            multiObjective.setNestedMultiObjectiveFormulasAllowed(false);
             multiObjective.setOperatorsAtTopLevelOfMultiObjectiveFormulasRequired(true);
+            multiObjective.setNestedOperatorsInsideMultiObjectiveFormulasAllowed(false);
             multiObjective.setProbabilityOperatorsAllowed(true);
             multiObjective.setUntilFormulasAllowed(true);
             multiObjective.setGloballyFormulasAllowed(true);
@@ -143,6 +148,11 @@ namespace storm {
             stepBoundedUntilFormulas = false;
             timeBoundedUntilFormulas = false;
             rewardBoundedUntilFormulas = false;
+            multiDimensionalBoundedUntilFormulas = false;
+            stepBoundedCumulativeRewardFormulas = false;
+            timeBoundedCumulativeRewardFormulas = false;
+            rewardBoundedCumulativeRewardFormulas = false;
+            multiDimensionalCumulativeRewardFormulas = false;
             varianceAsMeasureType = false;
             
             qualitativeOperatorResults = true;
@@ -435,7 +445,52 @@ namespace storm {
             this->rewardBoundedUntilFormulas = newValue;
             return *this;
         }
+        
+        bool FragmentSpecification::areMultiDimensionalBoundedUntilFormulasAllowed() const {
+            return this->multiDimensionalBoundedUntilFormulas;
+        }
 
+        FragmentSpecification& FragmentSpecification::setMultiDimensionalBoundedUntilFormulasAllowed(bool newValue) {
+            this->multiDimensionalBoundedUntilFormulas = newValue;
+            return *this;
+        }
+
+        bool FragmentSpecification::areStepBoundedCumulativeRewardFormulasAllowed() const {
+            return this->stepBoundedCumulativeRewardFormulas;
+        }
+        
+        FragmentSpecification& FragmentSpecification::setStepBoundedCumulativeRewardFormulasAllowed(bool newValue) {
+            this->stepBoundedCumulativeRewardFormulas = newValue;
+            return *this;
+        }
+        
+        bool FragmentSpecification::areTimeBoundedCumulativeRewardFormulasAllowed() const {
+            return this->timeBoundedCumulativeRewardFormulas;
+        }
+        
+        FragmentSpecification& FragmentSpecification::setTimeBoundedCumulativeRewardFormulasAllowed(bool newValue) {
+            this->timeBoundedCumulativeRewardFormulas = newValue;
+            return *this;
+        }
+
+        bool FragmentSpecification::areRewardBoundedCumulativeRewardFormulasAllowed() const {
+            return this->rewardBoundedCumulativeRewardFormulas;
+        }
+
+        FragmentSpecification& FragmentSpecification::setRewardBoundedCumulativeRewardFormulasAllowed(bool newValue) {
+            this->rewardBoundedCumulativeRewardFormulas = newValue;
+            return *this;
+        }
+        
+        bool FragmentSpecification::areMultiDimensionalCumulativeRewardFormulasAllowed() const {
+            return this->multiDimensionalCumulativeRewardFormulas;
+        }
+
+        FragmentSpecification& FragmentSpecification::setMultiDimensionalCumulativeRewardFormulasAllowed(bool newValue) {
+            this->multiDimensionalCumulativeRewardFormulas = newValue;
+            return *this;
+        }
+        
         FragmentSpecification& FragmentSpecification::setOperatorsAllowed(bool newValue) {
             this->setProbabilityOperatorsAllowed(newValue);
             this->setRewardOperatorsAllowed(newValue);

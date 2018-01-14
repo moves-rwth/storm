@@ -168,8 +168,8 @@ namespace storm {
              * Clones the given meta variable and optionally changes the number of layers of the variable.
              *
              * @param variable The variable to clone.
-             * @param newVariableName The name of the variable to crate.
-             * @param numberOfLayers The number of layers of the variable to crate
+             * @param newVariableName The name of the variable to create.
+             * @param numberOfLayers The number of layers of the variable to create.
              */
             std::vector<storm::expressions::Variable> cloneVariable(storm::expressions::Variable const& variable, std::string const& newVariableName, boost::optional<uint64_t> const& numberOfLayers = boost::none);
             

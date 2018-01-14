@@ -136,7 +136,7 @@ namespace storm {
             storm::storage::sparse::StateStorage<StateType> stateStorage;
             
             /// A set of states that still need to be explored.
-            std::deque<CompressedState> statesToExplore;
+            std::deque<std::pair<CompressedState, StateType>> statesToExplore;
             
             /// An optional mapping from state indices to the row groups in which they actually reside. This needs to be
             /// built in case the exploration order is not BFS.

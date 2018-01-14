@@ -154,7 +154,7 @@ namespace storm {
 
             template<typename ValueType, typename RewardModelType>
             void Model<ValueType, RewardModelType>::addRewardModel(std::string const& rewardModelName, RewardModelType const& newRewardModel) {
-                if(this->hasRewardModel(rewardModelName)) {
+                if (this->hasRewardModel(rewardModelName)) {
                     STORM_LOG_THROW(!(this->hasRewardModel(rewardModelName)), storm::exceptions::IllegalArgumentException, "A reward model with the given name '" << rewardModelName << "' already exists.");
                 }
                 STORM_LOG_ASSERT(newRewardModel.isCompatible(this->getNumberOfStates(), this->getTransitionMatrix().getRowCount()), "New reward model is not compatible.");
@@ -165,15 +165,34 @@ namespace storm {
             bool Model<ValueType, RewardModelType>::removeRewardModel(std::string const& rewardModelName) {
                 auto it = this->rewardModels.find(rewardModelName);
                 bool res = (it != this->rewardModels.end());
-                if(res) {
+                if (res) {
                     this->rewardModels.erase(it->first);
                 }
                 return res;
             }
             
             template<typename ValueType, typename RewardModelType>
+            void Model<ValueType, RewardModelType>::restrictRewardModels(std::set<std::string> const& keptRewardModels) {
+                std::set<std::string> removedRewardModels;
+                for (auto const& rewModel : this->getRewardModels()) {
+                    if (keptRewardModels.find(rewModel.first) == keptRewardModels.end()) {
+                        removedRewardModels.insert(rewModel.first);
+                    }
+                }
+                for (auto const& rewModelName : removedRewardModels) {
+                    this->removeRewardModel(rewModelName);
+                }
+            }
+            
+            template<typename ValueType, typename RewardModelType>
             bool Model<ValueType, RewardModelType>::hasUniqueRewardModel() const {
                 return this->getNumberOfRewardModels() == 1;
+            }
+            
+            template<typename ValueType, typename RewardModelType>
+            std::string const& Model<ValueType, RewardModelType>::getUniqueRewardModelName() const {
+                STORM_LOG_THROW(this->getNumberOfRewardModels() == 1, storm::exceptions::IllegalFunctionCallException, "The reward model is not unique.");
+                return this->rewardModels.begin()->first;
             }
             
             template<typename ValueType, typename RewardModelType>

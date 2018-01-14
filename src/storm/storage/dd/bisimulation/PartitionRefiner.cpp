@@ -10,14 +10,14 @@ namespace storm {
         namespace bisimulation {
             
             template <storm::dd::DdType DdType, typename ValueType>
-            PartitionRefiner<DdType, ValueType>::PartitionRefiner(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& initialStatePartition) : status(Status::Initialized), refinements(0), statePartition(initialStatePartition), signatureComputer(model), signatureRefiner(model.getManager(), statePartition.getBlockVariable(), model.getRowAndNondeterminismVariables(), !model.isOfType(storm::models::ModelType::Mdp), model.getNondeterminismVariables()) {
+            PartitionRefiner<DdType, ValueType>::PartitionRefiner(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& initialStatePartition) : status(Status::Initialized), refinements(0), statePartition(initialStatePartition), signatureComputer(model), signatureRefiner(model.getManager(), statePartition.getBlockVariable(), model.getRowAndNondeterminismVariables(), model.getColumnVariables(), !model.isOfType(storm::models::ModelType::Mdp), model.getNondeterminismVariables()) {
                 // Intentionally left empty.
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
             bool PartitionRefiner<DdType, ValueType>::refine(SignatureMode const& mode) {
                 Partition<DdType, ValueType> newStatePartition = this->internalRefine(signatureComputer, signatureRefiner, statePartition, statePartition, mode);
-                if (statePartition == newStatePartition) {
+                if (statePartition.getNumberOfBlocks() == newStatePartition.getNumberOfBlocks()) {
                     this->status = Status::FixedPoint;
                     return false;
                 } else {
@@ -121,6 +121,11 @@ namespace storm {
             template <storm::dd::DdType DdType, typename ValueType>
             Partition<DdType, ValueType> const& PartitionRefiner<DdType, ValueType>::getStatePartition() const {
                 return statePartition;
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
+            Signature<DdType, ValueType> PartitionRefiner<DdType, ValueType>::getFullSignature() const {
+                return signatureComputer.getFullSignature(statePartition);
             }
             
             template <storm::dd::DdType DdType, typename ValueType>

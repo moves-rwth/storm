@@ -13,6 +13,7 @@ namespace storm {
         public:
             SymbolicEquationSolver() = default;
             SymbolicEquationSolver(storm::dd::Bdd<DdType> const& allRows);
+            virtual ~SymbolicEquationSolver() = default;
 
             virtual void setLowerBounds(storm::dd::Add<DdType, ValueType> const& lowerBounds);
             virtual void setLowerBound(ValueType const& lowerBound);

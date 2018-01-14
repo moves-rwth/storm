@@ -10,6 +10,8 @@ namespace storm {
          
             class StatePriorityQueue {
             public:
+                virtual ~StatePriorityQueue() = default;
+
                 virtual bool hasNext() const = 0;
                 virtual storm::storage::sparse::state_type pop() = 0;
                 virtual void update(storm::storage::sparse::state_type state);

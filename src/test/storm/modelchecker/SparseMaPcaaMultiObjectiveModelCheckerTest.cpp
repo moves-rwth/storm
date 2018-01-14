@@ -15,9 +15,11 @@
 #include "storm/settings/SettingsManager.h"
 #include "storm/api/storm.h"
 
+#include "storm/environment/Environment.h"
 
 TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, serverRationalNumbers) {
-    
+    storm::Environment env;
+
     std::string programFile = STORM_TEST_RESOURCES_DIR "/ma/server.ma";
     std::string formulasAsString = "multi(Tmax=? [ F \"error\" ], Pmax=? [ F \"processB\" ]) "; // pareto
     
@@ -28,7 +30,7 @@ TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, serverRationalNumbers) {
     storm::generator::NextStateGeneratorOptions options(formulas);
     std::shared_ptr<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>> ma = storm::builder::ExplicitModelBuilder<storm::RationalNumber>(program, options).build()->as<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>();
     
-    std::unique_ptr<storm::modelchecker::CheckResult> result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(*ma, formulas[0]->asMultiObjectiveFormula(), storm::modelchecker::multiobjective::MultiObjectiveMethodSelection::Pcaa);
+    std::unique_ptr<storm::modelchecker::CheckResult> result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *ma, formulas[0]->asMultiObjectiveFormula(), storm::modelchecker::multiobjective::MultiObjectiveMethodSelection::Pcaa);
     ASSERT_TRUE(result->isExplicitParetoCurveCheckResult());
     
     storm::RationalNumber p1 = storm::utility::convertNumber<storm::RationalNumber>(11.0); p1 /= storm::utility::convertNumber<storm::RationalNumber>(6.0);
@@ -45,7 +47,8 @@ TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, serverRationalNumbers) {
 
 
 TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, server) {
-    
+    storm::Environment env;
+
     std::string programFile = STORM_TEST_RESOURCES_DIR "/ma/server.ma";
     std::string formulasAsString = "multi(Tmax=? [ F \"error\" ], Pmax=? [ F \"processB\" ]) "; // pareto
 
@@ -54,7 +57,7 @@ TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, server) {
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
     std::shared_ptr<storm::models::sparse::MarkovAutomaton<double>> ma = storm::api::buildSparseModel<double>(program, formulas)->as<storm::models::sparse::MarkovAutomaton<double>>();
 
-    std::unique_ptr<storm::modelchecker::CheckResult> result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(*ma, formulas[0]->asMultiObjectiveFormula(), storm::modelchecker::multiobjective::MultiObjectiveMethodSelection::Pcaa);
+    std::unique_ptr<storm::modelchecker::CheckResult> result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *ma, formulas[0]->asMultiObjectiveFormula(), storm::modelchecker::multiobjective::MultiObjectiveMethodSelection::Pcaa);
     ASSERT_TRUE(result->isExplicitParetoCurveCheckResult());
     
     // we do our checks with rationals to avoid numerical issues when doing polytope computations...
@@ -74,6 +77,7 @@ TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, server) {
 }
 
 TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, jobscheduler_pareto_3Obj) {
+    storm::Environment env;
 
     std::string programFile = STORM_TEST_RESOURCES_DIR "/ma/jobscheduler.ma";
     std::string formulasAsString = "multi(Tmin=? [ F  \"all_jobs_finished\" ], Pmax=? [ F<=0.2 \"half_of_jobs_finished\" ], Pmin=? [ F \"slowest_before_fastest\"  ]) ";
@@ -83,7 +87,7 @@ TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, jobscheduler_pareto_3Obj) {
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
     std::shared_ptr<storm::models::sparse::MarkovAutomaton<double>> ma = storm::api::buildSparseModel<double>(program, formulas)->as<storm::models::sparse::MarkovAutomaton<double>>();
 
-    std::unique_ptr<storm::modelchecker::CheckResult> result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(*ma, formulas[0]->asMultiObjectiveFormula(), storm::modelchecker::multiobjective::MultiObjectiveMethodSelection::Pcaa);
+    std::unique_ptr<storm::modelchecker::CheckResult> result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *ma, formulas[0]->asMultiObjectiveFormula(), storm::modelchecker::multiobjective::MultiObjectiveMethodSelection::Pcaa);
     ASSERT_TRUE(result->isExplicitParetoCurveCheckResult());
 
     std::vector<double> j12 = {1.266666667,0.1617571721,0.5};
@@ -104,6 +108,7 @@ TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, jobscheduler_pareto_3Obj) {
 }
 
 TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, jobscheduler_achievability_3Obj) {
+    storm::Environment env;
 
     std::string programFile = STORM_TEST_RESOURCES_DIR "/ma/jobscheduler.ma";
     std::string formulasAsString = "multi(T<=1.31 [ F  \"all_jobs_finished\" ], P>=0.17 [ F<=0.2 \"half_of_jobs_finished\" ], P<=0.31 [ F \"slowest_before_fastest\"  ]) "; //true
@@ -115,16 +120,17 @@ TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, jobscheduler_achievability_3Obj
     std::shared_ptr<storm::models::sparse::MarkovAutomaton<double>> ma = storm::api::buildSparseModel<double>(program, formulas)->as<storm::models::sparse::MarkovAutomaton<double>>();
     uint_fast64_t const initState = *ma->getInitialStates().begin();
 
-    std::unique_ptr<storm::modelchecker::CheckResult> result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(*ma, formulas[0]->asMultiObjectiveFormula(), storm::modelchecker::multiobjective::MultiObjectiveMethodSelection::Pcaa);
+    std::unique_ptr<storm::modelchecker::CheckResult> result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *ma, formulas[0]->asMultiObjectiveFormula(), storm::modelchecker::multiobjective::MultiObjectiveMethodSelection::Pcaa);
     ASSERT_TRUE(result->isExplicitQualitativeCheckResult());
     EXPECT_TRUE(result->asExplicitQualitativeCheckResult()[initState]);
 
-    std::unique_ptr<storm::modelchecker::CheckResult> result2 = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(*ma, formulas[1]->asMultiObjectiveFormula(), storm::modelchecker::multiobjective::MultiObjectiveMethodSelection::Pcaa);
+    std::unique_ptr<storm::modelchecker::CheckResult> result2 = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *ma, formulas[1]->asMultiObjectiveFormula(), storm::modelchecker::multiobjective::MultiObjectiveMethodSelection::Pcaa);
     ASSERT_TRUE(result2->isExplicitQualitativeCheckResult());
     EXPECT_FALSE(result2->asExplicitQualitativeCheckResult()[initState]);
 }
 
 TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, jobscheduler_quantitative_3Obj) {
+    storm::Environment env;
 
     std::string programFile = STORM_TEST_RESOURCES_DIR "/ma/jobscheduler.ma";
     std::string formulasAsString = "multi(Tmin=? [ F  \"all_jobs_finished\" ], P>=0.1797900683 [ F<=0.2 \"half_of_jobs_finished\" ], P<=0.3 [ F \"slowest_before_fastest\"  ]) "; //quantitative
@@ -137,16 +143,17 @@ TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, jobscheduler_quantitative_3Obj)
     uint_fast64_t const initState = *ma->getInitialStates().begin();
 
 
-    std::unique_ptr<storm::modelchecker::CheckResult> result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(*ma, formulas[0]->asMultiObjectiveFormula(), storm::modelchecker::multiobjective::MultiObjectiveMethodSelection::Pcaa);
+    std::unique_ptr<storm::modelchecker::CheckResult> result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *ma, formulas[0]->asMultiObjectiveFormula(), storm::modelchecker::multiobjective::MultiObjectiveMethodSelection::Pcaa);
     ASSERT_TRUE(result->isExplicitQuantitativeCheckResult());
     EXPECT_NEAR(1.3, result->asExplicitQuantitativeCheckResult<double>()[initState], storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>().getPrecision());
 
-    std::unique_ptr<storm::modelchecker::CheckResult> result2 = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(*ma, formulas[1]->asMultiObjectiveFormula(), storm::modelchecker::multiobjective::MultiObjectiveMethodSelection::Pcaa);
+    std::unique_ptr<storm::modelchecker::CheckResult> result2 = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *ma, formulas[1]->asMultiObjectiveFormula(), storm::modelchecker::multiobjective::MultiObjectiveMethodSelection::Pcaa);
     ASSERT_TRUE(result2->isExplicitQualitativeCheckResult());
     EXPECT_FALSE(result2->asExplicitQualitativeCheckResult()[initState]);
 }
 
 TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, jobscheduler_pareto_2Obj) {
+    storm::Environment env;
 
     std::string programFile = STORM_TEST_RESOURCES_DIR "/ma/jobscheduler.ma";
     std::string formulasAsString = "multi( Pmax=? [ F<=0.1 \"one_job_finished\"], Pmin=? [F<=0.2 \"all_jobs_finished\"]) ";
@@ -156,7 +163,7 @@ TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, jobscheduler_pareto_2Obj) {
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
     std::shared_ptr<storm::models::sparse::MarkovAutomaton<double>> ma = storm::api::buildSparseModel<double>(program, formulas)->as<storm::models::sparse::MarkovAutomaton<double>>();
 
-    std::unique_ptr<storm::modelchecker::CheckResult> result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(*ma, formulas[0]->asMultiObjectiveFormula(), storm::modelchecker::multiobjective::MultiObjectiveMethodSelection::Pcaa);
+    std::unique_ptr<storm::modelchecker::CheckResult> result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *ma, formulas[0]->asMultiObjectiveFormula(), storm::modelchecker::multiobjective::MultiObjectiveMethodSelection::Pcaa);
     ASSERT_TRUE(result->isExplicitParetoCurveCheckResult());
 
     std::vector<double> j12 = {0.2591835573, 0.01990529674};

@@ -14,22 +14,26 @@
 
 #include "storm/models/symbolic/StandardRewardModel.h"
 
+#include "storm/modelchecker/prctl/helper/DsMpiUpperRewardBoundsComputer.h"
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
 #include "storm/modelchecker/results/SymbolicQuantitativeCheckResult.h"
 #include "storm/modelchecker/results/HybridQuantitativeCheckResult.h"
 
 #include "storm/exceptions/InvalidPropertyException.h"
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/UncheckedRequirementException.h"
+
 
 namespace storm {
     namespace modelchecker {
         namespace helper {
 
             template<storm::dd::DdType DdType, typename ValueType>
-            std::unique_ptr<CheckResult> HybridDtmcPrctlHelper<DdType, ValueType>::computeUntilProbabilities(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, storm::dd::Bdd<DdType> const& phiStates, storm::dd::Bdd<DdType> const& psiStates, bool qualitative, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+            std::unique_ptr<CheckResult> HybridDtmcPrctlHelper<DdType, ValueType>::computeUntilProbabilities(Environment const& env, storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, storm::dd::Bdd<DdType> const& phiStates, storm::dd::Bdd<DdType> const& psiStates, bool qualitative, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
                 // We need to identify the states which have to be taken out of the matrix, i.e. all states that have
                 // probability 0 and 1 of satisfying the until-formula.
                 STORM_LOG_TRACE("Found " << phiStates.getNonZeroCount() << " phi states and " << psiStates.getNonZeroCount() << " psi states.");
-                std::pair<storm::dd::Bdd<DdType>, storm::dd::Bdd<DdType>> statesWithProbability01 = storm::utility::graph::performProb01(model, transitionMatrix, phiStates, psiStates);
+                std::pair<storm::dd::Bdd<DdType>, storm::dd::Bdd<DdType>> statesWithProbability01 = storm::utility::graph::performProb01(model, transitionMatrix.notZero(), phiStates, psiStates);
                 storm::dd::Bdd<DdType> maybeStates = !statesWithProbability01.first && !statesWithProbability01.second && model.getReachableStates();
                 
                 STORM_LOG_INFO("Preprocessing: " << statesWithProbability01.first.getNonZeroCount() << " states with probability 0, " << statesWithProbability01.second.getNonZeroCount() << " with probability 1 (" << maybeStates.getNonZeroCount() << " states remaining).");
@@ -58,8 +62,13 @@ namespace storm {
                         storm::dd::Add<DdType, ValueType> subvector = submatrix * prob1StatesAsColumn;
                         subvector = subvector.sumAbstract(model.getColumnVariables());
 
+                        auto req = linearEquationSolverFactory.getRequirements(env);
+                        req.clearLowerBounds();
+                        req.clearUpperBounds();
+                        STORM_LOG_THROW(req.empty(), storm::exceptions::UncheckedRequirementException, "At least one requirement of the linear equation solver could not be matched.");
+                        
                         // Check whether we need to create an equation system.
-                        bool convertToEquationSystem = linearEquationSolverFactory.getEquationProblemFormat() == storm::solver::LinearEquationSolverProblemFormat::EquationSystem;
+                        bool convertToEquationSystem = linearEquationSolverFactory.getEquationProblemFormat(env) == storm::solver::LinearEquationSolverProblemFormat::EquationSystem;
                         
                         // Finally cut away all columns targeting non-maybe states and potentially convert the matrix
                         // into the matrix needed for solving the equation system (i.e. compute (I-A)).
@@ -75,9 +84,9 @@ namespace storm {
                         storm::storage::SparseMatrix<ValueType> explicitSubmatrix = submatrix.toMatrix(odd, odd);
                         std::vector<ValueType> b = subvector.toVector(odd);
                             
-                        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(std::move(explicitSubmatrix));
+                        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(env, std::move(explicitSubmatrix));
                         solver->setBounds(storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
-                        solver->solveEquations(x, b);
+                        solver->solveEquations(env, x, b);
                         
                         // Return a hybrid check result that stores the numerical values explicitly.
                         return std::unique_ptr<CheckResult>(new storm::modelchecker::HybridQuantitativeCheckResult<DdType, ValueType>(model.getReachableStates(), model.getReachableStates() && !maybeStates, statesWithProbability01.second.template toAdd<ValueType>(), maybeStates, odd, x));
@@ -88,20 +97,20 @@ namespace storm {
             }
 
             template<storm::dd::DdType DdType, typename ValueType>
-            std::unique_ptr<CheckResult> HybridDtmcPrctlHelper<DdType, ValueType>::computeGloballyProbabilities(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, storm::dd::Bdd<DdType> const& psiStates, bool qualitative, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
-                std::unique_ptr<CheckResult> result = computeUntilProbabilities(model, transitionMatrix, model.getReachableStates(), !psiStates && model.getReachableStates(), qualitative, linearEquationSolverFactory);
+            std::unique_ptr<CheckResult> HybridDtmcPrctlHelper<DdType, ValueType>::computeGloballyProbabilities(Environment const& env, storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, storm::dd::Bdd<DdType> const& psiStates, bool qualitative, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+                std::unique_ptr<CheckResult> result = computeUntilProbabilities(env, model, transitionMatrix, model.getReachableStates(), !psiStates && model.getReachableStates(), qualitative, linearEquationSolverFactory);
                 result->asQuantitativeCheckResult<ValueType>().oneMinus();
                 return result;
             }
             
             template<storm::dd::DdType DdType, typename ValueType>
-            std::unique_ptr<CheckResult> HybridDtmcPrctlHelper<DdType, ValueType>::computeNextProbabilities(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, storm::dd::Bdd<DdType> const& nextStates) {
+            std::unique_ptr<CheckResult> HybridDtmcPrctlHelper<DdType, ValueType>::computeNextProbabilities(Environment const& env, storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, storm::dd::Bdd<DdType> const& nextStates) {
                 storm::dd::Add<DdType, ValueType> result = transitionMatrix * nextStates.swapVariables(model.getRowColumnMetaVariablePairs()).template toAdd<ValueType>();
                 return std::unique_ptr<CheckResult>(new SymbolicQuantitativeCheckResult<DdType, ValueType>(model.getReachableStates(), result.sumAbstract(model.getColumnVariables())));
             }
 
             template<storm::dd::DdType DdType, typename ValueType>
-            std::unique_ptr<CheckResult> HybridDtmcPrctlHelper<DdType, ValueType>::computeBoundedUntilProbabilities(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, storm::dd::Bdd<DdType> const& phiStates, storm::dd::Bdd<DdType> const& psiStates, uint_fast64_t stepBound, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+            std::unique_ptr<CheckResult> HybridDtmcPrctlHelper<DdType, ValueType>::computeBoundedUntilProbabilities(Environment const& env, storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, storm::dd::Bdd<DdType> const& phiStates, storm::dd::Bdd<DdType> const& psiStates, uint_fast64_t stepBound, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
                 // We need to identify the states which have to be taken out of the matrix, i.e. all states that have
                 // probability 0 or 1 of satisfying the until-formula.
                 storm::dd::Bdd<DdType> statesWithProbabilityGreater0 = storm::utility::graph::performProbGreater0(model, transitionMatrix.notZero(), phiStates, psiStates, stepBound);
@@ -136,7 +145,7 @@ namespace storm {
                     storm::storage::SparseMatrix<ValueType> explicitSubmatrix = submatrix.toMatrix(odd, odd);
                     std::vector<ValueType> b = subvector.toVector(odd);
                     
-                    std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(std::move(explicitSubmatrix));
+                    std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(env, std::move(explicitSubmatrix), storm::solver::LinearEquationSolverTask::Multiply);
                     solver->repeatedMultiply(x, &b, stepBound);
                     
                     // Return a hybrid check result that stores the numerical values explicitly.
@@ -147,7 +156,7 @@ namespace storm {
             }
 
             template<storm::dd::DdType DdType, typename ValueType>
-            std::unique_ptr<CheckResult> HybridDtmcPrctlHelper<DdType, ValueType>::computeInstantaneousRewards(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, RewardModelType const& rewardModel, uint_fast64_t stepBound, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+            std::unique_ptr<CheckResult> HybridDtmcPrctlHelper<DdType, ValueType>::computeInstantaneousRewards(Environment const& env, storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, RewardModelType const& rewardModel, uint_fast64_t stepBound, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
                 // Only compute the result if the model has at least one reward this->getModel().
                 STORM_LOG_THROW(rewardModel.hasStateRewards(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
                 
@@ -161,7 +170,7 @@ namespace storm {
                 storm::storage::SparseMatrix<ValueType> explicitMatrix = transitionMatrix.toMatrix(odd, odd);
                 
                 // Perform the matrix-vector multiplication.
-                std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(std::move(explicitMatrix));
+                std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(env, std::move(explicitMatrix), storm::solver::LinearEquationSolverTask::Multiply);
                 solver->repeatedMultiply(x, nullptr, stepBound);
                 
                 // Return a hybrid check result that stores the numerical values explicitly.
@@ -169,7 +178,7 @@ namespace storm {
             }
             
             template<storm::dd::DdType DdType, typename ValueType>
-            std::unique_ptr<CheckResult> HybridDtmcPrctlHelper<DdType, ValueType>::computeCumulativeRewards(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, RewardModelType const& rewardModel, uint_fast64_t stepBound, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+            std::unique_ptr<CheckResult> HybridDtmcPrctlHelper<DdType, ValueType>::computeCumulativeRewards(Environment const& env, storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, RewardModelType const& rewardModel, uint_fast64_t stepBound, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
                 // Only compute the result if the model has at least one reward this->getModel().
                 STORM_LOG_THROW(!rewardModel.empty(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
                 
@@ -187,15 +196,28 @@ namespace storm {
                 std::vector<ValueType> b = totalRewardVector.toVector(odd);
                 
                 // Perform the matrix-vector multiplication.
-                std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(std::move(explicitMatrix));
+                std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(env, std::move(explicitMatrix), storm::solver::LinearEquationSolverTask::Multiply);
                 solver->repeatedMultiply(x, &b, stepBound);
                 
                 // Return a hybrid check result that stores the numerical values explicitly.
                 return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType, ValueType>(model.getReachableStates(), model.getManager().getBddZero(), model.getManager().template getAddZero<ValueType>(), model.getReachableStates(), odd, x));
             }
             
+            // This function computes an upper bound on the reachability rewards (see Baier et al, CAV'17).
+            template<typename ValueType>
+            inline std::vector<ValueType> computeUpperRewardBounds(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& rewards, std::vector<ValueType> const& oneStepTargetProbabilities) {
+                DsMpiDtmcUpperRewardBoundsComputer<ValueType> dsmpi(transitionMatrix, rewards, oneStepTargetProbabilities);
+                std::vector<ValueType> bounds = dsmpi.computeUpperBounds();
+                return bounds;
+            }
+            
+            template<>
+            inline std::vector<storm::RationalFunction> computeUpperRewardBounds(storm::storage::SparseMatrix<storm::RationalFunction> const& transitionMatrix, std::vector<storm::RationalFunction> const& rewards, std::vector<storm::RationalFunction> const& oneStepTargetProbabilities) {
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Computing upper reward bounds is not supported for rational functions.");
+            }
+            
             template<storm::dd::DdType DdType, typename ValueType>
-            std::unique_ptr<CheckResult> HybridDtmcPrctlHelper<DdType, ValueType>::computeReachabilityRewards(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, RewardModelType const& rewardModel, storm::dd::Bdd<DdType> const& targetStates, bool qualitative, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+            std::unique_ptr<CheckResult> HybridDtmcPrctlHelper<DdType, ValueType>::computeReachabilityRewards(Environment const& env, storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, RewardModelType const& rewardModel, storm::dd::Bdd<DdType> const& targetStates, bool qualitative, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
                 
                 // Only compute the result if there is at least one reward model.
                 STORM_LOG_THROW(!rewardModel.empty(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
@@ -228,8 +250,22 @@ namespace storm {
                         // Then compute the state reward vector to use in the computation.
                         storm::dd::Add<DdType, ValueType> subvector = rewardModel.getTotalRewardVector(maybeStatesAdd, submatrix, model.getColumnVariables());
 
+                        // Check the requirements of a linear equation solver
+                        // We might need to compute upper reward bounds for which the oneStepTargetProbabilities are needed.
+                        boost::optional<storm::dd::Add<DdType, ValueType>> oneStepTargetProbs;
+                        auto req = linearEquationSolverFactory.getRequirements(env);
+                        req.clearLowerBounds();
+                        if (req.requiresUpperBounds()) {
+                            storm::dd::Add<DdType, ValueType> targetStatesAsColumn = targetStates.template toAdd<ValueType>();
+                            targetStatesAsColumn = targetStatesAsColumn.swapVariables(model.getRowColumnMetaVariablePairs());
+                            oneStepTargetProbs = submatrix * targetStatesAsColumn;
+                            oneStepTargetProbs = oneStepTargetProbs->sumAbstract(model.getColumnVariables());
+                            req.clearUpperBounds();
+                        }
+                        STORM_LOG_THROW(req.empty(), storm::exceptions::UncheckedRequirementException, "At least one requirement of the linear equation solver could not be matched.");
+                        
                         // Check whether we need to create an equation system.
-                        bool convertToEquationSystem = linearEquationSolverFactory.getEquationProblemFormat() == storm::solver::LinearEquationSolverProblemFormat::EquationSystem;
+                        bool convertToEquationSystem = linearEquationSolverFactory.getEquationProblemFormat(env) == storm::solver::LinearEquationSolverProblemFormat::EquationSystem;
                         
                         // Finally cut away all columns targeting non-maybe states and potentially convert the matrix
                         // into the matrix needed for solving the equation system (i.e. compute (I-A)).
@@ -245,10 +281,21 @@ namespace storm {
                         storm::storage::SparseMatrix<ValueType> explicitSubmatrix = submatrix.toMatrix(odd, odd);
                         std::vector<ValueType> b = subvector.toVector(odd);
                         
+                        // Create the upper bounds vector if one was requested.
+                        boost::optional<std::vector<ValueType>> upperBounds;
+                        if (oneStepTargetProbs) {
+                            // FIXME: This will fail if we already converted the matrix to the equation problem format.
+                            STORM_LOG_ASSERT(!convertToEquationSystem, "Upper reward bounds required, but the matrix is in the wrong format for the computation.");
+                            upperBounds = computeUpperRewardBounds(explicitSubmatrix, b, oneStepTargetProbs->toVector(odd));
+                        }
+                        
                         // Now solve the resulting equation system.
-                        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(std::move(explicitSubmatrix));
+                        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(env, std::move(explicitSubmatrix));
                         solver->setLowerBound(storm::utility::zero<ValueType>());
-                        solver->solveEquations(x, b);
+                        if (upperBounds) {
+                            solver->setUpperBounds(std::move(upperBounds.get()));
+                        }
+                        solver->solveEquations(env, x, b);
                         
                         // Return a hybrid check result that stores the numerical values explicitly.
                         return std::unique_ptr<CheckResult>(new storm::modelchecker::HybridQuantitativeCheckResult<DdType, ValueType>(model.getReachableStates(), model.getReachableStates() && !maybeStates, infinityStates.ite(model.getManager().getConstant(storm::utility::infinity<ValueType>()), model.getManager().template getAddZero<ValueType>()), maybeStates, odd, x));
@@ -259,22 +306,22 @@ namespace storm {
             }
 
             template<storm::dd::DdType DdType, typename ValueType>
-            std::unique_ptr<CheckResult> HybridDtmcPrctlHelper<DdType, ValueType>::computeLongRunAverageProbabilities(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, storm::dd::Bdd<DdType> const& targetStates, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+            std::unique_ptr<CheckResult> HybridDtmcPrctlHelper<DdType, ValueType>::computeLongRunAverageProbabilities(Environment const& env, storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, storm::dd::Bdd<DdType> const& targetStates, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
                 // Create ODD for the translation.
                 storm::dd::Odd odd = model.getReachableStates().createOdd();
                 storm::storage::SparseMatrix<ValueType> explicitProbabilityMatrix = model.getTransitionMatrix().toMatrix(odd, odd);
 
-                std::vector<ValueType> result = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeLongRunAverageProbabilities(storm::solver::SolveGoal<ValueType>(), explicitProbabilityMatrix, targetStates.toVector(odd), linearEquationSolverFactory);
+                std::vector<ValueType> result = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeLongRunAverageProbabilities(env, storm::solver::SolveGoal<ValueType>(), explicitProbabilityMatrix, targetStates.toVector(odd), linearEquationSolverFactory);
                 return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType, ValueType>(model.getReachableStates(), model.getManager().getBddZero(), model.getManager().template getAddZero<ValueType>(), model.getReachableStates(), std::move(odd), std::move(result)));
             }
 
             template<storm::dd::DdType DdType, typename ValueType>
-            std::unique_ptr<CheckResult> HybridDtmcPrctlHelper<DdType, ValueType>::computeLongRunAverageRewards(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, RewardModelType const& rewardModel, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+            std::unique_ptr<CheckResult> HybridDtmcPrctlHelper<DdType, ValueType>::computeLongRunAverageRewards(Environment const& env, storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, RewardModelType const& rewardModel, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
                 // Create ODD for the translation.
                 storm::dd::Odd odd = model.getReachableStates().createOdd();
                 storm::storage::SparseMatrix<ValueType> explicitProbabilityMatrix = model.getTransitionMatrix().toMatrix(odd, odd);
                 
-                std::vector<ValueType> result = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeLongRunAverageRewards(storm::solver::SolveGoal<ValueType>(), explicitProbabilityMatrix, rewardModel.getTotalRewardVector(model.getTransitionMatrix(), model.getColumnVariables()).toVector(odd), linearEquationSolverFactory);
+                std::vector<ValueType> result = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeLongRunAverageRewards(env, storm::solver::SolveGoal<ValueType>(), explicitProbabilityMatrix, rewardModel.getTotalRewardVector(model.getTransitionMatrix(), model.getColumnVariables()).toVector(odd), linearEquationSolverFactory);
                 return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType, ValueType>(model.getReachableStates(), model.getManager().getBddZero(), model.getManager().template getAddZero<ValueType>(), model.getReachableStates(), std::move(odd), std::move(result)));
             }
             

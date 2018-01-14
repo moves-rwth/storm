@@ -78,7 +78,7 @@ namespace storm {
              * @param filename the name of the file to parse.
              * @return The resulting PRISM program.
              */
-            static storm::prism::Program parse(std::string const& filename);
+            static storm::prism::Program parse(std::string const& filename, bool prismCompatability = false);
             
             /*!
              * Parses the given input stream into the PRISM storage classes assuming it complies with the PRISM syntax.
@@ -87,7 +87,7 @@ namespace storm {
              * @param filename The name of the file from which the input was read.
              * @return The resulting PRISM program.
              */
-            static storm::prism::Program parseFromString(std::string const& input, std::string const& filename);
+            static storm::prism::Program parseFromString(std::string const& input, std::string const& filename, bool prismCompatability = false);
             
         private:
             struct modelTypeStruct : qi::symbols<char, storm::prism::Program::ModelType> {
@@ -153,7 +153,7 @@ namespace storm {
              * @param filename The filename that is to be read. This is used for proper error reporting.
              * @param first The iterator to the beginning of the input.
              */
-            PrismParser(std::string const& filename, Iterator first);
+            PrismParser(std::string const& filename, Iterator first, bool prismCompatibility);
             
             /*!
              * Sets an internal flag that indicates the second run is now taking place.
@@ -162,6 +162,8 @@ namespace storm {
             
             // A flag that stores whether the grammar is currently doing the second run.
             bool secondRun;
+
+            bool prismCompatibility;
             
             /*!
              * Sets whether doubles literals are allowed in the parsed expression.

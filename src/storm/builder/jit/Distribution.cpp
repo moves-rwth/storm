@@ -2,6 +2,8 @@
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 
+#include "storm/storage/BitVector.h"
+
 namespace storm {
     namespace builder {
         namespace jit {
@@ -12,15 +14,47 @@ namespace storm {
             }
             
             template <typename IndexType, typename ValueType>
+            Distribution<IndexType, ValueType>::Distribution(Distribution<IndexType, ValueType> const& other) {
+                this->storage = other.storage;
+                this->compressed = other.compressed;
+            }
+            
+            template <typename IndexType, typename ValueType>
+            Distribution<IndexType, ValueType>::Distribution(Distribution<IndexType, ValueType>&& other) {
+                this->storage = std::move(other.storage);
+                this->compressed = other.compressed;
+                other.compressed = true;
+            }
+            
+            template <typename IndexType, typename ValueType>
+            Distribution<IndexType, ValueType>& Distribution<IndexType, ValueType>::operator=(Distribution<IndexType, ValueType> const& other) {
+                if (this != &other) {
+                    this->storage = other.storage;
+                    this->compressed = other.compressed;
+                }
+                return *this;
+            }
+            
+            template <typename IndexType, typename ValueType>
+            Distribution<IndexType, ValueType>& Distribution<IndexType, ValueType>::operator=(Distribution<IndexType, ValueType>&& other) {
+                if (this != &other) {
+                    this->storage = std::move(other.storage);
+                    this->compressed = other.compressed;
+                    other.compressed = true;
+                }
+                return *this;
+            }
+            
+            template <typename IndexType, typename ValueType>
             void Distribution<IndexType, ValueType>::add(DistributionEntry<IndexType, ValueType> const& entry) {
                 storage.push_back(entry);
-                compressed &= storage.back().getIndex() < entry.getIndex();
+                compressed &= storage.back().getState() < entry.getState();
             }
 
             template <typename IndexType, typename ValueType>
             void Distribution<IndexType, ValueType>::add(IndexType const& index, ValueType const& value) {
                 storage.emplace_back(index, value);
-                compressed &= storage.back().getIndex() < index;
+                compressed &= storage.back().getState() < index;
             }
 
             template <typename IndexType, typename ValueType>
@@ -34,7 +68,7 @@ namespace storm {
                 if (!compressed) {
                     std::sort(storage.begin(), storage.end(),
                               [] (DistributionEntry<IndexType, ValueType> const& a, DistributionEntry<IndexType, ValueType> const& b) {
-                                  return a.getIndex() < b.getIndex();
+                                  return a.getState() < b.getState();
                               }
                               );
                     
@@ -45,7 +79,7 @@ namespace storm {
                     if (first != last) {
                         auto result = first;
                         while (++first != last) {
-                            if (!(result->getIndex() == first->getIndex())) {
+                            if (!(result->getState() == first->getState())) {
                                 if (++result != first) {
                                     *result = std::move(*first);
                                 }
@@ -66,6 +100,12 @@ namespace storm {
                 for (auto& entry : storage) {
                     entry.divide(value);
                 }
+            }
+            
+            template <typename IndexType, typename ValueType>
+            void Distribution<IndexType, ValueType>::clear() {
+                this->storage.clear();
+                this->compressed = true;
             }
             
             template <typename IndexType, typename ValueType>
@@ -91,7 +131,11 @@ namespace storm {
             template class Distribution<uint32_t, double>;
             template class Distribution<uint32_t, storm::RationalNumber>;
             template class Distribution<uint32_t, storm::RationalFunction>;
-            
+
+            template class Distribution<storm::storage::BitVector, double>;
+            template class Distribution<storm::storage::BitVector, storm::RationalNumber>;
+            template class Distribution<storm::storage::BitVector, storm::RationalFunction>;
+
         }
     }
 }

@@ -17,6 +17,9 @@ namespace storm {
             const std::string BisimulationSettings::representativeOptionName = "repr";
             const std::string BisimulationSettings::quotientFormatOptionName = "quot";
             const std::string BisimulationSettings::signatureModeOptionName = "sigmode";
+            const std::string BisimulationSettings::reuseOptionName = "reuse";
+            const std::string BisimulationSettings::initialPartitionOptionName = "init";
+            const std::string BisimulationSettings::refinementModeOptionName = "refine";
             
             BisimulationSettings::BisimulationSettings() : ModuleSettings(moduleName) {
                 std::vector<std::string> types = { "strong", "weak" };
@@ -29,6 +32,24 @@ namespace storm {
 
                 std::vector<std::string> signatureModes = { "eager", "lazy" };
                 this->addOption(storm::settings::OptionBuilder(moduleName, signatureModeOptionName, false, "Sets the signature computation mode.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("mode", "The mode to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(signatureModes)).setDefaultValueString("eager").build()).build());
+                
+                std::vector<std::string> reuseModes = {"none", "blocks"};
+                this->addOption(storm::settings::OptionBuilder(moduleName, reuseOptionName, true, "Sets whether to reuse all results.")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("mode", "The mode to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(reuseModes))
+                                             .setDefaultValueString("blocks").build())
+                                .build());
+
+                std::vector<std::string> initialPartitionModes = {"regular", "finer"};
+                this->addOption(storm::settings::OptionBuilder(moduleName, initialPartitionOptionName, true, "Sets which initial partition mode to use.")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("mode", "The mode to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(initialPartitionModes))
+                                             .setDefaultValueString("finer").build())
+                                .build());
+                
+                std::vector<std::string> refinementModes = {"full", "changed"};
+                this->addOption(storm::settings::OptionBuilder(moduleName, refinementModeOptionName, true, "Sets which refinement mode to use.")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("mode", "The mode to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(refinementModes))
+                                             .setDefaultValueString("full").build())
+                                .build());
             }
             
             bool BisimulationSettings::isStrongBisimulationSet() const {
@@ -67,6 +88,36 @@ namespace storm {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unknown signature mode '" << modeAsString << ".");
             }
             
+            BisimulationSettings::ReuseMode BisimulationSettings::getReuseMode() const {
+                std::string reuseModeAsString = this->getOption(reuseOptionName).getArgumentByName("mode").getValueAsString();
+                if (reuseModeAsString == "none") {
+                    return ReuseMode::None;
+                } else if (reuseModeAsString == "blocks") {
+                    return ReuseMode::BlockNumbers;
+                }
+                return ReuseMode::BlockNumbers;
+            }
+            
+            BisimulationSettings::InitialPartitionMode BisimulationSettings::getInitialPartitionMode() const {
+                std::string initialPartitionModeAsString = this->getOption(initialPartitionOptionName).getArgumentByName("mode").getValueAsString();
+                if (initialPartitionModeAsString == "regular") {
+                    return InitialPartitionMode::Regular;
+                } else if (initialPartitionModeAsString == "finer") {
+                    return InitialPartitionMode::Finer;
+                }
+                return InitialPartitionMode::Finer;
+            }
+
+            BisimulationSettings::RefinementMode BisimulationSettings::getRefinementMode() const {
+                std::string refinementModeAsString = this->getOption(refinementModeOptionName).getArgumentByName("mode").getValueAsString();
+                if (refinementModeAsString == "full") {
+                    return RefinementMode::Full;
+                } else if (refinementModeAsString == "changed") {
+                    return RefinementMode::ChangedStates;
+                }
+                return RefinementMode::Full;
+            }
+
             bool BisimulationSettings::check() const {
                 bool optionsSet = this->getOption(typeOptionName).getHasOptionBeenSet();
                 STORM_LOG_WARN_COND(storm::settings::getModule<storm::settings::modules::GeneralSettings>().isBisimulationSet() || !optionsSet, "Bisimulation minimization is not selected, so setting options for bisimulation has no effect.");

@@ -24,6 +24,7 @@
 #include "storm/settings/modules/ResourceSettings.h"
 #include "storm/settings/modules/AbstractionSettings.h"
 #include "storm/settings/modules/JaniExportSettings.h"
+#include "storm/settings/modules/BuildSettings.h"
 #include "storm/settings/modules/JitBuilderSettings.h"
 #include "storm/settings/modules/MultiObjectiveSettings.h"
 #include "storm-pomdp-cli/settings/modules/POMDPSettings.h"
@@ -37,6 +38,7 @@
 #include "storm-pomdp/transformer/GlobalPOMDPSelfLoopEliminator.h"
 #include "storm-pomdp/transformer/GlobalPomdpMecChoiceEliminator.h"
 #include "storm-pomdp/transformer/PomdpMemoryUnfolder.h"
+#include "storm-pomdp/transformer/BinaryPomdpTransformer.h"
 #include "storm-pomdp/analysis/UniqueObservationStates.h"
 #include "storm-pomdp/analysis/QualitativeAnalysis.h"
 #include "storm/api/storm.h"
@@ -71,6 +73,7 @@ void initializeSettings() {
     storm::settings::addModule<storm::settings::modules::JaniExportSettings>();
     storm::settings::addModule<storm::settings::modules::JitBuilderSettings>();
     storm::settings::addModule<storm::settings::modules::MultiObjectiveSettings>();
+    storm::settings::addModule<storm::settings::modules::BuildSettings>();
 
 
     storm::settings::addModule<storm::settings::modules::POMDPSettings>();
@@ -158,7 +161,7 @@ int main(const int argc, const char** argv) {
                 STORM_PRINT_AND_LOG(" done." << std::endl);
                 pomdp->printModelInformationToStream(std::cout);
             } else {
-                STORM_PRINT_AND_LOG("Assumming memoryless schedulers.")
+                STORM_PRINT_AND_LOG("Assumming memoryless schedulers." << std::endl;)
             }
             
             // From now on the pomdp is considered memoryless
@@ -171,7 +174,21 @@ int main(const int argc, const char** argv) {
                 pomdp = mecChoiceEliminator.transform(*formula);
                 STORM_PRINT_AND_LOG(" done." << std::endl);
                 STORM_PRINT_AND_LOG(oldChoiceCount - pomdp->getNumberOfChoices() << " choices eliminated through MEC choice elimination." << std::endl);
+                pomdp->printModelInformationToStream(std::cout);
             }
+            
+            if (pomdpSettings.isTransformBinarySet() || pomdpSettings.isTransformSimpleSet()) {
+                if (pomdpSettings.isTransformSimpleSet()) {
+                    STORM_PRINT_AND_LOG("Transforming the POMDP to a simple POMDP.");
+                    pomdp = storm::transformer::BinaryPomdpTransformer<storm::RationalNumber>().transform(*pomdp, true);
+                } else {
+                    STORM_PRINT_AND_LOG("Transforming the POMDP to a binary POMDP.");
+                    pomdp = storm::transformer::BinaryPomdpTransformer<storm::RationalNumber>().transform(*pomdp, false);
+                }
+                pomdp->printModelInformationToStream(std::cout);
+                STORM_PRINT_AND_LOG(" done." << std::endl);
+            }
+
             
             if (pomdpSettings.isExportToParametricSet()) {
                 STORM_PRINT_AND_LOG("Transforming memoryless POMDP to pMC...");

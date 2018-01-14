@@ -11,6 +11,9 @@
 #include "storm/storage/dd/Add.h"
 
 namespace storm {
+    
+    class Environment;
+    
     namespace solver {
         
         /*!
@@ -35,26 +38,8 @@ namespace storm {
              */
             SymbolicGameSolver(storm::dd::Add<Type, ValueType> const& A, storm::dd::Bdd<Type> const& allRows, storm::dd::Bdd<Type> const& illegalPlayer1Mask, storm::dd::Bdd<Type> const& illegalPlayer2Mask, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs, std::set<storm::expressions::Variable> const& player1Variables, std::set<storm::expressions::Variable> const& player2Variables);
             
-            /*!
-             * Constructs a symbolic game solver with the given meta variable sets and pairs.
-             *
-             * @param A The matrix defining the coefficients of the game.
-             * @param allRows A BDD characterizing all rows of the equation system.
-             * @param illegalPlayer1Mask A BDD characterizing the illegal choices of player 1.
-             * @param illegalPlayer2Mask A BDD characterizing the illegal choices of player 2.
-             * @param rowMetaVariables The meta variables used to encode the rows of the matrix.
-             * @param columnMetaVariables The meta variables used to encode the columns of the matrix.
-             * @param rowColumnMetaVariablePairs The pairs of row meta variables and the corresponding column meta
-             * variables.
-             * @param player1Variables The meta variables used to encode the player 1 choices.
-             * @param player2Variables The meta variables used to encode the player 2 choices.
-             * @param precision The precision to achieve.
-             * @param maximalNumberOfIterations The maximal number of iterations to perform when solving a linear
-             * equation system iteratively.
-             * @param relative Sets whether or not to use a relativ stopping criterion rather than an absolute one.
-             */
-            SymbolicGameSolver(storm::dd::Add<Type, ValueType> const& A, storm::dd::Bdd<Type> const& allRows, storm::dd::Bdd<Type> const& illegalPlayer1Mask, storm::dd::Bdd<Type> const& illegalPlayer2Mask, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs, std::set<storm::expressions::Variable> const& player1Variables, std::set<storm::expressions::Variable> const& player2Variables, ValueType precision, uint_fast64_t maximalNumberOfIterations, bool relative);
-            
+            virtual ~SymbolicGameSolver() = default;
+
             /*!
              * Solves the equation system defined by the game matrix. Note that the game matrix has to be given upon
              * construction time of the solver object.
@@ -69,7 +54,7 @@ namespace storm {
              * then this strategy can be used to generate a strategy that only differs from the given one if it has to.
              * @return The solution vector.
              */
-            virtual storm::dd::Add<Type, ValueType> solveGame(OptimizationDirection player1Goal, OptimizationDirection player2Goal, storm::dd::Add<Type, ValueType> const& x, storm::dd::Add<Type, ValueType> const& b, boost::optional<storm::dd::Bdd<Type>> const& basePlayer1Strategy = boost::none, boost::optional<storm::dd::Bdd<Type>> const& basePlayer2Strategy = boost::none);
+            virtual storm::dd::Add<Type, ValueType> solveGame(Environment const& env, OptimizationDirection player1Goal, OptimizationDirection player2Goal, storm::dd::Add<Type, ValueType> const& x, storm::dd::Add<Type, ValueType> const& b, boost::optional<storm::dd::Bdd<Type>> const& basePlayer1Strategy = boost::none, boost::optional<storm::dd::Bdd<Type>> const& basePlayer2Strategy = boost::none);
         
             // Setters that enable the generation of the players' strategies.
             void setGeneratePlayer1Strategy(bool value);
@@ -120,14 +105,14 @@ namespace storm {
             // A player 1 strategy if one was generated.
             boost::optional<storm::dd::Bdd<Type>> player2Strategy;
             
-            // The precision to achieve.
-            ValueType precision;
+        };
+        
+        template<storm::dd::DdType Type, typename ValueType>
+        class SymbolicGameSolverFactory {
+        public:
+            virtual ~SymbolicGameSolverFactory() = default;
 
-            // The maximal number of iterations to perform.
-            uint_fast64_t maximalNumberOfIterations;
-
-            // A flag indicating whether a relative or an absolute stopping criterion is to be used.
-            bool relative;
+            virtual std::unique_ptr<storm::solver::SymbolicGameSolver<Type, ValueType>> create(storm::dd::Add<Type, ValueType> const& A, storm::dd::Bdd<Type> const& allRows, storm::dd::Bdd<Type> const& illegalPlayer1Mask, storm::dd::Bdd<Type> const& illegalPlayer2Mask, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs, std::set<storm::expressions::Variable> const& player1Variables, std::set<storm::expressions::Variable> const& player2Variables) const;
         };
         
     } // namespace solver

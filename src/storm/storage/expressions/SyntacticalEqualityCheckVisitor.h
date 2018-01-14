@@ -9,7 +9,7 @@ namespace storm {
         
         class SyntacticalEqualityCheckVisitor : public ExpressionVisitor {
         public:
-            bool isSyntaticallyEqual(storm::expressions::Expression const& expression1, storm::expressions::Expression const& expression2);
+            bool isSyntacticallyEqual(storm::expressions::Expression const& expression1, storm::expressions::Expression const& expression2);
             
             virtual boost::any visit(IfThenElseExpression const& expression, boost::any const& data) override;
             virtual boost::any visit(BinaryBooleanFunctionExpression const& expression, boost::any const& data) override;

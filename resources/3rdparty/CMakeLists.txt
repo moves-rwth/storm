@@ -208,9 +208,7 @@ include(${STORM_3RDPARTY_SOURCE_DIR}/include_cudd.cmake)
 #############################################################
 
 set(STORM_HAVE_CARL OFF)
-set(CARL_MINYEAR 17)
-set(CARL_MINMONTH 08)
-set(CARL_MINPATCH 0)
+set(CARL_MINVERSION "17.08")
 if (NOT STORM_FORCE_SHIPPED_CARL)
     if (NOT "${STORM_CARL_DIR_HINT}" STREQUAL "")
 		find_package(carl QUIET PATHS ${STORM_CARL_DIR_HINT} NO_DEFAULT_PATH)
@@ -228,20 +226,8 @@ if(carl_FOUND AND NOT STORM_FORCE_SHIPPED_CARL)
     else()
         message(SEND_ERROR "File ${carlLOCATION} does not exist, did you build carl?")
     endif()
-    if("${carl_MINORYEARVERSION}" STREQUAL "" OR "${carl_MINORMONTHVERSION}" STREQUAL "" OR "${carl_MAINTENANCEVERSION}" STREQUAL "")
-        # don't have detailed version information, probably an old version of carl
-        message(FATAL_ERROR "Carl at ${carlLOCATION} outdated, require ${CARL_MINYEAR}.${CARL_MINMONTH}.${CARL_MINPATCH}, have ${carl_VERSION}")
-    endif()
-    if(${carl_MINORYEARVERSION} LESS ${CARL_MINYEAR})
-        message(SEND_ERROR "Carl outdated, require ${CARL_MINYEAR}.${CARL_MINMONTH}.${CARL_MINPATCH}, have ${carl_VERSION}")
-    elseif(${carl_MINORYEARVERSION} EQUAL ${CARL_MINYEAR})
-        if(${carl_MINORMONTHVERSION} LESS ${CARL_MINMONTH})
-            message(SEND_ERROR "Carl outdated, require ${CARL_MINYEAR}.${CARL_MINMONTH}.${CARL_MINPATCH}, have ${carl_VERSION}")
-         elseif(${carl_MINORMONTHVERSION} EQUAL ${CARL_MINMONTH})
-            if(${carl_MAINTENANCEVERSION} LESS ${CARL_MINPATCH})
-                message(SEND_ERROR "Carl outdated, require ${CARL_MINYEAR}.${CARL_MINMONTH}.${CARL_MINPATCH}, have ${carl_VERSION}")
-            endif()
-        endif()
+    if("${carl_VERSION}" VERSION_LESS "${CARL_MINVERSION}")
+    	message(SEND_ERROR "Carl outdated, require ${CARL_MINVERSION}, have ${carl_VERSION}")
     endif()
 
     set(STORM_SHIPPED_CARL OFF)
@@ -294,7 +280,8 @@ else()
 
 	add_dependencies(resources carl)
     set(carl_INCLUDE_DIR "${STORM_3RDPARTY_BINARY_DIR}/carl/include/")
-	set(carl_LIBRARIES ${STORM_3RDPARTY_BINARY_DIR}/carl/lib/libcarl${DYNAMIC_EXT})
+    set(carl_DIR "${STORM_3RDPARTY_BINARY_DIR}/carl/")
+    set(carl_LIBRARIES ${STORM_3RDPARTY_BINARY_DIR}/carl/lib/libcarl${DYNAMIC_EXT})
     set(STORM_HAVE_CARL ON)
 
     message(STATUS "Storm - Linking with shipped carl ${carl_VERSION} (include: ${carl_INCLUDE_DIR}, library ${carl_LIBRARIES}, CARL_USE_CLN_NUMBERS: ${CARL_USE_CLN_NUMBERS}, CARL_USE_GINAC: ${CARL_USE_GINAC}).")
@@ -432,7 +419,7 @@ ExternalProject_Add(
         DOWNLOAD_COMMAND ""
         PREFIX "sylvan"
         SOURCE_DIR ${STORM_3RDPARTY_SOURCE_DIR}/sylvan
-        CMAKE_ARGS -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -DGMP_LOCATION=${GMP_LIB_LOCATION}  -DGMP_INCLUDE=${GMP_INCLUDE_DIR}  -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} -DSYLVAN_BUILD_DOCS=OFF -DSYLVAN_BUILD_EXAMPLES=OFF -DCMAKE_BUILD_TYPE=${SYLVAN_BUILD_TYPE} -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DUSE_CARL=ON -Dcarl_INCLUDE_DIR=${carl_INCLUDE_DIR} -DSYLVAN_PORTABLE=${STORM_PORTABLE} -Dcarl_LIBRARIES=${carl_LIBRARIES} -DBUILD_SHARED_LIBS=OFF -DSYLVAN_BUILD_TESTS=OFF
+        CMAKE_ARGS -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -DGMP_LOCATION=${GMP_LIB_LOCATION}  -DGMP_INCLUDE=${GMP_INCLUDE_DIR}  -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} -DSYLVAN_BUILD_DOCS=OFF -DSYLVAN_BUILD_EXAMPLES=OFF -DCMAKE_BUILD_TYPE=${SYLVAN_BUILD_TYPE} -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DUSE_CARL=ON -Dcarl_DIR=${carl_DIR} -DSYLVAN_PORTABLE=${STORM_PORTABLE} -DBoost_INCLUDE_DIRS=${Boost_INCLUDE_DIRS} -DBUILD_SHARED_LIBS=OFF -DSYLVAN_BUILD_TESTS=OFF
         BINARY_DIR ${STORM_3RDPARTY_BINARY_DIR}/sylvan
         BUILD_IN_SOURCE 0
         INSTALL_COMMAND ""

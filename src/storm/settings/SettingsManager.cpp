@@ -1,7 +1,6 @@
 #include "storm/settings/SettingsManager.h"
 
 #include <cstring>
-#include <cctype>
 #include <mutex>
 #include <iomanip>
 #include <fstream>
@@ -19,6 +18,7 @@
 #include "storm/settings/modules/DebugSettings.h"
 #include "storm/settings/modules/CounterexampleGeneratorSettings.h"
 #include "storm/settings/modules/CuddSettings.h"
+#include "storm/settings/modules/BuildSettings.h"
 #include "storm/settings/modules/SylvanSettings.h"
 #include "storm/settings/modules/EigenEquationSolverSettings.h"
 #include "storm/settings/modules/GmmxxEquationSolverSettings.h"
@@ -514,6 +514,7 @@ namespace storm {
             // Register all known settings modules.
             storm::settings::addModule<storm::settings::modules::GeneralSettings>();
             storm::settings::addModule<storm::settings::modules::IOSettings>();
+            storm::settings::addModule<storm::settings::modules::BuildSettings>();
             storm::settings::addModule<storm::settings::modules::CoreSettings>();
             storm::settings::addModule<storm::settings::modules::DebugSettings>();
             storm::settings::addModule<storm::settings::modules::CounterexampleGeneratorSettings>();

@@ -2,37 +2,39 @@
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 
+#include "storm/storage/BitVector.h"
+
 namespace storm {
     namespace builder {
         namespace jit {
             
-            template <typename IndexType, typename ValueType>
-            DistributionEntry<IndexType, ValueType>::DistributionEntry() : index(0), value(0) {
+            template <typename StateType, typename ValueType>
+            DistributionEntry<StateType, ValueType>::DistributionEntry() : state(0), value(0) {
                 // Intentionally left empty.
             }
             
-            template <typename IndexType, typename ValueType>
-            DistributionEntry<IndexType, ValueType>::DistributionEntry(IndexType const& index, ValueType const& value) : index(index), value(value) {
+            template <typename StateType, typename ValueType>
+            DistributionEntry<StateType, ValueType>::DistributionEntry(StateType const& state, ValueType const& value) : state(state), value(value) {
                 // Intentionally left empty.
             }
             
-            template <typename IndexType, typename ValueType>
-            IndexType const& DistributionEntry<IndexType, ValueType>::getIndex() const {
-                return index;
+            template <typename StateType, typename ValueType>
+            StateType const& DistributionEntry<StateType, ValueType>::getState() const {
+                return state;
             }
             
-            template <typename IndexType, typename ValueType>
-            ValueType const& DistributionEntry<IndexType, ValueType>::getValue() const {
+            template <typename StateType, typename ValueType>
+            ValueType const& DistributionEntry<StateType, ValueType>::getValue() const {
                 return value;
             }
             
-            template <typename IndexType, typename ValueType>
-            void DistributionEntry<IndexType, ValueType>::addToValue(ValueType const& value) {
+            template <typename StateType, typename ValueType>
+            void DistributionEntry<StateType, ValueType>::addToValue(ValueType const& value) {
                 this->value += value;
             }
             
-            template <typename IndexType, typename ValueType>
-            void DistributionEntry<IndexType, ValueType>::divide(ValueType const& value) {
+            template <typename StateType, typename ValueType>
+            void DistributionEntry<StateType, ValueType>::divide(ValueType const& value) {
                 this->value /= value;
             }
          
@@ -40,6 +42,11 @@ namespace storm {
             template class DistributionEntry<uint32_t, storm::RationalNumber>;
             template class DistributionEntry<uint32_t, storm::RationalFunction>;
 
+            template class DistributionEntry<storm::storage::BitVector, double>;
+            template class DistributionEntry<storm::storage::BitVector, storm::RationalNumber>;
+            template class DistributionEntry<storm::storage::BitVector, storm::RationalFunction>;
+
+            
         }
     }
 }

@@ -4,6 +4,7 @@
 #include "storm/storage/dd/bisimulation/PartitionRefiner.h"
 #include "storm/storage/dd/bisimulation/MdpPartitionRefiner.h"
 #include "storm/storage/dd/bisimulation/QuotientExtractor.h"
+#include "storm/storage/dd/bisimulation/PartialQuotientExtractor.h"
 
 #include "storm/models/symbolic/Model.h"
 #include "storm/models/symbolic/Mdp.h"
@@ -31,40 +32,45 @@ namespace storm {
         }
         
         template <storm::dd::DdType DdType, typename ValueType>
-        BisimulationDecomposition<DdType, ValueType>::BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::storage::BisimulationType const& bisimulationType) : model(model), preservationInformation(model, bisimulationType), refiner(createRefiner(model, Partition<DdType, ValueType>::create(model, bisimulationType, preservationInformation))) {
-            auto const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
-            showProgress = generalSettings.isVerboseSet();
-            showProgressDelay = generalSettings.getShowProgressDelay();
-            this->refineWrtRewardModels();
+        BisimulationDecomposition<DdType, ValueType>::BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::storage::BisimulationType const& bisimulationType) : model(model), preservationInformation(model), refiner(createRefiner(model, Partition<DdType, ValueType>::create(model, bisimulationType, preservationInformation))) {
+            this->initialize();
         }
-        
+      
         template <storm::dd::DdType DdType, typename ValueType>
-        BisimulationDecomposition<DdType, ValueType>::BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, storm::storage::BisimulationType const& bisimulationType) : model(model), preservationInformation(model, formulas, bisimulationType), refiner(createRefiner(model, Partition<DdType, ValueType>::create(model, bisimulationType, preservationInformation))) {
-            auto const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
-            showProgress = generalSettings.isVerboseSet();
-            showProgressDelay = generalSettings.getShowProgressDelay();
-            this->refineWrtRewardModels();
+        BisimulationDecomposition<DdType, ValueType>::BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::storage::BisimulationType const& bisimulationType, bisimulation::PreservationInformation<DdType, ValueType> const& preservationInformation) : model(model), preservationInformation(preservationInformation), refiner(createRefiner(model, Partition<DdType, ValueType>::create(model, bisimulationType, preservationInformation))) {
+            this->initialize();
+        }
+  
+        template <storm::dd::DdType DdType, typename ValueType>
+        BisimulationDecomposition<DdType, ValueType>::BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, storm::storage::BisimulationType const& bisimulationType) : model(model), preservationInformation(model, formulas), refiner(createRefiner(model, Partition<DdType, ValueType>::create(model, bisimulationType, formulas))) {
+            this->initialize();
         }
         
         template <storm::dd::DdType DdType, typename ValueType>
         BisimulationDecomposition<DdType, ValueType>::BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& initialPartition, bisimulation::PreservationInformation<DdType, ValueType> const& preservationInformation) : model(model), preservationInformation(preservationInformation), refiner(createRefiner(model, initialPartition)) {
-            auto const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
-            showProgress = generalSettings.isVerboseSet();
-            showProgressDelay = generalSettings.getShowProgressDelay();
-            this->refineWrtRewardModels();
+            this->initialize();
         }
         
         template <storm::dd::DdType DdType, typename ValueType>
         BisimulationDecomposition<DdType, ValueType>::~BisimulationDecomposition() = default;
         
         template <storm::dd::DdType DdType, typename ValueType>
-        void BisimulationDecomposition<DdType, ValueType>::compute(bisimulation::SignatureMode const& mode) {
-            STORM_LOG_ASSERT(refiner, "No suitable refiner.");
+        void BisimulationDecomposition<DdType, ValueType>::initialize() {
+            auto const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
+            showProgress = generalSettings.isVerboseSet();
+            showProgressDelay = generalSettings.getShowProgressDelay();
+            this->refineWrtRewardModels();
             
             STORM_LOG_TRACE("Initial partition has " << refiner->getStatePartition().getNumberOfBlocks() << " blocks.");
 #ifndef NDEBUG
             STORM_LOG_TRACE("Initial partition has " << refiner->getStatePartition().getNodeCount() << " nodes.");
 #endif
+        }
+        
+        template <storm::dd::DdType DdType, typename ValueType>
+        void BisimulationDecomposition<DdType, ValueType>::compute(bisimulation::SignatureMode const& mode) {
+            STORM_LOG_ASSERT(refiner, "No suitable refiner.");
+            STORM_LOG_ASSERT(this->refiner->getStatus() != Status::FixedPoint, "Can only proceed if no fixpoint has been reached yet.");
 
             auto start = std::chrono::high_resolution_clock::now();
             auto timeOfLastMessage = start;
@@ -88,18 +94,62 @@ namespace storm {
             }
             auto end = std::chrono::high_resolution_clock::now();
             
-            STORM_LOG_DEBUG("Partition refinement completed in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "s (" << iterations << " iterations).");
+            STORM_LOG_DEBUG("Partition refinement completed in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms (" << iterations << " iterations).");
+        }
+
+        template <storm::dd::DdType DdType, typename ValueType>
+        bool BisimulationDecomposition<DdType, ValueType>::compute(uint64_t steps, bisimulation::SignatureMode const& mode) {
+            STORM_LOG_ASSERT(refiner, "No suitable refiner.");
+            STORM_LOG_ASSERT(this->refiner->getStatus() != Status::FixedPoint, "Can only proceed if no fixpoint has been reached yet.");
+            STORM_LOG_ASSERT(steps > 0, "Can only perform positive number of steps.");
+
+            auto start = std::chrono::high_resolution_clock::now();
+            auto timeOfLastMessage = start;
+            uint64_t iterations = 0;
+            bool refined = true;
+            while (refined && iterations < steps) {
+                refined = refiner->refine(mode);
+                
+                ++iterations;
+                
+                if (showProgress) {
+                    auto now = std::chrono::high_resolution_clock::now();
+                    auto durationSinceLastMessage = std::chrono::duration_cast<std::chrono::seconds>(now - timeOfLastMessage).count();
+                    if (static_cast<uint64_t>(durationSinceLastMessage) >= showProgressDelay) {
+                        auto durationSinceStart = std::chrono::duration_cast<std::chrono::seconds>(now - start).count();
+                        STORM_LOG_INFO("State partition after " << iterations << " iterations (" << durationSinceStart << "ms) has " << refiner->getStatePartition().getNumberOfBlocks() << " blocks.");
+                        timeOfLastMessage = std::chrono::high_resolution_clock::now();
+                    }
+                }
+            }
+            
+            return !refined;
+        }
+        
+        template <storm::dd::DdType DdType, typename ValueType>
+        bool BisimulationDecomposition<DdType, ValueType>::getReachedFixedPoint() const {
+            return this->refiner->getStatus() == Status::FixedPoint;
         }
         
         template <storm::dd::DdType DdType, typename ValueType>
         std::shared_ptr<storm::models::Model<ValueType>> BisimulationDecomposition<DdType, ValueType>::getQuotient() const {
-            STORM_LOG_THROW(this->refiner->getStatus() == Status::FixedPoint, storm::exceptions::InvalidOperationException, "Cannot extract quotient, because bisimulation decomposition was not completed.");
-            
-            STORM_LOG_TRACE("Starting quotient extraction.");
-            QuotientExtractor<DdType, ValueType> extractor;
-            std::shared_ptr<storm::models::Model<ValueType>> quotient = extractor.extract(model, refiner->getStatePartition(), preservationInformation);
+            std::shared_ptr<storm::models::Model<ValueType>> quotient;
+            if (this->refiner->getStatus() == Status::FixedPoint) {
+                STORM_LOG_TRACE("Starting full quotient extraction.");
+                QuotientExtractor<DdType, ValueType> extractor;
+                quotient = extractor.extract(model, refiner->getStatePartition(), preservationInformation);
+            } else {
+                STORM_LOG_THROW(model.getType() == storm::models::ModelType::Dtmc || model.getType() == storm::models::ModelType::Mdp, storm::exceptions::InvalidOperationException, "Can only extract partial quotient for discrete-time models.");
+                
+                STORM_LOG_TRACE("Starting partial quotient extraction.");
+                if (!partialQuotientExtractor) {
+                    partialQuotientExtractor = std::make_unique<bisimulation::PartialQuotientExtractor<DdType, ValueType>>(model);
+                }
+
+                quotient = partialQuotientExtractor->extract(refiner->getStatePartition(), preservationInformation);
+            }
+
             STORM_LOG_TRACE("Quotient extraction done.");
-            
             return quotient;
         }
         

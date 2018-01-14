@@ -26,7 +26,7 @@ namespace storm {
         }
                 
         template<storm::dd::DdType DdType, typename ValueType>
-        storm::dd::Add<DdType, ValueType> SymbolicEliminationLinearEquationSolver<DdType, ValueType>::solveEquations(storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const {
+        storm::dd::Add<DdType, ValueType> SymbolicEliminationLinearEquationSolver<DdType, ValueType>::solveEquations(Environment const& env, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const {
             storm::dd::DdManager<DdType>& ddManager = x.getDdManager();
             
             // Build diagonal BDD over new meta variables.
@@ -74,7 +74,7 @@ namespace storm {
         }
 
         template<storm::dd::DdType DdType, typename ValueType>
-        LinearEquationSolverProblemFormat SymbolicEliminationLinearEquationSolver<DdType, ValueType>::getEquationProblemFormat() const {
+        LinearEquationSolverProblemFormat SymbolicEliminationLinearEquationSolver<DdType, ValueType>::getEquationProblemFormat(Environment const& env) const {
             return LinearEquationSolverProblemFormat::FixedPointSystem;
         }
         
@@ -134,20 +134,10 @@ namespace storm {
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, ValueType>> SymbolicEliminationLinearEquationSolverFactory<DdType, ValueType>::create() const {
+        std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, ValueType>> SymbolicEliminationLinearEquationSolverFactory<DdType, ValueType>::create(Environment const& env) const {
             return std::make_unique<SymbolicEliminationLinearEquationSolver<DdType, ValueType>>();
         }
             
-        template<storm::dd::DdType DdType, typename ValueType>
-        SymbolicEliminationLinearEquationSolverSettings<ValueType>& SymbolicEliminationLinearEquationSolverFactory<DdType, ValueType>::getSettings() {
-            return settings;
-        }
-
-        template<storm::dd::DdType DdType, typename ValueType>
-        SymbolicEliminationLinearEquationSolverSettings<ValueType> const& SymbolicEliminationLinearEquationSolverFactory<DdType, ValueType>::getSettings() const {
-            return settings;
-        }
-        
         template class SymbolicEliminationLinearEquationSolver<storm::dd::DdType::CUDD, double>;
         template class SymbolicEliminationLinearEquationSolver<storm::dd::DdType::CUDD, storm::RationalNumber>;
         template class SymbolicEliminationLinearEquationSolver<storm::dd::DdType::Sylvan, double>;

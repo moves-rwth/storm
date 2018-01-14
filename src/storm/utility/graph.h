@@ -237,7 +237,7 @@ namespace storm {
              * @return A pair of BDDs that represent all states with probability 0 and 1, respectively.
              */
             template <storm::dd::DdType Type, typename ValueType>
-            std::pair<storm::dd::Bdd<Type>, storm::dd::Bdd<Type>> performProb01(storm::models::symbolic::Model<Type, ValueType> const& model, storm::dd::Add<Type, ValueType> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates);
+            std::pair<storm::dd::Bdd<Type>, storm::dd::Bdd<Type>> performProb01(storm::models::symbolic::Model<Type, ValueType> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates);
             
             /*!
              * Computes a scheduler for the given states that chooses an action that stays completely in the very same set.

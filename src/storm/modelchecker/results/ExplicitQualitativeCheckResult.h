@@ -24,7 +24,9 @@ namespace storm {
             ExplicitQualitativeCheckResult(storm::storage::sparse::state_type state, bool value);
             ExplicitQualitativeCheckResult(vector_type const& truthValues);
             ExplicitQualitativeCheckResult(vector_type&& truthValues);
-            
+            ExplicitQualitativeCheckResult(boost::variant<vector_type, map_type> const& truthValues);
+            ExplicitQualitativeCheckResult(boost::variant<vector_type, map_type>&& truthValues);
+
             ExplicitQualitativeCheckResult(ExplicitQualitativeCheckResult const& other) = default;
             ExplicitQualitativeCheckResult& operator=(ExplicitQualitativeCheckResult const& other) = default;
 #ifndef WINDOWS
@@ -32,6 +34,8 @@ namespace storm {
             ExplicitQualitativeCheckResult& operator=(ExplicitQualitativeCheckResult&& other) = default;
 #endif
             
+            virtual std::unique_ptr<CheckResult> clone() const override;
+
             bool operator[](storm::storage::sparse::state_type index) const;
             void setValue(storm::storage::sparse::state_type, bool value);
             

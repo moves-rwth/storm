@@ -67,7 +67,8 @@ namespace storm {
             InternalAdd& operator=(InternalAdd<DdType::CUDD, ValueType> const& other) = default;
             InternalAdd(InternalAdd<DdType::CUDD, ValueType>&& other) = default;
             InternalAdd& operator=(InternalAdd<DdType::CUDD, ValueType>&& other) = default;
-            
+            virtual ~InternalAdd() = default;
+
             /*!
              * Retrieves whether the two DDs represent the same function.
              *
@@ -627,6 +628,11 @@ namespace storm {
              * @return The DD node of CUDD associated with this ADD.
              */
             DdNode* getCuddDdNode() const;
+            
+            /*!
+             * Retrieves a string representation of an ID for thid ADD.
+             */
+            std::string getStringId() const;
             
         private:
             /*!

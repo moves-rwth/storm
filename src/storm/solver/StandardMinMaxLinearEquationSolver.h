@@ -4,6 +4,9 @@
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 
 namespace storm {
+    
+    class Environment;
+    
     namespace solver {
         
         template<typename ValueType>
@@ -18,7 +21,7 @@ namespace storm {
             
             virtual ~StandardMinMaxLinearEquationSolver() = default;
             
-            virtual void repeatedMultiply(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const* b, uint_fast64_t n) const override;
+            virtual void repeatedMultiply(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const* b, uint_fast64_t n) const override;
 
             virtual void clearCache() const override;
 
@@ -44,14 +47,14 @@ namespace storm {
         template<typename ValueType>
         class StandardMinMaxLinearEquationSolverFactory : public MinMaxLinearEquationSolverFactory<ValueType> {
         public:
-            StandardMinMaxLinearEquationSolverFactory(MinMaxMethodSelection const& method = MinMaxMethodSelection::FROMSETTINGS, bool trackScheduler = false);
-            StandardMinMaxLinearEquationSolverFactory(std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory, MinMaxMethodSelection const& method = MinMaxMethodSelection::FROMSETTINGS, bool trackScheduler = false);
-            StandardMinMaxLinearEquationSolverFactory(EquationSolverType const& solverType, MinMaxMethodSelection const& method = MinMaxMethodSelection::FROMSETTINGS, bool trackScheduler = false);
+            StandardMinMaxLinearEquationSolverFactory();
+            StandardMinMaxLinearEquationSolverFactory(std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory);
+            StandardMinMaxLinearEquationSolverFactory(EquationSolverType const& solverType);
             
             // Make the other create methods visible.
             using MinMaxLinearEquationSolverFactory<ValueType>::create;
             
-            virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create() const override;
+            virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create(Environment const& env) const override;
 
         protected:
             std::unique_ptr<LinearEquationSolverFactory<ValueType>> linearEquationSolverFactory;
@@ -63,25 +66,25 @@ namespace storm {
         template<typename ValueType>
         class GmmxxMinMaxLinearEquationSolverFactory : public StandardMinMaxLinearEquationSolverFactory<ValueType> {
         public:
-            GmmxxMinMaxLinearEquationSolverFactory(MinMaxMethodSelection const& method = MinMaxMethodSelection::FROMSETTINGS, bool trackScheduler = false);
+            GmmxxMinMaxLinearEquationSolverFactory();
         };
 
         template<typename ValueType>
         class EigenMinMaxLinearEquationSolverFactory : public StandardMinMaxLinearEquationSolverFactory<ValueType> {
         public:
-            EigenMinMaxLinearEquationSolverFactory(MinMaxMethodSelection const& method = MinMaxMethodSelection::FROMSETTINGS, bool trackScheduler = false);
+            EigenMinMaxLinearEquationSolverFactory();
         };
 
         template<typename ValueType>
         class NativeMinMaxLinearEquationSolverFactory : public StandardMinMaxLinearEquationSolverFactory<ValueType> {
         public:
-            NativeMinMaxLinearEquationSolverFactory(MinMaxMethodSelection const& method = MinMaxMethodSelection::FROMSETTINGS, bool trackScheduler = false);
+            NativeMinMaxLinearEquationSolverFactory();
         };
 
         template<typename ValueType>
         class EliminationMinMaxLinearEquationSolverFactory : public StandardMinMaxLinearEquationSolverFactory<ValueType> {
         public:
-            EliminationMinMaxLinearEquationSolverFactory(MinMaxMethodSelection const& method = MinMaxMethodSelection::FROMSETTINGS, bool trackScheduler = false);
+            EliminationMinMaxLinearEquationSolverFactory();
         };
 
     }

@@ -13,6 +13,9 @@
 #include "storm/utility/ConstantsComparator.h"
 
 namespace storm {
+    
+    class Environment;
+    
     namespace storage {
         class MaximalEndComponent;
     }
@@ -41,7 +44,7 @@ namespace storm {
             
             virtual bool canHandle(CheckTask<storm::logic::Formula, ValueType> const& checkTask) const override;
             
-            virtual std::unique_ptr<CheckResult> computeUntilProbabilities(CheckTask<storm::logic::UntilFormula, ValueType> const& checkTask) override;
+            virtual std::unique_ptr<CheckResult> computeUntilProbabilities(Environment const& env, CheckTask<storm::logic::UntilFormula, ValueType> const& checkTask) override;
             
         private:
             std::tuple<StateType, ValueType, ValueType> performExploration(StateGeneration<StateType, ValueType>& stateGeneration, ExplorationInformation<StateType, ValueType>& explorationInformation) const;

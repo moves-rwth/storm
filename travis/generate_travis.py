@@ -85,6 +85,7 @@ if __name__ == "__main__":
             for build in build_types:
                 buildConfig += "    - stage: {}\n".format(stage[0])
                 buildConfig += "      os: osx\n"
+                buildConfig += "      osx_image: xcode9.1\n"
                 buildConfig += "      compiler: {}\n".format(config[1])
                 buildConfig += "      env: CONFIG={} COMPILER={} STL=libc++\n".format(build, compiler)
                 buildConfig += "      install:\n"

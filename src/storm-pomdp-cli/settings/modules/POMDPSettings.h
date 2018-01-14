@@ -29,6 +29,8 @@ namespace storm {
                 bool isAnalyzeUniqueObservationsSet() const;
                 bool isMecReductionSet() const;
                 bool isSelfloopReductionSet() const;
+                bool isTransformSimpleSet() const;
+                bool isTransformBinarySet() const;
                 std::string getFscApplicationTypeString() const;
                 uint64_t getMemoryBound() const;
                 

@@ -26,7 +26,9 @@ namespace storm {
 			ArgumentBase(std::string const& name, std::string const& description) : hasBeenSet(false), name(name), description(description) {
                 // Intentionally left empty.
             }
-            
+
+            virtual ~ArgumentBase() = default;
+
             /*!
              * Retrieves the type of the argument.
              *

@@ -22,6 +22,8 @@ namespace storm {
 
             DFTExplorationHeuristic(size_t id, DFTExplorationHeuristic const& predecessor, ValueType rate, ValueType exitRate);
 
+            virtual ~DFTExplorationHeuristic() = default;
+
             void setBounds(ValueType lowerBound, ValueType upperBound);
 
             virtual bool updateHeuristicValues(DFTExplorationHeuristic const& predecessor, ValueType rate, ValueType exitRate) = 0;

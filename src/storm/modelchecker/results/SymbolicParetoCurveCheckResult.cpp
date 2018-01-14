@@ -26,6 +26,11 @@ namespace storm {
         }
 
         template<storm::dd::DdType Type, typename ValueType>
+        std::unique_ptr<CheckResult> SymbolicParetoCurveCheckResult<Type, ValueType>::clone() const {
+            return std::make_unique<SymbolicParetoCurveCheckResult<Type, ValueType>>(this->state, this->points, this->underApproximation, this->overApproximation);
+        }
+
+        template<storm::dd::DdType Type, typename ValueType>
         bool SymbolicParetoCurveCheckResult<Type, ValueType>::isSymbolicParetoCurveCheckResult() const {
             return true;
         }

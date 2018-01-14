@@ -29,34 +29,6 @@ namespace storm {
     
         typedef typename storm::cli::SymbolicInput SymbolicInput;
 
-        template <typename ValueType>
-        std::shared_ptr<storm::models::ModelBase> buildModelSparse(SymbolicInput const& input, storm::settings::modules::IOSettings const& ioSettings) {
-            return storm::api::buildSparseModel<ValueType>(input.model.get(), storm::api::extractFormulasFromProperties(input.properties), ioSettings.isBuildChoiceLabelsSet());
-        }
-
-        template <storm::dd::DdType DdType, typename ValueType>
-        std::shared_ptr<storm::models::ModelBase> buildModel(storm::settings::modules::CoreSettings::Engine const& engine, SymbolicInput const& input, storm::settings::modules::IOSettings const& ioSettings) {
-            storm::utility::Stopwatch modelBuildingWatch(true);
-
-            std::shared_ptr<storm::models::ModelBase> result;
-            if (input.model) {
-                if (engine == storm::settings::modules::CoreSettings::Engine::Dd || engine == storm::settings::modules::CoreSettings::Engine::Hybrid) {
-                    result = storm::cli::buildModelDd<DdType, ValueType>(input);
-                } else if (engine == storm::settings::modules::CoreSettings::Engine::Sparse) {
-                    result = storm::pars::buildModelSparse<ValueType>(input, ioSettings);
-                }
-            } else if (ioSettings.isExplicitSet() || ioSettings.isExplicitDRNSet()) {
-                STORM_LOG_THROW(engine == storm::settings::modules::CoreSettings::Engine::Sparse, storm::exceptions::InvalidSettingsException, "Can only use sparse engine with explicit input.");
-                result = storm::cli::buildModelExplicit<ValueType>(ioSettings);
-            }
-
-            modelBuildingWatch.stop();
-            if (result) {
-                STORM_PRINT_AND_LOG("Time for model construction: " << modelBuildingWatch << "." << std::endl << std::endl);
-            }
-
-            return result;
-        }
 
         
         template <typename ValueType>
@@ -271,14 +243,16 @@ namespace storm {
         void processInputWithValueTypeAndDdlib(SymbolicInput& input) {
             auto coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
             auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
+
+            auto buildSettings = storm::settings::getModule<storm::settings::modules::BuildSettings>();
             auto parSettings = storm::settings::getModule<storm::settings::modules::ParametricSettings>();
             
             auto engine = coreSettings.getEngine();
             STORM_LOG_THROW(engine == storm::settings::modules::CoreSettings::Engine::Sparse || engine == storm::settings::modules::CoreSettings::Engine::Hybrid || engine == storm::settings::modules::CoreSettings::Engine::Dd, storm::exceptions::InvalidSettingsException, "The selected engine is not supported for parametric models.");
             
             std::shared_ptr<storm::models::ModelBase> model;
-            if (!ioSettings.isNoBuildModelSet()) {
-                model = storm::pars::buildModel<DdType, ValueType>(engine, input, ioSettings);
+            if (!buildSettings.isNoBuildModelSet()) {
+                model = storm::cli::buildModel<DdType, ValueType>(engine, input, ioSettings);
             }
             
             if (model) {

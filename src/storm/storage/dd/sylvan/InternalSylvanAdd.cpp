@@ -79,12 +79,7 @@ namespace storm {
             return negated ? -(*rationalFunction) : (*rationalFunction);
         }
 #endif
-        
-        template<typename ValueType>
-        bool InternalAdd<DdType::Sylvan, ValueType>::matchesVariableIndex(MTBDD const& node, uint64_t variableIndex, int64_t offset) {
-            return !mtbdd_isleaf(node) && static_cast<uint64_t>(sylvan_var(node) + offset) == variableIndex;
-        }
-        
+                
         template<typename ValueType>
         bool InternalAdd<DdType::Sylvan, ValueType>::operator==(InternalAdd<DdType::Sylvan, ValueType> const& other) const {
             return this->sylvanMtbdd == other.sylvanMtbdd;
@@ -1154,6 +1149,13 @@ namespace storm {
         template<typename ValueType>
         sylvan::Mtbdd InternalAdd<DdType::Sylvan, ValueType>::getSylvanMtbdd() const {
             return sylvanMtbdd;
+        }
+        
+        template<typename ValueType>
+        std::string InternalAdd<DdType::Sylvan, ValueType>::getStringId() const {
+            std::stringstream ss;
+            ss << this->getSylvanMtbdd().GetMTBDD();
+            return ss.str();
         }
         
         template class InternalAdd<DdType::Sylvan, double>;

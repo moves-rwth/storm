@@ -129,6 +129,13 @@ namespace storm {
             }
             
             /*!
+             * Sets the optimization direction.
+             */
+            void setOptimizationDirection(storm::OptimizationDirection const& dir) {
+                optimizationDirection = dir;
+            }
+            
+            /*!
              * Retrieves whether a reward model was set.
              */
             bool isRewardModelSet() const {

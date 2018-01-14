@@ -6,7 +6,7 @@
 #include "storm-gspn/storage/gspn/GSPN.h"
 
 #include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/GSPNExportSettings.h"
+#include "storm-gspn/settings/modules/GSPNExportSettings.h"
 
 #include "storm/utility/file.h"
 
