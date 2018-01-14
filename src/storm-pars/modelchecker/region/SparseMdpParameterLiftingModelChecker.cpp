@@ -45,9 +45,9 @@ namespace storm {
         }
         
         template <typename SparseModelType, typename ConstantType>
-        void SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::specify(Environment const& env, std::shared_ptr<storm::models::ModelBase> parametricModel, CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask, bool generateRegionSplitEstimates,bool allowModelSimplifications) {
+        void SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::specify(Environment const& env, std::shared_ptr<storm::models::ModelBase> parametricModel, CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask, bool generateRegionSplitEstimates, bool allowModelSimplifications) {
             auto mdp = parametricModel->template as<SparseModelType>();
-            specify(env, mdp, checkTask, generateRegionSplitEstimates, false);
+            specify_internal(env, mdp, checkTask, generateRegionSplitEstimates, false);
         }
         
         template <typename SparseModelType, typename ConstantType>
