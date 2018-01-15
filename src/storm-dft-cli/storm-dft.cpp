@@ -25,17 +25,24 @@
 template<typename ValueType>
 std::shared_ptr<storm::storage::DFT<ValueType>> loadDFT() {
     storm::settings::modules::DftIOSettings const& dftIOSettings = storm::settings::getModule<storm::settings::modules::DftIOSettings>();
-
+    std::shared_ptr<storm::storage::DFT<ValueType>> dft;
     // Build DFT from given file.
     if (dftIOSettings.isDftJsonFileSet()) {
         storm::parser::DFTJsonParser<ValueType> parser;
         STORM_LOG_DEBUG("Loading DFT from file " << dftIOSettings.getDftJsonFilename());
-        return std::make_shared<storm::storage::DFT<ValueType>>(parser.parseJson(dftIOSettings.getDftJsonFilename()));
+        dft = std::make_shared<storm::storage::DFT<ValueType>>(parser.parseJson(dftIOSettings.getDftJsonFilename()));
     } else {
         storm::parser::DFTGalileoParser<ValueType> parser;
         STORM_LOG_DEBUG("Loading DFT from file " << dftIOSettings.getDftFilename());
-        return std::make_shared<storm::storage::DFT<ValueType>>(parser.parseDFT(dftIOSettings.getDftFilename()));
+        dft = std::make_shared<storm::storage::DFT<ValueType>>(parser.parseDFT(dftIOSettings.getDftFilename()));
     }
+
+    if (dftIOSettings.isDisplayStatsSet()) {
+        std::cout << "=============DFT Statistics==============" << std::endl;
+        dft->writeStatsToStream(std::cout);
+        std::cout << "=========================================" << std::endl;
+    }
+    return dft;
 }
 
 /*!
