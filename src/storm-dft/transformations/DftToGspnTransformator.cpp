@@ -98,7 +98,6 @@ namespace storm {
                 double ycenter = mDft.getElementLayoutInfo(dftBE->id()).y;
                 builder.setPlaceLayoutInfo(beActive, storm::gspn::LayoutInfo(xcenter - 3.0, ycenter));
                 builder.setPlaceLayoutInfo(beFailed, storm::gspn::LayoutInfo(xcenter + 3.0, ycenter));
-
                 
                 uint64_t disabledNode = 0;
                 if (!smart || dftBE->nrRestrictions() > 0) {
@@ -146,7 +145,7 @@ namespace storm {
                 builder.setPlaceLayoutInfo(nodeFailed, storm::gspn::LayoutInfo(xcenter, ycenter-3.0));
 
                 uint64_t unavailableNode = 0;
-                if (isRepresentative) {
+                if (!smart || isRepresentative) {
                     unavailableNode = addUnavailableNode(dftAnd, storm::gspn::LayoutInfo(xcenter+6.0, ycenter-3.0));
                 }
 
@@ -155,10 +154,10 @@ namespace storm {
                 builder.setTransitionLayoutInfo(tAndFailed, storm::gspn::LayoutInfo(xcenter, ycenter+3.0));
                 builder.addInhibitionArc(nodeFailed, tAndFailed);
                 builder.addOutputArc(tAndFailed, nodeFailed);
-                if (isRepresentative) {
+                if (!smart || isRepresentative) {
                     builder.addOutputArc(tAndFailed, unavailableNode);
                 }
-                for(auto const& child : dftAnd->children()) {
+                for (auto const& child : dftAnd->children()) {
                     assert(failedNodes.size() > child->id());
                     builder.addInputArc(failedNodes[child->id()], tAndFailed);
                     builder.addOutputArc(tAndFailed, failedNodes[child->id()]);
@@ -176,7 +175,7 @@ namespace storm {
                 builder.setPlaceLayoutInfo(nodeFailed, storm::gspn::LayoutInfo(xcenter, ycenter-3.0));
 
                 uint64_t unavailableNode = 0;
-                if (isRepresentative) {
+                if (!smart || isRepresentative) {
                     unavailableNode = addUnavailableNode(dftOr, storm::gspn::LayoutInfo(xcenter+6.0, ycenter-3.0));
                 }
                 
@@ -186,7 +185,7 @@ namespace storm {
                     builder.setTransitionLayoutInfo(tNodeFailed, storm::gspn::LayoutInfo(xcenter-5.0+i*3.0, ycenter+3.0));
                     builder.addInhibitionArc(nodeFailed, tNodeFailed);
                     builder.addOutputArc(tNodeFailed, nodeFailed);
-                    if (isRepresentative) {
+                    if (!smart || isRepresentative) {
                         builder.addOutputArc(tNodeFailed, unavailableNode);
                     }
                     assert(failedNodes.size() > child->id());
@@ -265,10 +264,12 @@ namespace storm {
                     builder.setPlaceLayoutInfo(nodeFS, storm::gspn::LayoutInfo(xcenter-3.0, ycenter-3.0));
 
                     builder.addInhibitionArc(nodeFS, tNodeFailed);
-                    for(auto const& child : dftPand->children()) {
+                    // Transition for failed
+                    for (auto const& child : dftPand->children()) {
                         builder.addInputArc(failedNodes[child->id()], tNodeFailed);
                         builder.addOutputArc(tNodeFailed, failedNodes[child->id()]);
                     }
+                    // Transitions for fail-safe
                     for (uint64_t j = 1; j < dftPand->nrChildren(); ++j) {
                         uint64_t tfs = builder.addImmediateTransition(getFailPriority(dftPand), 0.0, dftPand->name() + STR_FAILSAVING + std::to_string(j));
                         builder.setTransitionLayoutInfo(tfs, storm::gspn::LayoutInfo(xcenter-6.0+j*3.0, ycenter+3.0));
@@ -290,9 +291,11 @@ namespace storm {
                             builder.addInhibitionArc(failedNodes.at(child->id()), tn);
                         }
                         if (j != dftPand->nrChildren() - 1) {
+                            // Not last child
                             tn = builder.addImmediateTransition(getFailPriority(dftPand), 0.0, dftPand->name() + STR_FAILING + "_" +std::to_string(j));
                             builder.setTransitionLayoutInfo(tn, storm::gspn::LayoutInfo(xcenter-3.0, ycenter+3.0));
                         } else {
+                            // Last child
                             tn = tNodeFailed;
                         }
                         builder.addInputArc(failedNodes.at(child->id()), tn);
@@ -353,7 +356,6 @@ namespace storm {
                             builder.addInhibitionArc(nodeFS, tfailsf);
                             builder.addInhibitionArc(failedNodes.at(dftPor->children().front()->id()), tfailsf);
                         }
-
                         ++j;
                     }
                 } else {
@@ -448,9 +450,6 @@ namespace storm {
                     builder.addOutputArc(nextconsiderTransitions.back(), unavailableNode);
                     builder.addOutputArc(nextclTransitions.back(), unavailableNode);
                 }
-                
-                
-
 			}
 
 			template <typename ValueType>
@@ -515,13 +514,7 @@ namespace storm {
                     if (!smart || mDft.isRepresentative(depEv->id())) {
                         builder.addOutputArc(tx, unavailableNodes.at(depEv->id()));
                     }
-                   
                 }
-                
-                
-                
-                
-                
 			}
             
             template <typename ValueType>

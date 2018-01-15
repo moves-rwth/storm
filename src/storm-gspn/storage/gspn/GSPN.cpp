@@ -395,6 +395,15 @@ namespace storm {
             this->transitionLayout = transitionLayout;
         }
 
+        std::map<uint64_t, LayoutInfo> const& GSPN::getPlaceLayoutInfos() const {
+            return this->placeLayout;
+        }
+
+        std::map<uint64_t, LayoutInfo> const& GSPN::getTransitionLayoutInfos() const {
+            return this->transitionLayout;
+        }
+
+
         void GSPN::toPnpro(std::ostream &stream) const {
             auto space = "  ";
             auto space2 = "    ";

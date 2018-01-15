@@ -26,11 +26,11 @@ namespace storm {
         private:
             enum ArcType { INPUT, OUTPUT, INHIBITOR };
 
-            static modernjson::json translatePlace(storm::gspn::Place const& place);
+            static modernjson::json translatePlace(storm::gspn::Place const& place, double x, double y);
 
-            static modernjson::json translateImmediateTransition(storm::gspn::ImmediateTransition<double> const& transition);
+            static modernjson::json translateImmediateTransition(storm::gspn::ImmediateTransition<double> const& transition, double x, double y);
 
-            static modernjson::json translateTimedTransition(storm::gspn::TimedTransition<double> const& transition);
+            static modernjson::json translateTimedTransition(storm::gspn::TimedTransition<double> const& transition, double x, double y);
 
             static modernjson::json translateArc(storm::gspn::Transition const& transition, storm::gspn::Place const& place, uint64_t multiplicity, bool immediate, ArcType arctype);
 

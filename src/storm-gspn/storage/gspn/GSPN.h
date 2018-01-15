@@ -154,7 +154,10 @@ namespace storm {
             void setTransitionLayoutInfo(uint64_t transitionId, LayoutInfo const& layout) const;
             void setPlaceLayoutInfo(std::map<uint64_t, LayoutInfo> const& placeLayout) const;
             void setTransitionLayoutInfo(std::map<uint64_t, LayoutInfo> const& transitionLayout) const;
-            
+
+            std::map<uint64_t, LayoutInfo> const& getPlaceLayoutInfos() const;
+
+            std::map<uint64_t, LayoutInfo> const& getTransitionLayoutInfos() const;
             
             /*!
              * Performe some checks

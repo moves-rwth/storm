@@ -9,6 +9,10 @@
 namespace storm {
     namespace gspn {
 
+        // Prevent some magic constants
+        static constexpr const uint64_t scaleFactor = 50;
+
+
         void GspnJsonExporter::toStream(storm::gspn::GSPN const& gspn, std::ostream& os) {
             os << translate(gspn).dump(4) << std::endl;
         }
@@ -16,21 +20,48 @@ namespace storm {
         modernjson::json GspnJsonExporter::translate(storm::gspn::GSPN const& gspn) {
             modernjson::json jsonGspn;
 
+            // Layouts
+            std::map<uint64_t, LayoutInfo> placeLayout = gspn.getPlaceLayoutInfos();
+            std::map<uint64_t, LayoutInfo> transitionLayout = gspn.getTransitionLayoutInfos();
+            double tmpX = 0;
+            double tmpY = 10;
+
             // Export places
             for (const auto &place : gspn.getPlaces()) {
-                modernjson::json jsonPlace = translatePlace(place);
+                double x = tmpX;
+                double y = tmpY;
+                if (placeLayout.count(place.getID()) > 0) {
+                    x = placeLayout.at(place.getID()).x;
+                    y = placeLayout.at(place.getID()).y;
+                }
+                tmpX += 3;
+                modernjson::json jsonPlace = translatePlace(place, x, y);
                 jsonGspn.push_back(jsonPlace);
             }
 
             // Export immediate transitions
             for (const auto &transition : gspn.getImmediateTransitions()) {
-                modernjson::json jsonImmediateTransition = translateImmediateTransition(transition);
+                double x = tmpX;
+                double y = tmpY;
+                if (transitionLayout.count(transition.getID()) > 0) {
+                    x = transitionLayout.at(transition.getID()).x;
+                    y = transitionLayout.at(transition.getID()).y;
+                }
+                tmpX += 3;
+                modernjson::json jsonImmediateTransition = translateImmediateTransition(transition, x, y);
                 jsonGspn.push_back(jsonImmediateTransition);
             }
 
             // Export timed transitions
             for (const auto &transition : gspn.getTimedTransitions()) {
-                modernjson::json jsonTimedTransition = translateTimedTransition(transition);
+                double x = tmpX;
+                double y = tmpY;
+                if (transitionLayout.count(transition.getID()) > 0) {
+                    x = transitionLayout.at(transition.getID()).x;
+                    y = transitionLayout.at(transition.getID()).y;
+                }
+                tmpX += 3;
+                modernjson::json jsonTimedTransition = translateTimedTransition(transition, x, y);
                 jsonGspn.push_back(jsonTimedTransition);
             }
 
@@ -86,42 +117,57 @@ namespace storm {
         }
 
 
-        modernjson::json GspnJsonExporter::translatePlace(storm::gspn::Place const& place) {
+        modernjson::json GspnJsonExporter::translatePlace(storm::gspn::Place const& place, double x, double y) {
             modernjson::json data;
             data["id"] = toJsonString(place);
             data["name"] = place.getName();
             data["marking"] = place.getNumberOfInitialTokens();
 
+            modernjson::json position;
+            position["x"] = x * scaleFactor;
+            position["y"] = y * scaleFactor;
+
             modernjson::json jsonPlace;
             jsonPlace["data"] = data;
+            jsonPlace["position"] = position;
             jsonPlace["group"] = "nodes";
             jsonPlace["classes"] = "place";
             return jsonPlace;
         }
 
-        modernjson::json GspnJsonExporter::translateImmediateTransition(storm::gspn::ImmediateTransition<double> const& transition) {
+        modernjson::json GspnJsonExporter::translateImmediateTransition(storm::gspn::ImmediateTransition<double> const& transition, double x, double y) {
             modernjson::json data;
             data["id"] = toJsonString(transition, true);
             data["name"] = transition.getName();
             data["priority"] = transition.getPriority();
             data["weight"] = transition.getWeight();
 
+            modernjson::json position;
+            position["x"] = x * scaleFactor;
+            position["y"] = y * scaleFactor;
+
             modernjson::json jsonTrans;
             jsonTrans["data"] = data;
+            jsonTrans["position"] = position;
             jsonTrans["group"] = "nodes";
             jsonTrans["classes"] = "trans_im";
             return jsonTrans;
         }
 
-         modernjson::json GspnJsonExporter::translateTimedTransition(storm::gspn::TimedTransition<double> const& transition) {
+         modernjson::json GspnJsonExporter::translateTimedTransition(storm::gspn::TimedTransition<double> const& transition, double x, double y) {
              modernjson::json data;
              data["id"] = toJsonString(transition, false);
              data["name"] = transition.getName();
              data["rate"] = transition.getRate();
              data["priority"] = transition.getPriority();
 
+             modernjson::json position;
+             position["x"] = x * scaleFactor;
+             position["y"] = y * scaleFactor;
+
              modernjson::json jsonTrans;
              jsonTrans["data"] = data;
+             jsonTrans["position"] = position;
              jsonTrans["group"] = "nodes";
              jsonTrans["classes"] = "trans_time";
              return jsonTrans;
