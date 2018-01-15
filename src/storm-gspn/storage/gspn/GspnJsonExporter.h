@@ -24,11 +24,47 @@ namespace storm {
             static modernjson::json translate(storm::gspn::GSPN const& gspn);
 
         private:
+            enum ArcType { INPUT, OUTPUT, INHIBITOR };
+
             static modernjson::json translatePlace(storm::gspn::Place const& place);
 
             static modernjson::json translateImmediateTransition(storm::gspn::ImmediateTransition<double> const& transition);
 
             static modernjson::json translateTimedTransition(storm::gspn::TimedTransition<double> const& transition);
+
+            static modernjson::json translateArc(storm::gspn::Transition const& transition, storm::gspn::Place const& place, uint64_t multiplicity, bool immediate, ArcType arctype);
+
+            std::string static inline toJsonString(storm::gspn::Place const& place) {
+                std::stringstream stream;
+                stream << "p" << place.getID();
+                return stream.str();
+            }
+
+            std::string static inline toJsonString(storm::gspn::Transition const& transition, bool immediate) {
+                std::stringstream stream;
+                stream << (immediate ? "i" : "t") << transition.getID();
+                return stream.str();
+            }
+
+            std::string static inline toJsonString(storm::gspn::Transition const& transition, storm::gspn::Place const& place, ArcType arctype) {
+                std::stringstream stream;
+                stream << place.getID();
+                switch (arctype) {
+                    case INPUT:
+                        stream << "i";
+                        break;
+                    case OUTPUT:
+                        stream << "o";
+                        break;
+                    case INHIBITOR:
+                        stream << "h";
+                        break;
+                    default:
+                        STORM_LOG_ASSERT(false, "Unknown type " << arctype << " used.");
+                }
+                stream << transition.getID();
+                return stream.str();
+            }
         };
        
     }
