@@ -107,7 +107,8 @@ void processOptions() {
             std::shared_ptr<storm::storage::DFT<double>> dft = loadDFT<double>();
             // Transform to GSPN
             storm::transformations::dft::DftToGspnTransformator<double> gspnTransformator(*dft);
-            gspnTransformator.transform();
+            bool smart = false;
+            gspnTransformator.transform(smart);
             storm::gspn::GSPN* gspn = gspnTransformator.obtainGSPN();
             uint64_t toplevelFailedPlace = gspnTransformator.toplevelFailedPlaceId();
             

@@ -16,14 +16,15 @@ namespace storm {
             }
 
             template <typename ValueType>
-            void DftToGspnTransformator<ValueType>::transform() {
-				
+            void DftToGspnTransformator<ValueType>::transform(bool smart) {
+                this->smart = smart;
                 builder.setGspnName("DftToGspnTransformation");
 				
 				// Loop through every DFT element and draw them as a GSPN.
 				drawGSPNElements();
 
 				// Draw restrictions into the GSPN (i.e. SEQ or MUTEX).
+                // TODO
 				//drawGSPNRestrictions();
             }
             
@@ -35,8 +36,7 @@ namespace storm {
             
 			template <typename ValueType>
             void DftToGspnTransformator<ValueType>::drawGSPNElements() {
-                
-                
+
 				// Loop through every DFT element and draw them as a GSPN.
 				for (std::size_t i = 0; i < mDft.nrElements(); i++) {
 					auto dftElement = mDft.getElement(i);
@@ -81,7 +81,7 @@ namespace storm {
                             drawPDEP(std::static_pointer_cast<storm::storage::DFTDependency<ValueType> const>(dftElement));
 							break;
 						default:
-							STORM_LOG_ASSERT(false, "DFT type unknown.");
+							STORM_LOG_ASSERT(false, "DFT type " << dftElement->type() << " unknown.");
 							break;
 					}
 				}
@@ -548,7 +548,7 @@ namespace storm {
             
             template<typename ValueType>
             uint64_t DftToGspnTransformator<ValueType>::addUnavailableNode(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dftElement, storm::gspn::LayoutInfo const& layoutInfo, bool initialAvailable) {
-                uint64_t unavailableNode = builder.addPlace(defaultCapacity, initialAvailable ? 0 : 1, dftElement->name() + "_unavailable");
+                uint64_t unavailableNode = builder.addPlace(defaultCapacity, initialAvailable ? 0 : 1, dftElement->name() + "_unavail");
                 assert(unavailableNode != 0);
                 unavailableNodes.emplace(dftElement->id(), unavailableNode);
                 builder.setPlaceLayoutInfo(unavailableNode, layoutInfo);
@@ -561,11 +561,9 @@ namespace storm {
                 disabledNodes.emplace(dftBe->id(), disabledNode);
                 return disabledNode;
             }
-//			
 			
 			template <typename ValueType>
-            bool DftToGspnTransformator<ValueType>::isBEActive(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dftElement)
-			{
+            bool DftToGspnTransformator<ValueType>::isBEActive(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dftElement) {
 				// If element is the top element, return true.
 				if (dftElement->id() == mDft.getTopLevelIndex()) {
 					return true;
@@ -607,6 +605,7 @@ namespace storm {
 			
 			template <typename ValueType>
             void DftToGspnTransformator<ValueType>::drawGSPNRestrictions() {
+                // TODO
 			}
 
 			template <typename ValueType>

@@ -25,7 +25,7 @@ namespace storm {
                 /*!
                  * Transform the DFT to a GSPN.
                  */
-                void transform();
+                void transform(bool smart = true);
 
                 /*!
                  * Extract Gspn by building
@@ -41,6 +41,7 @@ namespace storm {
 				 * Draw all elements of the GSPN.
 				 */
 				void drawGSPNElements();
+
 				/*
 				 * Draw restrictions between the elements of the GSPN (i.e. SEQ or MUTEX).
 				 */
@@ -118,24 +119,24 @@ namespace storm {
 				
                 
                 void drawSeq(std::shared_ptr<storm::storage::DFTSeq<ValueType> const> dftSeq);
-				 /*
-				  * Return true if BE is active (corresponding place contains one initial token) or false if BE is inactive (corresponding place contains no initial token).
-				  * 
-				  * @param dFTElement DFT element.
-				  */
-				 bool isBEActive(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dFTElement);
-				 
-				 /*
-				  * Get the priority of the element.
-				  * The priority is two times the length of the shortest path to the top event.
-				  * 
-				  * @param priority The priority of the gate. Top Event has priority 0,  its children 2, its grandchildren 4, ...
-				  * 
-				  * @param dftElement The element whose priority shall be determined.
-				  */
-				 uint64_t getFailPriority(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dFTElement);
 
-                
+				/*
+				 * Return true if BE is active (corresponding place contains one initial token) or false if BE is inactive (corresponding place contains no initial token).
+				 *
+				 * @param dFTElement DFT element.
+				 */
+                bool isBEActive(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dFTElement);
+				 
+				/*
+				 * Get the priority of the element.
+				 * The priority is two times the length of the shortest path to the top event.
+				 *
+				 * @param priority The priority of the gate. Top Event has priority 0,  its children 2, its grandchildren 4, ...
+				 *
+				 * @param dftElement The element whose priority shall be determined.
+				 */
+                uint64_t getFailPriority(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dFTElement);
+
                 uint64_t addUnavailableNode(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dftElement, storm::gspn::LayoutInfo const& layoutInfo, bool initialAvailable = true);
                 
                 uint64_t addDisabledPlace(std::shared_ptr<storm::storage::DFTBE<ValueType> const> dftBe);
@@ -146,16 +147,14 @@ namespace storm {
                 std::map<uint64_t, uint64_t> unavailableNodes;
                 std::map<uint64_t, uint64_t> activeNodes;
                 std::map<uint64_t, uint64_t> disabledNodes;
-                bool smart = true;
+                bool smart;
                 
                 static constexpr const char* STR_FAILING = "_failing";			// Name standard for transitions that point towards a place, which in turn indicates the failure of a gate.
                 static constexpr const char* STR_FAILED = "_failed";			// Name standard for place which indicates the failure of a gate.
                 static constexpr const char* STR_FAILSAVING = "_failsaving";	// Name standard for transition that point towards a place, which in turn indicates the failsave state of a gate.
                 static constexpr const char* STR_FAILSAVE = "_failsave";		// Name standard for place which indicates the failsave state of a gate.
-                static constexpr const char* STR_ACTIVATED = "_activated";		// Name standard for place which indicates the activity.
                 static constexpr const char* STR_ACTIVATING = "_activating";	// Name standard for transition that point towards a place, which in turn indicates its activity.
-                
-
+                static constexpr const char* STR_ACTIVATED = "_active";         // Name standard for place which indicates the activity.
             };
         }
     }
