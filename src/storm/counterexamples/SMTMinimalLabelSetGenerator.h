@@ -1450,16 +1450,12 @@ namespace storm {
                                     isBorderChoice = true;
                                 }
                             }
-                            
+
                             if (isBorderChoice) {
                                 boost::container::flat_set<uint_fast64_t> currentLabelSet;
-                                for (auto label : originalLabelSets.at(currentChoice)) {
-                                    if (commandSet.find(label) == commandSet.end()) {
-                                        currentLabelSet.insert(label);
-                                    }
-                                }
+                                std::set_difference(originalLabelSets[currentChoice].begin(), originalLabelSets[currentChoice].end(), commandSet.begin(), commandSet.end(), std::inserter(currentLabelSet, currentLabelSet.begin()));
                                 std::set_difference(guaranteedLabelSets[state].begin(), guaranteedLabelSets[state].end(), commandSet.begin(), commandSet.end(), std::inserter(currentLabelSet, currentLabelSet.end()));
-                                
+
                                 cutLabels.insert(currentLabelSet);
                             }
                         }
@@ -1559,13 +1555,9 @@ namespace storm {
                     for (auto currentChoice : relevancyInformation.relevantChoicesForRelevantStates.at(state)) {
                         if (!std::includes(commandSet.begin(), commandSet.end(), originalLabelSets[currentChoice].begin(), originalLabelSets[currentChoice].end())) {
                             boost::container::flat_set<uint_fast64_t> currentLabelSet;
-                            for (auto label : originalLabelSets[currentChoice]) {
-                                if (commandSet.find(label) == commandSet.end()) {
-                                    currentLabelSet.insert(label);
-                                }
-                            }
+                            std::set_difference(originalLabelSets[currentChoice].begin(), originalLabelSets[currentChoice].end(), commandSet.begin(), commandSet.end(), std::inserter(currentLabelSet, currentLabelSet.begin()));
                             std::set_difference(guaranteedLabelSets[state].begin(), guaranteedLabelSets[state].end(), commandSet.begin(), commandSet.end(), std::inserter(currentLabelSet, currentLabelSet.end()));
-                            
+
                             cutLabels.insert(currentLabelSet);
                         }
                     }
