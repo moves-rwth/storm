@@ -626,11 +626,13 @@ namespace storm {
             void setLowerBound(ValueType const& value) {
                 hasLowerBound = true;
                 lowerBound = value;
+              //  std::cout << "Lower bound set to " << lowerBound << std::endl;
             }
             
             void setUpperBound(ValueType const& value) {
                 hasUpperBound = true;
                 upperBound = value;
+             //   std::cout << "Upper bound set to " << upperBound << std::endl;
             }
             
             template<OptimizationDirection dir>
@@ -800,7 +802,7 @@ namespace storm {
             }
 
             bool isPreciseEnough(ValueType const& xi, ValueType const& yi, ValueType const& lb, ValueType const& ub) {
-                return yi * (ub - lb) <= (relative ? (precision * xi) : (precision * storm::utility::convertNumber<ValueType>(2.0)));
+                return yi * (ub - lb) <= storm::utility::abs<ValueType>((relative ? (precision * xi) : (precision * storm::utility::convertNumber<ValueType>(2.0))));
             }
             
             template<OptimizationDirection dir>
@@ -808,6 +810,7 @@ namespace storm {
                 
                 if (convergencePhase1) {
                     if (checkConvergencePhase1()) {
+                        STORM_LOG_INFO("Quick Value Iteration took " << iterations << " iterations for first convergence phase.");
                         firstIndexViolatingConvergence = 0;
                         if (relevantValues != nullptr) {
                             firstIndexViolatingConvergence = relevantValues->getNextSetIndex(firstIndexViolatingConvergence);
