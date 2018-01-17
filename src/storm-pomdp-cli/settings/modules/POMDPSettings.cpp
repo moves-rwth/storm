@@ -19,6 +19,8 @@ namespace storm {
             const std::string memoryBoundOption = "memorybound";
             const std::string fscmode = "fscmode";
             std::vector<std::string> fscModes = {"standard", "simple-linear", "simple-linear-inverse"};
+            const std::string transformBinaryOption = "transformbinary";
+            const std::string transformSimpleOption = "transformsimple";
 
             POMDPSettings::POMDPSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportAsParametricModelOption, false, "Export the parametric file.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file to which to write the model.").build()).build());
@@ -28,6 +30,8 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, selfloopReductionOption, false, "Reduces the model size by removing self loop actions").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, memoryBoundOption, false, "Sets the maximal number of allowed memory states (1 means memoryless schedulers).").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("bound", "The maximal number of memory states.").setDefaultValueUnsignedInteger(1).addValidatorUnsignedInteger(storm::settings::ArgumentValidatorFactory::createUnsignedGreaterValidator(0)).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, fscmode, false, "Sets the way the pMC is obtained").addArgument(storm::settings::ArgumentBuilder::createStringArgument("type", "type name").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(fscModes)).setDefaultValueString("standard").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, transformBinaryOption, false, "Transforms the pomdp to a binary pomdp.").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, transformSimpleOption, false, "Transforms the pomdp to a binary and simple pomdp.").build());
             }
 
             bool POMDPSettings::isExportToParametricSet() const {
@@ -61,10 +65,15 @@ namespace storm {
             std::string POMDPSettings::getFscApplicationTypeString() const {
                 return this->getOption(fscmode).getArgumentByName("type").getValueAsString();
             }
-
             
-            
+            bool POMDPSettings::isTransformBinarySet() const {
+                return this->getOption(transformBinaryOption).getHasOptionBeenSet();
+            }
 
+            bool POMDPSettings::isTransformSimpleSet() const {
+                return this->getOption(transformSimpleOption).getHasOptionBeenSet();
+            }
+            
             void POMDPSettings::finalize() {
             }
 

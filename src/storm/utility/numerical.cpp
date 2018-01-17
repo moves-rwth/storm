@@ -229,6 +229,7 @@ namespace storm {
                         } else {
                             t = j;
                             result.right = j + result.left;
+                            result.weights.resize(result.right - result.left + 1);
                             
                             // It's time to compute W.
                             break;
@@ -257,8 +258,8 @@ namespace storm {
                 }
                 result.totalWeight += result.weights[j];
                 
-                STORM_LOG_TRACE("Fox-Glynn: ltp = " << result.left << ", rtp = " << result.right << ", w = " << result.totalWeight << ".");
-                
+                STORM_LOG_TRACE("Fox-Glynn(lambda=" << lambda << ", eps=" << epsilon << "): ltp = " << result.left << ", rtp = " << result.right << ", w = " << result.totalWeight << ".");
+
                 return result;
             }
             

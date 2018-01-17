@@ -45,13 +45,14 @@ namespace storm {
         }
         
         template <typename SparseModelType, typename ConstantType>
-        void SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::specify(Environment const& env, std::shared_ptr<storm::models::ModelBase> parametricModel, CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask) {
+        void SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::specify(Environment const& env, std::shared_ptr<storm::models::ModelBase> parametricModel, CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask, bool generateRegionSplitEstimates, bool allowModelSimplifications) {
             auto mdp = parametricModel->template as<SparseModelType>();
-            specify(env, mdp, checkTask, false);
+            specify_internal(env, mdp, checkTask, generateRegionSplitEstimates, false);
         }
         
         template <typename SparseModelType, typename ConstantType>
-        void SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::specify(Environment const& env, std::shared_ptr<SparseModelType> parametricModel, CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask, bool skipModelSimplification) {
+        void SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::specify_internal(Environment const& env, std::shared_ptr<SparseModelType> parametricModel, CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask, bool generateRegionSplitEstimates, bool skipModelSimplification) {
+
 
             STORM_LOG_ASSERT(this->canHandle(parametricModel, checkTask), "specified model and formula can not be handled by this.");
          

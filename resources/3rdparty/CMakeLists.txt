@@ -208,7 +208,7 @@ include(${STORM_3RDPARTY_SOURCE_DIR}/include_cudd.cmake)
 #############################################################
 
 set(STORM_HAVE_CARL OFF)
-set(CARL_MINVERSION "17.08")
+set(CARL_MINVERSION "17.12")
 if (NOT STORM_FORCE_SHIPPED_CARL)
     if (NOT "${STORM_CARL_DIR_HINT}" STREQUAL "")
 		find_package(carl QUIET PATHS ${STORM_CARL_DIR_HINT} NO_DEFAULT_PATH)
@@ -226,7 +226,7 @@ if(carl_FOUND AND NOT STORM_FORCE_SHIPPED_CARL)
     else()
         message(SEND_ERROR "File ${carlLOCATION} does not exist, did you build carl?")
     endif()
-    if("${carl_VERSION}" VERSION_LESS "${CARL_MINVERSION}")
+    if("${carl_VERSION_MAJOR}.${carl_VERSION_MINOR}" VERSION_LESS "${CARL_MINVERSION}")
     	message(SEND_ERROR "Carl outdated, require ${CARL_MINVERSION}, have ${carl_VERSION}")
     endif()
 

@@ -20,8 +20,11 @@ namespace storm {
             
         private:
             
+            std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> transformMinReward(storm::logic::EventuallyFormula const& formula) const;
             std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> transformMax(storm::logic::UntilFormula const& formula) const;
             storm::storage::MaximalEndComponentDecomposition<ValueType> decomposeEndComponents(storm::storage::BitVector const& subsystem, storm::storage::BitVector const& ignoredStates) const;
+            storm::storage::BitVector getEndComponentsWithSingleOutStates(storm::storage::MaximalEndComponentDecomposition<ValueType> const& mecs) const;
+            std::vector<storm::storage::BitVector> getEndComponentChoicesPerObservation(storm::storage::MaximalEndComponentDecomposition<ValueType> const& mecs, storm::storage::BitVector const& consideredStates) const;
             
             storm::storage::BitVector checkPropositionalFormula(storm::logic::Formula const& propositionalFormula) const;
             

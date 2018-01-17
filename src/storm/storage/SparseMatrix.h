@@ -220,6 +220,13 @@ namespace storm {
             index_type getLastRow() const;
 
             /*!
+             * Retrieves the current row group count.
+             *
+             * @return The current row group count.
+             */
+            index_type getCurrentRowGroupCount() const;
+
+            /*!
              * Retrieves the most recently used row.
              *
              * @return The most recently used row.
@@ -296,7 +303,7 @@ namespace storm {
             
             // Stores the currently active row group. This is used for correctly constructing the row grouping of the
             // matrix.
-            index_type currentRowGroup;
+            index_type currentRowGroupCount;
         };
         
         /*!
@@ -928,6 +935,9 @@ namespace storm {
              */
             template<typename OtherValueType>
             bool isSubmatrixOf(SparseMatrix<OtherValueType> const& matrix) const;
+            
+            // Returns true if the matrix is the identity matrix
+            bool isIdentityMatrix() const;
             
             template<typename TPrime>
             friend std::ostream& operator<<(std::ostream& out, SparseMatrix<TPrime> const& matrix);

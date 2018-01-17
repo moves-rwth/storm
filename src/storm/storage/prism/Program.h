@@ -156,6 +156,12 @@ namespace storm {
              * @return The number of constants defined in the program.
              */
             std::size_t getNumberOfConstants() const;
+
+            /*!
+             * Retrieves the constants that are actually used in the program.
+             * @return
+             */
+            std::vector<Constant> usedConstants() const;
             
             /*!
              * Retrieves whether a global Boolean variable with the given name exists

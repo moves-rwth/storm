@@ -291,6 +291,10 @@ jobs:
         - docker cp storm:/storm/. .
       after_failure:
         - find build -iname '*err*.log' -type f -print -exec cat {} \;
+      after_success:
+        - docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD";
+        - docker commit storm mvolk/storm-debug:travis;
+        - docker push mvolk/storm-debug:travis;
     - stage: Test all
       os: linux
       compiler: gcc
@@ -303,4 +307,8 @@ jobs:
         - docker cp storm:/storm/. .
       after_failure:
         - find build -iname '*err*.log' -type f -print -exec cat {} \;
+      after_success:
+        - docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD";
+        - docker commit storm mvolk/storm:travis;
+        - docker push mvolk/storm:travis;
 

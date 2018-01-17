@@ -5,6 +5,7 @@
 
 #include <boost/optional.hpp>
 
+#include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/modelchecker/hints/ModelCheckerHint.h"
 
@@ -26,7 +27,10 @@ namespace storm {
             template <typename ValueType, typename RewardModelType = storm::models::sparse::StandardRewardModel<ValueType>>
             class SparseDtmcPrctlHelper {
             public:
-                static std::vector<ValueType> computeBoundedUntilProbabilities(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, uint_fast64_t stepBound, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory, ModelCheckerHint const& hint = ModelCheckerHint());
+
+                static std::vector<ValueType> computeStepBoundedUntilProbabilities(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, uint_fast64_t stepBound, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory, ModelCheckerHint const& hint = ModelCheckerHint());
+                
+                static std::map<storm::storage::sparse::state_type, ValueType> computeRewardBoundedValues(Environment const& env, storm::models::sparse::Dtmc<ValueType> const& model, std::shared_ptr<storm::logic::OperatorFormula const> rewardBoundedFormula, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory);
                 
                 static std::vector<ValueType> computeNextProbabilities(Environment const& env, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& nextStates, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory);
                 
@@ -59,7 +63,10 @@ namespace storm {
                     BaierTransformedModel() : noTargetStates(false) {
                         // Intentionally left empty.
                     }
-                    
+
+                    storm::storage::BitVector getNewRelevantStates(storm::storage::BitVector const& oldRelevantStates) const;
+                    storm::storage::BitVector getNewRelevantStates() const;
+
                     storm::storage::BitVector beforeStates;
                     boost::optional<storm::storage::SparseMatrix<ValueType>> transitionMatrix;
                     boost::optional<storm::storage::BitVector> targetStates;

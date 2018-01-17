@@ -1556,7 +1556,79 @@ namespace storm {
             storm::prism::Module singleModule(newModuleName.str(), allBooleanVariables, allIntegerVariables, newCommands, this->getFilename(), 0);
             return Program(manager, this->getModelType(), this->getConstants(), std::vector<storm::prism::BooleanVariable>(), std::vector<storm::prism::IntegerVariable>(), this->getFormulas(), {singleModule}, actionToIndexMap, this->getRewardModels(), this->getLabels(), this->getOptionalInitialConstruct(), this->getOptionalSystemCompositionConstruct(), prismCompatibility, this->getFilename(), 0, true);
         }
-        
+
+        std::vector<Constant> Program::usedConstants() const {
+            std::unordered_set<expressions::Variable> vars;
+            for(auto const& m : this->modules) {
+                for(auto const& c : m.getCommands()) {
+                    auto const& found_gex = c.getGuardExpression().getVariables();
+                    vars.insert(found_gex.begin(), found_gex.end());
+                    for (auto const& u : c.getUpdates()) {
+                        auto const& found_lex = u.getLikelihoodExpression().getVariables();
+                        vars.insert(found_lex.begin(), found_lex.end());
+                        for (auto const& a : u.getAssignments()) {
+                            auto const& found_ass = a.getExpression().getVariables();
+                            vars.insert(found_ass.begin(), found_ass.end());
+                        }
+                    }
+                }
+                for (auto const& v : m.getBooleanVariables()) {
+                    if (v.hasInitialValue()) {
+                        auto const& found_def = v.getInitialValueExpression().getVariables();
+                        vars.insert(found_def.begin(), found_def.end());
+                    }
+                }
+                for (auto const& v : m.getIntegerVariables()) {
+                    if (v.hasInitialValue()) {
+                        auto const& found_def = v.getInitialValueExpression().getVariables();
+                        vars.insert(found_def.begin(), found_def.end());
+                    }
+                }
+            }
+
+            for (auto const& f : this->formulas) {
+                auto const& found_def = f.getExpression().getVariables();
+                vars.insert(found_def.begin(), found_def.end());
+            }
+
+            for (auto const& v : this->constants) {
+                if (v.isDefined()) {
+                    auto const& found_def = v.getExpression().getVariables();
+                    vars.insert(found_def.begin(), found_def.end());
+                }
+            }
+
+            for (auto const& v : this->globalBooleanVariables) {
+                if (v.hasInitialValue()) {
+                    auto const& found_def = v.getExpression().getVariables();
+                    vars.insert(found_def.begin(), found_def.end());
+                }
+            }
+
+            for (auto const& v : this->globalIntegerVariables) {
+                if (v.hasInitialValue()) {
+                    auto const& found_def = v.getExpression().getVariables();
+                    vars.insert(found_def.begin(), found_def.end());
+                }
+            }
+
+
+            std::unordered_set<uint64_t> varIndices;
+            for (auto const& v : vars) {
+                varIndices.insert(v.getIndex());
+            }
+
+            std::vector<Constant> usedConstants;
+            for(auto const& c : this->constants) {
+                if (varIndices.count(c.getExpressionVariable().getIndex())) {
+                    usedConstants.push_back(c);
+                }
+            }
+
+            return usedConstants;
+
+        }
+
         std::unordered_map<uint_fast64_t, std::string> Program::buildCommandIndexToActionNameMap() const {
             std::unordered_map<uint_fast64_t, std::string> res;
             for(auto const& m : this->modules) {
