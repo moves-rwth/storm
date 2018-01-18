@@ -199,6 +199,8 @@ namespace storm {
             auto method = env.solver().minMax().getMethod();
             if (method == MinMaxMethod::ValueIteration || method == MinMaxMethod::PolicyIteration || method == MinMaxMethod::RationalSearch || method == MinMaxMethod::QuickValueIteration) {
                 result = std::make_unique<IterativeMinMaxLinearEquationSolver<ValueType>>(std::make_unique<GeneralLinearEquationSolverFactory<ValueType>>());
+            } else if (method == MinMaxMethod::Topological) {
+                result = std::make_unique<TopologicalMinMaxLinearEquationSolver<ValueType>>();
             } else if (method == MinMaxMethod::TopologicalCuda) {
                 result = std::make_unique<TopologicalCudaMinMaxLinearEquationSolver<ValueType>>();
             } else if (method == MinMaxMethod::LinearProgramming) {

@@ -34,8 +34,8 @@ namespace storm {
         return methodSetFromDefault;
     }
     
-    void MinMaxSolverEnvironment::setMethod(storm::solver::MinMaxMethod value) {
-        methodSetFromDefault = false;
+    void MinMaxSolverEnvironment::setMethod(storm::solver::MinMaxMethod value, bool isSetFromDefault) {
+        methodSetFromDefault = isSetFromDefault;
         minMaxMethod = value;
     }
     

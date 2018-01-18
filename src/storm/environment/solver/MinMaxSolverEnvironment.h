@@ -16,7 +16,7 @@ namespace storm {
         
         storm::solver::MinMaxMethod const& getMethod() const;
         bool const& isMethodSetFromDefault() const;
-        void setMethod(storm::solver::MinMaxMethod value);
+        void setMethod(storm::solver::MinMaxMethod value, bool isSetFromDefault = false);
         uint64_t const& getMaximalNumberOfIterations() const;
         void setMaximalNumberOfIterations(uint64_t value);
         storm::RationalNumber const& getPrecision() const;

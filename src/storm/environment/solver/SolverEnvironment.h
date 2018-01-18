@@ -16,7 +16,7 @@ namespace storm {
     class NativeSolverEnvironment;
     class MinMaxSolverEnvironment;
     class GameSolverEnvironment;
-    class TopologicalLinearEquationSolverEnvironment;
+    class TopologicalSolverEnvironment;
     
     class SolverEnvironment {
     public:
@@ -34,14 +34,14 @@ namespace storm {
         MinMaxSolverEnvironment const& minMax() const;
         GameSolverEnvironment& game();
         GameSolverEnvironment const& game() const;
-        TopologicalLinearEquationSolverEnvironment& topological();
-        TopologicalLinearEquationSolverEnvironment const& topological() const;
+        TopologicalSolverEnvironment& topological();
+        TopologicalSolverEnvironment const& topological() const;
 
         bool isForceSoundness() const;
         void setForceSoundness(bool value);
         
         storm::solver::EquationSolverType const& getLinearEquationSolverType() const;
-        void setLinearEquationSolverType(storm::solver::EquationSolverType const& value, bool assumeSetFromDefault = false);
+        void setLinearEquationSolverType(storm::solver::EquationSolverType const& value, bool isSetFromDefault = false);
         bool isLinearEquationSolverTypeSetFromDefaultValue() const;
 
         std::pair<boost::optional<storm::RationalNumber>, boost::optional<bool>> getPrecisionOfLinearEquationSolver(storm::solver::EquationSolverType const& solverType) const;
@@ -52,7 +52,7 @@ namespace storm {
         SubEnvironment<GmmxxSolverEnvironment> gmmxxSolverEnvironment;
         SubEnvironment<NativeSolverEnvironment> nativeSolverEnvironment;
         SubEnvironment<GameSolverEnvironment> gameSolverEnvironment;
-        SubEnvironment<TopologicalLinearEquationSolverEnvironment> topologicalSolverEnvironment;
+        SubEnvironment<TopologicalSolverEnvironment> topologicalSolverEnvironment;
         SubEnvironment<MinMaxSolverEnvironment> minMaxSolverEnvironment;
       
         storm::solver::EquationSolverType linearEquationSolverType;

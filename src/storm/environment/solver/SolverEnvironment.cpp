@@ -5,7 +5,7 @@
 #include "storm/environment/solver/GmmxxSolverEnvironment.h"
 #include "storm/environment/solver/NativeSolverEnvironment.h"
 #include "storm/environment/solver/GameSolverEnvironment.h"
-#include "storm/environment/solver/TopologicalLinearEquationSolverEnvironment.h"
+#include "storm/environment/solver/TopologicalSolverEnvironment.h"
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GeneralSettings.h"
@@ -68,11 +68,11 @@ namespace storm {
         return gameSolverEnvironment.get();
     }
 
-    TopologicalLinearEquationSolverEnvironment& SolverEnvironment::topological() {
+    TopologicalSolverEnvironment& SolverEnvironment::topological() {
         return topologicalSolverEnvironment.get();
     }
     
-    TopologicalLinearEquationSolverEnvironment const& SolverEnvironment::topological() const {
+    TopologicalSolverEnvironment const& SolverEnvironment::topological() const {
         return topologicalSolverEnvironment.get();
     }
 
@@ -88,8 +88,8 @@ namespace storm {
         return linearEquationSolverType;
     }
     
-    void SolverEnvironment::setLinearEquationSolverType(storm::solver::EquationSolverType const& value, bool assumeSetFromDefault) {
-        linearEquationSolverTypeSetFromDefault = assumeSetFromDefault;
+    void SolverEnvironment::setLinearEquationSolverType(storm::solver::EquationSolverType const& value, bool isSetFromDefault) {
+        linearEquationSolverTypeSetFromDefault = isSetFromDefault;
         linearEquationSolverType = value;
     }
     
@@ -113,7 +113,7 @@ namespace storm {
             case storm::solver::EquationSolverType::Elimination:
                 break;
             case storm::solver::EquationSolverType::Topological:
-                result = getPrecisionOfLinearEquationSolver(topological().getUnderlyingSolverType());
+                result = getPrecisionOfLinearEquationSolver(topological().getUnderlyingEquationSolverType());
                 break;
             default:
                 STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "The selected solver type is unknown.");

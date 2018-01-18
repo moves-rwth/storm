@@ -1,6 +1,6 @@
 #include "storm/solver/TopologicalLinearEquationSolver.h"
 
-#include "storm/environment/solver/TopologicalLinearEquationSolverEnvironment.h"
+#include "storm/environment/solver/TopologicalSolverEnvironment.h"
 
 #include "storm/utility/constants.h"
 #include "storm/utility/vector.h"
@@ -43,7 +43,7 @@ namespace storm {
         template<typename ValueType>
         storm::Environment TopologicalLinearEquationSolver<ValueType>::getEnvironmentForUnderlyingSolver(storm::Environment const& env, bool adaptPrecision) const {
             storm::Environment subEnv(env);
-            subEnv.solver().setLinearEquationSolverType(env.solver().topological().getUnderlyingSolverType(), env.solver().topological().isUnderlyingSolverTypeSetFromDefault());
+            subEnv.solver().setLinearEquationSolverType(env.solver().topological().getUnderlyingEquationSolverType(), env.solver().topological().isUnderlyingEquationSolverTypeSetFromDefault());
             if (adaptPrecision) {
                 STORM_LOG_ASSERT(this->longestSccChainSize, "Did not compute the longest SCC chain size although it is needed.");
                 auto subEnvPrec = subEnv.solver().getPrecisionOfLinearEquationSolver(subEnv.solver().getLinearEquationSolverType());
@@ -54,14 +54,9 @@ namespace storm {
 
         template<typename ValueType>
         bool TopologicalLinearEquationSolver<ValueType>::internalSolveEquations(Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
-            //std::cout << "Solving equation system with fixpoint characterization " << std::endl;
-            //std::cout << *this->A << std::endl;
-            //std::cout << storm::utility::vector::toString(b) << std::endl;
-            //std::cout << "Initial solution vector: " << std::endl;
-            //std::cout << storm::utility::vector::toString(x) << std::endl;
             
             // For sound computations we need to increase the precision in each SCC
-            bool needAdaptPrecision = env.solver().isForceSoundness() && env.solver().getPrecisionOfLinearEquationSolver(env.solver().topological().getUnderlyingSolverType()).first.is_initialized();
+            bool needAdaptPrecision = env.solver().isForceSoundness() && env.solver().getPrecisionOfLinearEquationSolver(env.solver().topological().getUnderlyingEquationSolverType()).first.is_initialized();
             
             if (!this->sortedSccDecomposition || (needAdaptPrecision && !this->longestSccChainSize)) {
                 STORM_LOG_TRACE("Creating SCC decomposition.");
@@ -88,21 +83,21 @@ namespace storm {
             }
             
             // Handle the case where there is just one large SCC
-            if (this->sortedSccDecomposition->size() == 1) {
-                return solveFullyConnectedEquationSystem(sccSolverEnvironment, x, b);
-            }
-            
-            storm::storage::BitVector sccAsBitVector(x.size(), false);
             bool returnValue = true;
-            for (auto const& scc : *this->sortedSccDecomposition) {
-                if (scc.isTrivial()) {
-                    returnValue = solveTrivialScc(*scc.begin(), x, b) && returnValue;
-                } else {
-                    sccAsBitVector.clear();
-                    for (auto const& state : scc) {
-                        sccAsBitVector.set(state, true);
+            if (this->sortedSccDecomposition->size() == 1) {
+                returnValue = solveFullyConnectedEquationSystem(sccSolverEnvironment, x, b);
+            } else {
+                storm::storage::BitVector sccAsBitVector(x.size(), false);
+                for (auto const& scc : *this->sortedSccDecomposition) {
+                    if (scc.isTrivial()) {
+                        returnValue = solveTrivialScc(*scc.begin(), x, b) && returnValue;
+                    } else {
+                        sccAsBitVector.clear();
+                        for (auto const& state : scc) {
+                            sccAsBitVector.set(state, true);
+                        }
+                        returnValue = solveScc(sccSolverEnvironment, sccAsBitVector, x, b) && returnValue;
                     }
-                    returnValue = solveScc(sccSolverEnvironment, sccAsBitVector, x, b) && returnValue;
                 }
             }
             
@@ -373,6 +368,7 @@ namespace storm {
         template<typename ValueType>
         void TopologicalLinearEquationSolver<ValueType>::clearCache() const {
             sortedSccDecomposition.reset();
+            longestSccChainSize = boost::none;
             sccSolver.reset();
             LinearEquationSolver<ValueType>::clearCache();
         }

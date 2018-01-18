@@ -6,6 +6,7 @@
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 #include "storm/environment/solver/NativeSolverEnvironment.h"
+#include "storm/environment/solver/TopologicalSolverEnvironment.h"
 #include "storm/solver/SolverSelectionOptions.h"
 #include "storm/storage/SparseMatrix.h"
 
@@ -34,6 +35,7 @@ namespace {
             return env;
         }
     };
+    
     class DoubleTopologicalViEnvironment {
     public:
         typedef double ValueType;
@@ -41,10 +43,12 @@ namespace {
         static storm::Environment createEnvironment() {
             storm::Environment env;
             env.solver().minMax().setMethod(storm::solver::MinMaxMethod::Topological);
+            env.solver().topological().setUnderlyingMinMaxMethod(storm::solver::MinMaxMethod::ValueIteration);
             env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
             return env;
         }
     };
+    
     class DoubleTopologicalCudaViEnvironment {
     public:
         typedef double ValueType;
