@@ -15,7 +15,7 @@
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/settings/modules/IOSettings.h"
-#include "storm/settings/modules/ModelcheckerSettings.h"
+#include "storm/settings/modules/ModelCheckerSettings.h"
 #include "storm/settings/modules/DebugSettings.h"
 #include "storm/settings/modules/CounterexampleGeneratorSettings.h"
 #include "storm/settings/modules/CuddSettings.h"
