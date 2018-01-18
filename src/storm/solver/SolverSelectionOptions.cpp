@@ -16,6 +16,8 @@ namespace storm {
                     return "ratsearch";
                 case MinMaxMethod::QuickValueIteration:
                     return "QuickValueIteration";
+                case MinMaxMethod::TopologicalCuda:
+                    return "topologicalcuda";
             }
             return "invalid";
         }

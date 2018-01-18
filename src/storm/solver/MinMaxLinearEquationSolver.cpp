@@ -5,6 +5,7 @@
 #include "storm/solver/LinearEquationSolver.h"
 #include "storm/solver/IterativeMinMaxLinearEquationSolver.h"
 #include "storm/solver/TopologicalMinMaxLinearEquationSolver.h"
+#include "storm/solver/TopologicalCudaMinMaxLinearEquationSolver.h"
 #include "storm/solver/LpMinMaxLinearEquationSolver.h"
 
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
@@ -198,8 +199,8 @@ namespace storm {
             auto method = env.solver().minMax().getMethod();
             if (method == MinMaxMethod::ValueIteration || method == MinMaxMethod::PolicyIteration || method == MinMaxMethod::RationalSearch || method == MinMaxMethod::QuickValueIteration) {
                 result = std::make_unique<IterativeMinMaxLinearEquationSolver<ValueType>>(std::make_unique<GeneralLinearEquationSolverFactory<ValueType>>());
-            } else if (method == MinMaxMethod::Topological) {
-                result = std::make_unique<TopologicalMinMaxLinearEquationSolver<ValueType>>();
+            } else if (method == MinMaxMethod::TopologicalCuda) {
+                result = std::make_unique<TopologicalCudaMinMaxLinearEquationSolver<ValueType>>();
             } else if (method == MinMaxMethod::LinearProgramming) {
                 result = std::make_unique<LpMinMaxLinearEquationSolver<ValueType>>(std::make_unique<GeneralLinearEquationSolverFactory<ValueType>>(), std::make_unique<storm::utility::solver::LpSolverFactory<ValueType>>());
             } else {

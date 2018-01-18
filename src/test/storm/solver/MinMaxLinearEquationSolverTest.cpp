@@ -45,6 +45,17 @@ namespace {
             return env;
         }
     };
+    class DoubleTopologicalCudaViEnvironment {
+    public:
+        typedef double ValueType;
+        static const bool isExact = false;
+        static storm::Environment createEnvironment() {
+            storm::Environment env;
+            env.solver().minMax().setMethod(storm::solver::MinMaxMethod::TopologicalCuda);
+            env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
+            return env;
+        }
+    };
     class DoublePIEnvironment {
     public:
         typedef double ValueType;
@@ -96,6 +107,7 @@ namespace {
             DoubleViEnvironment,
             DoubleSoundViEnvironment,
             DoubleTopologicalViEnvironment,
+            DoubleTopologicalCudaViEnvironment,
             DoublePIEnvironment,
             RationalPIEnvironment,
             RationalRationalSearchEnvironment
