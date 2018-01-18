@@ -606,7 +606,7 @@ namespace storm {
             bool terminate = false;
             uint64_t minIndex(0), maxIndex(0);
             ValueType minValueBound, maxValueBound;
-            bool hasMinValueBound, hasMaxValueBound;
+            bool hasMinValueBound(false), hasMaxValueBound(false);
             // Prepare initial bounds for the solution (if given)
             if (this->hasLowerBound()) {
                 minValueBound = this->getLowerBound(true);
@@ -688,9 +688,11 @@ namespace storm {
                         }
                         if (!hasMinValueBound || minValueBoundCandidate > minValueBound) {
                             minValueBound = minValueBoundCandidate;
+                            hasMinValueBound = true;
                         }
                         if (!hasMaxValueBound || maxValueBoundCandidate < maxValueBound) {
                             maxValueBound = maxValueBoundCandidate;
+                            hasMaxValueBound = true;
                         }
                         absoluteError = stayProb * (maxValueBound - minValueBound);
                         if (absoluteError <= maxAllowedError) {
@@ -724,6 +726,7 @@ namespace storm {
 
             }
             
+            
             // Finally set up the solution vector
             ValueType meanBound = (maxValueBound + minValueBound) / storm::utility::convertNumber<ValueType>(2.0);
             storm::utility::vector::applyPointwise(*stepBoundedX, *stepBoundedStayProbs, x, [&meanBound] (ValueType const& v, ValueType const& p) { return v + p * meanBound; });
@@ -733,6 +736,7 @@ namespace storm {
             }
             
             this->logIterations(converged, terminate, iterations);
+            STORM_LOG_WARN_COND(hasMinValueBound && hasMaxValueBound, "Could not compute lower or upper bound within the given number of iterations.");
             STORM_LOG_INFO("Quick Power Iteration terminated with lower value bound " << minValueBound << " and upper value bound " << maxValueBound << ".");
 
             return converged;
