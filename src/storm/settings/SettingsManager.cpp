@@ -15,6 +15,7 @@
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/settings/modules/IOSettings.h"
+#include "storm/settings/modules/ModelcheckerSettings.h"
 #include "storm/settings/modules/DebugSettings.h"
 #include "storm/settings/modules/CounterexampleGeneratorSettings.h"
 #include "storm/settings/modules/CuddSettings.h"
@@ -513,6 +514,7 @@ namespace storm {
             storm::settings::addModule<storm::settings::modules::IOSettings>();
             storm::settings::addModule<storm::settings::modules::BuildSettings>();
             storm::settings::addModule<storm::settings::modules::CoreSettings>();
+            storm::settings::addModule<storm::settings::modules::ModelCheckerSettings>();
             storm::settings::addModule<storm::settings::modules::DebugSettings>();
             storm::settings::addModule<storm::settings::modules::CounterexampleGeneratorSettings>();
             storm::settings::addModule<storm::settings::modules::CuddSettings>();

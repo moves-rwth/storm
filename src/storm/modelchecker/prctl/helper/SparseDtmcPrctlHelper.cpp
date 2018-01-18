@@ -23,6 +23,7 @@
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/settings/modules/IOSettings.h"
+#include "storm/settings/modules/ModelCheckerSettings.h"
 
 #include "storm/utility/Stopwatch.h"
 #include "storm/utility/ProgressMeasurement.h"

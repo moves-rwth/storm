@@ -9,6 +9,7 @@
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/settings/modules/IOSettings.h"
 #include "storm/settings/modules/BuildSettings.h"
+#include "storm/settings/modules/ModelCheckerSettings.h"
 #include "storm/settings/modules/DebugSettings.h"
 #include "storm/settings/modules/SylvanSettings.h"
 #include "storm/settings/modules/EigenEquationSolverSettings.h"
@@ -36,8 +37,7 @@ namespace storm {
             storm::settings::addModule<storm::settings::modules::RegionSettings>();
             storm::settings::addModule<storm::settings::modules::BuildSettings>();
             storm::settings::addModule<storm::settings::modules::CounterexampleGeneratorSettings>();
-
-
+            storm::settings::addModule<storm::settings::modules::ModelCheckerSettings>();
             storm::settings::addModule<storm::settings::modules::DebugSettings>();
             storm::settings::addModule<storm::settings::modules::SylvanSettings>();
             storm::settings::addModule<storm::settings::modules::GmmxxEquationSolverSettings>();
@@ -47,7 +47,6 @@ namespace storm {
             storm::settings::addModule<storm::settings::modules::MinMaxEquationSolverSettings>();
             storm::settings::addModule<storm::settings::modules::GameSolverSettings>();
             storm::settings::addModule<storm::settings::modules::BisimulationSettings>();
-            storm::settings::addModule<storm::settings::modules::TopologicalCudaMinMaxEquationSolverSettings>();
             storm::settings::addModule<storm::settings::modules::ResourceSettings>();
             storm::settings::addModule<storm::settings::modules::JaniExportSettings>();
             storm::settings::addModule<storm::settings::modules::JitBuilderSettings>();
