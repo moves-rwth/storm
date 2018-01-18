@@ -604,8 +604,19 @@ namespace storm {
             uint64_t iterations = 0;
             bool converged = false;
             bool terminate = false;
-            ValueType minValueBound, maxValueBound;
             uint64_t minIndex(0), maxIndex(0);
+            ValueType minValueBound, maxValueBound;
+            bool hasMinValueBound, hasMaxValueBound;
+            // Prepare initial bounds for the solution (if given)
+            if (this->hasLowerBound()) {
+                minValueBound = this->getLowerBound(true);
+                hasMinValueBound = true;
+            }
+            if (this->hasUpperBound()) {
+                maxValueBound = this->getUpperBound(true);
+                hasMaxValueBound = true;
+            }
+            
             bool convergencePhase1 = true;
             uint64_t firstIndexViolatingConvergence = 0;
             this->startMeasureProgress();
@@ -646,11 +657,17 @@ namespace storm {
                 if (!convergencePhase1) {
                     // Phase 2: the difference between lower and upper bound has to be < precision at every (relevant) value
                     // First check with (possibly too tight) bounds from a previous iteration. Only compute the actual bounds if this first check passes.
-                    minValueBound = stepBoundedX->at(minIndex) / (storm::utility::one<ValueType>() - stepBoundedStayProbs->at(minIndex));
-                    maxValueBound = stepBoundedX->at(maxIndex) / (storm::utility::one<ValueType>() - stepBoundedStayProbs->at(maxIndex));
+                    ValueType minValueBoundCandidate = stepBoundedX->at(minIndex) / (storm::utility::one<ValueType>() - stepBoundedStayProbs->at(minIndex));
+                    ValueType maxValueBoundCandidate = stepBoundedX->at(maxIndex) / (storm::utility::one<ValueType>() - stepBoundedStayProbs->at(maxIndex));
+                    if (hasMinValueBound && minValueBound > minValueBoundCandidate) {
+                        minValueBoundCandidate = minValueBound;
+                    }
+                    if (hasMaxValueBound && maxValueBound < maxValueBoundCandidate) {
+                        maxValueBoundCandidate = maxValueBound;
+                    }
                     ValueType const& stayProb = stepBoundedStayProbs->at(firstIndexViolatingConvergence);
                     // The error made in this iteration
-                    ValueType absoluteError = stayProb * (maxValueBound - minValueBound);
+                    ValueType absoluteError = stayProb * (maxValueBoundCandidate - minValueBoundCandidate);
                     // The maximal allowed error (possibly respecting relative precision)
                     // Note: We implement the relative convergence criterion in a way that avoids division by zero in the case where stepBoundedX[i] is zero.
                     ValueType maxAllowedError = relative ? (precision * stepBoundedX->at(firstIndexViolatingConvergence)) : precision;
@@ -661,13 +678,19 @@ namespace storm {
                         auto probIt = stepBoundedStayProbs->begin();
                         for (uint64_t index = 0; valIt != valIte; ++valIt, ++probIt, ++index) {
                             ValueType currentBound = *valIt / (storm::utility::one<ValueType>() - *probIt);
-                            if (currentBound < minValueBound) {
+                            if (currentBound < minValueBoundCandidate) {
                                 minIndex = index;
-                                minValueBound = std::move(currentBound);
-                            } else if (currentBound > maxValueBound) {
+                                minValueBoundCandidate = std::move(currentBound);
+                            } else if (currentBound > maxValueBoundCandidate) {
                                 maxIndex = index;
-                                maxValueBound = std::move(currentBound);
+                                maxValueBoundCandidate = std::move(currentBound);
                             }
+                        }
+                        if (!hasMinValueBound || minValueBoundCandidate > minValueBound) {
+                            minValueBound = minValueBoundCandidate;
+                        }
+                        if (!hasMaxValueBound || maxValueBoundCandidate < maxValueBound) {
+                            maxValueBound = maxValueBoundCandidate;
                         }
                         absoluteError = stayProb * (maxValueBound - minValueBound);
                         if (absoluteError <= maxAllowedError) {

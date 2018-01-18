@@ -98,9 +98,23 @@ namespace storm {
             ValueType const& getLowerBound() const;
             
             /*!
+             * Retrieves the lower bound (if there is any).
+             * If the given flag is true and if there are only local bounds,
+             * the minimum of the local bounds is returned.
+             */
+            ValueType getLowerBound(bool convertLocalBounds) const;
+            
+            /*!
              * Retrieves the upper bound (if there is any).
              */
             ValueType const& getUpperBound() const;
+            
+           /*!
+             * Retrieves the upper bound (if there is any).
+             * If the given flag is true and if there are only local bounds,
+             * the maximum of the local bounds is returned.
+             */
+            ValueType getUpperBound(bool convertLocalBounds) const;
             
             /*!
              * Retrieves a vector containing the lower bounds (if there are any).

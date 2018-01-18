@@ -984,19 +984,12 @@ namespace storm {
             
             
             // Prepare initial bounds for the solution (if given)
-            if (this->hasLowerBound(AbstractEquationSolver<ValueType>::BoundType::Global)) {
-                helper.setLowerBound(this->getLowerBound());
-            } else if (this->hasLowerBound(AbstractEquationSolver<ValueType>::BoundType::Local)) {
-                helper.setLowerBound(*std::min_element(this->getLowerBounds().begin(), this->getLowerBounds().end()));
+            if (this->hasLowerBound()) {
+                helper.setLowerBound(this->getLowerBound(true));
             }
-            if (this->hasUpperBound(AbstractEquationSolver<ValueType>::BoundType::Global)) {
-                helper.setUpperBound(this->getUpperBound());
-            } else if (this->hasUpperBound(AbstractEquationSolver<ValueType>::BoundType::Local)) {
-                helper.setUpperBound(*std::max_element(this->getUpperBounds().begin(), this->getUpperBounds().end()));
+            if (this->hasUpperBound()) {
+                helper.setUpperBound(this->getUpperBound(true));
             }
-            
-            //STORM_LOG_INFO_COND(!hasCurrentLowerBound, "Initial lower bound on the result is " << currentLowerBound);
-            //STORM_LOG_INFO_COND(!hasCurrentUpperBound, "Initial upper bound on the result is " << currentUpperBound);
             
             storm::storage::BitVector const* relevantValuesPtr = nullptr;
             if (this->hasRelevantValues()) {
