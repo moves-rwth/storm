@@ -606,8 +606,8 @@ namespace storm {
             bool terminate = false;
             ValueType minValueBound, maxValueBound;
             uint64_t minIndex(0), maxIndex(0);
-            uint64_t firstStayProb1Index = 0;
-            uint64_t firstIndexViolatingConvergence = this->hasRelevantValues() ? this->getRelevantValues().getNextSetIndex(0) : 0;
+            bool convergencePhase1 = true;
+            uint64_t firstIndexViolatingConvergence = 0;
             this->startMeasureProgress();
             while (!converged && !terminate && iterations < maxIter) {
                 
@@ -622,29 +622,29 @@ namespace storm {
                     std::swap(tmp, stepBoundedStayProbs);
                 }
                 
-                //std::cout << "Iteration " << iterations << std::endl;
-                //std::cout << "x: " << storm::utility::vector::toString(*stepBoundedX) << std::endl;
-                //std::cout << "y: " << storm::utility::vector::toString(*stepBoundedStayProbs) << std::endl;
-                
                 // Check for convergence
-                // Phase 1: the probability to 'stay within the matrix' has to be < 1 at every state
-                for (; firstStayProb1Index != stepBoundedStayProbs->size(); ++firstStayProb1Index) {
-                    static_assert(NumberTraits<ValueType>::IsExact || std::is_same<ValueType, double>::value, "Considered ValueType not handled.");
-                    if (NumberTraits<ValueType>::IsExact) {
-                        if (storm::utility::isOne(stepBoundedStayProbs->at(firstStayProb1Index))) {
-                            break;
-                        }
-                    } else {
-                        if (storm::utility::isAlmostOne(storm::utility::convertNumber<double>(stepBoundedStayProbs->at(firstStayProb1Index)))) {
-                            break;
-                           // std::cout << "In Phase 1" << std::endl;
+                if (convergencePhase1) {
+                    // Phase 1: the probability to 'stay within the matrix' has to be < 1 at every state
+                    for (; firstIndexViolatingConvergence != stepBoundedStayProbs->size(); ++firstIndexViolatingConvergence) {
+                        static_assert(NumberTraits<ValueType>::IsExact || std::is_same<ValueType, double>::value, "Considered ValueType not handled.");
+                        if (NumberTraits<ValueType>::IsExact) {
+                            if (storm::utility::isOne(stepBoundedStayProbs->at(firstIndexViolatingConvergence))) {
+                                break;
+                            }
+                        } else {
+                            if (storm::utility::isAlmostOne(storm::utility::convertNumber<double>(stepBoundedStayProbs->at(firstIndexViolatingConvergence)))) {
+                                break;
+                            }
                         }
                     }
+                    if (firstIndexViolatingConvergence == stepBoundedStayProbs->size()) {
+                        STORM_LOG_ASSERT(!std::any_of(stepBoundedStayProbs->begin(), stepBoundedStayProbs->end(), [](ValueType value){return storm::utility::isOne(value);}), "Did not expect staying-probability 1 at this point.");
+                        convergencePhase1 = false;
+                        firstIndexViolatingConvergence = this->hasRelevantValues() ? this->getRelevantValues().getNextSetIndex(0) : 0;
+                    }
                 }
-                if (firstStayProb1Index == stepBoundedStayProbs->size()) {
-                    STORM_LOG_ASSERT(!std::any_of(stepBoundedStayProbs->begin(), stepBoundedStayProbs->end(), [](ValueType value){return storm::utility::isOne(value);}), "Did not expect staying-probability 1 at this point.");
+                if (!convergencePhase1) {
                     // Phase 2: the difference between lower and upper bound has to be < precision at every (relevant) value
-                   // std::cout << "In Phase 2" << std::endl;
                     // First check with (possibly too tight) bounds from a previous iteration. Only compute the actual bounds if this first check passes.
                     minValueBound = stepBoundedX->at(minIndex) / (storm::utility::one<ValueType>() - stepBoundedStayProbs->at(minIndex));
                     maxValueBound = stepBoundedX->at(maxIndex) / (storm::utility::one<ValueType>() - stepBoundedStayProbs->at(maxIndex));
