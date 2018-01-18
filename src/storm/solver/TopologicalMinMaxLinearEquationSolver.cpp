@@ -298,6 +298,7 @@ namespace storm {
                 req.clearLowerBounds();
             }
             STORM_LOG_THROW(req.empty(), storm::exceptions::UnmetRequirementException, "Requirements of underlying solver not met.");
+            this->sccSolver->setRequirementsChecked(true);
             
             bool res = this->sccSolver->solveEquations(sccSolverEnvironment, dir, x, b);
             if (this->isTrackSchedulerSet()) {
@@ -368,6 +369,7 @@ namespace storm {
                 req.clearValidInitialScheduler();
             }
             STORM_LOG_THROW(req.empty(), storm::exceptions::UnmetRequirementException, "Requirements of underlying solver not met.");
+            this->sccSolver->setRequirementsChecked(true);
 
             // Invoke scc solver
             bool res = this->sccSolver->solveEquations(sccSolverEnvironment, dir, sccX, sccB);
