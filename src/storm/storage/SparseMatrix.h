@@ -568,11 +568,17 @@ namespace storm {
             index_type getRowGroupSize(index_type group) const;
             
             /*!
+             * Returns the size of the largest row group of the matrix
+             */
+            index_type getSizeOfLargestRowGroup() const;
+            
+            /*!
              * Returns the grouping of rows of this matrix.
              *
              * @return The grouping of rows of this matrix.
              */
             std::vector<index_type> const& getRowGroupIndices() const;
+            
             
             /*!
              * Sets the row grouping to the given one.

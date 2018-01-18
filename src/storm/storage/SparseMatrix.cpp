@@ -580,6 +580,20 @@ namespace storm {
         }
         
         template<typename ValueType>
+        typename SparseMatrix<ValueType>::index_type SparseMatrix<ValueType>::getSizeOfLargestRowGroup() const {
+            if (this->hasTrivialRowGrouping()) {
+                return 1;
+            }
+            index_type res = 0;
+            index_type previousGroupStart = 0;
+            for (auto const& i : rowGroupIndices.get()) {
+                res = std::max(res, i - previousGroupStart);
+                previousGroupStart = i;
+            }
+            return res;
+        }
+        
+        template<typename ValueType>
         std::vector<typename SparseMatrix<ValueType>::index_type> const& SparseMatrix<ValueType>::getRowGroupIndices() const {
             // If there is no current row grouping, we need to create it.
             if (!this->rowGroupIndices) {

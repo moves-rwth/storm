@@ -610,7 +610,10 @@ namespace storm {
         template<typename ValueType>
         class QuickValueIterationHelper {
         public:
-            QuickValueIterationHelper(std::vector<ValueType>& x, std::vector<ValueType>& y, bool relative, ValueType const& precision) : x(x), y(y), hasLowerBound(false), hasUpperBound(false), minIndex(0), maxIndex(0), relative(relative), precision(precision) {
+            QuickValueIterationHelper(std::vector<ValueType>& x, std::vector<ValueType>& y, bool relative, ValueType const& precision, uint64_t sizeOfLargestRowGroup) : x(x), y(y), hasLowerBound(false), hasUpperBound(false), minIndex(0), maxIndex(0), relative(relative), precision(precision) {
+                xTmp.resize(sizeOfLargestRowGroup);
+                yTmp.resize(sizeOfLargestRowGroup);
+                
                 restart();
             }
             
@@ -623,45 +626,43 @@ namespace storm {
                 firstIndexViolatingConvergence = 0;
             }
             
-            void setLowerBound(ValueType const& value) {
+            inline void setLowerBound(ValueType const& value) {
                 hasLowerBound = true;
                 lowerBound = value;
-              //  std::cout << "Lower bound set to " << lowerBound << std::endl;
             }
             
-            void setUpperBound(ValueType const& value) {
+            inline void setUpperBound(ValueType const& value) {
                 hasUpperBound = true;
                 upperBound = value;
-             //   std::cout << "Upper bound set to " << upperBound << std::endl;
             }
             
             template<OptimizationDirection dir>
-            bool better(ValueType const& val1, ValueType const& val2) {
+            inline bool better(ValueType const& val1, ValueType const& val2) {
                 return maximize(dir) ? val1 > val2 : val1 < val2;
             }
             
             template<OptimizationDirection dir>
-            ValueType& getPrimaryBound() {
+            inline ValueType& getPrimaryBound() {
                 return maximize(dir) ? upperBound : lowerBound;
             }
             
             template<OptimizationDirection dir>
-            bool& hasPrimaryBound() {
+            inline bool& hasPrimaryBound() {
                 return maximize(dir) ? hasUpperBound : hasLowerBound;
             }
             
             template<OptimizationDirection dir>
-            ValueType& getSecondaryBound() {
+            inline ValueType& getSecondaryBound() {
                 return maximize(dir) ? lowerBound : upperBound;
             }
             
             template<OptimizationDirection dir>
-            uint64_t& getPrimaryIndex() {
+            inline uint64_t& getPrimaryIndex() {
                 return maximize(dir) ? maxIndex : minIndex;
             }
 
             template<OptimizationDirection dir>
-            uint64_t& getSecondaryIndex() {
+            inline uint64_t& getSecondaryIndex() {
                 return maximize(dir) ? minIndex : maxIndex;
             }
             
@@ -732,9 +733,8 @@ namespace storm {
                     ++row;
                     // Only do more work if there are still rows in this row group
                     if (row != groupEnd) {
-                        xTmp.clear();
-                        yTmp.clear();
                         ValueType xi, yi;
+                        uint64_t xyTmpIndex = 0;
                         if (hasPrimaryBound<dir>()) {
                             ValueType bestValue = xBest + yBest * getPrimaryBound<dir>();
                             for (;row < groupEnd; ++row) {
@@ -745,8 +745,9 @@ namespace storm {
                                 if (better<dir>(currentValue, bestValue)) {
                                     if (yBest < yi) {
                                         // We need to store the 'old' best value as it might be relevant for the decision value
-                                        xTmp.push_back(std::move(xBest));
-                                        yTmp.push_back(std::move(yBest));
+                                        xTmp[xyTmpIndex] = std::move(xBest);
+                                        yTmp[xyTmpIndex] = std::move(yBest);
+                                        ++xyTmpIndex;
                                     }
                                     xBest = std::move(xi);
                                     yBest = std::move(yi);
@@ -757,8 +758,9 @@ namespace storm {
                                         xBest = std::move(xi);
                                         yBest = std::move(yi);
                                     } else {
-                                        xTmp.push_back(std::move(xi));
-                                        yTmp.push_back(std::move(yi));
+                                        xTmp[xyTmpIndex] = std::move(xi);
+                                        yTmp[xyTmpIndex] = std::move(yi);
+                                        ++xyTmpIndex;
                                     }
                                 }
                             }
@@ -767,24 +769,25 @@ namespace storm {
                                 multiplyRow(row, A, b[row], xi, yi);
                                 // Update the best choice
                                 if (yi > yBest || (yi == yBest && better<dir>(xi, xBest))) {
-                                    xTmp.push_back(std::move(xBest));
-                                    yTmp.push_back(std::move(yBest));
+                                        xTmp[xyTmpIndex] = std::move(xBest);
+                                        yTmp[xyTmpIndex] = std::move(yBest);
+                                        ++xyTmpIndex;
                                     xBest = std::move(xi);
                                     yBest = std::move(yi);
                                 } else {
-                                    xTmp.push_back(std::move(xi));
-                                    yTmp.push_back(std::move(yi));
+                                    xTmp[xyTmpIndex] = std::move(xi);
+                                    yTmp[xyTmpIndex] = std::move(yi);
+                                    ++xyTmpIndex;
                                 }
                             }
                         }
                         
                         // Update the decision value
-                        for (auto xTmpIt = xTmp.begin(), yTmpIt = yTmp.begin(); xTmpIt != xTmp.end(); ++xTmpIt, ++yTmpIt) {
-                            ValueType deltaY = yBest - (*yTmpIt);
+                        for (uint64_t i = 0; i < xyTmpIndex; ++i) {
+                            ValueType deltaY = yBest - yTmp[i];
                             if (deltaY > storm::utility::zero<ValueType>()) {
-                                ValueType newDecisionValue = (*xTmpIt - xBest) / deltaY;
+                                ValueType newDecisionValue = (xTmp[i] - xBest) / deltaY;
                                 if (!hasDecisionValue || better<dir>(newDecisionValue, decisionValue)) {
-                                   //     std::cout << "Updating decision value in Iteration " << iterations << " to " << newDecisionValue << ", where deltaX = " << xTmp[choice] << " - " << *xIt << " = " << (xTmp[choice] - *xIt) << " and deltaY= " << *yIt << " - " << yTmp[choice] << " = " << deltaY << "." << std::endl;
                                     decisionValue = std::move(newDecisionValue);
                                     hasDecisionValue = true;
                                 }
@@ -976,7 +979,7 @@ namespace storm {
                 this->auxiliaryRowGroupVector = std::make_unique<std::vector<ValueType>>();
             }
             
-            QuickValueIterationHelper<ValueType> helper(x, *this->auxiliaryRowGroupVector, env.solver().minMax().getRelativeTerminationCriterion(), storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()));
+            QuickValueIterationHelper<ValueType> helper(x, *this->auxiliaryRowGroupVector, env.solver().minMax().getRelativeTerminationCriterion(), storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()), this->A->getSizeOfLargestRowGroup());
 
             // Get the precision
             uint64_t restartMaxIterations = env.solver().minMax().getQviRestartMaxIterations();
