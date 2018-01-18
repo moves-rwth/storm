@@ -23,6 +23,7 @@ namespace storm {
             const std::string NativeEquationSolverSettings::precisionOptionName = "precision";
             const std::string NativeEquationSolverSettings::absoluteOptionName = "absolute";
             const std::string NativeEquationSolverSettings::powerMethodMultiplicationStyleOptionName = "powmult";
+            const std::string NativeEquationSolverSettings::forceBoundsOptionName = "forcebounds";
 
             NativeEquationSolverSettings::NativeEquationSolverSettings() : ModuleSettings(moduleName) {
                 std::vector<std::string> methods = { "jacobi", "gaussseidel", "sor", "walkerchae", "power", "ratsearch", "qpower" };
@@ -39,6 +40,9 @@ namespace storm {
                 std::vector<std::string> multiplicationStyles = {"gaussseidel", "regular", "gs", "r"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, powerMethodMultiplicationStyleOptionName, false, "Sets which method multiplication style to prefer for the power method.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of a multiplication style.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(multiplicationStyles)).setDefaultValueString("gaussseidel").build()).build());
+                                
+                this->addOption(storm::settings::OptionBuilder(moduleName, forceBoundsOptionName, false, "If set, the equation solver always require that a priori bounds for the solution are computed.").build());
+                
             }
             
             bool NativeEquationSolverSettings::isLinearEquationSystemTechniqueSet() const {
@@ -107,6 +111,10 @@ namespace storm {
                 STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown multiplication style '" << multiplicationStyleString << "'.");
             }
             
+            bool NativeEquationSolverSettings::isForceBoundsSet() const {
+                return this->getOption(forceBoundsOptionName).getHasOptionBeenSet();
+            }
+
             bool NativeEquationSolverSettings::check() const {
                 // This list does not include the precision, because this option is shared with other modules.
                 bool optionSet = isLinearEquationSystemTechniqueSet() || isMaximalIterationCountSet() || isConvergenceCriterionSet();

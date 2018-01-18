@@ -1128,6 +1128,10 @@ namespace storm {
         LinearEquationSolverRequirements NativeLinearEquationSolver<ValueType>::getRequirements(Environment const& env, LinearEquationSolverTask const& task) const {
             LinearEquationSolverRequirements requirements;
             if (task != LinearEquationSolverTask::Multiply) {
+                if (env.solver().native().isForceBoundsSet()) {
+                    requirements.requiresLowerBounds();
+                    requirements.requiresUpperBounds();
+                }
                 auto method = getMethod(env, storm::NumberTraits<ValueType>::IsExact);
                 if (method == NativeLinearEquationSolverMethod::Power && env.solver().isForceSoundness()) {
                     requirements.requireBounds();
