@@ -27,7 +27,7 @@ namespace storm {
 	}
 	namespace solver {
 		template<typename T>
-		class TopologicalValueIterationMinMaxLinearEquationSolver;
+		class TopologicalCudaValueIterationMinMaxLinearEquationSolver;
 	}
 }
 
@@ -327,7 +327,7 @@ namespace storm {
             friend class storm::adapters::GmmxxAdapter<ValueType>;
             friend class storm::adapters::EigenAdapter;
             friend class storm::adapters::StormAdapter;
-			friend class storm::solver::TopologicalValueIterationMinMaxLinearEquationSolver<ValueType>;
+			friend class storm::solver::TopologicalCudaValueIterationMinMaxLinearEquationSolver<ValueType>;
             friend class SparseMatrixBuilder<ValueType>;
             
             typedef SparseMatrixIndexType index_type;
