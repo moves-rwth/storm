@@ -49,7 +49,7 @@ namespace storm {
         
         template<typename ValueType>
 		bool TopologicalCudaMinMaxLinearEquationSolver<ValueType>::internalSolveEquations(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
-			STORM_LOG_THROW(env.solver().minMax().getMethod() == MinMaxMethod::Topological, storm::exceptions::InvalidEnvironmentException, "This min max solver does not support the selected technique.");
+			STORM_LOG_THROW(env.solver().minMax().getMethod() == MinMaxMethod::TopologicalCuda, storm::exceptions::InvalidEnvironmentException, "This min max solver does not support the selected technique.");
 			
 			ValueType precision = storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision());
 			uint64_t maxIters = env.solver().minMax().getMaximalNumberOfIterations();
