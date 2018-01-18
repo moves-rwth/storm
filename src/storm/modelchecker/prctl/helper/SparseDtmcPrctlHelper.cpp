@@ -382,29 +382,32 @@ namespace storm {
             
             template<typename ValueType, typename RewardModelType>
             std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeReachabilityRewards(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, RewardModelType const& rewardModel, storm::storage::BitVector const& targetStates, bool qualitative, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory, ModelCheckerHint const& hint) {
-                // Extend the set of target states such that states for which target is reached without collecting any reward are included
-                // TODO
-                storm::storage::BitVector extendedTargetStates = storm::utility::graph::performProb1(backwardTransitions, rewardModel.getStatesWithZeroReward(transitionMatrix), targetStates);
-                STORM_LOG_INFO("Extended the set of target states from " << targetStates.getNumberOfSetBits() << " states to " << extendedTargetStates.getNumberOfSetBits() << " states.");
-                std::cout << "TODO: make target state extension a setting." << std::endl;
-                return computeReachabilityRewards(env, std::move(goal), transitionMatrix, backwardTransitions, [&] (uint_fast64_t numberOfRows, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& maybeStates) { return rewardModel.getTotalRewardVector(numberOfRows, transitionMatrix, maybeStates); }, extendedTargetStates, qualitative, linearEquationSolverFactory, hint);
+                
+                return computeReachabilityRewards(env, std::move(goal), transitionMatrix, backwardTransitions,
+                                                  [&] (uint_fast64_t numberOfRows, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& maybeStates) {
+                                                      return rewardModel.getTotalRewardVector(numberOfRows, transitionMatrix, maybeStates);
+                                                  },
+                                                  targetStates, qualitative, linearEquationSolverFactory,
+                                                  [&] () {
+                                                      return rewardModel.getStatesWithZeroReward(transitionMatrix);
+                                                  },
+                                                  hint);
             }
 
             template<typename ValueType, typename RewardModelType>
             std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeReachabilityRewards(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType> const& totalStateRewardVector, storm::storage::BitVector const& targetStates, bool qualitative, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory, ModelCheckerHint const& hint) {
 
-                // TODO
-                storm::storage::BitVector extendedTargetStates = storm::utility::graph::performProb1(backwardTransitions, storm::utility::vector::filterZero(totalStateRewardVector), targetStates);
-                STORM_LOG_INFO("Extended the set of target states from " << targetStates.getNumberOfSetBits() << " states to " << extendedTargetStates.getNumberOfSetBits() << " states.");
-                std::cout << "TODO: make target state extension a setting" << std::endl;
-                
                 return computeReachabilityRewards(env, std::move(goal), transitionMatrix, backwardTransitions,
                                                   [&] (uint_fast64_t numberOfRows, storm::storage::SparseMatrix<ValueType> const&, storm::storage::BitVector const& maybeStates) {
                                                       std::vector<ValueType> result(numberOfRows);
                                                       storm::utility::vector::selectVectorValues(result, maybeStates, totalStateRewardVector);
                                                       return result;
                                                   },
-                                                  targetStates, qualitative, linearEquationSolverFactory, hint);
+                                                  targetStates, qualitative, linearEquationSolverFactory,
+                                                  [&] () {
+                                                      return storm::utility::vector::filterZero(totalStateRewardVector);
+                                                  },
+                                                  hint);
             }
             
             // This function computes an upper bound on the reachability rewards (see Baier et al, CAV'17).
@@ -421,24 +424,32 @@ namespace storm {
             }
             
             template<typename ValueType, typename RewardModelType>
-            std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeReachabilityRewards(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::function<std::vector<ValueType>(uint_fast64_t, storm::storage::SparseMatrix<ValueType> const&, storm::storage::BitVector const&)> const& totalStateRewardVectorGetter, storm::storage::BitVector const& targetStates, bool qualitative, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory, ModelCheckerHint const& hint) {
+            std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeReachabilityRewards(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::function<std::vector<ValueType>(uint_fast64_t, storm::storage::SparseMatrix<ValueType> const&, storm::storage::BitVector const&)> const& totalStateRewardVectorGetter, storm::storage::BitVector const& targetStates, bool qualitative, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory, std::function<storm::storage::BitVector()> const& zeroRewardStatesGetter, ModelCheckerHint const& hint) {
                 
                 std::vector<ValueType> result(transitionMatrix.getRowCount(), storm::utility::zero<ValueType>());
                 
+                // Determine which states have reward zero
+                storm::storage::BitVector rew0States;
+                if (storm::settings::getModule<storm::settings::modules::ModelCheckerSettings>().isFilterRewZeroSet()) {
+                    rew0States = storm::utility::graph::performProb1(backwardTransitions, zeroRewardStatesGetter(), targetStates);
+                } else {
+                    rew0States = targetStates;
+                }
+
                 // Determine which states have a reward that is less than infinity.
                 storm::storage::BitVector maybeStates;
                 if (hint.isExplicitModelCheckerHint() && hint.template asExplicitModelCheckerHint<ValueType>().getComputeOnlyMaybeStates()) {
                     maybeStates = hint.template asExplicitModelCheckerHint<ValueType>().getMaybeStates();
-                    storm::utility::vector::setVectorValues(result, ~(maybeStates | targetStates), storm::utility::infinity<ValueType>());
+                    storm::utility::vector::setVectorValues(result, ~(maybeStates | rew0States), storm::utility::infinity<ValueType>());
 
-                    STORM_LOG_INFO("Preprocessing: " << targetStates.getNumberOfSetBits() << " target states (" << maybeStates.getNumberOfSetBits() << " states remaining).");
+                    STORM_LOG_INFO("Preprocessing: " << rew0States.getNumberOfSetBits() << " States with reward zero (" << maybeStates.getNumberOfSetBits() << " states remaining).");
                 } else {
                     storm::storage::BitVector trueStates(transitionMatrix.getRowCount(), true);
-                    storm::storage::BitVector infinityStates = storm::utility::graph::performProb1(backwardTransitions, trueStates, targetStates);
+                    storm::storage::BitVector infinityStates = storm::utility::graph::performProb1(backwardTransitions, trueStates, rew0States);
                     infinityStates.complement();
-                    maybeStates = ~(targetStates | infinityStates);
+                    maybeStates = ~(rew0States | infinityStates);
                     
-                    STORM_LOG_INFO("Preprocessing: " << infinityStates.getNumberOfSetBits() << " states with reward infinity, " << targetStates.getNumberOfSetBits() << " target states (" << maybeStates.getNumberOfSetBits() << " states remaining).");
+                    STORM_LOG_INFO("Preprocessing: " << infinityStates.getNumberOfSetBits() << " states with reward infinity, " << rew0States.getNumberOfSetBits() << " states with reward zero (" << maybeStates.getNumberOfSetBits() << " states remaining).");
                     
                     storm::utility::vector::setVectorValues(result, infinityStates, storm::utility::infinity<ValueType>());
                 }
@@ -473,7 +484,7 @@ namespace storm {
                         boost::optional<std::vector<ValueType>> upperRewardBounds;
                         requirements.clearLowerBounds();
                         if (requirements.requiresUpperBounds()) {
-                            upperRewardBounds = computeUpperRewardBounds(submatrix, b, transitionMatrix.getConstrainedRowSumVector(maybeStates, targetStates));
+                            upperRewardBounds = computeUpperRewardBounds(submatrix, b, transitionMatrix.getConstrainedRowSumVector(maybeStates, rew0States));
                             requirements.clearUpperBounds();
                         }
                         STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "There are unchecked requirements of the solver.");
