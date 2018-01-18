@@ -185,8 +185,8 @@ namespace storm {
                             // Now add all successors that are not already sorted.
                             // Successors should only be added once, so we first prepare a set of them and add them afterwards.
                             successorSCCs.clear();
-                            for (auto const& row : currentScc) {
-                                for (auto const& entry : this->A->getRow(row)) {
+                            for (auto const& group : currentScc) {
+                                for (auto const& entry : this->A->getRowGroup(group)) {
                                     auto const& successorSCC = sccIndices[entry.getColumn()];
                                     if (successorSCC != currentSccIndex && unsortedSCCs.get(successorSCC)) {
                                         successorSCCs.insert(successorSCC);
@@ -236,10 +236,10 @@ namespace storm {
             uint64_t bestRow;
             
             for (uint64_t row = this->A->getRowGroupIndices()[sccState]; row < this->A->getRowGroupIndices()[sccState + 1]; ++row) {
-                ValueType rowValue = globalB[sccState];
+                ValueType rowValue = globalB[row];
                 bool hasDiagonalEntry = false;
                 ValueType denominator;
-                for (auto const& entry : this->A->getRow(sccState)) {
+                for (auto const& entry : this->A->getRow(row)) {
                     if (entry.getColumn() == sccState) {
                         STORM_LOG_ASSERT(!storm::utility::isOne(entry.getValue()), "Diagonal entry of fix point system has value 1.");
                         hasDiagonalEntry = true;
@@ -319,6 +319,7 @@ namespace storm {
             
             // SCC Matrix
             storm::storage::SparseMatrix<ValueType> sccA = this->A->getSubmatrix(true, sccRowGroups, sccRowGroups);
+            //std::cout << "Matrix is " << sccA << std::endl;
             this->sccSolver->setMatrix(std::move(sccA));
             
             // x Vector

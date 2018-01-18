@@ -36,12 +36,14 @@ namespace storm {
         void StandardMinMaxLinearEquationSolver<ValueType>::setMatrix(storm::storage::SparseMatrix<ValueType> const& matrix) {
             this->localA = nullptr;
             this->A = &matrix;
+            clearCache();
         }
         
         template<typename ValueType>
         void StandardMinMaxLinearEquationSolver<ValueType>::setMatrix(storm::storage::SparseMatrix<ValueType>&& matrix) {
             this->localA = std::make_unique<storm::storage::SparseMatrix<ValueType>>(std::move(matrix));
             this->A = this->localA.get();
+            clearCache();
         }
         
         template<typename ValueType>
