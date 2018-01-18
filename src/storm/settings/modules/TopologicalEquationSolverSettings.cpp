@@ -76,7 +76,7 @@ namespace storm {
                 } else if (minMaxEquationSolvingTechnique == "quick-value-iteration" || minMaxEquationSolvingTechnique == "qvi") {
                     return storm::solver::MinMaxMethod::QuickValueIteration;
                 }
-                STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown underlying equation solver '" << equationSolverName << "'.");
+                STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown underlying equation solver '" << minMaxEquationSolvingTechnique << "'.");
             }
             
             bool TopologicalEquationSolverSettings::check() const {
