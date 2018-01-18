@@ -13,10 +13,8 @@ namespace storm {
         underlyingEquationSolverType = topologicalSettings.getUnderlyingEquationSolverType();
         underlyingEquationSolverTypeSetFromDefault = topologicalSettings.isUnderlyingEquationSolverTypeSetFromDefaultValue();
         
-        std::cout << "Get topo env minmax from settings!!" << std::endl;
-        underlyingMinMaxMethod = storm::solver::MinMaxMethod::ValueIteration;
-        underlyingEquationSolverTypeSetFromDefault = false;
-        
+        underlyingMinMaxMethod = topologicalSettings.getUnderlyingMinMaxMethod();
+        underlyingEquationSolverTypeSetFromDefault = topologicalSettings.isUnderlyingMinMaxMethodSetFromDefaultValue();
     }
 
     TopologicalSolverEnvironment::~TopologicalSolverEnvironment() {

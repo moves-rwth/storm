@@ -23,7 +23,7 @@ namespace storm {
             const std::string MinMaxEquationSolverSettings::quickValueIterationRestartOptionName = "qvirestart";
 
             MinMaxEquationSolverSettings::MinMaxEquationSolverSettings() : ModuleSettings(moduleName) {
-                std::vector<std::string> minMaxSolvingTechniques = {"vi", "value-iteration", "pi", "policy-iteration", "linear-programming", "lp", "ratsearch", "qvi", "quick-value-iteration"};
+                std::vector<std::string> minMaxSolvingTechniques = {"vi", "value-iteration", "pi", "policy-iteration", "linear-programming", "lp", "ratsearch", "qvi", "quick-value-iteration", "topological"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, solvingMethodOptionName, false, "Sets which min/max linear equation solving technique is preferred.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of a min/max linear equation solving technique.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(minMaxSolvingTechniques)).setDefaultValueString("vi").build()).build());
                 
@@ -60,6 +60,8 @@ namespace storm {
                     return storm::solver::MinMaxMethod::RationalSearch;
                 } else if (minMaxEquationSolvingTechnique == "quick-value-iteration" || minMaxEquationSolvingTechnique == "qvi") {
                     return storm::solver::MinMaxMethod::QuickValueIteration;
+                } else if (minMaxEquationSolvingTechnique == "topological") {
+                    return storm::solver::MinMaxMethod::Topological;
                 }
                 STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown min/max equation solving technique '" << minMaxEquationSolvingTechnique << "'.");
             }

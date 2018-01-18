@@ -40,6 +40,27 @@ namespace storm {
                  */
                 storm::solver::EquationSolverType getUnderlyingEquationSolverType() const;
                 
+                /*!
+                 * Retrieves whether the underlying equation solver type has been set.
+                 *
+                 * @return True iff the linear equation system technique has been set.
+                 */
+                bool isUnderlyingMinMaxMethodSet() const;
+                
+                /*!
+                 * Retrieves whether the underlying minmax method is set from its default value.
+                 *
+                 * @return True iff it was set from its default value.
+                 */
+                bool isUnderlyingMinMaxMethodSetFromDefaultValue() const;
+                
+                /*!
+                 * Retrieves the method that is to be used for solving systems of linear equations.
+                 *
+                 * @return The method to use.
+                 */
+                storm::solver::MinMaxMethod getUnderlyingMinMaxMethod() const;
+                
                 bool check() const override;
                 
                 // The name of the module.
@@ -48,6 +69,7 @@ namespace storm {
             private:
                 // Define the string names of the options as constants.
                 static const std::string underlyingEquationSolverOptionName;
+                static const std::string underlyingMinMaxMethodOptionName;
             };
             
         } // namespace modules
