@@ -23,6 +23,7 @@ namespace storm {
             
             const std::string TopologicalEquationSolverSettings::moduleName = "topological";
             const std::string TopologicalEquationSolverSettings::underlyingEquationSolverOptionName = "eqsolver";
+            const std::string TopologicalEquationSolverSettings::underlyingMinMaxMethodOptionName = "minmax";
             
             TopologicalEquationSolverSettings::TopologicalEquationSolverSettings() : ModuleSettings(moduleName) {
                 std::vector<std::string> linearEquationSolver = {"gmm++", "native", "eigen", "elimination"};
