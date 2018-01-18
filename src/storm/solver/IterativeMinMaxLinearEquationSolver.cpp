@@ -212,12 +212,12 @@ namespace storm {
         }
 
         template<typename ValueType>
-        MinMaxLinearEquationSolverRequirements IterativeMinMaxLinearEquationSolver<ValueType>::getRequirements(Environment const& env, boost::optional<storm::solver::OptimizationDirection> const& direction, bool const& assumeNoInitialScheduler) const {
+        MinMaxLinearEquationSolverRequirements IterativeMinMaxLinearEquationSolver<ValueType>::getRequirements(Environment const& env, boost::optional<storm::solver::OptimizationDirection> const& direction, bool const& hasInitialScheduler) const {
             auto method = getMethod(env, storm::NumberTraits<ValueType>::IsExact);
             
             // Start by getting the requirements of the linear equation solver.
             LinearEquationSolverTask linEqTask = LinearEquationSolverTask::Unspecified;
-            if ((method == MinMaxMethod::ValueIteration && !this->hasInitialScheduler() && assumeNoInitialScheduler) || method == MinMaxMethod::RationalSearch || method == MinMaxMethod::QuickValueIteration) {
+            if ((method == MinMaxMethod::ValueIteration && !this->hasInitialScheduler() && !hasInitialScheduler) || method == MinMaxMethod::RationalSearch || method == MinMaxMethod::QuickValueIteration) {
                 linEqTask = LinearEquationSolverTask::Multiply;
             }
             MinMaxLinearEquationSolverRequirements requirements(this->linearEquationSolverFactory->getRequirements(env, linEqTask));

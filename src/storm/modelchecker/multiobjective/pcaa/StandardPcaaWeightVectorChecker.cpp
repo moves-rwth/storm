@@ -179,7 +179,7 @@ namespace storm {
                 solver->setTrackScheduler(true);
                 solver->setHasUniqueSolution(true);
                 solver->setOptimizationDirection(storm::solver::OptimizationDirection::Maximize);
-                auto req = solver->getRequirements(env, storm::solver::OptimizationDirection::Maximize, true);
+                auto req = solver->getRequirements(env, storm::solver::OptimizationDirection::Maximize);
                 setBoundsToSolver(*solver, req.requiresLowerBounds(), req.requiresUpperBounds(), weightVector, objectivesWithNoUpperTimeBound, ecQuotient->matrix, ecQuotient->rowsWithSumLessOne, ecQuotient->auxChoiceValues);
                 if (solver->hasLowerBound()) {
                     req.clearLowerBounds();

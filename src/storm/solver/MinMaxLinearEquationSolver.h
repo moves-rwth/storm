@@ -167,7 +167,7 @@ namespace storm {
              * Retrieves the requirements of this solver for solving equations with the current settings. The requirements
              * are guaranteed to be ordered according to their appearance in the SolverRequirement type.
              */
-            virtual MinMaxLinearEquationSolverRequirements getRequirements(Environment const& env, boost::optional<storm::solver::OptimizationDirection> const& direction = boost::none, bool const& assumeNoInitialScheduler = false) const;
+            virtual MinMaxLinearEquationSolverRequirements getRequirements(Environment const& env, boost::optional<storm::solver::OptimizationDirection> const& direction = boost::none, bool const& hasInitialScheduler = false) const;
             
             /*!
              * Notifies the solver that the requirements for solving equations have been checked. If this has not been
@@ -220,7 +220,7 @@ namespace storm {
              * Retrieves the requirements of the solver that would be created when calling create() right now. The
              * requirements are guaranteed to be ordered according to their appearance in the SolverRequirement type.
              */
-            MinMaxLinearEquationSolverRequirements getRequirements(Environment const& env, bool hasUniqueSolution = false, boost::optional<storm::solver::OptimizationDirection> const& direction = boost::none, bool const& assumeNoInitialScheduler = false) const;
+            MinMaxLinearEquationSolverRequirements getRequirements(Environment const& env, bool hasUniqueSolution = false, boost::optional<storm::solver::OptimizationDirection> const& direction = boost::none, bool const& hasInitialScheduler = false) const;
             void setRequirementsChecked(bool value = true);
             bool isRequirementsCheckedSet() const;
 

@@ -317,19 +317,6 @@ namespace storm {
             this->sccSolver->setHasUniqueSolution(this->hasUniqueSolution());
             this->sccSolver->setTrackScheduler(this->isTrackSchedulerSet());
             
-            // Requirements
-            auto req = this->sccSolver->getRequirements(sccSolverEnvironment, dir);
-            if (req.requiresUpperBounds() && this->hasUpperBound()) {
-                req.clearUpperBounds();
-            }
-            if (req.requiresLowerBounds() && this->hasLowerBound()) {
-                req.clearLowerBounds();
-            }
-            if (req.requiresValidInitialScheduler() && this->hasInitialScheduler()) {
-                req.clearValidInitialScheduler();
-            }
-            STORM_LOG_THROW(req.empty(), storm::exceptions::UnmetRequirementException, "Requirements of underlying solver not met.");
-
             // SCC Matrix
             storm::storage::SparseMatrix<ValueType> sccA = this->A->getSubmatrix(true, sccRowGroups, sccRowGroups);
             this->sccSolver->setMatrix(std::move(sccA));
@@ -368,6 +355,19 @@ namespace storm {
                 this->sccSolver->setUpperBounds(storm::utility::vector::filterVector(this->getUpperBounds(), sccRowGroups));
             }
             
+            // Requirements
+            auto req = this->sccSolver->getRequirements(sccSolverEnvironment, dir);
+            if (req.requiresUpperBounds() && this->hasUpperBound()) {
+                req.clearUpperBounds();
+            }
+            if (req.requiresLowerBounds() && this->hasLowerBound()) {
+                req.clearLowerBounds();
+            }
+            if (req.requiresValidInitialScheduler() && this->hasInitialScheduler()) {
+                req.clearValidInitialScheduler();
+            }
+            STORM_LOG_THROW(req.empty(), storm::exceptions::UnmetRequirementException, "Requirements of underlying solver not met.");
+
             // Invoke scc solver
             bool res = this->sccSolver->solveEquations(sccSolverEnvironment, dir, sccX, sccB);
             //std::cout << "rhs is " << storm::utility::vector::toString(sccB) << std::endl;
@@ -403,9 +403,9 @@ namespace storm {
         }
 
         template<typename ValueType>
-        MinMaxLinearEquationSolverRequirements TopologicalMinMaxLinearEquationSolver<ValueType>::getRequirements(Environment const& env, boost::optional<storm::solver::OptimizationDirection> const& direction, bool const& assumeNoInitialScheduler) const {
+        MinMaxLinearEquationSolverRequirements TopologicalMinMaxLinearEquationSolver<ValueType>::getRequirements(Environment const& env, boost::optional<storm::solver::OptimizationDirection> const& direction, bool const& hasInitialScheduler) const {
             // Return the requirements of the underlying solver
-            return GeneralMinMaxLinearEquationSolverFactory<ValueType>().getRequirements(getEnvironmentForUnderlyingSolver(env), this->hasUniqueSolution(), direction, assumeNoInitialScheduler);
+            return GeneralMinMaxLinearEquationSolverFactory<ValueType>().getRequirements(getEnvironmentForUnderlyingSolver(env), this->hasUniqueSolution(), direction, hasInitialScheduler);
         }
         
         template<typename ValueType>

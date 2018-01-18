@@ -150,7 +150,7 @@ namespace storm {
             upperResultBound = storm::utility::one<ConstantType>();
             
             // The solution of the min-max equation system will always be unique (assuming graph-preserving instantiations).
-            auto req = solverFactory->getRequirements(env, true);
+            auto req = solverFactory->getRequirements(env, true, boost::none, true);
             req.clearBounds();
             STORM_LOG_THROW(req.empty(), storm::exceptions::UncheckedRequirementException, "Unchecked solver requirement.");
             solverFactory->setRequirementsChecked(true);
@@ -189,7 +189,7 @@ namespace storm {
             lowerResultBound = storm::utility::zero<ConstantType>();
         
             // The solution of the min-max equation system will always be unique (assuming graph-preserving instantiations).
-            auto req = solverFactory->getRequirements(env, true);
+            auto req = solverFactory->getRequirements(env, true, boost::none, true);
             req.clearLowerBounds();
             if (req.requiresUpperBounds()) {
                 solvingRequiresUpperRewardBounds = true;
