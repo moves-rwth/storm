@@ -109,7 +109,6 @@ namespace storm {
                 for (auto const& scc : *this->sortedSccDecomposition) {
                     if (scc.isTrivial()) {
                         returnValue = solveTrivialScc(*scc.begin(), dir, x, b) && returnValue;
-                        ++this->overallPerformedIterations;
                     } else {
                         sccRowGroupsAsBitVector.clear();
                         sccRowsAsBitVector.clear();
@@ -132,12 +131,6 @@ namespace storm {
                     this->A->multiplyAndReduce(dir, this->A->getRowGroupIndices(), x, &b, *auxiliaryRowGroupVector.get(), &this->schedulerChoices.get());
                 }
             }
-            
-            if (this->sccSolver) {
-                this->overallPerformedIterations += this->sccSolver->overallPerformedIterations;
-                this->sccSolver->overallPerformedIterations = 0;
-            }
-
             
             if (!this->isCachingEnabled()) {
                 clearCache();

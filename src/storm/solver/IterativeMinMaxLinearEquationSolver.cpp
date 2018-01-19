@@ -582,8 +582,7 @@ namespace storm {
             }
             
             reportStatus(status, iterations);
-            this->overallPerformedIterations += iterations;
-
+            
             // We take the means of the lower and upper bound so we guarantee the desired precision.
             ValueType two = storm::utility::convertNumber<ValueType>(2.0);
             storm::utility::vector::applyPointwise<ValueType, ValueType, ValueType>(*lowerX, *upperX, *lowerX, [&two] (ValueType const& a, ValueType const& b) -> ValueType { return (a + b) / two; });
@@ -1279,8 +1278,6 @@ namespace storm {
             }
 
             reportStatus(status, iterations);
-            
-            this->overallPerformedIterations += iterations;
             
             if (!this->isCachingEnabled()) {
                 clearCache();
