@@ -679,7 +679,7 @@ namespace storm {
             template<OptimizationDirection dir>
             void performIterationStep(storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType> const& b) {
                 if (!decisionValueBlocks) {
-                    performIterationStepUpdateDecisionValue2<dir>(A, b);
+                    performIterationStepUpdateDecisionValue<dir>(A, b);
                 } else {
                     assert(decisionValue == getPrimaryBound<dir>());
                     auto xIt = x.rbegin();
@@ -703,6 +703,90 @@ namespace storm {
                                 ValueType currentValue = xi + yi * getPrimaryBound<dir>();
                                 // Check if the current row is better then the previously found one
                                 if (better<dir>(currentValue, bestValue)) {
+                                    xBest = std::move(xi);
+                                    yBest = std::move(yi);
+                                    bestValue = std::move(currentValue);
+                                } else if (currentValue == bestValue && yBest > yi) {
+                                    // If the value for this row is not strictly better, it might still be equal and have a better y value
+                                    xBest = std::move(xi);
+                                    yBest = std::move(yi);
+                                }
+                            }
+                        }
+                        *xIt = std::move(xBest);
+                        *yIt = std::move(yBest);
+                    }
+                }
+            }
+            
+            void performIterationStepMax(storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType> const& b) {
+                if (!decisionValueBlocks) {
+                    performIterationStepUpdateDecisionValueMax(A, b);
+                } else {
+                    assert(decisionValue == upperBound);
+                    auto xIt = x.rbegin();
+                    auto yIt = y.rbegin();
+                    auto groupStartIt = A.getRowGroupIndices().rbegin();
+                    uint64_t groupEnd = *groupStartIt;
+                    ++groupStartIt;
+                    for (auto groupStartIte = A.getRowGroupIndices().rend(); groupStartIt != groupStartIte; groupEnd = *(groupStartIt++), ++xIt, ++yIt) {
+                        // Perform the iteration for the first row in the group
+                        uint64_t row = *groupStartIt;
+                        ValueType xBest, yBest;
+                        multiplyRow(row, A, b[row], xBest, yBest);
+                        ++row;
+                        // Only do more work if there are still rows in this row group
+                        if (row != groupEnd) {
+                            ValueType xi, yi;
+                            ValueType bestValue = xBest + yBest * upperBound;
+                            for (;row < groupEnd; ++row) {
+                                // Get the multiplication results
+                                multiplyRow(row, A, b[row], xi, yi);
+                                ValueType currentValue = xi + yi * upperBound;
+                                // Check if the current row is better then the previously found one
+                                if (currentValue > bestValue) {
+                                    xBest = std::move(xi);
+                                    yBest = std::move(yi);
+                                    bestValue = std::move(currentValue);
+                                } else if (currentValue == bestValue && yBest > yi) {
+                                    // If the value for this row is not strictly better, it might still be equal and have a better y value
+                                    xBest = std::move(xi);
+                                    yBest = std::move(yi);
+                                }
+                            }
+                        }
+                        *xIt = std::move(xBest);
+                        *yIt = std::move(yBest);
+                    }
+                }
+            }
+            
+            void performIterationStepMin(storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType> const& b) {
+                if (!decisionValueBlocks) {
+                    performIterationStepUpdateDecisionValueMin(A, b);
+                } else {
+                    assert(decisionValue == lowerBound);
+                    auto xIt = x.rbegin();
+                    auto yIt = y.rbegin();
+                    auto groupStartIt = A.getRowGroupIndices().rbegin();
+                    uint64_t groupEnd = *groupStartIt;
+                    ++groupStartIt;
+                    for (auto groupStartIte = A.getRowGroupIndices().rend(); groupStartIt != groupStartIte; groupEnd = *(groupStartIt++), ++xIt, ++yIt) {
+                        // Perform the iteration for the first row in the group
+                        uint64_t row = *groupStartIt;
+                        ValueType xBest, yBest;
+                        multiplyRow(row, A, b[row], xBest, yBest);
+                        ++row;
+                        // Only do more work if there are still rows in this row group
+                        if (row != groupEnd) {
+                            ValueType xi, yi;
+                            ValueType bestValue = xBest + yBest * lowerBound;
+                            for (;row < groupEnd; ++row) {
+                                // Get the multiplication results
+                                multiplyRow(row, A, b[row], xi, yi);
+                                ValueType currentValue = xi + yi * lowerBound;
+                                // Check if the current row is better then the previously found one
+                                if (currentValue < bestValue) {
                                     xBest = std::move(xi);
                                     yBest = std::move(yi);
                                     bestValue = std::move(currentValue);
@@ -800,30 +884,30 @@ namespace storm {
                 }
             }
             
-            template<OptimizationDirection dir>
-            void performIterationStepUpdateDecisionValue2(storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType> const& b) {
-                auto const& groupIndices = A.getRowGroupIndices();
-                uint64_t group = groupIndices.size();
-                while (group != 0) {
-                    uint64_t const& groupEnd = groupIndices[group];
-                    --group;
-                    uint64_t row = groupIndices[group];
+            void performIterationStepUpdateDecisionValueMax(storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType> const& b) {
+                auto xIt = x.rbegin();
+                auto yIt = y.rbegin();
+                auto groupStartIt = A.getRowGroupIndices().rbegin();
+                uint64_t groupEnd = *groupStartIt;
+                ++groupStartIt;
+                for (auto groupStartIte = A.getRowGroupIndices().rend(); groupStartIt != groupStartIte; groupEnd = *(groupStartIt++), ++xIt, ++yIt) {
+                    // Perform the iteration for the first row in the group
+                    uint64_t row = *groupStartIt;
                     ValueType xBest, yBest;
                     multiplyRow(row, A, b[row], xBest, yBest);
                     ++row;
-                    
                     // Only do more work if there are still rows in this row group
                     if (row != groupEnd) {
                         ValueType xi, yi;
                         uint64_t xyTmpIndex = 0;
-                        if (hasPrimaryBound<dir>()) {
-                            ValueType bestValue = xBest + yBest * getPrimaryBound<dir>();
+                        if (hasUpperBound) {
+                            ValueType bestValue = xBest + yBest * upperBound;
                             for (;row < groupEnd; ++row) {
                                 // Get the multiplication results
                                 multiplyRow(row, A, b[row], xi, yi);
-                                ValueType currentValue = xi + yi * getPrimaryBound<dir>();
+                                ValueType currentValue = xi + yi * upperBound;
                                 // Check if the current row is better then the previously found one
-                                if (better<dir>(currentValue, bestValue)) {
+                                if (currentValue > bestValue) {
                                     if (yBest < yi) {
                                         // We need to store the 'old' best value as it might be relevant for the decision value
                                         xTmp[xyTmpIndex] = std::move(xBest);
@@ -849,7 +933,7 @@ namespace storm {
                             for (;row < groupEnd; ++row) {
                                 multiplyRow(row, A, b[row], xi, yi);
                                 // Update the best choice
-                                if (yi > yBest || (yi == yBest && better<dir>(xi, xBest))) {
+                                if (yi > yBest || (yi == yBest && xi > xBest)) {
                                         xTmp[xyTmpIndex] = std::move(xBest);
                                         yTmp[xyTmpIndex] = std::move(yBest);
                                         ++xyTmpIndex;
@@ -868,15 +952,95 @@ namespace storm {
                             ValueType deltaY = yBest - yTmp[i];
                             if (deltaY > storm::utility::zero<ValueType>()) {
                                 ValueType newDecisionValue = (xTmp[i] - xBest) / deltaY;
-                                if (!hasDecisionValue || better<dir>(newDecisionValue, decisionValue)) {
+                                if (!hasDecisionValue || newDecisionValue > decisionValue) {
                                     decisionValue = std::move(newDecisionValue);
                                     hasDecisionValue = true;
                                 }
                             }
                         }
                     }
-                    x[group] = std::move(xBest);
-                    y[group] = std::move(yBest);
+                    *xIt = std::move(xBest);
+                    *yIt = std::move(yBest);
+                }
+            }
+            
+            void performIterationStepUpdateDecisionValueMin(storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType> const& b) {
+                auto xIt = x.rbegin();
+                auto yIt = y.rbegin();
+                auto groupStartIt = A.getRowGroupIndices().rbegin();
+                uint64_t groupEnd = *groupStartIt;
+                ++groupStartIt;
+                for (auto groupStartIte = A.getRowGroupIndices().rend(); groupStartIt != groupStartIte; groupEnd = *(groupStartIt++), ++xIt, ++yIt) {
+                    // Perform the iteration for the first row in the group
+                    uint64_t row = *groupStartIt;
+                    ValueType xBest, yBest;
+                    multiplyRow(row, A, b[row], xBest, yBest);
+                    ++row;
+                    // Only do more work if there are still rows in this row group
+                    if (row != groupEnd) {
+                        ValueType xi, yi;
+                        uint64_t xyTmpIndex = 0;
+                        if (hasLowerBound) {
+                            ValueType bestValue = xBest + yBest * lowerBound;
+                            for (;row < groupEnd; ++row) {
+                                // Get the multiplication results
+                                multiplyRow(row, A, b[row], xi, yi);
+                                ValueType currentValue = xi + yi * lowerBound;
+                                // Check if the current row is better then the previously found one
+                                if (currentValue < bestValue) {
+                                    if (yBest < yi) {
+                                        // We need to store the 'old' best value as it might be relevant for the decision value
+                                        xTmp[xyTmpIndex] = std::move(xBest);
+                                        yTmp[xyTmpIndex] = std::move(yBest);
+                                        ++xyTmpIndex;
+                                    }
+                                    xBest = std::move(xi);
+                                    yBest = std::move(yi);
+                                    bestValue = std::move(currentValue);
+                                } else if (yBest > yi) {
+                                    // If the value for this row is not strictly better, it might still be equal and have a better y value
+                                    if (currentValue == bestValue) {
+                                        xBest = std::move(xi);
+                                        yBest = std::move(yi);
+                                    } else {
+                                        xTmp[xyTmpIndex] = std::move(xi);
+                                        yTmp[xyTmpIndex] = std::move(yi);
+                                        ++xyTmpIndex;
+                                    }
+                                }
+                            }
+                        } else {
+                            for (;row < groupEnd; ++row) {
+                                multiplyRow(row, A, b[row], xi, yi);
+                                // Update the best choice
+                                if (yi > yBest || (yi == yBest && xi < xBest)) {
+                                        xTmp[xyTmpIndex] = std::move(xBest);
+                                        yTmp[xyTmpIndex] = std::move(yBest);
+                                        ++xyTmpIndex;
+                                    xBest = std::move(xi);
+                                    yBest = std::move(yi);
+                                } else {
+                                    xTmp[xyTmpIndex] = std::move(xi);
+                                    yTmp[xyTmpIndex] = std::move(yi);
+                                    ++xyTmpIndex;
+                                }
+                            }
+                        }
+                        
+                        // Update the decision value
+                        for (uint64_t i = 0; i < xyTmpIndex; ++i) {
+                            ValueType deltaY = yBest - yTmp[i];
+                            if (deltaY > storm::utility::zero<ValueType>()) {
+                                ValueType newDecisionValue = (xTmp[i] - xBest) / deltaY;
+                                if (!hasDecisionValue || newDecisionValue < decisionValue) {
+                                    decisionValue = std::move(newDecisionValue);
+                                    hasDecisionValue = true;
+                                }
+                            }
+                        }
+                    }
+                    *xIt = std::move(xBest);
+                    *yIt = std::move(yBest);
                 }
             }
             
@@ -1086,13 +1250,13 @@ namespace storm {
             
             while (status == SolverStatus::InProgress && iterations < env.solver().minMax().getMaximalNumberOfIterations()) {
                 if (minimize(dir)) {
-                    helper.template performIterationStep<OptimizationDirection::Minimize>(*this->A, b);
+                    helper.template performIterationStepMin(*this->A, b);
                     if (helper.template checkConvergenceUpdateBounds<OptimizationDirection::Minimize>(iterations, relevantValuesPtr)) {
                         status = SolverStatus::Converged;
                     }
                 } else {
                     assert(maximize(dir));
-                    helper.template performIterationStep<OptimizationDirection::Maximize>(*this->A, b);
+                    helper.template performIterationStepMax(*this->A, b);
                     if (helper.template checkConvergenceUpdateBounds<OptimizationDirection::Maximize>(iterations, relevantValuesPtr)) {
                         status = SolverStatus::Converged;
                     }
