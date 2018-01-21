@@ -207,7 +207,7 @@ namespace storm {
                 builder.setPlaceLayoutInfo(nodeFailed, storm::gspn::LayoutInfo(xcenter, ycenter-3.0));
 
                 uint64_t unavailableNode = 0;
-                if (isRepresentative) {
+                if (!smart || isRepresentative) {
                     unavailableNode = addUnavailableNode(dftVot, storm::gspn::LayoutInfo(xcenter+6.0, ycenter-3.0));
                 }
                 
@@ -216,12 +216,11 @@ namespace storm {
 
                 uint64_t tNodeFailed = builder.addImmediateTransition(getFailPriority(dftVot), 0.0, dftVot->name() + STR_FAILING);
                 builder.addOutputArc(tNodeFailed, nodeFailed);
-                if (isRepresentative) {
+                if (!smart || isRepresentative) {
                     builder.addOutputArc(tNodeFailed, unavailableNode);
                 }
                 builder.addInhibitionArc(nodeFailed, tNodeFailed);
                 builder.addInputArc(nodeCollector, tNodeFailed, dftVot->threshold());
-                builder.addOutputArc(tNodeFailed, nodeCollector, dftVot->threshold());
                 uint64_t i = 0;
                 for (auto const& child : dftVot->children()) {
                     uint64_t childInhibPlace = builder.addPlace(1, 0, dftVot->name() + "_child_fail_inhib" + std::to_string(i));
@@ -374,7 +373,6 @@ namespace storm {
 
 			template <typename ValueType>
             void DftToGspnTransformator<ValueType>::drawSPARE(std::shared_ptr<storm::storage::DFTSpare<ValueType> const> dftSpare, bool isRepresentative) {
-                
                 uint64_t nodeFailed = builder.addPlace(defaultCapacity, 0, dftSpare->name() + STR_FAILED);
                 failedNodes.push_back(nodeFailed);
 
@@ -383,13 +381,12 @@ namespace storm {
                 builder.setPlaceLayoutInfo(nodeFailed, storm::gspn::LayoutInfo(xcenter+10.0, ycenter-8.0));
 
                 uint64_t unavailableNode = 0;
-                if (isRepresentative) {
+                if (!smart || isRepresentative) {
                     unavailableNode = addUnavailableNode(dftSpare, storm::gspn::LayoutInfo(xcenter+16.0, ycenter-8.0));
                 }
                 uint64_t spareActive = builder.addPlace(defaultCapacity, isBEActive(dftSpare) ? 1 : 0, dftSpare->name() + STR_ACTIVATED);
                 builder.setPlaceLayoutInfo(spareActive, storm::gspn::LayoutInfo(xcenter-20.0, ycenter-8.0));
                 activeNodes.emplace(dftSpare->id(), spareActive);
-
                 
                 std::vector<uint64_t> cucNodes;
                 std::vector<uint64_t> considerNodes;
@@ -431,22 +428,21 @@ namespace storm {
                     builder.addOutputArc(tnextcl, failedNodes.at(child->id()));
                     nextclTransitions.push_back(tnextcl);
                     ++j;
+                    // Activate spare module
                     for (uint64_t k : mDft.module(child->id())) {
-                        
                         uint64_t tactive = builder.addImmediateTransition(defaultPriority+1, 0.0, dftSpare->name() + "_activate_" + std::to_string(j) + "_" +  std::to_string(k));
                         builder.addInputArc(cucNodes.back(), tactive);
                         builder.addOutputArc(tactive, cucNodes.back());
                         builder.addInputArc(spareActive, tactive);
+                        builder.addOutputArc(tactive, spareActive);
                         builder.addOutputArc(tactive, activeNodes.at(k));
                         builder.addInhibitionArc(activeNodes.at(k), tactive);
                     }
-                    
-                    
                 }
                 builder.addOutputArc(nextconsiderTransitions.back(), nodeFailed);
                 builder.addOutputArc(nextclTransitions.back(), nodeFailed);
 
-                if (isRepresentative) {
+                if (!smart || isRepresentative) {
                     builder.addOutputArc(nextconsiderTransitions.back(), unavailableNode);
                     builder.addOutputArc(nextclTransitions.back(), unavailableNode);
                 }
