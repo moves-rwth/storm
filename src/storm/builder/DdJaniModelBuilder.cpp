@@ -1515,7 +1515,7 @@ namespace storm {
                                     
                                     // Keep track of the fragment of transient assignments.
                                     for (auto const& transientAssignment : currentEdge.transientEdgeAssignments) {
-                                        addToTransientAssignmentMap(transientAssignments, transientAssignment.first, remainingGuardChoicesIntersection.template toAdd<ValueType>() * transientAssignment.second * indicesEncodedWithLocalNondeterminismVariables[k].first.template toAdd<ValueType>());
+                                        addToTransientAssignmentMap(transientAssignments, transientAssignment.first, remainingGuardChoicesIntersection.template toAdd<ValueType>() * transientAssignment.second * indicesEncodedWithLocalNondeterminismVariables[k].second);
                                     }
                                     
                                     // Keep track of the written global variables of the fragment.
