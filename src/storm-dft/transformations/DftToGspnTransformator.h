@@ -139,7 +139,7 @@ namespace storm {
 
                 uint64_t addUnavailableNode(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dftElement, storm::gspn::LayoutInfo const& layoutInfo, bool initialAvailable = true);
                 
-                uint64_t addDisabledPlace(std::shared_ptr<storm::storage::DFTBE<ValueType> const> dftBe);
+                uint64_t addDisabledPlace(std::shared_ptr<storm::storage::DFTBE<ValueType> const> dftBe, storm::gspn::LayoutInfo const& layoutInfo);
                 
                 storm::storage::DFT<ValueType> const& mDft;
                 storm::gspn::GspnBuilder builder;

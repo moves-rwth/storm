@@ -101,7 +101,7 @@ namespace storm {
                 
                 uint64_t disabledNode = 0;
                 if (!smart || dftBE->nrRestrictions() > 0) {
-                    disabledNode = addDisabledPlace(dftBE);
+                    disabledNode = addDisabledPlace(dftBE, storm::gspn::LayoutInfo(xcenter-9.0, ycenter));
                 }
                 
                 uint64_t unavailableNode = 0;
@@ -150,7 +150,7 @@ namespace storm {
                 }
 
                 
-                uint64_t tAndFailed = builder.addImmediateTransition( getFailPriority(dftAnd)  , 0.0, dftAnd->name() + STR_FAILING );
+                uint64_t tAndFailed = builder.addImmediateTransition( getFailPriority(dftAnd), 0.0, dftAnd->name() + STR_FAILING );
                 builder.setTransitionLayoutInfo(tAndFailed, storm::gspn::LayoutInfo(xcenter, ycenter+3.0));
                 builder.addInhibitionArc(nodeFailed, tAndFailed);
                 builder.addOutputArc(tAndFailed, nodeFailed);
@@ -254,7 +254,7 @@ namespace storm {
                 builder.addInhibitionArc(nodeFailed, tNodeFailed);
                 builder.addOutputArc(tNodeFailed, nodeFailed);
                 if (!smart || isRepresentative) {
-                    builder.addOutputArc(tNodeFailed, nodeFailed);
+                    builder.addOutputArc(tNodeFailed, unavailableNode);
                 }
 
                 if(dftPand->isInclusive()) {
@@ -545,9 +545,11 @@ namespace storm {
             }
             
             template<typename ValueType>
-            uint64_t DftToGspnTransformator<ValueType>::addDisabledPlace(std::shared_ptr<const storm::storage::DFTBE<ValueType> > dftBe) {
+            uint64_t DftToGspnTransformator<ValueType>::addDisabledPlace(std::shared_ptr<const storm::storage::DFTBE<ValueType> > dftBe, storm::gspn::LayoutInfo const& layoutInfo) {
                 uint64_t disabledNode = builder.addPlace(dftBe->nrRestrictions(), dftBe->nrRestrictions(), dftBe->name() + "_dabled");
+                assert(disabledNode != 0);
                 disabledNodes.emplace(dftBe->id(), disabledNode);
+                builder.setPlaceLayoutInfo(disabledNode, layoutInfo);
                 return disabledNode;
             }
 			
