@@ -125,7 +125,7 @@ namespace storm {
 				 *
 				 * @param dFTElement DFT element.
 				 */
-                bool isBEActive(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dFTElement);
+                bool isActiveInitially(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dFTElement);
 				 
 				/*
 				 * Get the priority of the element.

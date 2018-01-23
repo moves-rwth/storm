@@ -90,7 +90,7 @@ namespace storm {
             
             template <typename ValueType>
             void DftToGspnTransformator<ValueType>::drawBE(std::shared_ptr<storm::storage::DFTBE<ValueType> const> dftBE, bool isRepresentative) {
-                uint64_t beActive = builder.addPlace(defaultCapacity, isBEActive(dftBE) ? 1 : 0, dftBE->name() + STR_ACTIVATED);
+                uint64_t beActive = builder.addPlace(defaultCapacity, isActiveInitially(dftBE) ? 1 : 0, dftBE->name() + STR_ACTIVATED);
                 activeNodes.emplace(dftBE->id(), beActive);
                 uint64_t beFailed = builder.addPlace(defaultCapacity, 0, dftBE->name() + STR_FAILED);
 
@@ -384,64 +384,68 @@ namespace storm {
                 if (!smart || isRepresentative) {
                     unavailableNode = addUnavailableNode(dftSpare, storm::gspn::LayoutInfo(xcenter+16.0, ycenter-8.0));
                 }
-                uint64_t spareActive = builder.addPlace(defaultCapacity, isBEActive(dftSpare) ? 1 : 0, dftSpare->name() + STR_ACTIVATED);
-                builder.setPlaceLayoutInfo(spareActive, storm::gspn::LayoutInfo(xcenter-20.0, ycenter-8.0));
+                uint64_t spareActive = builder.addPlace(defaultCapacity, isActiveInitially(dftSpare) ? 1 : 0, dftSpare->name() + STR_ACTIVATED);
+                builder.setPlaceLayoutInfo(spareActive, storm::gspn::LayoutInfo(xcenter-20.0, ycenter-12.0));
                 activeNodes.emplace(dftSpare->id(), spareActive);
                 
-                std::vector<uint64_t> cucNodes;
-                std::vector<uint64_t> considerNodes;
                 std::vector<uint64_t> nextclTransitions;
                 std::vector<uint64_t> nextconsiderTransitions;
                 uint64_t j = 0;
                 for(auto const& child : dftSpare->children()) {
-                    if (j > 0) {
-                        size_t nodeConsider = builder.addPlace(defaultCapacity, 0, dftSpare->name()+ "_consider_" + child->name());
-                        considerNodes.push_back(nodeConsider);
-                        builder.setPlaceLayoutInfo(nodeConsider, storm::gspn::LayoutInfo(xcenter-15.0+j*14.0, ycenter-8.0));
+                    // Consider next child
+                    size_t nodeConsider = builder.addPlace(defaultCapacity, j == 0 ? 1 : 0, dftSpare->name()+ "_consider_" + child->name());
+                    builder.setPlaceLayoutInfo(nodeConsider, storm::gspn::LayoutInfo(xcenter-15.0+j*14.0, ycenter-8.0));
 
-                        builder.addOutputArc(nextclTransitions.back(), considerNodes.back(), 1);
-                        if (j > 1) {
-                            builder.addOutputArc(nextconsiderTransitions.back(), considerNodes.back());
-                        }
-                        
-                        uint64_t tnextconsider = builder.addImmediateTransition(getFailPriority(dftSpare), 0.0, dftSpare->name() + "_cannot_claim_" + child->name());
-                        builder.setTransitionLayoutInfo(tnextconsider, storm::gspn::LayoutInfo(xcenter-7.0+j*14.0, ycenter-8.0));
-                        builder.addInputArc(considerNodes.back(), tnextconsider);
-                        builder.addInputArc(unavailableNodes.at(child->id()), tnextconsider);
-                        nextconsiderTransitions.push_back(tnextconsider);
-                        
-                    }
-                    size_t nodeCUC = builder.addPlace(defaultCapacity, j == 0 ? 1 : 0, dftSpare->name() + "_claimed_" + child->name());
-                    cucNodes.push_back(nodeCUC);
-                    builder.setPlaceLayoutInfo(nodeCUC, storm::gspn::LayoutInfo(xcenter-9.0+j*14.0, ycenter+5.0));
                     if (j > 0) {
-                        uint64_t tclaim = builder.addImmediateTransition(getFailPriority(dftSpare), 0.0, dftSpare->name() + "_claim_" + child->name());
-                        builder.setTransitionLayoutInfo(tclaim, storm::gspn::LayoutInfo(xcenter-9.0+j*14.0, ycenter));
-                        builder.addInhibitionArc(unavailableNodes.at(child->id()), tclaim);
-                        builder.addInputArc(considerNodes.back(), tclaim);
-                        builder.addOutputArc(tclaim, cucNodes.back());
+                        // Set output transition from previous next_claim
+                        builder.addOutputArc(nextclTransitions.back(), nodeConsider);
+                        // Set output transition from previous cannot_claim
+                        builder.addOutputArc(nextconsiderTransitions.back(), nodeConsider);
                     }
+
+                    // Cannot claim child
+                    uint64_t tnextconsider = builder.addImmediateTransition(getFailPriority(dftSpare), 0.0, dftSpare->name() + "_cannot_claim_" + child->name());
+                    builder.setTransitionLayoutInfo(tnextconsider, storm::gspn::LayoutInfo(xcenter-7.0+j*14.0, ycenter-8.0));
+                    builder.addInputArc(nodeConsider, tnextconsider);
+                    builder.addInputArc(unavailableNodes.at(child->id()), tnextconsider);
+                    builder.addOutputArc(tnextconsider, unavailableNodes.at(child->id()));
+                    nextconsiderTransitions.push_back(tnextconsider);
+
+                    // Claimed child
+                    size_t nodeCUC = builder.addPlace(defaultCapacity, 0, dftSpare->name() + "_claimed_" + child->name());
+                    builder.setPlaceLayoutInfo(nodeCUC, storm::gspn::LayoutInfo(xcenter-15.0+j*14.0, ycenter+5.0));
+                    uint64_t tclaim = builder.addImmediateTransition(getFailPriority(dftSpare), 0.0, dftSpare->name() + "_claim_" + child->name());
+                    builder.setTransitionLayoutInfo(tclaim, storm::gspn::LayoutInfo(xcenter-15.0+j*14.0, ycenter));
+                    builder.addInhibitionArc(unavailableNodes.at(child->id()), tclaim);
+                    builder.addInputArc(nodeConsider, tclaim);
+                    builder.addOutputArc(tclaim, nodeCUC);
+                    builder.addOutputArc(tclaim, unavailableNodes.at(child->id()));
+
+                    // Claim next
                     uint64_t tnextcl = builder.addImmediateTransition(getFailPriority(dftSpare), 0.0, dftSpare->name() + "_next_claim_" + std::to_string(j));
-                    builder.setTransitionLayoutInfo(tnextcl, storm::gspn::LayoutInfo(xcenter-3.0+j*14.0, ycenter+5.0));
-                    builder.addInputArc(cucNodes.back(), tnextcl);
+                    builder.setTransitionLayoutInfo(tnextcl, storm::gspn::LayoutInfo(xcenter-7.0+j*14.0, ycenter+5.0));
+                    builder.addInputArc(nodeCUC, tnextcl);
                     builder.addInputArc(failedNodes.at(child->id()), tnextcl);
                     builder.addOutputArc(tnextcl, failedNodes.at(child->id()));
                     nextclTransitions.push_back(tnextcl);
+
                     ++j;
-                    // Activate spare module
+                    // Activate all nodes in spare module
                     uint64_t l = 0;
                     for (uint64_t k : mDft.module(child->id())) {
                         uint64_t tactive = builder.addImmediateTransition(defaultPriority+1, 0.0, dftSpare->name() + "_activate_" + std::to_string(j) + "_" +  std::to_string(k));
-                        builder.setTransitionLayoutInfo(tactive, storm::gspn::LayoutInfo(xcenter-20.0+(j+l)*3, ycenter-6.0));
-                        builder.addInputArc(cucNodes.back(), tactive);
-                        builder.addOutputArc(tactive, cucNodes.back());
+                        builder.setTransitionLayoutInfo(tactive, storm::gspn::LayoutInfo(xcenter-18.0+(j+l)*3, ycenter-12.0));
+                        builder.addInhibitionArc(activeNodes.at(k), tactive);
+                        builder.addInputArc(nodeCUC, tactive);
                         builder.addInputArc(spareActive, tactive);
+                        builder.addOutputArc(tactive, nodeCUC);
                         builder.addOutputArc(tactive, spareActive);
                         builder.addOutputArc(tactive, activeNodes.at(k));
-                        builder.addInhibitionArc(activeNodes.at(k), tactive);
                         ++l;
                     }
                 }
+
+                // Set arcs to failed
                 builder.addOutputArc(nextconsiderTransitions.back(), nodeFailed);
                 builder.addOutputArc(nextclTransitions.back(), nodeFailed);
 
@@ -577,37 +581,9 @@ namespace storm {
             }
 			
 			template <typename ValueType>
-            bool DftToGspnTransformator<ValueType>::isBEActive(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dftElement) {
-				// If element is the top element, return true.
-				if (dftElement->id() == mDft.getTopLevelIndex()) {
-					return true;
-				}
-				else { // Else look at all parents.
-					auto parents = dftElement->parents();
-					std::vector<bool> pathValidities;
-					
-					for (std::size_t i = 0; i < parents.size(); i++) {
-						// Add all parents to the vector, except if the parent is a SPARE and the current element is an inactive child of the SPARE.
-						if (parents[i]->type() == storm::storage::DFTElementType::SPARE) {
-							auto children = std::static_pointer_cast<storm::storage::DFTSpare<ValueType> const>(parents[i])->children();
-							if (children[0]->id() != dftElement->id()) {
-								continue;
-							}
-						}
-						
-						pathValidities.push_back(isBEActive(parents[i]));
-					}
-					
-					// Check all vector entries. If one is true, a "valid" path has been found.
-					for (std::size_t i = 0; i < pathValidities.size(); i++) {
-						if (pathValidities[i]) {
-							return true;
-						}
-					}
-				}
-				
-				// No "valid" path found. BE is inactive.
-				return false;
+            bool DftToGspnTransformator<ValueType>::isActiveInitially(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dftElement) {
+				// If element is in the top module, return true.
+                return !mDft.hasRepresentant(dftElement->id());
 			}
 			
 			template <typename ValueType>
