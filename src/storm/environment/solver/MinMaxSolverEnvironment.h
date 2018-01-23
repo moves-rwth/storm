@@ -27,6 +27,8 @@ namespace storm {
         void setMultiplicationStyle(storm::solver::MultiplicationStyle value);
         bool isForceBoundsSet() const;
         void setForceBounds(bool value);
+        bool isSymmetricUpdatesSet() const;
+        void setSymmetricUpdates(bool value);
         storm::RationalNumber getQviRestartThreshold() const;
         void setQviRestartThreshold(storm::RationalNumber value);
         uint64_t getQviRestartMaxIterations() const;
@@ -40,6 +42,7 @@ namespace storm {
         bool considerRelativeTerminationCriterion;
         storm::solver::MultiplicationStyle multiplicationStyle;
         bool forceBounds;
+        bool symmetricUpdates;
         storm::RationalNumber qviRestartThreshold;
         uint64_t qviRestartMaxIterations;
     };

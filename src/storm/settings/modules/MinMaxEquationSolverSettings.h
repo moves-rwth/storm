@@ -98,6 +98,11 @@ namespace storm {
                 storm::solver::MultiplicationStyle getValueIterationMultiplicationStyle() const;
                 
                 /*!
+                 * Retrievew whether updates in interval iteration have to be made symmetrically
+                 */
+                bool isForceIntervalIterationSymmetricUpdatesSet() const;
+                
+                /*!
                  * Retrieves whether the  force bounds option has been set.
                  */
                 bool isForceBoundsSet() const;
@@ -123,6 +128,7 @@ namespace storm {
                 static const std::string absoluteOptionName;
                 static const std::string lraMethodOptionName;
                 static const std::string valueIterationMultiplicationStyleOptionName;
+                static const std::string intervalIterationSymmetricUpdatesOptionName;
                 static const std::string forceBoundsOptionName;
                 static const std::string quickValueIterationRestartOptionName;
             };

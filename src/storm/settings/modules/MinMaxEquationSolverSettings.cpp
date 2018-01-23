@@ -19,6 +19,7 @@ namespace storm {
             const std::string MinMaxEquationSolverSettings::absoluteOptionName = "absolute";
             const std::string MinMaxEquationSolverSettings::lraMethodOptionName = "lramethod";
             const std::string MinMaxEquationSolverSettings::valueIterationMultiplicationStyleOptionName = "vimult";
+            const std::string MinMaxEquationSolverSettings::intervalIterationSymmetricUpdatesOptionName = "symmetricupdates";
             const std::string MinMaxEquationSolverSettings::forceBoundsOptionName = "forcebounds";
             const std::string MinMaxEquationSolverSettings::quickValueIterationRestartOptionName = "qvirestart";
 
@@ -40,6 +41,8 @@ namespace storm {
                 std::vector<std::string> multiplicationStyles = {"gaussseidel", "regular", "gs", "r"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, valueIterationMultiplicationStyleOptionName, false, "Sets which method multiplication style to prefer for value iteration.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of a multiplication style.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(multiplicationStyles)).setDefaultValueString("gaussseidel").build()).build());
+                
+                this->addOption(storm::settings::OptionBuilder(moduleName, intervalIterationSymmetricUpdatesOptionName, false, "If set, interval iteration performs an update on both, lower and upper bound in each iteration").build());
                 
                 this->addOption(storm::settings::OptionBuilder(moduleName, forceBoundsOptionName, false, "If set, minmax solver always require that a priori bounds for the solution are computed.").build());
                 
@@ -116,6 +119,10 @@ namespace storm {
                     return storm::solver::MultiplicationStyle::Regular;
                 }
                 STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown multiplication style '" << multiplicationStyleString << "'.");
+            }
+            
+            bool MinMaxEquationSolverSettings::isForceIntervalIterationSymmetricUpdatesSet() const {
+                return this->getOption(intervalIterationSymmetricUpdatesOptionName).getHasOptionBeenSet();
             }
             
             bool MinMaxEquationSolverSettings::isForceBoundsSet() const {
