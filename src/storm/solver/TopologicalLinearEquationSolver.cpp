@@ -91,6 +91,7 @@ namespace storm {
                 for (auto const& scc : *this->sortedSccDecomposition) {
                     if (scc.isTrivial()) {
                         returnValue = solveTrivialScc(*scc.begin(), x, b) && returnValue;
+                        ++this->overallPerformedIterations;
                     } else {
                         sccAsBitVector.clear();
                         for (auto const& state : scc) {
@@ -101,9 +102,16 @@ namespace storm {
                 }
             }
             
+            if (this->sccSolver) {
+                this->overallPerformedIterations += this->sccSolver->overallPerformedIterations;
+                this->sccSolver->overallPerformedIterations = 0;
+            }
             if (!this->isCachingEnabled()) {
                 clearCache();
             }
+
+            
+
             
             return returnValue;
         }

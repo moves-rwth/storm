@@ -194,7 +194,8 @@ namespace storm {
                 std::fill(ecQuotient->auxStateValues.begin(), ecQuotient->auxStateValues.end(), storm::utility::zero<ValueType>());
                 
                 solver->solveEquations(env, ecQuotient->auxStateValues, ecQuotient->auxChoiceValues);
-
+                this->overallPerformedIterations += solver->overallPerformedIterations;
+                solver->overallPerformedIterations = 0;
                 this->weightedResult = std::vector<ValueType>(transitionMatrix.getRowGroupCount());
                 
                 transformReducedSolutionToOriginalModel(ecQuotient->matrix, ecQuotient->auxStateValues, solver->getSchedulerChoices(), ecQuotient->ecqToOriginalChoiceMapping, ecQuotient->originalToEcqStateMapping, this->weightedResult, this->optimalChoices);
@@ -277,6 +278,8 @@ namespace storm {
 
                                STORM_LOG_THROW(req.empty(), storm::exceptions::UncheckedRequirementException, "At least one requirement of the LinearEquationSolver was not met.");
                                solver->solveEquations(env, x, b);
+                               this->overallPerformedIterations += solver->overallPerformedIterations;
+                               solver->overallPerformedIterations = 0;
 
                                // Set the result for this objective accordingly
                                storm::utility::vector::setVectorValues<ValueType>(objectiveResults[objIndex], maybeStates, x);

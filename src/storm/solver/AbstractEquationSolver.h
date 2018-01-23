@@ -3,7 +3,7 @@
 
 #include <memory>
 #include <chrono>
-
+#include <iostream>
 #include <boost/optional.hpp>
 
 #include "storm/solver/TerminationCondition.h"
@@ -16,6 +16,15 @@ namespace storm {
         class AbstractEquationSolver {
         public:
             AbstractEquationSolver();
+            
+            virtual ~AbstractEquationSolver() {
+                if (overallPerformedIterations != 0) {
+                    std::cout << "PERFORMEDITERATIONS: " << overallPerformedIterations << std::endl;
+                }
+            }
+            
+            mutable uint64_t overallPerformedIterations = 0;
+            
             
             /*!
              * Sets a custom termination condition that is used together with the regular termination condition of the

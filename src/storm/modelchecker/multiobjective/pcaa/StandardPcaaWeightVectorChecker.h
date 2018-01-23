@@ -37,7 +37,13 @@ namespace storm {
                 
                 StandardPcaaWeightVectorChecker(SparseMultiObjectivePreprocessorResult<SparseModelType> const& preprocessorResult);
                 
-                virtual ~StandardPcaaWeightVectorChecker() = default;
+                virtual ~StandardPcaaWeightVectorChecker() {
+                   if (overallPerformedIterations != 0) {
+                        std::cout << "PERFORMEDITERATIONS: " << overallPerformedIterations << std::endl;
+                    }
+                }
+            
+                mutable uint64_t overallPerformedIterations = 0;
                 
                 /*!
                  * - computes the optimal expected reward w.r.t. the weighted sum of the rewards of the individual objectives

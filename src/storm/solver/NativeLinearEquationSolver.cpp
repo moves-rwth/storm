@@ -549,7 +549,8 @@ namespace storm {
             if (!this->isCachingEnabled()) {
                 clearCache();
             }
-            
+            this->overallPerformedIterations += iterations;
+
             this->logIterations(converged, terminate, iterations);
 
             return converged;
@@ -734,7 +735,8 @@ namespace storm {
             if (!this->isCachingEnabled()) {
                 clearCache();
             }
-            
+            this->overallPerformedIterations += iterations;
+
             this->logIterations(converged, terminate, iterations);
             STORM_LOG_WARN_COND(hasMinValueBound && hasMaxValueBound, "Could not compute lower or upper bound within the given number of iterations.");
             STORM_LOG_INFO("Quick Power Iteration terminated with lower value bound " << minValueBound << " and upper value bound " << maxValueBound << ".");
