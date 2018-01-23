@@ -429,14 +429,17 @@ namespace storm {
                     nextclTransitions.push_back(tnextcl);
                     ++j;
                     // Activate spare module
+                    uint64_t l = 0;
                     for (uint64_t k : mDft.module(child->id())) {
                         uint64_t tactive = builder.addImmediateTransition(defaultPriority+1, 0.0, dftSpare->name() + "_activate_" + std::to_string(j) + "_" +  std::to_string(k));
+                        builder.setTransitionLayoutInfo(tactive, storm::gspn::LayoutInfo(xcenter-20.0+(j+l)*3, ycenter-6.0));
                         builder.addInputArc(cucNodes.back(), tactive);
                         builder.addOutputArc(tactive, cucNodes.back());
                         builder.addInputArc(spareActive, tactive);
                         builder.addOutputArc(tactive, spareActive);
                         builder.addOutputArc(tactive, activeNodes.at(k));
                         builder.addInhibitionArc(activeNodes.at(k), tactive);
+                        ++l;
                     }
                 }
                 builder.addOutputArc(nextconsiderTransitions.back(), nodeFailed);
@@ -470,9 +473,16 @@ namespace storm {
 //			
 			template <typename ValueType>
             void DftToGspnTransformator<ValueType>::drawPDEP(std::shared_ptr<storm::storage::DFTDependency<ValueType> const> dftDependency) {
-                double xcenter = mDft.getElementLayoutInfo(dftDependency->id()).x;;
-                double ycenter = mDft.getElementLayoutInfo(dftDependency->id()).y;;
-                
+                double xcenter = mDft.getElementLayoutInfo(dftDependency->id()).x;
+                double ycenter = mDft.getElementLayoutInfo(dftDependency->id()).y;
+
+                if (!smart) {
+                    uint64_t nodeFailed = builder.addPlace(defaultCapacity, 0, dftDependency->name() + STR_FAILED);
+                    failedNodes.push_back(nodeFailed);
+                    builder.setPlaceLayoutInfo(nodeFailed, storm::gspn::LayoutInfo(xcenter+10.0, ycenter-8.0));
+                    addUnavailableNode(dftDependency, storm::gspn::LayoutInfo(xcenter+16.0, ycenter-8.0));
+                }
+
                 uint64_t coinPlace = builder.addPlace(defaultCapacity, 1, dftDependency->name() + "_coin");
                 builder.setPlaceLayoutInfo(coinPlace, storm::gspn::LayoutInfo(xcenter-5.0, ycenter+2.0));
                 uint64_t t1 = builder.addImmediateTransition(defaultPriority, 0.0, dftDependency->name() + "_start_flip");
@@ -516,15 +526,28 @@ namespace storm {
             template <typename ValueType>
             void DftToGspnTransformator<ValueType>::drawSeq(std::shared_ptr<storm::storage::DFTSeq<ValueType> const> dftSeq) {
                 STORM_LOG_THROW(dftSeq->allChildrenBEs(), storm::exceptions::NotImplementedException, "Sequence enforcers with gates as children are currently not supported");
+                double xcenter = mDft.getElementLayoutInfo(dftSeq->id()).x;
+                double ycenter = mDft.getElementLayoutInfo(dftSeq->id()).y;
+
+                if (!smart) {
+                    uint64_t nodeFailed = builder.addPlace(defaultCapacity, 0, dftSeq->name() + STR_FAILED);
+                    failedNodes.push_back(nodeFailed);
+                    builder.setPlaceLayoutInfo(nodeFailed, storm::gspn::LayoutInfo(xcenter+10.0, ycenter-8.0));
+                    addUnavailableNode(dftSeq, storm::gspn::LayoutInfo(xcenter+16.0, ycenter-8.0));
+                }
+
                 uint64_t j = 0;
                 uint64_t tEnable = 0;
                 uint64_t nextPlace = 0;
                 for(auto const& child : dftSeq->children()) {
                     nextPlace = builder.addPlace(defaultCapacity, j==0 ? 1 : 0, dftSeq->name() + "_next_" + child->name());
+                    builder.setPlaceLayoutInfo(nextPlace, storm::gspn::LayoutInfo(xcenter-5.0+j*3.0, ycenter-3.0));
                     if (j>0) {
                         builder.addOutputArc(tEnable, nextPlace);
                     }
-                    tEnable = builder.addImmediateTransition(defaultPriority + 1, 0.0, dftSeq->name() + "_unblock_" +child->name() );
+                    tEnable = builder.addImmediateTransition(defaultPriority + 1, 0.0, dftSeq->name() + "_unblock_" +child->name());
+                    builder.setTransitionLayoutInfo(tEnable, storm::gspn::LayoutInfo(xcenter-5.0+j*3.0, ycenter+3.0));
+
                     builder.addInputArc(nextPlace, tEnable);
                     builder.addInputArc(disabledNodes.at(child->id()), tEnable);
                     if (j>0) {
