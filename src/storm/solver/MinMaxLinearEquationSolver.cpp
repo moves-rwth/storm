@@ -220,6 +220,8 @@ namespace storm {
                 result = std::make_unique<IterativeMinMaxLinearEquationSolver<storm::RationalNumber>>(std::make_unique<GeneralLinearEquationSolverFactory<storm::RationalNumber>>());
             } else if (method == MinMaxMethod::LinearProgramming) {
                 result = std::make_unique<LpMinMaxLinearEquationSolver<storm::RationalNumber>>(std::make_unique<GeneralLinearEquationSolverFactory<storm::RationalNumber>>(), std::make_unique<storm::utility::solver::LpSolverFactory<storm::RationalNumber>>());
+            } else if (method == MinMaxMethod::Topological) {
+                result = std::make_unique<TopologicalMinMaxLinearEquationSolver<storm::RationalNumber>>();
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unsupported technique.");
             }
