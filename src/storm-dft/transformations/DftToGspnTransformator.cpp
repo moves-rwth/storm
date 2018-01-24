@@ -433,7 +433,7 @@ namespace storm {
                     // Activate all nodes in spare module
                     uint64_t l = 0;
                     for (uint64_t k : mDft.module(child->id())) {
-                        uint64_t tactive = builder.addImmediateTransition(defaultPriority+1, 0.0, dftSpare->name() + "_activate_" + std::to_string(j) + "_" +  std::to_string(k));
+                        uint64_t tactive = builder.addImmediateTransition(defaultPriority, 0.0, dftSpare->name() + "_activate_" + std::to_string(j) + "_" +  std::to_string(k));
                         builder.setTransitionLayoutInfo(tactive, storm::gspn::LayoutInfo(xcenter-18.0+(j+l)*3, ycenter-12.0));
                         builder.addInhibitionArc(activeNodes.at(k), tactive);
                         builder.addInputArc(nodeCUC, tactive);
@@ -502,11 +502,11 @@ namespace storm {
                     builder.addOutputArc(t1, flipPlace);
                     
                     builder.setPlaceLayoutInfo(flipPlace, storm::gspn::LayoutInfo(xcenter-2.0, ycenter+2.0));
-                    uint64_t t2 = builder.addImmediateTransition(defaultPriority + 1, dftDependency->probability(), "_win_flip");
+                    uint64_t t2 = builder.addImmediateTransition(defaultPriority, dftDependency->probability(), "_win_flip");
                     builder.addInputArc(flipPlace, t2);
                     builder.addOutputArc(t2, forwardPlace);
                     if (dftDependency->probability() < 1.0) {
-                        uint64_t t3 = builder.addImmediateTransition(defaultPriority + 1, 1 - dftDependency->probability(), "_loose_flip");
+                        uint64_t t3 = builder.addImmediateTransition(defaultPriority, 1 - dftDependency->probability(), "_loose_flip");
                         builder.addInputArc(flipPlace, t3);
                     }
                 } else {
@@ -549,7 +549,7 @@ namespace storm {
                     if (j>0) {
                         builder.addOutputArc(tEnable, nextPlace);
                     }
-                    tEnable = builder.addImmediateTransition(defaultPriority + 1, 0.0, dftSeq->name() + "_unblock_" +child->name());
+                    tEnable = builder.addImmediateTransition(defaultPriority, 0.0, dftSeq->name() + "_unblock_" +child->name());
                     builder.setTransitionLayoutInfo(tEnable, storm::gspn::LayoutInfo(xcenter-5.0+j*3.0, ycenter+3.0));
 
                     builder.addInputArc(nextPlace, tEnable);
@@ -589,7 +589,9 @@ namespace storm {
 			template <typename ValueType>
             uint64_t DftToGspnTransformator<ValueType>::getFailPriority(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dftElement)
 			{
-                return mDft.maxRank() - dftElement->rank() + 2;
+                // Temporariliy use one priority for all
+                return defaultPriority;
+                //return mDft.maxRank() - dftElement->rank() + 2;
 			}
 
 			
