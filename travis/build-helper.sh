@@ -35,7 +35,7 @@ run() {
     # Make
     travis_fold start make
     cd build
-    make -j$N_JOBS
+    travis_wait make -j$N_JOBS
     travis_fold end make
     # Set skip-file
     if [[ "$1" != "BuildLast" ]]
