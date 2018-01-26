@@ -48,7 +48,7 @@ jobs:
         - rm -rf build
         - travis/install_linux.sh
       script:
-        - travis/build.sh Build1
+        - travis_wait 40 travis/build.sh Build1
       before_cache:
         - docker cp storm:/storm/. .
       after_failure:
@@ -61,7 +61,7 @@ jobs:
         - rm -rf build
         - travis/install_linux.sh
       script:
-        - travis/build.sh Build1
+        - travis_wait 40 travis/build.sh Build1
       before_cache:
         - docker cp storm:/storm/. .
       after_failure:
@@ -79,7 +79,7 @@ jobs:
       install:
         - travis/install_linux.sh
       script:
-        - travis/build.sh Build2
+        - travis_wait 40 travis/build.sh Build2
       before_cache:
         - docker cp storm:/storm/. .
       after_failure:
@@ -91,7 +91,7 @@ jobs:
       install:
         - travis/install_linux.sh
       script:
-        - travis/build.sh Build2
+        - travis_wait 40 travis/build.sh Build2
       before_cache:
         - docker cp storm:/storm/. .
       after_failure:
@@ -109,7 +109,7 @@ jobs:
       install:
         - travis/install_linux.sh
       script:
-        - travis/build.sh Build3
+        - travis_wait 40 travis/build.sh Build3
       before_cache:
         - docker cp storm:/storm/. .
       after_failure:
@@ -121,7 +121,7 @@ jobs:
       install:
         - travis/install_linux.sh
       script:
-        - travis/build.sh Build3
+        - travis_wait 40 travis/build.sh Build3
       before_cache:
         - docker cp storm:/storm/. .
       after_failure:
@@ -139,7 +139,7 @@ jobs:
       install:
         - travis/install_linux.sh
       script:
-        - travis/build.sh BuildLast
+        - travis_wait 40 travis/build.sh BuildLast
       before_cache:
         - docker cp storm:/storm/. .
       after_failure:
@@ -151,7 +151,7 @@ jobs:
       install:
         - travis/install_linux.sh
       script:
-        - travis/build.sh BuildLast
+        - travis_wait 40 travis/build.sh BuildLast
       before_cache:
         - docker cp storm:/storm/. .
       after_failure:
@@ -169,7 +169,7 @@ jobs:
       install:
         - travis/install_linux.sh
       script:
-        - travis/build.sh TestAll
+        - travis_wait 40 travis/build.sh TestAll
       before_cache:
         - docker cp storm:/storm/. .
       after_failure:
@@ -185,7 +185,7 @@ jobs:
       install:
         - travis/install_linux.sh
       script:
-        - travis/build.sh TestAll
+        - travis_wait 40 travis/build.sh TestAll
       before_cache:
         - docker cp storm:/storm/. .
       after_failure:
