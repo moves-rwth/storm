@@ -194,7 +194,7 @@ int main(const int argc, const char** argv) {
                 pmc->printModelInformationToStream(std::cout);
                 STORM_PRINT_AND_LOG("Simplifying pMC...");
                 //if (generalSettings.isBisimulationSet()) {
-                pmc = storm::api::performBisimulationMinimization<storm::RationalFunction>(pmc->as<storm::models::sparse::Dtmc<storm::RationalFunction>>(),{formula})->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+                pmc = storm::api::performBisimulationMinimization<storm::RationalFunction>(pmc->as<storm::models::sparse::Dtmc<storm::RationalFunction>>(),{formula}, storm::storage::BisimulationType::Weak)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
 
                 //}
                 STORM_PRINT_AND_LOG(" done." << std::endl);
