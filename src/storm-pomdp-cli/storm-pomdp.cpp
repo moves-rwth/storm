@@ -67,7 +67,7 @@ void initializeSettings() {
     storm::settings::addModule<storm::settings::modules::JaniExportSettings>();
     storm::settings::addModule<storm::settings::modules::JitBuilderSettings>();
     storm::settings::addModule<storm::settings::modules::MultiObjectiveSettings>();
-    storm::settings::addModule<storm::settings::modules::BuildSettings>();
+    storm::settings::addModule<storm::settings::modules::CounterexampleGeneratorSettings>();
 
 
 
@@ -205,7 +205,7 @@ int main(const int argc, const char** argv) {
                 std::vector<storm::RationalFunctionVariable> parameters(parameterSet.begin(), parameterSet.end());
                 std::vector<std::string> parameterNames;
                 for (auto const& parameter : parameters) {
-                    parameterNames.push_back(parameter.getName());
+                    parameterNames.push_back(parameter.name());
                 }
                 storm::api::exportSparseModelAsDrn(pmc, pomdpSettings.getExportToParametricFilename(), parameterNames);
                 STORM_PRINT_AND_LOG(" done." << std::endl);
