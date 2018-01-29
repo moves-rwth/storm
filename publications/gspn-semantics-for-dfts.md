@@ -1,7 +1,8 @@
 ---
 title: GSPN semantics for DFTs
-navigation_weight: 5
+category_weight: 6
 layout: default
+categories: [Publications]
 ---
 
 On this page, you can find supplementary material for the GSPN semantics for DFTs.
