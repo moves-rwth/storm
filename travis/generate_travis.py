@@ -9,7 +9,7 @@ configs_linux = [
 # Configurations for Mac
 configs_mac = [
     # OS, compiler
-    ("osx", "clang", ""),
+#    ("osx", "clang", ""),
 ]
 
 # Build types
@@ -93,7 +93,7 @@ if __name__ == "__main__":
                     buildConfig += "        - rm -rf build\n"
                 buildConfig += "        - travis/install_osx.sh\n"
                 buildConfig += "      script:\n"
-                buildConfig += "        - travis/build.sh {}\n".format(stage[1])
+                buildConfig += "        - travis_wait 60 travis/build.sh {}\n".format(stage[1])
                 buildConfig += "      after_failure:\n"
                 buildConfig += "        - find build -iname '*err*.log' -type f -print -exec cat {} \;\n"
             s += buildConfig
@@ -114,7 +114,7 @@ if __name__ == "__main__":
                     buildConfig += "        - rm -rf build\n"
                 buildConfig += "        - travis/install_linux.sh\n"
                 buildConfig += "      script:\n"
-                buildConfig += "        - travis/build.sh {}\n".format(stage[1])
+                buildConfig += "        - travis_wait 60 travis/build.sh {}\n".format(stage[1])
                 buildConfig += "      before_cache:\n"
                 buildConfig += "        - docker cp storm:/storm/. .\n"
                 buildConfig += "      after_failure:\n"

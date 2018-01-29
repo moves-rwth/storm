@@ -39,31 +39,6 @@ jobs:
     # Stage: Build (1st run)
     ###
 
-    # osx
-    - stage: Build (1st run)
-      os: osx
-      osx_image: xcode9.1
-      compiler: clang
-      env: CONFIG=DefaultDebug COMPILER=clang STL=libc++
-      install:
-        - rm -rf build
-        - travis/install_osx.sh
-      script:
-        - travis/build.sh Build1
-      after_failure:
-        - find build -iname '*err*.log' -type f -print -exec cat {} \;
-    - stage: Build (1st run)
-      os: osx
-      osx_image: xcode9.1
-      compiler: clang
-      env: CONFIG=DefaultRelease COMPILER=clang STL=libc++
-      install:
-        - rm -rf build
-        - travis/install_osx.sh
-      script:
-        - travis/build.sh Build1
-      after_failure:
-        - find build -iname '*err*.log' -type f -print -exec cat {} \;
     # ubuntu-16.10
     - stage: Build (1st run)
       os: linux
@@ -73,7 +48,7 @@ jobs:
         - rm -rf build
         - travis/install_linux.sh
       script:
-        - travis/build.sh Build1
+        - travis_wait 60 travis/build.sh Build1
       before_cache:
         - docker cp storm:/storm/. .
       after_failure:
@@ -86,7 +61,7 @@ jobs:
         - rm -rf build
         - travis/install_linux.sh
       script:
-        - travis/build.sh Build1
+        - travis_wait 60 travis/build.sh Build1
       before_cache:
         - docker cp storm:/storm/. .
       after_failure:
@@ -96,29 +71,6 @@ jobs:
     # Stage: Build (2nd run)
     ###
 
-    # osx
-    - stage: Build (2nd run)
-      os: osx
-      osx_image: xcode9.1
-      compiler: clang
-      env: CONFIG=DefaultDebug COMPILER=clang STL=libc++
-      install:
-        - travis/install_osx.sh
-      script:
-        - travis/build.sh Build2
-      after_failure:
-        - find build -iname '*err*.log' -type f -print -exec cat {} \;
-    - stage: Build (2nd run)
-      os: osx
-      osx_image: xcode9.1
-      compiler: clang
-      env: CONFIG=DefaultRelease COMPILER=clang STL=libc++
-      install:
-        - travis/install_osx.sh
-      script:
-        - travis/build.sh Build2
-      after_failure:
-        - find build -iname '*err*.log' -type f -print -exec cat {} \;
     # ubuntu-16.10
     - stage: Build (2nd run)
       os: linux
@@ -127,7 +79,7 @@ jobs:
       install:
         - travis/install_linux.sh
       script:
-        - travis/build.sh Build2
+        - travis_wait 60 travis/build.sh Build2
       before_cache:
         - docker cp storm:/storm/. .
       after_failure:
@@ -139,7 +91,7 @@ jobs:
       install:
         - travis/install_linux.sh
       script:
-        - travis/build.sh Build2
+        - travis_wait 60 travis/build.sh Build2
       before_cache:
         - docker cp storm:/storm/. .
       after_failure:
@@ -149,29 +101,6 @@ jobs:
     # Stage: Build (3rd run)
     ###
 
-    # osx
-    - stage: Build (3rd run)
-      os: osx
-      osx_image: xcode9.1
-      compiler: clang
-      env: CONFIG=DefaultDebug COMPILER=clang STL=libc++
-      install:
-        - travis/install_osx.sh
-      script:
-        - travis/build.sh Build3
-      after_failure:
-        - find build -iname '*err*.log' -type f -print -exec cat {} \;
-    - stage: Build (3rd run)
-      os: osx
-      osx_image: xcode9.1
-      compiler: clang
-      env: CONFIG=DefaultRelease COMPILER=clang STL=libc++
-      install:
-        - travis/install_osx.sh
-      script:
-        - travis/build.sh Build3
-      after_failure:
-        - find build -iname '*err*.log' -type f -print -exec cat {} \;
     # ubuntu-16.10
     - stage: Build (3rd run)
       os: linux
@@ -180,7 +109,7 @@ jobs:
       install:
         - travis/install_linux.sh
       script:
-        - travis/build.sh Build3
+        - travis_wait 60 travis/build.sh Build3
       before_cache:
         - docker cp storm:/storm/. .
       after_failure:
@@ -192,7 +121,7 @@ jobs:
       install:
         - travis/install_linux.sh
       script:
-        - travis/build.sh Build3
+        - travis_wait 60 travis/build.sh Build3
       before_cache:
         - docker cp storm:/storm/. .
       after_failure:
@@ -202,29 +131,6 @@ jobs:
     # Stage: Build (4th run)
     ###
 
-    # osx
-    - stage: Build (4th run)
-      os: osx
-      osx_image: xcode9.1
-      compiler: clang
-      env: CONFIG=DefaultDebug COMPILER=clang STL=libc++
-      install:
-        - travis/install_osx.sh
-      script:
-        - travis/build.sh BuildLast
-      after_failure:
-        - find build -iname '*err*.log' -type f -print -exec cat {} \;
-    - stage: Build (4th run)
-      os: osx
-      osx_image: xcode9.1
-      compiler: clang
-      env: CONFIG=DefaultRelease COMPILER=clang STL=libc++
-      install:
-        - travis/install_osx.sh
-      script:
-        - travis/build.sh BuildLast
-      after_failure:
-        - find build -iname '*err*.log' -type f -print -exec cat {} \;
     # ubuntu-16.10
     - stage: Build (4th run)
       os: linux
@@ -233,7 +139,7 @@ jobs:
       install:
         - travis/install_linux.sh
       script:
-        - travis/build.sh BuildLast
+        - travis_wait 60 travis/build.sh BuildLast
       before_cache:
         - docker cp storm:/storm/. .
       after_failure:
@@ -245,7 +151,7 @@ jobs:
       install:
         - travis/install_linux.sh
       script:
-        - travis/build.sh BuildLast
+        - travis_wait 60 travis/build.sh BuildLast
       before_cache:
         - docker cp storm:/storm/. .
       after_failure:
@@ -255,29 +161,6 @@ jobs:
     # Stage: Test all
     ###
 
-    # osx
-    - stage: Test all
-      os: osx
-      osx_image: xcode9.1
-      compiler: clang
-      env: CONFIG=DefaultDebug COMPILER=clang STL=libc++
-      install:
-        - travis/install_osx.sh
-      script:
-        - travis/build.sh TestAll
-      after_failure:
-        - find build -iname '*err*.log' -type f -print -exec cat {} \;
-    - stage: Test all
-      os: osx
-      osx_image: xcode9.1
-      compiler: clang
-      env: CONFIG=DefaultRelease COMPILER=clang STL=libc++
-      install:
-        - travis/install_osx.sh
-      script:
-        - travis/build.sh TestAll
-      after_failure:
-        - find build -iname '*err*.log' -type f -print -exec cat {} \;
     # ubuntu-16.10
     - stage: Test all
       os: linux
@@ -286,7 +169,7 @@ jobs:
       install:
         - travis/install_linux.sh
       script:
-        - travis/build.sh TestAll
+        - travis_wait 60 travis/build.sh TestAll
       before_cache:
         - docker cp storm:/storm/. .
       after_failure:
@@ -302,7 +185,7 @@ jobs:
       install:
         - travis/install_linux.sh
       script:
-        - travis/build.sh TestAll
+        - travis_wait 60 travis/build.sh TestAll
       before_cache:
         - docker cp storm:/storm/. .
       after_failure:

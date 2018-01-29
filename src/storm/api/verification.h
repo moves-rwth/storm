@@ -152,8 +152,13 @@ namespace storm {
         }
         
         template<typename ValueType>
-        typename std::enable_if<std::is_same<ValueType, storm::RationalFunction>::value, std::unique_ptr<storm::modelchecker::CheckResult>>::type verifyWithSparseEngine(std::shared_ptr<storm::models::sparse::Mdp<ValueType>> const&, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const&) {
-            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Sparse engine cannot verify MDPs with this data type.");
+        typename std::enable_if<std::is_same<ValueType, storm::RationalFunction>::value, std::unique_ptr<storm::modelchecker::CheckResult>>::type verifyWithSparseEngine(std::shared_ptr<storm::models::sparse::Mdp<ValueType>> const& mdp, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
+            std::unique_ptr<storm::modelchecker::CheckResult> result;
+            storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Mdp<ValueType>> modelchecker(*mdp);
+            if (modelchecker.canHandle(task)) {
+                result = modelchecker.check(task);
+            }
+            return result;
         }
         
         template<typename ValueType>
