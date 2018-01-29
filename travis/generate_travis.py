@@ -2,7 +2,7 @@
 # Configuration for Linux
 configs_linux = [
     # OS, compiler
-    ("ubuntu-16.10", "gcc", ""),
+    ("ubuntu-17.10", "gcc", ""),
     #("debian-9", "gcc", ""),
 ]
 
