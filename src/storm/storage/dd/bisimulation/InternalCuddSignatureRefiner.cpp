@@ -117,10 +117,11 @@ namespace storm {
                     DdNode* partitionThen;
                     DdNode* partitionElse;
                     short offset;
-                    bool isNondeterminismVariable = false;
+                    bool isNondeterminismVariable;
                     while (skipped && !Cudd_IsConstant(nonBlockVariablesNode)) {
                         // Remember an offset that indicates whether the top variable is a nondeterminism variable or not.
                         offset = options.shiftStateVariables ? 1 : 0;
+                        isNondeterminismVariable = false;
                         if (!Cudd_IsConstant(nondeterminismVariablesNode) && Cudd_NodeReadIndex(nondeterminismVariablesNode) == Cudd_NodeReadIndex(nonBlockVariablesNode)) {
                             offset = 0;
                             isNondeterminismVariable = true;
@@ -260,10 +261,11 @@ namespace storm {
                     DdNode* signatureThen;
                     DdNode* signatureElse;
                     short offset;
-                    bool isNondeterminismVariable = false;
+                    bool isNondeterminismVariable;
                     while (skippedBoth && !Cudd_IsConstant(nonBlockVariablesNode)) {
                         // Remember an offset that indicates whether the top variable is a nondeterminism variable or not.
                         offset = options.shiftStateVariables ? 1 : 0;
+                        isNondeterminismVariable = false;
                         if (!Cudd_IsConstant(nondeterminismVariablesNode) && Cudd_NodeReadIndex(nondeterminismVariablesNode) == Cudd_NodeReadIndex(nonBlockVariablesNode)) {
                             offset = 0;
                             isNondeterminismVariable = true;
