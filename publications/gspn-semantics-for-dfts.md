@@ -16,5 +16,5 @@ The obtained GSPNs can be exported into the project format used by the [GreatSPN
 
 ### Models
 
-We provide GSPNs for sample DFTs on our [GitHub page](https://github.com/moves-rwth/){:target="_blank"}.
+We provide GSPNs for sample DFTs on our [GitHub page](https://github.com/moves-rwth/dft-gspn-examples){:target="_blank"}.
 
