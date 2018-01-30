@@ -39,11 +39,11 @@ jobs:
     # Stage: Build (1st run)
     ###
 
-    # ubuntu-16.10
+    # ubuntu-17.10
     - stage: Build (1st run)
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultDebug LINUX=ubuntu-16.10 COMPILER=gcc
+      env: CONFIG=DefaultDebug LINUX=ubuntu-17.10 COMPILER=gcc
       install:
         - rm -rf build
         - travis/install_linux.sh
@@ -56,7 +56,7 @@ jobs:
     - stage: Build (1st run)
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultRelease LINUX=ubuntu-16.10 COMPILER=gcc
+      env: CONFIG=DefaultRelease LINUX=ubuntu-17.10 COMPILER=gcc
       install:
         - rm -rf build
         - travis/install_linux.sh
@@ -71,11 +71,11 @@ jobs:
     # Stage: Build (2nd run)
     ###
 
-    # ubuntu-16.10
+    # ubuntu-17.10
     - stage: Build (2nd run)
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultDebug LINUX=ubuntu-16.10 COMPILER=gcc
+      env: CONFIG=DefaultDebug LINUX=ubuntu-17.10 COMPILER=gcc
       install:
         - travis/install_linux.sh
       script:
@@ -87,7 +87,7 @@ jobs:
     - stage: Build (2nd run)
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultRelease LINUX=ubuntu-16.10 COMPILER=gcc
+      env: CONFIG=DefaultRelease LINUX=ubuntu-17.10 COMPILER=gcc
       install:
         - travis/install_linux.sh
       script:
@@ -101,11 +101,11 @@ jobs:
     # Stage: Build (3rd run)
     ###
 
-    # ubuntu-16.10
+    # ubuntu-17.10
     - stage: Build (3rd run)
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultDebug LINUX=ubuntu-16.10 COMPILER=gcc
+      env: CONFIG=DefaultDebug LINUX=ubuntu-17.10 COMPILER=gcc
       install:
         - travis/install_linux.sh
       script:
@@ -117,7 +117,7 @@ jobs:
     - stage: Build (3rd run)
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultRelease LINUX=ubuntu-16.10 COMPILER=gcc
+      env: CONFIG=DefaultRelease LINUX=ubuntu-17.10 COMPILER=gcc
       install:
         - travis/install_linux.sh
       script:
@@ -131,11 +131,11 @@ jobs:
     # Stage: Build (4th run)
     ###
 
-    # ubuntu-16.10
+    # ubuntu-17.10
     - stage: Build (4th run)
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultDebug LINUX=ubuntu-16.10 COMPILER=gcc
+      env: CONFIG=DefaultDebug LINUX=ubuntu-17.10 COMPILER=gcc
       install:
         - travis/install_linux.sh
       script:
@@ -147,7 +147,7 @@ jobs:
     - stage: Build (4th run)
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultRelease LINUX=ubuntu-16.10 COMPILER=gcc
+      env: CONFIG=DefaultRelease LINUX=ubuntu-17.10 COMPILER=gcc
       install:
         - travis/install_linux.sh
       script:
@@ -161,11 +161,11 @@ jobs:
     # Stage: Test all
     ###
 
-    # ubuntu-16.10
+    # ubuntu-17.10
     - stage: Test all
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultDebug LINUX=ubuntu-16.10 COMPILER=gcc
+      env: CONFIG=DefaultDebug LINUX=ubuntu-17.10 COMPILER=gcc
       install:
         - travis/install_linux.sh
       script:
@@ -181,7 +181,7 @@ jobs:
     - stage: Test all
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultRelease LINUX=ubuntu-16.10 COMPILER=gcc
+      env: CONFIG=DefaultRelease LINUX=ubuntu-17.10 COMPILER=gcc
       install:
         - travis/install_linux.sh
       script:

@@ -168,7 +168,7 @@ namespace storm {
         template<typename ModelType, typename BlockDataType>
         BisimulationDecomposition<ModelType, BlockDataType>::BisimulationDecomposition(ModelType const& model, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, Options const& options) : model(model), backwardTransitions(backwardTransitions), options(options), partition(), comparator(), quotient(nullptr) {
             STORM_LOG_THROW(!options.getKeepRewards() || !model.hasRewardModel() || model.hasUniqueRewardModel(), storm::exceptions::IllegalFunctionCallException, "Bisimulation currently only supports models with at most one reward model.");
-            STORM_LOG_THROW(!options.getKeepRewards() || !model.hasRewardModel() || model.getUniqueRewardModel().hasOnlyStateRewards(), storm::exceptions::IllegalFunctionCallException, "Bisimulation is currently supported for models with state rewards only. Consider converting the transition rewards to state rewards (via suitable function calls).");
+            STORM_LOG_THROW(!options.getKeepRewards() || !model.hasRewardModel() || !model.getUniqueRewardModel().hasTransitionRewards(), storm::exceptions::IllegalFunctionCallException, "Bisimulation is currently supported for models with state or action rewards rewards only. Consider converting the transition rewards to state rewards (via suitable function calls).");
             STORM_LOG_THROW(options.getType() != BisimulationType::Weak || !options.getBounded(), storm::exceptions::IllegalFunctionCallException, "Weak bisimulation cannot preserve bounded properties.");
             
             // Fix the respected atomic propositions if they were not explicitly given.
@@ -259,9 +259,19 @@ namespace storm {
         }
 
         template<typename ModelType, typename BlockDataType>
-        void BisimulationDecomposition<ModelType, BlockDataType>::splitInitialPartitionBasedOnStateRewards() {
-            std::vector<ValueType> const& stateRewardVector = model.getUniqueRewardModel().getStateRewardVector();
-            partition.split([&stateRewardVector] (storm::storage::sparse::state_type const& a, storm::storage::sparse::state_type const& b) { return stateRewardVector[a] < stateRewardVector[b]; });
+        void BisimulationDecomposition<ModelType, BlockDataType>::splitInitialPartitionBasedOnRewards() {
+            auto const& rewardModel = model.getUniqueRewardModel();
+            if (rewardModel.hasStateRewards()) {
+                this->splitInitialPartitionBasedOnRewards(rewardModel.getStateRewardVector());
+            }
+            if (rewardModel.hasStateActionRewards() && (model.isOfType(storm::models::ModelType::Dtmc) || model.isOfType(storm::models::ModelType::Ctmc))) {
+                this->splitInitialPartitionBasedOnRewards(rewardModel.getStateActionRewardVector());
+            }
+        }
+        
+        template<typename ModelType, typename BlockDataType>
+        void BisimulationDecomposition<ModelType, BlockDataType>::splitInitialPartitionBasedOnRewards(std::vector<ValueType> const& rewardVector) {
+            partition.split([&rewardVector] (storm::storage::sparse::state_type const& a, storm::storage::sparse::state_type const& b) { return rewardVector[a] < rewardVector[b]; });
         }
         
         template<typename ModelType, typename BlockDataType>
@@ -278,7 +288,7 @@ namespace storm {
             // If the model has state rewards, we need to consider them, because otherwise reward properties are not
             // preserved.
             if (options.getKeepRewards() && model.hasRewardModel()) {
-                this->splitInitialPartitionBasedOnStateRewards();
+                this->splitInitialPartitionBasedOnRewards();
             }
         }
         
@@ -296,7 +306,7 @@ namespace storm {
             // If the model has state rewards, we need to consider them, because otherwise reward properties are not
             // preserved.
             if (options.getKeepRewards() && model.hasRewardModel()) {
-                this->splitInitialPartitionBasedOnStateRewards();
+                this->splitInitialPartitionBasedOnRewards();
             }
         }
         

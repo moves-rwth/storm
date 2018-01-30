@@ -118,7 +118,6 @@ namespace storm {
             this->initializeSilentProbabilities();
         }
         
-        
         template<typename ModelType>
         void DeterministicModelBisimulationDecomposition<ModelType>::postProcessInitialPartition() {
             if (this->options.getType() == BisimulationType::Weak && this->model.getType() == storm::models::ModelType::Dtmc) {
@@ -127,14 +126,15 @@ namespace storm {
             
             if (this->options.getKeepRewards() && this->model.hasRewardModel() && this->options.getType() == BisimulationType::Weak) {
                 // For a weak bisimulation that is to preserve reward properties, we have to flag all blocks of states
-                // with non-zero reward as reward blocks to they can be refined wrt. strong bisimulation.
+                // with non-zero reward as reward blocks so they can be refined wrt. strong bisimulation.
                 
-                // Here, we assume that the initial partition already respects state rewards. Therefore, it suffices to
+                // Here, we assume that the initial partition already respects state (and action) rewards. Therefore, it suffices to
                 // check the first state of each block for a non-zero reward.
-                std::vector<ValueType> const& stateRewardVector = this->model.getUniqueRewardModel().getStateRewardVector();
+                boost::optional<std::vector<ValueType>> const& optionalStateRewardVector = this->model.getUniqueRewardModel().getOptionalStateRewardVector();
+                boost::optional<std::vector<ValueType>> const& optionalStateActionRewardVector = this->model.getUniqueRewardModel().getOptionalStateActionRewardVector();
                 for (auto& block : this->partition.getBlocks()) {
                     auto state = *this->partition.begin(*block);
-                    block->data().setHasRewards(!storm::utility::isZero(stateRewardVector[state]));
+                    block->data().setHasRewards((optionalStateRewardVector && !storm::utility::isZero(optionalStateRewardVector.get()[state])) || (optionalStateActionRewardVector && !storm::utility::isZero(optionalStateActionRewardVector.get()[state])));
                 }
             }
         }
@@ -661,7 +661,13 @@ namespace storm {
                 // If the model has state rewards, we simply copy the state reward of the representative state, because
                 // all states in a block are guaranteed to have the same state reward.
                 if (this->options.getKeepRewards() && this->model.hasRewardModel()) {
-                    stateRewards.get()[blockIndex] = this->model.getUniqueRewardModel().getStateRewardVector()[representativeState];
+                    auto const& rewardModel = this->model.getUniqueRewardModel();
+                    if (rewardModel.hasStateRewards()) {
+                        stateRewards.get()[blockIndex] = rewardModel.getStateRewardVector()[representativeState];
+                    }
+                    if (rewardModel.hasStateActionRewards()) {
+                        stateRewards.get()[blockIndex] += rewardModel.getStateActionRewardVector()[representativeState];
+                    }
                 }
             }
             
