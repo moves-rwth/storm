@@ -10,6 +10,14 @@ travis_fold() {
   echo -en "travis_fold:${action}:${name}\r"
 }
 
+# Helper to write output every minute
+function bell() {
+  while true; do
+    echo "travis_wait for it..."
+    sleep 60
+  done
+}
+
 # Helper for distinguishing between different runs
 run() {
   case "$1" in
@@ -121,4 +129,9 @@ fi
 ruby travis/mtime_cache/mtime_cache.rb -g travis/mtime_cache/globs.txt -c travis/mtime_cache/cache.json
 travis_fold end mtime
 
+# Run and print output to avoid travis timeout
+bell &
+bellPID=$!
 run "$1"
+kill $bellPID
+

@@ -39,16 +39,16 @@ jobs:
     # Stage: Build (1st run)
     ###
 
-    # ubuntu-16.10
+    # ubuntu-17.10
     - stage: Build (1st run)
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultDebug LINUX=ubuntu-16.10 COMPILER=gcc
+      env: CONFIG=DefaultDebug LINUX=ubuntu-17.10 COMPILER=gcc
       install:
         - rm -rf build
         - travis/install_linux.sh
       script:
-        - travis_wait 60 travis/build.sh Build1
+        - travis/build.sh Build1
       before_cache:
         - docker cp storm:/storm/. .
       after_failure:
@@ -56,12 +56,12 @@ jobs:
     - stage: Build (1st run)
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultRelease LINUX=ubuntu-16.10 COMPILER=gcc
+      env: CONFIG=DefaultRelease LINUX=ubuntu-17.10 COMPILER=gcc
       install:
         - rm -rf build
         - travis/install_linux.sh
       script:
-        - travis_wait 60 travis/build.sh Build1
+        - travis/build.sh Build1
       before_cache:
         - docker cp storm:/storm/. .
       after_failure:
@@ -71,15 +71,15 @@ jobs:
     # Stage: Build (2nd run)
     ###
 
-    # ubuntu-16.10
+    # ubuntu-17.10
     - stage: Build (2nd run)
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultDebug LINUX=ubuntu-16.10 COMPILER=gcc
+      env: CONFIG=DefaultDebug LINUX=ubuntu-17.10 COMPILER=gcc
       install:
         - travis/install_linux.sh
       script:
-        - travis_wait 60 travis/build.sh Build2
+        - travis/build.sh Build2
       before_cache:
         - docker cp storm:/storm/. .
       after_failure:
@@ -87,11 +87,11 @@ jobs:
     - stage: Build (2nd run)
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultRelease LINUX=ubuntu-16.10 COMPILER=gcc
+      env: CONFIG=DefaultRelease LINUX=ubuntu-17.10 COMPILER=gcc
       install:
         - travis/install_linux.sh
       script:
-        - travis_wait 60 travis/build.sh Build2
+        - travis/build.sh Build2
       before_cache:
         - docker cp storm:/storm/. .
       after_failure:
@@ -101,15 +101,15 @@ jobs:
     # Stage: Build (3rd run)
     ###
 
-    # ubuntu-16.10
+    # ubuntu-17.10
     - stage: Build (3rd run)
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultDebug LINUX=ubuntu-16.10 COMPILER=gcc
+      env: CONFIG=DefaultDebug LINUX=ubuntu-17.10 COMPILER=gcc
       install:
         - travis/install_linux.sh
       script:
-        - travis_wait 60 travis/build.sh Build3
+        - travis/build.sh Build3
       before_cache:
         - docker cp storm:/storm/. .
       after_failure:
@@ -117,11 +117,11 @@ jobs:
     - stage: Build (3rd run)
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultRelease LINUX=ubuntu-16.10 COMPILER=gcc
+      env: CONFIG=DefaultRelease LINUX=ubuntu-17.10 COMPILER=gcc
       install:
         - travis/install_linux.sh
       script:
-        - travis_wait 60 travis/build.sh Build3
+        - travis/build.sh Build3
       before_cache:
         - docker cp storm:/storm/. .
       after_failure:
@@ -131,15 +131,15 @@ jobs:
     # Stage: Build (4th run)
     ###
 
-    # ubuntu-16.10
+    # ubuntu-17.10
     - stage: Build (4th run)
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultDebug LINUX=ubuntu-16.10 COMPILER=gcc
+      env: CONFIG=DefaultDebug LINUX=ubuntu-17.10 COMPILER=gcc
       install:
         - travis/install_linux.sh
       script:
-        - travis_wait 60 travis/build.sh BuildLast
+        - travis/build.sh BuildLast
       before_cache:
         - docker cp storm:/storm/. .
       after_failure:
@@ -147,11 +147,11 @@ jobs:
     - stage: Build (4th run)
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultRelease LINUX=ubuntu-16.10 COMPILER=gcc
+      env: CONFIG=DefaultRelease LINUX=ubuntu-17.10 COMPILER=gcc
       install:
         - travis/install_linux.sh
       script:
-        - travis_wait 60 travis/build.sh BuildLast
+        - travis/build.sh BuildLast
       before_cache:
         - docker cp storm:/storm/. .
       after_failure:
@@ -161,15 +161,15 @@ jobs:
     # Stage: Test all
     ###
 
-    # ubuntu-16.10
+    # ubuntu-17.10
     - stage: Test all
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultDebug LINUX=ubuntu-16.10 COMPILER=gcc
+      env: CONFIG=DefaultDebug LINUX=ubuntu-17.10 COMPILER=gcc
       install:
         - travis/install_linux.sh
       script:
-        - travis_wait 60 travis/build.sh TestAll
+        - travis/build.sh TestAll
       before_cache:
         - docker cp storm:/storm/. .
       after_failure:
@@ -181,11 +181,11 @@ jobs:
     - stage: Test all
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultRelease LINUX=ubuntu-16.10 COMPILER=gcc
+      env: CONFIG=DefaultRelease LINUX=ubuntu-17.10 COMPILER=gcc
       install:
         - travis/install_linux.sh
       script:
-        - travis_wait 60 travis/build.sh TestAll
+        - travis/build.sh TestAll
       before_cache:
         - docker cp storm:/storm/. .
       after_failure:
