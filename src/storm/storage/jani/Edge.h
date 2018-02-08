@@ -110,7 +110,7 @@ namespace storm {
              * @param localVars
              */
             void simplifyIndexedAssignments(VariableSet const& localVars);
-
+            
             std::shared_ptr<TemplateEdge> const& getTemplateEdge();
             
         private:

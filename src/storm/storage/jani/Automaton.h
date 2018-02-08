@@ -374,6 +374,11 @@ namespace storm {
 
             void writeDotToStream(std::ostream& outStream, std::vector<std::string> const& actionNames) const;
             
+            /*!
+             * Restricts the automaton to the edges given by the indices. All other edges are deleted.
+             */
+            void restrictToEdges(boost::container::flat_set<uint_fast64_t> const& edgeIndices);
+            
         private:
             /// The name of the automaton.
             std::string name;

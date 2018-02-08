@@ -3,13 +3,17 @@
 #include <memory>
 #include <string>
 
+#include <boost/container/flat_set.hpp>
+
 #include "storm/storage/sparse/ChoiceOrigins.h"
 
-
 namespace storm {
+    namespace jani {
+        class Model;
+    }
+    
     namespace storage {
         namespace sparse {
-            
             
             /*!
              * This class represents for each choice the origin in the jani specification
@@ -17,11 +21,12 @@ namespace storm {
              */
             class JaniChoiceOrigins : public ChoiceOrigins {
             public:
-                
+                typedef boost::container::flat_set<uint_fast64_t> EdgeIndexSet;
+
                 /*!
                  * Creates a new representation of the choice indices to their origin in the Jani specification
                  */
-                JaniChoiceOrigins(std::vector<uint_fast64_t> const& indexToIdentifierMapping);
+                JaniChoiceOrigins(std::shared_ptr<storm::jani::Model const> const& janiModel, std::vector<uint_fast64_t> const& indexToIdentifierMapping, std::vector<EdgeIndexSet> const& identifierToEdgeIndexSetMapping);
                 
                 virtual ~JaniChoiceOrigins() = default;
                 
@@ -33,6 +38,18 @@ namespace storm {
                  */
                 virtual uint_fast64_t getNumberOfIdentifiers() const override;
                 
+                /*!
+                 * Retrieves the associated JANI model.
+                 */
+                storm::jani::Model const& getModel() const;
+                
+                /*
+                 * Returns the set of edges that induced the choice with the given index.
+                 * The edges set is represented by a set of indices that encode an automaton index and its local edge index.
+                 */
+                EdgeIndexSet const& getEdgeIndexSet(uint_fast64_t choiceIndex) const;
+                
+            private:
                 /*
                  * Returns a copy of this object where the mapping of choice indices to origin identifiers is replaced by the given one.
                  */
@@ -43,8 +60,8 @@ namespace storm {
                  */
                 virtual void computeIdentifierInfos() const override;
                 
-            private:
-                
+                std::shared_ptr<storm::jani::Model const> model;
+                std::vector<EdgeIndexSet> identifierToEdgeIndexSet;
             };
         }
     }

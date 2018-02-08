@@ -5,7 +5,7 @@
 
 #include "storm/solver/Z3SmtSolver.h"
 
-#include "storm/counterexamples/PrismHighLevelCounterexample.h"
+#include "storm/counterexamples/HighLevelCounterexample.h"
 
 #include "storm/storage/prism/Program.h"
 #include "storm/storage/expressions/Expression.h"
@@ -1875,11 +1875,11 @@ namespace storm {
                 return commandSet;
             }
 
-            static std::shared_ptr<PrismHighLevelCounterexample> computeCounterexample(Environment const& env, storm::prism::Program program, storm::models::sparse::Model<T> const& model, std::shared_ptr<storm::logic::Formula const> const& formula) {
+            static std::shared_ptr<HighLevelCounterexample> computeCounterexample(Environment const& env, storm::prism::Program program, storm::models::sparse::Model<T> const& model, std::shared_ptr<storm::logic::Formula const> const& formula) {
 #ifdef STORM_HAVE_Z3
                 auto commandSet = computeCounterexampleCommandSet(env, program, model, formula);
                 
-                return std::make_shared<PrismHighLevelCounterexample>(program.restrictCommands(commandSet));
+                return std::make_shared<HighLevelCounterexample>(program.restrictCommands(commandSet));
 
 #else
                 throw storm::exceptions::NotImplementedException() << "This functionality is unavailable since storm has been compiled without support for Z3.";

@@ -52,5 +52,7 @@ namespace storm {
             boost::optional<boost::variant<storm::jani::Model, storm::prism::Program>> modelDescription;
         };
         
+        std::ostream& operator<<(std::ostream& out, SymbolicModelDescription const& model);
+        
     }
 }
