@@ -389,13 +389,10 @@ namespace storm {
                     } else {
                         STORM_LOG_THROW(sparseModel->isOfType(storm::models::ModelType::Dtmc) || sparseModel->isOfType(storm::models::ModelType::Mdp), storm::exceptions::NotSupportedException, "Counterexample generation using MaxSAT is currently only supported for discrete-time models.");
 
-                        STORM_LOG_THROW(input.model && input.model.get().isPrismProgram(), storm::exceptions::NotSupportedException, "Minimal command set counterexamples are only supported for PRISM model input.");
-                        storm::prism::Program const& program = input.model.get().asPrismProgram();
-                        
                         if (sparseModel->isOfType(storm::models::ModelType::Dtmc)) {
-                            counterexample = storm::api::computeHighLevelCounterexampleMaxSmt(program, sparseModel->template as<storm::models::sparse::Dtmc<ValueType>>(), property.getRawFormula());
+                            counterexample = storm::api::computeHighLevelCounterexampleMaxSmt(input.model.get(), sparseModel->template as<storm::models::sparse::Dtmc<ValueType>>(), property.getRawFormula());
                         } else {
-                            counterexample = storm::api::computeHighLevelCounterexampleMaxSmt(program, sparseModel->template as<storm::models::sparse::Mdp<ValueType>>(), property.getRawFormula());
+                            counterexample = storm::api::computeHighLevelCounterexampleMaxSmt(input.model.get(), sparseModel->template as<storm::models::sparse::Mdp<ValueType>>(), property.getRawFormula());
                         }
                     }
                     watch.stop();

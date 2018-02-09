@@ -175,6 +175,10 @@ namespace storm {
             return locationExpressionVariable;
         }
 
+        Edge const& Automaton::getEdge(uint64_t index) const {
+            return edges[index];
+        }
+        
         Automaton::Edges Automaton::getEdgesFromLocation(std::string const& name) {
             auto it = locationToIndex.find(name);
             STORM_LOG_THROW(it != locationToIndex.end(), storm::exceptions::InvalidArgumentException, "Cannot retrieve edges from unknown location '" << name << ".");

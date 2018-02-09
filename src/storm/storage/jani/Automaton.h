@@ -219,6 +219,11 @@ namespace storm {
             storm::expressions::Variable const& getLocationExpressionVariable() const;
             
             /*!
+             * Retrieves the edge with the given index in this automaton.
+             */
+            Edge const& getEdge(uint64_t index) const;
+            
+            /*!
              * Retrieves the edges of the location with the given name.
              */
             Edges getEdgesFromLocation(std::string const& name);

@@ -10,9 +10,9 @@ namespace storm {
             return storm::counterexamples::MILPMinimalLabelSetGenerator<double>::computeCounterexample(env, symbolicModel, *mdp, formula);
         }
         
-        std::shared_ptr<storm::counterexamples::Counterexample> computeHighLevelCounterexampleMaxSmt(storm::prism::Program const& program, std::shared_ptr<storm::models::sparse::Model<double>> model, std::shared_ptr<storm::logic::Formula const> const& formula) {
+        std::shared_ptr<storm::counterexamples::Counterexample> computeHighLevelCounterexampleMaxSmt(storm::storage::SymbolicModelDescription const& symbolicModel, std::shared_ptr<storm::models::sparse::Model<double>> model, std::shared_ptr<storm::logic::Formula const> const& formula) {
             Environment env;
-            return storm::counterexamples::SMTMinimalLabelSetGenerator<double>::computeCounterexample(env, program, *model, formula);
+            return storm::counterexamples::SMTMinimalLabelSetGenerator<double>::computeCounterexample(env, symbolicModel, *model, formula);
         }
         
     }

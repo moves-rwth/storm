@@ -319,11 +319,12 @@ namespace storm {
              * Asserts cuts that are derived from the explicit representation of the model and rule out a lot of
              * suboptimal solutions.
              *
+             * @param symbolicModel The symbolic model description used to build the model.
              * @param model The labeled model for which to compute the cuts.
              * @param context The Z3 context in which to build the expressions.
              * @param solver The solver to use for the satisfiability evaluation.
              */
-            static void assertCuts(storm::prism::Program& program, storm::models::sparse::Model<T> const& model, std::vector<boost::container::flat_set<uint_fast64_t>> const& labelSets, storm::storage::BitVector const& psiStates, VariableInformation const& variableInformation, RelevancyInformation const& relevancyInformation, storm::solver::SmtSolver& solver) {
+            static void assertCuts(storm::storage::SymbolicModelDescription const& symbolicModel, storm::models::sparse::Model<T> const& model, std::vector<boost::container::flat_set<uint_fast64_t>> const& labelSets, storm::storage::BitVector const& psiStates, VariableInformation const& variableInformation, RelevancyInformation const& relevancyInformation, storm::solver::SmtSolver& solver) {
                 // Walk through the model and
                 // * identify labels enabled in initial states
                 // * identify labels that can directly precede a given action
@@ -400,189 +401,249 @@ namespace storm {
                     }
                 }
                 
-                // Create a new solver over the same variables as the given program to use it for determining the symbolic
-                // cuts.
-                std::unique_ptr<storm::solver::SmtSolver> localSolver(new storm::solver::Z3SmtSolver(program.getManager()));
-                storm::expressions::ExpressionManager const& localManager = program.getManager();
-                
-                // Then add the constraints for bounds of the integer variables..
-                for (auto const& integerVariable : program.getGlobalIntegerVariables()) {
-                    localSolver->add(integerVariable.getExpressionVariable() >= integerVariable.getLowerBoundExpression());
-                    localSolver->add(integerVariable.getExpressionVariable() <= integerVariable.getUpperBoundExpression());
-                }
-                for (auto const& module : program.getModules()) {
-                    for (auto const& integerVariable : module.getIntegerVariables()) {
-                        localSolver->add(integerVariable.getExpressionVariable() >= integerVariable.getLowerBoundExpression());
-                        localSolver->add(integerVariable.getExpressionVariable() <= integerVariable.getUpperBoundExpression());
-                    }
-                }
-                
-                // Construct an expression that exactly characterizes the initial state.
-                storm::expressions::Expression initialStateExpression = program.getInitialStatesExpression();
-                
                 // Store the found implications in a container similar to the preceding label sets.
                 std::map<boost::container::flat_set<uint_fast64_t>, std::set<boost::container::flat_set<uint_fast64_t>>> backwardImplications;
-                
-                // Now check for possible backward cuts.
-                for (auto const& labelSetAndPrecedingLabelSetsPair : precedingLabels) {
-                    // Find out the commands for the currently considered label set.
-                    std::vector<std::reference_wrapper<storm::prism::Command const>> currentCommandVector;
-                    for (uint_fast64_t moduleIndex = 0; moduleIndex < program.getNumberOfModules(); ++moduleIndex) {
-                        storm::prism::Module const& module = program.getModule(moduleIndex);
+
+                if (!symbolicModel.isJaniModel() || !symbolicModel.asJaniModel().usesAssignmentLevels()) {
+                    // Create a new solver over the same variables as the given symbolic model description to use it for
+                    // determining the symbolic cuts.
+                    std::unique_ptr<storm::solver::SmtSolver> localSolver;
+                    if (symbolicModel.isPrismProgram()) {
+                        storm::prism::Program const& program = symbolicModel.asPrismProgram();
+                        localSolver = std::make_unique<storm::solver::Z3SmtSolver>(program.getManager());
                         
-                        for (uint_fast64_t commandIndex = 0; commandIndex < module.getNumberOfCommands(); ++commandIndex) {
-                            storm::prism::Command const& command = module.getCommand(commandIndex);
+                        // Then add the constraints for bounds of the integer variables.
+                        for (auto const& integerVariable : program.getGlobalIntegerVariables()) {
+                            localSolver->add(integerVariable.getExpressionVariable() >= integerVariable.getLowerBoundExpression());
+                            localSolver->add(integerVariable.getExpressionVariable() <= integerVariable.getUpperBoundExpression());
+                        }
+                        for (auto const& module : program.getModules()) {
+                            for (auto const& integerVariable : module.getIntegerVariables()) {
+                                localSolver->add(integerVariable.getExpressionVariable() >= integerVariable.getLowerBoundExpression());
+                                localSolver->add(integerVariable.getExpressionVariable() <= integerVariable.getUpperBoundExpression());
+                            }
+                        }
+                    } else {
+                        storm::jani::Model const& janiModel = symbolicModel.asJaniModel();
+                        localSolver = std::make_unique<storm::solver::Z3SmtSolver>(janiModel.getManager());
+                        
+                        for (auto const& integerVariable : janiModel.getGlobalVariables().getBoundedIntegerVariables()) {
+                            if (integerVariable.isTransient()) {
+                                continue;
+                            }
                             
-                            // If the current command is one of the commands we need to consider, store a reference to it in the container.
-                            if (labelSetAndPrecedingLabelSetsPair.first.find(command.getGlobalIndex()) != labelSetAndPrecedingLabelSetsPair.first.end()) {
-                                currentCommandVector.push_back(command);
+                            localSolver->add(integerVariable.getExpressionVariable() >= integerVariable.getLowerBound());
+                            localSolver->add(integerVariable.getExpressionVariable() <= integerVariable.getUpperBound());
+                        }
+                        for (auto const& automaton : janiModel.getAutomata()) {
+                            for (auto const& integerVariable : automaton.getVariables().getBoundedIntegerVariables()) {
+                                if (integerVariable.isTransient()) {
+                                    continue;
+                                }
+                                
+                                localSolver->add(integerVariable.getExpressionVariable() >= integerVariable.getLowerBound());
+                                localSolver->add(integerVariable.getExpressionVariable() <= integerVariable.getUpperBound());
                             }
                         }
                     }
                     
-                    // Save the state of the solver so we can easily backtrack.
-                    localSolver->push();
                     
-                    // Check if the command set is enabled in the initial state.
-                    for (auto const& command : currentCommandVector) {
-                        localSolver->add(command.get().getGuardExpression());
+                    // Construct an expression that exactly characterizes the initial state.
+                    storm::expressions::Expression initialStateExpression;
+                    if (symbolicModel.isPrismProgram()) {
+                       initialStateExpression = symbolicModel.asPrismProgram().getInitialStatesExpression();
+                    } else {
+                        initialStateExpression = symbolicModel.asJaniModel().getInitialStatesExpression();
                     }
-                    localSolver->add(initialStateExpression);
                     
-                    storm::solver::SmtSolver::CheckResult checkResult = localSolver->check();
-                    localSolver->pop();
-                    localSolver->push();
-                    
-//                    std::cout << "combi" << std::endl;
-//                    for (auto const& e : labelSetAndPrecedingLabelSetsPair.first) {
-//                        std::cout << e << ", ";
-//                    }
-//                    std::cout << std::endl;
-                    
-                    // If the solver reports unsat, then we know that the current selection is not enabled in the initial state.
-                    if (checkResult == storm::solver::SmtSolver::CheckResult::Unsat) {
-                        STORM_LOG_DEBUG("Selection not enabled in initial state.");
+                    // Now check for possible backward cuts.
+                    for (auto const& labelSetAndPrecedingLabelSetsPair : precedingLabels) {
+                        // Find out the commands for the currently considered label set.
                         storm::expressions::Expression guardConjunction;
-                        if (currentCommandVector.size() == 1) {
-                            guardConjunction = currentCommandVector.begin()->get().getGuardExpression();
-                        } else if (currentCommandVector.size() > 1) {
-                            std::vector<std::reference_wrapper<storm::prism::Command const>>::const_iterator setIterator = currentCommandVector.begin();
-                            storm::expressions::Expression first = setIterator->get().getGuardExpression();
-                            ++setIterator;
-                            storm::expressions::Expression second = setIterator->get().getGuardExpression();
-                            guardConjunction = first && second;
-                            ++setIterator;
-                            
-                            while (setIterator != currentCommandVector.end()) {
-                                guardConjunction = guardConjunction && setIterator->get().getGuardExpression();
-                                ++setIterator;
-                            }
-                        } else {
-                            STORM_LOG_ASSERT(false, "Choice label set is empty.");
-                        }
                         
-                        STORM_LOG_DEBUG("About to assert that combination is not enabled in the current state.");
-//                        std::cout << "negated guard expr " << !guardConjunction << std::endl;
-                        localSolver->add(!guardConjunction);
-                        STORM_LOG_DEBUG("Asserted disjunction of negated guards.");
-                        
-                        // Now check the possible preceding label sets for the essential ones.
-                        for (auto const& precedingLabelSet : labelSetAndPrecedingLabelSetsPair.second) {
-                            if (labelSetAndPrecedingLabelSetsPair.first == precedingLabelSet) continue;
+                        if (symbolicModel.isPrismProgram()) {
+                            storm::prism::Program const& program = symbolicModel.asPrismProgram();
                             
-//                            std::cout << "new preceeding label set" << std::endl;
-//                            for (auto const& e : precedingLabelSet) {
-//                                std::cout << e << ", ";
-//                            }
-//                            std::cout << std::endl;
-                            
-                            // Create a restore point so we can easily pop-off all weakest precondition expressions.
-                            localSolver->push();
-                            
-                            // Find out the commands for the currently considered preceding label set.
-                            std::vector<std::reference_wrapper<storm::prism::Command const>> currentPrecedingCommandVector;
                             for (uint_fast64_t moduleIndex = 0; moduleIndex < program.getNumberOfModules(); ++moduleIndex) {
                                 storm::prism::Module const& module = program.getModule(moduleIndex);
                                 
                                 for (uint_fast64_t commandIndex = 0; commandIndex < module.getNumberOfCommands(); ++commandIndex) {
                                     storm::prism::Command const& command = module.getCommand(commandIndex);
                                     
-                                    // If the current command is one of the commands we need to consider, store a reference to it in the container.
-                                    if (precedingLabelSet.find(command.getGlobalIndex()) != precedingLabelSet.end()) {
-                                        currentPrecedingCommandVector.push_back(command);
+                                    // If the current command is one of the commands we need to consider, add its guard.
+                                    if (labelSetAndPrecedingLabelSetsPair.first.find(command.getGlobalIndex()) != labelSetAndPrecedingLabelSetsPair.first.end()) {
+                                        guardConjunction = guardConjunction && command.getGuardExpression();
                                     }
                                 }
                             }
-                            
-                            // Assert all the guards of the preceding command set.
-                            for (auto const& command : currentPrecedingCommandVector) {
-//                                std::cout << "command guard " << command.get().getGuardExpression() << std::endl;
-                                localSolver->add(command.get().getGuardExpression());
-                            }
-                            
-                            std::vector<std::vector<storm::prism::Update>::const_iterator> iteratorVector;
-                            for (auto const& command : currentPrecedingCommandVector) {
-                                iteratorVector.push_back(command.get().getUpdates().begin());
-                            }
-                            
-                            // Iterate over all possible combinations of updates of the preceding command set.
-                            std::vector<storm::expressions::Expression> formulae;
-                            bool done = false;
-                            while (!done) {
-                                std::map<storm::expressions::Variable, storm::expressions::Expression> currentUpdateCombinationMap;
-                                for (auto const& updateIterator : iteratorVector) {
-                                    for (auto const& assignment : updateIterator->getAssignments()) {
-                                        currentUpdateCombinationMap.emplace(assignment.getVariable(), assignment.getExpression());
+                        } else {
+                            storm::jani::Model const& janiModel = symbolicModel.asJaniModel();
+
+                            for (uint_fast64_t automatonIndex = 0; automatonIndex < janiModel.getNumberOfAutomata(); ++automatonIndex) {
+                                storm::jani::Automaton const& automaton = janiModel.getAutomaton(automatonIndex);
+                                
+                                for (uint_fast64_t edgeIndex = 0; edgeIndex < automaton.getNumberOfEdges(); ++edgeIndex) {
+                                    // If the current edge is one of the edges we need to consider, add its guard.
+                                    if (labelSetAndPrecedingLabelSetsPair.first.find(janiModel.encodeAutomatonAndEdgeIndices(automatonIndex, edgeIndex)) != labelSetAndPrecedingLabelSetsPair.first.end()) {
+                                        storm::jani::Edge const& edge = automaton.getEdge(edgeIndex);
+                                        
+                                        guardConjunction = guardConjunction && edge.getGuard();
                                     }
                                 }
-                                
-                                STORM_LOG_DEBUG("About to assert a weakest precondition.");
-                                storm::expressions::Expression wp = guardConjunction.substitute(currentUpdateCombinationMap);
-//                                std::cout << "wp: " << wp << std::endl;
-                                formulae.push_back(wp);
-                                STORM_LOG_DEBUG("Asserted weakest precondition.");
-                                
-                                // Now try to move iterators to the next position if possible. If we could properly move it, we can directly
-                                // move on to the next combination of updates. If we have to reset it to the start, we
-                                uint_fast64_t k = iteratorVector.size();
-                                for (; k > 0; --k) {
-                                    ++iteratorVector[k - 1];
-                                    if (iteratorVector[k - 1] == currentPrecedingCommandVector[k - 1].get().getUpdates().end()) {
-                                        iteratorVector[k - 1] = currentPrecedingCommandVector[k - 1].get().getUpdates().begin();
-                                    } else {
-                                        break;
-                                    }
-                                }
-                                
-                                // If we had to reset all iterator to the start, we are done.
-                                if (k == 0) {
-                                    done = true;
-                                }
                             }
-                            
-                            // Now assert the disjunction of all weakest preconditions of all considered update combinations.
-                            assertDisjunction(*localSolver, formulae, localManager);
-                            
-                            STORM_LOG_DEBUG("Asserted disjunction of all weakest preconditions.");
-                            
-                            if (localSolver->check() == storm::solver::SmtSolver::CheckResult::Sat) {
-//                                std::cout << "sat" << std::endl;
-                                backwardImplications[labelSetAndPrecedingLabelSetsPair.first].insert(precedingLabelSet);
-                            }
-//                            else {
-//                                std::cout << "unsat" << std::endl;
-//                            }
-                            
-                            localSolver->pop();
                         }
                         
-                        // Popping the disjunction of negated guards from the solver stack.
+                        // Save the state of the solver so we can easily backtrack.
+                        localSolver->push();
+
+                        // Push initial state expression.
+                        STORM_LOG_DEBUG("About to assert that combination is not enabled in the current state.");
+                        localSolver->add(initialStateExpression);
+
+                        // Check if the label set is enabled in the initial state.
+                        localSolver->add(guardConjunction);
+                        
+                        storm::solver::SmtSolver::CheckResult checkResult = localSolver->check();
                         localSolver->pop();
-                    } else {
-                        STORM_LOG_DEBUG("Selection is enabled in initial state.");
+                        localSolver->push();
+                        
+                        // If the solver reports unsat, then we know that the current selection is not enabled in the initial state.
+                        if (checkResult == storm::solver::SmtSolver::CheckResult::Unsat) {
+                            STORM_LOG_DEBUG("Selection not enabled in initial state.");
+                            
+                            localSolver->add(!guardConjunction);
+                            STORM_LOG_DEBUG("Asserted disjunction of negated guards.");
+                            
+                            
+                            // Now check the possible preceding label sets for the essential ones.
+                            for (auto const& precedingLabelSet : labelSetAndPrecedingLabelSetsPair.second) {
+                                if (labelSetAndPrecedingLabelSetsPair.first == precedingLabelSet) continue;
+                                
+                                // Create a restore point so we can easily pop-off all weakest precondition expressions.
+                                localSolver->push();
+                                
+                                // Find out the commands for the currently considered preceding label set.
+                                std::vector<std::vector<boost::container::flat_map<storm::expressions::Variable, storm::expressions::Expression>>> currentPreceedingVariableUpdates;
+                                storm::expressions::Expression preceedingGuardConjunction;
+                                if (symbolicModel.isPrismProgram()) {
+                                    storm::prism::Program const& program = symbolicModel.asPrismProgram();
+                                    for (uint_fast64_t moduleIndex = 0; moduleIndex < program.getNumberOfModules(); ++moduleIndex) {
+                                        storm::prism::Module const& module = program.getModule(moduleIndex);
+                                        
+                                        for (uint_fast64_t commandIndex = 0; commandIndex < module.getNumberOfCommands(); ++commandIndex) {
+                                            storm::prism::Command const& command = module.getCommand(commandIndex);
+                                            
+                                            // If the current command is one of the commands we need to consider, store a reference to it in the container.
+                                            if (precedingLabelSet.find(command.getGlobalIndex()) != precedingLabelSet.end()) {
+                                                preceedingGuardConjunction = preceedingGuardConjunction && command.getGuardExpression();
+                                                
+                                                currentPreceedingVariableUpdates.emplace_back();
+                                                
+                                                for (uint64_t updateIndex = 0; updateIndex < command.getNumberOfUpdates(); ++updateIndex) {
+                                                    storm::prism::Update const& update = command.getUpdate(updateIndex);
+                                                    boost::container::flat_map<storm::expressions::Variable, storm::expressions::Expression> variableUpdates;
+                                                    for (auto const& assignment : update.getAssignments()) {
+                                                        variableUpdates.emplace(assignment.getVariable(), assignment.getExpression());
+                                                    }
+                                                    currentPreceedingVariableUpdates.back().emplace_back(std::move(variableUpdates));
+                                                }
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    storm::jani::Model const& janiModel = symbolicModel.asJaniModel();
+                                    for (uint_fast64_t automatonIndex = 0; automatonIndex < janiModel.getNumberOfAutomata(); ++automatonIndex) {
+                                        storm::jani::Automaton const& automaton = janiModel.getAutomaton(automatonIndex);
+                                        
+                                        for (uint_fast64_t edgeIndex = 0; edgeIndex < automaton.getNumberOfEdges(); ++edgeIndex) {
+                                            // If the current command is one of the commands we need to consider, store a reference to it in the container.
+                                            if (precedingLabelSet.find(janiModel.encodeAutomatonAndEdgeIndices(automatonIndex, edgeIndex)) != precedingLabelSet.end()) {
+                                                storm::jani::Edge const& edge = automaton.getEdge(edgeIndex);
+
+                                                preceedingGuardConjunction = preceedingGuardConjunction && edge.getGuard();
+
+                                                currentPreceedingVariableUpdates.emplace_back();
+                                                
+                                                for (uint64_t destinationIndex = 0; destinationIndex < edge.getNumberOfDestinations(); ++destinationIndex) {
+                                                    storm::jani::EdgeDestination const& destination = edge.getDestination(destinationIndex);
+                                                    boost::container::flat_map<storm::expressions::Variable, storm::expressions::Expression> variableUpdates;
+                                                    for (auto const& assignment : destination.getOrderedAssignments().getNonTransientAssignments()) {
+                                                        variableUpdates.emplace(assignment.getVariable().getExpressionVariable(), assignment.getAssignedExpression());
+                                                    }
+                                                    currentPreceedingVariableUpdates.back().emplace_back(std::move(variableUpdates));
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                
+                                // Assert all the guards of the preceding command set.
+                                localSolver->add(preceedingGuardConjunction);
+                                
+                                std::vector<std::vector<boost::container::flat_map<storm::expressions::Variable, storm::expressions::Expression>>::const_iterator> iteratorVector;
+                                for (auto const& variableUpdates : currentPreceedingVariableUpdates) {
+                                    iteratorVector.push_back(variableUpdates.begin());
+                                }
+                                
+                                // Iterate over all possible combinations of updates of the preceding command set.
+                                std::vector<storm::expressions::Expression> formulae;
+                                bool done = false;
+                                while (!done) {
+                                    std::map<storm::expressions::Variable, storm::expressions::Expression> currentVariableUpdateCombinationMap;
+                                    for (auto const& updateIterator : iteratorVector) {
+                                        for (auto const& variableUpdatePair : *updateIterator) {
+                                            currentVariableUpdateCombinationMap.emplace(variableUpdatePair.first, variableUpdatePair.second);
+                                        }
+                                    }
+                                    
+                                    STORM_LOG_DEBUG("About to assert a weakest precondition.");
+                                    storm::expressions::Expression wp = guardConjunction.substitute(currentVariableUpdateCombinationMap);
+                                    formulae.push_back(wp);
+                                    STORM_LOG_DEBUG("Asserted weakest precondition.");
+                                    
+                                    // Now try to move iterators to the next position if possible. If we could properly
+                                    // move it, we can directly move on to the next combination of updates. If we have
+                                    // to reset it to the start, we do so unless there is no more iterator to reset.
+                                    uint_fast64_t k = iteratorVector.size();
+                                    for (; k > 0; --k) {
+                                        ++iteratorVector[k - 1];
+                                        if (iteratorVector[k - 1] == currentPreceedingVariableUpdates[k - 1].end()) {
+                                            iteratorVector[k - 1] = currentPreceedingVariableUpdates[k - 1].begin();
+                                        } else {
+                                            break;
+                                        }
+                                    }
+                                    
+                                    // If we had to reset all iterator to the start, we are done.
+                                    if (k == 0) {
+                                        done = true;
+                                    }
+                                }
+                                
+                                // Now assert the disjunction of all weakest preconditions of all considered update combinations.
+                                assertDisjunction(*localSolver, formulae, symbolicModel.isPrismProgram() ? symbolicModel.asPrismProgram().getManager() : symbolicModel.asJaniModel().getManager());
+                                
+                                STORM_LOG_DEBUG("Asserted disjunction of all weakest preconditions.");
+                                
+                                if (localSolver->check() == storm::solver::SmtSolver::CheckResult::Sat) {
+                                    backwardImplications[labelSetAndPrecedingLabelSetsPair.first].insert(precedingLabelSet);
+                                }
+                                
+                                localSolver->pop();
+                            }
+                            
+                            // Popping the disjunction of negated guards from the solver stack.
+                            localSolver->pop();
+                        } else {
+                            STORM_LOG_DEBUG("Selection is enabled in initial state.");
+                        }
                     }
+                } else if (symbolicModel.isJaniModel()) {
+                    STORM_LOG_WARN("Model uses assignment levels, did not assert backward implications.");
                 }
                 
+                STORM_LOG_DEBUG("Successfully gathered data for cuts.");
+
                 // Compute the sets of labels such that the transitions labeled with this set possess at least one known label.
                 boost::container::flat_set<boost::container::flat_set<uint_fast64_t>> hasKnownSuccessor;
                 for (auto const& labelSetFollowingSetsPair : followingLabels) {
@@ -604,9 +665,6 @@ namespace storm {
                         }
                     }
                 }
-
-                
-                STORM_LOG_DEBUG("Successfully gathered data for cuts.");
                 
                 STORM_LOG_DEBUG("Asserting initial combination is taken.");
                 {
@@ -1563,7 +1621,7 @@ namespace storm {
             /*!
              * Computes the minimal command set that is needed in the given model to exceed the given probability threshold for satisfying phi until psi.
              *
-             * @param program The program that was used to build the model.
+             * @param symbolicModel The symbolic model description that was used to build the model.
              * @param model The sparse model in which to find the minimal command set.
              * @param phiStates A bit vector characterizing all phi states in the model.
              * @param psiStates A bit vector characterizing all psi states in the model.
@@ -1572,7 +1630,7 @@ namespace storm {
              * @param checkThresholdFeasible If set, it is verified that the model can actually achieve/exceed the given probability value. If this check
              * is made and fails, an exception is thrown.
              */
-            static boost::container::flat_set<uint_fast64_t> getMinimalCommandSet(Environment const& env, storm::prism::Program program, storm::models::sparse::Model<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, double probabilityThreshold, bool strictBound, boost::container::flat_set<uint_fast64_t> const& dontCareLabels = boost::container::flat_set<uint_fast64_t>(), bool checkThresholdFeasible = false, bool includeReachabilityEncoding = false) {
+            static boost::container::flat_set<uint_fast64_t> getMinimalLabelSet(Environment const& env, storm::storage::SymbolicModelDescription const& symbolicModel, storm::models::sparse::Model<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, double probabilityThreshold, bool strictBound, boost::container::flat_set<uint_fast64_t> const& dontCareLabels = boost::container::flat_set<uint_fast64_t>(), bool checkThresholdFeasible = false, bool includeReachabilityEncoding = false) {
 #ifdef STORM_HAVE_Z3
                 // Set up all clocks used for time measurement.
                 auto totalClock = std::chrono::high_resolution_clock::now();
@@ -1594,12 +1652,19 @@ namespace storm {
                 // (0) Obtain the label sets for each choice.
                 // The label set of a choice corresponds to the set of prism commands that induce the choice.
                 STORM_LOG_THROW(model.hasChoiceOrigins(), storm::exceptions::InvalidArgumentException, "Restriction to minimal command set is impossible for model without choice origins.");
-                STORM_LOG_THROW(model.getChoiceOrigins()->isPrismChoiceOrigins(), storm::exceptions::InvalidArgumentException, "Restriction to command set is impossible for model without prism choice origins.");
-                storm::storage::sparse::PrismChoiceOrigins const& choiceOrigins = model.getChoiceOrigins()->asPrismChoiceOrigins();
-                std::vector<boost::container::flat_set<uint_fast64_t>> labelSets;
-                labelSets.reserve(model.getNumberOfChoices());
-                for (uint_fast64_t choice = 0; choice < model.getNumberOfChoices(); ++choice) {
-                    labelSets.push_back(choiceOrigins.getCommandSet(choice));
+                STORM_LOG_THROW(model.getChoiceOrigins()->isPrismChoiceOrigins() || model.getChoiceOrigins()->isJaniChoiceOrigins(), storm::exceptions::InvalidArgumentException, "Restriction to label set is impossible for model without PRISM or JANI choice origins.");
+                
+                std::vector<boost::container::flat_set<uint_fast64_t>> labelSets(model.getNumberOfChoices());
+                if (model.getChoiceOrigins()->isPrismChoiceOrigins()) {
+                    storm::storage::sparse::PrismChoiceOrigins const& choiceOrigins = model.getChoiceOrigins()->asPrismChoiceOrigins();
+                    for (uint_fast64_t choice = 0; choice < model.getNumberOfChoices(); ++choice) {
+                        labelSets[choice] = choiceOrigins.getCommandSet(choice);
+                    }
+                } else {
+                    storm::storage::sparse::JaniChoiceOrigins const& choiceOrigins = model.getChoiceOrigins()->asJaniChoiceOrigins();
+                    for (uint_fast64_t choice = 0; choice < model.getNumberOfChoices(); ++choice) {
+                        labelSets[choice] = choiceOrigins.getEdgeIndexSet(choice);
+                    }
                 }
                 
                 // (1) Check whether its possible to exceed the threshold if checkThresholdFeasible is set.
@@ -1630,7 +1695,7 @@ namespace storm {
                 
                 // (6) Add constraints that cut off a lot of suboptimal solutions.
                 STORM_LOG_DEBUG("Asserting cuts.");
-                assertCuts(program, model, labelSets, psiStates, variableInformation, relevancyInformation, *solver);
+                assertCuts(symbolicModel, model, labelSets, psiStates, variableInformation, relevancyInformation, *solver);
                 STORM_LOG_DEBUG("Asserted cuts.");
                 if (includeReachabilityEncoding) {
                     assertReachabilityCuts(model, labelSets, psiStates, variableInformation, relevancyInformation, *solver);
@@ -1727,7 +1792,7 @@ namespace storm {
 #endif
             }
             
-            static void extendCommandSetLowerBound(storm::models::sparse::Model<T> const& model, boost::container::flat_set<uint_fast64_t>& commandSet, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
+            static void extendLabelSetLowerBound(storm::models::sparse::Model<T> const& model, boost::container::flat_set<uint_fast64_t>& commandSet, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
                 auto startTime = std::chrono::high_resolution_clock::now();
                 
                 // Create sub-model that only contains the choices allowed by the given command set.
@@ -1796,7 +1861,7 @@ namespace storm {
                 std::cout << std::endl << "Extended command for lower bounded property to size " << commandSet.size() << " in " << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << "ms." << std::endl;
             }
 
-            static boost::container::flat_set<uint_fast64_t>  computeCounterexampleCommandSet(Environment const& env, storm::prism::Program program, storm::models::sparse::Model<T> const& model, std::shared_ptr<storm::logic::Formula const> const& formula) {
+            static boost::container::flat_set<uint_fast64_t> computeCounterexampleLabelSet(Environment const& env, storm::storage::SymbolicModelDescription const& symbolicModel, storm::models::sparse::Model<T> const& model, std::shared_ptr<storm::logic::Formula const> const& formula) {
                 STORM_LOG_THROW(model.isOfType(storm::models::ModelType::Dtmc) || model.isOfType(storm::models::ModelType::Mdp), storm::exceptions::NotSupportedException, "MaxSAT-based counterexample generation is supported only for discrete-time models.");
                 std::cout << std::endl << "Generating minimal label counterexample for formula " << *formula << std::endl;
 
@@ -1864,23 +1929,27 @@ namespace storm {
 
                 // Delegate the actual computation work to the function of equal name.
                 auto startTime = std::chrono::high_resolution_clock::now();
-                auto commandSet = getMinimalCommandSet(env, program, model, phiStates, psiStates, threshold, strictBound, boost::container::flat_set<uint_fast64_t>(), true, storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>().isEncodeReachabilitySet());
+                auto labelSet = getMinimalLabelSet(env, symbolicModel, model, phiStates, psiStates, threshold, strictBound, boost::container::flat_set<uint_fast64_t>(), true, storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>().isEncodeReachabilitySet());
                 auto endTime = std::chrono::high_resolution_clock::now();
-                std::cout << std::endl << "Computed minimal command set of size " << commandSet.size() << " in " << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << "ms." << std::endl;
+                std::cout << std::endl << "Computed minimal label set of size " << labelSet.size() << " in " << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << "ms." << std::endl;
 
                 // Extend the command set properly.
                 if (lowerBoundedFormula) {
-                    extendCommandSetLowerBound(model, commandSet, phiStates, psiStates);
+                    extendLabelSetLowerBound(model, labelSet, phiStates, psiStates);
                 }
-                return commandSet;
+                return labelSet;
             }
 
-            static std::shared_ptr<HighLevelCounterexample> computeCounterexample(Environment const& env, storm::prism::Program program, storm::models::sparse::Model<T> const& model, std::shared_ptr<storm::logic::Formula const> const& formula) {
+            static std::shared_ptr<HighLevelCounterexample> computeCounterexample(Environment const& env, storm::storage::SymbolicModelDescription const& symbolicModel, storm::models::sparse::Model<T> const& model, std::shared_ptr<storm::logic::Formula const> const& formula) {
 #ifdef STORM_HAVE_Z3
-                auto commandSet = computeCounterexampleCommandSet(env, program, model, formula);
+                auto labelSet = computeCounterexampleLabelSet(env, symbolicModel, model, formula);
                 
-                return std::make_shared<HighLevelCounterexample>(program.restrictCommands(commandSet));
-
+                if (symbolicModel.isPrismProgram()) {
+                    return std::make_shared<HighLevelCounterexample>(symbolicModel.asPrismProgram().restrictCommands(labelSet));
+                } else {
+                    STORM_LOG_ASSERT(symbolicModel.isJaniModel(), "Unknown symbolic model description type.");
+                    return std::make_shared<HighLevelCounterexample>(symbolicModel.asJaniModel().restrictEdges(labelSet));
+                }
 #else
                 throw storm::exceptions::NotImplementedException() << "This functionality is unavailable since storm has been compiled without support for Z3.";
                 return nullptr;
