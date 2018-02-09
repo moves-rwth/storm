@@ -1560,7 +1560,7 @@ namespace storm {
                 for(uint_fast64_t state = 0; state < model.getNumberOfStates(); ++state) {
                     bool stateHasValidChoice = false;
                     for (uint_fast64_t choice = model.getTransitionMatrix().getRowGroupIndices()[state]; choice < model.getTransitionMatrix().getRowGroupIndices()[state + 1]; ++choice) {
-                        auto const& choiceLabelSet = model.getChoiceOrigins()->asPrismChoiceOrigins().getCommandSet(choice);
+                        auto const& choiceLabelSet = model.getChoiceOrigins()->isPrismChoiceOrigins() ? model.getChoiceOrigins()->asPrismChoiceOrigins().getCommandSet(choice) : model.getChoiceOrigins()->asJaniChoiceOrigins().getEdgeIndexSet(choice);
                         bool choiceValid = std::includes(filterLabelSet.begin(), filterLabelSet.end(), choiceLabelSet.begin(), choiceLabelSet.end());
 
                         // If the choice is valid, copy over all its elements.
@@ -1634,7 +1634,7 @@ namespace storm {
 #ifdef STORM_HAVE_Z3
                 // Set up all clocks used for time measurement.
                 auto totalClock = std::chrono::high_resolution_clock::now();
-                auto localClock = std::chrono::high_resolution_clock::now();
+                auto timeOfLastMessage = std::chrono::high_resolution_clock::now();
                 decltype(std::chrono::high_resolution_clock::now() - totalClock) totalTime(0);
                 
                 auto setupTimeClock = std::chrono::high_resolution_clock::now();
@@ -1726,6 +1726,7 @@ namespace storm {
                 uint_fast64_t currentBound = 0;
                 maximalReachabilityProbability = 0;
                 uint_fast64_t zeroProbabilityCount = 0;
+                uint64_t progressDelay = storm::settings::getModule<storm::settings::modules::GeneralSettings>().getShowProgressDelay();
                 do {
                     STORM_LOG_DEBUG("Computing minimal command set.");
                     solverClock = std::chrono::high_resolution_clock::now();
@@ -1762,16 +1763,26 @@ namespace storm {
                     }
                     totalAnalysisTime += (std::chrono::high_resolution_clock::now() - analysisClock);
                     ++iterations;
-                    
-                    if (std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - localClock).count() >= 5) {
-                        std::cout << "Checked " << iterations << " models in " << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - totalClock).count() << "s (out of which " << zeroProbabilityCount << " could not reach the target states). Current command set size is " << commandSet.size() << "." << std::endl;
-                        localClock = std::chrono::high_resolution_clock::now();
+
+                    auto now = std::chrono::high_resolution_clock::now();
+                    auto durationSinceLastMessage = std::chrono::duration_cast<std::chrono::seconds>(now - timeOfLastMessage).count();
+                    if (static_cast<uint64_t>(durationSinceLastMessage) >= progressDelay || iterations == 1) {
+                        if (iterations == 1) {
+                            std::cout << "Initial l";
+                        } else {
+                            std::cout << "L";
+                        }
+                        std::cout << "ower bound on label set size is " << commandSet.size() << " after " << std::chrono::duration_cast<std::chrono::seconds>(now - totalClock).count() << "s (checked " << iterations << " models, " << zeroProbabilityCount << " could not reach the target set)." << std::endl;
+                        timeOfLastMessage = std::chrono::high_resolution_clock::now();
                     }
                 } while (!done);
 
                 // Compute and emit the time measurements if the corresponding flag was set.
                 totalTime = std::chrono::high_resolution_clock::now() - totalClock;
                 if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
+                    std::cout << "Metrics:" << std::endl;
+                    std::cout << "    * known labels: " << relevancyInformation.knownLabels.size() << std::endl;
+                    std::cout << "    * relevant labels: " << (relevancyInformation.knownLabels.size() + relevancyInformation.relevantLabels.size()) << std::endl;
                     std::cout << std::endl;
                     std::cout << "Time breakdown:" << std::endl;
                     std::cout << "    * time for setup: " << std::chrono::duration_cast<std::chrono::milliseconds>(totalSetupTime).count() << "ms" << std::endl;
