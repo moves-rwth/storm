@@ -56,13 +56,13 @@ namespace storm {
                 // Compute the Markovian choices.
                 this->markovianChoices = this->getQualitativeTransitionMatrix() && this->markovianMarker;
                 
-                // Compute the Markovian states.
-                this->markovianStates = markovianChoices.existsAbstract(this->getNondeterminismVariables());
-                
                 // Compute the probabilistic states.
                 std::set<storm::expressions::Variable> columnAndNondeterminsmVariables;
                 std::set_union(this->getColumnVariables().begin(), this->getColumnVariables().end(), this->getNondeterminismVariables().begin(), this->getNondeterminismVariables().end(), std::inserter(columnAndNondeterminsmVariables, columnAndNondeterminsmVariables.begin()));
                 this->probabilisticStates = (this->getQualitativeTransitionMatrix() && !markovianMarker).existsAbstract(columnAndNondeterminsmVariables);
+
+                // Compute the Markovian states.
+                this->markovianStates = markovianChoices.existsAbstract(columnAndNondeterminsmVariables);
                 
                 // Compute the vector of exit rates.
                 this->exitRateVector = (this->getTransitionMatrix() * this->markovianMarker.template toAdd<ValueType>()).sumAbstract(columnAndNondeterminsmVariables);

@@ -229,8 +229,8 @@ namespace storm {
             std::vector<storm::expressions::Variable> localNondeterminismVariables;
             
             // The meta variable used to distinguish Markovian from probabilistic choices in Markov automata.
-            storm::expressions::Variable markovNondeterminismVariable;
-            storm::dd::Bdd<Type> markovMarker;
+            storm::expressions::Variable probabilisticNondeterminismVariable;
+            storm::dd::Bdd<Type> probabilisticMarker;
             
             // The meta variables used to encode the actions and nondeterminism.
             std::set<storm::expressions::Variable> allNondeterminismVariables;
@@ -322,9 +322,9 @@ namespace storm {
                 }
                 
                 if (this->model.getModelType() == storm::jani::ModelType::MA) {
-                    result.markovNondeterminismVariable = result.manager->addMetaVariable("markov").first;
-                    result.markovMarker = result.manager->getEncoding(result.markovNondeterminismVariable, 1);
-                    result.allNondeterminismVariables.insert(result.markovNondeterminismVariable);
+                    result.probabilisticNondeterminismVariable = result.manager->addMetaVariable("prob").first;
+                    result.probabilisticMarker = result.manager->getEncoding(result.probabilisticNondeterminismVariable, 1);
+                    result.allNondeterminismVariables.insert(result.probabilisticNondeterminismVariable);
                 }
                 
                 for (auto const& automatonName : this->automata) {
@@ -573,9 +573,9 @@ namespace storm {
             
             if (markovian) {
                 if (markovian.get()) {
-                    encoding *= variables.markovMarker.template toAdd<ValueType>();
+                    encoding *= (!variables.probabilisticMarker).template toAdd<ValueType>();
                 } else {
-                    encoding *= (!variables.markovMarker).template toAdd<ValueType>();
+                    encoding *= variables.probabilisticMarker.template toAdd<ValueType>();
                 }
             }
             
@@ -1712,7 +1712,7 @@ namespace storm {
             } else if (modelType == storm::jani::ModelType::MDP || modelType == storm::jani::ModelType::LTS) {
                 result = std::make_shared<storm::models::symbolic::Mdp<Type, ValueType>>(variables.manager, modelComponents.reachableStates, modelComponents.initialStates, modelComponents.deadlockStates, modelComponents.transitionMatrix, variables.rowMetaVariables, variables.rowExpressionAdapter, variables.columnMetaVariables, variables.rowColumnMetaVariablePairs, variables.allNondeterminismVariables, modelComponents.labelToExpressionMap, modelComponents.rewardModels);
             } else if (modelType == storm::jani::ModelType::MA) {
-                result = std::make_shared<storm::models::symbolic::MarkovAutomaton<Type, ValueType>>(variables.manager, variables.markovMarker, modelComponents.reachableStates, modelComponents.initialStates, modelComponents.deadlockStates, modelComponents.transitionMatrix, variables.rowMetaVariables, variables.rowExpressionAdapter, variables.columnMetaVariables, variables.rowColumnMetaVariablePairs, variables.allNondeterminismVariables, modelComponents.labelToExpressionMap, modelComponents.rewardModels);
+                result = std::make_shared<storm::models::symbolic::MarkovAutomaton<Type, ValueType>>(variables.manager, !variables.probabilisticMarker, modelComponents.reachableStates, modelComponents.initialStates, modelComponents.deadlockStates, modelComponents.transitionMatrix, variables.rowMetaVariables, variables.rowExpressionAdapter, variables.columnMetaVariables, variables.rowColumnMetaVariablePairs, variables.allNondeterminismVariables, modelComponents.labelToExpressionMap, modelComponents.rewardModels);
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Model type '" << modelType << "' not supported.");
             }

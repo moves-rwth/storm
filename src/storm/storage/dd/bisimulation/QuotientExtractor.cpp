@@ -13,6 +13,7 @@
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/Mdp.h"
+#include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 
 #include "storm/storage/dd/bisimulation/PreservationInformation.h"
@@ -306,7 +307,7 @@ namespace storm {
                     rowPermutation = std::vector<uint64_t>(matrixEntries.size());
                     std::iota(rowPermutation.begin(), rowPermutation.end(), 0ull);
                     if (this->isNondeterministic) {
-                        std::sort(rowPermutation.begin(), rowPermutation.end(), [this] (uint64_t first, uint64_t second) { return this->rowToState[first] < this->rowToState[second]; } );
+                        std::stable_sort(rowPermutation.begin(), rowPermutation.end(), [this] (uint64_t first, uint64_t second) { return this->rowToState[first] < this->rowToState[second]; } );
                     }
                     
                     uint64_t rowCounter = 0;
@@ -905,6 +906,14 @@ namespace storm {
                     result = std::make_shared<storm::models::sparse::Ctmc<ValueType>>(std::move(quotientTransitionMatrix), std::move(quotientStateLabeling), std::move(quotientRewardModels));
                 } else if (model.getType() == storm::models::ModelType::Mdp) {
                     result = std::make_shared<storm::models::sparse::Mdp<ValueType>>(std::move(quotientTransitionMatrix), std::move(quotientStateLabeling), std::move(quotientRewardModels));
+                } else if (model.getType() == storm::models::ModelType::MarkovAutomaton) {
+                    storm::models::symbolic::MarkovAutomaton<DdType, ValueType> const& markovAutomaton = *model.template as<storm::models::symbolic::MarkovAutomaton<DdType, ValueType>>();
+                    
+                    boost::optional<storm::storage::BitVector> markovianStates = sparseExtractor.extractSetExists(markovAutomaton.getMarkovianStates());
+                    storm::storage::sparse::ModelComponents<ValueType> modelComponents(std::move(quotientTransitionMatrix), std::move(quotientStateLabeling), std::move(quotientRewardModels), false, std::move(markovianStates));
+                    modelComponents.exitRates = sparseExtractor.extractStateVector(markovAutomaton.getExitRateVector());
+                    
+                    result = std::make_shared<storm::models::sparse::MarkovAutomaton<ValueType>>(std::move(modelComponents));
                 }
                 
                 return result;
