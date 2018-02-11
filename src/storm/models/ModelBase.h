@@ -109,6 +109,13 @@ namespace storm {
             bool isOfType(storm::models::ModelType const& modelType) const;
             
             /*!
+             * Returns true if the model is a nondeterministic model.
+             *
+             * @return True iff the model is a nondeterministic model.
+             */
+            bool isNondeterministicModel() const;
+            
+            /*!
              * Checks whether the model supports parameters.
              *
              * @return True iff the model supports parameters.

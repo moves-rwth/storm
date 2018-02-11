@@ -23,6 +23,7 @@
 
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
+#include "storm/models/symbolic/MarkovAutomaton.h"
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/ResourceSettings.h"
@@ -305,6 +306,23 @@ namespace storm {
         }
         
         template <storm::dd::DdType DdType, typename ValueType>
+        typename std::enable_if<DdType != storm::dd::DdType::Sylvan && !std::is_same<ValueType, double>::value, std::shared_ptr<storm::models::Model<ValueType>>>::type
+        preprocessDdMarkovAutomaton(std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> const& model) {
+            return model;
+        }
+        
+        template <storm::dd::DdType DdType, typename ValueType>
+        typename std::enable_if<DdType == storm::dd::DdType::Sylvan || std::is_same<ValueType, double>::value, std::shared_ptr<storm::models::Model<ValueType>>>::type
+        preprocessDdMarkovAutomaton(std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> const& model) {
+            auto ma = model->template as<storm::models::symbolic::MarkovAutomaton<DdType, ValueType>>();
+            if (!ma->isClosed()) {
+                return std::make_shared<storm::models::symbolic::MarkovAutomaton<DdType, ValueType>>(ma->close());
+            } else {
+                return model;
+            }
+        }
+        
+        template <storm::dd::DdType DdType, typename ValueType>
         std::shared_ptr<storm::models::Model<ValueType>> preprocessDdModelBisimulation(std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> const& model, SymbolicInput const& input, storm::settings::modules::BisimulationSettings const& bisimulationSettings) {
             STORM_LOG_WARN_COND(!bisimulationSettings.isWeakBisimulationSet(), "Weak bisimulation is currently not supported on DDs. Falling back to strong bisimulation.");
             
@@ -317,6 +335,11 @@ namespace storm {
             auto bisimulationSettings = storm::settings::getModule<storm::settings::modules::BisimulationSettings>();
             auto generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
             std::pair<std::shared_ptr<storm::models::Model<ValueType>>, bool> result = std::make_pair(model, false);
+            
+            if (model->isOfType(storm::models::ModelType::MarkovAutomaton)) {
+                result.first = preprocessDdMarkovAutomaton(result.first->template as<storm::models::symbolic::Model<DdType, ValueType>>());
+                result.second = true;
+            }
             
             if (generalSettings.isBisimulationSet()) {
                 result.first = preprocessDdModelBisimulation(model, input, bisimulationSettings);

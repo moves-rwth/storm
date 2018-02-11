@@ -6,7 +6,6 @@
 
 #include "storm/logic/Formulas.h"
 
-
 #include "storm/storage/jani/Edge.h"
 #include "storm/storage/jani/EdgeDestination.h"
 #include "storm/storage/jani/Model.h"
@@ -25,6 +24,7 @@
 #include "storm/models/symbolic/Dtmc.h"
 #include "storm/models/symbolic/Ctmc.h"
 #include "storm/models/symbolic/Mdp.h"
+#include "storm/models/symbolic/MarkovAutomaton.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
 
 #include "storm/settings/SettingsManager.h"
@@ -560,7 +560,7 @@ namespace storm {
         }
         
         template <storm::dd::DdType Type, typename ValueType>
-        storm::dd::Add<Type, ValueType> encodeAction(boost::optional<uint64_t> const& actionIndex, CompositionVariables<Type, ValueType> const& variables) {
+        storm::dd::Add<Type, ValueType> encodeAction(boost::optional<uint64_t> const& actionIndex, boost::optional<bool> const& markovian, CompositionVariables<Type, ValueType> const& variables) {
             storm::dd::Add<Type, ValueType> encoding = variables.manager->template getAddOne<ValueType>();
             
             for (auto it = variables.actionVariablesMap.rbegin(), ite = variables.actionVariablesMap.rend(); it != ite; ++it) {
@@ -568,6 +568,14 @@ namespace storm {
                     encoding *= variables.manager->getEncoding(it->second, 1).template toAdd<ValueType>();
                 } else {
                     encoding *= variables.manager->getEncoding(it->second, 0).template toAdd<ValueType>();
+                }
+            }
+            
+            if (markovian) {
+                if (markovian.get()) {
+                    encoding *= variables.markovMarker.template toAdd<ValueType>();
+                } else {
+                    encoding *= (!variables.markovMarker).template toAdd<ValueType>();
                 }
             }
             
@@ -693,6 +701,10 @@ namespace storm {
                 
                 bool setMarkovian(bool markovian) {
                     this->markovian = markovian;
+                }
+                
+                bool isMarkovian() const {
+                    return this->markovian;
                 }
                 
                 bool operator==(ActionIdentification const& other) const {
@@ -1117,7 +1129,7 @@ namespace storm {
                         result = ActionDd(result.guard || actionIt->guard, result.transitions + actionIt->transitions, joinTransientAssignmentMaps(result.transientEdgeAssignments, actionIt->transientEdgeAssignments), std::make_pair<uint64_t, uint64_t>(0, 0), joinVariableWritingFragmentMaps(result.variableToWritingFragment, actionIt->variableToWritingFragment), result.illegalFragment || actionIt->illegalFragment);
                     }
                     return result;
-                } else if (this->model.getModelType() == storm::jani::ModelType::MDP || this->model.getModelType() == storm::jani::ModelType::LTS ) {
+                } else if (this->model.getModelType() == storm::jani::ModelType::MDP || this->model.getModelType() == storm::jani::ModelType::LTS || this->model.getModelType() == storm::jani::ModelType::MA) {
                     // Ensure that all actions start at the same local nondeterminism variable.
                     uint_fast64_t lowestLocalNondeterminismVariable = actions.front().getLowestLocalNondeterminismVariable();
                     uint_fast64_t highestLocalNondeterminismVariable = actions.front().getHighestLocalNondeterminismVariable();
@@ -1378,7 +1390,7 @@ namespace storm {
                 std::map<storm::expressions::Variable, storm::dd::Add<Type, ValueType>> transientEdgeAssignments;
                 bool overlappingGuards = false;
                 for (auto const& edgeDd : edgeDds) {
-                    STORM_LOG_THROW((this->model.getModelType() == storm::jani::ModelType::CTMC) == edgeDd.isMarkovian, storm::exceptions::WrongFormatException, "Unexpected non-Markovian edge in CTMC.");
+                    STORM_LOG_THROW((this->model.getModelType() == storm::jani::ModelType::CTMC || this->model.getModelType() == storm::jani::ModelType::MA) == edgeDd.isMarkovian, storm::exceptions::WrongFormatException, "Unexpected edge type.");
                     
                     // Check for overlapping guards.
                     overlappingGuards = !(edgeDd.guard && allGuards).isZero();
@@ -1617,8 +1629,12 @@ namespace storm {
             }
             
             ComposerResult<Type, ValueType> buildSystemFromAutomaton(AutomatonDd& automaton) {
+                STORM_LOG_TRACE("Building system from final automaton.");
+
+                auto modelType = this->model.getModelType();
+                
                 // If the model is an MDP, we need to encode the nondeterminism using additional variables.
-                if (this->model.getModelType() == storm::jani::ModelType::MDP || this->model.getModelType() == storm::jani::ModelType::LTS) {
+                if (modelType == storm::jani::ModelType::MDP || modelType == storm::jani::ModelType::MA || modelType == storm::jani::ModelType::LTS) {
                     storm::dd::Add<Type, ValueType> result = this->variables.manager->template getAddZero<ValueType>();
                     storm::dd::Bdd<Type> illegalFragment = this->variables.manager->getBddZero();
                     
@@ -1629,14 +1645,20 @@ namespace storm {
                     
                     // Add missing global variable identities, action and nondeterminism encodings.
                     std::map<storm::expressions::Variable, storm::dd::Add<Type, ValueType>> transientEdgeAssignments;
-                    std::unordered_set<uint64_t> actionIndices;
+                    std::unordered_set<ActionIdentification, ActionIdentificationHash> containedActions;
                     for (auto& action : automaton.actions) {
+                        STORM_LOG_TRACE("Treating action with index " << action.first.actionIndex << (action.first.isMarkovian() ? " (Markovian)" : "") << ".");
+
                         uint64_t actionIndex = action.first.actionIndex;
-                        STORM_LOG_THROW(actionIndices.find(actionIndex) == actionIndices.end(), storm::exceptions::WrongFormatException, "Duplication action " << actionInformation.getActionName(actionIndex));
-                        actionIndices.insert(action.first.actionIndex);
+                        bool markovian = action.first.isMarkovian();
+                        ActionIdentification identificationWithoutSynchVector(actionIndex, markovian);
+                        
+                        STORM_LOG_THROW(containedActions.find(identificationWithoutSynchVector) == containedActions.end(), storm::exceptions::WrongFormatException, "Duplicate action " << actionInformation.getActionName(actionIndex));
+                        containedActions.insert(identificationWithoutSynchVector);
                         illegalFragment |= action.second.illegalFragment;
                         addMissingGlobalVariableIdentities(action.second);
-                        storm::dd::Add<Type, ValueType> actionEncoding = encodeAction(actionIndex != storm::jani::Model::SILENT_ACTION_INDEX ? boost::optional<uint64_t>(actionIndex) : boost::none, this->variables);
+                        storm::dd::Add<Type, ValueType> actionEncoding = encodeAction(actionIndex != storm::jani::Model::SILENT_ACTION_INDEX ? boost::make_optional(actionIndex) : boost::none, this->model.getModelType() == storm::jani::ModelType::MA ? boost::make_optional(markovian) : boost::none, this->variables);
+                        
                         storm::dd::Add<Type, ValueType> missingNondeterminismEncoding = encodeIndex(0, action.second.getHighestLocalNondeterminismVariable(), numberOfUsedNondeterminismVariables - action.second.getHighestLocalNondeterminismVariable(), this->variables);
                         storm::dd::Add<Type, ValueType> extendedTransitions = actionEncoding * missingNondeterminismEncoding * action.second.transitions;
                         for (auto const& transientAssignment : action.second.transientEdgeAssignments) {
@@ -1645,9 +1667,9 @@ namespace storm {
                         
                         result += extendedTransitions;
                     }
-                    
+                                        
                     return ComposerResult<Type, ValueType>(result, automaton.transientLocationAssignments, transientEdgeAssignments, illegalFragment, numberOfUsedNondeterminismVariables);
-                } else if (this->model.getModelType() == storm::jani::ModelType::DTMC || this->model.getModelType() == storm::jani::ModelType::CTMC) {
+                } else if (modelType == storm::jani::ModelType::DTMC || modelType == storm::jani::ModelType::CTMC) {
                     // Simply add all actions, but make sure to include the missing global variable identities.
 
                     storm::dd::Add<Type, ValueType> result = this->variables.manager->template getAddZero<ValueType>();
@@ -1689,6 +1711,8 @@ namespace storm {
                 result = std::make_shared<storm::models::symbolic::Ctmc<Type, ValueType>>(variables.manager, modelComponents.reachableStates, modelComponents.initialStates, modelComponents.deadlockStates, modelComponents.transitionMatrix, variables.rowMetaVariables, variables.rowExpressionAdapter, variables.columnMetaVariables, variables.rowColumnMetaVariablePairs, modelComponents.labelToExpressionMap, modelComponents.rewardModels);
             } else if (modelType == storm::jani::ModelType::MDP || modelType == storm::jani::ModelType::LTS) {
                 result = std::make_shared<storm::models::symbolic::Mdp<Type, ValueType>>(variables.manager, modelComponents.reachableStates, modelComponents.initialStates, modelComponents.deadlockStates, modelComponents.transitionMatrix, variables.rowMetaVariables, variables.rowExpressionAdapter, variables.columnMetaVariables, variables.rowColumnMetaVariablePairs, variables.allNondeterminismVariables, modelComponents.labelToExpressionMap, modelComponents.rewardModels);
+            } else if (modelType == storm::jani::ModelType::MA) {
+                result = std::make_shared<storm::models::symbolic::MarkovAutomaton<Type, ValueType>>(variables.manager, variables.markovMarker, modelComponents.reachableStates, modelComponents.initialStates, modelComponents.deadlockStates, modelComponents.transitionMatrix, variables.rowMetaVariables, variables.rowExpressionAdapter, variables.columnMetaVariables, variables.rowColumnMetaVariablePairs, variables.allNondeterminismVariables, modelComponents.labelToExpressionMap, modelComponents.rewardModels);
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Model type '" << modelType << "' not supported.");
             }
@@ -1805,16 +1829,15 @@ namespace storm {
                     if (modelType == storm::jani::ModelType::DTMC || modelType == storm::jani::ModelType::CTMC) {
                         // For DTMCs, we can simply add the identity of the global module for all deadlock states.
                         transitionMatrix += deadlockStatesAdd * globalIdentity;
-                    } else if (modelType == storm::jani::ModelType::MDP || modelType == storm::jani::ModelType::LTS ) {
+                    } else if (modelType == storm::jani::ModelType::MDP || modelType == storm::jani::ModelType::LTS || modelType == storm::jani::ModelType::MA) {
                         // For MDPs, however, we need to select an action associated with the self-loop, if we do not
                         // want to attach a lot of self-loops to the deadlock states.
-                        storm::dd::Add<Type, ValueType> action = variables.manager->template getAddOne<ValueType>();
-                        for (auto const& variable : variables.actionVariablesMap) {
-                            action *= variables.manager->template getIdentity<ValueType>(variable.second);
-                        }
+                        storm::dd::Add<Type, ValueType> action = encodeAction(boost::none, modelType == storm::jani::ModelType::MA ? boost::make_optional(true) : boost::none, variables);
+                        
                         for (auto const& variable : variables.localNondeterminismVariables) {
-                            action *= variables.manager->template getIdentity<ValueType>(variable);
+                            action *= variables.manager->getEncoding(variable, 0).template toAdd<ValueType>();
                         }
+                        
                         transitionMatrix += deadlockStatesAdd * globalIdentity * action;
                     }
                 } else {
@@ -1959,7 +1982,7 @@ namespace storm {
             
             // Perform reachability analysis to obtain reachable states.
             storm::dd::Bdd<Type> transitionMatrixBdd = system.transitions.notZero();
-            if (preparedModel.getModelType() == storm::jani::ModelType::MDP || preparedModel.getModelType() == storm::jani::ModelType::LTS) {
+            if (preparedModel.getModelType() == storm::jani::ModelType::MDP || preparedModel.getModelType() == storm::jani::ModelType::LTS || preparedModel.getModelType() == storm::jani::ModelType::MA) {
                 transitionMatrixBdd = transitionMatrixBdd.existsAbstract(variables.allNondeterminismVariables);
             }
             modelComponents.reachableStates = storm::utility::dd::computeReachableStates(modelComponents.initialStates, transitionMatrixBdd, variables.rowMetaVariables, variables.columnMetaVariables);

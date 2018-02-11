@@ -1,6 +1,6 @@
-#include "storm/storage/dd/bisimulation/MdpPartitionRefiner.h"
+#include "storm/storage/dd/bisimulation/NondeterministicModelPartitionRefiner.h"
 
-#include "storm/models/symbolic/Mdp.h"
+#include "storm/models/symbolic/MarkovAutomaton.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
 
 namespace storm {
@@ -8,12 +8,18 @@ namespace storm {
         namespace bisimulation {
             
             template<storm::dd::DdType DdType, typename ValueType>
-            MdpPartitionRefiner<DdType, ValueType>::MdpPartitionRefiner(storm::models::symbolic::Mdp<DdType, ValueType> const& mdp, Partition<DdType, ValueType> const& initialStatePartition) : PartitionRefiner<DdType, ValueType>(mdp, initialStatePartition), mdp(mdp), choicePartition(Partition<DdType, ValueType>::createTrivialChoicePartition(mdp, initialStatePartition.getBlockVariables())), stateSignatureRefiner(mdp.getManager(), this->statePartition.getBlockVariable(), mdp.getRowVariables(), mdp.getColumnVariables(), true) {
-                // Intentionally left empty.
+            NondeterministicModelPartitionRefiner<DdType, ValueType>::NondeterministicModelPartitionRefiner(storm::models::symbolic::NondeterministicModel<DdType, ValueType> const& model, Partition<DdType, ValueType> const& initialStatePartition) : PartitionRefiner<DdType, ValueType>(model, initialStatePartition), model(model), choicePartition(Partition<DdType, ValueType>::createTrivialChoicePartition(model, initialStatePartition.getBlockVariables())), stateSignatureRefiner(model.getManager(), this->statePartition.getBlockVariable(), model.getRowVariables(), model.getColumnVariables(), true) {
+
+                // For Markov automata, we refine the state partition wrt. to their exit rates.
+                if (model.isOfType(storm::models::ModelType::MarkovAutomaton)) {
+                    STORM_LOG_TRACE("Refining with respect to exit rates.");
+                    auto exitRateVector = this->model.template as<storm::models::symbolic::MarkovAutomaton<DdType, ValueType>>()->getExitRateVector();
+                    this->statePartition = stateSignatureRefiner.refine(this->statePartition, Signature<DdType, ValueType>(exitRateVector));
+                }
             }
             
             template<storm::dd::DdType DdType, typename ValueType>
-            bool MdpPartitionRefiner<DdType, ValueType>::refine(bisimulation::SignatureMode const& mode) {
+            bool NondeterministicModelPartitionRefiner<DdType, ValueType>::refine(bisimulation::SignatureMode const& mode) {
                 // In this procedure, we will
                 // (1) refine the partition of nondeterministic choices based on the state partition. For this, we use
                 // the signature computer/refiner of the superclass. These objects use the full transition matrix.
@@ -36,7 +42,7 @@ namespace storm {
                     } else {
                         choicePartitionAsBdd = this->choicePartition.asAdd().notZero();
                     }
-                    Signature<DdType, ValueType> stateSignature(choicePartitionAsBdd.existsAbstract(mdp.getNondeterminismVariables()).template toAdd<ValueType>());
+                    Signature<DdType, ValueType> stateSignature(choicePartitionAsBdd.existsAbstract(model.getNondeterminismVariables()).template toAdd<ValueType>());
                     
                     // If the choice partition changed, refine the state partition.
                     STORM_LOG_TRACE("Refining state partition.");
@@ -53,12 +59,12 @@ namespace storm {
             }
             
             template<storm::dd::DdType DdType, typename ValueType>
-            Partition<DdType, ValueType> const& MdpPartitionRefiner<DdType, ValueType>::getChoicePartition() const {
+            Partition<DdType, ValueType> const& NondeterministicModelPartitionRefiner<DdType, ValueType>::getChoicePartition() const {
                 return choicePartition;
             }
             
             template<storm::dd::DdType DdType, typename ValueType>
-            bool MdpPartitionRefiner<DdType, ValueType>::refineWrtStateActionRewards(storm::dd::Add<DdType, ValueType> const& stateActionRewards) {
+            bool NondeterministicModelPartitionRefiner<DdType, ValueType>::refineWrtStateActionRewards(storm::dd::Add<DdType, ValueType> const& stateActionRewards) {
                 STORM_LOG_TRACE("Refining with respect to state-action rewards.");
                 Partition<DdType, ValueType> newChoicePartition = this->signatureRefiner.refine(this->choicePartition, Signature<DdType, ValueType>(stateActionRewards));
                 if (newChoicePartition == this->choicePartition) {
@@ -69,11 +75,11 @@ namespace storm {
                 }
             }
             
-            template class MdpPartitionRefiner<storm::dd::DdType::CUDD, double>;
+            template class NondeterministicModelPartitionRefiner<storm::dd::DdType::CUDD, double>;
             
-            template class MdpPartitionRefiner<storm::dd::DdType::Sylvan, double>;
-            template class MdpPartitionRefiner<storm::dd::DdType::Sylvan, storm::RationalNumber>;
-            template class MdpPartitionRefiner<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+            template class NondeterministicModelPartitionRefiner<storm::dd::DdType::Sylvan, double>;
+            template class NondeterministicModelPartitionRefiner<storm::dd::DdType::Sylvan, storm::RationalNumber>;
+            template class NondeterministicModelPartitionRefiner<storm::dd::DdType::Sylvan, storm::RationalFunction>;
             
         }
     }

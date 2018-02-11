@@ -2,6 +2,8 @@
 
 #include "storm/models/symbolic/StandardRewardModel.h"
 
+#include "storm/storage/dd/DdManager.h"
+
 #include "storm/utility/macros.h"
 #include "storm/exceptions/NotSupportedException.h"
 
@@ -10,7 +12,7 @@ namespace storm {
         namespace bisimulation {
             
             template <storm::dd::DdType DdType, typename ValueType>
-            PartitionRefiner<DdType, ValueType>::PartitionRefiner(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& initialStatePartition) : status(Status::Initialized), refinements(0), statePartition(initialStatePartition), signatureComputer(model), signatureRefiner(model.getManager(), statePartition.getBlockVariable(), model.getRowAndNondeterminismVariables(), model.getColumnVariables(), !model.isOfType(storm::models::ModelType::Mdp), model.getNondeterminismVariables()) {
+            PartitionRefiner<DdType, ValueType>::PartitionRefiner(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& initialStatePartition) : status(Status::Initialized), refinements(0), statePartition(initialStatePartition), signatureComputer(model), signatureRefiner(model.getManager(), statePartition.getBlockVariable(), model.getRowAndNondeterminismVariables(), model.getColumnVariables(), !model.isNondeterministicModel(), model.getNondeterminismVariables()) {
                 // Intentionally left empty.
             }
             

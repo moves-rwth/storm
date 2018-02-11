@@ -14,9 +14,9 @@ namespace storm {
         namespace bisimulation {
             
             template <storm::dd::DdType DdType, typename ValueType>
-            class MdpPartitionRefiner : public PartitionRefiner<DdType, ValueType> {
+            class NondeterministicModelPartitionRefiner : public PartitionRefiner<DdType, ValueType> {
             public:
-                MdpPartitionRefiner(storm::models::symbolic::Mdp<DdType, ValueType> const& mdp, Partition<DdType, ValueType> const& initialStatePartition);
+                NondeterministicModelPartitionRefiner(storm::models::symbolic::NondeterministicModel<DdType, ValueType> const& model, Partition<DdType, ValueType> const& initialStatePartition);
                 
                 /*!
                  * Refines the partition.
@@ -35,7 +35,7 @@ namespace storm {
                 virtual bool refineWrtStateActionRewards(storm::dd::Add<DdType, ValueType> const& stateActionRewards) override;
                 
                 // The model to refine.
-                storm::models::symbolic::Mdp<DdType, ValueType> const& mdp;
+                storm::models::symbolic::NondeterministicModel<DdType, ValueType> const& model;
                 
                 // The choice partition in the refinement process.
                 Partition<DdType, ValueType> choicePartition;

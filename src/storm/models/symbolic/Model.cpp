@@ -343,6 +343,11 @@ namespace storm {
             }
             
             template<storm::dd::DdType Type, typename ValueType>
+            std::shared_ptr<storm::adapters::AddExpressionAdapter<Type, ValueType>> const& Model<Type, ValueType>::getRowExpressionAdapter() const {
+                return this->rowExpressionAdapter;
+            }
+            
+            template<storm::dd::DdType Type, typename ValueType>
             bool Model<Type, ValueType>::isSymbolicModel() const {
                 return true;
             }
