@@ -40,7 +40,7 @@ namespace storm {
             struct RelevancyInformation {
                 // The set of relevant states in the model.
                 storm::storage::BitVector relevantStates;
-                
+
                 // The set of relevant labels.
                 boost::container::flat_set<uint_fast64_t> relevantLabels;
                 
@@ -1780,7 +1780,13 @@ namespace storm {
                 // Compute and emit the time measurements if the corresponding flag was set.
                 totalTime = std::chrono::high_resolution_clock::now() - totalClock;
                 if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
+                    boost::container::flat_set<uint64_t> allLabels;
+                    for (auto const& e : labelSets) {
+                        allLabels.insert(e.begin(), e.end());
+                    }
+                    
                     std::cout << "Metrics:" << std::endl;
+                    std::cout << "    * all labels: " << allLabels.size() << std::endl;
                     std::cout << "    * known labels: " << relevancyInformation.knownLabels.size() << std::endl;
                     std::cout << "    * relevant labels: " << (relevancyInformation.knownLabels.size() + relevancyInformation.relevantLabels.size()) << std::endl;
                     std::cout << std::endl;
