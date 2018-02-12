@@ -1773,7 +1773,7 @@ namespace storm {
                             std::cout << "Improved lower bound to " << commandSet.size() << " after " << milliseconds << "s." << std::endl;
                             lastSize = commandSet.size();
                         } else {
-                            std::cout << "Lower bound on label set size is " << commandSet.size() << " after " << milliseconds << "s (checked " << iterations << " models, " << zeroProbabilityCount << " could not reach the target set)." << std::endl;
+                            std::cout << "Lower bound on label set size is " << commandSet.size() << " after " << milliseconds << "ms (checked " << iterations << " models, " << zeroProbabilityCount << " could not reach the target set)." << std::endl;
                             timeOfLastMessage = std::chrono::high_resolution_clock::now();
                         }
                     }
