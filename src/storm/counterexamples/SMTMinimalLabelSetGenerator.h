@@ -1722,6 +1722,7 @@ namespace storm {
                 
                 // Set up some variables for the iterations.
                 bool done = false;
+                uint_fast64_t lastSize = 0;
                 uint_fast64_t iterations = 0;
                 uint_fast64_t currentBound = 0;
                 maximalReachabilityProbability = 0;
@@ -1766,14 +1767,15 @@ namespace storm {
 
                     auto now = std::chrono::high_resolution_clock::now();
                     auto durationSinceLastMessage = std::chrono::duration_cast<std::chrono::seconds>(now - timeOfLastMessage).count();
-                    if (static_cast<uint64_t>(durationSinceLastMessage) >= progressDelay || iterations == 1) {
-                        if (iterations == 1) {
-                            std::cout << "Initial l";
+                    if (static_cast<uint64_t>(durationSinceLastMessage) >= progressDelay || lastSize < commandSet.size()) {
+                        auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(now - totalClock).count();
+                        if (lastSize < commandSet.size()) {
+                            std::cout << "Improved lower bound to " << commandSet.size() << " after " << milliseconds << "s." << std::endl;
+                            lastSize = commandSet.size();
                         } else {
-                            std::cout << "L";
+                            std::cout << "Lower bound on label set size is " << commandSet.size() << " after " << milliseconds << "s (checked " << iterations << " models, " << zeroProbabilityCount << " could not reach the target set)." << std::endl;
+                            timeOfLastMessage = std::chrono::high_resolution_clock::now();
                         }
-                        std::cout << "ower bound on label set size is " << commandSet.size() << " after " << std::chrono::duration_cast<std::chrono::seconds>(now - totalClock).count() << "s (checked " << iterations << " models, " << zeroProbabilityCount << " could not reach the target set)." << std::endl;
-                        timeOfLastMessage = std::chrono::high_resolution_clock::now();
                     }
                 } while (!done);
 
