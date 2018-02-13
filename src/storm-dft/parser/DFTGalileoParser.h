@@ -15,18 +15,15 @@ namespace storm {
 
         template<typename ValueType>
         class DFTGalileoParser {
-            storm::storage::DFTBuilder<ValueType> builder;
-
-            std::shared_ptr<storm::expressions::ExpressionManager> manager;
-
-            storm::parser::ExpressionParser parser;
-
-            storm::expressions::ExpressionEvaluator<ValueType> evaluator;
-
-            std::unordered_map<std::string, storm::expressions::Expression> identifierMapping;
-
         public:
-            DFTGalileoParser(bool defaultInclusive = true, bool binaryDependencies = true) : builder(defaultInclusive, binaryDependencies), manager(new storm::expressions::ExpressionManager()), parser(*manager), evaluator(*manager) {
+
+            /*!
+             * Constructor.
+             *
+             * @param defaultInclusive Flag indicating if priority gates are inclusive by default.
+             * @param binaryDependencies Flag indicating if dependencies should be converted to binary dependencies.
+             */
+            DFTGalileoParser(bool defaultInclusive = true, bool binaryDependencies = true) : builder(defaultInclusive, binaryDependencies) {
             }
 
             storm::storage::DFT<ValueType> parseDFT(std::string const& filename);
@@ -37,8 +34,7 @@ namespace storm {
             std::string stripQuotsFromName(std::string const& name);
             std::string parseNodeIdentifier(std::string const& name);
 
-            ValueType parseRationalExpression(std::string const& expr);
-            
+            storm::storage::DFTBuilder<ValueType> builder;
             bool defaultInclusive;
         };
     }
