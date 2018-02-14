@@ -19,21 +19,18 @@ namespace storm {
     namespace parser {
 
         template<typename ValueType>
-        std::string DFTGalileoParser<ValueType>::stripQuotsFromName(std::string const& name) {
+        std::string DFTGalileoParser<ValueType>::parseName(std::string const& name) {
             size_t firstQuots = name.find("\"");
             size_t secondQuots = name.find("\"", firstQuots+1);
+            std::string parsedName;
             
-            if(firstQuots == std::string::npos) {
-                return name;
+            if (firstQuots == std::string::npos) {
+                parsedName = name;
             } else {
-                STORM_LOG_THROW(secondQuots != std::string::npos, storm::exceptions::FileIoException, "No ending quotation mark found in " << name);
-                return name.substr(firstQuots+1,secondQuots-1);
+                STORM_LOG_THROW(secondQuots != std::string::npos, storm::exceptions::WrongFormatException, "No ending quotation mark found in " << name);
+                parsedName = name.substr(firstQuots+1,secondQuots-1);
             }
-        }
-        
-        template<typename ValueType>
-        std::string DFTGalileoParser<ValueType>::parseNodeIdentifier(std::string const& name) {
-            return boost::replace_all_copy(name, "'", "__prime__");
+            return boost::replace_all_copy(parsedName, "'", "__prime__");
         }
 
         template<typename ValueType>
@@ -95,19 +92,19 @@ namespace storm {
                     // Top level indicator
                     STORM_LOG_THROW(toplevelId == "", storm::exceptions::WrongFormatException, "Toplevel element already defined.");
                     STORM_LOG_THROW(tokens.size() == 2, storm::exceptions::WrongFormatException, "Expected element id after 'toplevel' in line " << lineNo << ".");
-                    toplevelId = stripQuotsFromName(tokens[1]);
+                    toplevelId = parseName(tokens[1]);
                 } else if (tokens[0] == "param") {
                     // Parameters
                     STORM_LOG_THROW(tokens.size() == 2, storm::exceptions::WrongFormatException, "Expected parameter name after 'param' in line " << lineNo << ".");
                     STORM_LOG_THROW((std::is_same<ValueType, storm::RationalFunction>::value), storm::exceptions::NotSupportedException, "Parameters only allowed when using rational functions.");
-                    valueParser.addParameter(stripQuotsFromName(tokens[1]));
+                    valueParser.addParameter(parseName(tokens[1]));
                 } else {
                     // DFT element
-                    std::string name = parseNodeIdentifier(stripQuotsFromName(tokens[0]));
+                    std::string name = parseName(tokens[0]);
 
                     std::vector<std::string> childNames;
                     for(unsigned i = 2; i < tokens.size(); ++i) {
-                        childNames.push_back(parseNodeIdentifier(stripQuotsFromName(tokens[i])));
+                        childNames.push_back(parseName(tokens[i]));
                     }
                     bool success = true;
 

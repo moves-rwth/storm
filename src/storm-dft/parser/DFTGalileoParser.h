@@ -32,9 +32,7 @@ namespace storm {
             static storm::storage::DFT<ValueType> parseDFT(std::string const& filename, bool defaultInclusive = true, bool binaryDependencies = true);
             
         private:
-            static std::string stripQuotsFromName(std::string const& name);
-
-            static std::string parseNodeIdentifier(std::string const& name);
+            static std::string parseName(std::string const& name);
         };
     }
 }
