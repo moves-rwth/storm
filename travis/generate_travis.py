@@ -1,21 +1,19 @@
+# Generate .travis.yml automatically
 
 # Configuration for Linux
 configs_linux = [
-    # OS, compiler
-    ("ubuntu-17.10", "gcc", ""),
-    #("debian-9", "gcc", ""),
+    # OS, compiler, build type
+    ("debian-9", "gcc", "DefaultDebug"),
+    ("debian-9", "gcc", "DefaultRelease"),
+    ("ubuntu-17.10", "gcc", "DefaultDebugTravis"),
+    ("ubuntu-17.10", "gcc", "DefaultReleaseTravis"),
 ]
 
 # Configurations for Mac
 configs_mac = [
-    # OS, compiler
-#    ("osx", "clang", ""),
-]
-
-# Build types
-build_types = [
-    "DefaultDebug",
-    "DefaultRelease",
+    # OS, compiler, build type
+#    ("osx", "clang", "DefaultDebug"),
+#    ("osx", "clang", "DefaultRelease"),
 ]
 
 # Stages in travis
@@ -31,8 +29,6 @@ stages = [
 if __name__ == "__main__":
     s = ""
     # Initial config
-    s += "# This file was inspired from https://github.com/google/fruit\n"
-    s += "\n"
     s += "#\n"
     s += "# General config\n"
     s += "#\n"
@@ -79,58 +75,58 @@ if __name__ == "__main__":
         # Mac OS X
         for config in configs_mac:
             osx = config[0]
-            compiler = "{}{}".format(config[1], config[2])
-            s += "    # {}\n".format(osx)
+            compiler = config[1]
+            build_type = config[2]
+            s += "    # {} - {}\n".format(osx, build_type)
             buildConfig = ""
-            for build in build_types:
-                buildConfig += "    - stage: {}\n".format(stage[0])
-                buildConfig += "      os: osx\n"
-                buildConfig += "      osx_image: xcode9.1\n"
-                buildConfig += "      compiler: {}\n".format(config[1])
-                buildConfig += "      env: CONFIG={} COMPILER={} STL=libc++\n".format(build, compiler)
-                buildConfig += "      install:\n"
-                if stage[1] == "Build1":
-                    buildConfig += "        - rm -rf build\n"
-                buildConfig += "        - travis/install_osx.sh\n"
-                buildConfig += "      script:\n"
-                buildConfig += "        - travis/build.sh {}\n".format(stage[1])
-                buildConfig += "      after_failure:\n"
-                buildConfig += "        - find build -iname '*err*.log' -type f -print -exec cat {} \;\n"
+            buildConfig += "    - stage: {}\n".format(stage[0])
+            buildConfig += "      os: osx\n"
+            buildConfig += "      osx_image: xcode9.1\n"
+            buildConfig += "      compiler: {}\n".format(compiler)
+            buildConfig += "      env: CONFIG={} COMPILER={} STL=libc++\n".format(build_type, compiler)
+            buildConfig += "      install:\n"
+            if stage[1] == "Build1":
+                buildConfig += "        - rm -rf build\n"
+            buildConfig += "        - travis/install_osx.sh\n"
+            buildConfig += "      script:\n"
+            buildConfig += "        - travis/build.sh {}\n".format(stage[1])
+            buildConfig += "      after_failure:\n"
+            buildConfig += "        - find build -iname '*err*.log' -type f -print -exec cat {} \;\n"
             s += buildConfig
 
         # Linux via Docker
         for config in configs_linux:
             linux = config[0]
-            compiler = "{}{}".format(config[1], config[2])
-            s += "    # {}\n".format(linux)
+            compiler = config[1]
+            build_type = config[2]
+            s += "    # {} - {}\n".format(linux, build_type)
             buildConfig = ""
-            for build in build_types:
-                buildConfig += "    - stage: {}\n".format(stage[0])
-                buildConfig += "      os: linux\n"
-                buildConfig += "      compiler: {}\n".format(config[1])
-                buildConfig += "      env: CONFIG={} LINUX={} COMPILER={}\n".format(build, linux, compiler)
-                buildConfig += "      install:\n"
-                if stage[1] == "Build1":
-                    buildConfig += "        - rm -rf build\n"
-                buildConfig += "        - travis/install_linux.sh\n"
-                buildConfig += "      script:\n"
-                buildConfig += "        - travis/build.sh {}\n".format(stage[1])
-                buildConfig += "      before_cache:\n"
-                buildConfig += "        - docker cp storm:/storm/. .\n"
-                buildConfig += "      after_failure:\n"
-                buildConfig += "        - find build -iname '*err*.log' -type f -print -exec cat {} \;\n"
-                # Upload to dockerhub
-                if stage[1] == "TestAll":
-                    buildConfig += "      after_success:\n"
-                    buildConfig += '        - docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD";\n'
-                    if "Debug" in build:
-                        buildConfig += "        - docker commit storm mvolk/storm-debug:travis;\n"
-                        buildConfig += "        - docker push mvolk/storm-debug:travis;\n"
-                    elif "Release" in build:
-                        buildConfig += "        - docker commit storm mvolk/storm:travis;\n"
-                        buildConfig += "        - docker push mvolk/storm:travis;\n"
-                    else:
-                        assert False
+            buildConfig += "    - stage: {}\n".format(stage[0])
+            buildConfig += "      os: linux\n"
+            buildConfig += "      compiler: {}\n".format(compiler)
+            buildConfig += "      env: CONFIG={} LINUX={} COMPILER={}\n".format(build_type, linux, compiler)
+            buildConfig += "      install:\n"
+            if stage[1] == "Build1":
+                buildConfig += "        - rm -rf build\n"
+            buildConfig += "        - travis/install_linux.sh\n"
+            buildConfig += "      script:\n"
+            buildConfig += "        - travis/build.sh {}\n".format(stage[1])
+            buildConfig += "      before_cache:\n"
+            buildConfig += "        - docker cp storm:/storm/. .\n"
+            buildConfig += "      after_failure:\n"
+            buildConfig += "        - find build -iname '*err*.log' -type f -print -exec cat {} \;\n"
+            # Upload to DockerHub
+            if stage[1] == "TestAll" and "Travis" in build_type:
+                buildConfig += "      after_success:\n"
+                buildConfig += '        - docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD";\n'
+                if "Debug" in build_type:
+                    buildConfig += "        - docker commit storm mvolk/storm-debug:travis;\n"
+                    buildConfig += "        - docker push mvolk/storm-debug:travis;\n"
+                elif "Release" in build_type:
+                    buildConfig += "        - docker commit storm mvolk/storm:travis;\n"
+                    buildConfig += "        - docker push mvolk/storm:travis;\n"
+                else:
+                    assert False
             s += buildConfig
 
     print(s)

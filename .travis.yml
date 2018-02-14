@@ -1,5 +1,3 @@
-# This file was inspired from https://github.com/google/fruit
-
 #
 # General config
 #
@@ -39,11 +37,11 @@ jobs:
     # Stage: Build (1st run)
     ###
 
-    # ubuntu-17.10
+    # debian-9 - DefaultDebug
     - stage: Build (1st run)
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultDebug LINUX=ubuntu-17.10 COMPILER=gcc
+      env: CONFIG=DefaultDebug LINUX=debian-9 COMPILER=gcc
       install:
         - rm -rf build
         - travis/install_linux.sh
@@ -53,10 +51,39 @@ jobs:
         - docker cp storm:/storm/. .
       after_failure:
         - find build -iname '*err*.log' -type f -print -exec cat {} \;
+    # debian-9 - DefaultRelease
     - stage: Build (1st run)
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultRelease LINUX=ubuntu-17.10 COMPILER=gcc
+      env: CONFIG=DefaultRelease LINUX=debian-9 COMPILER=gcc
+      install:
+        - rm -rf build
+        - travis/install_linux.sh
+      script:
+        - travis/build.sh Build1
+      before_cache:
+        - docker cp storm:/storm/. .
+      after_failure:
+        - find build -iname '*err*.log' -type f -print -exec cat {} \;
+    # ubuntu-17.10 - DefaultDebugTravis
+    - stage: Build (1st run)
+      os: linux
+      compiler: gcc
+      env: CONFIG=DefaultDebugTravis LINUX=ubuntu-17.10 COMPILER=gcc
+      install:
+        - rm -rf build
+        - travis/install_linux.sh
+      script:
+        - travis/build.sh Build1
+      before_cache:
+        - docker cp storm:/storm/. .
+      after_failure:
+        - find build -iname '*err*.log' -type f -print -exec cat {} \;
+    # ubuntu-17.10 - DefaultReleaseTravis
+    - stage: Build (1st run)
+      os: linux
+      compiler: gcc
+      env: CONFIG=DefaultReleaseTravis LINUX=ubuntu-17.10 COMPILER=gcc
       install:
         - rm -rf build
         - travis/install_linux.sh
@@ -71,11 +98,11 @@ jobs:
     # Stage: Build (2nd run)
     ###
 
-    # ubuntu-17.10
+    # debian-9 - DefaultDebug
     - stage: Build (2nd run)
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultDebug LINUX=ubuntu-17.10 COMPILER=gcc
+      env: CONFIG=DefaultDebug LINUX=debian-9 COMPILER=gcc
       install:
         - travis/install_linux.sh
       script:
@@ -84,10 +111,37 @@ jobs:
         - docker cp storm:/storm/. .
       after_failure:
         - find build -iname '*err*.log' -type f -print -exec cat {} \;
+    # debian-9 - DefaultRelease
     - stage: Build (2nd run)
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultRelease LINUX=ubuntu-17.10 COMPILER=gcc
+      env: CONFIG=DefaultRelease LINUX=debian-9 COMPILER=gcc
+      install:
+        - travis/install_linux.sh
+      script:
+        - travis/build.sh Build2
+      before_cache:
+        - docker cp storm:/storm/. .
+      after_failure:
+        - find build -iname '*err*.log' -type f -print -exec cat {} \;
+    # ubuntu-17.10 - DefaultDebugTravis
+    - stage: Build (2nd run)
+      os: linux
+      compiler: gcc
+      env: CONFIG=DefaultDebugTravis LINUX=ubuntu-17.10 COMPILER=gcc
+      install:
+        - travis/install_linux.sh
+      script:
+        - travis/build.sh Build2
+      before_cache:
+        - docker cp storm:/storm/. .
+      after_failure:
+        - find build -iname '*err*.log' -type f -print -exec cat {} \;
+    # ubuntu-17.10 - DefaultReleaseTravis
+    - stage: Build (2nd run)
+      os: linux
+      compiler: gcc
+      env: CONFIG=DefaultReleaseTravis LINUX=ubuntu-17.10 COMPILER=gcc
       install:
         - travis/install_linux.sh
       script:
@@ -101,11 +155,11 @@ jobs:
     # Stage: Build (3rd run)
     ###
 
-    # ubuntu-17.10
+    # debian-9 - DefaultDebug
     - stage: Build (3rd run)
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultDebug LINUX=ubuntu-17.10 COMPILER=gcc
+      env: CONFIG=DefaultDebug LINUX=debian-9 COMPILER=gcc
       install:
         - travis/install_linux.sh
       script:
@@ -114,10 +168,37 @@ jobs:
         - docker cp storm:/storm/. .
       after_failure:
         - find build -iname '*err*.log' -type f -print -exec cat {} \;
+    # debian-9 - DefaultRelease
     - stage: Build (3rd run)
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultRelease LINUX=ubuntu-17.10 COMPILER=gcc
+      env: CONFIG=DefaultRelease LINUX=debian-9 COMPILER=gcc
+      install:
+        - travis/install_linux.sh
+      script:
+        - travis/build.sh Build3
+      before_cache:
+        - docker cp storm:/storm/. .
+      after_failure:
+        - find build -iname '*err*.log' -type f -print -exec cat {} \;
+    # ubuntu-17.10 - DefaultDebugTravis
+    - stage: Build (3rd run)
+      os: linux
+      compiler: gcc
+      env: CONFIG=DefaultDebugTravis LINUX=ubuntu-17.10 COMPILER=gcc
+      install:
+        - travis/install_linux.sh
+      script:
+        - travis/build.sh Build3
+      before_cache:
+        - docker cp storm:/storm/. .
+      after_failure:
+        - find build -iname '*err*.log' -type f -print -exec cat {} \;
+    # ubuntu-17.10 - DefaultReleaseTravis
+    - stage: Build (3rd run)
+      os: linux
+      compiler: gcc
+      env: CONFIG=DefaultReleaseTravis LINUX=ubuntu-17.10 COMPILER=gcc
       install:
         - travis/install_linux.sh
       script:
@@ -131,11 +212,11 @@ jobs:
     # Stage: Build (4th run)
     ###
 
-    # ubuntu-17.10
+    # debian-9 - DefaultDebug
     - stage: Build (4th run)
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultDebug LINUX=ubuntu-17.10 COMPILER=gcc
+      env: CONFIG=DefaultDebug LINUX=debian-9 COMPILER=gcc
       install:
         - travis/install_linux.sh
       script:
@@ -144,10 +225,37 @@ jobs:
         - docker cp storm:/storm/. .
       after_failure:
         - find build -iname '*err*.log' -type f -print -exec cat {} \;
+    # debian-9 - DefaultRelease
     - stage: Build (4th run)
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultRelease LINUX=ubuntu-17.10 COMPILER=gcc
+      env: CONFIG=DefaultRelease LINUX=debian-9 COMPILER=gcc
+      install:
+        - travis/install_linux.sh
+      script:
+        - travis/build.sh BuildLast
+      before_cache:
+        - docker cp storm:/storm/. .
+      after_failure:
+        - find build -iname '*err*.log' -type f -print -exec cat {} \;
+    # ubuntu-17.10 - DefaultDebugTravis
+    - stage: Build (4th run)
+      os: linux
+      compiler: gcc
+      env: CONFIG=DefaultDebugTravis LINUX=ubuntu-17.10 COMPILER=gcc
+      install:
+        - travis/install_linux.sh
+      script:
+        - travis/build.sh BuildLast
+      before_cache:
+        - docker cp storm:/storm/. .
+      after_failure:
+        - find build -iname '*err*.log' -type f -print -exec cat {} \;
+    # ubuntu-17.10 - DefaultReleaseTravis
+    - stage: Build (4th run)
+      os: linux
+      compiler: gcc
+      env: CONFIG=DefaultReleaseTravis LINUX=ubuntu-17.10 COMPILER=gcc
       install:
         - travis/install_linux.sh
       script:
@@ -161,11 +269,37 @@ jobs:
     # Stage: Test all
     ###
 
-    # ubuntu-17.10
+    # debian-9 - DefaultDebug
     - stage: Test all
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultDebug LINUX=ubuntu-17.10 COMPILER=gcc
+      env: CONFIG=DefaultDebug LINUX=debian-9 COMPILER=gcc
+      install:
+        - travis/install_linux.sh
+      script:
+        - travis/build.sh TestAll
+      before_cache:
+        - docker cp storm:/storm/. .
+      after_failure:
+        - find build -iname '*err*.log' -type f -print -exec cat {} \;
+    # debian-9 - DefaultRelease
+    - stage: Test all
+      os: linux
+      compiler: gcc
+      env: CONFIG=DefaultRelease LINUX=debian-9 COMPILER=gcc
+      install:
+        - travis/install_linux.sh
+      script:
+        - travis/build.sh TestAll
+      before_cache:
+        - docker cp storm:/storm/. .
+      after_failure:
+        - find build -iname '*err*.log' -type f -print -exec cat {} \;
+    # ubuntu-17.10 - DefaultDebugTravis
+    - stage: Test all
+      os: linux
+      compiler: gcc
+      env: CONFIG=DefaultDebugTravis LINUX=ubuntu-17.10 COMPILER=gcc
       install:
         - travis/install_linux.sh
       script:
@@ -178,10 +312,11 @@ jobs:
         - docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD";
         - docker commit storm mvolk/storm-debug:travis;
         - docker push mvolk/storm-debug:travis;
+    # ubuntu-17.10 - DefaultReleaseTravis
     - stage: Test all
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultRelease LINUX=ubuntu-17.10 COMPILER=gcc
+      env: CONFIG=DefaultReleaseTravis LINUX=ubuntu-17.10 COMPILER=gcc
       install:
         - travis/install_linux.sh
       script:

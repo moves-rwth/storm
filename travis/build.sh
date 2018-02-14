@@ -1,5 +1,4 @@
 #!/bin/bash -x
-# Inspired by https://github.com/google/fruit
 
 N_JOBS=2
 TIMEOUT_MAC=1600
@@ -29,8 +28,8 @@ linux)
     set -e
     docker run -d -it --name storm --privileged mvolk/storm-basesystem:$LINUX
     # Copy local content into container
-    docker exec storm mkdir storm
-    docker cp . storm:/storm
+    docker exec storm mkdir opt/storm
+    docker cp . storm:/opt/storm
     set +e
 
     # Execute main process
@@ -40,7 +39,7 @@ linux)
         export N_JOBS=$N_JOBS;
         export STLARG=;
         export OS=$OS;
-        cd storm;
+        cd opt/storm;
         travis/build-helper.sh $1"
     EXITCODE=$?
     ;;
