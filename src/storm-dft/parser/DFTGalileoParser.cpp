@@ -11,7 +11,6 @@
 #include "storm/exceptions/FileIoException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/WrongFormatException.h"
-#include "storm/parser/ValueParser.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/file.h"
 
@@ -145,10 +144,8 @@ namespace storm {
                     } else if (boost::starts_with(type, "pdep=")) {
                         ValueType probability = valueParser.parseValue(type.substr(5));
                         success = builder.addDepElement(name, childNames, probability);
-                    } else if (boost::starts_with(type, "lambda=")) {
-                        ValueType failureRate = valueParser.parseValue(type.substr(7));
-                        ValueType dormancyFactor = valueParser.parseValue(tokens[2].substr(5));
-                        success = builder.addBasicElement(name, failureRate, dormancyFactor, false); // TODO set transient BEs
+                    } else if (type.find("=") != std::string::npos) {
+                        success = parseBasicElement(tokens, builder, valueParser);
                     } else {
                         STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Type name: " << type << " in line " << lineNo << " not recognized.");
                         success = false;
@@ -167,6 +164,48 @@ namespace storm {
             STORM_LOG_DEBUG("DFT Elements:" << std::endl << dft.getElementsString());
             STORM_LOG_DEBUG("Spare Modules:" << std::endl << dft.getSpareModulesString());
             return dft;
+        }
+
+        template<typename ValueType>
+        bool DFTGalileoParser<ValueType>::parseBasicElement(std::vector<std::string> const& tokens, storm::storage::DFTBuilder<ValueType>& builder, ValueParser<ValueType>& valueParser) {
+            std::string name = parseName(tokens[0]);
+
+            // Default values
+            ValueType lambda = storm::utility::zero<ValueType>();
+            ValueType dormancyFactor = storm::utility::one<ValueType>();
+            bool exponential = false;
+
+            for (size_t i = 1; i < tokens.size(); ++i) {
+                std::string token = tokens[i];
+                if (boost::starts_with(token, "prob=")) {
+                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Constant distribution is not supported.");
+                } else if (boost::starts_with(token, "lambda=")) {
+                    lambda = valueParser.parseValue(token.substr(7));
+                    exponential = true;
+                } else if (boost::starts_with(token, "rate=")) {
+                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Weibull distribution is not supported.");
+                } else if (boost::starts_with(token, "shape=")) {
+                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Weibull distribution is not supported.");
+                } else if (boost::starts_with(token, "mean=")) {
+                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "LogNormal distribution is not supported.");
+                } else if (boost::starts_with(token, "stddev=")) {
+                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "LogNormal distribution is not supported.");
+                } else if (boost::starts_with(token, "cov=")) {
+                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Coverage is not supported.");
+                } else if (boost::starts_with(token, "res=")) {
+                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Restoration is not supported.");
+                } else if (boost::starts_with(token, "repl=")) {
+                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Replication is not supported.");
+                } else if (boost::starts_with(token, "dorm=")) {
+                    dormancyFactor = valueParser.parseValue(token.substr(5));
+                }
+            }
+
+            if (exponential) {
+                return builder.addBasicElement(name, lambda, dormancyFactor, false); // TODO set transient BEs
+            } else {
+                STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "No distribution for basic element defined.");
+            }
         }
 
         // Explicitly instantiate the class.

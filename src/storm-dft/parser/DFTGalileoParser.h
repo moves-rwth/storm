@@ -8,6 +8,7 @@
 
 #include "storm-dft/storage/dft/DFT.h"
 #include "storm-dft/storage/dft/DFTBuilder.h"
+#include "storm/parser/ValueParser.h"
 
 
 namespace storm {
@@ -32,7 +33,25 @@ namespace storm {
             static storm::storage::DFT<ValueType> parseDFT(std::string const& filename, bool defaultInclusive = true, bool binaryDependencies = true);
             
         private:
+            /*!
+             * Parse element name (strip quotation marks, etc.).
+             *
+             * @param name Element name.
+             *
+             * @return Name.
+             */
             static std::string parseName(std::string const& name);
+
+            /*!
+             * Parse basic element and add it to builder.
+             *
+             * @param tokens Tokens defining the basic element.
+             * @param builder DFTBuilder.
+             * @param valueParser ValueParser.
+             *
+             * @return True iff the parsing and creation was successful.
+             */
+            static bool parseBasicElement(std::vector<std::string> const& tokens, storm::storage::DFTBuilder<ValueType>& builder, ValueParser<ValueType>& valueParser);
         };
     }
 }
