@@ -13,29 +13,28 @@
 namespace storm {
     namespace parser {
 
+        /*!
+         * Parser for DFT in the Galileo format.
+         */
         template<typename ValueType>
         class DFTGalileoParser {
         public:
 
             /*!
-             * Constructor.
+             * Parse DFT in Galileo format and build DFT.
              *
+             * @param filename File.
              * @param defaultInclusive Flag indicating if priority gates are inclusive by default.
              * @param binaryDependencies Flag indicating if dependencies should be converted to binary dependencies.
+             *
+             * @return DFT.
              */
-            DFTGalileoParser(bool defaultInclusive = true, bool binaryDependencies = true) : builder(defaultInclusive, binaryDependencies) {
-            }
-
-            storm::storage::DFT<ValueType> parseDFT(std::string const& filename);
+            static storm::storage::DFT<ValueType> parseDFT(std::string const& filename, bool defaultInclusive = true, bool binaryDependencies = true);
             
         private:
-            void readFile(std::string const& filename);
+            static std::string stripQuotsFromName(std::string const& name);
 
-            std::string stripQuotsFromName(std::string const& name);
-            std::string parseNodeIdentifier(std::string const& name);
-
-            storm::storage::DFTBuilder<ValueType> builder;
-            bool defaultInclusive;
+            static std::string parseNodeIdentifier(std::string const& name);
         };
     }
 }

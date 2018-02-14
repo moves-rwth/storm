@@ -32,9 +32,8 @@ std::shared_ptr<storm::storage::DFT<ValueType>> loadDFT() {
         STORM_LOG_DEBUG("Loading DFT from file " << dftIOSettings.getDftJsonFilename());
         dft = std::make_shared<storm::storage::DFT<ValueType>>(parser.parseJson(dftIOSettings.getDftJsonFilename()));
     } else {
-        storm::parser::DFTGalileoParser<ValueType> parser;
         STORM_LOG_DEBUG("Loading DFT from file " << dftIOSettings.getDftFilename());
-        dft = std::make_shared<storm::storage::DFT<ValueType>>(parser.parseDFT(dftIOSettings.getDftFilename()));
+        dft = std::make_shared<storm::storage::DFT<ValueType>>(storm::parser::DFTGalileoParser<ValueType>::parseDFT(dftIOSettings.getDftFilename()));
     }
 
     if (dftIOSettings.isDisplayStatsSet()) {
