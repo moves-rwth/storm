@@ -799,22 +799,12 @@ namespace storm {
                     *yIt = std::move(yBest);
                 }
             }
-            
-            bool checkRestartCriterion() {
-                return false;
-                // iterations <= restartMaxIterations && (minimize(dir) ? restartThreshold * improvedPrimaryBound > primaryBound : restartThreshold * primaryBound > improvedPrimaryBound
-            }
 
-            bool isPreciseEnough(ValueType const& xi, ValueType const& yi, ValueType const& lb, ValueType const& ub) {
-                return yi * (ub - lb) <= storm::utility::abs<ValueType>((relative ? (precision * xi) : (precision * storm::utility::convertNumber<ValueType>(2.0))));
-            }
-            
             template<OptimizationDirection dir>
-            bool checkConvergenceUpdateBounds(uint64_t const& iterations, storm::storage::BitVector const* relevantValues = nullptr) {
+            bool checkConvergenceUpdateBounds(storm::storage::BitVector const* relevantValues = nullptr) {
                 
                 if (convergencePhase1) {
                     if (checkConvergencePhase1()) {
-                        STORM_LOG_INFO("Quick Value Iteration took " << iterations << " iterations for first convergence phase.");
                         firstIndexViolatingConvergence = 0;
                         if (relevantValues != nullptr) {
                             firstIndexViolatingConvergence = relevantValues->getNextSetIndex(firstIndexViolatingConvergence);
@@ -829,93 +819,11 @@ namespace storm {
                 // The difference between lower and upper bound has to be < precision at every (relevant) value
                 
                 // For efficiency reasons we first check whether it is worth to compute the actual bounds. We do so by considering possibly too tight bounds
-                
-                ValueType lowerBoundCandidate = x[minIndex] / (storm::utility::one<ValueType>() - y[minIndex]);
-                ValueType upperBoundCandidate = x[maxIndex] / (storm::utility::one<ValueType>() - y[maxIndex]);
-                // Make sure that these candidates are at least as tight as the already known bounds
-                if (hasLowerBound && lowerBoundCandidate < lowerBound) {
-                    lowerBoundCandidate = lowerBound;
-                }
-                if (hasUpperBound && upperBoundCandidate > upperBound) {
-                    upperBoundCandidate = upperBound;
-                }
-                bool computeActualBounds = isPreciseEnough(x[firstIndexViolatingConvergence], y[firstIndexViolatingConvergence], lowerBoundCandidate, upperBoundCandidate);
-                if (!computeActualBounds) {
-                    if (decisionValueBlocks) {
-                        ValueType improvedPrimaryBound = x[getPrimaryIndex<dir>()] + getPrimaryBound<dir>() * y[getPrimaryIndex<dir>()];
-                        assert(better<dir>(getPrimaryBound<dir>(), improvedPrimaryBound));
-                        computeActualBounds = checkRestartCriterion();
-                    } else {
-                        computeActualBounds = hasDecisionValue && better<dir>(decisionValue, getPrimaryBound<dir>());
-                    }
-                }
-                if (computeActualBounds) {
-                    auto xIt = x.begin();
-                    auto xIte = x.end();
-                    auto yIt = y.begin();
-                    ValueType improvedPrimaryBound;
-                    bool computedImprovedPrimaryBound = false;
-                    for (uint64_t index = 0; xIt != xIte; ++xIt, ++yIt, ++index) {
-                        ValueType currentBound = *xIt / (storm::utility::one<ValueType>() - *yIt);
-                        if (decisionValueBlocks) {
-                            ValueType currentImprovedBound = *xIt + getPrimaryBound<dir>() * (*yIt);
-                            if (!computedImprovedPrimaryBound || better<dir>(currentImprovedBound, improvedPrimaryBound)) {
-                                computedImprovedPrimaryBound = true;
-                                getPrimaryIndex<dir>() = index;
-                                improvedPrimaryBound = std::move(currentImprovedBound);
-                            }
-                            if (better<dir>(getSecondaryBound<dir>(), currentBound)) {
-                                getSecondaryIndex<dir>() = index;
-                                getSecondaryBound<dir>() = std::move(currentBound);
-                            }
-                        } else {
-                            if (currentBound < lowerBoundCandidate) {
-                                minIndex = index;
-                                lowerBoundCandidate = std::move(currentBound);
-                            } else if (currentBound > upperBoundCandidate) {
-                                maxIndex = index;
-                                upperBoundCandidate = std::move(currentBound);
-                            }
-                        }
-                    }
-                    if ((maximize(dir) || !decisionValueBlocks) && (!hasLowerBound || lowerBoundCandidate > lowerBound)) {
-                        setLowerBound(lowerBoundCandidate);
-                    }
-                    if ((minimize(dir) || !decisionValueBlocks) && (!hasUpperBound || upperBoundCandidate < upperBound)) {
-                        setUpperBound(upperBoundCandidate);
-                    }
-                    
-                    // Check whether the decision value blocks now (i.e. further improvement of the primary bound would lead to a non-optimal scheduler).
-                    if (!decisionValueBlocks && hasDecisionValue && better<dir>(decisionValue, getPrimaryBound<dir>())) {
-                        getPrimaryBound<dir>() = decisionValue;
-                        decisionValueBlocks = true;
-                    }
-                
-                    // Check whether the desired precision is reached
-                    if (isPreciseEnough(x[firstIndexViolatingConvergence], y[firstIndexViolatingConvergence], lowerBound, upperBound)) {
-                        // The current index satisfies the desired bound. We now move to the next index that violates it
-                        while (true) {
-                            ++firstIndexViolatingConvergence;
-                            if (relevantValues != nullptr) {
-                                firstIndexViolatingConvergence = relevantValues->getNextSetIndex(firstIndexViolatingConvergence);
-                            }
-                            if (firstIndexViolatingConvergence == x.size()) {
-                                // Converged!
-                                return true;
-                            } else {
-                                if (!isPreciseEnough(x[firstIndexViolatingConvergence], y[firstIndexViolatingConvergence], lowerBound, upperBound)) {
-                                    // not converged yet
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    // Check whether we should restart
-                    if (computedImprovedPrimaryBound && checkRestartCriterion()) {
-                        STORM_LOG_INFO("Restarting QVI after " << iterations << " iterations. Improved bound from " << getPrimaryBound<dir>() << " to " << improvedPrimaryBound << ".");
-                        getPrimaryBound<dir>() = improvedPrimaryBound;
-                        restart();
-                    }
+                ValueType lowerBoundCandidate, upperBoundCandidate;
+                if (preliminaryConvergenceCheck<dir>(lowerBoundCandidate, upperBoundCandidate)) {
+                    updateLowerUpperBound<dir>(lowerBoundCandidate, upperBoundCandidate);
+                    checkIfDecisionValueBlocks<dir>();
+                    return checkConvergencePhase2<dir>(relevantValues);
                 }
                 return false;
             }
@@ -956,6 +864,94 @@ namespace storm {
                 return true;
             }
             
+            
+            bool isPreciseEnough(ValueType const& xi, ValueType const& yi, ValueType const& lb, ValueType const& ub) {
+                return yi * (ub - lb) <= storm::utility::abs<ValueType>((relative ? (precision * xi) : (precision * storm::utility::convertNumber<ValueType>(2.0))));
+            }
+            
+            template<OptimizationDirection dir>
+            bool preliminaryConvergenceCheck(ValueType& lowerBoundCandidate, ValueType& upperBoundCandidate) {
+                lowerBoundCandidate = x[minIndex] / (storm::utility::one<ValueType>() - y[minIndex]);
+                upperBoundCandidate = x[maxIndex] / (storm::utility::one<ValueType>() - y[maxIndex]);
+                // Make sure that these candidates are at least as tight as the already known bounds
+                if (hasLowerBound && lowerBoundCandidate < lowerBound) {
+                    lowerBoundCandidate = lowerBound;
+                }
+                if (hasUpperBound && upperBoundCandidate > upperBound) {
+                    upperBoundCandidate = upperBound;
+                }
+                if (isPreciseEnough(x[firstIndexViolatingConvergence], y[firstIndexViolatingConvergence], lowerBoundCandidate, upperBoundCandidate)) {
+                    return true;
+                }
+                if (!decisionValueBlocks) {
+                    return hasDecisionValue && better<dir>(decisionValue, getPrimaryBound<dir>());
+                }
+                return false;
+            }
+            
+            template<OptimizationDirection dir>
+            void updateLowerUpperBound(ValueType& lowerBoundCandidate, ValueType& upperBoundCandidate) {
+                auto xIt = x.begin();
+                auto xIte = x.end();
+                auto yIt = y.begin();
+                for (uint64_t index = 0; xIt != xIte; ++xIt, ++yIt, ++index) {
+                    ValueType currentBound = *xIt / (storm::utility::one<ValueType>() - *yIt);
+                    if (decisionValueBlocks) {
+                        if (better<dir>(getSecondaryBound<dir>(), currentBound)) {
+                            getSecondaryIndex<dir>() = index;
+                            getSecondaryBound<dir>() = std::move(currentBound);
+                        }
+                    } else {
+                        if (currentBound < lowerBoundCandidate) {
+                            minIndex = index;
+                            lowerBoundCandidate = std::move(currentBound);
+                        } else if (currentBound > upperBoundCandidate) {
+                            maxIndex = index;
+                            upperBoundCandidate = std::move(currentBound);
+                        }
+                    }
+                }
+                if ((maximize(dir) || !decisionValueBlocks) && (!hasLowerBound || lowerBoundCandidate > lowerBound)) {
+                    setLowerBound(lowerBoundCandidate);
+                }
+                if ((minimize(dir) || !decisionValueBlocks) && (!hasUpperBound || upperBoundCandidate < upperBound)) {
+                    setUpperBound(upperBoundCandidate);
+                }
+            }
+            
+            template<OptimizationDirection dir>
+            void checkIfDecisionValueBlocks() {
+                // Check whether the decision value blocks now (i.e. further improvement of the primary bound would lead to a non-optimal scheduler).
+                if (!decisionValueBlocks && hasDecisionValue && better<dir>(decisionValue, getPrimaryBound<dir>())) {
+                    getPrimaryBound<dir>() = decisionValue;
+                    decisionValueBlocks = true;
+                }
+            }
+            
+            template<OptimizationDirection dir>
+            bool checkConvergencePhase2(storm::storage::BitVector const* relevantValues = nullptr) {
+                // Check whether the desired precision is reached
+                if (isPreciseEnough(x[firstIndexViolatingConvergence], y[firstIndexViolatingConvergence], lowerBound, upperBound)) {
+                    // The current index satisfies the desired bound. We now move to the next index that violates it
+                    while (true) {
+                        ++firstIndexViolatingConvergence;
+                        if (relevantValues != nullptr) {
+                            firstIndexViolatingConvergence = relevantValues->getNextSetIndex(firstIndexViolatingConvergence);
+                        }
+                        if (firstIndexViolatingConvergence == x.size()) {
+                            // Converged!
+                            return true;
+                        } else {
+                            if (!isPreciseEnough(x[firstIndexViolatingConvergence], y[firstIndexViolatingConvergence], lowerBound, upperBound)) {
+                                // not converged yet
+                                return false;
+                            }
+                        }
+                    }
+                }
+                return false;
+            }
+            
             std::vector<ValueType>& x;
             std::vector<ValueType>& y;
             std::vector<ValueType> xTmp, yTmp;
@@ -982,11 +978,6 @@ namespace storm {
             
             QuickValueIterationHelper<ValueType> helper(x, *this->auxiliaryRowGroupVector, env.solver().minMax().getRelativeTerminationCriterion(), storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()), this->A->getSizeOfLargestRowGroup());
 
-            // Get the precision
-            uint64_t restartMaxIterations = env.solver().minMax().getQviRestartMaxIterations();
-            ValueType restartThreshold = storm::utility::convertNumber<ValueType>(env.solver().minMax().getQviRestartThreshold());
-            
-            
             // Prepare initial bounds for the solution (if given)
             if (this->hasLowerBound()) {
                 helper.setLowerBound(this->getLowerBound(true));
@@ -1007,13 +998,13 @@ namespace storm {
             while (status == SolverStatus::InProgress && iterations < env.solver().minMax().getMaximalNumberOfIterations()) {
                 if (minimize(dir)) {
                     helper.template performIterationStep<OptimizationDirection::Minimize>(*this->A, b);
-                    if (helper.template checkConvergenceUpdateBounds<OptimizationDirection::Minimize>(iterations, relevantValuesPtr)) {
+                    if (helper.template checkConvergenceUpdateBounds<OptimizationDirection::Minimize>(relevantValuesPtr)) {
                         status = SolverStatus::Converged;
                     }
                 } else {
                     assert(maximize(dir));
                     helper.template performIterationStep<OptimizationDirection::Maximize>(*this->A, b);
-                    if (helper.template checkConvergenceUpdateBounds<OptimizationDirection::Maximize>(iterations, relevantValuesPtr)) {
+                    if (helper.template checkConvergenceUpdateBounds<OptimizationDirection::Maximize>(relevantValuesPtr)) {
                         status = SolverStatus::Converged;
                     }
                 }
