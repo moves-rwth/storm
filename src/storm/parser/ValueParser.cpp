@@ -1,7 +1,6 @@
 #include "storm/parser/ValueParser.h"
 
 #include "storm/exceptions/NotSupportedException.h"
-#include "storm/exceptions/WrongFormatException.h"
 
 namespace storm {
     namespace parser {
@@ -21,12 +20,7 @@ namespace storm {
 
         template<>
         double ValueParser<double>::parseValue(std::string const& value) const {
-            try {
-                return boost::lexical_cast<double>(value);
-            }
-            catch(boost::bad_lexical_cast &) {
-                STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Could not parse value '" << value << "'.");
-            }
+            return NumberParser<double>::parse(value);
         }
 
         template<>

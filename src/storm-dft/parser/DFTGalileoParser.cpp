@@ -5,7 +5,6 @@
 #include <regex>
 
 #include <boost/algorithm/string.hpp>
-#include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string/replace.hpp>
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/FileIoException.h"
@@ -114,12 +113,12 @@ namespace storm {
                     } else if (type == "or") {
                         success = builder.addOrElement(name, childNames);
                     } else if (boost::starts_with(type, "vot")) {
-                        unsigned threshold = boost::lexical_cast<unsigned>(type.substr(3));
+                        unsigned threshold = NumberParser<unsigned>::parse(type.substr(3));
                         success = builder.addVotElement(name, threshold, childNames);
                     } else if (type.find("of") != std::string::npos) {
                         size_t pos = type.find("of");
-                        unsigned threshold = boost::lexical_cast<unsigned>(type.substr(0, pos));
-                        unsigned count = boost::lexical_cast<unsigned>(type.substr(pos + 2));
+                        unsigned threshold = NumberParser<unsigned>::parse(type.substr(0, pos));
+                        unsigned count = NumberParser<unsigned>::parse(type.substr(pos + 2));
                         STORM_LOG_THROW(count == childNames.size(), storm::exceptions::WrongFormatException, "Voting gate number " << count << " does not correspond to number of children " << childNames.size() << "in line " << lineNo << ".");
                         success = builder.addVotElement(name, threshold, childNames);
                     } else if (type == "pand") {

@@ -79,7 +79,7 @@ namespace storm {
                 if(line == "@nr_states") {
                     STORM_LOG_THROW(nrStates == 0, storm::exceptions::WrongFormatException, "Number states declared twice");
                     std::getline(file, line);
-                    nrStates = boost::lexical_cast<size_t>(line);
+                    nrStates = NumberParser<size_t>::parse(line);
 
                 }
                 if(line == "@model") {
@@ -132,7 +132,7 @@ namespace storm {
                     size_t parsedId;
                     size_t posId = line.find(" ");
                     if (posId != std::string::npos) {
-                        parsedId = boost::lexical_cast<size_t>(line.substr(0, posId));
+                        parsedId = NumberParser<size_t>::parse(line.substr(0, posId));
 
                         // Parse rewards and labels
                         line = line.substr(posId+1);
@@ -167,7 +167,7 @@ namespace storm {
                         }
                     } else {
                         // Only state id given
-                        parsedId = boost::lexical_cast<size_t>(line);
+                        parsedId = NumberParser<size_t>::parse(line);
                     }
                     STORM_LOG_TRACE("New state " << state);
                     STORM_LOG_ASSERT(state == parsedId, "State ids do not correspond.");
@@ -201,7 +201,7 @@ namespace storm {
                     // New transition
                     size_t posColon = line.find(":");
                     STORM_LOG_ASSERT(posColon != std::string::npos, "':' not found.");
-                    size_t target = boost::lexical_cast<size_t>(line.substr(2, posColon-3));
+                    size_t target = NumberParser<size_t>::parse(line.substr(2, posColon-3));
                     std::string valueStr = line.substr(posColon+2);
                     ValueType value = valueParser.parseValue(valueStr);
                     STORM_LOG_TRACE("Transition " << row << " -> " << target << ": " << value);

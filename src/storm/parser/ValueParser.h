@@ -4,6 +4,7 @@
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/parser/ExpressionParser.h"
 #include "storm/storage/expressions/ExpressionEvaluator.h"
+#include "storm/exceptions/WrongFormatException.h"
 
 namespace storm {
     namespace parser {
@@ -39,12 +40,29 @@ namespace storm {
         private:
 
             std::shared_ptr<storm::expressions::ExpressionManager> manager;
-
             storm::parser::ExpressionParser parser;
-
             storm::expressions::ExpressionEvaluator<ValueType> evaluator;
-
             std::unordered_map<std::string, storm::expressions::Expression> identifierMapping;
+        };
+
+        template<typename NumberType>
+        class NumberParser {
+        public:
+            /*!
+             * Parse number from string.
+             *
+             * @param value String containing the value.
+             *
+             * @return NumberType.
+             */
+            static NumberType parse(std::string const& value) {
+                try {
+                    return boost::lexical_cast<NumberType>(value);
+                }
+                catch(boost::bad_lexical_cast &) {
+                    STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Could not parse value '" << value << "' into " << typeid(NumberType).name() << ".");
+                }
+            }
         };
 
     } // namespace parser
