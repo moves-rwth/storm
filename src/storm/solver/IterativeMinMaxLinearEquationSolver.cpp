@@ -223,19 +223,13 @@ namespace storm {
             
             // Start by getting the requirements of the linear equation solver.
             LinearEquationSolverTask linEqTask = LinearEquationSolverTask::Unspecified;
-            if ((method == MinMaxMethod::ValueIteration && !this->hasInitialScheduler() && !hasInitialScheduler) || method == MinMaxMethod::RationalSearch || method == MinMaxMethod::SoundValueIteration) {
+            if ((method == MinMaxMethod::ValueIteration && !this->hasInitialScheduler() && !hasInitialScheduler) || method == MinMaxMethod::RationalSearch || method == MinMaxMethod::SoundValueIteration || method == MinMaxMethod::IntervalIteration) {
                 linEqTask = LinearEquationSolverTask::Multiply;
             }
             MinMaxLinearEquationSolverRequirements requirements(this->linearEquationSolverFactory->getRequirements(env, linEqTask));
 
             if (method == MinMaxMethod::ValueIteration) {
-                if (env.solver().isForceSoundness()) {
-                    // Interval iteration requires a unique solution and lower+upper bounds
-                    if (!this->hasUniqueSolution()) {
-                        requirements.requireNoEndComponents();
-                    }
-                    requirements.requireBounds();
-                } else if (!this->hasUniqueSolution()) { // Traditional value iteration has no requirements if the solution is unique.
+                if (!this->hasUniqueSolution()) { // Traditional value iteration has no requirements if the solution is unique.
                     // Computing a scheduler is only possible if the solution is unique
                     if (this->isTrackSchedulerSet()) {
                         requirements.requireNoEndComponents();
@@ -249,6 +243,12 @@ namespace storm {
                         }
                     }
                 }
+            } else if (method == MinMaxMethod::IntervalIteration) {
+                // Interval iteration requires a unique solution and lower+upper bounds
+                if (!this->hasUniqueSolution()) {
+                    requirements.requireNoEndComponents();
+                }
+                requirements.requireBounds();
             } else if (method == MinMaxMethod::RationalSearch) {
                 // Rational search needs to approach the solution from below.
                 requirements.requireLowerBounds();
