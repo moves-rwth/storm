@@ -23,23 +23,6 @@ run() {
   Build*)
     if [[ "$1" == "Build1" ]]
     then
-
-        if [[ "$CONFIG" == "*Travis" ]]
-        then
-            # Build Carl separately
-            travis_fold start install_carl
-            cd ..
-            git clone https://github.com/smtrat/carl.git
-            cd carl
-            mkdir build
-            cd build
-            cmake .. "${CARL_CMAKE_ARGS[@]}"
-            make lib_carl -j$N_JOBS
-            cd ../../storm
-            travis_fold end install_carl
-        fi
-
-
         # CMake
         travis_fold start cmake
         mkdir build
@@ -132,11 +115,9 @@ echo Normalized C++ Standard library location: $(readlink -f $(echo '#include <v
 case "$CONFIG" in
 DefaultDebug*)
     CMAKE_ARGS=(-DCMAKE_BUILD_TYPE=Debug -DSTORM_DEVELOPER=ON -DCMAKE_CXX_FLAGS="$STLARG")
-    CARL_CMAKE_ARGS=(-DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="$STLARG" -DUSE_CLN_NUMBERS=ON -DUSE_GINAC=ON -DTHREAD_SAFE=ON -DBUILD_ADDONS=ON -DBUILD_ADDON_PARSER=ON)
     ;;
 DefaultRelease*)
     CMAKE_ARGS=(-DCMAKE_BUILD_TYPE=Release -DSTORM_DEVELOPER=OFF -DCMAKE_CXX_FLAGS="$STLARG")
-    CARL_CMAKE_ARGS=(-DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="$STLARG" -DUSE_CLN_NUMBERS=ON -DUSE_GINAC=ON -DTHREAD_SAFE=ON -DBUILD_ADDONS=ON -DBUILD_ADDON_PARSER=ON)
     ;;
 *)
     echo "Unrecognized value of CONFIG: $CONFIG"; exit 1
@@ -156,6 +137,6 @@ travis_fold end mtime
 # Run and print output to avoid travis timeout
 bell &
 bellPID=$!
+trap 'rc=$?; kill $bellPID; exit $rc' EXIT
 run "$1"
-kill $bellPID
 

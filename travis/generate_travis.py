@@ -65,6 +65,40 @@ if __name__ == "__main__":
     s += "jobs:\n"
     s += "  include:\n"
 
+    # Start with prebuilding carl for docker
+    s += "\n"
+    s += "    ###\n"
+    s += "    # Stage: Build Carl\n"
+    s += "    ###\n"
+    s += "\n"
+    for config in configs_linux:
+        linux = config[0]
+        compiler = config[1]
+        build_type = config[2]
+        if "Travis" in build_type:
+            s += "    # {} - {}\n".format(linux, build_type)
+            buildConfig = ""
+            buildConfig += "    - stage: Build Carl\n"
+            buildConfig += "      os: linux\n"
+            buildConfig += "      compiler: {}\n".format(compiler)
+            buildConfig += "      env: CONFIG={} LINUX={} COMPILER={}\n".format(build_type, linux, compiler)
+            buildConfig += "      install:\n"
+            buildConfig += "        - travis/install_linux.sh\n"
+            buildConfig += "      script:\n"
+            buildConfig += "        - travis/build_carl.sh\n"
+            # Upload to DockerHub
+            buildConfig += "      after_success:\n"
+            buildConfig += '        - docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD";\n'
+            if "Debug" in build_type:
+                buildConfig += "        - docker commit carl mvolk/carl-debug:travis;\n"
+                buildConfig += "        - docker push mvolk/carl-debug:travis;\n"
+            elif "Release" in build_type:
+                buildConfig += "        - docker commit carl mvolk/carl:travis;\n"
+                buildConfig += "        - docker push mvolk/carl:travis;\n"
+            else:
+                assert False
+            s += buildConfig
+
     # Generate all configurations
     for stage in stages:
         s += "\n"
@@ -112,7 +146,7 @@ if __name__ == "__main__":
             buildConfig += "      script:\n"
             buildConfig += "        - travis/build.sh {}\n".format(stage[1])
             buildConfig += "      before_cache:\n"
-            buildConfig += "        - docker cp storm:/storm/. .\n"
+            buildConfig += "        - docker cp storm:/opt/storm/. .\n"
             buildConfig += "      after_failure:\n"
             buildConfig += "        - find build -iname '*err*.log' -type f -print -exec cat {} \;\n"
             # Upload to DockerHub

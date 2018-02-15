@@ -26,7 +26,17 @@ linux)
     docker rm -f storm &>/dev/null
     # Run container
     set -e
-    docker run -d -it --name storm --privileged mvolk/storm-basesystem:$LINUX
+    case "$CONFIG" in
+    *DebugTravis)
+        docker run -d -it --name storm --privileged mvolk/carl-debug:travis
+        ;;
+    *ReleaseTravis)
+        docker run -d -it --name storm --privileged mvolk/carl:travis
+        ;;
+    *)
+        docker run -d -it --name storm --privileged mvolk/storm-basesystem:$LINUX
+        ;;
+    esac
     # Copy local content into container
     docker exec storm mkdir opt/storm
     docker cp . storm:/opt/storm
@@ -39,7 +49,7 @@ linux)
         export N_JOBS=$N_JOBS;
         export STLARG=;
         export OS=$OS;
-        cd opt/storm;
+        cd /opt/storm;
         travis/build-helper.sh $1"
     EXITCODE=$?
     ;;
