@@ -19,8 +19,6 @@ namespace storm {
         multiplicationStyle = minMaxSettings.getValueIterationMultiplicationStyle();
         forceBounds = minMaxSettings.isForceBoundsSet();
         symmetricUpdates = minMaxSettings.isForceIntervalIterationSymmetricUpdatesSet();
-        qviRestartThreshold = minMaxSettings.getQviRestartThreshold();
-        qviRestartMaxIterations = minMaxSettings.getQviRestartMaxIterations();
     }
 
     MinMaxSolverEnvironment::~MinMaxSolverEnvironment() {
@@ -88,22 +86,4 @@ namespace storm {
         symmetricUpdates = value;
     }
     
-    storm::RationalNumber MinMaxSolverEnvironment::getQviRestartThreshold() const {
-        return qviRestartThreshold;
-    }
-    
-    void MinMaxSolverEnvironment::setQviRestartThreshold(storm::RationalNumber value) {
-        qviRestartThreshold = value;
-    }
-    
-    uint64_t MinMaxSolverEnvironment::getQviRestartMaxIterations() const {
-        return qviRestartMaxIterations;
-    }
-    
-    void MinMaxSolverEnvironment::setQviRestartMaxIterations(uint64_t value) {
-        qviRestartMaxIterations = value;
-    }
-    
-
-
 }

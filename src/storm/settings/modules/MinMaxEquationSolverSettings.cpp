@@ -21,7 +21,6 @@ namespace storm {
             const std::string MinMaxEquationSolverSettings::valueIterationMultiplicationStyleOptionName = "vimult";
             const std::string MinMaxEquationSolverSettings::intervalIterationSymmetricUpdatesOptionName = "symmetricupdates";
             const std::string MinMaxEquationSolverSettings::forceBoundsOptionName = "forcebounds";
-            const std::string MinMaxEquationSolverSettings::quickValueIterationRestartOptionName = "qvirestart";
 
             MinMaxEquationSolverSettings::MinMaxEquationSolverSettings() : ModuleSettings(moduleName) {
                 std::vector<std::string> minMaxSolvingTechniques = {"vi", "value-iteration", "pi", "policy-iteration", "linear-programming", "lp", "ratsearch", "qvi", "quick-value-iteration", "topological"};
@@ -46,9 +45,6 @@ namespace storm {
                 
                 this->addOption(storm::settings::OptionBuilder(moduleName, forceBoundsOptionName, false, "If set, minmax solver always require that a priori bounds for the solution are computed.").build());
                 
-                this->addOption(storm::settings::OptionBuilder(moduleName, quickValueIterationRestartOptionName, false, "Controls when a restart of quick value iteration is triggered.")
-                                .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("threshold", "The minimal (relative) bound improvement that triggers a restart").addValidatorDouble(ArgumentValidatorFactory::createDoubleRangeValidatorIncluding(0.0, 1.0)).setDefaultValueDouble(0.5).build())
-                                .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("maxiters", "The maximal number of iterations within which a restart can be triggered.").setDefaultValueUnsignedInteger(300).build()).build());
             }
             
             storm::solver::MinMaxMethod MinMaxEquationSolverSettings::getMinMaxEquationSolvingMethod() const {
@@ -128,15 +124,6 @@ namespace storm {
             bool MinMaxEquationSolverSettings::isForceBoundsSet() const {
                 return this->getOption(forceBoundsOptionName).getHasOptionBeenSet();
             }
-            
-            double MinMaxEquationSolverSettings::getQviRestartThreshold() const {
-                return this->getOption(quickValueIterationRestartOptionName).getArgumentByName("threshold").getValueAsDouble();
-            }
-            
-            uint_fast64_t MinMaxEquationSolverSettings::getQviRestartMaxIterations() const {
-                return this->getOption(quickValueIterationRestartOptionName).getArgumentByName("maxiters").getValueAsUnsignedInteger();
-            }
-            
         }
     }
 }

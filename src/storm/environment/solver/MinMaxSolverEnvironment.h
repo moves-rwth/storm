@@ -29,10 +29,6 @@ namespace storm {
         void setForceBounds(bool value);
         bool isSymmetricUpdatesSet() const;
         void setSymmetricUpdates(bool value);
-        storm::RationalNumber getQviRestartThreshold() const;
-        void setQviRestartThreshold(storm::RationalNumber value);
-        uint64_t getQviRestartMaxIterations() const;
-        void setQviRestartMaxIterations(uint64_t value);
         
     private:
         storm::solver::MinMaxMethod minMaxMethod;
@@ -43,8 +39,6 @@ namespace storm {
         storm::solver::MultiplicationStyle multiplicationStyle;
         bool forceBounds;
         bool symmetricUpdates;
-        storm::RationalNumber qviRestartThreshold;
-        uint64_t qviRestartMaxIterations;
     };
 }
 
