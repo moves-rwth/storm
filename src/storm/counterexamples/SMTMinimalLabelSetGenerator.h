@@ -1770,7 +1770,7 @@ namespace storm {
                     if (static_cast<uint64_t>(durationSinceLastMessage) >= progressDelay || lastSize < commandSet.size()) {
                         auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(now - totalClock).count();
                         if (lastSize < commandSet.size()) {
-                            std::cout << "Improved lower bound to " << commandSet.size() << " after " << milliseconds << "s." << std::endl;
+                            std::cout << "Improved lower bound to " << commandSet.size() << " after " << milliseconds << "ms." << std::endl;
                             lastSize = commandSet.size();
                         } else {
                             std::cout << "Lower bound on label set size is " << commandSet.size() << " after " << milliseconds << "ms (checked " << iterations << " models, " << zeroProbabilityCount << " could not reach the target set)." << std::endl;
