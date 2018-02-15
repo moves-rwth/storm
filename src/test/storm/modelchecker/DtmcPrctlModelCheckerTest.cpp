@@ -217,13 +217,13 @@ namespace {
             storm::Environment env;
             env.solver().setForceSoundness(true);
             env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Native);
-            env.solver().native().setMethod(storm::solver::NativeLinearEquationSolverMethod::Power);
+            env.solver().native().setMethod(storm::solver::NativeLinearEquationSolverMethod::SoundPower);
             env.solver().native().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6));
             return env;
         }
     };
 
-    class SparseNativeQuickSoundPowerEnvironment {
+    class SparseNativeIntervalIterationEnvironment {
     public:
         static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan; // unused for sparse models
         static const storm::settings::modules::CoreSettings::Engine engine = storm::settings::modules::CoreSettings::Engine::Sparse;
@@ -234,7 +234,7 @@ namespace {
             storm::Environment env;
             env.solver().setForceSoundness(true);
             env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Native);
-            env.solver().native().setMethod(storm::solver::NativeLinearEquationSolverMethod::QuickPower);
+            env.solver().native().setMethod(storm::solver::NativeLinearEquationSolverMethod::IntervalIteration);
             env.solver().native().setRelativeTerminationCriterion(false);
             env.solver().native().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6));
             return env;
@@ -482,7 +482,7 @@ namespace {
             SparseNativeSorEnvironment,
             SparseNativePowerEnvironment,
             SparseNativeSoundPowerEnvironment,
-            SparseNativeQuickSoundPowerEnvironment,
+            SparseNativeIntervalIterationEnvironment,
             SparseNativeRationalSearchEnvironment,
             SparseTopologicalEigenLUEnvironment,
             HybridSylvanGmmxxGmresEnvironment,

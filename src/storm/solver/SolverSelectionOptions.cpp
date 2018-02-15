@@ -73,7 +73,7 @@ namespace storm {
         }
         
         std::string toString(NativeLinearEquationSolverMethod t) {
-            switch( t) {
+            switch(t) {
                 case NativeLinearEquationSolverMethod::Jacobi:
                     return "Jacobi";
                 case NativeLinearEquationSolverMethod::GaussSeidel:
@@ -84,10 +84,12 @@ namespace storm {
                     return "WalkerChae";
                 case NativeLinearEquationSolverMethod::Power:
                     return "Power";
+                case NativeLinearEquationSolverMethod::SoundPower:
+                    return "SoundPower";
+                case NativeLinearEquationSolverMethod::IntervalIteration:
+                    return "IntervalIteration";
                 case NativeLinearEquationSolverMethod::RationalSearch:
                     return "RationalSearch";
-                case NativeLinearEquationSolverMethod::QuickPower:
-                    return "QuickPower";
             }
             return "invalid";
         }

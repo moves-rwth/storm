@@ -72,7 +72,7 @@ namespace storm {
             virtual bool solveEquationsWalkerChae(storm::Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
             virtual bool solveEquationsPower(storm::Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
             virtual bool solveEquationsSoundPower(storm::Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
-            virtual bool solveEquationsQuickSoundPower(storm::Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
+            virtual bool solveEquationsIntervalIteration(storm::Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
             virtual bool solveEquationsRationalSearch(storm::Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
 
             template<typename RationalType, typename ImpreciseType>

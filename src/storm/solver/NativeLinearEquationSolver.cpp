@@ -396,10 +396,10 @@ namespace storm {
         }
         
         template<typename ValueType>
-        bool NativeLinearEquationSolver<ValueType>::solveEquationsSoundPower(Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+        bool NativeLinearEquationSolver<ValueType>::solveEquationsIntervalIteration(Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             STORM_LOG_THROW(this->hasLowerBound(), storm::exceptions::UnmetRequirementException, "Solver requires lower bound, but none was given.");
             STORM_LOG_THROW(this->hasUpperBound(), storm::exceptions::UnmetRequirementException, "Solver requires upper bound, but none was given.");
-            STORM_LOG_INFO("Solving linear equation system (" << x.size() << " rows) with NativeLinearEquationSolver (SoundPower)");
+            STORM_LOG_INFO("Solving linear equation system (" << x.size() << " rows) with NativeLinearEquationSolver (IntervalIteration)");
 
             std::vector<ValueType>* lowerX = &x;
             this->createLowerBoundsVector(*lowerX);
@@ -557,8 +557,8 @@ namespace storm {
         }
         
         template<typename ValueType>
-        bool NativeLinearEquationSolver<ValueType>::solveEquationsQuickSoundPower(Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
-            STORM_LOG_INFO("Solving linear equation system (" << x.size() << " rows) with NativeLinearEquationSolver (QuickPower)");
+        bool NativeLinearEquationSolver<ValueType>::solveEquationsSoundPower(Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+            STORM_LOG_INFO("Solving linear equation system (" << x.size() << " rows) with NativeLinearEquationSolver (SoundPower)");
             bool useGaussSeidelMultiplication = env.solver().native().getPowerMethodMultiplicationStyle() == storm::solver::MultiplicationStyle::GaussSeidel;
 
             // Prepare the solution vectors.
@@ -597,11 +597,6 @@ namespace storm {
             }
             uint64_t maxIter = env.solver().native().getMaximalNumberOfIterations();
 
-            //std::cout << *this->A << std::endl;
-            //std::cout << storm::utility::vector::toString(b) << std::endl;
-
-            //std::cout << "solving eq sys.. " << std::endl;
-            
             uint64_t iterations = 0;
             bool converged = false;
             bool terminate = false;
@@ -1018,9 +1013,9 @@ namespace storm {
                 } else {
                     STORM_LOG_WARN("The selected solution method does not guarantee exact results.");
                 }
-            } else if (env.solver().isForceSoundness() && method != NativeLinearEquationSolverMethod::Power && method != NativeLinearEquationSolverMethod::RationalSearch && method != NativeLinearEquationSolverMethod::QuickPower) {
+            } else if (env.solver().isForceSoundness() && method != NativeLinearEquationSolverMethod::SoundPower && method != NativeLinearEquationSolverMethod::IntervalIteration && method != NativeLinearEquationSolverMethod::RationalSearch) {
                 if (env.solver().native().isMethodSetFromDefault()) {
-                    method = NativeLinearEquationSolverMethod::Power;
+                    method = NativeLinearEquationSolverMethod::SoundPower;
                     STORM_LOG_INFO("Selecting '" + toString(method) + "' as the solution technique to guarantee sound results. If you want to override this, please explicitly specify a different method.");
                 } else {
                     STORM_LOG_WARN("The selected solution method does not guarantee sound results.");
@@ -1042,13 +1037,11 @@ namespace storm {
                 case NativeLinearEquationSolverMethod::WalkerChae:
                     return this->solveEquationsWalkerChae(env, x, b);
                 case NativeLinearEquationSolverMethod::Power:
-                    if (env.solver().isForceSoundness()) {
-                        return this->solveEquationsSoundPower(env, x, b);
-                    } else {
-                        return this->solveEquationsPower(env, x, b);
-                    }
-                case NativeLinearEquationSolverMethod::QuickPower:
-                        return this->solveEquationsQuickSoundPower(env, x, b);
+                    return this->solveEquationsPower(env, x, b);
+                case NativeLinearEquationSolverMethod::SoundPower:
+                    return this->solveEquationsSoundPower(env, x, b);
+                case NativeLinearEquationSolverMethod::IntervalIteration:
+                    return this->solveEquationsIntervalIteration(env, x, b);
                 case NativeLinearEquationSolverMethod::RationalSearch:
                     return this->solveEquationsRationalSearch(env, x, b);
             }
@@ -1119,7 +1112,7 @@ namespace storm {
         template<typename ValueType>
         LinearEquationSolverProblemFormat NativeLinearEquationSolver<ValueType>::getEquationProblemFormat(Environment const& env) const {
             auto method = getMethod(env, storm::NumberTraits<ValueType>::IsExact);
-            if (method == NativeLinearEquationSolverMethod::Power || method == NativeLinearEquationSolverMethod::RationalSearch || method == NativeLinearEquationSolverMethod::QuickPower) {
+            if (method == NativeLinearEquationSolverMethod::Power || method == NativeLinearEquationSolverMethod::SoundPower || method == NativeLinearEquationSolverMethod::RationalSearch || method == NativeLinearEquationSolverMethod::IntervalIteration) {
                 return LinearEquationSolverProblemFormat::FixedPointSystem;
             } else {
                 return LinearEquationSolverProblemFormat::EquationSystem;
@@ -1131,11 +1124,10 @@ namespace storm {
             LinearEquationSolverRequirements requirements;
             if (task != LinearEquationSolverTask::Multiply) {
                 if (env.solver().native().isForceBoundsSet()) {
-                    requirements.requiresLowerBounds();
-                    requirements.requiresUpperBounds();
+                    requirements.requireBounds();
                 }
                 auto method = getMethod(env, storm::NumberTraits<ValueType>::IsExact);
-                if (method == NativeLinearEquationSolverMethod::Power && env.solver().isForceSoundness()) {
+                if (method == NativeLinearEquationSolverMethod::IntervalIteration) {
                     requirements.requireBounds();
                 } else if (method == NativeLinearEquationSolverMethod::RationalSearch) {
                     requirements.requireLowerBounds();

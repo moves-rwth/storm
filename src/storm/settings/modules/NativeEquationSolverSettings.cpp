@@ -67,10 +67,12 @@ namespace storm {
                     return storm::solver::NativeLinearEquationSolverMethod::WalkerChae;
                 } else if (linearEquationSystemTechniqueAsString == "power") {
                     return storm::solver::NativeLinearEquationSolverMethod::Power;
+                } else if (linearEquationSystemTechniqueAsString == "soundpower") {
+                    return storm::solver::NativeLinearEquationSolverMethod::SoundPower;
+                } else if (linearEquationSystemTechniqueAsString == "interval-iteration") {
+                    return storm::solver::NativeLinearEquationSolverMethod::IntervalIteration;
                 } else if (linearEquationSystemTechniqueAsString == "ratsearch") {
                     return storm::solver::NativeLinearEquationSolverMethod::RationalSearch;
-                } else if (linearEquationSystemTechniqueAsString == "qpower") {
-                    return storm::solver::NativeLinearEquationSolverMethod::QuickPower;
                 }
                 STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown solution technique '" << linearEquationSystemTechniqueAsString << "' selected.");
             }
