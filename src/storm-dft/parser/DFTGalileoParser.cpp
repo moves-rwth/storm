@@ -167,44 +167,74 @@ namespace storm {
 
         template<typename ValueType>
         bool DFTGalileoParser<ValueType>::parseBasicElement(std::vector<std::string> const& tokens, storm::storage::DFTBuilder<ValueType>& builder, ValueParser<ValueType>& valueParser) {
-            std::string name = parseName(tokens[0]);
-
             // Default values
-            ValueType lambda = storm::utility::zero<ValueType>();
+            Distribution distribution = Distribution::None;
+            ValueType firstValDistribution = storm::utility::zero<ValueType>();
+            ValueType secondValDistribution = storm::utility::zero<ValueType>();
             ValueType dormancyFactor = storm::utility::one<ValueType>();
-            bool exponential = false;
+            size_t replication = 1;
 
+            // Parse properties and determine distribution
             for (size_t i = 1; i < tokens.size(); ++i) {
                 std::string token = tokens[i];
                 if (boost::starts_with(token, "prob=")) {
+                    STORM_LOG_THROW(distribution == Distribution::None, storm::exceptions::WrongFormatException, "A different distribution was already defined for this basic element.");
+                    firstValDistribution = valueParser.parseValue(token.substr(5));
+                    distribution = Distribution::Constant;
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Constant distribution is not supported.");
                 } else if (boost::starts_with(token, "lambda=")) {
-                    lambda = valueParser.parseValue(token.substr(7));
-                    exponential = true;
+                    STORM_LOG_THROW(distribution == Distribution::None, storm::exceptions::WrongFormatException, "A different distribution was already defined for this basic element.");
+                    firstValDistribution = valueParser.parseValue(token.substr(7));
+                    distribution = Distribution::Exponential;
                 } else if (boost::starts_with(token, "rate=")) {
-                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Weibull distribution is not supported.");
+                    STORM_LOG_THROW(distribution == Distribution::None || distribution == Distribution::Weibull, storm::exceptions::WrongFormatException, "A different distribution was already defined for this basic element.");
+                    firstValDistribution = valueParser.parseValue(token.substr(5));
+                    distribution = Distribution::Weibull;
                 } else if (boost::starts_with(token, "shape=")) {
-                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Weibull distribution is not supported.");
+                    STORM_LOG_THROW(distribution == Distribution::None || distribution == Distribution::Weibull, storm::exceptions::WrongFormatException, "A different distribution was already defined for this basic element.");
+                    secondValDistribution = valueParser.parseValue(token.substr(6));
+                    distribution = Distribution::Weibull;
                 } else if (boost::starts_with(token, "mean=")) {
-                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "LogNormal distribution is not supported.");
+                    STORM_LOG_THROW(distribution == Distribution::None || distribution == Distribution::LogNormal, storm::exceptions::WrongFormatException, "A different distribution was already defined for this basic element.");
+                    firstValDistribution = valueParser.parseValue(token.substr(5));
+                    distribution = Distribution::LogNormal;
                 } else if (boost::starts_with(token, "stddev=")) {
-                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "LogNormal distribution is not supported.");
+                    STORM_LOG_THROW(distribution == Distribution::None || distribution == Distribution::LogNormal, storm::exceptions::WrongFormatException, "A different distribution was already defined for this basic element.");
+                    secondValDistribution = valueParser.parseValue(token.substr(7));
+                    distribution = Distribution::LogNormal;
                 } else if (boost::starts_with(token, "cov=")) {
-                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Coverage is not supported.");
+                    STORM_LOG_WARN("Coverage is not supported and will be ignored.");
                 } else if (boost::starts_with(token, "res=")) {
-                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Restoration is not supported.");
+                    STORM_LOG_WARN("Restoration is not supported and will be ignored.");
                 } else if (boost::starts_with(token, "repl=")) {
-                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Replication is not supported.");
+                    replication = NumberParser<unsigned>::parse(token.substr(5));
+                    STORM_LOG_THROW(replication == 1, storm::exceptions::NotSupportedException, "Replication > 1 is not supported.");
                 } else if (boost::starts_with(token, "dorm=")) {
                     dormancyFactor = valueParser.parseValue(token.substr(5));
                 }
             }
 
-            if (exponential) {
-                return builder.addBasicElement(name, lambda, dormancyFactor, false); // TODO set transient BEs
-            } else {
-                STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "No distribution for basic element defined.");
+            switch (distribution) {
+                case Constant:
+                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Constant distribution is not supported.");
+                    break;
+                case Exponential:
+                    return builder.addBasicElement(parseName(tokens[0]), firstValDistribution, dormancyFactor, false); // TODO set transient BEs
+                    break;
+                case Weibull:
+                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Weibull distribution is not supported.");
+                    break;
+                case LogNormal:
+                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "LogNormal distribution is not supported.");
+                    break;
+                case None:
+                    // go-through
+                default:
+                    STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "No distribution for basic element defined.");
+                    break;
             }
+            return false;
+
         }
 
         // Explicitly instantiate the class.

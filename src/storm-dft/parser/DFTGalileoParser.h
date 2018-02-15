@@ -52,6 +52,8 @@ namespace storm {
              * @return True iff the parsing and creation was successful.
              */
             static bool parseBasicElement(std::vector<std::string> const& tokens, storm::storage::DFTBuilder<ValueType>& builder, ValueParser<ValueType>& valueParser);
+
+            enum Distribution { None, Constant, Exponential, Weibull, LogNormal };
         };
     }
 }
