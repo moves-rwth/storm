@@ -38,7 +38,7 @@ namespace storm {
         
         template<typename ValueType>
         MinMaxMethod IterativeMinMaxLinearEquationSolver<ValueType>::getMethod(Environment const& env, bool isExactMode) const {
-            // Adjust the method if none was specified and we are using rational numbers.
+            // Adjust the method if none was specified and we want exact or sound computations.
             auto method = env.solver().minMax().getMethod();
             
             if (isExactMode && method != MinMaxMethod::PolicyIteration && method != MinMaxMethod::RationalSearch) {
@@ -48,8 +48,15 @@ namespace storm {
                 } else {
                     STORM_LOG_WARN("The selected solution method does not guarantee exact results.");
                 }
+            } else if (env.solver().isForceSoundness() && method != MinMaxMethod::SoundValueIteration && method != MinMaxMethod::IntervalIteration && method != MinMaxMethod::PolicyIteration && method != MinMaxMethod::RationalSearch) {
+                if (env.solver().minMax().isMethodSetFromDefault()) {
+                    STORM_LOG_INFO("Selecting 'sound value iteration' as the solution technique to guarantee sound results. If you want to override this, please explicitly specify a different method.");
+                    method = MinMaxMethod::SoundValueIteration;
+                } else {
+                    STORM_LOG_WARN("The selected solution method does not guarantee sound results.");
+                }
             }
-            STORM_LOG_THROW(method == MinMaxMethod::ValueIteration || method == MinMaxMethod::PolicyIteration || method == MinMaxMethod::RationalSearch || method == MinMaxMethod::QuickValueIteration, storm::exceptions::InvalidEnvironmentException, "This solver does not support the selected method.");
+            STORM_LOG_THROW(method == MinMaxMethod::ValueIteration || method == MinMaxMethod::PolicyIteration || method == MinMaxMethod::RationalSearch || method == MinMaxMethod::SoundValueIteration || method == MinMaxMethod::IntervalIteration, storm::exceptions::InvalidEnvironmentException, "This solver does not support the selected method.");
             return method;
         }
         
@@ -58,11 +65,7 @@ namespace storm {
             bool result = false;
             switch (getMethod(env, storm::NumberTraits<ValueType>::IsExact)) {
                 case MinMaxMethod::ValueIteration:
-                    if (env.solver().isForceSoundness()) {
-                        result = solveEquationsSoundValueIteration(env, dir, x, b);
-                    } else {
-                        result = solveEquationsValueIteration(env, dir, x, b);
-                    }
+                    result = solveEquationsValueIteration(env, dir, x, b);
                     break;
                 case MinMaxMethod::PolicyIteration:
                     result = solveEquationsPolicyIteration(env, dir, x, b);
@@ -70,8 +73,11 @@ namespace storm {
                 case MinMaxMethod::RationalSearch:
                     result = solveEquationsRationalSearch(env, dir, x, b);
                     break;
-                case MinMaxMethod::QuickValueIteration:
-                    result = solveEquationsQuickSoundValueIteration(env, dir, x, b);
+                case MinMaxMethod::IntervalIteration:
+                    result = solveEquationsIntervalIteration(env, dir, x, b);
+                    break;
+                case MinMaxMethod::SoundValueIteration:
+                    result = solveEquationsSoundValueIteration(env, dir, x, b);
                     break;
                 default:
                     STORM_LOG_THROW(false, storm::exceptions::InvalidEnvironmentException, "This solver does not implement the selected solution method");
@@ -217,7 +223,7 @@ namespace storm {
             
             // Start by getting the requirements of the linear equation solver.
             LinearEquationSolverTask linEqTask = LinearEquationSolverTask::Unspecified;
-            if ((method == MinMaxMethod::ValueIteration && !this->hasInitialScheduler() && !hasInitialScheduler) || method == MinMaxMethod::RationalSearch || method == MinMaxMethod::QuickValueIteration) {
+            if ((method == MinMaxMethod::ValueIteration && !this->hasInitialScheduler() && !hasInitialScheduler) || method == MinMaxMethod::RationalSearch || method == MinMaxMethod::SoundValueIteration) {
                 linEqTask = LinearEquationSolverTask::Multiply;
             }
             MinMaxLinearEquationSolverRequirements requirements(this->linearEquationSolverFactory->getRequirements(env, linEqTask));
@@ -254,7 +260,7 @@ namespace storm {
                 if (!this->hasUniqueSolution()) {
                     requirements.requireValidInitialScheduler();
                 }
-            } else if (method == MinMaxMethod::QuickValueIteration) {
+            } else if (method == MinMaxMethod::SoundValueIteration) {
                 if (!this->hasUniqueSolution()) {
                     requirements.requireNoEndComponents();
                 }
@@ -434,7 +440,7 @@ namespace storm {
          * Model Checker: Interval Iteration for Markov Decision Processes, CAV 2017).
          */
         template<typename ValueType>
-        bool IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsSoundValueIteration(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+        bool IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsIntervalIteration(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             STORM_LOG_THROW(this->hasUpperBound(), storm::exceptions::UnmetRequirementException, "Solver requires upper bound, but none was given.");
 
             if (!this->linEqSolverA) {
@@ -609,16 +615,11 @@ namespace storm {
         }
         
         template<typename ValueType>
-        class QuickValueIterationHelper {
+        class SoundValueIterationHelper {
         public:
-            QuickValueIterationHelper(std::vector<ValueType>& x, std::vector<ValueType>& y, bool relative, ValueType const& precision, uint64_t sizeOfLargestRowGroup) : x(x), y(y), hasLowerBound(false), hasUpperBound(false), minIndex(0), maxIndex(0), relative(relative), precision(precision) {
+            SoundValueIterationHelper(std::vector<ValueType>& x, std::vector<ValueType>& y, bool relative, ValueType const& precision, uint64_t sizeOfLargestRowGroup) : x(x), y(y), hasLowerBound(false), hasUpperBound(false), minIndex(0), maxIndex(0), relative(relative), precision(precision) {
                 xTmp.resize(sizeOfLargestRowGroup);
                 yTmp.resize(sizeOfLargestRowGroup);
-                
-                restart();
-            }
-            
-            void restart() {
                 x.assign(x.size(), storm::utility::zero<ValueType>());
                 y.assign(x.size(), storm::utility::one<ValueType>());
                 hasDecisionValue = false;
@@ -626,6 +627,7 @@ namespace storm {
                 convergencePhase1 = true;
                 firstIndexViolatingConvergence = 0;
             }
+            
             
             inline void setLowerBound(ValueType const& value) {
                 hasLowerBound = true;
@@ -834,7 +836,7 @@ namespace storm {
                 ValueType meanBound = (upperBound + lowerBound) / storm::utility::convertNumber<ValueType>(2.0);
                 storm::utility::vector::applyPointwise(x, y, x, [&meanBound] (ValueType const& xi, ValueType const& yi) { return xi + yi * meanBound; });
                 
-                STORM_LOG_INFO("Quick Value Iteration terminated with lower value bound "
+                STORM_LOG_INFO("Sound Value Iteration terminated with lower value bound "
                                        << (hasLowerBound ? lowerBound : storm::utility::zero<ValueType>()) << (hasLowerBound ? "" : "(none)")
                                        << " and upper value bound "
                                        << (hasUpperBound ? upperBound : storm::utility::zero<ValueType>()) << (hasUpperBound ? "" : "(none)")
@@ -968,7 +970,7 @@ namespace storm {
         };
         
         template<typename ValueType>
-        bool IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsQuickSoundValueIteration(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+        bool IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsSoundValueIteration(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
 
             // Prepare the solution vectors.
             assert(x.size() == this->A->getRowGroupCount());
@@ -976,7 +978,7 @@ namespace storm {
                 this->auxiliaryRowGroupVector = std::make_unique<std::vector<ValueType>>();
             }
             
-            QuickValueIterationHelper<ValueType> helper(x, *this->auxiliaryRowGroupVector, env.solver().minMax().getRelativeTerminationCriterion(), storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()), this->A->getSizeOfLargestRowGroup());
+            SoundValueIterationHelper<ValueType> helper(x, *this->auxiliaryRowGroupVector, env.solver().minMax().getRelativeTerminationCriterion(), storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()), this->A->getSizeOfLargestRowGroup());
 
             // Prepare initial bounds for the solution (if given)
             if (this->hasLowerBound()) {
@@ -1394,7 +1396,7 @@ namespace storm {
             STORM_LOG_ASSERT(this->linearEquationSolverFactory, "Linear equation solver factory not initialized.");
             
             auto method = env.solver().minMax().getMethod();
-            STORM_LOG_THROW(method == MinMaxMethod::ValueIteration || method == MinMaxMethod::PolicyIteration || method == MinMaxMethod::RationalSearch || method == MinMaxMethod::QuickValueIteration, storm::exceptions::InvalidEnvironmentException, "This solver does not support the selected method.");
+            STORM_LOG_THROW(method == MinMaxMethod::ValueIteration || method == MinMaxMethod::PolicyIteration || method == MinMaxMethod::RationalSearch || method == MinMaxMethod::IntervalIteration || method == MinMaxMethod::SoundValueIteration, storm::exceptions::InvalidEnvironmentException, "This solver does not support the selected method.");
             
             std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> result = std::make_unique<IterativeMinMaxLinearEquationSolver<ValueType>>(this->linearEquationSolverFactory->clone());
             result->setRequirementsChecked(this->isRequirementsCheckedSet());
