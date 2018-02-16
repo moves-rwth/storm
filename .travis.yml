@@ -48,8 +48,8 @@ jobs:
         - travis/build_carl.sh
       after_success:
         - docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD";
-        - docker commit carl mvolk/carl-debug:travis;
-        - docker push mvolk/carl-debug:travis;
+        - docker commit carl mvolk/carl:travis-debug;
+        - docker push mvolk/carl:travis-debug;
     # ubuntu-17.10 - DefaultReleaseTravis
     - stage: Build Carl
       os: linux
@@ -341,8 +341,8 @@ jobs:
         - find build -iname '*err*.log' -type f -print -exec cat {} \;
       after_success:
         - docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD";
-        - docker commit storm mvolk/storm-debug:travis;
-        - docker push mvolk/storm-debug:travis;
+        - docker commit storm mvolk/storm:travis-debug;
+        - docker push mvolk/storm:travis-debug;
     # ubuntu-17.10 - DefaultReleaseTravis
     - stage: Test all
       os: linux

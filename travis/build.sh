@@ -28,7 +28,7 @@ linux)
     set -e
     case "$CONFIG" in
     *DebugTravis)
-        docker run -d -it --name storm --privileged mvolk/carl-debug:travis
+        docker run -d -it --name storm --privileged mvolk/carl:travis-debug
         ;;
     *ReleaseTravis)
         docker run -d -it --name storm --privileged mvolk/carl:travis
