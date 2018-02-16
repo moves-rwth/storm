@@ -7,7 +7,7 @@
 #include "storm/utility/iota_n.h"
 #include "storm/utility/vector.h"
 
-#include "storm-dft/storage/dft/DFTBuilder.h"
+#include "storm-dft/builder/DFTBuilder.h"
 #include "storm-dft/storage/dft/DFTIsomorphism.h"
 
 
@@ -271,7 +271,7 @@ namespace storm {
             
             std::vector<DFT<ValueType>> res;
             for(auto const& subdft : subdfts) {
-                DFTBuilder<ValueType> builder;
+                storm::builder::DFTBuilder<ValueType> builder;
             
                 for(size_t id : subdft.second) {
                     builder.copyElement(mElements[id]);
@@ -307,7 +307,7 @@ namespace storm {
             std::vector<std::vector<size_t>> rewriteIds;
             rewriteIds.push_back(modIdea);
             
-            DFTBuilder<ValueType> builder;
+            storm::builder::DFTBuilder<ValueType> builder;
             
             // Accumulate elements which must be rewritten
             std::set<size_t> rewriteSet;

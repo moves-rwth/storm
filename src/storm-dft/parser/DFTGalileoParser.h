@@ -7,7 +7,7 @@
 #include "storm/storage/expressions/ExpressionEvaluator.h"
 
 #include "storm-dft/storage/dft/DFT.h"
-#include "storm-dft/storage/dft/DFTBuilder.h"
+#include "storm-dft/builder/DFTBuilder.h"
 #include "storm/parser/ValueParser.h"
 
 
@@ -51,7 +51,7 @@ namespace storm {
              *
              * @return True iff the parsing and creation was successful.
              */
-            static bool parseBasicElement(std::vector<std::string> const& tokens, storm::storage::DFTBuilder<ValueType>& builder, ValueParser<ValueType>& valueParser);
+            static bool parseBasicElement(std::vector<std::string> const& tokens, storm::builder::DFTBuilder<ValueType>& builder, ValueParser<ValueType>& valueParser);
 
             enum Distribution { None, Constant, Exponential, Weibull, LogNormal };
         };

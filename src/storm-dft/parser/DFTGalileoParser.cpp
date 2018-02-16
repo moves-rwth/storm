@@ -33,7 +33,7 @@ namespace storm {
 
         template<typename ValueType>
         storm::storage::DFT<ValueType> DFTGalileoParser<ValueType>::parseDFT(const std::string& filename, bool defaultInclusive, bool binaryDependencies) {
-            storm::storage::DFTBuilder<ValueType> builder(defaultInclusive, binaryDependencies);
+            storm::builder::DFTBuilder<ValueType> builder(defaultInclusive, binaryDependencies);
             ValueParser<ValueType> valueParser;
             // Regular expression to detect comments
             // taken from: https://stackoverflow.com/questions/9449887/removing-c-c-style-comments-using-boostregex
@@ -166,7 +166,7 @@ namespace storm {
         }
 
         template<typename ValueType>
-        bool DFTGalileoParser<ValueType>::parseBasicElement(std::vector<std::string> const& tokens, storm::storage::DFTBuilder<ValueType>& builder, ValueParser<ValueType>& valueParser) {
+        bool DFTGalileoParser<ValueType>::parseBasicElement(std::vector<std::string> const& tokens, storm::builder::DFTBuilder<ValueType>& builder, ValueParser<ValueType>& valueParser) {
             // Default values
             Distribution distribution = Distribution::None;
             ValueType firstValDistribution = storm::utility::zero<ValueType>();
