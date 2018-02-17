@@ -50,7 +50,7 @@ linux)
         export STLARG=;
         export OS=$OS;
         cd /opt/storm;
-        travis/build-helper.sh $1"
+        travis/build_helper.sh $1"
     EXITCODE=$?
     ;;
 
@@ -62,7 +62,7 @@ osx)
     export N_JOBS
     export STLARG
     export OS
-    gtimeout $TIMEOUT_MAC travis/build-helper.sh "$1"
+    gtimeout $TIMEOUT_MAC travis/build_helper.sh "$1"
     EXITCODE=$?
     ;;
 
