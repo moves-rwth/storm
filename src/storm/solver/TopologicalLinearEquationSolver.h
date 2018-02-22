@@ -67,7 +67,7 @@ namespace storm {
             NativeMultiplier<ValueType> multiplier;
 
             // cached auxiliary data
-            mutable std::unique_ptr<std::vector<storm::storage::StronglyConnectedComponent>> sortedSccDecomposition;
+            mutable std::unique_ptr<storm::storage::StronglyConnectedComponentDecomposition<ValueType>> sortedSccDecomposition;
             mutable boost::optional<uint64_t> longestSccChainSize;
             mutable std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> sccSolver;
         };

@@ -63,15 +63,6 @@ namespace storm {
                 createSortedSccDecomposition(needAdaptPrecision);
             }
             
-            //std::cout << "Sorted SCC decomposition: " << std::endl;
-            //for (auto const& scc : *this->sortedSccDecomposition) {
-                //std::cout << "SCC: ";
-              //  for (auto const& row : scc) {
-                    //std::cout << row << "  ";
-               // }
-                //std::cout << std::endl;
-            //}
-            
             // We do not need to adapt the precision if all SCCs are trivial (i.e., the system is acyclic)
             needAdaptPrecision = needAdaptPrecision && (this->sortedSccDecomposition->size() != this->getMatrixRowCount());
             
@@ -119,90 +110,12 @@ namespace storm {
         template<typename ValueType>
         void TopologicalLinearEquationSolver<ValueType>::createSortedSccDecomposition(bool needLongestChainSize) const {
             // Obtain the scc decomposition
-            auto sccDecomposition = storm::storage::StronglyConnectedComponentDecomposition<ValueType>(*this->A);
-            
-            // Get a mapping from matrix row to the corresponding scc
-            STORM_LOG_THROW(sccDecomposition.size() < std::numeric_limits<uint32_t>::max(), storm::exceptions::UnexpectedException, "The number of SCCs is too large.");
-            std::vector<uint32_t> sccIndices(this->A->getRowCount(), std::numeric_limits<uint32_t>::max());
-            uint32_t sccIndex = 0;
-            for (auto const& scc : sccDecomposition) {
-                for (auto const& row : scc) {
-                    sccIndices[row] = sccIndex;
-                }
-                ++sccIndex;
-            }
-            
-            // Prepare the resulting set of sorted sccs
-            this->sortedSccDecomposition = std::make_unique<std::vector<storm::storage::StronglyConnectedComponent>>();
-            std::vector<storm::storage::StronglyConnectedComponent>& sortedSCCs = *this->sortedSccDecomposition;
-            sortedSCCs.reserve(sccDecomposition.size());
-            
-            // Find a topological sort via DFS.
-            storm::storage::BitVector unsortedSCCs(sccDecomposition.size(), true);
-            std::vector<uint32_t> sccStack, chainSizes;
+            this->sortedSccDecomposition = std::make_unique<storm::storage::StronglyConnectedComponentDecomposition<ValueType>>(*this->A);
             if (needLongestChainSize) {
-                chainSizes.resize(sccDecomposition.size(), 1u);
-            }
-            uint32_t longestChainSize = 0;
-            uint32_t const token = std::numeric_limits<uint32_t>::max();
-            std::set<uint64_t> successorSCCs;
-
-            for (uint32_t firstUnsortedScc = 0; firstUnsortedScc < unsortedSCCs.size(); firstUnsortedScc = unsortedSCCs.getNextSetIndex(firstUnsortedScc + 1)) {
-                
-                sccStack.push_back(firstUnsortedScc);
-                while (!sccStack.empty()) {
-                    uint32_t currentSccIndex = sccStack.back();
-                    if (currentSccIndex != token) {
-                        // Check whether the SCC is still unprocessed
-                        if (unsortedSCCs.get(currentSccIndex)) {
-                            // Explore the successors of the scc.
-                            storm::storage::StronglyConnectedComponent const& currentScc = sccDecomposition.getBlock(currentSccIndex);
-                            // We first push a token on the stack in order to recognize later when all successors of this SCC have been explored already.
-                            sccStack.push_back(token);
-                            // Now add all successors that are not already sorted.
-                            // Successors should only be added once, so we first prepare a set of them and add them afterwards.
-                            successorSCCs.clear();
-                            for (auto const& row : currentScc) {
-                                for (auto const& entry : this->A->getRow(row)) {
-                                    auto const& successorSCC = sccIndices[entry.getColumn()];
-                                    if (successorSCC != currentSccIndex && unsortedSCCs.get(successorSCC)) {
-                                        successorSCCs.insert(successorSCC);
-                                    }
-                                }
-                            }
-                            sccStack.insert(sccStack.end(), successorSCCs.begin(), successorSCCs.end());
-                            
-                        }
-                    } else {
-                        // all successors of the current scc have already been explored.
-                        sccStack.pop_back(); // pop the token
-                        
-                        currentSccIndex = sccStack.back();
-                        storm::storage::StronglyConnectedComponent& scc = sccDecomposition.getBlock(currentSccIndex);
-                        
-                        // Compute the longest chain size for this scc
-                        if (needLongestChainSize) {
-                            uint32_t& currentChainSize = chainSizes[currentSccIndex];
-                            for (auto const& row : scc) {
-                                for (auto const& entry : this->A->getRow(row)) {
-                                    auto const& successorSCC = sccIndices[entry.getColumn()];
-                                    if (successorSCC != currentSccIndex) {
-                                        currentChainSize = std::max(currentChainSize, chainSizes[successorSCC] + 1);
-                                    }
-                                }
-                            }
-                            longestChainSize = std::max(longestChainSize, currentChainSize);
-                        }
-                        
-                        unsortedSCCs.set(currentSccIndex, false);
-                        sccStack.pop_back(); // pop the current scc index
-                        sortedSCCs.push_back(std::move(scc));
-                    }
-                }
-            }
-            
-            if (longestChainSize > 0) {
-                this->longestSccChainSize = longestChainSize;
+                this->longestSccChainSize = 0;
+                this->sortedSccDecomposition->sortTopologically(*this->A, &(this->longestSccChainSize.get()));
+            } else {
+                this->sortedSccDecomposition->sortTopologically(*this->A);
             }
         }
         

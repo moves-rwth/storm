@@ -21,7 +21,6 @@ namespace storm {
             virtual void setMatrix(storm::storage::SparseMatrix<ValueType> const& A) override;
             virtual void setMatrix(storm::storage::SparseMatrix<ValueType>&& A) override;
             
-
             virtual void clearCache() const override;
 
             virtual void repeatedMultiply(Environment const& env, OptimizationDirection d, std::vector<ValueType>& x, std::vector<ValueType> const* b, uint_fast64_t n = 1) const override;
@@ -54,7 +53,7 @@ namespace storm {
             storm::storage::SparseMatrix<ValueType> const* A;
             
             // cached auxiliary data
-            mutable std::unique_ptr<std::vector<storm::storage::StronglyConnectedComponent>> sortedSccDecomposition;
+            mutable std::unique_ptr<storm::storage::StronglyConnectedComponentDecomposition<ValueType>> sortedSccDecomposition;
             mutable boost::optional<uint64_t> longestSccChainSize;
             mutable std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> sccSolver;
             mutable std::unique_ptr<std::vector<ValueType>> auxiliaryRowGroupVector; // A.rowGroupCount() entries
