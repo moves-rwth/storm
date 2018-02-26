@@ -97,7 +97,7 @@ namespace storm {
             SignatureMode const& SignatureComputer<DdType, ValueType>::getSignatureMode() const {
                 return mode;
             }
-            
+                        
             template<storm::dd::DdType DdType, typename ValueType>
             Signature<DdType, ValueType> SignatureComputer<DdType, ValueType>::getFullSignature(Partition<DdType, ValueType> const& partition) const {
                 if (partition.storedAsBdd()) {

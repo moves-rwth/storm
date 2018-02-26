@@ -231,7 +231,7 @@ namespace storm {
             for (auto const& ddVariable : summationDdVariables) {
                 summationAdds.push_back(ddVariable.toAdd<ValueType>().getCuddAdd());
             }
-            
+
 //            return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd().TimesPlus(otherMatrix.getCuddAdd(), summationAdds));
 //            return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd().Triangle(otherMatrix.getCuddAdd(), summationAdds));
             return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd().MatrixMultiply(otherMatrix.getCuddAdd(), summationAdds));

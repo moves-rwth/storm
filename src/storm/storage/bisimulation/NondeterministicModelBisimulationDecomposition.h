@@ -4,7 +4,7 @@
 #include "storm/storage/bisimulation/BisimulationDecomposition.h"
 #include "storm/storage/bisimulation/DeterministicBlockData.h"
 
-#include "storm/storage/Distribution.h"
+#include "storm/storage/DistributionWithReward.h"
 
 namespace storm {
     namespace utility {
@@ -73,10 +73,10 @@ namespace storm {
             std::vector<storm::storage::sparse::state_type> choiceToStateMapping;
             
             // A vector that holds the quotient distributions for all nondeterministic choices of all states.
-            std::vector<storm::storage::Distribution<ValueType>> quotientDistributions;
+            std::vector<storm::storage::DistributionWithReward<ValueType>> quotientDistributions;
             
             // A vector that stores for each state the ordered list of quotient distributions.
-            std::vector<storm::storage::Distribution<ValueType> const*> orderedQuotientDistributions;
+            std::vector<storm::storage::DistributionWithReward<ValueType> const*> orderedQuotientDistributions;
         };
     }
 }

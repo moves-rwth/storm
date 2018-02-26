@@ -138,12 +138,26 @@ namespace storm {
                     STORM_LOG_THROW(obj.formula->hasBound(), storm::exceptions::InvalidOperationException, "Invoked achievability query but no bound was specified for at least one objective.");
                     STORM_LOG_THROW(obj.formula->asRewardOperatorFormula().hasRewardModelName(), storm::exceptions::InvalidOperationException, "Expected reward operator with a reward model name. Got " << *obj.formula << " instead.");
                     std::vector<ValueType> rewards = getActionBasedExpectedRewards(obj.formula->asRewardOperatorFormula().getRewardModelName());
-                    storm::expressions::Expression objValue = zero;
+                    std::vector<storm::expressions::Expression> objectiveValues;
                     for (uint_fast64_t choice = 0; choice < rewards.size(); ++choice) {
                         if (!storm::utility::isZero(rewards[choice])) {
-                            objValue = objValue + (this->expressionManager->rational(rewards[choice]) * expectedChoiceVariables[choice].getExpression());
+                            objectiveValues.push_back(this->expressionManager->rational(rewards[choice]) * expectedChoiceVariables[choice].getExpression());
                         }
                     }
+                    
+                    // Get the sum of all objective values
+                    // As the sum can potentially have many summands, we want to make sure that the formula tree is (roughly balanced)
+                    auto vIt = objectiveValues.begin();
+                    while (objectiveValues.size() > 1) {
+                        if (vIt == objectiveValues.end() || vIt == objectiveValues.end() - 1) {
+                            vIt = objectiveValues.begin();
+                        }
+                        *vIt = *vIt + objectiveValues.back();
+                        objectiveValues.pop_back();
+                        ++vIt;
+                    }
+                    storm::expressions::Expression objValue = objectiveValues.empty() ? zero : objectiveValues.front();
+                    
                     // We need to actually evaluate the threshold as rational number. Otherwise a threshold like '<=16/9' might be considered as 1 due to integer division
                     storm::expressions::Expression threshold = this->expressionManager->rational(obj.formula->getThreshold().evaluateAsRational());
                     switch (obj.formula->getBound().comparisonType) {

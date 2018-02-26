@@ -1,5 +1,4 @@
 #!/bin/bash
-# Inspired by https://github.com/google/fruit
 
 set -e
 
@@ -8,6 +7,14 @@ travis_fold() {
   local action=$1
   local name=$2
   echo -en "travis_fold:${action}:${name}\r"
+}
+
+# Helper to write output every minute
+function bell() {
+  while true; do
+    echo "travis_wait for it..."
+    sleep 60
+  done
 }
 
 # Helper for distinguishing between different runs
@@ -106,9 +113,15 @@ echo C++ Standard library location: $(echo '#include <vector>' | $CXX -x c++ -E 
 echo Normalized C++ Standard library location: $(readlink -f $(echo '#include <vector>' | $CXX -x c++ -E - | grep 'vector\"' | awk '{print $3}' | sed 's@/vector@@;s@\"@@g' | head -n 1))
 
 case "$CONFIG" in
-DefaultDebug)           CMAKE_ARGS=(-DCMAKE_BUILD_TYPE=Debug   -DCMAKE_CXX_FLAGS="$STLARG") ;;
-DefaultRelease)         CMAKE_ARGS=(-DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="$STLARG") ;;
-*) echo "Unrecognized value of CONFIG: $CONFIG"; exit 1 ;;
+DefaultDebug*)
+    CMAKE_ARGS=(-DCMAKE_BUILD_TYPE=Debug -DSTORM_DEVELOPER=ON -DCMAKE_CXX_FLAGS="$STLARG")
+    ;;
+DefaultRelease*)
+    CMAKE_ARGS=(-DCMAKE_BUILD_TYPE=Release -DSTORM_DEVELOPER=OFF -DCMAKE_CXX_FLAGS="$STLARG")
+    ;;
+*)
+    echo "Unrecognized value of CONFIG: $CONFIG"; exit 1
+    ;;
 esac
 
 # Restore timestamps of files
@@ -121,4 +134,9 @@ fi
 ruby travis/mtime_cache/mtime_cache.rb -g travis/mtime_cache/globs.txt -c travis/mtime_cache/cache.json
 travis_fold end mtime
 
+# Run and print output to avoid travis timeout
+bell &
+bellPID=$!
+trap 'rc=$?; kill $bellPID; exit $rc' EXIT
 run "$1"
+

@@ -31,7 +31,6 @@ namespace storm {
             
             std::vector<boost::any> buildDataOfChoiceOrigins(uint_fast64_t totalNumberOfChoices);
             
-            
         private:
             std::unordered_map<std::string, storm::storage::BitVector> labels;
             std::vector<boost::any> dataOfOrigins;

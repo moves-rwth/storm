@@ -15,6 +15,8 @@
 #include "storm/storage/jani/ParallelComposition.h"
 #include "storm/storage/jani/CompositionInformationVisitor.h"
 
+#include "storm/storage/sparse/JaniChoiceOrigins.h"
+
 #include "storm/builder/jit/Distribution.h"
 
 #include "storm/utility/constants.h"
@@ -338,6 +340,10 @@ namespace storm {
                     for (uint_fast64_t rewardVariableIndex = 0; rewardVariableIndex < rewardVariables.size(); ++rewardVariableIndex) {
                         stateActionRewards[rewardVariableIndex] += choice.getRewards()[rewardVariableIndex] * choice.getTotalMass() / totalExitRate;
                     }
+                    
+                    if (this->options.isBuildChoiceOriginsSet() && choice.hasOriginData()) {
+                        globalChoice.addOriginData(choice.getOriginData());
+                    }
                 }
                 globalChoice.addRewards(std::move(stateActionRewards));
                 
@@ -408,7 +414,7 @@ namespace storm {
                 checkGlobalVariableWritesValid(edgeCombination);
             }
             
-            std::vector<EdgeSet::const_iterator> iteratorList(edgeCombination.size());
+            std::vector<EdgeSetWithIndices::const_iterator> iteratorList(edgeCombination.size());
             
             // Initialize the list of iterators.
             for (size_t i = 0; i < edgeCombination.size(); ++i) {
@@ -425,8 +431,15 @@ namespace storm {
                 
                 currentDistribution.add(state, storm::utility::one<ValueType>());
                 
+                EdgeIndexSet edgeIndices;
                 for (uint_fast64_t i = 0; i < iteratorList.size(); ++i) {
-                    storm::jani::Edge const& edge = **iteratorList[i];
+                    auto const& indexAndEdge = *iteratorList[i];
+                    
+                    if (this->getOptions().isBuildChoiceOriginsSet()) {
+                        edgeIndices.insert(model.encodeAutomatonAndEdgeIndices(edgeCombination[i].first, indexAndEdge.first));
+                    }
+                    
+                    storm::jani::Edge const& edge = *indexAndEdge.second;
                     
                     for (auto const& destination : edge.getDestinations()) {
                         for (auto const& stateProbability : currentDistribution) {
@@ -464,6 +477,11 @@ namespace storm {
                 
                 // Now create the actual distribution.
                 Choice<ValueType>& choice = result.back();
+                
+                // Add the edge indices if requested.
+                if (this->getOptions().isBuildChoiceOriginsSet()) {
+                    choice.addOriginData(boost::any(std::move(edgeIndices)));
+                }
                 
                 // Add the rewards to the choice.
                 choice.addRewards(std::move(stateActionRewards));
@@ -515,12 +533,17 @@ namespace storm {
 
                     auto edgesIt = nonsychingEdges.second.find(locations[automatonIndex]);
                     if (edgesIt != nonsychingEdges.second.end()) {
-                        for (auto const& edge : edgesIt->second) {
-                            if (!this->evaluator->asBool(edge->getGuard())) {
+                        for (auto const& indexAndEdge : edgesIt->second) {
+                            if (!this->evaluator->asBool(indexAndEdge.second->getGuard())) {
                                 continue;
                             }
                         
-                            Choice<ValueType> choice = expandNonSynchronizingEdge(*edge, outputAndEdges.first ? outputAndEdges.first.get() : edge->getActionIndex(), automatonIndex, state, stateToIdCallback);
+                            Choice<ValueType> choice = expandNonSynchronizingEdge(*indexAndEdge.second, outputAndEdges.first ? outputAndEdges.first.get() : indexAndEdge.second->getActionIndex(), automatonIndex, state, stateToIdCallback);
+
+                            if (this->getOptions().isBuildChoiceOriginsSet()) {
+                                EdgeIndexSet edgeIndex { model.encodeAutomatonAndEdgeIndices(automatonIndex, indexAndEdge.first) };
+                                choice.addOriginData(boost::any(std::move(edgeIndex)));
+                            }
                             result.emplace_back(std::move(choice));
                         }
                     }
@@ -534,18 +557,18 @@ namespace storm {
                     bool productiveCombination = true;
                     for (auto const& automatonAndEdges : outputAndEdges.second) {
                         uint64_t automatonIndex = automatonAndEdges.first;
-                        EdgeSet enabledEdgesOfAutomaton;
+                        EdgeSetWithIndices enabledEdgesOfAutomaton;
                         
                         bool atLeastOneEdge = false;
                         auto edgesIt = automatonAndEdges.second.find(locations[automatonIndex]);
                         if (edgesIt != automatonAndEdges.second.end()) {
-                            for (auto const& edge : edgesIt->second) {
-                                if (!this->evaluator->asBool(edge->getGuard())) {
+                            for (auto const& indexAndEdge : edgesIt->second) {
+                                if (!this->evaluator->asBool(indexAndEdge.second->getGuard())) {
                                     continue;
                                 }
                             
                                 atLeastOneEdge = true;
-                                enabledEdgesOfAutomaton.emplace_back(edge);
+                                enabledEdgesOfAutomaton.emplace_back(indexAndEdge);
                             }
                         }
 
@@ -560,7 +583,7 @@ namespace storm {
                     
                     if (productiveCombination) {
                         std::vector<Choice<ValueType>> choices = expandSynchronizingEdgeCombination(automataEdgeSets, outputActionIndex, state, stateToIdCallback);
-                    
+                        
                         for (auto const& choice : choices) {
                             result.emplace_back(std::move(choice));
                         }
@@ -575,8 +598,8 @@ namespace storm {
         void JaniNextStateGenerator<ValueType, StateType>::checkGlobalVariableWritesValid(AutomataEdgeSets const& enabledEdges) const {
             std::map<storm::expressions::Variable, uint64_t> writtenGlobalVariables;
             for (auto edgeSetIt = enabledEdges.begin(), edgeSetIte = enabledEdges.end(); edgeSetIt != edgeSetIte; ++edgeSetIt) {
-                for (auto const& edge : edgeSetIt->second) {
-                    for (auto const& globalVariable : edge->getWrittenGlobalVariables()) {
+                for (auto const& indexAndEdge : edgeSetIt->second) {
+                    for (auto const& globalVariable : indexAndEdge.second->getWrittenGlobalVariables()) {
                         auto it = writtenGlobalVariables.find(globalVariable);
                         
                         auto index = std::distance(enabledEdges.begin(), edgeSetIt);
@@ -707,8 +730,10 @@ namespace storm {
                 this->parallelAutomata.push_back(automaton);
                 
                 LocationsAndEdges locationsAndEdges;
+                uint64_t edgeIndex = 0;
                 for (auto const& edge : automaton.getEdges()) {
-                    locationsAndEdges[edge.getSourceLocationIndex()].emplace_back(&edge);
+                    locationsAndEdges[edge.getSourceLocationIndex()].emplace_back(std::make_pair(edgeIndex, &edge));
+                    ++edgeIndex;
                 }
                 
                 AutomataAndEdges automataAndEdges;
@@ -726,10 +751,12 @@ namespace storm {
                 
                     // Add edges with silent action.
                     LocationsAndEdges locationsAndEdges;
+                    uint64_t edgeIndex = 0;
                     for (auto const& edge : parallelAutomata.back().get().getEdges()) {
                         if (edge.getActionIndex() == storm::jani::Model::SILENT_ACTION_INDEX) {
-                            locationsAndEdges[edge.getSourceLocationIndex()].emplace_back(&edge);
+                            locationsAndEdges[edge.getSourceLocationIndex()].emplace_back(std::make_pair(edgeIndex, &edge));
                         }
+                        ++edgeIndex;
                     }
 
                     if (!locationsAndEdges.empty()) {
@@ -750,10 +777,12 @@ namespace storm {
                         if (!storm::jani::SynchronizationVector::isNoActionInput(element)) {
                             LocationsAndEdges locationsAndEdges;
                             uint64_t actionIndex = this->model.getActionIndex(element);
+                            uint64_t edgeIndex = 0;
                             for (auto const& edge : parallelAutomata[automatonIndex].get().getEdges()) {
                                 if (edge.getActionIndex() == actionIndex) {
-                                    locationsAndEdges[edge.getSourceLocationIndex()].emplace_back(&edge);
+                                    locationsAndEdges[edge.getSourceLocationIndex()].emplace_back(std::make_pair(edgeIndex, &edge));
                                 }
+                                ++edgeIndex;
                             }
                             if (locationsAndEdges.empty()) {
                                 atLeastOneEdge = false;
@@ -771,6 +800,39 @@ namespace storm {
             }
             
             STORM_LOG_TRACE("Number of synchronizations: " << this->edges.size() << ".");
+        }
+        
+        template<typename ValueType, typename StateType>
+        std::shared_ptr<storm::storage::sparse::ChoiceOrigins> JaniNextStateGenerator<ValueType, StateType>::generateChoiceOrigins(std::vector<boost::any>& dataForChoiceOrigins) const {
+            if (!this->getOptions().isBuildChoiceOriginsSet()) {
+                return nullptr;
+            }
+            
+            std::vector<uint_fast64_t> identifiers;
+            identifiers.reserve(dataForChoiceOrigins.size());
+            
+            std::map<EdgeIndexSet, uint_fast64_t> edgeIndexSetToIdentifierMap;
+            // The empty edge set (i.e., the choices without origin) always has to get identifier getIdentifierForChoicesWithNoOrigin() -- which is assumed to be 0
+            STORM_LOG_ASSERT(storm::storage::sparse::ChoiceOrigins::getIdentifierForChoicesWithNoOrigin() == 0, "The no origin identifier is assumed to be zero");
+            edgeIndexSetToIdentifierMap.insert(std::make_pair(EdgeIndexSet(), 0));
+            uint_fast64_t currentIdentifier = 1;
+            for (boost::any& originData : dataForChoiceOrigins) {
+                STORM_LOG_ASSERT(originData.empty() || boost::any_cast<EdgeIndexSet>(&originData) != nullptr, "Origin data has unexpected type: " << originData.type().name() << ".");
+                
+                EdgeIndexSet currentEdgeIndexSet = originData.empty() ? EdgeIndexSet() : boost::any_cast<EdgeIndexSet>(std::move(originData));
+                auto insertionRes = edgeIndexSetToIdentifierMap.emplace(std::move(currentEdgeIndexSet), currentIdentifier);
+                identifiers.push_back(insertionRes.first->second);
+                if (insertionRes.second) {
+                    ++currentIdentifier;
+                }
+            }
+            
+            std::vector<EdgeIndexSet> identifierToEdgeIndexSetMapping(currentIdentifier);
+            for (auto const& setIdPair : edgeIndexSetToIdentifierMap) {
+                identifierToEdgeIndexSetMapping[setIdPair.second] = setIdPair.first;
+            }
+            
+            return std::make_shared<storm::storage::sparse::JaniChoiceOrigins>(std::make_shared<storm::jani::Model>(model), std::move(identifiers), std::move(identifierToEdgeIndexSetMapping));
         }
         
         template<typename ValueType, typename StateType>

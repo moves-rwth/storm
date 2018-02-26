@@ -7,11 +7,13 @@
 #include "storm/models/symbolic/Dtmc.h"
 #include "storm/models/symbolic/Ctmc.h"
 #include "storm/models/symbolic/Mdp.h"
+#include "storm/models/symbolic/MarkovAutomaton.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
 
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/Mdp.h"
+#include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 
 #include "storm/storage/dd/bisimulation/PreservationInformation.h"
@@ -305,7 +307,7 @@ namespace storm {
                     rowPermutation = std::vector<uint64_t>(matrixEntries.size());
                     std::iota(rowPermutation.begin(), rowPermutation.end(), 0ull);
                     if (this->isNondeterministic) {
-                        std::sort(rowPermutation.begin(), rowPermutation.end(), [this] (uint64_t first, uint64_t second) { return this->rowToState[first] < this->rowToState[second]; } );
+                        std::stable_sort(rowPermutation.begin(), rowPermutation.end(), [this] (uint64_t first, uint64_t second) { return this->rowToState[first] < this->rowToState[second]; } );
                     }
                     
                     uint64_t rowCounter = 0;
@@ -904,6 +906,14 @@ namespace storm {
                     result = std::make_shared<storm::models::sparse::Ctmc<ValueType>>(std::move(quotientTransitionMatrix), std::move(quotientStateLabeling), std::move(quotientRewardModels));
                 } else if (model.getType() == storm::models::ModelType::Mdp) {
                     result = std::make_shared<storm::models::sparse::Mdp<ValueType>>(std::move(quotientTransitionMatrix), std::move(quotientStateLabeling), std::move(quotientRewardModels));
+                } else if (model.getType() == storm::models::ModelType::MarkovAutomaton) {
+                    storm::models::symbolic::MarkovAutomaton<DdType, ValueType> const& markovAutomaton = *model.template as<storm::models::symbolic::MarkovAutomaton<DdType, ValueType>>();
+                    
+                    boost::optional<storm::storage::BitVector> markovianStates = sparseExtractor.extractSetExists(markovAutomaton.getMarkovianStates());
+                    storm::storage::sparse::ModelComponents<ValueType> modelComponents(std::move(quotientTransitionMatrix), std::move(quotientStateLabeling), std::move(quotientRewardModels), false, std::move(markovianStates));
+                    modelComponents.exitRates = sparseExtractor.extractStateVector(markovAutomaton.getExitRateVector());
+                    
+                    result = std::make_shared<storm::models::sparse::MarkovAutomaton<ValueType>>(std::move(modelComponents));
                 }
                 
                 return result;
@@ -919,8 +929,8 @@ namespace storm {
                 auto modelType = model.getType();
                 
                 bool useRepresentativesForThisExtraction = this->useRepresentatives;
-                if (modelType == storm::models::ModelType::Dtmc || modelType == storm::models::ModelType::Ctmc || modelType == storm::models::ModelType::Mdp) {
-                    if (modelType == storm::models::ModelType::Mdp) {
+                if (modelType == storm::models::ModelType::Dtmc || modelType == storm::models::ModelType::Ctmc || modelType == storm::models::ModelType::Mdp || modelType == storm::models::ModelType::MarkovAutomaton) {
+                    if (modelType == storm::models::ModelType::Mdp || modelType == storm::models::ModelType::MarkovAutomaton) {
                         STORM_LOG_WARN_COND(!useRepresentativesForThisExtraction, "Using representatives is unsupported for MDPs, falling back to regular extraction.");
                         useRepresentativesForThisExtraction = false;
                     }
@@ -979,7 +989,7 @@ namespace storm {
 
                     quotientTransitionMatrix = quotientTransitionMatrix.multiplyMatrix(partitionAsAdd, model.getRowVariables());
                     end = std::chrono::high_resolution_clock::now();
-                    
+
                     // Check quotient matrix for sanity.
                     if (std::is_same<ValueType, storm::RationalNumber>::value) {
                         STORM_LOG_ASSERT(quotientTransitionMatrix.greater(storm::utility::one<ValueType>()).isZero(), "Illegal entries in quotient matrix.");
@@ -1020,7 +1030,7 @@ namespace storm {
                     } else if (modelType == storm::models::ModelType::Mdp) {
                         return std::shared_ptr<storm::models::symbolic::Mdp<DdType, ValueType>>(new storm::models::symbolic::Mdp<DdType, ValueType>(model.getManager().asSharedPointer(), reachableStates, initialStates, deadlockStates, quotientTransitionMatrix, blockVariableSet, blockPrimeVariableSet, blockMetaVariablePairs, model.getNondeterminismVariables(), preservedLabelBdds, quotientRewardModels));
                     } else {
-                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Unsupported quotient type.");
+                        return std::shared_ptr<storm::models::symbolic::MarkovAutomaton<DdType, ValueType>>(new storm::models::symbolic::MarkovAutomaton<DdType, ValueType>(model.getManager().asSharedPointer(), model. template as<storm::models::symbolic::MarkovAutomaton<DdType, ValueType>>()->getMarkovianMarker(), reachableStates, initialStates, deadlockStates, quotientTransitionMatrix, blockVariableSet, blockPrimeVariableSet, blockMetaVariablePairs, model.getNondeterminismVariables(), preservedLabelBdds, quotientRewardModels));
                     }
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Cannot extract quotient for this model type.");

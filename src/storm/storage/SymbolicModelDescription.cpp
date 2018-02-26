@@ -178,5 +178,16 @@ namespace storm {
                 storm::utility::prism::requireNoUndefinedConstants(this->asPrismProgram());
             }
         }
+        
+        std::ostream& operator<<(std::ostream& out, SymbolicModelDescription const& model) {
+            if (model.isPrismProgram()) {
+                out << model.asPrismProgram();
+            } else if (model.isJaniModel()) {
+                out << model.asJaniModel();
+            } else {
+                out << "unkown symbolic model description";
+            }
+            return out;
+        }
     }
 }

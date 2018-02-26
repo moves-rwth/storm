@@ -14,6 +14,7 @@
 #include "storm/settings/modules/NativeEquationSolverSettings.h"
 #include "storm/settings/modules/EliminationSettings.h"
 #include "storm/settings/modules/MinMaxEquationSolverSettings.h"
+#include "storm/settings/modules/GameSolverSettings.h"
 #include "storm/settings/modules/BisimulationSettings.h"
 #include "storm/settings/modules/ResourceSettings.h"
 #include "storm/settings/modules/JaniExportSettings.h"
@@ -40,6 +41,7 @@ namespace storm {
             storm::settings::addModule<storm::settings::modules::EigenEquationSolverSettings>();
             storm::settings::addModule<storm::settings::modules::EliminationSettings>();
             storm::settings::addModule<storm::settings::modules::MinMaxEquationSolverSettings>();
+            storm::settings::addModule<storm::settings::modules::GameSolverSettings>(false);
             // storm::settings::addModule<storm::settings::modules::BisimulationSettings>();
             storm::settings::addModule<storm::settings::modules::ResourceSettings>();
 

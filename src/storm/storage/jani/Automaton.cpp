@@ -175,6 +175,10 @@ namespace storm {
             return locationExpressionVariable;
         }
 
+        Edge const& Automaton::getEdge(uint64_t index) const {
+            return edges[index];
+        }
+        
         Automaton::Edges Automaton::getEdgesFromLocation(std::string const& name) {
             auto it = locationToIndex.find(name);
             STORM_LOG_THROW(it != locationToIndex.end(), storm::exceptions::InvalidArgumentException, "Cannot retrieve edges from unknown location '" << name << ".");
@@ -300,8 +304,6 @@ namespace storm {
             
             return ConstEdges(it1, it2);
         }
-        
-
         
         void Automaton::addEdge(Edge const& edge) {
             STORM_LOG_THROW(edge.getSourceLocationIndex() < locations.size(), storm::exceptions::InvalidArgumentException, "Cannot add edge with unknown source location index '" << edge.getSourceLocationIndex() << "'.");
@@ -529,6 +531,20 @@ namespace storm {
             return result;
         }
 
+        void Automaton::restrictToEdges(boost::container::flat_set<uint_fast64_t> const& edgeIndices) {
+            std::vector<Edge> oldEdges = this->edges;
+            
+            this->edges.clear();
+            actionIndices.clear();
+            for (auto& e : locationToStartingIndex) {
+                e = 0;
+            }
+
+            for (auto const& index : edgeIndices) {
+                this->addEdge(oldEdges[index]);
+            }
+        }
+        
         void Automaton::writeDotToStream(std::ostream& outStream, std::vector<std::string> const& actionNames) const {
             outStream << "\tsubgraph " << name << " {" << std::endl;
 

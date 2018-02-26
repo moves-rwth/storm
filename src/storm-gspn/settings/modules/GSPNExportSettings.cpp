@@ -19,6 +19,7 @@ namespace storm {
             
             const std::string GSPNExportSettings::writeToPnmlOptionName = "to-pnml";
             const std::string GSPNExportSettings::writeToPnproOptionName = "to-pnpro";
+            const std::string GSPNExportSettings::writeToJsonOptionName = "to-json";
             const std::string GSPNExportSettings::writeStatsOptionName = "to-stats";
             const std::string GSPNExportSettings::displayStatsOptionName = "show-stats";
             
@@ -29,6 +30,7 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, writeToDotOptionName, false, "Destination for the dot output.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "path to file").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, writeToPnmlOptionName, false, "Destination for the pnml output").addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "path to file").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, writeToPnproOptionName, false, "Destination for the pnpro output").addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "path to file").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, writeToJsonOptionName, false, "Destination for the json output").addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "path to file").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, writeStatsOptionName, false, "Destination for the stats file").addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "path to file").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, displayStatsOptionName, false, "Print stats to stdout").build());
             }
@@ -56,7 +58,14 @@ namespace storm {
             std::string GSPNExportSettings::getWriteToPnproFilename() const {
                 return this->getOption(writeToPnproOptionName).getArgumentByName("filename").getValueAsString();
             }
-            
+
+            bool GSPNExportSettings::isWriteToJsonSet() const {
+                return this->getOption(writeToJsonOptionName).getHasOptionBeenSet();
+            }
+
+            std::string GSPNExportSettings::getWriteToJsonFilename() const {
+                return this->getOption(writeToJsonOptionName).getArgumentByName("filename").getValueAsString();
+            }
             
             bool GSPNExportSettings::isDisplayStatsSet() const {
                 return this->getOption(displayStatsOptionName).getHasOptionBeenSet();

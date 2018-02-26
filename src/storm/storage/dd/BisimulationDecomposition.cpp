@@ -2,7 +2,7 @@
 
 #include "storm/storage/dd/bisimulation/Partition.h"
 #include "storm/storage/dd/bisimulation/PartitionRefiner.h"
-#include "storm/storage/dd/bisimulation/MdpPartitionRefiner.h"
+#include "storm/storage/dd/bisimulation/NondeterministicModelPartitionRefiner.h"
 #include "storm/storage/dd/bisimulation/QuotientExtractor.h"
 #include "storm/storage/dd/bisimulation/PartialQuotientExtractor.h"
 
@@ -24,8 +24,8 @@ namespace storm {
 
         template <storm::dd::DdType DdType, typename ValueType>
         std::unique_ptr<PartitionRefiner<DdType, ValueType>> createRefiner(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& initialPartition) {
-            if (model.isOfType(storm::models::ModelType::Mdp)) {
-                return std::make_unique<MdpPartitionRefiner<DdType, ValueType>>(*model.template as<storm::models::symbolic::Mdp<DdType, ValueType>>(), initialPartition);
+            if (model.isOfType(storm::models::ModelType::Mdp) || model.isOfType(storm::models::ModelType::MarkovAutomaton)) {
+                return std::make_unique<NondeterministicModelPartitionRefiner<DdType, ValueType>>(*model.template as<storm::models::symbolic::NondeterministicModel<DdType, ValueType>>(), initialPartition);
             } else {
                 return std::make_unique<PartitionRefiner<DdType, ValueType>>(model, initialPartition);
             }

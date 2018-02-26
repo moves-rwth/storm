@@ -371,16 +371,26 @@ namespace storm {
                  */
                 virtual void printDdVariableInformationToStream(std::ostream& out) const;
                 
+            protected:
+                /*!
+                 * Retrieves the expression adapter of this model.
+                 *
+                 * @return The expression adapter.
+                 */
+                std::shared_ptr<storm::adapters::AddExpressionAdapter<Type, ValueType>> const& getRowExpressionAdapter() const;
+                
             private:
                 // The manager responsible for the decision diagrams.
                 std::shared_ptr<storm::dd::DdManager<Type>> manager;
                 
                 // A vector representing the reachable states of the model.
                 storm::dd::Bdd<Type> reachableStates;
-                                
+
+            protected:
                 // A matrix representing transition relation.
                 storm::dd::Add<Type, ValueType> transitionMatrix;
                 
+            private:
                 // The meta variables used to encode the rows of the transition matrix.
                 std::set<storm::expressions::Variable> rowVariables;
                 

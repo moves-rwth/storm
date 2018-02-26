@@ -23,6 +23,7 @@
 
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
+#include "storm/models/symbolic/MarkovAutomaton.h"
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/ResourceSettings.h"
@@ -305,6 +306,23 @@ namespace storm {
         }
         
         template <storm::dd::DdType DdType, typename ValueType>
+        typename std::enable_if<DdType != storm::dd::DdType::Sylvan && !std::is_same<ValueType, double>::value, std::shared_ptr<storm::models::Model<ValueType>>>::type
+        preprocessDdMarkovAutomaton(std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> const& model) {
+            return model;
+        }
+        
+        template <storm::dd::DdType DdType, typename ValueType>
+        typename std::enable_if<DdType == storm::dd::DdType::Sylvan || std::is_same<ValueType, double>::value, std::shared_ptr<storm::models::Model<ValueType>>>::type
+        preprocessDdMarkovAutomaton(std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> const& model) {
+            auto ma = model->template as<storm::models::symbolic::MarkovAutomaton<DdType, ValueType>>();
+            if (!ma->isClosed()) {
+                return std::make_shared<storm::models::symbolic::MarkovAutomaton<DdType, ValueType>>(ma->close());
+            } else {
+                return model;
+            }
+        }
+        
+        template <storm::dd::DdType DdType, typename ValueType>
         std::shared_ptr<storm::models::Model<ValueType>> preprocessDdModelBisimulation(std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> const& model, SymbolicInput const& input, storm::settings::modules::BisimulationSettings const& bisimulationSettings) {
             STORM_LOG_WARN_COND(!bisimulationSettings.isWeakBisimulationSet(), "Weak bisimulation is currently not supported on DDs. Falling back to strong bisimulation.");
             
@@ -317,6 +335,11 @@ namespace storm {
             auto bisimulationSettings = storm::settings::getModule<storm::settings::modules::BisimulationSettings>();
             auto generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
             std::pair<std::shared_ptr<storm::models::Model<ValueType>>, bool> result = std::make_pair(model, false);
+            
+            if (model->isOfType(storm::models::ModelType::MarkovAutomaton)) {
+                result.first = preprocessDdMarkovAutomaton(result.first->template as<storm::models::symbolic::Model<DdType, ValueType>>());
+                result.second = true;
+            }
             
             if (generalSettings.isBisimulationSet()) {
                 result.first = preprocessDdModelBisimulation(model, input, bisimulationSettings);
@@ -377,8 +400,6 @@ namespace storm {
             
             auto counterexampleSettings = storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>();
             if (counterexampleSettings.isMinimalCommandSetGenerationSet()) {
-                STORM_LOG_THROW(input.model && input.model.get().isPrismProgram(), storm::exceptions::NotSupportedException, "Minimal command set counterexamples are only supported for PRISM model input.");
-                storm::prism::Program const& program = input.model.get().asPrismProgram();
                 
                 bool useMilp = counterexampleSettings.isUseMilpBasedMinimalCommandSetGenerationSet();
                 for (auto const& property : input.properties) {
@@ -387,13 +408,14 @@ namespace storm {
                     storm::utility::Stopwatch watch(true);
                     if (useMilp) {
                         STORM_LOG_THROW(sparseModel->isOfType(storm::models::ModelType::Mdp), storm::exceptions::NotSupportedException, "Counterexample generation using MILP is currently only supported for MDPs.");
-                        counterexample = storm::api::computePrismHighLevelCounterexampleMilp(program, sparseModel->template as<storm::models::sparse::Mdp<ValueType>>(), property.getRawFormula());
+                        counterexample = storm::api::computeHighLevelCounterexampleMilp(input.model.get(), sparseModel->template as<storm::models::sparse::Mdp<ValueType>>(), property.getRawFormula());
                     } else {
                         STORM_LOG_THROW(sparseModel->isOfType(storm::models::ModelType::Dtmc) || sparseModel->isOfType(storm::models::ModelType::Mdp), storm::exceptions::NotSupportedException, "Counterexample generation using MaxSAT is currently only supported for discrete-time models.");
+
                         if (sparseModel->isOfType(storm::models::ModelType::Dtmc)) {
-                            counterexample = storm::api::computePrismHighLevelCounterexampleMaxSmt(program, sparseModel->template as<storm::models::sparse::Dtmc<ValueType>>(), property.getRawFormula());
+                            counterexample = storm::api::computeHighLevelCounterexampleMaxSmt(input.model.get(), sparseModel->template as<storm::models::sparse::Dtmc<ValueType>>(), property.getRawFormula());
                         } else {
-                            counterexample = storm::api::computePrismHighLevelCounterexampleMaxSmt(program, sparseModel->template as<storm::models::sparse::Mdp<ValueType>>(), property.getRawFormula());
+                            counterexample = storm::api::computeHighLevelCounterexampleMaxSmt(input.model.get(), sparseModel->template as<storm::models::sparse::Mdp<ValueType>>(), property.getRawFormula());
                         }
                     }
                     watch.stop();
