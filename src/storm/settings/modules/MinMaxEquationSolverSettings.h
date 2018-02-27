@@ -120,7 +120,6 @@ namespace storm {
                 static const std::string valueIterationMultiplicationStyleOptionName;
                 static const std::string intervalIterationSymmetricUpdatesOptionName;
                 static const std::string forceBoundsOptionName;
-                static const std::string quickValueIterationRestartOptionName;
             };
             
         }
