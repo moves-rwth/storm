@@ -61,6 +61,7 @@ namespace storm {
              * to the number of rows of A. Can be the same as the x vector.
              * @param choices If given, the choices made in the reduction process are written to this vector.
              */
+            void multiplyAndReduce(Environment const& env, OptimizationDirection const& dir, std::vector<ValueType> const& x, std::vector<ValueType> const* b, std::vector<ValueType>& result, std::vector<uint_fast64_t>* choices = nullptr) const;
             virtual void multiplyAndReduce(Environment const& env, OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType> const& x, std::vector<ValueType> const* b, std::vector<ValueType>& result, std::vector<uint_fast64_t>* choices = nullptr) const = 0;
             
             /*!
@@ -77,6 +78,7 @@ namespace storm {
              * to the number of rows of A. Can be the same as the x vector.
              * @param choices If given, the choices made in the reduction process are written to this vector.
              */
+            void multiplyAndReduceGaussSeidel(Environment const& env, OptimizationDirection const& dir, std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<uint_fast64_t>* choices = nullptr) const;
             virtual void multiplyAndReduceGaussSeidel(Environment const& env, OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<uint_fast64_t>* choices = nullptr) const = 0;
             
             /*!
@@ -97,7 +99,6 @@ namespace storm {
              * so that the resulting vector has the size of number of row groups of A.
              *
              * @param dir The direction for the reduction step.
-             * @param rowGroupIndices A vector storing the row groups over which to reduce.
              * @param x The input vector with which to multiply the matrix. Its length must be equal
              * to the number of columns of A.
              * @param b If non-null, this vector is added after the multiplication. If given, its length must be equal
@@ -106,7 +107,7 @@ namespace storm {
              * to the number of rows of A.
              * @param n The number of times to perform the multiplication.
              */
-            void repeatedMultiplyAndReduce(Environment const& env, OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType>& x, std::vector<ValueType> const* b, uint64_t n) const;
+            void repeatedMultiplyAndReduce(Environment const& env, OptimizationDirection const& dir, std::vector<ValueType>& x, std::vector<ValueType> const* b, uint64_t n) const;
   
             /*!
              * Multiplies the row with the given index with x and adds the given offset

@@ -24,6 +24,16 @@ namespace storm {
         void Multiplier<ValueType>::clearCache() const {
             cachedVector.reset();
         }
+        
+        template<typename ValueType>
+        void Multiplier<ValueType>::multiplyAndReduce(Environment const& env, OptimizationDirection const& dir, std::vector<ValueType> const& x, std::vector<ValueType> const* b, std::vector<ValueType>& result, std::vector<uint_fast64_t>* choices = nullptr) {
+            multiplyAndReduce(env, dir, this->matrix.getRowGroupIndices(), x, b, result, choices);
+        }
+
+        template<typename ValueType>
+        void Multiplier<ValueType>::multiplyAndReduceGaussSeidel(Environment const& env, OptimizationDirection const& dir, std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<uint_fast64_t>* choices = nullptr) {
+            multiplyAndReduceGaussSeidel(env, dir, this->matrix.getRowGroupIndices(), x, b, choices);
+        }
     
         template<typename ValueType>
         void Multiplier<ValueType>::repeatedMultiply(Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const* b, uint64_t n) const {
@@ -49,7 +59,6 @@ namespace storm {
                     return std::make_unique<NativeMultiplier<ValueType>>(matrix);
             }
         }
-
         
         template class Multiplier<double>;
         template class MultiplierFactory<double>;

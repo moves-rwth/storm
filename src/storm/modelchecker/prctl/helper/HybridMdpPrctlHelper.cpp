@@ -21,6 +21,7 @@
 #include "storm/modelchecker/results/HybridQuantitativeCheckResult.h"
 
 #include "storm/solver/MinMaxLinearEquationSolver.h"
+#include "storm/solver/Multiplier.h"
 
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/UncheckedRequirementException.h"
@@ -309,8 +310,8 @@ namespace storm {
                     // Translate the symbolic matrix/vector to their explicit representations.
                     std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> explicitRepresentation = submatrix.toMatrixVector(subvector, model.getNondeterminismVariables(), odd, odd);
                     
-                    std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(env, std::move(explicitRepresentation.first));
-                    solver->repeatedMultiply(env, dir, x, &explicitRepresentation.second, stepBound);
+                    auto multiplier = storm::solver::MultiplierFactory<ValueType>().create(env, explicitRepresentation.first);
+                    multiplier->repeatedMultiplyAndReduce(env, dir, x, &explicitRepresentation.second, stepBound);
                     
                     // Return a hybrid check result that stores the numerical values explicitly.
                     return std::unique_ptr<CheckResult>(new storm::modelchecker::HybridQuantitativeCheckResult<DdType, ValueType>(model.getReachableStates(), model.getReachableStates() && !maybeStates, psiStates.template toAdd<ValueType>(), maybeStates, odd, x));
@@ -334,9 +335,9 @@ namespace storm {
                 std::vector<ValueType> x = rewardModel.getStateRewardVector().toVector(odd);
                 
                 // Perform the matrix-vector multiplication.
-                std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(env, std::move(explicitMatrix));
-                solver->repeatedMultiply(env, dir, x, nullptr, stepBound);
-                
+                auto multiplier = storm::solver::MultiplierFactory<ValueType>().create(env, explicitMatrix);
+                multiplier->repeatedMultiplyAndReduce(env, dir, x, nullptr, stepBound);
+
                 // Return a hybrid check result that stores the numerical values explicitly.
                 return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType, ValueType>(model.getReachableStates(), model.getManager().getBddZero(), model.getManager().template getAddZero<ValueType>(), model.getReachableStates(), odd, x));
             }
@@ -359,9 +360,9 @@ namespace storm {
                 std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> explicitRepresentation = transitionMatrix.toMatrixVector(totalRewardVector, model.getNondeterminismVariables(), odd, odd);
                 
                 // Perform the matrix-vector multiplication.
-                std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(env, std::move(explicitRepresentation.first));
-                solver->repeatedMultiply(env, dir, x, &explicitRepresentation.second, stepBound);
-                
+                    auto multiplier = storm::solver::MultiplierFactory<ValueType>().create(env, explicitRepresentation.first);
+                    multiplier->repeatedMultiplyAndReduce(env, dir, x, &explicitRepresentation.second, stepBound);
+
                 // Return a hybrid check result that stores the numerical values explicitly.
                 return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType, ValueType>(model.getReachableStates(), model.getManager().getBddZero(), model.getManager().template getAddZero<ValueType>(), model.getReachableStates(), odd, x));
             }

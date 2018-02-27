@@ -21,6 +21,7 @@
 #include "storm/storage/Scheduler.h"
 
 #include "storm/solver/MinMaxLinearEquationSolver.h"
+#include "storm/solver/Multiplier.h"
 #include "storm/solver/LpSolver.h"
 
 #include "storm/settings/SettingsManager.h"
@@ -75,9 +76,8 @@ namespace storm {
                     // Create the vector with which to multiply.
                     std::vector<ValueType> subresult(maybeStates.getNumberOfSetBits());
                     
-                    goal.restrictRelevantValues(maybeStates);
-                    std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = storm::solver::configureMinMaxLinearEquationSolver(env, std::move(goal), minMaxLinearEquationSolverFactory, std::move(submatrix));
-                    solver->repeatedMultiply(env, subresult, &b, stepBound);
+                    auto multiplier = storm::solver::MultiplierFactory<ValueType>().create(env, submatrix);
+                    multiplier->repeatedMultiplyAndReduce(env, goal.direction(), subresult, &b, stepBound);
                     
                     // Set the values of the resulting vector accordingly.
                     storm::utility::vector::setVectorValues(result, maybeStates, subresult);
@@ -272,8 +272,8 @@ namespace storm {
                 std::vector<ValueType> result(transitionMatrix.getRowGroupCount());
                 storm::utility::vector::setVectorValues(result, nextStates, storm::utility::one<ValueType>());
                 
-                std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = minMaxLinearEquationSolverFactory.create(env, transitionMatrix);
-                solver->repeatedMultiply(env, dir, result, nullptr, 1);
+                auto multiplier = storm::solver::MultiplierFactory<ValueType>().create(env, transitionMatrix);
+                multiplier->multiplyAndReduce(env, dir, result, nullptr, result);
                 
                 return result;
             }
@@ -812,9 +812,9 @@ namespace storm {
                 // Initialize result to state rewards of the this->getModel().
                 std::vector<ValueType> result(rewardModel.getStateRewardVector());
                 
-                std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = storm::solver::configureMinMaxLinearEquationSolver(env, std::move(goal), minMaxLinearEquationSolverFactory, transitionMatrix);
-                solver->repeatedMultiply(env, result, nullptr, stepCount);
-                
+                auto multiplier = storm::solver::MultiplierFactory<ValueType>().create(env, transitionMatrix);
+                multiplier->repeatedMultiplyAndReduce(env, goal.direction(), result, nullptr, stepCount);
+
                 return result;
             }
             
@@ -831,8 +831,8 @@ namespace storm {
                 // Initialize result to the zero vector.
                 std::vector<ValueType> result(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
                 
-                std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = storm::solver::configureMinMaxLinearEquationSolver(env, std::move(goal), minMaxLinearEquationSolverFactory, transitionMatrix);
-                solver->repeatedMultiply(env, result, &totalRewardVector, stepBound);
+                auto multiplier = storm::solver::MultiplierFactory<ValueType>().create(env, transitionMatrix);
+                multiplier->repeatedMultiplyAndReduce(env, goal.direction(), result, &totalRewardVector, stepBound);
                 
                 return result;
             }
@@ -1459,12 +1459,11 @@ namespace storm {
                 std::vector<ValueType> x(mecTransitions.getRowGroupCount(), storm::utility::zero<ValueType>());
                 std::vector<ValueType> xPrime = x;
                 
-                auto solver = minMaxLinearEquationSolverFactory.create(env, std::move(mecTransitions));
-                solver->setCachingEnabled(true);
+                auto multiplier = storm::solver::MultiplierFactory<ValueType>().create(env, mecTransitions);
                 ValueType maxDiff, minDiff;
                 while (true) {
                     // Compute the obtained rewards for the next step
-                    solver->repeatedMultiply(env, dir, x, &choiceRewards, 1);
+                    multiplier->multiplyAndReduce(env, dir, x, &choiceRewards, x);
                     
                     // update xPrime and check for convergence
                     // to avoid large (and numerically unstable) x-values, we substract a reference value.
