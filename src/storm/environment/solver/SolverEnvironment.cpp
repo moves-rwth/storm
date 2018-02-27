@@ -1,6 +1,7 @@
 #include "storm/environment/solver/SolverEnvironment.h"
 
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
+#include "storm/environment/solver/MultiplierEnvironment.h"
 #include "storm/environment/solver/EigenSolverEnvironment.h"
 #include "storm/environment/solver/GmmxxSolverEnvironment.h"
 #include "storm/environment/solver/NativeSolverEnvironment.h"
@@ -34,6 +35,14 @@ namespace storm {
     
     MinMaxSolverEnvironment const& SolverEnvironment::minMax() const {
         return minMaxSolverEnvironment.get();
+    }
+    
+    MultiplierEnvironment& SolverEnvironment::multiplier() {
+        return multiplierEnvironment.get();
+    }
+    
+    MultiplierEnvironment const& SolverEnvironment::multiplier() const {
+        return multiplierEnvironment.get();
     }
     
     EigenSolverEnvironment& SolverEnvironment::eigen() {

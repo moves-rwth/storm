@@ -15,6 +15,7 @@ namespace storm {
     class GmmxxSolverEnvironment;
     class NativeSolverEnvironment;
     class MinMaxSolverEnvironment;
+    class MultiplierEnvironment;
     class GameSolverEnvironment;
     class TopologicalSolverEnvironment;
     
@@ -32,6 +33,8 @@ namespace storm {
         NativeSolverEnvironment const& native() const;
         MinMaxSolverEnvironment& minMax();
         MinMaxSolverEnvironment const& minMax() const;
+        MultiplierEnvironment& multiplier();
+        MultiplierEnvironment const& multiplier() const;
         GameSolverEnvironment& game();
         GameSolverEnvironment const& game() const;
         TopologicalSolverEnvironment& topological();
@@ -54,6 +57,7 @@ namespace storm {
         SubEnvironment<GameSolverEnvironment> gameSolverEnvironment;
         SubEnvironment<TopologicalSolverEnvironment> topologicalSolverEnvironment;
         SubEnvironment<MinMaxSolverEnvironment> minMaxSolverEnvironment;
+        SubEnvironment<MultiplierEnvironment> multiplierEnvironment;
       
         storm::solver::EquationSolverType linearEquationSolverType;
         bool linearEquationSolverTypeSetFromDefault;
