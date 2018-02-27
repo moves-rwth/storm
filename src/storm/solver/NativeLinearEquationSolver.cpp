@@ -7,10 +7,12 @@
 #include "storm/utility/NumberTraits.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/vector.h"
+#include "storm/solver/Multiplier.h"
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/InvalidEnvironmentException.h"
 #include "storm/exceptions/UnmetRequirementException.h"
 #include "storm/exceptions/PrecisionExceededException.h"
+
 
 namespace storm {
     namespace solver {
@@ -91,6 +93,14 @@ namespace storm {
         }
     
         template<typename ValueType>
+        NativeLinearEquationSolver<ValueType>::JacobiDecomposition::JacobiDecomposition(Environment const& env, storm::storage::SparseMatrix<ValueType> const& A) {
+            auto decomposition = A.getJacobiDecomposition();
+            this->LUMatrix = std::move(decomposition.first);
+            this->DVector = std::move(decomposition.second);
+            this->multiplier = storm::solver::MultiplierFactory<ValueType>().create(env, this->LUMatrix);
+        }
+        
+        template<typename ValueType>
         bool NativeLinearEquationSolver<ValueType>::solveEquationsJacobi(Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             STORM_LOG_INFO("Solving linear equation system (" << x.size() << " rows) with NativeLinearEquationSolver (Jacobi)");
             
@@ -100,16 +110,13 @@ namespace storm {
             
             // Get a Jacobi decomposition of the matrix A.
             if (!jacobiDecomposition) {
-                jacobiDecomposition = std::make_unique<std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>>>(A->getJacobiDecomposition());
+                jacobiDecomposition = std::make_unique<JacobiDecomposition>(env, *A);
             }
             
             ValueType precision = storm::utility::convertNumber<ValueType>(env.solver().native().getPrecision());
             uint64_t maxIter = env.solver().native().getMaximalNumberOfIterations();
             bool relative = env.solver().native().getRelativeTerminationCriterion();
 
-            storm::storage::SparseMatrix<ValueType> const& jacobiLU = jacobiDecomposition->first;
-            std::vector<ValueType> const& jacobiD = jacobiDecomposition->second;
-            
             std::vector<ValueType>* currentX = &x;
             std::vector<ValueType>* nextX = this->cachedRowVector.get();
             
@@ -121,10 +128,9 @@ namespace storm {
             this->startMeasureProgress();
             while (!converged && !terminate && iterations < maxIter) {
                 // Compute D^-1 * (b - LU * x) and store result in nextX.
-                multiplier.multAdd(jacobiLU, *currentX, nullptr, *nextX);
-
+                jacobiDecomposition->multiplier->multiply(env, *currentX, nullptr, *nextX);
                 storm::utility::vector::subtractVectors(b, *nextX, *nextX);
-                storm::utility::vector::multiplyVectorsPointwise(jacobiD, *nextX, *nextX);
+                storm::utility::vector::multiplyVectorsPointwise(jacobiDecomposition->DVector, *nextX, *nextX);
                 
                 // Now check if the process already converged within our precision.
                 converged = storm::utility::vector::equalModuloPrecision<ValueType>(*currentX, *nextX, precision, relative);
@@ -156,10 +162,11 @@ namespace storm {
         }
         
         template<typename ValueType>
-        NativeLinearEquationSolver<ValueType>::WalkerChaeData::WalkerChaeData(storm::storage::SparseMatrix<ValueType> const& originalMatrix, std::vector<ValueType> const& originalB) : t(storm::utility::convertNumber<ValueType>(1000.0)) {
+        NativeLinearEquationSolver<ValueType>::WalkerChaeData::WalkerChaeData(Environment const& env, storm::storage::SparseMatrix<ValueType> const& originalMatrix, std::vector<ValueType> const& originalB) : t(storm::utility::convertNumber<ValueType>(1000.0)) {
             computeWalkerChaeMatrix(originalMatrix);
             computeNewB(originalB);
             precomputeAuxiliaryData();
+            multiplier = storm::solver::MultiplierFactory<ValueType>().create(env, this->matrix);
         }
         
         template<typename ValueType>
@@ -218,7 +225,7 @@ namespace storm {
             
             // (1) Compute an equivalent equation system that has only non-negative coefficients.
             if (!walkerChaeData) {
-                walkerChaeData = std::make_unique<WalkerChaeData>(*this->A, b);
+                walkerChaeData = std::make_unique<WalkerChaeData>(env, *this->A, b);
             }
 
             // (2) Enlarge the vectors x and b to account for additional variables.
@@ -242,7 +249,7 @@ namespace storm {
 
             // Create a vector that always holds Ax.
             std::vector<ValueType> currentAx(x.size());
-            multiplier.multAdd(walkerChaeData->matrix, *currentX, nullptr, currentAx);
+            walkerChaeData->multiplier->multiply(env, *currentX, nullptr, currentAx);
             
             // (3) Perform iterations until convergence.
             bool converged = false;
@@ -253,7 +260,7 @@ namespace storm {
                 walkerChaeData->matrix.performWalkerChaeStep(*currentX, walkerChaeData->columnSums, walkerChaeData->b, currentAx, *nextX);
                 
                 // Compute new Ax.
-                multiplier.multAdd(walkerChaeData->matrix, *nextX, nullptr, currentAx);
+                walkerChaeData->multiplier->multiply(env, *nextX, nullptr, currentAx);
                 
                 // Check for convergence.
                 converged = storm::utility::vector::computeSquaredNorm2Difference(currentAx, walkerChaeData->b) <= squaredErrorBound;
@@ -294,7 +301,11 @@ namespace storm {
         }
         
         template<typename ValueType>
-        typename NativeLinearEquationSolver<ValueType>::PowerIterationResult NativeLinearEquationSolver<ValueType>::performPowerIteration(std::vector<ValueType>*& currentX, std::vector<ValueType>*& newX, std::vector<ValueType> const& b, ValueType const& precision, bool relative, SolverGuarantee const& guarantee, uint64_t currentIterations, uint64_t maxIterations, storm::solver::MultiplicationStyle const& multiplicationStyle) const {
+        typename NativeLinearEquationSolver<ValueType>::PowerIterationResult NativeLinearEquationSolver<ValueType>::performPowerIteration(Environment const& env, std::vector<ValueType>*& currentX, std::vector<ValueType>*& newX, std::vector<ValueType> const& b, storm::solver::Multiplier<ValueType> const& multiplier, ValueType const& precision, bool relative, SolverGuarantee const& guarantee, uint64_t currentIterations, uint64_t maxIterations, storm::solver::MultiplicationStyle const& multiplicationStyle) const {
+
+            if (!this->multiplier) {
+                this->multiplier = storm::solver::MultiplierFactory<ValueType>().create(env, *A);
+            }
 
             bool useGaussSeidelMultiplication = multiplicationStyle == storm::solver::MultiplicationStyle::GaussSeidel;
             
@@ -306,9 +317,9 @@ namespace storm {
             while (!converged && !terminate && iterations < maxIterations) {
                 if (useGaussSeidelMultiplication) {
                     *newX = *currentX;
-                    this->multiplier.multAddGaussSeidelBackward(*this->A, *newX, &b);
+                    multiplier.multiplyGaussSeidel(env, *newX, &b);
                 } else {
-                    this->multiplier.multAdd(*this->A, *currentX, &b, *newX);
+                    multiplier.multiply(env, *currentX, &b, *newX);
                 }
                 
                 // Now check for termination.
@@ -339,6 +350,9 @@ namespace storm {
             if (!this->cachedRowVector) {
                 this->cachedRowVector = std::make_unique<std::vector<ValueType>>(getMatrixRowCount());
             }
+            if (!this->multiplier) {
+                this->multiplier = storm::solver::MultiplierFactory<ValueType>().create(env, *A);
+            }
             std::vector<ValueType>* currentX = &x;
             SolverGuarantee guarantee = SolverGuarantee::None;
             if (this->hasCustomTerminationCondition()) {
@@ -355,7 +369,7 @@ namespace storm {
             // Forward call to power iteration implementation.
             this->startMeasureProgress();
             ValueType precision = storm::utility::convertNumber<ValueType>(env.solver().native().getPrecision());
-            PowerIterationResult result = this->performPowerIteration(currentX, newX, b, precision, env.solver().native().getRelativeTerminationCriterion(), guarantee, 0, env.solver().native().getMaximalNumberOfIterations(), env.solver().native().getPowerMethodMultiplicationStyle());
+            PowerIterationResult result = this->performPowerIteration(env, currentX, newX, b, *this->multiplier, precision, env.solver().native().getRelativeTerminationCriterion(), guarantee, 0, env.solver().native().getMaximalNumberOfIterations(), env.solver().native().getPowerMethodMultiplicationStyle());
 
             // Swap the result in place.
             if (currentX == this->cachedRowVector.get()) {
@@ -413,6 +427,10 @@ namespace storm {
                 tmp = cachedRowVector2.get();
             }
             
+            if (!this->multiplier) {
+                this->multiplier = storm::solver::MultiplierFactory<ValueType>().create(env, *A);
+            }
+            
             bool converged = false;
             bool terminate = false;
             uint64_t iterations = 0;
@@ -444,22 +462,22 @@ namespace storm {
                         if (useDiffs) {
                             preserveOldRelevantValues(*lowerX, this->getRelevantValues(), oldValues);
                         }
-                        this->multiplier.multAddGaussSeidelBackward(*this->A, *lowerX, &b);
+                        this->multiplier->multiplyGaussSeidel(env, *lowerX, &b);
                         if (useDiffs) {
                             maxLowerDiff = computeMaxAbsDiff(*lowerX, this->getRelevantValues(), oldValues);
                             preserveOldRelevantValues(*upperX, this->getRelevantValues(), oldValues);
                         }
-                        this->multiplier.multAddGaussSeidelBackward(*this->A, *upperX, &b);
+                        this->multiplier->multiplyGaussSeidel(env, *upperX, &b);
                         if (useDiffs) {
                             maxUpperDiff = computeMaxAbsDiff(*upperX, this->getRelevantValues(), oldValues);
                         }
                     } else {
-                        this->multiplier.multAdd(*this->A, *lowerX, &b, *tmp);
+                        this->multiplier->multiply(env, *lowerX, &b, *tmp);
                         if (useDiffs) {
                             maxLowerDiff = computeMaxAbsDiff(*lowerX, *tmp, this->getRelevantValues());
                         }
                         std::swap(tmp, lowerX);
-                        this->multiplier.multAdd(*this->A, *upperX, &b, *tmp);
+                        this->multiplier->multiply(env, *upperX, &b, *tmp);
                         if (useDiffs) {
                             maxUpperDiff = computeMaxAbsDiff(*upperX, *tmp, this->getRelevantValues());
                         }
@@ -472,7 +490,7 @@ namespace storm {
                             if (useDiffs) {
                                 preserveOldRelevantValues(*lowerX, this->getRelevantValues(), oldValues);
                             }
-                            this->multiplier.multAddGaussSeidelBackward(*this->A, *lowerX, &b);
+                            this->multiplier->multiplyGaussSeidel(env, *lowerX, &b);
                             if (useDiffs) {
                                 maxLowerDiff = computeMaxAbsDiff(*lowerX, this->getRelevantValues(), oldValues);
                             }
@@ -481,7 +499,7 @@ namespace storm {
                             if (useDiffs) {
                                 preserveOldRelevantValues(*upperX, this->getRelevantValues(), oldValues);
                             }
-                            this->multiplier.multAddGaussSeidelBackward(*this->A, *upperX, &b);
+                           this->multiplier->multiplyGaussSeidel(env, *upperX, &b);
                             if (useDiffs) {
                                 maxUpperDiff = computeMaxAbsDiff(*upperX, this->getRelevantValues(), oldValues);
                             }
@@ -489,14 +507,14 @@ namespace storm {
                         }
                     } else {
                         if (maxLowerDiff >= maxUpperDiff) {
-                            this->multiplier.multAdd(*this->A, *lowerX, &b, *tmp);
+                            this->multiplier->multiply(env, *lowerX, &b, *tmp);
                             if (useDiffs) {
                                 maxLowerDiff = computeMaxAbsDiff(*lowerX, *tmp, this->getRelevantValues());
                             }
                             std::swap(tmp, lowerX);
                             lowerStep = true;
                         } else {
-                            this->multiplier.multAdd(*this->A, *upperX, &b, *tmp);
+                            this->multiplier->multiply(env, *upperX, &b, *tmp);
                             if (useDiffs) {
                                 maxUpperDiff = computeMaxAbsDiff(*upperX, *tmp, this->getRelevantValues());
                             }
@@ -576,22 +594,26 @@ namespace storm {
                 upperBound = value;
             }
             
-            void multiplyRow(uint64_t const& row, storm::storage::SparseMatrix<ValueType> const& A, ValueType const& bi, ValueType& xi, ValueType& yi) {
+            void multiplyRow(uint64_t const& row, storm::storage::SparseMatrix<ValueType> const& A, storm::solver::Multiplier<ValueType> const& multiplier, ValueType const& bi, ValueType& xi, ValueType& yi) {
+                xi = multiplier.multiplyRow(row, x, bi);
+                yi = multiplier.multiplyRow(row, y, storm::utility::zero());
+                /*
                 xi = bi;
                 yi = storm::utility::zero<ValueType>();
                 for (auto const& entry : A.getRow(row)) {
                     xi += entry.getValue() * x[entry.getColumn()];
                     yi += entry.getValue() * y[entry.getColumn()];
                 }
+                 */
             }
             
-            void performIterationStep(storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType> const& b) {
+            void performIterationStep(storm::storage::SparseMatrix<ValueType> const& A, storm::solver::Multiplier<ValueType> const& multiplier, std::vector<ValueType> const& b) {
                 auto xIt = x.rbegin();
                 auto yIt = y.rbegin();
                 uint64_t row = A.getRowCount();
                 while (row > 0) {
                     --row;
-                    multiplyRow(row, A, b[row], *xIt, *yIt);
+                    multiplyRow(row, A, multiplier, b[row], *xIt, *yIt);
                     ++xIt;
                     ++yIt;
                 }
@@ -744,6 +766,10 @@ namespace storm {
                 this->cachedRowVector = std::make_unique<std::vector<ValueType>>();
             }
             
+            if (!this->multiplier) {
+                this->multiplier = storm::solver::MultiplierFactory<ValueType>().create(env, *this->A);
+            }
+            
             SoundPowerHelper<ValueType> helper(x, *this->cachedRowVector, env.solver().native().getRelativeTerminationCriterion(), storm::utility::convertNumber<ValueType>(env.solver().native().getPrecision()));
 
             // Prepare initial bounds for the solution (if given)
@@ -765,7 +791,7 @@ namespace storm {
             uint64_t iterations = 0;
             
             while (!converged && iterations < env.solver().native().getMaximalNumberOfIterations()) {
-                helper.performIterationStep(*this->A, b);
+                helper.performIterationStep(*this->A, *this->multiplier, b);
                 if (helper.checkConvergenceUpdateBounds(relevantValuesPtr)) {
                     converged = true;
                 }
@@ -900,6 +926,9 @@ namespace storm {
             if (!this->cachedRowVector) {
                 this->cachedRowVector = std::make_unique<std::vector<ValueType>>(this->A->getRowCount());
             }
+            if (!this->multiplier) {
+                this->multiplier = storm::solver::MultiplierFactory<ValueType>().create(env, *A);
+            }
             
             // Forward the call to the core rational search routine.
             bool converged = solveEquationsRationalSearchHelper<storm::RationalNumber, ImpreciseType>(env, *this, rationalA, rationalX, rationalB, *this->A, x, b, *this->cachedRowVector);
@@ -922,13 +951,11 @@ namespace storm {
         typename std::enable_if<std::is_same<ValueType, ImpreciseType>::value && NumberTraits<ValueType>::IsExact, bool>::type NativeLinearEquationSolver<ValueType>::solveEquationsRationalSearchHelper(Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             // Version for when the overall value type is exact and the same type is to be used for the imprecise part.
             
-            if (!this->linEqSolverA) {
-                this->linEqSolverA = this->linearEquationSolverFactory->create(*this->A);
-                this->linEqSolverA->setCachingEnabled(true);
-            }
-            
             if (!this->cachedRowVector) {
                 this->cachedRowVector = std::make_unique<std::vector<ValueType>>(this->A->getRowCount());
+            }
+            if (!this->multiplier) {
+                this->multiplier = storm::solver::MultiplierFactory<ValueType>().create(env, *A);
             }
             
             // Forward the call to the core rational search routine.
@@ -975,18 +1002,22 @@ namespace storm {
             NativeLinearEquationSolver<ImpreciseType> impreciseSolver;
             impreciseSolver.setMatrix(impreciseA);
             impreciseSolver.setCachingEnabled(true);
-            
+            impreciseSolver.multiplier = storm::solver::MultiplierFactory<ImpreciseType>().create(env, impreciseA);
+
             bool converged = false;
             try {
                 // Forward the call to the core rational search routine.
                 converged = solveEquationsRationalSearchHelper<ValueType, ImpreciseType>(env, impreciseSolver, *this->A, x, b, impreciseA, impreciseX, impreciseB, impreciseTmpX);
+                impreciseSolver.clearCache();
             } catch (storm::exceptions::PrecisionExceededException const& e) {
                 STORM_LOG_WARN("Precision of value type was exceeded, trying to recover by switching to rational arithmetic.");
                 
                 if (!this->cachedRowVector) {
                     this->cachedRowVector = std::make_unique<std::vector<ValueType>>(this->A->getRowGroupCount());
                 }
-                
+                if (!this->multiplier) {
+                    this->multiplier = storm::solver::MultiplierFactory<ValueType>().create(env, *A);
+                }
                 // Translate the imprecise value iteration result to the one we are going to use from now on.
                 auto targetIt = this->cachedRowVector->begin();
                 for (auto it = impreciseX.begin(), ite = impreciseX.end(); it != ite; ++it, ++targetIt) {
@@ -1102,66 +1133,6 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void NativeLinearEquationSolver<ValueType>::multiply(std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<ValueType>& result) const {
-            if (&x != &result) {
-                multiplier.multAdd(*A, x, b, result);
-            } else {
-                // If the two vectors are aliases, we need to create a temporary.
-                if (!this->cachedRowVector) {
-                    this->cachedRowVector = std::make_unique<std::vector<ValueType>>(getMatrixRowCount());
-                }
-                
-                multiplier.multAdd(*A, x, b, *this->cachedRowVector);
-                result.swap(*this->cachedRowVector);
-                
-                if (!this->isCachingEnabled()) {
-                    clearCache();
-                }
-            }
-        }
-        
-        template<typename ValueType>
-        void NativeLinearEquationSolver<ValueType>::multiplyAndReduce(OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<ValueType>& result, std::vector<uint_fast64_t>* choices) const {
-            if (&x != &result) {
-                multiplier.multAddReduce(dir, rowGroupIndices, *A, x, b, result, choices);
-            } else {
-                // If the two vectors are aliases, we need to create a temporary.
-                if (!this->cachedRowVector) {
-                    this->cachedRowVector = std::make_unique<std::vector<ValueType>>(getMatrixRowCount());
-                }
-            
-                multiplier.multAddReduce(dir, rowGroupIndices, *A, x, b, *this->cachedRowVector, choices);
-                result.swap(*this->cachedRowVector);
-                
-                if (!this->isCachingEnabled()) {
-                    clearCache();
-                }
-            }
-        }
-        
-        template<typename ValueType>
-        bool NativeLinearEquationSolver<ValueType>::supportsGaussSeidelMultiplication() const {
-            return true;
-        }
-        
-        template<typename ValueType>
-        void NativeLinearEquationSolver<ValueType>::multiplyGaussSeidel(std::vector<ValueType>& x, std::vector<ValueType> const* b) const {
-            STORM_LOG_ASSERT(this->A->getRowCount() == this->A->getColumnCount(), "This function is only applicable for square matrices.");
-            multiplier.multAddGaussSeidelBackward(*A, x, b);
-        }
-        
-        template<typename ValueType>
-        void NativeLinearEquationSolver<ValueType>::multiplyAndReduceGaussSeidel(OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<uint_fast64_t>* choices) const {
-            multiplier.multAddReduceGaussSeidelBackward(dir, rowGroupIndices, *A, x, b, choices);
-        }
-        
-        template<typename ValueType>
-        ValueType NativeLinearEquationSolver<ValueType>::multiplyRow(uint64_t const& rowIndex, std::vector<ValueType> const& x) const {
-            return multiplier.multiplyRow(*A, rowIndex, x);
-        }
-
-        
-        template<typename ValueType>
         LinearEquationSolverProblemFormat NativeLinearEquationSolver<ValueType>::getEquationProblemFormat(Environment const& env) const {
             auto method = getMethod(env, storm::NumberTraits<ValueType>::IsExact);
             if (method == NativeLinearEquationSolverMethod::Power || method == NativeLinearEquationSolverMethod::SoundPower || method == NativeLinearEquationSolverMethod::RationalSearch || method == NativeLinearEquationSolverMethod::IntervalIteration) {
@@ -1174,16 +1145,14 @@ namespace storm {
         template<typename ValueType>
         LinearEquationSolverRequirements NativeLinearEquationSolver<ValueType>::getRequirements(Environment const& env, LinearEquationSolverTask const& task) const {
             LinearEquationSolverRequirements requirements;
-            if (task != LinearEquationSolverTask::Multiply) {
-                if (env.solver().native().isForceBoundsSet()) {
-                    requirements.requireBounds();
-                }
-                auto method = getMethod(env, storm::NumberTraits<ValueType>::IsExact);
-                if (method == NativeLinearEquationSolverMethod::IntervalIteration) {
-                    requirements.requireBounds();
-                } else if (method == NativeLinearEquationSolverMethod::RationalSearch) {
-                    requirements.requireLowerBounds();
-                }
+            if (env.solver().native().isForceBoundsSet()) {
+                requirements.requireBounds();
+            }
+            auto method = getMethod(env, storm::NumberTraits<ValueType>::IsExact);
+            if (method == NativeLinearEquationSolverMethod::IntervalIteration) {
+                requirements.requireBounds();
+            } else if (method == NativeLinearEquationSolverMethod::RationalSearch) {
+                requirements.requireLowerBounds();
             }
             return requirements;
         }
@@ -1193,6 +1162,7 @@ namespace storm {
             jacobiDecomposition.reset();
             cachedRowVector2.reset();
             walkerChaeData.reset();
+            multiplier.reset();
             LinearEquationSolver<ValueType>::clearCache();
         }
         
@@ -1207,7 +1177,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> NativeLinearEquationSolverFactory<ValueType>::create(Environment const& env, LinearEquationSolverTask const& task) const {
+        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> NativeLinearEquationSolverFactory<ValueType>::create(Environment const& env) const {
             return std::make_unique<storm::solver::NativeLinearEquationSolver<ValueType>>();
         }
         

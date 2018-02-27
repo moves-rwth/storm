@@ -38,7 +38,7 @@ namespace storm {
             virtual ValueType multiplyRow(uint64_t const& rowIndex, std::vector<ValueType> const& x) const override;
 
             virtual LinearEquationSolverProblemFormat getEquationProblemFormat(storm::Environment const& env) const override;
-            virtual LinearEquationSolverRequirements getRequirements(Environment const& env, LinearEquationSolverTask const& task = LinearEquationSolverTask::Unspecified) const override;
+            virtual LinearEquationSolverRequirements getRequirements(Environment const& env) const override;
 
             virtual void clearCache() const override;
 
@@ -58,7 +58,7 @@ namespace storm {
             template <typename ValueTypePrime>
             friend class NativeLinearEquationSolver;
             
-            PowerIterationResult performPowerIteration(std::vector<ValueType>*& currentX, std::vector<ValueType>*& newX, std::vector<ValueType> const& b, ValueType const& precision, bool relative, SolverGuarantee const& guarantee, uint64_t currentIterations, uint64_t maxIterations, storm::solver::MultiplicationStyle const& multiplicationStyle) const;
+            PowerIterationResult performPowerIteration(Environment const& env, std::vector<ValueType>*& currentX, std::vector<ValueType>*& newX, std::vector<ValueType> const& b, ValueType const& precision, bool relative, SolverGuarantee const& guarantee, uint64_t currentIterations, uint64_t maxIterations, storm::solver::MultiplicationStyle const& multiplicationStyle) const;
             
             void logIterations(bool converged, bool terminate, uint64_t iterations) const;
             
@@ -96,14 +96,22 @@ namespace storm {
             storm::storage::SparseMatrix<ValueType> const* A;
             
             // An object to dispatch all multiplication operations.
-            NativeMultiplier<ValueType> multiplier;
+            mutable std::unique_ptr<Multiplier<ValueType>> multiplier;
 
             // cached auxiliary data
-            mutable std::unique_ptr<std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>>> jacobiDecomposition;
             mutable std::unique_ptr<std::vector<ValueType>> cachedRowVector2; // A.getRowCount() rows
             
+            struct JacobiDecomposition {
+                JacobiDecomposition(Environment const& env, storm::storage::SparseMatrix<ValueType> const& A);
+                
+                storm::storage::SparseMatrix<ValueType> LUMatrix;
+                std::vector<ValueType> DVector;
+                std::unique_ptr<storm::solver::Multiplier<ValueType>> multiplier;
+            };
+            mutable std::unique_ptr<JacobiDecomposition> jacobiDecomposition;
+            
             struct WalkerChaeData {
-                WalkerChaeData(storm::storage::SparseMatrix<ValueType> const& originalMatrix, std::vector<ValueType> const& originalB);
+                WalkerChaeData(Environment const& env, storm::storage::SparseMatrix<ValueType> const& originalMatrix, std::vector<ValueType> const& originalB);
                 
                 void computeWalkerChaeMatrix(storm::storage::SparseMatrix<ValueType> const& originalMatrix);
                 void computeNewB(std::vector<ValueType> const& originalB);
@@ -112,6 +120,7 @@ namespace storm {
                 storm::storage::SparseMatrix<ValueType> matrix;
                 std::vector<ValueType> b;
                 ValueType t;
+                std::unique_ptr<storm::solver::Multiplier<ValueType>> multiplier;
 
                 // Auxiliary data.
                 std::vector<ValueType> columnSums;
@@ -125,7 +134,7 @@ namespace storm {
         public:
             using LinearEquationSolverFactory<ValueType>::create;
             
-            virtual std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> create(Environment const& env, LinearEquationSolverTask const& task = LinearEquationSolverTask::Unspecified) const override;
+            virtual std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> create(Environment const& env) const override;
             
             virtual std::unique_ptr<LinearEquationSolverFactory<ValueType>> clone() const override;
 

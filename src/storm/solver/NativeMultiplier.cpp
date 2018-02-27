@@ -31,74 +31,61 @@ namespace storm {
         }
         
         template<typename ValueType>
-        MultiplicationStyle NativeMultiplier<ValueType>::getMultiplicationStyle() const {
-            if (this->getAllowGaussSeidelMultiplications()) {
-                return MultiplicationStyle::GaussSeidel;
-            } else {
-                return  MultiplicationStyle::Regular;
-            }
-        }
-        
-        template<typename ValueType>
-        void NativeMultiplier<ValueType>::multiply(Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<ValueType>& result) const {
-            if (getMultiplicationStyle() == MultiplicationStyle::GaussSeidel) {
-                multAddGaussSeidelBackward(x, b);
-                if (&x != &result) {
-                    result = x;
-                }
-            } else {
-                STORM_LOG_ASSERT(getMultiplicationStyle() == MultiplicationStyle::Regular, "Unexpected Multiplicationstyle.");
-                std::vector<ValueType>* target = &result;
-                if (&x == &result) {
-                    if (this->cachedVector) {
-                        this->cachedVector->resize(x.size());
-                    } else {
-                        this->cachedVector = std::make_unique<std::vector<ValueType>>(x.size());
-                    }
-                    target = this->cachedVector.get();
-                }
-                if (parallelize(env)) {
-                    multAddParallel(x, b, *target);
+        void NativeMultiplier<ValueType>::multiply(Environment const& env, std::vector<ValueType> const& x, std::vector<ValueType> const* b, std::vector<ValueType>& result) const {
+            STORM_LOG_ASSERT(getMultiplicationStyle() == MultiplicationStyle::Regular, "Unexpected Multiplicationstyle.");
+            std::vector<ValueType>* target = &result;
+            if (&x == &result) {
+                if (this->cachedVector) {
+                    this->cachedVector->resize(x.size());
                 } else {
-                    multAdd(x, b, *target);
+                    this->cachedVector = std::make_unique<std::vector<ValueType>>(x.size());
                 }
-                if (&x == &result) {
-                    std::swap(result, *this->cachedVector);
-                }
+                target = this->cachedVector.get();
             }
-        }
-        
-        template<typename ValueType>
-        void NativeMultiplier<ValueType>::multiplyAndReduce(Environment const& env, OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<ValueType>& result, std::vector<uint_fast64_t>* choices) const {
-            if (getMultiplicationStyle() == MultiplicationStyle::GaussSeidel) {
-                multAddReduceGaussSeidelBackward(dir, rowGroupIndices, x, b, choices);
-                if (&x != &result) {
-                    result = x;
-                }
+            if (parallelize(env)) {
+                multAddParallel(x, b, *target);
             } else {
-                STORM_LOG_ASSERT(getMultiplicationStyle() == MultiplicationStyle::Regular, "Unexpected Multiplicationstyle.");
-                std::vector<ValueType>* target = &result;
-                if (&x == &result) {
-                    if (this->cachedVector) {
-                        this->cachedVector->resize(x.size());
-                    } else {
-                        this->cachedVector = std::make_unique<std::vector<ValueType>>(x.size());
-                    }
-                    target = this->cachedVector.get();
-                }
-                if (parallelize(env)) {
-                    multAddReduceParallel(dir, rowGroupIndices, x, b, *target, choices);
-                } else {
-                    multAddReduce(dir, rowGroupIndices, x, b, *target, choices);
-                }
-                if (&x == &result) {
-                    std::swap(result, *this->cachedVector);
-                }
+                multAdd(x, b, *target);
+            }
+            if (&x == &result) {
+                std::swap(result, *this->cachedVector);
             }
         }
         
         template<typename ValueType>
-        ValueType NativeMultiplier<ValueType>::multiplyRow(Environment const& env, uint64_t const& rowIndex, std::vector<ValueType> const& x, ValueType const& offset) const {
+        void NativeMultiplier<ValueType>::multiplyGaussSeidel(Environment const& env, std::vector<ValueType> const& x, std::vector<ValueType> const* b) const {
+            this->matrix.multiplyWithVectorBackward(x, x, b);
+        }
+        
+        template<typename ValueType>
+        void NativeMultiplier<ValueType>::multiplyAndReduce(Environment const& env, OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType> const& x, std::vector<ValueType> const* b, std::vector<ValueType>& result, std::vector<uint_fast64_t>* choices) const {
+            STORM_LOG_ASSERT(getMultiplicationStyle() == MultiplicationStyle::Regular, "Unexpected Multiplicationstyle.");
+            std::vector<ValueType>* target = &result;
+            if (&x == &result) {
+                if (this->cachedVector) {
+                    this->cachedVector->resize(x.size());
+                } else {
+                    this->cachedVector = std::make_unique<std::vector<ValueType>>(x.size());
+                }
+                target = this->cachedVector.get();
+            }
+            if (parallelize(env)) {
+                multAddReduceParallel(dir, rowGroupIndices, x, b, *target, choices);
+            } else {
+                multAddReduce(dir, rowGroupIndices, x, b, *target, choices);
+            }
+            if (&x == &result) {
+                std::swap(result, *this->cachedVector);
+            }
+        }
+        
+        template<typename ValueType>
+        void NativeMultiplier<ValueType>::multiplyAndReduceGaussSeidel(Environment const& env, OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<uint_fast64_t>* choices) const {
+            this->matrix.multiplyAndReduceBackward(dir, rowGroupIndices, x, b, x, choices);
+        }
+        
+        template<typename ValueType>
+        ValueType NativeMultiplier<ValueType>::multiplyRow(uint64_t const& rowIndex, std::vector<ValueType> const& x, ValueType const& offset) const {
             return this->matrix.multiplyRowWithVector(rowIndex, x);
         }
 
@@ -108,20 +95,10 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void NativeMultiplier<ValueType>::multAddGaussSeidelBackward(std::vector<ValueType>& x, std::vector<ValueType> const* b) const {
-            this->matrix.multiplyWithVectorBackward(x, x, b);
-        }
-        
-        template<typename ValueType>
         void NativeMultiplier<ValueType>::multAddReduce(storm::solver::OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType> const& x, std::vector<ValueType> const* b, std::vector<ValueType>& result, std::vector<uint64_t>* choices) const {
             this->matrix.multiplyAndReduce(dir, rowGroupIndices, x, b, result, choices);
         }
         
-        template<typename ValueType>
-        void NativeMultiplier<ValueType>::multAddReduceGaussSeidelBackward(storm::solver::OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<uint64_t>* choices) const {
-            this->matrix.multiplyAndReduceBackward(dir, rowGroupIndices, x, b, x, choices);
-        }
-                
         template<typename ValueType>
         void NativeMultiplier<ValueType>::multAddParallel(std::vector<ValueType> const& x, std::vector<ValueType> const* b, std::vector<ValueType>& result) const {
 #ifdef STORM_HAVE_INTELTBB

@@ -16,20 +16,10 @@ namespace storm {
     namespace solver {
         
         template<typename ValueType>
-        Multiplier<ValueType>::Multiplier(storm::storage::SparseMatrix<ValueType> const& matrix) : matrix(matrix), allowGaussSeidelMultiplications(false) {
+        Multiplier<ValueType>::Multiplier(storm::storage::SparseMatrix<ValueType> const& matrix) : matrix(matrix) {
             // Intentionally left empty.
         }
     
-        template<typename ValueType>
-        bool Multiplier<ValueType>::getAllowGaussSeidelMultiplications() const {
-            return allowGaussSeidelMultiplications;
-        }
-    
-        template<typename ValueType>
-        void Multiplier<ValueType>::setAllowGaussSeidelMultiplications(bool value) {
-            allowGaussSeidelMultiplications = value;
-        }
-        
         template<typename ValueType>
         void Multiplier<ValueType>::clearCache() const {
             cachedVector.reset();
