@@ -24,6 +24,16 @@ namespace storm {
             return "invalid";
         }
         
+        std::string toString(MultiplierType t) {
+            switch(t) {
+                case MultiplierType::Native:
+                    return "Native";
+                case MultiplierType::Gmmxx:
+                    return "Gmmxx";
+            }
+            return "invalid";
+        }
+        
         std::string toString(LraMethod m) {
             switch(m) {
                 case LraMethod::LinearProgramming:
