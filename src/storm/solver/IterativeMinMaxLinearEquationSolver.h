@@ -5,6 +5,7 @@
 #include "storm/utility/NumberTraits.h"
 
 #include "storm/solver/LinearEquationSolver.h"
+#include "storm/solver/Multiplier.h"
 #include "storm/solver/StandardMinMaxLinearEquationSolver.h"
 
 #include "storm/solver/SolverStatus.h"
@@ -68,31 +69,21 @@ namespace storm {
             template <typename ValueTypePrime>
             friend class IterativeMinMaxLinearEquationSolver;
             
-            ValueIterationResult performValueIteration(OptimizationDirection dir, std::vector<ValueType>*& currentX, std::vector<ValueType>*& newX, std::vector<ValueType> const& b, ValueType const& precision, bool relative, SolverGuarantee const& guarantee, uint64_t currentIterations, uint64_t  maximalNumberOfIterations, storm::solver::MultiplicationStyle const& multiplicationStyle) const;
+            ValueIterationResult performValueIteration(Environment const& env, OptimizationDirection dir, std::vector<ValueType>*& currentX, std::vector<ValueType>*& newX, std::vector<ValueType> const& b, ValueType const& precision, bool relative, SolverGuarantee const& guarantee, uint64_t currentIterations, uint64_t  maximalNumberOfIterations, storm::solver::MultiplicationStyle const& multiplicationStyle) const;
             
             void createLinearEquationSolver(Environment const& env) const;
             
+            /// The factory used to obtain linear equation solvers.
+            std::unique_ptr<LinearEquationSolverFactory<ValueType>> linearEquationSolverFactory;
+            
             // possibly cached data
+            mutable std::unique_ptr<storm::solver::Multiplier<ValueType>> multiplierA;
             mutable std::unique_ptr<std::vector<ValueType>> auxiliaryRowGroupVector; // A.rowGroupCount() entries
             mutable std::unique_ptr<std::vector<ValueType>> auxiliaryRowGroupVector2; // A.rowGroupCount() entries
-            mutable std::unique_ptr<std::vector<uint64_t>> rowGroupOrdering; // A.rowGroupCount() entries
             
             SolverStatus updateStatusIfNotConverged(SolverStatus status, std::vector<ValueType> const& x, uint64_t iterations, uint64_t maximalNumberOfIterations, SolverGuarantee const& guarantee) const;
             static void reportStatus(SolverStatus status, uint64_t iterations);
         };
         
-        template<typename ValueType>
-        class IterativeMinMaxLinearEquationSolverFactory : public StandardMinMaxLinearEquationSolverFactory<ValueType> {
-        public:
-            IterativeMinMaxLinearEquationSolverFactory();
-            IterativeMinMaxLinearEquationSolverFactory(std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory);
-            IterativeMinMaxLinearEquationSolverFactory(EquationSolverType const& solverType);
-            
-            // Make the other create methods visible.
-            using MinMaxLinearEquationSolverFactory<ValueType>::create;
-
-            virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create(Environment const& env) const override;
-            
-        };
     }
 }
