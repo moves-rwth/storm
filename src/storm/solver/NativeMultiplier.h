@@ -1,6 +1,6 @@
 #pragma once
 
-#include "storm/utility/VectorHelper.h"
+#include "storm/solver/Multiplier.h"
 
 #include "storm/solver/OptimizationDirection.h"
 
@@ -13,20 +13,28 @@ namespace storm {
     namespace solver {
         
         template<typename ValueType>
-        class NativeMultiplier : public storm::utility::VectorHelper<ValueType> {
+        class NativeMultiplier : public Multiplier<ValueType> {
         public:
-            NativeMultiplier();
+            NativeMultiplier(storm::storage::SparseMatrix<ValueType> const& matrix);
             
-            void multAdd(storm::storage::SparseMatrix<ValueType> const& matrix, std::vector<ValueType> const& x, std::vector<ValueType> const* b, std::vector<ValueType>& result) const;
-            void multAddGaussSeidelBackward(storm::storage::SparseMatrix<ValueType> const& matrix, std::vector<ValueType>& x, std::vector<ValueType> const* b) const;
+            virtual MultiplicationStyle getMultiplicationStyle() const override;
+
+            virtual void multiply(Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<ValueType>& result) const override;
+            virtual void multiplyAndReduce(Environment const& env, OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<ValueType>& result, std::vector<uint_fast64_t>* choices = nullptr) const override;
+            virtual ValueType multiplyRow(Environment const& env, uint64_t const& rowIndex, std::vector<ValueType> const& x, ValueType const& offset) const override;
+
+        private:
+            bool parallelize(Environment const& env) const;
             
-            void multAddReduce(storm::solver::OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, storm::storage::SparseMatrix<ValueType> const& matrix, std::vector<ValueType> const& x, std::vector<ValueType> const* b, std::vector<ValueType>& result, std::vector<uint64_t>* choices = nullptr) const;
-            void multAddReduceGaussSeidelBackward(storm::solver::OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, storm::storage::SparseMatrix<ValueType> const& matrix, std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<uint64_t>* choices = nullptr) const;
+            void multAdd(std::vector<ValueType> const& x, std::vector<ValueType> const* b, std::vector<ValueType>& result) const;
+            void multAddGaussSeidelBackward(std::vector<ValueType>& x, std::vector<ValueType> const* b) const;
             
-            void multAddParallel(storm::storage::SparseMatrix<ValueType> const& matrix, std::vector<ValueType> const& x, std::vector<ValueType> const* b, std::vector<ValueType>& result) const;
-            void multAddReduceParallel(storm::solver::OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, storm::storage::SparseMatrix<ValueType> const& matrix, std::vector<ValueType> const& x, std::vector<ValueType> const* b, std::vector<ValueType>& result, std::vector<uint64_t>* choices = nullptr) const;
+            void multAddReduce(storm::solver::OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType> const& x, std::vector<ValueType> const* b, std::vector<ValueType>& result, std::vector<uint64_t>* choices = nullptr) const;
+            void multAddReduceGaussSeidelBackward(storm::solver::OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<uint64_t>* choices = nullptr) const;
             
-            ValueType multiplyRow(storm::storage::SparseMatrix<ValueType> const& matrix, uint64_t const& rowIndex, std::vector<ValueType> const& x) const;
+            void multAddParallel(std::vector<ValueType> const& x, std::vector<ValueType> const* b, std::vector<ValueType>& result) const;
+            void multAddReduceParallel(storm::solver::OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType> const& x, std::vector<ValueType> const* b, std::vector<ValueType>& result, std::vector<uint64_t>* choices = nullptr) const;
+            
         };
         
     }
