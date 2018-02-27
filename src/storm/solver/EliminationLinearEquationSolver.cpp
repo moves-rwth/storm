@@ -94,28 +94,6 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void EliminationLinearEquationSolver<ValueType>::multiply(std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<ValueType>& result) const {
-            if (&x != &result) {
-                A->multiplyWithVector(x, result);
-                if (b != nullptr) {
-                    storm::utility::vector::addVectors(result, *b, result);
-                }
-            } else {
-                // If the two vectors are aliases, we need to create a temporary.
-                std::vector<ValueType> tmp(result.size());
-                A->multiplyWithVector(x, tmp);
-                if (b != nullptr) {
-                    storm::utility::vector::addVectors(tmp, *b, result);
-                }
-            }
-        }
-
-        template<typename ValueType>
-        ValueType EliminationLinearEquationSolver<ValueType>::multiplyRow(uint64_t const& rowIndex, std::vector<ValueType> const& x) const {
-            return A->multiplyRowWithVector(rowIndex, x);
-        }
-        
-        template<typename ValueType>
         LinearEquationSolverProblemFormat EliminationLinearEquationSolver<ValueType>::getEquationProblemFormat(Environment const& env) const {
             return LinearEquationSolverProblemFormat::FixedPointSystem;
         }
@@ -131,7 +109,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> EliminationLinearEquationSolverFactory<ValueType>::create(Environment const& env, LinearEquationSolverTask const& task) const {
+        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> EliminationLinearEquationSolverFactory<ValueType>::create(Environment const& env) const {
             return std::make_unique<storm::solver::EliminationLinearEquationSolver<ValueType>>();
         }
         

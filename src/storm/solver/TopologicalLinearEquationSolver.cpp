@@ -138,14 +138,13 @@ namespace storm {
             if (hasDiagonalEntry) {
                 xi /= denominator;
             }
-            //std::cout << "Solved trivial scc " << sccState << " with result " << globalX[sccState] << std::endl;
             return true;
         }
         
         template<typename ValueType>
         bool TopologicalLinearEquationSolver<ValueType>::solveFullyConnectedEquationSystem(storm::Environment const& sccSolverEnvironment, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             if (!this->sccSolver) {
-                this->sccSolver = GeneralLinearEquationSolverFactory<ValueType>().create(sccSolverEnvironment, LinearEquationSolverTask::SolveEquations);
+                this->sccSolver = GeneralLinearEquationSolverFactory<ValueType>().create(sccSolverEnvironment);
                 this->sccSolver->setCachingEnabled(true);
                 this->sccSolver->setBoundsFromOtherSolver(*this);
                 if (this->sccSolver->getEquationProblemFormat(sccSolverEnvironment) == LinearEquationSolverProblemFormat::EquationSystem) {
@@ -165,7 +164,7 @@ namespace storm {
             
             // Set up the SCC solver
             if (!this->sccSolver) {
-                this->sccSolver = GeneralLinearEquationSolverFactory<ValueType>().create(sccSolverEnvironment, LinearEquationSolverTask::SolveEquations);
+                this->sccSolver = GeneralLinearEquationSolverFactory<ValueType>().create(sccSolverEnvironment);
                 this->sccSolver->setCachingEnabled(true);
             }
             
@@ -215,75 +214,15 @@ namespace storm {
             return returnvalue;
         }
         
-        
-        template<typename ValueType>
-        void TopologicalLinearEquationSolver<ValueType>::multiply(std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<ValueType>& result) const {
-            if (&x != &result) {
-                multiplier.multAdd(*A, x, b, result);
-            } else {
-                // If the two vectors are aliases, we need to create a temporary.
-                if (!this->cachedRowVector) {
-                    this->cachedRowVector = std::make_unique<std::vector<ValueType>>(getMatrixRowCount());
-                }
-                
-                multiplier.multAdd(*A, x, b, *this->cachedRowVector);
-                result.swap(*this->cachedRowVector);
-                
-                if (!this->isCachingEnabled()) {
-                    clearCache();
-                }
-            }
-        }
-        
-        template<typename ValueType>
-        void TopologicalLinearEquationSolver<ValueType>::multiplyAndReduce(OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<ValueType>& result, std::vector<uint_fast64_t>* choices) const {
-            if (&x != &result) {
-                multiplier.multAddReduce(dir, rowGroupIndices, *A, x, b, result, choices);
-            } else {
-                // If the two vectors are aliases, we need to create a temporary.
-                if (!this->cachedRowVector) {
-                    this->cachedRowVector = std::make_unique<std::vector<ValueType>>(getMatrixRowCount());
-                }
-            
-                multiplier.multAddReduce(dir, rowGroupIndices, *A, x, b, *this->cachedRowVector, choices);
-                result.swap(*this->cachedRowVector);
-                
-                if (!this->isCachingEnabled()) {
-                    clearCache();
-                }
-            }
-        }
-        
-        template<typename ValueType>
-        bool TopologicalLinearEquationSolver<ValueType>::supportsGaussSeidelMultiplication() const {
-            return true;
-        }
-        
-        template<typename ValueType>
-        void TopologicalLinearEquationSolver<ValueType>::multiplyGaussSeidel(std::vector<ValueType>& x, std::vector<ValueType> const* b) const {
-            STORM_LOG_ASSERT(this->A->getRowCount() == this->A->getColumnCount(), "This function is only applicable for square matrices.");
-            multiplier.multAddGaussSeidelBackward(*A, x, b);
-        }
-        
-        template<typename ValueType>
-        void TopologicalLinearEquationSolver<ValueType>::multiplyAndReduceGaussSeidel(OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<uint_fast64_t>* choices) const {
-            multiplier.multAddReduceGaussSeidelBackward(dir, rowGroupIndices, *A, x, b, choices);
-        }
-        
-        template<typename ValueType>
-        ValueType TopologicalLinearEquationSolver<ValueType>::multiplyRow(uint64_t const& rowIndex, std::vector<ValueType> const& x) const {
-            return multiplier.multiplyRow(*A, rowIndex, x);
-        }
-        
         template<typename ValueType>
         LinearEquationSolverProblemFormat TopologicalLinearEquationSolver<ValueType>::getEquationProblemFormat(Environment const& env) const {
             return LinearEquationSolverProblemFormat::FixedPointSystem;
         }
         
         template<typename ValueType>
-        LinearEquationSolverRequirements TopologicalLinearEquationSolver<ValueType>::getRequirements(Environment const& env, LinearEquationSolverTask const& task) const {
+        LinearEquationSolverRequirements TopologicalLinearEquationSolver<ValueType>::getRequirements(Environment const& env) const {
             // Return the requirements of the underlying solver
-            return GeneralLinearEquationSolverFactory<ValueType>().getRequirements(getEnvironmentForUnderlyingSolver(env), task);
+            return GeneralLinearEquationSolverFactory<ValueType>().getRequirements(getEnvironmentForUnderlyingSolver(env));
         }
         
         template<typename ValueType>
@@ -305,7 +244,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> TopologicalLinearEquationSolverFactory<ValueType>::create(Environment const& env, LinearEquationSolverTask const& task) const {
+        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> TopologicalLinearEquationSolverFactory<ValueType>::create(Environment const& env) const {
             return std::make_unique<storm::solver::TopologicalLinearEquationSolver<ValueType>>();
         }
         

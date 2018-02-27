@@ -22,15 +22,8 @@ namespace storm {
             virtual void setMatrix(storm::storage::SparseMatrix<ValueType> const& A) override;
             virtual void setMatrix(storm::storage::SparseMatrix<ValueType>&& A) override;
             
-            virtual void multiply(std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<ValueType>& result) const override;
-            virtual void multiplyAndReduce(OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<ValueType>& result, std::vector<uint_fast64_t>* choices = nullptr) const override;
-            virtual bool supportsGaussSeidelMultiplication() const override;
-            virtual void multiplyGaussSeidel(std::vector<ValueType>& x, std::vector<ValueType> const* b) const override;
-            virtual void multiplyAndReduceGaussSeidel(OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<uint_fast64_t>* choices = nullptr) const override;
-            virtual ValueType multiplyRow(uint64_t const& rowIndex, std::vector<ValueType> const& x) const override;
-
             virtual LinearEquationSolverProblemFormat getEquationProblemFormat(storm::Environment const& env) const override;
-            virtual LinearEquationSolverRequirements getRequirements(Environment const& env, LinearEquationSolverTask const& task = LinearEquationSolverTask::Unspecified) const override;
+            virtual LinearEquationSolverRequirements getRequirements(Environment const& env) const override;
 
             virtual void clearCache() const override;
 
@@ -77,7 +70,7 @@ namespace storm {
         public:
             using LinearEquationSolverFactory<ValueType>::create;
             
-            virtual std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> create(Environment const& env, LinearEquationSolverTask const& task = LinearEquationSolverTask::Unspecified) const override;
+            virtual std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> create(Environment const& env) const override;
             
             virtual std::unique_ptr<LinearEquationSolverFactory<ValueType>> clone() const override;
 
