@@ -202,6 +202,7 @@ namespace storm {
             for (auto it1 = from.begin(), ite1 = from.end(), it2 = to.begin(); it1 != ite1; ++it1, ++it2) {
                 fromAdd.push_back(it1->getCuddBdd().Add());
                 toAdd.push_back(it2->getCuddBdd().Add());
+                std::cout << fromAdd.back().NodeReadIndex() << " <-> " << toAdd.back().NodeReadIndex() << std::endl;
             }
             return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd().SwapVariables(fromAdd, toAdd));
         }

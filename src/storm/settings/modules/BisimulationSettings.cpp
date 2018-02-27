@@ -15,6 +15,7 @@ namespace storm {
             const std::string BisimulationSettings::moduleName = "bisimulation";
             const std::string BisimulationSettings::typeOptionName = "type";
             const std::string BisimulationSettings::representativeOptionName = "repr";
+            const std::string BisimulationSettings::originalVariablesOptionName = "origvar";
             const std::string BisimulationSettings::quotientFormatOptionName = "quot";
             const std::string BisimulationSettings::signatureModeOptionName = "sigmode";
             const std::string BisimulationSettings::reuseOptionName = "reuse";
@@ -29,6 +30,7 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, quotientFormatOptionName, true, "Sets the format in which the quotient is extracted (only applies to DD-based bisimulation).").addArgument(storm::settings::ArgumentBuilder::createStringArgument("format", "The format of the quotient.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(quotTypes)).setDefaultValueString("dd").build()).build());
                 
                 this->addOption(storm::settings::OptionBuilder(moduleName, representativeOptionName, false, "Sets whether to use representatives in the quotient rather than block numbers.").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, originalVariablesOptionName, false, "Sets whether to use the original variables in the quotient rather than the block variables.").build());
 
                 std::vector<std::string> signatureModes = { "eager", "lazy" };
                 this->addOption(storm::settings::OptionBuilder(moduleName, signatureModeOptionName, false, "Sets the signature computation mode.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("mode", "The mode to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(signatureModes)).setDefaultValueString("eager").build()).build());
@@ -76,6 +78,10 @@ namespace storm {
             
             bool BisimulationSettings::isUseRepresentativesSet() const {
                 return this->getOption(representativeOptionName).getHasOptionBeenSet();
+            }
+            
+            bool BisimulationSettings::isUseOriginalVariablesSet() const {
+                return this->getOption(originalVariablesOptionName).getHasOptionBeenSet();
             }
             
             storm::dd::bisimulation::SignatureMode BisimulationSettings::getSignatureMode() const {

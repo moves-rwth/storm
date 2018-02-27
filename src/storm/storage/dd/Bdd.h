@@ -286,6 +286,19 @@ namespace storm {
             Bdd<LibraryType> renameVariables(std::set<storm::expressions::Variable> const& from, std::set<storm::expressions::Variable> const& to) const;
             
             /*!
+             * Renames the given meta variables in the BDD. The number of the underlying DD variables of the from meta
+             * variable set needs to be at least as large as the to meta variable set. If the amount of variables coincide,
+             * this operation coincides with renameVariables. Otherwise, it first abstracts from the superfluous variables
+             * and then performs the renaming.
+             *
+             * @param from The meta variables to be renamed. The current ADD needs to contain all these meta variables.
+             * @param to The meta variables that are the target of the renaming process. The current ADD must not contain
+             * any of these meta variables.
+             * @return The resulting ADD.
+             */
+            Bdd<LibraryType> renameVariablesAbstract(std::set<storm::expressions::Variable> const& from, std::set<storm::expressions::Variable> const& to) const;
+            
+            /*!
              * Retrieves whether this DD represents the constant one function.
              *
              * @return True if this DD represents the constant one function.
