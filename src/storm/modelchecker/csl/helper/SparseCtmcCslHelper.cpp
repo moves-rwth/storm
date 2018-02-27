@@ -9,6 +9,7 @@
 #include "storm/settings/modules/GeneralSettings.h"
 
 #include "storm/solver/LinearEquationSolver.h"
+#include "storm/solver/Multiplier.h"
 
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
 
@@ -671,18 +672,16 @@ namespace storm {
                     }
                 }
                 
-                std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(env, std::move(uniformizedMatrix), storm::solver::LinearEquationSolverTask::Multiply);
-                solver->setCachingEnabled(true);
-                
+                auto multiplier = storm::solver::MultiplierFactory<ValueType>().create(env, uniformizedMatrix);
                 if (!useMixedPoissonProbabilities && foxGlynnResult.left > 1) {
                     // Perform the matrix-vector multiplications (without adding).
-                    solver->repeatedMultiply(values, addVector, foxGlynnResult.left - 1);
+                    multiplier->repeatedMultiply(env, values, addVector, foxGlynnResult.left - 1);
                 } else if (useMixedPoissonProbabilities) {
                     std::function<ValueType(ValueType const&, ValueType const&)> addAndScale = [&uniformizationRate] (ValueType const& a, ValueType const& b) { return a + b / uniformizationRate; };
                     
                     // For the iterations below the left truncation point, we need to add and scale the result with the uniformization rate.
                     for (uint_fast64_t index = 1; index < startingIteration; ++index) {
-                        solver->repeatedMultiply(values, nullptr, 1);
+                        multiplier->multiply(env, values, nullptr, values);
                         storm::utility::vector::applyPointwise(result, values, result, addAndScale);
                     }
                 }
@@ -692,7 +691,7 @@ namespace storm {
                 ValueType weight = 0;
                 std::function<ValueType(ValueType const&, ValueType const&)> addAndScale = [&weight] (ValueType const& a, ValueType const& b) { return a + weight * b; };
                 for (uint_fast64_t index = startingIteration; index <= foxGlynnResult.right; ++index) {
-                    solver->repeatedMultiply(values, addVector, 1);
+                    multiplier->multiply(env, values, addVector, values);
                     
                     weight = foxGlynnResult.weights[index - foxGlynnResult.left];
                     storm::utility::vector::applyPointwise(result, values, result, addAndScale);

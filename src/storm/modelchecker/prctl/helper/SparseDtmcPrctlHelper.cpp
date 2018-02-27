@@ -11,6 +11,7 @@
 #include "storm/storage/ConsecutiveUint64DynamicPriorityQueue.h"
 
 #include "storm/solver/LinearEquationSolver.h"
+#include "storm/solver/Multiplier.h"
 
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/modelchecker/hints/ExplicitModelCheckerHint.h"
@@ -69,10 +70,9 @@ namespace storm {
                     // Create the vector with which to multiply.
                     std::vector<ValueType> subresult(maybeStates.getNumberOfSetBits());
                     
-                    // Perform the matrix vector multiplication as often as required by the formula bound.
-                    goal.restrictRelevantValues(maybeStates);
-                    std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = storm::solver::configureLinearEquationSolver(env, std::move(goal), linearEquationSolverFactory, std::move(submatrix), storm::solver::LinearEquationSolverTask::Multiply);
-                    solver->repeatedMultiply(subresult, &b, stepBound);
+                    // Perform the matrix vector multiplication
+                    auto multiplier = storm::solver::MultiplierFactory<ValueType>().create(env, submatrix);
+                    multiplier->repeatedMultiply(env, subresult, &b, stepBound);
                     
                     // Set the values of the resulting vector accordingly.
                     storm::utility::vector::setVectorValues(result, maybeStates, subresult);
@@ -116,9 +116,9 @@ namespace storm {
                 // Update some data for the case that the Matrix has changed
                 if (epochModel.epochMatrixChanged) {
                     x.assign(epochModel.epochMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
-                    linEqSolver = linearEquationSolverFactory.create(env, epochModel.epochMatrix, storm::solver::LinearEquationSolverTask::SolveEquations);
+                    linEqSolver = linearEquationSolverFactory.create(env, epochModel.epochMatrix);
                     linEqSolver->setCachingEnabled(true);
-                    auto req = linEqSolver->getRequirements(env, storm::solver::LinearEquationSolverTask::SolveEquations);
+                    auto req = linEqSolver->getRequirements(env);
                     if (lowerBound) {
                         linEqSolver->setLowerBound(lowerBound.get());
                         req.clearLowerBounds();
@@ -345,8 +345,8 @@ namespace storm {
                 storm::utility::vector::setVectorValues(result, nextStates, storm::utility::one<ValueType>());
                 
                 // Perform one single matrix-vector multiplication.
-                std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(env, transitionMatrix, storm::solver::LinearEquationSolverTask::Multiply);
-                solver->repeatedMultiply(result, nullptr, 1);
+                auto multiplier = storm::solver::MultiplierFactory<ValueType>().create(env, transitionMatrix);
+                multiplier->multiply(env, result, nullptr, result);
                 return result;
             }
             
@@ -359,8 +359,8 @@ namespace storm {
                 std::vector<ValueType> totalRewardVector = rewardModel.getTotalRewardVector(transitionMatrix);
                 
                 // Perform the matrix vector multiplication as often as required by the formula bound.
-                std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = storm::solver::configureLinearEquationSolver(env, std::move(goal), linearEquationSolverFactory, transitionMatrix, storm::solver::LinearEquationSolverTask::Multiply);
-                solver->repeatedMultiply(result, &totalRewardVector, stepBound);
+                auto multiplier = storm::solver::MultiplierFactory<ValueType>().create(env, transitionMatrix);
+                multiplier->repeatedMultiply(env, result, &totalRewardVector, stepBound);
                 
                 return result;
             }
@@ -374,9 +374,9 @@ namespace storm {
                 std::vector<ValueType> result = rewardModel.getStateRewardVector();
                 
                 // Perform the matrix vector multiplication as often as required by the formula bound.
-                std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = storm::solver::configureLinearEquationSolver(env, std::move(goal), linearEquationSolverFactory, transitionMatrix);
-                solver->repeatedMultiply(result, nullptr, stepCount);
-                
+                auto multiplier = storm::solver::MultiplierFactory<ValueType>().create(env, transitionMatrix);
+                multiplier->repeatedMultiply(env, result, nullptr, stepCount);
+
                 return result;
             }
             
