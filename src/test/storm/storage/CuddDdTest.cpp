@@ -589,6 +589,29 @@ TEST(CuddDd, MultiplyMatrixTest) {
     EXPECT_TRUE(dd3 == dd2 * manager->template getConstant<double>(2));
 }
 
+TEST(CuddDd, MultiplyMatrixTest2) {
+    std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::CUDD>> manager(new storm::dd::DdManager<storm::dd::DdType::CUDD>());
+    std::pair<storm::expressions::Variable, storm::expressions::Variable> x = manager->addMetaVariable("x", 0, 2);
+    std::pair<storm::expressions::Variable, storm::expressions::Variable> b = manager->addMetaVariable("b", 0, 2);
+
+    storm::dd::Add<storm::dd::DdType::CUDD, double> p = manager->getAddZero<double>();
+    p += (manager->getEncoding(x.first, 2, true) && manager->getEncoding(b.first, 0, true)).template toAdd<double>();
+    p += (manager->getEncoding(x.first, 0, true) && manager->getEncoding(b.first, 2, true)).template toAdd<double>();
+    
+    storm::dd::Add<storm::dd::DdType::CUDD, double> q = manager->getAddZero<double>();
+    q += (manager->getEncoding(x.first, 0, true) && manager->getEncoding(x.second, 0, true)).template toAdd<double>() * manager->template getConstant<double>(0.3);
+    q += (manager->getEncoding(x.first, 1, true) && manager->getEncoding(x.second, 0, true)).template toAdd<double>() * manager->template getConstant<double>(0.3);
+    q += (manager->getEncoding(x.first, 0, true) && manager->getEncoding(x.second, 2, true)).template toAdd<double>() * manager->template getConstant<double>(0.7);
+    q += (manager->getEncoding(x.first, 1, true) && manager->getEncoding(x.second, 2, true)).template toAdd<double>() * manager->template getConstant<double>(0.7);
+    q += (manager->getEncoding(x.first, 2, true) && manager->getEncoding(x.second, 0, true)).template toAdd<double>() * manager->template getConstant<double>(1);
+    
+    storm::dd::Add<storm::dd::DdType::CUDD, double> r = q.multiplyMatrix(p, {x.first});
+    
+    ASSERT_EQ(12, r.getNodeCount());
+    ASSERT_EQ(4, r.getLeafCount());
+    ASSERT_EQ(3, r.getNonZeroCount());
+}
+
 TEST(CuddDd, GetSetValueTest) {
     std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::CUDD>> manager(new storm::dd::DdManager<storm::dd::DdType::CUDD>());
     std::pair<storm::expressions::Variable, storm::expressions::Variable> x = manager->addMetaVariable("x", 1, 9);

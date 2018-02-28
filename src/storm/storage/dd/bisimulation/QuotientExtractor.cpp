@@ -1090,35 +1090,19 @@ namespace storm {
                     std::set<storm::expressions::Variable> blockPrimeAndColumnVariables;
                     std::set_union(blockPrimeVariableSet.begin(), blockPrimeVariableSet.end(), model.getColumnVariables().begin(), model.getColumnVariables().end(), std::inserter(blockPrimeAndColumnVariables, blockPrimeAndColumnVariables.end()));
                     storm::dd::Add<DdType, ValueType> partitionAsAdd = partitionAsBdd.template toAdd<ValueType>();
-                    storm::dd::Add<DdType, ValueType> quotientTransitionMatrix = model.getTransitionMatrix().multiplyMatrix(partitionAsAdd.renameVariables(blockAndRowVariables, blockPrimeAndColumnVariables), model.getColumnVariables()).renameVariablesAbstract(blockPrimeVariableSet, model.getColumnVariables());
-                    (model.getTransitionMatrix().multiplyMatrix(partitionAsAdd.renameVariables(blockAndRowVariables, blockPrimeAndColumnVariables), model.getColumnVariables()).renameVariablesAbstract(blockPrimeVariableSet, model.getColumnVariables())).exportToDot("tmp0.dot");
-                    quotientTransitionMatrix.exportToDot("tmp1.dot");
-                    std::cout << "q1 size: " << quotientTransitionMatrix.getNodeCount() << ", " << quotientTransitionMatrix.getNonZeroCount() << std::endl;
-                    quotientTransitionMatrix.sumAbstract(model.getColumnVariables()).exportToDot("tmp1_1.dot");
-//                    quotientTransitionMatrix.sumAbstract(blockPrimeVariableSet).exportToDot("tmp1_1.dot");
+                    storm::dd::Add<DdType, ValueType> quotientTransitionMatrix = model.getTransitionMatrix().multiplyMatrix(partitionAsAdd.renameVariables(model.getRowVariables(), model.getColumnVariables()), model.getColumnVariables()).renameVariablesAbstract(blockVariableSet, model.getColumnVariables());
 
                     // Pick a representative from each block.
                     auto representatives = InternalRepresentativeComputer<DdType>(partitionAsBdd, model.getRowVariables()).getRepresentatives();
                     partitionAsBdd &= representatives;
-                    partitionAsAdd *= partitionAsBdd.template toAdd<ValueType>();
-                    partitionAsAdd.exportToDot("partrepr.dot");
-                    partitionAsAdd.sumAbstract(model.getRowVariables()).exportToDot("part2.dot");
-                    std::cout << "part size " << partitionAsAdd.getNodeCount() << ", " << partitionAsAdd.getNonZeroCount() << std::endl;
-                    
-                    auto tmp1 = partitionAsAdd.multiplyMatrix(quotientTransitionMatri, model.getRowVariables());
-                    auto tmp2 = (quotientTransitionMatrix * partitionAsAdd).sumAbstract(model.getRowVariables());
-                    std::cout << "size1: " << tmp1.getNodeCount() << ", " << tmp1.getNonZeroCount() << std::endl;
-                    std::cout << "size2: " << tmp2.getNodeCount() << ", " << tmp2.getNonZeroCount() << std::endl;
-                    if (tmp1 != tmp2) {
-                        tmp1.exportToDot("tmp1__.dot");
-                        tmp2.exportToDot("tmp2__.dot");
-                        (tmp2-tmp1).exportToDot("diff.dot");
-                        STORM_LOG_ASSERT(false, "error");
+                    partitionAsAdd = partitionAsBdd.template toAdd<ValueType>();
+
+                    // Workaround for problem with CUDD. Matrix-Matrix multiplication yields other result than multiplication+sum-abstract...
+                    if (DdType == storm::dd::DdType::CUDD) {
+                        quotientTransitionMatrix = (quotientTransitionMatrix * partitionAsAdd).sumAbstract(model.getRowVariables()).renameVariablesAbstract(blockVariableSet, model.getRowVariables());
+                    } else {
+                        quotientTransitionMatrix = quotientTransitionMatrix.multiplyMatrix(partitionAsAdd, model.getRowVariables()).renameVariablesAbstract(blockVariableSet, model.getRowVariables());
                     }
-                    quotientTransitionMatrix.multiplyMatrix(partitionAsAdd, model.getRowVariables()).exportToDot("tmp2.dot");
-                    quotientTransitionMatrix.multiplyMatrix(partitionAsAdd, model.getRowVariables()).sumAbstract(model.getColumnVariables()).exportToDot("tmp2_2.dot");
-//                    quotientTransitionMatrix.multiplyMatrix(partitionAsAdd, model.getRowVariables()).sumAbstract(blockPrimeVariableSet).exportToDot("tmp2_2.dot");
-                    quotientTransitionMatrix = quotientTransitionMatrix.multiplyMatrix(partitionAsAdd, model.getRowVariables()).renameVariablesAbstract(blockVariableSet, model.getRowVariables());
                     end = std::chrono::high_resolution_clock::now();
                     
                     // Check quotient matrix for sanity.
@@ -1127,9 +1111,6 @@ namespace storm {
                     } else {
                         STORM_LOG_ASSERT(quotientTransitionMatrix.greater(storm::utility::one<ValueType>() + storm::utility::convertNumber<ValueType>(1e-6)).isZero(), "Illegal entries in quotient matrix.");
                     }
-                    quotientTransitionMatrix.exportToDot("trans.dot");
-                    quotientTransitionMatrix.sumAbstract(model.getColumnVariables()).exportToDot("trans1.dot");
-                    quotientTransitionMatrix.notZero().existsAbstract(model.getColumnVariables()).template toAdd<ValueType>().exportToDot("trans2.dot");
                     STORM_LOG_ASSERT(quotientTransitionMatrix.sumAbstract(model.getColumnVariables()).equalModuloPrecision(quotientTransitionMatrix.notZero().existsAbstract(model.getColumnVariables()).template toAdd<ValueType>(), storm::utility::convertNumber<ValueType>(1e-6)), "Illegal probabilistic matrix.");
                     
                     STORM_LOG_TRACE("Quotient transition matrix extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
@@ -1160,11 +1141,11 @@ namespace storm {
                     if (modelType == storm::models::ModelType::Dtmc) {
                         return std::shared_ptr<storm::models::symbolic::Dtmc<DdType, ValueType>>(new storm::models::symbolic::Dtmc<DdType, ValueType>(model.getManager().asSharedPointer(), reachableStates, initialStates, deadlockStates, quotientTransitionMatrix, model.getRowVariables(), model.getColumnVariables(), model.getRowColumnMetaVariablePairs(), preservedLabelBdds, quotientRewardModels));
                     } else if (modelType == storm::models::ModelType::Ctmc) {
-                        return std::shared_ptr<storm::models::symbolic::Ctmc<DdType, ValueType>>(new storm::models::symbolic::Ctmc<DdType, ValueType>(model.getManager().asSharedPointer(), reachableStates, initialStates, deadlockStates, quotientTransitionMatrix, blockVariableSet, blockPrimeVariableSet, blockMetaVariablePairs, preservedLabelBdds, quotientRewardModels));
+                        return std::shared_ptr<storm::models::symbolic::Ctmc<DdType, ValueType>>(new storm::models::symbolic::Ctmc<DdType, ValueType>(model.getManager().asSharedPointer(), reachableStates, initialStates, deadlockStates, quotientTransitionMatrix, model.getRowVariables(), model.getColumnVariables(), model.getRowColumnMetaVariablePairs(), preservedLabelBdds, quotientRewardModels));
                     } else if (modelType == storm::models::ModelType::Mdp) {
-                        return std::shared_ptr<storm::models::symbolic::Mdp<DdType, ValueType>>(new storm::models::symbolic::Mdp<DdType, ValueType>(model.getManager().asSharedPointer(), reachableStates, initialStates, deadlockStates, quotientTransitionMatrix, blockVariableSet, blockPrimeVariableSet, blockMetaVariablePairs, model.getNondeterminismVariables(), preservedLabelBdds, quotientRewardModels));
+                        return std::shared_ptr<storm::models::symbolic::Mdp<DdType, ValueType>>(new storm::models::symbolic::Mdp<DdType, ValueType>(model.getManager().asSharedPointer(), reachableStates, initialStates, deadlockStates, quotientTransitionMatrix, model.getRowVariables(), model.getColumnVariables(), model.getRowColumnMetaVariablePairs(), model.getNondeterminismVariables(), preservedLabelBdds, quotientRewardModels));
                     } else {
-                        return std::shared_ptr<storm::models::symbolic::MarkovAutomaton<DdType, ValueType>>(new storm::models::symbolic::MarkovAutomaton<DdType, ValueType>(model.getManager().asSharedPointer(), model. template as<storm::models::symbolic::MarkovAutomaton<DdType, ValueType>>()->getMarkovianMarker(), reachableStates, initialStates, deadlockStates, quotientTransitionMatrix, blockVariableSet, blockPrimeVariableSet, blockMetaVariablePairs, model.getNondeterminismVariables(), preservedLabelBdds, quotientRewardModels));
+                        return std::shared_ptr<storm::models::symbolic::MarkovAutomaton<DdType, ValueType>>(new storm::models::symbolic::MarkovAutomaton<DdType, ValueType>(model.getManager().asSharedPointer(), model. template as<storm::models::symbolic::MarkovAutomaton<DdType, ValueType>>()->getMarkovianMarker(), reachableStates, initialStates, deadlockStates, quotientTransitionMatrix, model.getRowVariables(), model.getColumnVariables(), model.getRowColumnMetaVariablePairs(), model.getNondeterminismVariables(), preservedLabelBdds, quotientRewardModels));
                     }
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Cannot extract quotient for this model type.");

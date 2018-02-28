@@ -344,11 +344,13 @@ namespace storm {
             std::set<storm::expressions::Variable> newContainedMetaVariables = to;
             std::set_difference(this->getContainedMetaVariables().begin(), this->getContainedMetaVariables().end(), from.begin(), from.end(), std::inserter(newContainedMetaVariables, newContainedMetaVariables.begin()));
             
+            STORM_LOG_ASSERT(fromBdds.size() >= toBdds.size(), "Unable to perform rename-abstract with mismatching sizes.");
+            
             if (fromBdds.size() == toBdds.size()) {
                 return Bdd<LibraryType>(this->getDdManager(), internalBdd.swapVariables(fromBdds, toBdds), newContainedMetaVariables);
             } else {
                 InternalBdd<LibraryType> cube = this->getDdManager().getBddOne().getInternalBdd();
-                for (uint64_t index = fromBdds.size(); index < fromBdds.size(); ++index) {
+                for (uint64_t index = toBdds.size(); index < fromBdds.size(); ++index) {
                     cube &= fromBdds[index];
                 }
                 fromBdds.resize(toBdds.size());
