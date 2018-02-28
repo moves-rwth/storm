@@ -159,9 +159,8 @@ namespace storm {
         template<typename ValueType>
         bool StandardGameSolver<ValueType>::solveGameValueIteration(Environment const& env, OptimizationDirection player1Dir, OptimizationDirection player2Dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
                          
-            if(!linEqSolverPlayer2Matrix) {
-                linEqSolverPlayer2Matrix = linearEquationSolverFactory->create(env, player2Matrix, storm::solver::LinearEquationSolverTask::Multiply);
-                linEqSolverPlayer2Matrix->setCachingEnabled(true);
+            if (!multiplierPlayer2Matrix) {
+                multiplierPlayer2Matrix = storm::solver::MultiplierFactory<ValueType>().create(env, player2Matrix);
             }
             
             if (!auxiliaryP2RowVector) {
@@ -204,7 +203,7 @@ namespace storm {
 
             Status status = Status::InProgress;
             while (status == Status::InProgress) {
-                multiplyAndReduce(player1Dir, player2Dir, *currentX, &b, *linEqSolverPlayer2Matrix, multiplyResult, reducedMultiplyResult, *newX);
+                multiplyAndReduce(env, player1Dir, player2Dir, *currentX, &b, *multiplierPlayer2Matrix, multiplyResult, reducedMultiplyResult, *newX);
 
                 // Determine whether the method converged.
                 if (storm::utility::vector::equalModuloPrecision<ValueType>(*currentX, *newX, precision, relative)) {
@@ -242,9 +241,8 @@ namespace storm {
         template<typename ValueType>
         void StandardGameSolver<ValueType>::repeatedMultiply(Environment const& env, OptimizationDirection player1Dir, OptimizationDirection player2Dir, std::vector<ValueType>& x, std::vector<ValueType> const* b, uint_fast64_t n) const {
             
-            if(!linEqSolverPlayer2Matrix) {
-                linEqSolverPlayer2Matrix = linearEquationSolverFactory->create(env, player2Matrix, storm::solver::LinearEquationSolverTask::Multiply);
-                linEqSolverPlayer2Matrix->setCachingEnabled(true);
+            if (!multiplierPlayer2Matrix) {
+                multiplierPlayer2Matrix = storm::solver::MultiplierFactory<ValueType>().create(env, player2Matrix);
             }
             
             if (!auxiliaryP2RowVector) {
@@ -258,7 +256,7 @@ namespace storm {
             std::vector<ValueType>& reducedMultiplyResult = *auxiliaryP2RowGroupVector;
             
             for (uint_fast64_t iteration = 0; iteration < n; ++iteration) {
-                multiplyAndReduce(player1Dir, player2Dir, x, b, *linEqSolverPlayer2Matrix, multiplyResult, reducedMultiplyResult, x);
+                multiplyAndReduce(env, player1Dir, player2Dir, x, b, *multiplierPlayer2Matrix, multiplyResult, reducedMultiplyResult, x);
             }
             
             if(!this->isCachingEnabled()) {
@@ -267,9 +265,9 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void StandardGameSolver<ValueType>::multiplyAndReduce(OptimizationDirection player1Dir, OptimizationDirection player2Dir, std::vector<ValueType>& x, std::vector<ValueType> const* b, storm::solver::LinearEquationSolver<ValueType> const& linEqSolver, std::vector<ValueType>& multiplyResult, std::vector<ValueType>& p2ReducedMultiplyResult, std::vector<ValueType>& p1ReducedMultiplyResult) const {
+        void StandardGameSolver<ValueType>::multiplyAndReduce(Environment const& env, OptimizationDirection player1Dir, OptimizationDirection player2Dir, std::vector<ValueType>& x, std::vector<ValueType> const* b, storm::solver::Multiplier<ValueType> const& multiplier, std::vector<ValueType>& multiplyResult, std::vector<ValueType>& p2ReducedMultiplyResult, std::vector<ValueType>& p1ReducedMultiplyResult) const {
             
-            linEqSolver.multiply(x, b, multiplyResult);
+            multiplier.multiply(env, x, b, multiplyResult);
             
             storm::utility::vector::reduceVectorMinOrMax(player2Dir, multiplyResult, p2ReducedMultiplyResult, player2Matrix.getRowGroupIndices());
 
@@ -404,7 +402,7 @@ namespace storm {
         
         template<typename ValueType>
         void StandardGameSolver<ValueType>::clearCache() const {
-            linEqSolverPlayer2Matrix.reset();
+            multiplierPlayer2Matrix.reset();
             auxiliaryP2RowVector.reset();
             auxiliaryP2RowGroupVector.reset();
             auxiliaryP1RowGroupVector.reset();
