@@ -29,7 +29,20 @@ namespace {
         static const bool isExact = false;
         static storm::Environment createEnvironment() {
             storm::Environment env;
-            env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
+            env.solver().minMax().setMethod(storm::solver::MinMaxMethod::SoundValueIteration);
+            env.solver().setForceSoundness(true);
+            env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6));
+            return env;
+        }
+    };
+    
+    class DoubleIntervalIterationEnvironment {
+    public:
+        typedef double ValueType;
+        static const bool isExact = false;
+        static storm::Environment createEnvironment() {
+            storm::Environment env;
+            env.solver().minMax().setMethod(storm::solver::MinMaxMethod::IntervalIteration);
             env.solver().setForceSoundness(true);
             env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6));
             return env;
@@ -110,6 +123,7 @@ namespace {
     typedef ::testing::Types<
             DoubleViEnvironment,
             DoubleSoundViEnvironment,
+            DoubleIntervalIterationEnvironment,
             DoubleTopologicalViEnvironment,
             DoubleTopologicalCudaViEnvironment,
             DoublePIEnvironment,
@@ -145,52 +159,6 @@ namespace {
         ASSERT_NO_THROW(solver->solveEquations(this->env(), storm::OptimizationDirection::Maximize, x, b));
         EXPECT_NEAR(x[0], this->parseNumber("0.99"), this->precision());
     }
-    
-    TYPED_TEST(MinMaxLinearEquationSolverTest, MatrixVectorMultiplication) {
-        typedef typename TestFixture::ValueType ValueType;
-    
-        storm::storage::SparseMatrixBuilder<ValueType> builder(0, 0, 0, false, true);
-        ASSERT_NO_THROW(builder.newRowGroup(0));
-        ASSERT_NO_THROW(builder.addNextValue(0, 0, this->parseNumber("0.9")));
-        ASSERT_NO_THROW(builder.addNextValue(0, 1, this->parseNumber("0.099")));
-        ASSERT_NO_THROW(builder.addNextValue(0, 2, this->parseNumber("0.001")));
-        ASSERT_NO_THROW(builder.addNextValue(1, 1, this->parseNumber("0.5")));
-        ASSERT_NO_THROW(builder.addNextValue(1, 2, this->parseNumber("0.5")));
-        ASSERT_NO_THROW(builder.newRowGroup(2));
-        ASSERT_NO_THROW(builder.addNextValue(2, 1, this->parseNumber("1")));
-        ASSERT_NO_THROW(builder.newRowGroup(3));
-        ASSERT_NO_THROW(builder.addNextValue(3, 2, this->parseNumber("1")));
-        
-        storm::storage::SparseMatrix<ValueType> A;
-        ASSERT_NO_THROW(A = builder.build());
-        
-        std::vector<ValueType> initialX = {this->parseNumber("0"), this->parseNumber("1"), this->parseNumber("0")};
-        std::vector<ValueType> x;
-        
-        auto factory = storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType>();
-        auto solver = factory.create(this->env(), A);
-        
-        x = initialX;
-        ASSERT_NO_THROW(solver->repeatedMultiply(this->env(), storm::OptimizationDirection::Minimize, x, nullptr, 1));
-        EXPECT_NEAR(x[0], this->parseNumber("0.099"), this->precision());
-        
-        x = initialX;
-        ASSERT_NO_THROW(solver->repeatedMultiply(this->env(), storm::OptimizationDirection::Minimize, x, nullptr, 2));
-        EXPECT_NEAR(x[0], this->parseNumber("0.1881"), this->precision());
-        
-        x = initialX;
-        ASSERT_NO_THROW(solver->repeatedMultiply(this->env(), storm::OptimizationDirection::Minimize, x, nullptr, 20));
-        EXPECT_NEAR(x[0], this->parseNumber("0.5"), this->precision());
-        
-        x = initialX;
-        ASSERT_NO_THROW(solver->repeatedMultiply(this->env(), storm::OptimizationDirection::Maximize, x, nullptr, 1));
-        EXPECT_NEAR(x[0], this->parseNumber("0.5"), this->precision());
-        
-        x = initialX;
-        ASSERT_NO_THROW(solver->repeatedMultiply(this->env(), storm::OptimizationDirection::Maximize, x, nullptr, 20));
-        EXPECT_NEAR(x[0], this->parseNumber("0.923808265834023387639"), this->precision());
-    }
-    
 }
 
 

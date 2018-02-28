@@ -32,14 +32,14 @@ namespace {
             storm::Environment env;
             env.solver().setForceSoundness(true);
             env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Native);
-            env.solver().native().setMethod(storm::solver::NativeLinearEquationSolverMethod::Power);
+            env.solver().native().setMethod(storm::solver::NativeLinearEquationSolverMethod::SoundPower);
             env.solver().native().setRelativeTerminationCriterion(false);
             env.solver().native().setPrecision(storm::utility::convertNumber<storm::RationalNumber, std::string>("1e-6"));
             return env;
         }
     };
     
-    class NativeDoubleQuickSoundPowerEnvironment {
+    class NativeDoubleIntervalIterationEnvironment {
     public:
         typedef double ValueType;
         static const bool isExact = false;
@@ -47,7 +47,7 @@ namespace {
             storm::Environment env;
             env.solver().setForceSoundness(true);
             env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Native);
-            env.solver().native().setMethod(storm::solver::NativeLinearEquationSolverMethod::QuickPower);
+            env.solver().native().setMethod(storm::solver::NativeLinearEquationSolverMethod::IntervalIteration);
             env.solver().native().setRelativeTerminationCriterion(false);
             env.solver().native().setPrecision(storm::utility::convertNumber<storm::RationalNumber, std::string>("1e-6"));
             return env;
@@ -294,7 +294,7 @@ namespace {
     typedef ::testing::Types<
             NativeDoublePowerEnvironment,
             NativeDoubleSoundPowerEnvironment,
-            NativeDoubleQuickSoundPowerEnvironment,
+            NativeDoubleIntervalIterationEnvironment,
             NativeDoubleJacobiEnvironment,
             NativeDoubleGaussSeidelEnvironment,
             NativeDoubleSorEnvironment,
@@ -352,30 +352,5 @@ namespace {
         EXPECT_NEAR(x[0], this->parseNumber("481/9"), this->precision());
         EXPECT_NEAR(x[1], this->parseNumber("457/9"), this->precision());
         EXPECT_NEAR(x[2], this->parseNumber("875/18"), this->precision());
-    }
-    
-    TYPED_TEST(LinearEquationSolverTest, MatrixVectorMultiplication) {
-        typedef typename TestFixture::ValueType ValueType;
-        ASSERT_NO_THROW(storm::storage::SparseMatrixBuilder<ValueType> builder);
-        storm::storage::SparseMatrixBuilder<ValueType> builder;
-        ASSERT_NO_THROW(builder.addNextValue(0, 1, this->parseNumber("0.5")));
-        ASSERT_NO_THROW(builder.addNextValue(0, 4, this->parseNumber("0.5")));
-        ASSERT_NO_THROW(builder.addNextValue(1, 2, this->parseNumber("0.5")));
-        ASSERT_NO_THROW(builder.addNextValue(1, 4, this->parseNumber("0.5")));
-        ASSERT_NO_THROW(builder.addNextValue(2, 3, this->parseNumber("0.5")));
-        ASSERT_NO_THROW(builder.addNextValue(2, 4, this->parseNumber("0.5")));
-        ASSERT_NO_THROW(builder.addNextValue(3, 4, this->parseNumber("1")));
-        ASSERT_NO_THROW(builder.addNextValue(4, 4, this->parseNumber("1")));
-        
-        storm::storage::SparseMatrix<ValueType> A;
-        ASSERT_NO_THROW(A = builder.build());
-        
-        std::vector<ValueType> x(5);
-        x[4] = this->parseNumber("1");
-
-        auto factory = storm::solver::GeneralLinearEquationSolverFactory<ValueType>();
-        auto solver = factory.create(this->env(), A);
-        ASSERT_NO_THROW(solver->repeatedMultiply(x, nullptr, 4));
-        EXPECT_NEAR(x[0], this->parseNumber("1"), this->precision());
     }
 }
