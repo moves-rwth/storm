@@ -253,8 +253,8 @@ namespace storm {
             if (stepBound) {
                 assert(*stepBound > 0);
                 x = std::vector<ConstantType>(maybeStates.getNumberOfSetBits(), storm::utility::zero<ConstantType>());
-                auto multiplier = storm::solver::MultiplierFactory<ConstantType>().create();
-                multiplier->repeatedMultiply(env, dirForParameters, x, &parameterLifter->getVector(), *stepBound);
+                auto multiplier = storm::solver::MultiplierFactory<ConstantType>().create(env, parameterLifter->getMatrix());
+                multiplier->repeatedMultiplyAndReduce(env, dirForParameters, x, &parameterLifter->getVector(), *stepBound);
             } else {
                 auto solver = solverFactory->create(env, parameterLifter->getMatrix());
                 solver->setHasUniqueSolution();
