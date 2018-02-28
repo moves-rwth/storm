@@ -17,8 +17,6 @@ namespace storm {
         public:
             NativeMultiplier(storm::storage::SparseMatrix<ValueType> const& matrix);
             
-            virtual MultiplicationStyle getMultiplicationStyle() const override;
-
             virtual void multiply(Environment const& env, std::vector<ValueType> const& x, std::vector<ValueType> const* b, std::vector<ValueType>& result) const override;
             virtual void multiplyGaussSeidel(Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const* b) const override;
             virtual void multiplyAndReduce(Environment const& env, OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType> const& x, std::vector<ValueType> const* b, std::vector<ValueType>& result, std::vector<uint_fast64_t>* choices = nullptr) const override;

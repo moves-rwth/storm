@@ -301,11 +301,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        typename NativeLinearEquationSolver<ValueType>::PowerIterationResult NativeLinearEquationSolver<ValueType>::performPowerIteration(Environment const& env, std::vector<ValueType>*& currentX, std::vector<ValueType>*& newX, std::vector<ValueType> const& b, storm::solver::Multiplier<ValueType> const& multiplier, ValueType const& precision, bool relative, SolverGuarantee const& guarantee, uint64_t currentIterations, uint64_t maxIterations, storm::solver::MultiplicationStyle const& multiplicationStyle) const {
-
-            if (!this->multiplier) {
-                this->multiplier = storm::solver::MultiplierFactory<ValueType>().create(env, *A);
-            }
+        typename NativeLinearEquationSolver<ValueType>::PowerIterationResult NativeLinearEquationSolver<ValueType>::performPowerIteration(Environment const& env, std::vector<ValueType>*& currentX, std::vector<ValueType>*& newX, std::vector<ValueType> const& b, ValueType const& precision, bool relative, SolverGuarantee const& guarantee, uint64_t currentIterations, uint64_t maxIterations, storm::solver::MultiplicationStyle const& multiplicationStyle) const {
 
             bool useGaussSeidelMultiplication = multiplicationStyle == storm::solver::MultiplicationStyle::GaussSeidel;
             
@@ -317,9 +313,9 @@ namespace storm {
             while (!converged && !terminate && iterations < maxIterations) {
                 if (useGaussSeidelMultiplication) {
                     *newX = *currentX;
-                    multiplier.multiplyGaussSeidel(env, *newX, &b);
+                    this->multiplier->multiplyGaussSeidel(env, *newX, &b);
                 } else {
-                    multiplier.multiply(env, *currentX, &b, *newX);
+                    this->multiplier->multiply(env, *currentX, &b, *newX);
                 }
                 
                 // Now check for termination.
@@ -369,7 +365,7 @@ namespace storm {
             // Forward call to power iteration implementation.
             this->startMeasureProgress();
             ValueType precision = storm::utility::convertNumber<ValueType>(env.solver().native().getPrecision());
-            PowerIterationResult result = this->performPowerIteration(env, currentX, newX, b, *this->multiplier, precision, env.solver().native().getRelativeTerminationCriterion(), guarantee, 0, env.solver().native().getMaximalNumberOfIterations(), env.solver().native().getPowerMethodMultiplicationStyle());
+            PowerIterationResult result = this->performPowerIteration(env, currentX, newX, b, precision, env.solver().native().getRelativeTerminationCriterion(), guarantee, 0, env.solver().native().getMaximalNumberOfIterations(), env.solver().native().getPowerMethodMultiplicationStyle());
 
             // Swap the result in place.
             if (currentX == this->cachedRowVector.get()) {
@@ -596,7 +592,7 @@ namespace storm {
             
             void multiplyRow(uint64_t const& row, storm::storage::SparseMatrix<ValueType> const& A, storm::solver::Multiplier<ValueType> const& multiplier, ValueType const& bi, ValueType& xi, ValueType& yi) {
                 xi = multiplier.multiplyRow(row, x, bi);
-                yi = multiplier.multiplyRow(row, y, storm::utility::zero());
+                yi = multiplier.multiplyRow(row, y, storm::utility::zero<ValueType>());
                 /*
                 xi = bi;
                 yi = storm::utility::zero<ValueType>();
@@ -873,7 +869,7 @@ namespace storm {
             impreciseSolver.startMeasureProgress();
             while (status == SolverStatus::InProgress && overallIterations < maxIter) {
                 // Perform value iteration with the current precision.
-                typename NativeLinearEquationSolver<ImpreciseType>::PowerIterationResult result = impreciseSolver.performPowerIteration(currentX, newX, b, storm::utility::convertNumber<ImpreciseType, ValueType>(precision), relative, SolverGuarantee::LessOrEqual, overallIterations, maxIter, multiplicationStyle);
+                typename NativeLinearEquationSolver<ImpreciseType>::PowerIterationResult result = impreciseSolver.performPowerIteration(env, currentX, newX, b, storm::utility::convertNumber<ImpreciseType, ValueType>(precision), relative, SolverGuarantee::LessOrEqual, overallIterations, maxIter, multiplicationStyle);
                 
                 // At this point, the result of the imprecise value iteration is stored in the (imprecise) current x.
 
@@ -1143,7 +1139,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        LinearEquationSolverRequirements NativeLinearEquationSolver<ValueType>::getRequirements(Environment const& env, LinearEquationSolverTask const& task) const {
+        LinearEquationSolverRequirements NativeLinearEquationSolver<ValueType>::getRequirements(Environment const& env) const {
             LinearEquationSolverRequirements requirements;
             if (env.solver().native().isForceBoundsSet()) {
                 requirements.requireBounds();

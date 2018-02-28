@@ -32,7 +32,6 @@ namespace storm {
         
         template<typename ValueType>
         void NativeMultiplier<ValueType>::multiply(Environment const& env, std::vector<ValueType> const& x, std::vector<ValueType> const* b, std::vector<ValueType>& result) const {
-            STORM_LOG_ASSERT(getMultiplicationStyle() == MultiplicationStyle::Regular, "Unexpected Multiplicationstyle.");
             std::vector<ValueType>* target = &result;
             if (&x == &result) {
                 if (this->cachedVector) {
@@ -53,13 +52,12 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void NativeMultiplier<ValueType>::multiplyGaussSeidel(Environment const& env, std::vector<ValueType> const& x, std::vector<ValueType> const* b) const {
+        void NativeMultiplier<ValueType>::multiplyGaussSeidel(Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const* b) const {
             this->matrix.multiplyWithVectorBackward(x, x, b);
         }
         
         template<typename ValueType>
         void NativeMultiplier<ValueType>::multiplyAndReduce(Environment const& env, OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType> const& x, std::vector<ValueType> const* b, std::vector<ValueType>& result, std::vector<uint_fast64_t>* choices) const {
-            STORM_LOG_ASSERT(getMultiplicationStyle() == MultiplicationStyle::Regular, "Unexpected Multiplicationstyle.");
             std::vector<ValueType>* target = &result;
             if (&x == &result) {
                 if (this->cachedVector) {

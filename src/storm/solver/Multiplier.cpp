@@ -10,6 +10,7 @@
 #include "storm/utility/macros.h"
 #include "storm/solver/SolverSelectionOptions.h"
 #include "storm/solver/NativeMultiplier.h"
+#include "storm/solver/GmmxxMultiplier.h"
 #include "storm/environment/solver/MultiplierEnvironment.h"
 
 namespace storm {
@@ -26,12 +27,12 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void Multiplier<ValueType>::multiplyAndReduce(Environment const& env, OptimizationDirection const& dir, std::vector<ValueType> const& x, std::vector<ValueType> const* b, std::vector<ValueType>& result, std::vector<uint_fast64_t>* choices = nullptr) {
+        void Multiplier<ValueType>::multiplyAndReduce(Environment const& env, OptimizationDirection const& dir, std::vector<ValueType> const& x, std::vector<ValueType> const* b, std::vector<ValueType>& result, std::vector<uint_fast64_t>* choices) const {
             multiplyAndReduce(env, dir, this->matrix.getRowGroupIndices(), x, b, result, choices);
         }
 
         template<typename ValueType>
-        void Multiplier<ValueType>::multiplyAndReduceGaussSeidel(Environment const& env, OptimizationDirection const& dir, std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<uint_fast64_t>* choices = nullptr) {
+        void Multiplier<ValueType>::multiplyAndReduceGaussSeidel(Environment const& env, OptimizationDirection const& dir, std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<uint_fast64_t>* choices) const {
             multiplyAndReduceGaussSeidel(env, dir, this->matrix.getRowGroupIndices(), x, b, choices);
         }
     
@@ -43,9 +44,9 @@ namespace storm {
         }
     
         template<typename ValueType>
-        void Multiplier<ValueType>::repeatedMultiplyAndReduce(Environment const& env, OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType>& x, std::vector<ValueType> const* b, uint64_t n) const {
+        void Multiplier<ValueType>::repeatedMultiplyAndReduce(Environment const& env, OptimizationDirection const& dir, std::vector<ValueType>& x, std::vector<ValueType> const* b, uint64_t n) const {
             for (uint64_t i = 0; i < n; ++i) {
-                multiplyAndReduce(env, dir, rowGroupIndices, x, b, x);
+                multiplyAndReduce(env, dir, x, b, x);
             }
         }
     
@@ -53,8 +54,7 @@ namespace storm {
         std::unique_ptr<Multiplier<ValueType>> MultiplierFactory<ValueType>::create(Environment const& env, storm::storage::SparseMatrix<ValueType> const& matrix) {
             switch (env.solver().multiplier().getType()) {
                 case MultiplierType::Gmmxx:
-                    //return std::make_unique<GmmxxMultiplier<ValueType>>(matrix);
-                STORM_PRINT_AND_LOG("gmm mult not yet supported");
+                    return std::make_unique<GmmxxMultiplier<ValueType>>(matrix);
                 case MultiplierType::Native:
                     return std::make_unique<NativeMultiplier<ValueType>>(matrix);
             }
