@@ -14,32 +14,18 @@ namespace storm {
     namespace solver {
 
         template<typename ValueType>
-        TopologicalMinMaxLinearEquationSolver<ValueType>::TopologicalMinMaxLinearEquationSolver() : localA(nullptr), A(nullptr) {
+        TopologicalMinMaxLinearEquationSolver<ValueType>::TopologicalMinMaxLinearEquationSolver() {
             // Intentionally left empty.
         }
 
         template<typename ValueType>
-        TopologicalMinMaxLinearEquationSolver<ValueType>::TopologicalMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A) : localA(nullptr), A(nullptr) {
-            this->setMatrix(A);
+        TopologicalMinMaxLinearEquationSolver<ValueType>::TopologicalMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A) : StandardMinMaxLinearEquationSolver<ValueType>(A) {
+            // Intentionally left empty.
         }
 
         template<typename ValueType>
-        TopologicalMinMaxLinearEquationSolver<ValueType>::TopologicalMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType>&& A) : localA(nullptr), A(nullptr) {
-            this->setMatrix(std::move(A));
-        }
-        
-        template<typename ValueType>
-        void TopologicalMinMaxLinearEquationSolver<ValueType>::setMatrix(storm::storage::SparseMatrix<ValueType> const& A) {
-            localA.reset();
-            this->A = &A;
-            clearCache();
-        }
-
-        template<typename ValueType>
-        void TopologicalMinMaxLinearEquationSolver<ValueType>::setMatrix(storm::storage::SparseMatrix<ValueType>&& A) {
-            localA = std::make_unique<storm::storage::SparseMatrix<ValueType>>(std::move(A));
-            this->A = localA.get();
-            clearCache();
+        TopologicalMinMaxLinearEquationSolver<ValueType>::TopologicalMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType>&& A) : StandardMinMaxLinearEquationSolver<ValueType>(std::move(A)) {
+            // Intentionally left empty.
         }
         
         template<typename ValueType>
@@ -58,12 +44,6 @@ namespace storm {
         bool TopologicalMinMaxLinearEquationSolver<ValueType>::internalSolveEquations(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             STORM_LOG_ASSERT(x.size() == this->A->getRowGroupCount(), "Provided x-vector has invalid size.");
             STORM_LOG_ASSERT(b.size() == this->A->getRowCount(), "Provided b-vector has invalid size.");
-            
-            //std::cout << "Solving equation system with fixpoint characterization " << std::endl;
-            //std::cout << *this->A << std::endl;
-            //std::cout << storm::utility::vector::toString(b) << std::endl;
-            //std::cout << "Initial solution vector: " << std::endl;
-            //std::cout << storm::utility::vector::toString(x) << std::endl;
             
             // For sound computations we need to increase the precision in each SCC
             bool needAdaptPrecision = env.solver().isForceSoundness();
@@ -308,24 +288,6 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void TopologicalMinMaxLinearEquationSolver<ValueType>::repeatedMultiply(Environment const& env, OptimizationDirection d, std::vector<ValueType>& x, std::vector<ValueType> const* b, uint_fast64_t n) const {
-            
-            storm::Environment sccSolverEnvironment = getEnvironmentForUnderlyingSolver(env);
-            
-            // Set up the SCC solver
-            if (!this->sccSolver) {
-                this->sccSolver = GeneralMinMaxLinearEquationSolverFactory<ValueType>().create(sccSolverEnvironment);
-                this->sccSolver->setCachingEnabled(true);
-            }
-            this->sccSolver->setMatrix(*this->A);
-            this->sccSolver->repeatedMultiply(sccSolverEnvironment, d, x, b, n);
-            
-            if (!this->isCachingEnabled()) {
-                clearCache();
-            }
-        }
-
-        template<typename ValueType>
         MinMaxLinearEquationSolverRequirements TopologicalMinMaxLinearEquationSolver<ValueType>::getRequirements(Environment const& env, boost::optional<storm::solver::OptimizationDirection> const& direction, bool const& hasInitialScheduler) const {
             // Return the requirements of the underlying solver
             return GeneralMinMaxLinearEquationSolverFactory<ValueType>().getRequirements(getEnvironmentForUnderlyingSolver(env), this->hasUniqueSolution(), direction, hasInitialScheduler);
@@ -337,21 +299,14 @@ namespace storm {
             longestSccChainSize = boost::none;
             sccSolver.reset();
             auxiliaryRowGroupVector.reset();
-            MinMaxLinearEquationSolver<ValueType>::clearCache();
-        }
-        
-        template<typename ValueType>
-        std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> TopologicalMinMaxLinearEquationSolverFactory<ValueType>::create(Environment const& env) const {
-            return std::make_unique<storm::solver::TopologicalMinMaxLinearEquationSolver<ValueType>>();
+            StandardMinMaxLinearEquationSolver<ValueType>::clearCache();
         }
         
         // Explicitly instantiate the min max linear equation solver.
         template class TopologicalMinMaxLinearEquationSolver<double>;
-        template class TopologicalMinMaxLinearEquationSolverFactory<double>;
         
 #ifdef STORM_HAVE_CARL
         template class TopologicalMinMaxLinearEquationSolver<storm::RationalNumber>;
-        template class TopologicalMinMaxLinearEquationSolverFactory<storm::RationalNumber>;
 #endif
     }
 }

@@ -448,25 +448,6 @@ namespace storm {
 		}
 
         template<typename ValueType>
-        void TopologicalCudaMinMaxLinearEquationSolver<ValueType>::repeatedMultiply(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const* b, uint_fast64_t n) const {
-            std::unique_ptr<std::vector<ValueType>> multiplyResult = std::make_unique<std::vector<ValueType>>(this->A->getRowCount());
-            
-            // Now perform matrix-vector multiplication as long as we meet the bound of the formula.
-            for (uint_fast64_t i = 0; i < n; ++i) {
-                this->A->multiplyWithVector(x, *multiplyResult);
-                
-                // Add b if it is non-null.
-                if (b != nullptr) {
-                    storm::utility::vector::addVectors(*multiplyResult, *b, *multiplyResult);
-                }
-                
-                // Reduce the vector x' by applying min/max for all non-deterministic choices as given by the topmost
-                // element of the min/max operator stack.
-                storm::utility::vector::reduceVectorMinOrMax(dir, *multiplyResult, x, this->A->getRowGroupIndices());
-            }
-        }
-
-        template<typename ValueType>
         TopologicalCudaMinMaxLinearEquationSolverFactory<ValueType>::TopologicalCudaMinMaxLinearEquationSolverFactory(bool trackScheduler) {
             // Intentionally left empty.
         }

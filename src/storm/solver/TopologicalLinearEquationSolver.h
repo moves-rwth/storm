@@ -56,9 +56,6 @@ namespace storm {
             // the pointer refers to localA.
             storm::storage::SparseMatrix<ValueType> const* A;
             
-            // An object to dispatch all multiplication operations.
-            NativeMultiplier<ValueType> multiplier;
-
             // cached auxiliary data
             mutable std::unique_ptr<storm::storage::StronglyConnectedComponentDecomposition<ValueType>> sortedSccDecomposition;
             mutable boost::optional<uint64_t> longestSccChainSize;

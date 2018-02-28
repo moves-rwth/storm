@@ -41,12 +41,6 @@ namespace storm {
         }
 
         template<typename ValueType>
-        void MinMaxLinearEquationSolver<ValueType>::repeatedMultiply(Environment const& env, std::vector<ValueType>& x, std::vector<ValueType>* b, uint_fast64_t n) const {
-            STORM_LOG_THROW(isSet(this->direction), storm::exceptions::IllegalFunctionCallException, "Optimization direction not set.");
-            return repeatedMultiply(env, convert(this->direction), x, b, n);
-        }
-
-        template<typename ValueType>
         void MinMaxLinearEquationSolver<ValueType>::setOptimizationDirection(OptimizationDirection d) {
             direction = convert(d);
         }
@@ -204,7 +198,7 @@ namespace storm {
             } else if (method == MinMaxMethod::TopologicalCuda) {
                 result = std::make_unique<TopologicalCudaMinMaxLinearEquationSolver<ValueType>>();
             } else if (method == MinMaxMethod::LinearProgramming) {
-                result = std::make_unique<LpMinMaxLinearEquationSolver<ValueType>>(std::make_unique<GeneralLinearEquationSolverFactory<ValueType>>(), std::make_unique<storm::utility::solver::LpSolverFactory<ValueType>>());
+                result = std::make_unique<LpMinMaxLinearEquationSolver<ValueType>>(std::make_unique<storm::utility::solver::LpSolverFactory<ValueType>>());
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unsupported technique.");
             }
@@ -219,7 +213,7 @@ namespace storm {
             if (method == MinMaxMethod::ValueIteration || method == MinMaxMethod::PolicyIteration || method == MinMaxMethod::RationalSearch || method == MinMaxMethod::IntervalIteration || method == MinMaxMethod::SoundValueIteration) {
                 result = std::make_unique<IterativeMinMaxLinearEquationSolver<storm::RationalNumber>>(std::make_unique<GeneralLinearEquationSolverFactory<storm::RationalNumber>>());
             } else if (method == MinMaxMethod::LinearProgramming) {
-                result = std::make_unique<LpMinMaxLinearEquationSolver<storm::RationalNumber>>(std::make_unique<GeneralLinearEquationSolverFactory<storm::RationalNumber>>(), std::make_unique<storm::utility::solver::LpSolverFactory<storm::RationalNumber>>());
+                result = std::make_unique<LpMinMaxLinearEquationSolver<storm::RationalNumber>>(std::make_unique<storm::utility::solver::LpSolverFactory<storm::RationalNumber>>());
             } else if (method == MinMaxMethod::Topological) {
                 result = std::make_unique<TopologicalMinMaxLinearEquationSolver<storm::RationalNumber>>();
             } else {

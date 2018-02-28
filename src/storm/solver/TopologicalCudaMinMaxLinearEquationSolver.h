@@ -39,8 +39,6 @@ namespace storm {
             
             virtual bool internalSolveEquations(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const override;
             
-            virtual void repeatedMultiply(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const* b, uint_fast64_t n) const override;
-
         private:
             storm::storage::SparseMatrix<ValueType> const* A;
             std::unique_ptr<storm::storage::SparseMatrix<ValueType>> localA;
