@@ -100,7 +100,7 @@ namespace storm {
         template<typename ValueType>
         void NativeMultiplier<ValueType>::multAddParallel(std::vector<ValueType> const& x, std::vector<ValueType> const* b, std::vector<ValueType>& result) const {
 #ifdef STORM_HAVE_INTELTBB
-            matrix.multiplyWithVectorParallel(x, result, b);
+            this->matrix.multiplyWithVectorParallel(x, result, b);
 #else
             STORM_LOG_WARN("Storm was built without support for Intel TBB, defaulting to sequential version.");
             multAdd(x, b, result);
@@ -110,7 +110,7 @@ namespace storm {
         template<typename ValueType>
         void NativeMultiplier<ValueType>::multAddReduceParallel(storm::solver::OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType> const& x, std::vector<ValueType> const* b, std::vector<ValueType>& result, std::vector<uint64_t>* choices) const {
 #ifdef STORM_HAVE_INTELTBB
-            matrix.multiplyAndReduceParallel(dir, rowGroupIndices, x, b, result, choices);
+            this->matrix.multiplyAndReduceParallel(dir, rowGroupIndices, x, b, result, choices);
 #else
             STORM_LOG_WARN("Storm was built without support for Intel TBB, defaulting to sequential version.");
             multAddReduce(dir, rowGroupIndices, x, b, result, choices);

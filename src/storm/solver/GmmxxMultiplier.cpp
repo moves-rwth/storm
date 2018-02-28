@@ -191,9 +191,9 @@ namespace storm {
         void GmmxxMultiplier<ValueType>::multAddParallel(std::vector<ValueType> const& x, std::vector<ValueType> const* b, std::vector<ValueType>& result) const {
 #ifdef STORM_HAVE_INTELTBB
             if (b) {
-                gmm::mult_add_parallel(x, *b, result);
+                gmm::mult_add_parallel(gmmMatrix, x, *b, result);
             } else {
-                gmm::mult_parallel(x, result);
+                gmm::mult_parallel(gmmMatrix, x, result);
             }
 #else
             STORM_LOG_WARN("Storm was built without support for Intel TBB, defaulting to sequential version.");
