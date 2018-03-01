@@ -64,8 +64,6 @@ namespace storm {
                     return std::make_unique<GmmxxMultiplier<ValueType>>(matrix);
                 case MultiplierType::Native:
                     return std::make_unique<NativeMultiplier<ValueType>>(matrix);
-                case MultiplierType::InPlace:
-                    return std::make_unique<InPlaceMultiplier<ValueType>>(matrix);
             }
         }
         

@@ -25,8 +25,6 @@ namespace storm {
                 std::string type = this->getOption(multiplierTypeOptionName).getArgumentByName("name").getValueAsString();
                 if (type == "native") {
                     return storm::solver::MultiplierType::Native;
-                } else if (type == "inplace") {
-                    return storm::solver::MultiplierType::InPlace;
                 } else if (type == "gmmxx") {
                     return storm::solver::MultiplierType::Gmmxx;
                 }
