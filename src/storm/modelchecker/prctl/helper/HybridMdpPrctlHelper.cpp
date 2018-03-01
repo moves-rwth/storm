@@ -123,7 +123,7 @@ namespace storm {
             }
             
             template<storm::dd::DdType DdType, typename ValueType>
-            std::unique_ptr<CheckResult> HybridMdpPrctlHelper<DdType, ValueType>::computeUntilProbabilities(Environment const& env, OptimizationDirection dir, storm::models::symbolic::NondeterministicModel<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, storm::dd::Bdd<DdType> const& phiStates, storm::dd::Bdd<DdType> const& psiStates, bool qualitative, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+            std::unique_ptr<CheckResult> HybridMdpPrctlHelper<DdType, ValueType>::computeUntilProbabilities(Environment const& env, OptimizationDirection dir, storm::models::symbolic::NondeterministicModel<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, storm::dd::Bdd<DdType> const& phiStates, storm::dd::Bdd<DdType> const& psiStates, bool qualitative) {
                 // We need to identify the states which have to be taken out of the matrix, i.e. all states that have
                 // probability 0 and 1 of satisfying the until-formula.
                 storm::dd::Bdd<DdType> transitionMatrixBdd = transitionMatrix.notZero();
@@ -147,6 +147,7 @@ namespace storm {
                         // If we minimize, we know that the solution to the equation system is unique.
                         bool uniqueSolution = dir == storm::solver::OptimizationDirection::Minimize;
                         // Check for requirements of the solver early so we can adjust the maybe state computation accordingly.
+                        storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType> linearEquationSolverFactory;
                         storm::solver::MinMaxLinearEquationSolverRequirements requirements = linearEquationSolverFactory.getRequirements(env, uniqueSolution, dir);
                         storm::solver::MinMaxLinearEquationSolverRequirements clearedRequirements = requirements;
                         SolverRequirementsData<ValueType> solverRequirementsData;
@@ -259,8 +260,8 @@ namespace storm {
             }
             
             template<storm::dd::DdType DdType, typename ValueType>
-            std::unique_ptr<CheckResult> HybridMdpPrctlHelper<DdType, ValueType>::computeGloballyProbabilities(Environment const& env, OptimizationDirection dir, storm::models::symbolic::NondeterministicModel<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, storm::dd::Bdd<DdType> const& psiStates, bool qualitative, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
-                std::unique_ptr<CheckResult> result = computeUntilProbabilities(env, dir == OptimizationDirection::Minimize ? OptimizationDirection::Maximize : OptimizationDirection::Maximize, model, transitionMatrix, model.getReachableStates(), !psiStates && model.getReachableStates(), qualitative, linearEquationSolverFactory);
+            std::unique_ptr<CheckResult> HybridMdpPrctlHelper<DdType, ValueType>::computeGloballyProbabilities(Environment const& env, OptimizationDirection dir, storm::models::symbolic::NondeterministicModel<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, storm::dd::Bdd<DdType> const& psiStates, bool qualitative) {
+                std::unique_ptr<CheckResult> result = computeUntilProbabilities(env, dir == OptimizationDirection::Minimize ? OptimizationDirection::Maximize : OptimizationDirection::Maximize, model, transitionMatrix, model.getReachableStates(), !psiStates && model.getReachableStates(), qualitative);
                 result->asQuantitativeCheckResult<ValueType>().oneMinus();
                 return result;
             }
@@ -271,7 +272,7 @@ namespace storm {
             }
 
             template<storm::dd::DdType DdType, typename ValueType>
-            std::unique_ptr<CheckResult> HybridMdpPrctlHelper<DdType, ValueType>::computeBoundedUntilProbabilities(Environment const& env, OptimizationDirection dir, storm::models::symbolic::NondeterministicModel<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, storm::dd::Bdd<DdType> const& phiStates, storm::dd::Bdd<DdType> const& psiStates, uint_fast64_t stepBound, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+            std::unique_ptr<CheckResult> HybridMdpPrctlHelper<DdType, ValueType>::computeBoundedUntilProbabilities(Environment const& env, OptimizationDirection dir, storm::models::symbolic::NondeterministicModel<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, storm::dd::Bdd<DdType> const& phiStates, storm::dd::Bdd<DdType> const& psiStates, uint_fast64_t stepBound) {
                 // We need to identify the states which have to be taken out of the matrix, i.e. all states that have
                 // probability 0 or 1 of satisfying the until-formula.
                 storm::dd::Bdd<DdType> statesWithProbabilityGreater0;
@@ -321,7 +322,7 @@ namespace storm {
             }
             
             template<storm::dd::DdType DdType, typename ValueType>
-            std::unique_ptr<CheckResult> HybridMdpPrctlHelper<DdType, ValueType>::computeInstantaneousRewards(Environment const& env, OptimizationDirection dir, storm::models::symbolic::NondeterministicModel<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, RewardModelType const& rewardModel, uint_fast64_t stepBound, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+            std::unique_ptr<CheckResult> HybridMdpPrctlHelper<DdType, ValueType>::computeInstantaneousRewards(Environment const& env, OptimizationDirection dir, storm::models::symbolic::NondeterministicModel<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, RewardModelType const& rewardModel, uint_fast64_t stepBound) {
                 // Only compute the result if the model has at least one reward this->getModel().
                 STORM_LOG_THROW(rewardModel.hasStateRewards(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
                 
@@ -343,7 +344,7 @@ namespace storm {
             }
 
             template<storm::dd::DdType DdType, typename ValueType>
-            std::unique_ptr<CheckResult> HybridMdpPrctlHelper<DdType, ValueType>::computeCumulativeRewards(Environment const& env, OptimizationDirection dir, storm::models::symbolic::NondeterministicModel<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, RewardModelType const& rewardModel, uint_fast64_t stepBound, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+            std::unique_ptr<CheckResult> HybridMdpPrctlHelper<DdType, ValueType>::computeCumulativeRewards(Environment const& env, OptimizationDirection dir, storm::models::symbolic::NondeterministicModel<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, RewardModelType const& rewardModel, uint_fast64_t stepBound) {
                 // Only compute the result if the model has at least one reward this->getModel().
                 STORM_LOG_THROW(!rewardModel.empty(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
                 
@@ -488,7 +489,7 @@ namespace storm {
             }
             
             template<storm::dd::DdType DdType, typename ValueType>
-            std::unique_ptr<CheckResult> HybridMdpPrctlHelper<DdType, ValueType>::computeReachabilityRewards(Environment const& env, OptimizationDirection dir, storm::models::symbolic::NondeterministicModel<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, RewardModelType const& rewardModel, storm::dd::Bdd<DdType> const& targetStates, bool qualitative, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+            std::unique_ptr<CheckResult> HybridMdpPrctlHelper<DdType, ValueType>::computeReachabilityRewards(Environment const& env, OptimizationDirection dir, storm::models::symbolic::NondeterministicModel<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, RewardModelType const& rewardModel, storm::dd::Bdd<DdType> const& targetStates, bool qualitative) {
                 
                 // Only compute the result if there is at least one reward model.
                 STORM_LOG_THROW(!rewardModel.empty(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
@@ -518,6 +519,7 @@ namespace storm {
                         // If we maximize, we know that the solution to the equation system is unique.
                         bool uniqueSolution = dir == storm::solver::OptimizationDirection::Maximize;
                         // Check for requirements of the solver this early so we can adapt the maybe states accordingly.
+                        storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType> linearEquationSolverFactory;
                         storm::solver::MinMaxLinearEquationSolverRequirements requirements = linearEquationSolverFactory.getRequirements(env, uniqueSolution, dir);
                         storm::solver::MinMaxLinearEquationSolverRequirements clearedRequirements = requirements;
                         bool extendMaybeStates = false;
