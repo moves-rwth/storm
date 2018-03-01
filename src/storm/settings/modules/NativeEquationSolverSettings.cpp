@@ -27,7 +27,7 @@ namespace storm {
             const std::string NativeEquationSolverSettings::powerMethodSymmetricUpdatesOptionName = "symmetricupdates";
 
             NativeEquationSolverSettings::NativeEquationSolverSettings() : ModuleSettings(moduleName) {
-                std::vector<std::string> methods = { "jacobi", "gaussseidel", "sor", "walkerchae", "power", "ratsearch", "qpower" };
+                std::vector<std::string> methods = { "jacobi", "gaussseidel", "sor", "walkerchae", "power", "soundpower", "interval-iteration", "ratsearch" };
                 this->addOption(storm::settings::OptionBuilder(moduleName, techniqueOptionName, true, "The method to be used for solving linear equation systems with the native engine.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the method to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(methods)).setDefaultValueString("jacobi").build()).build());
                 
                 this->addOption(storm::settings::OptionBuilder(moduleName, maximalIterationsOptionName, false, "The maximal number of iterations to perform before iterative solving is aborted.").setShortName(maximalIterationsOptionShortName).addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("count", "The maximal iteration count.").setDefaultValueUnsignedInteger(20000).build()).build());
