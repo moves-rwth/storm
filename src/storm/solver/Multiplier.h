@@ -1,5 +1,8 @@
 #pragma once
 
+#include <vector>
+#include <memory>
+
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/solver/MultiplicationStyle.h"
 
