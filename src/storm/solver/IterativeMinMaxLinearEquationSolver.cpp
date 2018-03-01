@@ -667,9 +667,11 @@ namespace storm {
             }
             
             void multiplyRow(uint64_t const& row, storm::storage::SparseMatrix<ValueType> const& A, storm::solver::Multiplier<ValueType> const& multiplier, ValueType const& bi, ValueType& xi, ValueType& yi) {
-                xi = bi;
-                yi = storm::utility::zero<ValueType>();
-                multiplier.multiplyRow2(row, x, xi, y, yi);
+                ValueType xRes = bi;
+                ValueType yRes = storm::utility::zero<ValueType>();
+                multiplier.multiplyRow2(row, x, xRes, y, yRes);
+                xi = std::move(xRes);
+                yi = std::move(yRes);
             }
             
             template<OptimizationDirection dir>
