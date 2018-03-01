@@ -15,7 +15,7 @@ namespace storm {
             const std::string BisimulationSettings::moduleName = "bisimulation";
             const std::string BisimulationSettings::typeOptionName = "type";
             const std::string BisimulationSettings::representativeOptionName = "repr";
-            const std::string BisimulationSettings::originalVariablesOptionName = "origvar";
+            const std::string BisimulationSettings::originalVariablesOptionName = "origvars";
             const std::string BisimulationSettings::quotientFormatOptionName = "quot";
             const std::string BisimulationSettings::signatureModeOptionName = "sigmode";
             const std::string BisimulationSettings::reuseOptionName = "reuse";

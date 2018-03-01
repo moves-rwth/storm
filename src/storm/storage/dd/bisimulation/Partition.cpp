@@ -130,6 +130,8 @@ namespace storm {
                 
                 std::pair<storm::expressions::Variable, storm::expressions::Variable> blockVariables = createBlockVariables(model);
 
+                auto start = std::chrono::high_resolution_clock::now();
+                
                 // Set up the construction.
                 storm::dd::DdManager<DdType>& manager = model.getManager();
                 storm::dd::Bdd<DdType> partitionBdd = manager.getBddZero();
@@ -152,6 +154,9 @@ namespace storm {
                 
                 // Move the partition over to the primed variables.
                 partitionBdd = partitionBdd.swapVariables(model.getRowColumnMetaVariablePairs());
+                
+                auto end = std::chrono::high_resolution_clock::now();
+                STORM_LOG_INFO("Created distance and label-based initial partition in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
                 
                 // Store the partition as an ADD only in the case of CUDD.
                 if (DdType == storm::dd::DdType::CUDD) {
@@ -191,8 +196,11 @@ namespace storm {
                 for (auto const& expression : expressions) {
                     stateSets.emplace_back(model.getStates(expression));
                 }
+                auto start = std::chrono::high_resolution_clock::now();
                 std::pair<storm::dd::Bdd<DdType>, uint64_t> partitionBddAndBlockCount = createPartitionBdd(model.getManager(), model, stateSets, blockVariables.first);
-                
+                auto end = std::chrono::high_resolution_clock::now();
+                STORM_LOG_INFO("Created label-based initial partition in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
+
                 // Store the partition as an ADD only in the case of CUDD.
                 if (DdType == storm::dd::DdType::CUDD) {
                     return Partition<DdType, ValueType>(partitionBddAndBlockCount.first.template toAdd<ValueType>(), blockVariables, partitionBddAndBlockCount.second, partitionBddAndBlockCount.second);

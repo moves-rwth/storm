@@ -47,7 +47,7 @@ namespace storm {
             
             template <storm::dd::DdType Type>
             storm::dd::Bdd<Type> getRowColumnDiagonal(storm::dd::DdManager<Type> const& ddManager, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) {
-                return ddManager.getIdentity(rowColumnMetaVariablePairs);
+                return ddManager.getIdentity(rowColumnMetaVariablePairs, false);
             }
             
             template storm::dd::Bdd<storm::dd::DdType::CUDD> computeReachableStates(storm::dd::Bdd<storm::dd::DdType::CUDD> const& initialStates, storm::dd::Bdd<storm::dd::DdType::CUDD> const& transitions, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables);

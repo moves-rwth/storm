@@ -42,12 +42,21 @@ namespace storm {
                     } else {
                         choicePartitionAsBdd = this->choicePartition.asAdd().notZero();
                     }
-                    Signature<DdType, ValueType> stateSignature(choicePartitionAsBdd.existsAbstract(model.getNondeterminismVariables()).template toAdd<ValueType>());
                     
+                    auto signatureStart = std::chrono::high_resolution_clock::now();
+                    Signature<DdType, ValueType> stateSignature(choicePartitionAsBdd.existsAbstract(model.getNondeterminismVariables()).template toAdd<ValueType>());
+                    auto signatureEnd = std::chrono::high_resolution_clock::now();
+
                     // If the choice partition changed, refine the state partition.
                     STORM_LOG_TRACE("Refining state partition.");
+                    auto refinementStart = std::chrono::high_resolution_clock::now();
                     Partition<DdType, ValueType> newStatePartition = this->internalRefine(stateSignature, this->stateSignatureRefiner, this->statePartition);
+                    auto refinementEnd = std::chrono::high_resolution_clock::now();
                     
+                    auto signatureTime = std::chrono::duration_cast<std::chrono::milliseconds>(signatureEnd - signatureStart).count();
+                    auto refinementTime = std::chrono::duration_cast<std::chrono::milliseconds>(refinementEnd - refinementStart).count();
+                    STORM_LOG_INFO("Refinement " << (this->refinements-1) << " produced " << newStatePartition.getNumberOfBlocks() << " blocks and was completed in " << (signatureTime + refinementTime) << "ms (signature: " << signatureTime << "ms, refinement: " << refinementTime << "ms).");
+
                     if (newStatePartition == this->statePartition) {
                         this->status = Status::FixedPoint;
                         return false;

@@ -607,9 +607,9 @@ TEST(CuddDd, MultiplyMatrixTest2) {
     
     storm::dd::Add<storm::dd::DdType::CUDD, double> r = q.multiplyMatrix(p, {x.first});
     
-    ASSERT_EQ(12, r.getNodeCount());
-    ASSERT_EQ(4, r.getLeafCount());
-    ASSERT_EQ(3, r.getNonZeroCount());
+    ASSERT_EQ(12ull, r.getNodeCount());
+    ASSERT_EQ(4ull, r.getLeafCount());
+    ASSERT_EQ(3ull, r.getNonZeroCount());
 }
 
 TEST(CuddDd, GetSetValueTest) {

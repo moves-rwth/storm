@@ -835,7 +835,7 @@ namespace storm {
                     result = extractDdQuotient(model, partition, preservationInformation);
                 }
                 auto end = std::chrono::high_resolution_clock::now();
-                STORM_LOG_TRACE("Quotient extraction completed in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
+                STORM_LOG_INFO("Quotient extraction completed in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
                 
                 STORM_LOG_THROW(result, storm::exceptions::NotSupportedException, "Quotient could not be extracted.");
                 
@@ -856,7 +856,7 @@ namespace storm {
                 InternalSparseQuotientExtractor<DdType, ValueType> sparseExtractor(model, partitionAsBdd, partition.getBlockVariable(), partition.getNumberOfBlocks(), representatives);
                 storm::storage::SparseMatrix<ValueType> quotientTransitionMatrix = sparseExtractor.extractTransitionMatrix(model.getTransitionMatrix());
                 auto end = std::chrono::high_resolution_clock::now();
-                STORM_LOG_TRACE("Quotient transition matrix extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
+                STORM_LOG_INFO("Quotient transition matrix extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
 
                 start = std::chrono::high_resolution_clock::now();
                 storm::models::sparse::StateLabeling quotientStateLabeling(partition.getNumberOfBlocks());
@@ -878,7 +878,7 @@ namespace storm {
                     }
                 }
                 end = std::chrono::high_resolution_clock::now();
-                STORM_LOG_TRACE("Quotient labels extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
+                STORM_LOG_INFO("Quotient labels extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
 
                 start = std::chrono::high_resolution_clock::now();
                 std::unordered_map<std::string, storm::models::sparse::StandardRewardModel<ValueType>> quotientRewardModels;
@@ -898,7 +898,7 @@ namespace storm {
                     quotientRewardModels.emplace(rewardModelName, storm::models::sparse::StandardRewardModel<ValueType>(std::move(quotientStateRewards), std::move(quotientStateActionRewards), boost::none));
                 }
                 end = std::chrono::high_resolution_clock::now();
-                STORM_LOG_TRACE("Reward models extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
+                STORM_LOG_INFO("Reward models extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
 
                 std::shared_ptr<storm::models::sparse::Model<ValueType>> result;
                 if (model.getType() == storm::models::ModelType::Dtmc) {
@@ -978,7 +978,7 @@ namespace storm {
                         }
                     }
                     auto end = std::chrono::high_resolution_clock::now();
-                    STORM_LOG_TRACE("Quotient labels extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
+                    STORM_LOG_INFO("Quotient labels extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
 
                     start = std::chrono::high_resolution_clock::now();
                     std::set<storm::expressions::Variable> blockAndRowVariables;
@@ -1004,7 +1004,7 @@ namespace storm {
                     }
                     STORM_LOG_ASSERT(quotientTransitionMatrix.sumAbstract(blockPrimeVariableSet).equalModuloPrecision(quotientTransitionMatrix.notZero().existsAbstract(blockPrimeVariableSet).template toAdd<ValueType>(), storm::utility::convertNumber<ValueType>(1e-6)), "Illegal non-probabilistic matrix.");
                     
-                    STORM_LOG_TRACE("Quotient transition matrix extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
+                    STORM_LOG_INFO("Quotient transition matrix extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
 
                     storm::dd::Bdd<DdType> quotientTransitionMatrixBdd = quotientTransitionMatrix.notZero();
                     storm::dd::Bdd<DdType> deadlockStates = !quotientTransitionMatrixBdd.existsAbstract(blockPrimeVariableSet) && reachableStates;
@@ -1027,7 +1027,7 @@ namespace storm {
                         quotientRewardModels.emplace(rewardModelName, storm::models::symbolic::StandardRewardModel<DdType, ValueType>(quotientStateRewards, quotientStateActionRewards, boost::none));
                     }
                     end = std::chrono::high_resolution_clock::now();
-                    STORM_LOG_TRACE("Reward models extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
+                    STORM_LOG_INFO("Reward models extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
 
                     if (modelType == storm::models::ModelType::Dtmc) {
                         return std::shared_ptr<storm::models::symbolic::Dtmc<DdType, ValueType>>(new storm::models::symbolic::Dtmc<DdType, ValueType>(model.getManager().asSharedPointer(), reachableStates, initialStates, deadlockStates, quotientTransitionMatrix, blockVariableSet, blockPrimeVariableSet, blockMetaVariablePairs, preservedLabelBdds, quotientRewardModels));
@@ -1082,7 +1082,7 @@ namespace storm {
                         }
                     }
                     auto end = std::chrono::high_resolution_clock::now();
-                    STORM_LOG_TRACE("Quotient labels extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
+                    STORM_LOG_INFO("Quotient labels extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
                     
                     start = std::chrono::high_resolution_clock::now();
                     std::set<storm::expressions::Variable> blockAndRowVariables;
@@ -1113,7 +1113,7 @@ namespace storm {
                     }
                     STORM_LOG_ASSERT(quotientTransitionMatrix.sumAbstract(model.getColumnVariables()).equalModuloPrecision(quotientTransitionMatrix.notZero().existsAbstract(model.getColumnVariables()).template toAdd<ValueType>(), storm::utility::convertNumber<ValueType>(1e-6)), "Illegal probabilistic matrix.");
                     
-                    STORM_LOG_TRACE("Quotient transition matrix extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
+                    STORM_LOG_INFO("Quotient transition matrix extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
                     
                     storm::dd::Bdd<DdType> quotientTransitionMatrixBdd = quotientTransitionMatrix.notZero();
                     storm::dd::Bdd<DdType> deadlockStates = !quotientTransitionMatrixBdd.existsAbstract(model.getColumnVariables()) && reachableStates;
@@ -1136,7 +1136,7 @@ namespace storm {
                         quotientRewardModels.emplace(rewardModelName, storm::models::symbolic::StandardRewardModel<DdType, ValueType>(quotientStateRewards, quotientStateActionRewards, boost::none));
                     }
                     end = std::chrono::high_resolution_clock::now();
-                    STORM_LOG_TRACE("Reward models extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
+                    STORM_LOG_INFO("Reward models extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
                     
                     if (modelType == storm::models::ModelType::Dtmc) {
                         return std::shared_ptr<storm::models::symbolic::Dtmc<DdType, ValueType>>(new storm::models::symbolic::Dtmc<DdType, ValueType>(model.getManager().asSharedPointer(), reachableStates, initialStates, deadlockStates, quotientTransitionMatrix, model.getRowVariables(), model.getColumnVariables(), model.getRowColumnMetaVariablePairs(), preservedLabelBdds, quotientRewardModels));

@@ -66,7 +66,7 @@ namespace storm {
                     }
                     
                     auto totalTimeInRefinement = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start).count();
-                    STORM_LOG_TRACE("Refinement " << refinements << " produced " << newPartition.getNumberOfBlocks() << " blocks and was completed in " << totalTimeInRefinement << "ms (signature: " << signatureTime << "ms, refinement: " << refinementTime << "ms).");
+                    STORM_LOG_INFO("Refinement " << refinements << " produced " << newPartition.getNumberOfBlocks() << " blocks and was completed in " << totalTimeInRefinement << "ms (signature: " << signatureTime << "ms, refinement: " << refinementTime << "ms).");
                     ++refinements;
                     return newPartition;
                 } else {
@@ -78,10 +78,7 @@ namespace storm {
             Partition<DdType, ValueType> PartitionRefiner<DdType, ValueType>::internalRefine(Signature<DdType, ValueType> const& signature, SignatureRefiner<DdType, ValueType>& signatureRefiner, Partition<DdType, ValueType> const& oldPartition) {
 
                 STORM_LOG_TRACE("Signature " << refinements << " DD has " << signature.getSignatureAdd().getNodeCount() << " nodes.");
-                auto start = std::chrono::high_resolution_clock::now();
                 auto newPartition = signatureRefiner.refine(oldPartition, signature);
-                auto totalTimeInRefinement = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start).count();
-                STORM_LOG_TRACE("Refinement " << refinements << " produced " << newPartition.getNumberOfBlocks() << " blocks and was completed in " << totalTimeInRefinement << "ms.");
                 
                 ++refinements;
                 return newPartition;
