@@ -11,6 +11,7 @@
 #include "storm/solver/SolverSelectionOptions.h"
 #include "storm/solver/NativeMultiplier.h"
 #include "storm/solver/GmmxxMultiplier.h"
+#include "storm/solver/InPlaceMultiplier.h"
 #include "storm/environment/solver/MultiplierEnvironment.h"
 
 namespace storm {
@@ -63,6 +64,8 @@ namespace storm {
                     return std::make_unique<GmmxxMultiplier<ValueType>>(matrix);
                 case MultiplierType::Native:
                     return std::make_unique<NativeMultiplier<ValueType>>(matrix);
+                case MultiplierType::InPlace:
+                    return std::make_unique<InPlaceMultiplier<ValueType>>(matrix);
             }
         }
         

@@ -116,17 +116,17 @@ namespace storm {
              * Multiplies the row with the given index with x and adds the result to the provided value
              * @param rowIndex The index of the considered row
              * @param x The input vector with which the row is multiplied
-             * @param value The multiplication result is added to this value.
+             * @param value The multiplication result is added to this value. It shall not reffer to a value in x or in the Matrix.
              */
             virtual void multiplyRow(uint64_t const& rowIndex, std::vector<ValueType> const& x, ValueType& value) const = 0;
             
             /*!
              * Multiplies the row with the given index with x1 and x2 and adds the given offset o1 and o2, respectively
              * @param rowIndex The index of the considered row
-             * @param x1 The first input vector with which the row is multiplied
-             * @param val1 The first multiplication result is added to this value.
-             * @param x2 The second input vector with which the row is multiplied
-             * @param val2 The second multiplication result is added to this value.
+             * @param x1 The first input vector with which the row is multiplied.
+             * @param val1 The first multiplication result is added to this value. It shall not reffer to a value in x or in the Matrix.
+             * @param x2 The second input vector with which the row is multiplied.
+             * @param val2 The second multiplication result is added to this value. It shall not reffer to a value in x or in the Matrix.
              */
             virtual void multiplyRow2(uint64_t const& rowIndex, std::vector<ValueType> const& x1, ValueType& val1, std::vector<ValueType> const& x2, ValueType& val2) const;
             

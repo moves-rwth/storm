@@ -12,10 +12,10 @@ namespace storm {
     
     namespace solver {
         
-        template<typename ValueType, typename IndexType = uint32_t>
-        class NativeMultiplier : public Multiplier<ValueType> {
+        template<typename ValueType>
+        class InPlaceMultiplier : public Multiplier<ValueType> {
         public:
-            NativeMultiplier(storm::storage::SparseMatrix<ValueType> const& matrix);
+            InPlaceMultiplier(storm::storage::SparseMatrix<ValueType> const& matrix);
             
             virtual void multiply(Environment const& env, std::vector<ValueType> const& x, std::vector<ValueType> const* b, std::vector<ValueType>& result) const override;
             virtual void multiplyGaussSeidel(Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const* b) const override;
@@ -28,21 +28,12 @@ namespace storm {
         private:
             bool parallelize(Environment const& env) const;
             
-            void initialize() const;
-            
-            ValueType multiplyAndReduceRowGroup(OptimizationDirection const& dir, IndexType const& groupStart, IndexType const& groupEnd, std::vector<ValueType> const& x, std::vector<ValueType> const* b, uint_fast64_t* choice = nullptr) const;
-            
             void multAdd(std::vector<ValueType> const& x, std::vector<ValueType> const* b, std::vector<ValueType>& result) const;
             
             void multAddReduce(storm::solver::OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType> const& x, std::vector<ValueType> const* b, std::vector<ValueType>& result, std::vector<uint64_t>* choices = nullptr) const;
             
             void multAddParallel(std::vector<ValueType> const& x, std::vector<ValueType> const* b, std::vector<ValueType>& result) const;
             void multAddReduceParallel(storm::solver::OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType> const& x, std::vector<ValueType> const* b, std::vector<ValueType>& result, std::vector<uint64_t>* choices = nullptr) const;
-            
-            mutable std::vector<ValueType> entries;
-            mutable std::vector<IndexType> columns;
-            mutable std::vector<IndexType> rowIndications;
-            mutable IndexType numRows;
             
         };
         

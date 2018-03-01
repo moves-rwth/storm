@@ -28,6 +28,8 @@ namespace storm {
             switch(t) {
                 case MultiplierType::Native:
                     return "Native";
+                case MultiplierType::InPlace:
+                    return "InPlace";
                 case MultiplierType::Gmmxx:
                     return "Gmmxx";
             }
