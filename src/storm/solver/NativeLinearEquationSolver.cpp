@@ -1,5 +1,7 @@
 #include "storm/solver/NativeLinearEquationSolver.h"
 
+#include <limits>
+
 #include "storm/environment/solver/NativeSolverEnvironment.h"
 
 #include "storm/utility/ConstantsComparator.h"
@@ -12,7 +14,7 @@
 #include "storm/exceptions/InvalidEnvironmentException.h"
 #include "storm/exceptions/UnmetRequirementException.h"
 #include "storm/exceptions/PrecisionExceededException.h"
-
+#include "storm/exceptions/NotSupportedException.h"
 
 namespace storm {
     namespace solver {
@@ -573,11 +575,31 @@ namespace storm {
         template<typename ValueType>
         class SoundPowerHelper {
         public:
-            SoundPowerHelper(std::vector<ValueType>& x, std::vector<ValueType>& y, bool relative, ValueType const& precision) : x(x), y(y), hasLowerBound(false), hasUpperBound(false), minIndex(0), maxIndex(0), relative(relative), precision(precision) {
+            
+            typedef uint32_t IndexType;
+            
+            SoundPowerHelper(storm::storage::SparseMatrix<ValueType> const& matrix, std::vector<ValueType>& x, std::vector<ValueType>& y, bool relative, ValueType const& precision) : x(x), y(y), hasLowerBound(false), hasUpperBound(false), minIndex(0), maxIndex(0), relative(relative), precision(precision) {
+                STORM_LOG_THROW(matrix.getEntryCount() < std::numeric_limits<IndexType>::max(), storm::exceptions::NotSupportedException, "The number of matrix entries is too large for the selected index type.");
                 x.assign(x.size(), storm::utility::zero<ValueType>());
                 y.assign(x.size(), storm::utility::one<ValueType>());
                 convergencePhase1 = true;
                 firstIndexViolatingConvergence = 0;
+                
+                numRows = matrix.getRowCount();
+                matrixValues.clear();
+                matrixColumns.clear();
+                rowIndications.clear();
+                matrixValues.reserve(matrix.getNonzeroEntryCount());
+                matrixColumns.reserve(matrix.getColumnCount());
+                rowIndications.reserve(numRows + 1);
+                rowIndications.push_back(0);
+                for (IndexType r = 0; r < numRows; ++r) {
+                    for (auto const& entry : matrix.getRow(r)) {
+                        matrixValues.push_back(entry.getValue());
+                        matrixColumns.push_back(entry.getColumn());
+                    }
+                    rowIndications.push_back(matrixValues.size());
+                }
             }
             
             inline void setLowerBound(ValueType const& value) {
@@ -590,21 +612,29 @@ namespace storm {
                 upperBound = value;
             }
             
-            void multiplyRow(uint64_t const& row, storm::storage::SparseMatrix<ValueType> const& A, storm::solver::Multiplier<ValueType> const& multiplier, ValueType const& bi, ValueType& xi, ValueType& yi) {
+            void multiplyRow(IndexType const& rowIndex, ValueType const& bi, ValueType& xi, ValueType& yi) {
+                assert(rowIndex < numRows);
                 ValueType xRes = bi;
                 ValueType yRes = storm::utility::zero<ValueType>();
-                multiplier.multiplyRow2(row, x, xRes, y, yRes);
+                
+                auto entryIt = matrixValues.begin() + rowIndications[rowIndex];
+                auto entryItE = matrixValues.begin() + rowIndications[rowIndex + 1];
+                auto colIt = matrixColumns.begin() + rowIndications[rowIndex];
+                for (; entryIt != entryItE; ++entryIt, ++colIt) {
+                    xRes += *entryIt * x[*colIt];
+                    yRes += *entryIt * y[*colIt];
+                }
                 xi = std::move(xRes);
                 yi = std::move(yRes);
             }
             
-            void performIterationStep(storm::storage::SparseMatrix<ValueType> const& A, storm::solver::Multiplier<ValueType> const& multiplier, std::vector<ValueType> const& b) {
+            void performIterationStep(std::vector<ValueType> const& b) {
                 auto xIt = x.rbegin();
                 auto yIt = y.rbegin();
-                uint64_t row = A.getRowCount();
+                IndexType row = numRows;
                 while (row > 0) {
                     --row;
-                    multiplyRow(row, A, multiplier, b[row], *xIt, *yIt);
+                    multiplyRow(row, b[row], *xIt, *yIt);
                     ++xIt;
                     ++yIt;
                 }
@@ -744,6 +774,11 @@ namespace storm {
             bool convergencePhase1;
             uint64_t firstIndexViolatingConvergence;
             
+            std::vector<ValueType> matrixValues;
+            std::vector<IndexType> matrixColumns;
+            std::vector<IndexType> rowIndications;
+            IndexType numRows;
+            
             bool relative;
             ValueType precision;
         };
@@ -757,11 +792,8 @@ namespace storm {
                 this->cachedRowVector = std::make_unique<std::vector<ValueType>>();
             }
             
-            if (!this->multiplier) {
-                this->multiplier = storm::solver::MultiplierFactory<ValueType>().create(env, *this->A);
-            }
-            
-            SoundPowerHelper<ValueType> helper(x, *this->cachedRowVector, env.solver().native().getRelativeTerminationCriterion(), storm::utility::convertNumber<ValueType>(env.solver().native().getPrecision()));
+            // TODO: implement caching for the helper
+            SoundPowerHelper<ValueType> helper(*this->A, x, *this->cachedRowVector, env.solver().native().getRelativeTerminationCriterion(), storm::utility::convertNumber<ValueType>(env.solver().native().getPrecision()));
 
             // Prepare initial bounds for the solution (if given)
             if (this->hasLowerBound()) {
@@ -782,7 +814,7 @@ namespace storm {
             uint64_t iterations = 0;
             
             while (!converged && iterations < env.solver().native().getMaximalNumberOfIterations()) {
-                helper.performIterationStep(*this->A, *this->multiplier, b);
+                helper.performIterationStep(b);
                 if (helper.checkConvergenceUpdateBounds(relevantValuesPtr)) {
                     converged = true;
                 }

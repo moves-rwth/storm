@@ -1,4 +1,5 @@
 #include <functional>
+#include <limits>
 
 #include "storm/solver/IterativeMinMaxLinearEquationSolver.h"
 
@@ -614,7 +615,12 @@ namespace storm {
         template<typename ValueType>
         class SoundValueIterationHelper {
         public:
-            SoundValueIterationHelper(std::vector<ValueType>& x, std::vector<ValueType>& y, bool relative, ValueType const& precision, uint64_t sizeOfLargestRowGroup) : x(x), y(y), hasLowerBound(false), hasUpperBound(false), minIndex(0), maxIndex(0), relative(relative), precision(precision) {
+            
+            typedef uint32_t IndexType;
+            
+            SoundValueIterationHelper(storm::storage::SparseMatrix<ValueType> const& matrix, std::vector<ValueType>& x, std::vector<ValueType>& y, bool relative, ValueType const& precision) : x(x), y(y), hasLowerBound(false), hasUpperBound(false), minIndex(0), maxIndex(0), relative(relative), precision(precision), rowGroupIndices(matrix.getRowGroupIndices()) {
+                STORM_LOG_THROW(matrix.getEntryCount() < std::numeric_limits<IndexType>::max(), storm::exceptions::NotSupportedException, "The number of matrix entries is too large for the selected index type.");
+                uint64_t sizeOfLargestRowGroup = matrix.getSizeOfLargestRowGroup();
                 xTmp.resize(sizeOfLargestRowGroup);
                 yTmp.resize(sizeOfLargestRowGroup);
                 x.assign(x.size(), storm::utility::zero<ValueType>());
@@ -623,6 +629,22 @@ namespace storm {
                 decisionValueBlocks = false;
                 convergencePhase1 = true;
                 firstIndexViolatingConvergence = 0;
+                
+                numRows = matrix.getRowCount();
+                matrixValues.clear();
+                matrixColumns.clear();
+                rowIndications.clear();
+                matrixValues.reserve(matrix.getNonzeroEntryCount());
+                matrixColumns.reserve(matrix.getColumnCount());
+                rowIndications.reserve(numRows + 1);
+                rowIndications.push_back(0);
+                for (IndexType r = 0; r < numRows; ++r) {
+                    for (auto const& entry : matrix.getRow(r)) {
+                        matrixValues.push_back(entry.getValue());
+                        matrixColumns.push_back(entry.getColumn());
+                    }
+                    rowIndications.push_back(matrixValues.size());
+                }
             }
             
             
@@ -666,30 +688,38 @@ namespace storm {
                 return maximize(dir) ? minIndex : maxIndex;
             }
             
-            void multiplyRow(uint64_t const& row, storm::storage::SparseMatrix<ValueType> const& A, storm::solver::Multiplier<ValueType> const& multiplier, ValueType const& bi, ValueType& xi, ValueType& yi) {
+            void multiplyRow(IndexType const& rowIndex, ValueType const& bi, ValueType& xi, ValueType& yi) {
+                assert(rowIndex < numRows);
                 ValueType xRes = bi;
                 ValueType yRes = storm::utility::zero<ValueType>();
-                multiplier.multiplyRow2(row, x, xRes, y, yRes);
+                
+                auto entryIt = matrixValues.begin() + rowIndications[rowIndex];
+                auto entryItE = matrixValues.begin() + rowIndications[rowIndex + 1];
+                auto colIt = matrixColumns.begin() + rowIndications[rowIndex];
+                for (; entryIt != entryItE; ++entryIt, ++colIt) {
+                    xRes += *entryIt * x[*colIt];
+                    yRes += *entryIt * y[*colIt];
+                }
                 xi = std::move(xRes);
                 yi = std::move(yRes);
             }
             
             template<OptimizationDirection dir>
-            void performIterationStep(storm::storage::SparseMatrix<ValueType> const& A, storm::solver::Multiplier<ValueType> const& multiplier, std::vector<ValueType> const& b) {
+            void performIterationStep(std::vector<ValueType> const& b) {
                 if (!decisionValueBlocks) {
-                    performIterationStepUpdateDecisionValue<dir>(A, multiplier, b);
+                    performIterationStepUpdateDecisionValue<dir>(b);
                 } else {
                     assert(decisionValue == getPrimaryBound<dir>());
                     auto xIt = x.rbegin();
                     auto yIt = y.rbegin();
-                    auto groupStartIt = A.getRowGroupIndices().rbegin();
+                    auto groupStartIt = rowGroupIndices.rbegin();
                     uint64_t groupEnd = *groupStartIt;
                     ++groupStartIt;
-                    for (auto groupStartIte = A.getRowGroupIndices().rend(); groupStartIt != groupStartIte; groupEnd = *(groupStartIt++), ++xIt, ++yIt) {
+                    for (auto groupStartIte = rowGroupIndices.rend(); groupStartIt != groupStartIte; groupEnd = *(groupStartIt++), ++xIt, ++yIt) {
                         // Perform the iteration for the first row in the group
-                        uint64_t row = *groupStartIt;
+                        IndexType row = *groupStartIt;
                         ValueType xBest, yBest;
-                        multiplyRow(row, A, multiplier, b[row], xBest, yBest);
+                        multiplyRow(row, b[row], xBest, yBest);
                         ++row;
                         // Only do more work if there are still rows in this row group
                         if (row != groupEnd) {
@@ -697,7 +727,7 @@ namespace storm {
                             ValueType bestValue = xBest + yBest * getPrimaryBound<dir>();
                             for (;row < groupEnd; ++row) {
                                 // Get the multiplication results
-                                multiplyRow(row, A, multiplier, b[row], xi, yi);
+                                multiplyRow(row, b[row], xi, yi);
                                 ValueType currentValue = xi + yi * getPrimaryBound<dir>();
                                 // Check if the current row is better then the previously found one
                                 if (better<dir>(currentValue, bestValue)) {
@@ -718,17 +748,17 @@ namespace storm {
             }
             
             template<OptimizationDirection dir>
-            void performIterationStepUpdateDecisionValue(storm::storage::SparseMatrix<ValueType> const& A, storm::solver::Multiplier<ValueType> const& multiplier, std::vector<ValueType> const& b) {
+            void performIterationStepUpdateDecisionValue(std::vector<ValueType> const& b) {
                 auto xIt = x.rbegin();
                 auto yIt = y.rbegin();
-                auto groupStartIt = A.getRowGroupIndices().rbegin();
+                auto groupStartIt = rowGroupIndices.rbegin();
                 uint64_t groupEnd = *groupStartIt;
                 ++groupStartIt;
-                for (auto groupStartIte = A.getRowGroupIndices().rend(); groupStartIt != groupStartIte; groupEnd = *(groupStartIt++), ++xIt, ++yIt) {
+                for (auto groupStartIte = rowGroupIndices.rend(); groupStartIt != groupStartIte; groupEnd = *(groupStartIt++), ++xIt, ++yIt) {
                     // Perform the iteration for the first row in the group
                     uint64_t row = *groupStartIt;
                     ValueType xBest, yBest;
-                    multiplyRow(row, A, multiplier, b[row], xBest, yBest);
+                    multiplyRow(row, b[row], xBest, yBest);
                     ++row;
                     // Only do more work if there are still rows in this row group
                     if (row != groupEnd) {
@@ -738,7 +768,7 @@ namespace storm {
                             ValueType bestValue = xBest + yBest * getPrimaryBound<dir>();
                             for (;row < groupEnd; ++row) {
                                 // Get the multiplication results
-                                multiplyRow(row, A, multiplier, b[row], xi, yi);
+                                multiplyRow(row, b[row], xi, yi);
                                 ValueType currentValue = xi + yi * getPrimaryBound<dir>();
                                 // Check if the current row is better then the previously found one
                                 if (better<dir>(currentValue, bestValue)) {
@@ -765,7 +795,7 @@ namespace storm {
                             }
                         } else {
                             for (;row < groupEnd; ++row) {
-                                multiplyRow(row, A, multiplier, b[row], xi, yi);
+                                multiplyRow(row, b[row], xi, yi);
                                 // Update the best choice
                                 if (yi > yBest || (yi == yBest && better<dir>(xi, xBest))) {
                                         xTmp[xyTmpIndex] = std::move(xBest);
@@ -963,6 +993,12 @@ namespace storm {
             
             bool relative;
             ValueType precision;
+            
+            std::vector<ValueType> matrixValues;
+            std::vector<IndexType> matrixColumns;
+            std::vector<IndexType> rowIndications;
+            std::vector<typename storm::storage::SparseMatrix<ValueType>::index_type> const& rowGroupIndices;
+            IndexType numRows;
         };
         
         template<typename ValueType>
@@ -973,12 +1009,9 @@ namespace storm {
             if (!this->auxiliaryRowGroupVector) {
                 this->auxiliaryRowGroupVector = std::make_unique<std::vector<ValueType>>();
             }
-            
-            if (!this->multiplierA) {
-                this->multiplierA = storm::solver::MultiplierFactory<ValueType>().create(env, *this->A);
-            }
-            
-            SoundValueIterationHelper<ValueType> helper(x, *this->auxiliaryRowGroupVector, env.solver().minMax().getRelativeTerminationCriterion(), storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()), this->A->getSizeOfLargestRowGroup());
+
+            // TODO: implement caching for the helper
+            SoundValueIterationHelper<ValueType> helper(*this->A, x, *this->auxiliaryRowGroupVector, env.solver().minMax().getRelativeTerminationCriterion(), storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()));
 
             // Prepare initial bounds for the solution (if given)
             if (this->hasLowerBound()) {
@@ -999,13 +1032,13 @@ namespace storm {
             
             while (status == SolverStatus::InProgress && iterations < env.solver().minMax().getMaximalNumberOfIterations()) {
                 if (minimize(dir)) {
-                    helper.template performIterationStep<OptimizationDirection::Minimize>(*this->A, *this->multiplierA, b);
+                    helper.template performIterationStep<OptimizationDirection::Minimize>(b);
                     if (helper.template checkConvergenceUpdateBounds<OptimizationDirection::Minimize>(relevantValuesPtr)) {
                         status = SolverStatus::Converged;
                     }
                 } else {
                     assert(maximize(dir));
-                    helper.template performIterationStep<OptimizationDirection::Maximize>(*this->A, *this->multiplierA, b);
+                    helper.template performIterationStep<OptimizationDirection::Maximize>(b);
                     if (helper.template checkConvergenceUpdateBounds<OptimizationDirection::Maximize>(relevantValuesPtr)) {
                         status = SolverStatus::Converged;
                     }
