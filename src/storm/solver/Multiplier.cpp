@@ -51,6 +51,12 @@ namespace storm {
         }
     
         template<typename ValueType>
+        void Multiplier<ValueType>::multiplyRow2(uint64_t const& rowIndex, std::vector<ValueType> const& x1, ValueType& val1, std::vector<ValueType> const& x2, ValueType& val2) const {
+            multiplyRow(rowIndex, x1, val1);
+            multiplyRow(rowIndex, x2, val2);
+        }
+        
+        template<typename ValueType>
         std::unique_ptr<Multiplier<ValueType>> MultiplierFactory<ValueType>::create(Environment const& env, storm::storage::SparseMatrix<ValueType> const& matrix) {
             switch (env.solver().multiplier().getType()) {
                 case MultiplierType::Gmmxx:

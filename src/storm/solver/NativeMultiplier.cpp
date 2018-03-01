@@ -83,9 +83,20 @@ namespace storm {
         }
         
         template<typename ValueType>
-        ValueType NativeMultiplier<ValueType>::multiplyRow(uint64_t const& rowIndex, std::vector<ValueType> const& x, ValueType const& offset) const {
-            return this->matrix.multiplyRowWithVector(rowIndex, x);
+        void NativeMultiplier<ValueType>::multiplyRow(uint64_t const& rowIndex, std::vector<ValueType> const& x, ValueType& value) const {
+            for (auto const& entry : this->matrix.getRow(rowIndex)) {
+                value += entry.getValue() * x[entry.getColumn()];
+            }
         }
+        
+        template<typename ValueType>
+        void NativeMultiplier<ValueType>::multiplyRow2(uint64_t const& rowIndex, std::vector<ValueType> const& x1, ValueType& val1, std::vector<ValueType> const& x2, ValueType& val2) const {
+            for (auto const& entry : this->matrix.getRow(rowIndex)) {
+                val1 += entry.getValue() * x1[entry.getColumn()];
+                val2 += entry.getValue() * x2[entry.getColumn()];
+            }
+        }
+
 
         template<typename ValueType>
         void NativeMultiplier<ValueType>::multAdd(std::vector<ValueType> const& x, std::vector<ValueType> const* b, std::vector<ValueType>& result) const {

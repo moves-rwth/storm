@@ -591,16 +591,9 @@ namespace storm {
             }
             
             void multiplyRow(uint64_t const& row, storm::storage::SparseMatrix<ValueType> const& A, storm::solver::Multiplier<ValueType> const& multiplier, ValueType const& bi, ValueType& xi, ValueType& yi) {
-                xi = multiplier.multiplyRow(row, x, bi);
-                yi = multiplier.multiplyRow(row, y, storm::utility::zero<ValueType>());
-                /*
                 xi = bi;
                 yi = storm::utility::zero<ValueType>();
-                for (auto const& entry : A.getRow(row)) {
-                    xi += entry.getValue() * x[entry.getColumn()];
-                    yi += entry.getValue() * y[entry.getColumn()];
-                }
-                 */
+                multiplier.multiplyRow2(row, x, xi, y, yi);
             }
             
             void performIterationStep(storm::storage::SparseMatrix<ValueType> const& A, storm::solver::Multiplier<ValueType> const& multiplier, std::vector<ValueType> const& b) {
