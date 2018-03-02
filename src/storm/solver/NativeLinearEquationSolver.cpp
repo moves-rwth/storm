@@ -565,8 +565,6 @@ namespace storm {
             if (!this->isCachingEnabled()) {
                 clearCache();
             }
-            this->overallPerformedIterations += iterations;
-
             this->logIterations(converged, terminate, iterations);
 
             return converged;
@@ -831,8 +829,6 @@ namespace storm {
             helper.setSolutionVector();
             
             this->logIterations(converged, terminate, iterations);
-            
-            this->overallPerformedIterations += iterations;
             
             if (!this->isCachingEnabled()) {
                 clearCache();
