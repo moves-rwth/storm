@@ -15,7 +15,9 @@ namespace storm {
     class GmmxxSolverEnvironment;
     class NativeSolverEnvironment;
     class MinMaxSolverEnvironment;
+    class MultiplierEnvironment;
     class GameSolverEnvironment;
+    class TopologicalSolverEnvironment;
     
     class SolverEnvironment {
     public:
@@ -31,26 +33,31 @@ namespace storm {
         NativeSolverEnvironment const& native() const;
         MinMaxSolverEnvironment& minMax();
         MinMaxSolverEnvironment const& minMax() const;
+        MultiplierEnvironment& multiplier();
+        MultiplierEnvironment const& multiplier() const;
         GameSolverEnvironment& game();
         GameSolverEnvironment const& game() const;
+        TopologicalSolverEnvironment& topological();
+        TopologicalSolverEnvironment const& topological() const;
 
         bool isForceSoundness() const;
         void setForceSoundness(bool value);
         
         storm::solver::EquationSolverType const& getLinearEquationSolverType() const;
-        void setLinearEquationSolverType(storm::solver::EquationSolverType const& value);
+        void setLinearEquationSolverType(storm::solver::EquationSolverType const& value, bool isSetFromDefault = false);
         bool isLinearEquationSolverTypeSetFromDefaultValue() const;
-        
-        boost::optional<storm::RationalNumber> getPrecisionOfCurrentLinearEquationSolver() const;
-        void setLinearEquationSolverPrecision(storm::RationalNumber const& value);
-        void setLinearEquationSolverRelativeTerminationCriterion(bool value);
+
+        std::pair<boost::optional<storm::RationalNumber>, boost::optional<bool>> getPrecisionOfLinearEquationSolver(storm::solver::EquationSolverType const& solverType) const;
+        void setLinearEquationSolverPrecision(boost::optional<storm::RationalNumber> const& newPrecision, boost::optional<bool> const& relativePrecision = boost::none);
     
     private:
         SubEnvironment<EigenSolverEnvironment> eigenSolverEnvironment;
         SubEnvironment<GmmxxSolverEnvironment> gmmxxSolverEnvironment;
         SubEnvironment<NativeSolverEnvironment> nativeSolverEnvironment;
         SubEnvironment<GameSolverEnvironment> gameSolverEnvironment;
+        SubEnvironment<TopologicalSolverEnvironment> topologicalSolverEnvironment;
         SubEnvironment<MinMaxSolverEnvironment> minMaxSolverEnvironment;
+        SubEnvironment<MultiplierEnvironment> multiplierEnvironment;
       
         storm::solver::EquationSolverType linearEquationSolverType;
         bool linearEquationSolverTypeSetFromDefault;

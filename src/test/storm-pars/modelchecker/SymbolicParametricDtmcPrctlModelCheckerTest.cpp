@@ -40,7 +40,7 @@ TEST(SymbolicDtmcPrctlModelCheckerTest, Die_RationalFunction_Sylvan) {
     
     std::shared_ptr<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, storm::RationalFunction>> dtmc = model->as<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, storm::RationalFunction>>();
     
-    storm::modelchecker::SymbolicDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, storm::RationalFunction>> checker(*dtmc, std::unique_ptr<storm::solver::SymbolicLinearEquationSolverFactory<storm::dd::DdType::Sylvan, storm::RationalFunction>>(new storm::solver::SymbolicEliminationLinearEquationSolverFactory<storm::dd::DdType::Sylvan, storm::RationalFunction>()));
+    storm::modelchecker::SymbolicDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, storm::RationalFunction>> checker(*dtmc);
     
     std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [F \"one\"]");
     

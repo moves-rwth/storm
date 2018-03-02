@@ -1606,10 +1606,10 @@ namespace storm {
                 
                 STORM_LOG_DEBUG("Invoking model checker.");
                 if (model.isOfType(storm::models::ModelType::Dtmc)) {
-                    allStatesResult = storm::modelchecker::helper::SparseDtmcPrctlHelper<T>::computeUntilProbabilities(env, false, model.getTransitionMatrix(), model.getBackwardTransitions(), phiStates, psiStates, false, storm::solver::GeneralLinearEquationSolverFactory<T>());
+                    allStatesResult = storm::modelchecker::helper::SparseDtmcPrctlHelper<T>::computeUntilProbabilities(env, false, model.getTransitionMatrix(), model.getBackwardTransitions(), phiStates, psiStates, false);
                 } else {
                     storm::modelchecker::helper::SparseMdpPrctlHelper<T> modelCheckerHelper;
-                    allStatesResult = std::move(modelCheckerHelper.computeUntilProbabilities(env, false, model.getTransitionMatrix(), model.getBackwardTransitions(), phiStates, psiStates, false, false, storm::solver::GeneralMinMaxLinearEquationSolverFactory<T>()).values);
+                    allStatesResult = std::move(modelCheckerHelper.computeUntilProbabilities(env, false, model.getTransitionMatrix(), model.getBackwardTransitions(), phiStates, psiStates, false, false).values);
                 }
                 for (auto state : model.getInitialStates()) {
                     result = std::max(result, allStatesResult[state]);

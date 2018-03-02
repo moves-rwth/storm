@@ -19,9 +19,11 @@ namespace storm {
             const std::string MinMaxEquationSolverSettings::absoluteOptionName = "absolute";
             const std::string MinMaxEquationSolverSettings::lraMethodOptionName = "lramethod";
             const std::string MinMaxEquationSolverSettings::valueIterationMultiplicationStyleOptionName = "vimult";
+            const std::string MinMaxEquationSolverSettings::intervalIterationSymmetricUpdatesOptionName = "symmetricupdates";
+            const std::string MinMaxEquationSolverSettings::forceBoundsOptionName = "forcebounds";
 
             MinMaxEquationSolverSettings::MinMaxEquationSolverSettings() : ModuleSettings(moduleName) {
-                std::vector<std::string> minMaxSolvingTechniques = {"vi", "value-iteration", "pi", "policy-iteration", "linear-programming", "lp", "ratsearch"};
+                std::vector<std::string> minMaxSolvingTechniques = {"vi", "value-iteration", "pi", "policy-iteration", "lp", "linear-programming", "rs", "ratsearch", "ii", "interval-iteration", "svi", "sound-value-iteration", "topological"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, solvingMethodOptionName, false, "Sets which min/max linear equation solving technique is preferred.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of a min/max linear equation solving technique.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(minMaxSolvingTechniques)).setDefaultValueString("vi").build()).build());
                 
@@ -38,6 +40,11 @@ namespace storm {
                 std::vector<std::string> multiplicationStyles = {"gaussseidel", "regular", "gs", "r"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, valueIterationMultiplicationStyleOptionName, false, "Sets which method multiplication style to prefer for value iteration.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of a multiplication style.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(multiplicationStyles)).setDefaultValueString("gaussseidel").build()).build());
+                
+                this->addOption(storm::settings::OptionBuilder(moduleName, intervalIterationSymmetricUpdatesOptionName, false, "If set, interval iteration performs an update on both, lower and upper bound in each iteration").build());
+                
+                this->addOption(storm::settings::OptionBuilder(moduleName, forceBoundsOptionName, false, "If set, minmax solver always require that a priori bounds for the solution are computed.").build());
+                
             }
             
             storm::solver::MinMaxMethod MinMaxEquationSolverSettings::getMinMaxEquationSolvingMethod() const {
@@ -48,9 +55,16 @@ namespace storm {
                     return storm::solver::MinMaxMethod::PolicyIteration;
                 } else if (minMaxEquationSolvingTechnique == "linear-programming" || minMaxEquationSolvingTechnique == "lp") {
                     return storm::solver::MinMaxMethod::LinearProgramming;
-                } else if (minMaxEquationSolvingTechnique == "ratsearch") {
+                } else if (minMaxEquationSolvingTechnique == "ratsearch" || minMaxEquationSolvingTechnique == "rs") {
                     return storm::solver::MinMaxMethod::RationalSearch;
+                } else if (minMaxEquationSolvingTechnique == "interval-iteration" || minMaxEquationSolvingTechnique == "ii") {
+                    return storm::solver::MinMaxMethod::IntervalIteration;
+                } else if (minMaxEquationSolvingTechnique == "sound-value-iteration" || minMaxEquationSolvingTechnique == "svi") {
+                    return storm::solver::MinMaxMethod::SoundValueIteration;
+                } else if (minMaxEquationSolvingTechnique == "topological") {
+                    return storm::solver::MinMaxMethod::Topological;
                 }
+                
                 STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown min/max equation solving technique '" << minMaxEquationSolvingTechnique << "'.");
             }
             
@@ -106,6 +120,13 @@ namespace storm {
                 STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown multiplication style '" << multiplicationStyleString << "'.");
             }
             
+            bool MinMaxEquationSolverSettings::isForceIntervalIterationSymmetricUpdatesSet() const {
+                return this->getOption(intervalIterationSymmetricUpdatesOptionName).getHasOptionBeenSet();
+            }
+            
+            bool MinMaxEquationSolverSettings::isForceBoundsSet() const {
+                return this->getOption(forceBoundsOptionName).getHasOptionBeenSet();
+            }
         }
     }
 }

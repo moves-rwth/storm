@@ -303,7 +303,7 @@ namespace storm {
                 result->solver->setHasUniqueSolution(true);
                 result->solver->setTrackScheduler(true);
                 result->solver->setCachingEnabled(true);
-                auto req = result->solver->getRequirements(env, storm::solver::OptimizationDirection::Maximize, true);
+                auto req = result->solver->getRequirements(env, storm::solver::OptimizationDirection::Maximize, false);
                 boost::optional<ValueType> lowerBound = this->computeWeightedResultBound(true, weightVector, storm::storage::BitVector(weightVector.size(), true));
                 if (lowerBound) {
                     result->solver->setLowerBound(lowerBound.get());

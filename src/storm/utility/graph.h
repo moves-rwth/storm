@@ -297,9 +297,10 @@ namespace storm {
              * @param phiStates The set of states satisfying phi.
              * @param psiStates The set of states satisfying psi.
              * @param scheduler The resulting scheduler for the prob1EStates. The scheduler is not set at the remaining states.
+             * @param rowFilter If given, only scheduler choices within this filter are taken. This filter is ignored for the psiStates.
              */
             template <typename T>
-            void computeSchedulerProb1E(storm::storage::BitVector const& prob1EStates, storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::Scheduler<T>& scheduler);
+            void computeSchedulerProb1E(storm::storage::BitVector const& prob1EStates, storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::Scheduler<T>& scheduler, boost::optional<storm::storage::BitVector> const& rowFilter = boost::none);
             
             /*!
              * Computes the sets of states that have probability greater 0 of satisfying phi until psi under at least
@@ -330,10 +331,11 @@ namespace storm {
              * @param backwardTransitions The reversed transition relation of the model.
              * @param phiStates The set of all states satisfying phi.
              * @param psiStates The set of all states satisfying psi.
+             * @param choiceConstraint If given, only the selected choices are considered.
              * @return A bit vector that represents all states with probability 1.
              */
             template <typename T>
-            storm::storage::BitVector performProb1E(storm::storage::SparseMatrix<T> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
+            storm::storage::BitVector performProb1E(storm::storage::SparseMatrix<T> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, boost::optional<storm::storage::BitVector> const& choiceConstraint = boost::none);
             
             /*!
              * Computes the sets of states that have probability 1 of satisfying phi until psi under at least

@@ -20,7 +20,6 @@ namespace storm {
             static const storm::dd::DdType DdType = ModelType::DdType;
 
             explicit HybridCtmcCslModelChecker(ModelType const& model);
-            explicit HybridCtmcCslModelChecker(ModelType const& model, std::unique_ptr<storm::solver::LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory);
             
             // The implemented methods of the AbstractModelChecker interface.
             virtual bool canHandle(CheckTask<storm::logic::Formula, ValueType> const& checkTask) const override;
@@ -41,8 +40,6 @@ namespace storm {
             template<typename CValueType = ValueType, typename std::enable_if<!storm::NumberTraits<CValueType>::SupportsExponential, int>::type = 0>
             bool canHandleImplementation(CheckTask<storm::logic::Formula, CValueType> const& checkTask) const;
             
-            // An object that is used for solving linear equations and performing matrix-vector multiplication.
-            std::unique_ptr<storm::solver::LinearEquationSolverFactory<ValueType>> linearEquationSolverFactory;
         };
         
     } // namespace modelchecker

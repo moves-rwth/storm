@@ -3,7 +3,7 @@
 
 #include <memory>
 #include <chrono>
-
+#include <iostream>
 #include <boost/optional.hpp>
 
 #include "storm/solver/TerminationCondition.h"
@@ -16,6 +16,15 @@ namespace storm {
         class AbstractEquationSolver {
         public:
             AbstractEquationSolver();
+            
+            virtual ~AbstractEquationSolver() {
+                if (overallPerformedIterations != 0) {
+                    std::cout << "PERFORMEDITERATIONS: " << overallPerformedIterations << std::endl;
+                }
+            }
+            
+            mutable uint64_t overallPerformedIterations = 0;
+            
             
             /*!
              * Sets a custom termination condition that is used together with the regular termination condition of the
@@ -98,9 +107,23 @@ namespace storm {
             ValueType const& getLowerBound() const;
             
             /*!
+             * Retrieves the lower bound (if there is any).
+             * If the given flag is true and if there are only local bounds,
+             * the minimum of the local bounds is returned.
+             */
+            ValueType getLowerBound(bool convertLocalBounds) const;
+            
+            /*!
              * Retrieves the upper bound (if there is any).
              */
             ValueType const& getUpperBound() const;
+            
+           /*!
+             * Retrieves the upper bound (if there is any).
+             * If the given flag is true and if there are only local bounds,
+             * the maximum of the local bounds is returned.
+             */
+            ValueType getUpperBound(bool convertLocalBounds) const;
             
             /*!
              * Retrieves a vector containing the lower bounds (if there are any).
