@@ -936,10 +936,6 @@ namespace storm {
                 
                 bool useRepresentativesForThisExtraction = this->useRepresentatives;
                 if (modelType == storm::models::ModelType::Dtmc || modelType == storm::models::ModelType::Ctmc || modelType == storm::models::ModelType::Mdp || modelType == storm::models::ModelType::MarkovAutomaton) {
-                    if (modelType == storm::models::ModelType::Mdp || modelType == storm::models::ModelType::MarkovAutomaton) {
-                        STORM_LOG_WARN_COND(!useRepresentativesForThisExtraction, "Using representatives is unsupported for MDPs, falling back to regular extraction.");
-                        useRepresentativesForThisExtraction = false;
-                    }
                     
                     // Sanity checks.
                     STORM_LOG_ASSERT(partition.getNumberOfStates() == model.getNumberOfStates(), "Mismatching partition size.");
@@ -948,16 +944,20 @@ namespace storm {
                     std::set<storm::expressions::Variable> blockVariableSet = {partition.getBlockVariable()};
                     std::set<storm::expressions::Variable> blockPrimeVariableSet = {partition.getPrimedBlockVariable()};
                     std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> blockMetaVariablePairs = {std::make_pair(partition.getBlockVariable(), partition.getPrimedBlockVariable())};
+
+                    auto start = std::chrono::high_resolution_clock::now();
                     
+                    // Compute representatives.
                     storm::dd::Bdd<DdType> partitionAsBdd = partition.storedAsBdd() ? partition.asBdd() : partition.asAdd().notZero();
+                    partitionAsBdd = partitionAsBdd.renameVariables(model.getColumnVariables(), model.getRowVariables());
+                    auto representatives = InternalRepresentativeComputer<DdType>(partitionAsBdd, model.getRowVariables()).getRepresentatives();
+
                     if (useRepresentativesForThisExtraction) {
-                        storm::dd::Bdd<DdType> partitionAsBddOverPrimedBlockVariable = partitionAsBdd.renameVariables(blockVariableSet, blockPrimeVariableSet);
-                        storm::dd::Bdd<DdType> representativePartition = partitionAsBddOverPrimedBlockVariable.existsAbstractRepresentative(model.getColumnVariables()).renameVariables(model.getColumnVariables(), blockVariableSet);
-                        partitionAsBdd = (representativePartition && partitionAsBddOverPrimedBlockVariable).existsAbstract(blockPrimeVariableSet);
+                        storm::dd::Bdd<DdType> partitionAsBddOverPrimedBlockVariables = partitionAsBdd.renameVariables(blockVariableSet, blockPrimeVariableSet);
+                        storm::dd::Bdd<DdType> tmp = (representatives && partitionAsBddOverPrimedBlockVariables).renameVariablesConcretize(model.getRowVariables(), blockVariableSet);
+                        partitionAsBdd = (tmp && partitionAsBddOverPrimedBlockVariables).existsAbstract(blockPrimeVariableSet);
                     }
                     
-                    auto start = std::chrono::high_resolution_clock::now();
-                    partitionAsBdd = partitionAsBdd.renameVariables(model.getColumnVariables(), model.getRowVariables());
                     storm::dd::Bdd<DdType> reachableStates = partitionAsBdd.existsAbstract(model.getRowVariables());
                     storm::dd::Bdd<DdType> initialStates = (model.getInitialStates() && partitionAsBdd).existsAbstract(model.getRowVariables());
                     
@@ -989,7 +989,6 @@ namespace storm {
                     storm::dd::Add<DdType, ValueType> quotientTransitionMatrix = model.getTransitionMatrix().multiplyMatrix(partitionAsAdd.renameVariables(blockAndRowVariables, blockPrimeAndColumnVariables), model.getColumnVariables());
                     
                     // Pick a representative from each block.
-                    auto representatives = InternalRepresentativeComputer<DdType>(partitionAsBdd, model.getRowVariables()).getRepresentatives();
                     partitionAsBdd &= representatives;
                     partitionAsAdd *= partitionAsBdd.template toAdd<ValueType>();
 
@@ -1047,6 +1046,7 @@ namespace storm {
             std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> QuotientExtractor<DdType, ValueType>::extractQuotientUsingOriginalVariables(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& partition, PreservationInformation<DdType, ValueType> const& preservationInformation) {
                 auto modelType = model.getType();
                 
+                bool useRepresentativesForThisExtraction = this->useRepresentatives;
                 if (modelType == storm::models::ModelType::Dtmc || modelType == storm::models::ModelType::Ctmc || modelType == storm::models::ModelType::Mdp || modelType == storm::models::ModelType::MarkovAutomaton) {
                     STORM_LOG_WARN_COND(!this->useRepresentatives, "Using representatives is unsupported for this extraction, falling back to regular extraction.");
                     
@@ -1058,10 +1058,19 @@ namespace storm {
                     std::set<storm::expressions::Variable> blockPrimeVariableSet = {partition.getPrimedBlockVariable()};
                     std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> blockMetaVariablePairs = {std::make_pair(partition.getBlockVariable(), partition.getPrimedBlockVariable())};
                     
-                    storm::dd::Bdd<DdType> partitionAsBdd = partition.storedAsBdd() ? partition.asBdd() : partition.asAdd().notZero();
-                    
                     auto start = std::chrono::high_resolution_clock::now();
+
+                    // Compute representatives.
+                    storm::dd::Bdd<DdType> partitionAsBdd = partition.storedAsBdd() ? partition.asBdd() : partition.asAdd().notZero();
                     partitionAsBdd = partitionAsBdd.renameVariables(model.getColumnVariables(), model.getRowVariables());
+                    auto representatives = InternalRepresentativeComputer<DdType>(partitionAsBdd, model.getRowVariables()).getRepresentatives();
+                    
+                    if (useRepresentativesForThisExtraction) {
+                        storm::dd::Bdd<DdType> partitionAsBddOverPrimedBlockVariables = partitionAsBdd.renameVariables(blockVariableSet, blockPrimeVariableSet);
+                        storm::dd::Bdd<DdType> tmp = (representatives && partitionAsBddOverPrimedBlockVariables).renameVariablesConcretize(model.getRowVariables(), blockVariableSet);
+                        partitionAsBdd = (tmp && partitionAsBddOverPrimedBlockVariables).existsAbstract(blockPrimeVariableSet);
+                    }
+
                     storm::dd::Bdd<DdType> reachableStates = partitionAsBdd.existsAbstract(model.getRowVariables()).renameVariablesAbstract(blockVariableSet, model.getRowVariables());
                     storm::dd::Bdd<DdType> initialStates = (model.getInitialStates() && partitionAsBdd).existsAbstract(model.getRowVariables()).renameVariablesAbstract(blockVariableSet, model.getRowVariables());
                     
@@ -1093,7 +1102,6 @@ namespace storm {
                     storm::dd::Add<DdType, ValueType> quotientTransitionMatrix = model.getTransitionMatrix().multiplyMatrix(partitionAsAdd.renameVariables(model.getRowVariables(), model.getColumnVariables()), model.getColumnVariables()).renameVariablesAbstract(blockVariableSet, model.getColumnVariables());
 
                     // Pick a representative from each block.
-                    auto representatives = InternalRepresentativeComputer<DdType>(partitionAsBdd, model.getRowVariables()).getRepresentatives();
                     partitionAsBdd &= representatives;
                     partitionAsAdd = partitionAsBdd.template toAdd<ValueType>();
 
