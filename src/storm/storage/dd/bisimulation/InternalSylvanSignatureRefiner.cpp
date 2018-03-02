@@ -49,7 +49,7 @@ namespace storm {
                 
                 LACE_ME;
 
-                nextFreeBlockIndex = options.reuseBlockNumbers ? oldPartition.getNextFreeBlockIndex() : 0;
+                nextFreeBlockIndex = options.reuseBlockNumbers ? oldPartition.getNextFreeBlockIndex() : 1;
                 signatures.resize(nextFreeBlockIndex);
                 
                 // Perform the actual recursive refinement step.
@@ -161,6 +161,8 @@ namespace storm {
                 }
             }
             
+            static const uint64_t NO_ELEMENT_MARKER = -1ull;
+            
             static uint64_t sylvan_search_or_insert(uint64_t sig, uint64_t previous_block, InternalSylvanSignatureRefinerBase* refiner)
             {
                 uint64_t hash = sylvan_hash(sig, previous_block);
@@ -189,7 +191,7 @@ namespace storm {
                     }
                     pos++;
                     if (pos >= refiner->currentCapacity) pos = 0;
-                    if (++count >= 128) return 0;
+                    if (++count >= 128) return NO_ELEMENT_MARKER;
                 }
             }
             
@@ -219,11 +221,11 @@ namespace storm {
                 }
                 return sylvan_cube(vars, e.data());
             }
-            
+                        
             TASK_3(BDD, sylvan_assign_block, BDD, sig, BDD, previous_block, InternalSylvanSignatureRefinerBase*, refiner)
             {
                 assert(previous_block != mtbdd_false); // if so, incorrect call!
-                
+             
                 // maybe do garbage collection
                 sylvan_gc_test();
                 
@@ -232,21 +234,25 @@ namespace storm {
                     sig = (uint64_t)-1;
                 }
                 
-                // try to claim previous block number
-                assert(previous_block != sylvan_false);
-                const uint64_t p_b = CALL(sylvan_decode_block, previous_block);
-                assert(p_b < refiner->signatures.size());
-
-                for (;;) {
-                    BDD cur = *(volatile BDD*)&refiner->signatures[p_b];
-                    if (cur == sig) return previous_block;
-                    if (cur != 0) break;
-                    if (cas(&refiner->signatures[p_b], 0, sig)) return previous_block;
+                if (refiner->options.reuseBlockNumbers) {
+                    // try to claim previous block number
+                    assert(previous_block != sylvan_false);
+                    const uint64_t p_b = CALL(sylvan_decode_block, previous_block);
+                    assert(p_b < refiner->signatures.size());
+                    
+                    for (;;) {
+                        BDD cur = *(volatile BDD*)&refiner->signatures[p_b];
+                        if (cur == sig) return previous_block;
+                        if (cur != 0) break;
+                        if (cas(&refiner->signatures[p_b], 0, sig)) return previous_block;
+                    }
                 }
                 
                 // no previous block number, search or insert
                 uint64_t c;
-                while ((c = sylvan_search_or_insert(sig, previous_block, refiner)) == 0) CALL(sylvan_grow, refiner);
+                while ((c = sylvan_search_or_insert(sig, refiner->options.reuseBlockNumbers ? previous_block : sig, refiner)) == NO_ELEMENT_MARKER) {
+                    CALL(sylvan_grow, refiner);
+                }
                 
                 return CALL(sylvan_encode_block, refiner->blockCube.getInternalBdd().getSylvanBdd().GetBDD(), refiner->numberOfBlockVariables, c);
             }
