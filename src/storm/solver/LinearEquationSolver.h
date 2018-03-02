@@ -8,7 +8,6 @@
 #include "storm/solver/MultiplicationStyle.h"
 #include "storm/solver/LinearEquationSolverProblemFormat.h"
 #include "storm/solver/LinearEquationSolverRequirements.h"
-#include "storm/solver/LinearEquationSolverTask.h"
 #include "storm/solver/OptimizationDirection.h"
 
 #include "storm/utility/VectorHelper.h"
