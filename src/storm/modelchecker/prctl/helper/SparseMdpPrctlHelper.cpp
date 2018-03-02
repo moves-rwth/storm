@@ -548,9 +548,10 @@ namespace storm {
 #ifndef NDEBUG
                 // As a sanity check, make sure our local upper bounds were in fact correct.
                 if (solver->hasUpperBound(storm::solver::AbstractEquationSolver<ValueType>::BoundType::Local)) {
+                    auto precision = storm::utility::convertNumber<ValueType>(storm::settings::getModule<storm::settings::modules::MinMaxEquationSolverSettings>().getPrecision());
                     auto resultIt = x.begin();
                     for (auto const& entry : solver->getUpperBounds()) {
-                        STORM_LOG_ASSERT(*resultIt <= entry, "Expecting result value for state " << std::distance(x.begin(), resultIt) << " to be <= " << entry << ", but got " << *resultIt << ".");
+                        STORM_LOG_ASSERT(*resultIt <= entry + precision, "Expecting result value for state " << std::distance(x.begin(), resultIt) << " to be <= " << entry << ", but got " << *resultIt << ".");
                         ++resultIt;
                     }
                 }
