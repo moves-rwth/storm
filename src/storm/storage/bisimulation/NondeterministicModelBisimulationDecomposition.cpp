@@ -63,6 +63,12 @@ namespace storm {
                     // Otherwise, we compute the probabilities from the transition matrix.
                     for (auto stateIt = this->partition.begin(*block), stateIte = this->partition.end(*block); stateIt != stateIte; ++stateIt) {
                         for (uint_fast64_t choice = nondeterministicChoiceIndices[*stateIt]; choice < nondeterministicChoiceIndices[*stateIt + 1]; ++choice) {
+                            if (this->options.getKeepRewards() && this->model.hasRewardModel()) {
+                                auto const& rewardModel = this->model.getUniqueRewardModel();
+                                if (rewardModel.hasStateActionRewards()) {
+                                    this->quotientDistributions[choice].setReward(rewardModel.getStateActionReward(choice));
+                                }
+                            }
                             for (auto entry : this->model.getTransitionMatrix().getRow(choice)) {
                                 if (!this->comparator.isZero(entry.getValue())) {
                                     this->quotientDistributions[choice].addProbability(this->partition.getBlock(entry.getColumn()).getId(), entry.getValue());
@@ -107,10 +113,18 @@ namespace storm {
                 newLabeling.addLabel(ap);
             }
             
-            // If the model had state rewards, we need to build the state rewards for the quotient as well.
+            // If the model had state (action) rewards, we need to build the state rewards for the quotient as well.
             boost::optional<std::vector<ValueType>> stateRewards;
+            boost::optional<std::vector<ValueType>> stateActionRewards;
+            boost::optional<storm::models::sparse::StandardRewardModel<ValueType> const&> rewardModel;
             if (this->options.getKeepRewards() && this->model.hasRewardModel()) {
-                stateRewards = std::vector<ValueType>(this->blocks.size());
+                rewardModel = this->model.getUniqueRewardModel();
+                if (rewardModel.get().hasStateRewards()) {
+                    stateRewards = std::vector<ValueType>(this->blocks.size());
+                }
+                if (rewardModel.get().hasStateActionRewards()) {
+                    stateActionRewards = std::vector<ValueType>();
+                }
             }
             
             // Now build (a) and (b) by traversing all blocks.
@@ -137,6 +151,11 @@ namespace storm {
                         representativeState = oldBlock.data().representativeState();
                     }
                     
+                    // Give the choice a reward of zero as we artificially introduced that the block is absorbing.
+                    if (this->options.getKeepRewards() && rewardModel && rewardModel.get().hasStateActionRewards()) {
+                        stateActionRewards.get().push_back(storm::utility::zero<ValueType>());
+                    }
+                    
                     // Add all of the selected atomic propositions that hold in the representative state to the state
                     // representing the block.
                     for (auto const& ap : atomicPropositions) {
@@ -155,6 +174,9 @@ namespace storm {
                         for (auto entry : quotientDistributions[choice]) {
                             builder.addNextValue(currentRow, entry.first, entry.second);
                         }
+                        if (this->options.getKeepRewards() && rewardModel && rewardModel.get().hasStateActionRewards()) {
+                            stateActionRewards.get().push_back(quotientDistributions[choice].getReward());
+                        }
                         ++currentRow;
                     }
                     
@@ -169,8 +191,8 @@ namespace storm {
                 
                 // If the model has state rewards, we simply copy the state reward of the representative state, because
                 // all states in a block are guaranteed to have the same state reward.
-                if (this->options.getKeepRewards() && this->model.hasRewardModel()) {
-                    stateRewards.get()[blockIndex] = this->model.getUniqueRewardModel().getStateRewardVector()[representativeState];
+                if (this->options.getKeepRewards() && rewardModel && rewardModel.get().hasStateRewards()) {
+                    stateRewards.get()[blockIndex] = rewardModel.get().getStateRewardVector()[representativeState];
                 }
             }
             
@@ -185,7 +207,7 @@ namespace storm {
             if (this->options.getKeepRewards() && this->model.hasRewardModel()) {
                 STORM_LOG_THROW(this->model.hasUniqueRewardModel(), storm::exceptions::IllegalFunctionCallException, "Cannot preserve more than one reward model.");
                 typename std::unordered_map<std::string, typename ModelType::RewardModelType>::const_iterator nameRewardModelPair = this->model.getRewardModels().begin();
-                rewardModels.insert(std::make_pair(nameRewardModelPair->first, typename ModelType::RewardModelType(stateRewards)));
+                rewardModels.insert(std::make_pair(nameRewardModelPair->first, typename ModelType::RewardModelType(stateRewards, stateActionRewards)));
             }
             
             // Finally construct the quotient model.
@@ -217,7 +239,7 @@ namespace storm {
                         continue;
                     }
                     
-                    // If the predecessor block is not marked as to-refined, we do so now.
+                    // If the predecessor block is not marked as to-be-refined, we do so now.
                     if (!predecessorBlock.data().splitter()) {
                         predecessorBlock.data().setSplitter();
                         splitterQueue.push_back(&predecessorBlock);
@@ -250,7 +272,13 @@ namespace storm {
             std::vector<uint_fast64_t> nondeterministicChoiceIndices = this->model.getTransitionMatrix().getRowGroupIndices();
             for (decltype(this->model.getNumberOfStates()) state = 0; state < this->model.getNumberOfStates(); ++state) {
                 for (auto choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1]; ++choice) {
-                    storm::storage::Distribution<ValueType> distribution;
+                    storm::storage::DistributionWithReward<ValueType> distribution;
+                    if (this->options.getKeepRewards() && this->model.hasRewardModel()) {
+                        auto const& rewardModel = this->model.getUniqueRewardModel();
+                        if (rewardModel.hasStateActionRewards()) {
+                            distribution.setReward(rewardModel.getStateActionReward(choice));
+                        }
+                    }
                     for (auto const& element : this->model.getTransitionMatrix().getRow(choice)) {
                         distribution.addProbability(this->partition.getBlock(element.getColumn()).getId(), element.getValue());
                     }
@@ -348,7 +376,7 @@ namespace storm {
             for (auto el : newBlocks) {
                 this->updateQuotientDistributionsOfPredecessors(*el, block, splitterQueue);
             }
-            
+                        
             return split;
         }
         

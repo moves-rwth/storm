@@ -37,6 +37,13 @@ namespace storm {
                  *
                  */
                 std::string getWriteToPnproFilename() const;
+
+                bool isWriteToJsonSet() const;
+
+                /**
+                 *
+                 */
+                std::string getWriteToJsonFilename() const;
                 
                 bool isDisplayStatsSet() const;
                 
@@ -54,6 +61,7 @@ namespace storm {
                 static const std::string writeToDotOptionName;
                 static const std::string writeToPnmlOptionName;
                 static const std::string writeToPnproOptionName;
+                static const std::string writeToJsonOptionName;
                 static const std::string displayStatsOptionName;
                 static const std::string writeStatsOptionName;
                 

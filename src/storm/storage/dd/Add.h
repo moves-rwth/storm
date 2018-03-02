@@ -332,6 +332,20 @@ namespace storm {
             Add<LibraryType, ValueType> renameVariables(std::set<storm::expressions::Variable> const& from, std::set<storm::expressions::Variable> const& to) const;
             
             /*!
+             * Renames the given meta variables in the ADD. The number of the underlying DD variables of the from meta
+             * variable set needs to be at least as large as the to meta variable set. If the amount of variables coincide,
+             * this operation coincides with renameVariables. Otherwise, it first abstracts from the superfluous variables
+             * and then performs the renaming.
+             *
+             * @param from The meta variables to be renamed. The current ADD needs to contain all these meta variables.
+             * @param to The meta variables that are the target of the renaming process. The current ADD must not contain
+             * any of these meta variables.
+             * @return The resulting ADD.
+             */
+            Add<LibraryType, ValueType> renameVariablesAbstract(std::set<storm::expressions::Variable> const& from, std::set<storm::expressions::Variable> const& to) const;
+
+            
+            /*!
              * Swaps the given pairs of meta variables in the ADD. The pairs of meta variables must be guaranteed to have
              * the same number of underlying ADD variables.
              *

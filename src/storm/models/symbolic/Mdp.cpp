@@ -28,7 +28,7 @@ namespace storm {
             : NondeterministicModel<Type, ValueType>(storm::models::ModelType::Mdp, manager, reachableStates, initialStates, deadlockStates, transitionMatrix, rowVariables, rowExpressionAdapter, columnVariables, rowColumnMetaVariablePairs, nondeterminismVariables, labelToExpressionMap, rewardModels) {
                 // Intentionally left empty.
             }
-
+            
             template<storm::dd::DdType Type, typename ValueType>
             Mdp<Type, ValueType>::Mdp(std::shared_ptr<storm::dd::DdManager<Type>> manager,
                                       storm::dd::Bdd<Type> reachableStates,
@@ -48,7 +48,7 @@ namespace storm {
             // Explicitly instantiate the template class.
             template class Mdp<storm::dd::DdType::CUDD, double>;
             template class Mdp<storm::dd::DdType::Sylvan, double>;
-
+            
             template class Mdp<storm::dd::DdType::Sylvan, storm::RationalNumber>;
             template class Mdp<storm::dd::DdType::Sylvan, storm::RationalFunction>;
             

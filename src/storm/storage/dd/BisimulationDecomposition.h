@@ -83,7 +83,7 @@ namespace storm {
             mutable std::unique_ptr<bisimulation::PartialQuotientExtractor<DdType, ValueType>> partialQuotientExtractor;
             
             // A flag indicating whether progress is reported.
-            bool showProgress;
+            bool verboseProgress;
             
             // The delay between progress reports.
             uint64_t showProgressDelay;

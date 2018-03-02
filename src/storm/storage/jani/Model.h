@@ -449,6 +449,18 @@ namespace storm {
              */
             bool reusesActionsInComposition() const;
 
+            /*!
+             * Encode and decode a tuple of automaton and edge index in one 64-bit index.
+             */
+            uint64_t encodeAutomatonAndEdgeIndices(uint64_t automatonIndex, uint64_t edgeIndex) const;
+            std::pair<uint64_t, uint64_t> decodeAutomatonAndEdgeIndices(uint64_t index) const;
+
+            /*!
+             * Creates a new model that only contains the selected edges. The edge indices encode the automata and
+             * (local) indices of the edges within the automata.
+             */
+            Model restrictEdges(boost::container::flat_set<uint_fast64_t> const& automataAndEdgeIndices) const;
+            
             void writeDotToStream(std::ostream& outStream = std::cout) const;
             
             /// The name of the silent action.
@@ -505,6 +517,8 @@ namespace storm {
             // The expression restricting the legal initial values of the global variables.
             storm::expressions::Expression initialStatesRestriction;
         };
+        
+        std::ostream& operator<<(std::ostream& out, Model const& model);
     }
 }
 

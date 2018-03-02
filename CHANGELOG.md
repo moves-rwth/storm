@@ -7,8 +7,12 @@ The releases of major and minor versions contain an overview of changes since th
 Version 1.2.x
 -------------
 
-### Version 1.2.1 (to be released)
+### Version 1.2.2 (to be released)
+
+### Version 1.2.1 (2018/02)
 - Multi-dimensional reward bounded reachability properties for DTMCs.
+- `storm-dft`: transformation of DFTs to GSPNs
+- Several bug fixes
 
 ### Version 1.2.0 (2017/12)
 - C++ api changes: Building model takes `BuilderOptions` instead of extended list of Booleans, does not depend on settings anymore.

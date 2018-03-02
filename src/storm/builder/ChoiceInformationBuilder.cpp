@@ -10,7 +10,7 @@ namespace storm {
         }
         
         void ChoiceInformationBuilder::addOriginData(boost::any const& originData, uint_fast64_t choiceIndex) {
-            if(dataOfOrigins.size() != choiceIndex) {
+            if (dataOfOrigins.size() != choiceIndex) {
                 dataOfOrigins.resize(choiceIndex);
             }
             dataOfOrigins.push_back(originData);

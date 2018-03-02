@@ -178,7 +178,10 @@ namespace storm {
                 // Find longest option name.
                 uint_fast64_t maxLength = getPrintLengthOfLongestOption();
                 for (auto const& moduleName : this->moduleNames) {
-                    printHelpForModule(moduleName, maxLength);
+                    // Only print for visible modules.
+                    if (hasModule(moduleName, true)) {
+                        printHelpForModule(moduleName, maxLength);
+                    };
                 }
             } else {
                 // Create a regular expression from the input hint.
@@ -192,12 +195,15 @@ namespace storm {
                 uint_fast64_t maxLengthModules = 0;
                 for (auto const& moduleName : this->moduleNames) {
                     if (std::regex_search(moduleName, hintRegex)) {
-                        matchingModuleNames.push_back(moduleName);
-                        maxLengthModules = std::max(maxLengthModules, getPrintLengthOfLongestOption(moduleName));
-                        
-                        // Add all options of this module to the list of printed options so we don't print them twice.
-                        auto optionIterator = this->moduleOptions.find(moduleName);
-                        printedOptions.insert(optionIterator->second.begin(), optionIterator->second.end());
+                        if (hasModule(moduleName, true)) {
+                            // Only consider visible modules.
+                            matchingModuleNames.push_back(moduleName);
+                            maxLengthModules = std::max(maxLengthModules, getPrintLengthOfLongestOption(moduleName));
+                            
+                            // Add all options of this module to the list of printed options so we don't print them twice.
+                            auto optionIterator = this->moduleOptions.find(moduleName);
+                            printedOptions.insert(optionIterator->second.begin(), optionIterator->second.end());
+                        }
                     }
                 }
 
@@ -285,8 +291,8 @@ namespace storm {
             std::unique_ptr<modules::ModuleSettings> const& settings = iterator->second;
 
             if (doRegister) {
-                // Now register the options of the module.
                 this->moduleOptions.emplace(moduleName, std::vector<std::shared_ptr<Option>>());
+                // Now register the options of the module.
                 for (auto const& option : settings->getOptions()) {
                     this->addOption(option);
                 }
@@ -318,6 +324,14 @@ namespace storm {
                     addOptionToMap(option->getShortName(), option, this->shortNameToOptions);
                 }
                 addOptionToMap(option->getModuleName() + ":" + option->getShortName(), option, this->shortNameToOptions);
+            }
+        }
+
+        bool SettingsManager::hasModule(std::string const& moduleName, bool checkHidden) const {
+            if (checkHidden) {
+                return this->moduleOptions.find(moduleName) != this->moduleOptions.end();
+            } else {
+                return this->modules.find(moduleName) != this->modules.end();
             }
         }
         

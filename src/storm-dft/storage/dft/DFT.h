@@ -89,6 +89,8 @@ namespace storm {
             size_t nrBasicElements() const {
                 return mNrOfBEs;
             }
+
+            size_t nrDynamicElements() const;
             
             size_t getTopLevelIndex() const {
                 return mTopLevelIndex;
@@ -274,6 +276,8 @@ namespace storm {
             DFTLayoutInfo const& getElementLayoutInfo(size_t id) const {
                 return mLayoutInfo.at(id);
             }
+
+            void writeStatsToStream(std::ostream& stream) const;
 
         private:
             std::tuple<std::vector<size_t>, std::vector<size_t>, std::vector<size_t>> getSortedParentAndDependencyIds(size_t index) const;

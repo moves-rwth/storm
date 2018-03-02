@@ -102,7 +102,16 @@ namespace storm {
              * @param moduleSettings The settings of the module to add.
              */
             void addModule(std::unique_ptr<modules::ModuleSettings>&& moduleSettings, bool doRegister = true);
-            
+
+            /*!
+             * Checks whether the module with the given name exists.
+             *
+             * @param moduleName The name of the module to search.
+             * @param checkHidden If true hidden modules are included in the search.
+             * @return True iff the module exists.
+             */
+            bool hasModule(std::string const& moduleName, bool checkHidden = false) const;
+
             /*!
              * Retrieves the settings of the module with the given name.
              *

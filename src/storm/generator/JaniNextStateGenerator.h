@@ -1,5 +1,7 @@
 #pragma once
 
+#include <boost/container/flat_set.hpp>
+
 #include "storm/generator/NextStateGenerator.h"
 
 #include "storm/storage/jani/Model.h"
@@ -17,6 +19,7 @@ namespace storm {
         class JaniNextStateGenerator : public NextStateGenerator<ValueType, StateType> {
         public:
             typedef typename NextStateGenerator<ValueType, StateType>::StateToIdCallback StateToIdCallback;
+            typedef boost::container::flat_set<uint_fast64_t> EdgeIndexSet;
             
             JaniNextStateGenerator(storm::jani::Model const& model, NextStateGeneratorOptions const& options = NextStateGeneratorOptions());
             
@@ -32,6 +35,8 @@ namespace storm {
             virtual storm::builder::RewardModelInformation getRewardModelInformation(uint64_t const& index) const override;
                         
             virtual storm::models::sparse::StateLabeling label(storm::storage::sparse::StateStorage<StateType> const& stateStorage, std::vector<StateType> const& initialStateIndices = {}, std::vector<StateType> const& deadlockStateIndices = {}) override;
+            
+            virtual std::shared_ptr<storm::storage::sparse::ChoiceOrigins> generateChoiceOrigins(std::vector<boost::any>& dataForChoiceOrigins) const override;
             
         private:
             /*!
@@ -80,12 +85,12 @@ namespace storm {
              */
             Choice<ValueType> expandNonSynchronizingEdge(storm::jani::Edge const& edge, uint64_t outputActionIndex, uint64_t automatonIndex, CompressedState const& state, StateToIdCallback stateToIdCallback);
             
-            typedef std::vector<storm::jani::Edge const*> EdgeSet;
-            typedef std::unordered_map<uint64_t, EdgeSet> LocationsAndEdges;
+            typedef std::vector<std::pair<uint64_t, storm::jani::Edge const*>> EdgeSetWithIndices;
+            typedef std::unordered_map<uint64_t, EdgeSetWithIndices> LocationsAndEdges;
             typedef std::vector<std::pair<uint64_t, LocationsAndEdges>> AutomataAndEdges;
             typedef std::pair<boost::optional<uint64_t>, AutomataAndEdges> OutputAndEdges;
 
-            typedef std::pair<uint64_t, EdgeSet> AutomatonAndEdgeSet;
+            typedef std::pair<uint64_t, EdgeSetWithIndices> AutomatonAndEdgeSet;
             typedef std::vector<AutomatonAndEdgeSet> AutomataEdgeSets;
             
             std::vector<Choice<ValueType>> expandSynchronizingEdgeCombination(AutomataEdgeSets const& edgeCombination, uint64_t outputActionIndex, CompressedState const& state, StateToIdCallback stateToIdCallback);
