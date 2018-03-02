@@ -124,7 +124,6 @@ int main(const int argc, const char** argv) {
             storm::analysis::UniqueObservationStates<storm::RationalNumber> uniqueAnalysis(*pomdp);
             std::cout << uniqueAnalysis.analyse() << std::endl;
         }
-
         
         if (formula) {
             if (formula->isProbabilityOperatorFormula()) {
@@ -155,8 +154,10 @@ int main(const int argc, const char** argv) {
                 }
             }
             if (pomdpSettings.getMemoryBound() > 1) {
-                STORM_PRINT_AND_LOG("Computing the unfolding for memory bound " << pomdpSettings.getMemoryBound() << "...");
-                storm::transformer::PomdpMemoryUnfolder<storm::RationalNumber> memoryUnfolder(*pomdp, pomdpSettings.getMemoryBound());
+                STORM_PRINT_AND_LOG("Computing the unfolding for memory bound " << pomdpSettings.getMemoryBound() << " and memory pattern '" << storm::storage::toString(pomdpSettings.getMemoryPattern()) << "' ...");
+                storm::storage::PomdpMemory memory = storm::storage::PomdpMemoryBuilder().build(pomdpSettings.getMemoryPattern(), pomdpSettings.getMemoryBound());
+                std::cout << memory.toString() << std::endl;
+                storm::transformer::PomdpMemoryUnfolder<storm::RationalNumber> memoryUnfolder(*pomdp, memory);
                 pomdp = memoryUnfolder.transform();
                 STORM_PRINT_AND_LOG(" done." << std::endl);
                 pomdp->printModelInformationToStream(std::cout);

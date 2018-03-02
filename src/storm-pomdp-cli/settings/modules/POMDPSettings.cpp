@@ -6,6 +6,8 @@
 #include "storm/settings/OptionBuilder.h"
 #include "storm/settings/ArgumentBuilder.h"
 
+#include "storm/exceptions/InvalidArgumentException.h"
+
 namespace storm {
     namespace settings {
         namespace modules {
@@ -17,6 +19,8 @@ namespace storm {
             const std::string mecReductionOption = "mecreduction";
             const std::string selfloopReductionOption = "selfloopreduction";
             const std::string memoryBoundOption = "memorybound";
+            const std::string memoryPatternOption = "memorypattern";
+            std::vector<std::string> memoryPatterns = {"trivial", "fixedcounter", "selectivecounter", "ring", "settablebits", "full"};
             const std::string fscmode = "fscmode";
             std::vector<std::string> fscModes = {"standard", "simple-linear", "simple-linear-inverse"};
             const std::string transformBinaryOption = "transformbinary";
@@ -29,6 +33,7 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, mecReductionOption, false, "Reduces the model size by analyzing maximal end components").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, selfloopReductionOption, false, "Reduces the model size by removing self loop actions").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, memoryBoundOption, false, "Sets the maximal number of allowed memory states (1 means memoryless schedulers).").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("bound", "The maximal number of memory states.").setDefaultValueUnsignedInteger(1).addValidatorUnsignedInteger(storm::settings::ArgumentValidatorFactory::createUnsignedGreaterValidator(0)).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, memoryPatternOption, false, "Sets the pattern of the considered memory structure").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "Pattern name.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(memoryPatterns)).setDefaultValueString("full").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, fscmode, false, "Sets the way the pMC is obtained").addArgument(storm::settings::ArgumentBuilder::createStringArgument("type", "type name").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(fscModes)).setDefaultValueString("standard").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, transformBinaryOption, false, "Transforms the pomdp to a binary pomdp.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, transformSimpleOption, false, "Transforms the pomdp to a binary and simple pomdp.").build());
@@ -61,6 +66,24 @@ namespace storm {
             uint64_t POMDPSettings::getMemoryBound() const {
                 return this->getOption(memoryBoundOption).getArgumentByName("bound").getValueAsUnsignedInteger();
             }
+            
+            storm::storage::PomdpMemoryPattern POMDPSettings::getMemoryPattern() const {
+                auto pattern = this->getOption(memoryPatternOption).getArgumentByName("name").getValueAsString();
+                if (pattern == "trivial") {
+                    return storm::storage::PomdpMemoryPattern::Trivial;
+                } else if (pattern == "fixedcounter") {
+                    return storm::storage::PomdpMemoryPattern::FixedCounter;
+                } else if (pattern == "selectivecounter") {
+                    return storm::storage::PomdpMemoryPattern::SelectiveCounter;
+                } else if (pattern == "ring") {
+                    return storm::storage::PomdpMemoryPattern::Ring;
+                } else if (pattern == "settablebits") {
+                    return storm::storage::PomdpMemoryPattern::SettableBits;
+                } else if (pattern == "full") {
+                    return storm::storage::PomdpMemoryPattern::Full;
+                }
+                STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The name of the memory pattern is unknown.");
+            }
 
             std::string POMDPSettings::getFscApplicationTypeString() const {
                 return this->getOption(fscmode).getArgumentByName("type").getValueAsString();
@@ -78,7 +101,7 @@ namespace storm {
             }
 
             bool POMDPSettings::check() const {
-                // Ensure that at most one of min or max is set
+                STORM_LOG_THROW(getMemoryPattern() != storm::storage::PomdpMemoryPattern::Trivial || getMemoryBound() == 1, storm::exceptions::InvalidArgumentException, "Memory bound greater one is not possible with the trivial memory pattern.");
                 return true;
             }
             
