@@ -57,6 +57,13 @@ namespace storm {
                 bool isUseRepresentativesSet() const;
                 
                 /*!
+                 * Retrieves whether the extracted quotient model is supposed to use the same variables as the original
+                 * model.
+                 * NOTE: only applies to DD-based bisimulation.
+                 */
+                bool isUseOriginalVariablesSet() const;
+                
+                /*!
                  * Retrieves the mode to compute signatures.
                  */
                 storm::dd::bisimulation::SignatureMode getSignatureMode() const;
@@ -85,6 +92,7 @@ namespace storm {
                 // Define the string names of the options as constants.
                 static const std::string typeOptionName;
                 static const std::string representativeOptionName;
+                static const std::string originalVariablesOptionName;
                 static const std::string quotientFormatOptionName;
                 static const std::string signatureModeOptionName;
                 static const std::string reuseOptionName;

@@ -53,6 +53,9 @@ namespace storm {
                  */
                 Status getStatus() const;
                 
+                std::chrono::high_resolution_clock::duration getTotalSignatureTime() const;
+                std::chrono::high_resolution_clock::duration getTotalRefinementTime() const;
+                
             protected:
                 Partition<DdType, ValueType> internalRefine(SignatureComputer<DdType, ValueType>& stateSignatureComputer, SignatureRefiner<DdType, ValueType>& signatureRefiner, Partition<DdType, ValueType> const& oldPartition, Partition<DdType, ValueType> const& targetPartition, SignatureMode const& mode = SignatureMode::Eager);
                 Partition<DdType, ValueType> internalRefine(Signature<DdType, ValueType> const& signature, SignatureRefiner<DdType, ValueType>& signatureRefiner, Partition<DdType, ValueType> const& oldPartition);
