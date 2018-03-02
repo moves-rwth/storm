@@ -93,7 +93,7 @@ namespace storm {
             }
             auto end = std::chrono::high_resolution_clock::now();
             
-            STORM_LOG_INFO("Partition refinement completed in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms (" << iterations << " iterations).");
+            STORM_LOG_INFO("Partition refinement completed in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms (" << iterations << " iterations, signature: " << std::chrono::duration_cast<std::chrono::milliseconds>(refiner->getTotalSignatureTime()).count() << "ms, refinement: " << std::chrono::duration_cast<std::chrono::milliseconds>(refiner->getTotalRefinementTime()).count() << "ms).");
         }
 
         template <storm::dd::DdType DdType, typename ValueType>

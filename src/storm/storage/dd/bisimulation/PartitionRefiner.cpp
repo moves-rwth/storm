@@ -12,7 +12,7 @@ namespace storm {
         namespace bisimulation {
             
             template <storm::dd::DdType DdType, typename ValueType>
-            PartitionRefiner<DdType, ValueType>::PartitionRefiner(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& initialStatePartition) : status(Status::Initialized), refinements(0), statePartition(initialStatePartition), signatureComputer(model), signatureRefiner(model.getManager(), statePartition.getBlockVariable(), model.getRowAndNondeterminismVariables(), model.getColumnVariables(), !model.isNondeterministicModel(), model.getNondeterminismVariables()) {
+            PartitionRefiner<DdType, ValueType>::PartitionRefiner(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& initialStatePartition) : status(Status::Initialized), refinements(0), statePartition(initialStatePartition), signatureComputer(model), signatureRefiner(model.getManager(), statePartition.getBlockVariable(), model.getRowAndNondeterminismVariables(), model.getColumnVariables(), !model.isNondeterministicModel(), model.getNondeterminismVariables()), totalSignatureTime(0), totalRefinementTime(0) {
                 // Intentionally left empty.
             }
             
@@ -50,7 +50,7 @@ namespace storm {
                         auto signatureEnd = std::chrono::high_resolution_clock::now();
                         totalSignatureTime += (signatureEnd - signatureStart);
                         STORM_LOG_TRACE("Signature " << refinements << "[" << index << "] DD has " << signature.getSignatureAdd().getNodeCount() << " nodes.");
-                        
+                                                
                         auto refinementStart = std::chrono::high_resolution_clock::now();
                         newPartition = signatureRefiner.refine(oldPartition, signature);
                         auto refinementEnd = std::chrono::high_resolution_clock::now();
@@ -78,8 +78,11 @@ namespace storm {
             Partition<DdType, ValueType> PartitionRefiner<DdType, ValueType>::internalRefine(Signature<DdType, ValueType> const& signature, SignatureRefiner<DdType, ValueType>& signatureRefiner, Partition<DdType, ValueType> const& oldPartition) {
 
                 STORM_LOG_TRACE("Signature " << refinements << " DD has " << signature.getSignatureAdd().getNodeCount() << " nodes.");
+                auto refinementStart = std::chrono::high_resolution_clock::now();
                 auto newPartition = signatureRefiner.refine(oldPartition, signature);
-                
+                auto refinementEnd = std::chrono::high_resolution_clock::now();
+                totalRefinementTime += (refinementEnd - refinementStart);
+
                 ++refinements;
                 return newPartition;
             }
@@ -130,6 +133,16 @@ namespace storm {
             template <storm::dd::DdType DdType, typename ValueType>
             Status PartitionRefiner<DdType, ValueType>::getStatus() const {
                 return status;
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
+            std::chrono::high_resolution_clock::duration PartitionRefiner<DdType, ValueType>::getTotalSignatureTime() const {
+                return totalSignatureTime;
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
+            std::chrono::high_resolution_clock::duration PartitionRefiner<DdType, ValueType>::getTotalRefinementTime() const {
+                return totalRefinementTime;
             }
             
             template class PartitionRefiner<storm::dd::DdType::CUDD, double>;

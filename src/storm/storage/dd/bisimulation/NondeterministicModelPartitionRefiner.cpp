@@ -46,7 +46,8 @@ namespace storm {
                     auto signatureStart = std::chrono::high_resolution_clock::now();
                     Signature<DdType, ValueType> stateSignature(choicePartitionAsBdd.existsAbstract(model.getNondeterminismVariables()).template toAdd<ValueType>());
                     auto signatureEnd = std::chrono::high_resolution_clock::now();
-
+                    this->totalSignatureTime += (signatureEnd - signatureStart);
+                    
                     // If the choice partition changed, refine the state partition.
                     STORM_LOG_TRACE("Refining state partition.");
                     auto refinementStart = std::chrono::high_resolution_clock::now();
