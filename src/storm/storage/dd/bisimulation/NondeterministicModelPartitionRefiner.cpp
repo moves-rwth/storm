@@ -73,6 +73,18 @@ namespace storm {
                 return choicePartition;
             }
             
+            template <storm::dd::DdType DdType, typename ValueType>
+            bool NondeterministicModelPartitionRefiner<DdType, ValueType>::refineWrtStateRewards(storm::dd::Add<DdType, ValueType> const& stateRewards) {
+                STORM_LOG_TRACE("Refining with respect to state rewards.");
+                Partition<DdType, ValueType> newStatePartition = this->stateSignatureRefiner.refine(this->statePartition, Signature<DdType, ValueType>(stateRewards));
+                if (newStatePartition == this->statePartition) {
+                    return false;
+                } else {
+                    this->statePartition = newStatePartition;
+                    return true;
+                }
+            }
+            
             template<storm::dd::DdType DdType, typename ValueType>
             bool NondeterministicModelPartitionRefiner<DdType, ValueType>::refineWrtStateActionRewards(storm::dd::Add<DdType, ValueType> const& stateActionRewards) {
                 STORM_LOG_TRACE("Refining with respect to state-action rewards.");
