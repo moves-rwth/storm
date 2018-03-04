@@ -64,6 +64,13 @@ namespace storm {
                 bool isUseOriginalVariablesSet() const;
                 
                 /*!
+                 * Retrieves whether exact arithmetic is to be used in symbolic bisimulation minimization.
+                 *
+                 * @return True iff exact arithmetic is to be used in symbolic bisimulation minimization.
+                 */
+                bool useExactArithmeticInDdBisimulation() const;
+                
+                /*!
                  * Retrieves the mode to compute signatures.
                  */
                 storm::dd::bisimulation::SignatureMode getSignatureMode() const;
@@ -99,6 +106,7 @@ namespace storm {
                 static const std::string initialPartitionOptionName;
                 static const std::string refinementModeOptionName;
                 static const std::string parallelismModeOptionName;
+                static const std::string exactArithmeticDdOptionName;
             };
         } // namespace modules
     } // namespace settings

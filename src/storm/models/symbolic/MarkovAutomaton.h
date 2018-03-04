@@ -92,6 +92,9 @@ namespace storm {
                 
                 storm::dd::Add<Type, ValueType> const& getExitRateVector() const;
                 
+                template<typename NewValueType>
+                std::shared_ptr<MarkovAutomaton<Type, NewValueType>> toValueType() const;
+                
             private:
                 /*!
                  * Computes the member data related to Markovian stuff.
