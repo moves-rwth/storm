@@ -2,6 +2,7 @@
 
 #include "storm-config.h"
 #include "storm/settings/modules/ModuleSettings.h"
+#include "storm-pomdp/storage/PomdpMemory.h"
 
 #include "storm-dft/builder/DftExplorationHeuristic.h"
 
@@ -33,7 +34,7 @@ namespace storm {
                 bool isTransformBinarySet() const;
                 std::string getFscApplicationTypeString() const;
                 uint64_t getMemoryBound() const;
-                
+                storm::storage::PomdpMemoryPattern getMemoryPattern() const;
                 
                 bool check() const override;
                 void finalize() override;

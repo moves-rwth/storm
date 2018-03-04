@@ -35,8 +35,7 @@ namespace storm {
 			}
             
             std::shared_ptr<ChoiceOrigins> PrismChoiceOrigins::cloneWithNewIndexToIdentifierMapping(std::vector<uint_fast64_t>&& indexToIdentifierMapping) const {
-                std::vector<CommandSet> identifierToCommandSetMapping = this->identifierToCommandSet;
-                auto result = std::make_shared<PrismChoiceOrigins>(this->program, std::move(indexToIdentifierMapping), std::move(identifierToCommandSetMapping));
+                auto result = std::make_shared<PrismChoiceOrigins>(this->program, std::move(indexToIdentifierMapping), std::move(this->identifierToCommandSet));
                 result->identifierToInfo = this->identifierToInfo;
                 return result;
             }

@@ -15,6 +15,7 @@
 #include "storm/storage/jani/ParallelComposition.h"
 #include "storm/storage/jani/CompositionInformationVisitor.h"
 #include "storm/storage/jani/Compositions.h"
+#include "storm/storage/jani/JSONExporter.h"
 
 #include "storm/storage/expressions/LinearityCheckVisitor.h"
 
@@ -1154,7 +1155,36 @@ namespace storm {
             }
             return false;
         }
+        
+        uint64_t Model::encodeAutomatonAndEdgeIndices(uint64_t automatonIndex, uint64_t edgeIndex) const {
+            return automatonIndex << 32 | edgeIndex;
+        }
+        
+        std::pair<uint64_t, uint64_t> Model::decodeAutomatonAndEdgeIndices(uint64_t index) const {
+            return std::make_pair(index >> 32, index & ((1ull << 32) - 1));
+        }
 
+        Model Model::restrictEdges(boost::container::flat_set<uint_fast64_t> const& automataAndEdgeIndices) const {
+            Model result(*this);
+
+            // Restrict all automata.
+            for (uint64_t automatonIndex = 0; automatonIndex < result.automata.size(); ++automatonIndex) {
+                
+                // Compute the set of edges that is to be kept for this automaton.
+                boost::container::flat_set<uint_fast64_t> automatonEdgeIndices;
+                for (auto const& e : automataAndEdgeIndices) {
+                    auto automatonAndEdgeIndex = decodeAutomatonAndEdgeIndices(e);
+                    if (automatonAndEdgeIndex.first == automatonIndex) {
+                        automatonEdgeIndices.insert(automatonAndEdgeIndex.second);
+                    }
+                }
+                
+                result.automata[automatonIndex].restrictToEdges(automatonEdgeIndices);
+            }
+            
+            return result;
+        }
+        
         Model Model::createModelFromAutomaton(Automaton const& automaton) const {
             // Copy the full model
             Model newModel(*this);
@@ -1193,6 +1223,11 @@ namespace storm {
             }
 
             outStream << "}";
+        }
+        
+        std::ostream& operator<<(std::ostream& out, Model const& model) {
+            JsonExporter::toStream(model, std::vector<storm::jani::Property>(), out);
+            return out;
         }
     }
 }

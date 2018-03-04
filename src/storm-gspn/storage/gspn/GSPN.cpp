@@ -6,8 +6,7 @@
 
 #include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidArgumentException.h"
-
-
+#include "storm-gspn/storage/gspn/GspnJsonExporter.h"
 
 namespace storm {
     namespace gspn {
@@ -396,6 +395,15 @@ namespace storm {
             this->transitionLayout = transitionLayout;
         }
 
+        std::map<uint64_t, LayoutInfo> const& GSPN::getPlaceLayoutInfos() const {
+            return this->placeLayout;
+        }
+
+        std::map<uint64_t, LayoutInfo> const& GSPN::getTransitionLayoutInfos() const {
+            return this->transitionLayout;
+        }
+
+
         void GSPN::toPnpro(std::ostream &stream) const {
             auto space = "  ";
             auto space2 = "    ";
@@ -610,6 +618,11 @@ namespace storm {
             stream << space << "</net>" << std::endl;
             stream << "</pnml>" << std::endl;
         }
+
+        void GSPN::toJson(std::ostream &stream) const {
+            return storm::gspn::GspnJsonExporter::toStream(*this, stream);
+        }
+
         
         void GSPN::writeStatsToStream(std::ostream& stream) const {
             stream << "Number of places: " << getNumberOfPlaces() << std::endl;

@@ -607,7 +607,6 @@ namespace storm {
         
         template<typename ValueType, typename StateType>
         std::shared_ptr<storm::storage::sparse::ChoiceOrigins> PrismNextStateGenerator<ValueType, StateType>::generateChoiceOrigins(std::vector<boost::any>& dataForChoiceOrigins) const {
-            
             if (!this->getOptions().isBuildChoiceOriginsSet()) {
                 return nullptr;
             }

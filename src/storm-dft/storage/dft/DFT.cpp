@@ -378,7 +378,35 @@ namespace storm {
             STORM_LOG_TRACE(newDft.getElementsString());
             return newDft.optimize();
         }
-        
+
+        template<typename ValueType>
+        size_t DFT<ValueType>::nrDynamicElements() const {
+            size_t noDyn = 0;
+            for (auto const& elem : mElements) {
+                switch (elem->type()) {
+                    case DFTElementType::AND:
+                    case DFTElementType::OR:
+                    case DFTElementType::VOT:
+                    case DFTElementType::BE:
+                    case DFTElementType::CONSTF:
+                    case DFTElementType::CONSTS:
+                        break;
+                    case DFTElementType::PAND:
+                    case DFTElementType::SPARE:
+                    case DFTElementType::POR:
+                    case DFTElementType::SEQ:
+                    case DFTElementType::MUTEX:
+                    case DFTElementType::PDEP:
+                        noDyn += 1;
+                        break;
+                    default:
+                        STORM_LOG_ASSERT(false, "DFT element type " << elem->type() << " not known.");
+                        break;
+                }
+            }
+            return noDyn;
+        }
+
         template<typename ValueType>
         std::string DFT<ValueType>::getElementsString() const {
             std::stringstream stream;
@@ -765,6 +793,13 @@ namespace storm {
             }
             std::sort(outgoingDeps.begin(), outgoingDeps.end());
             return std::make_tuple(parents, ingoingDeps, outgoingDeps);
+        }
+
+        template<typename ValueType>
+        void DFT<ValueType>::writeStatsToStream(std::ostream& stream) const {
+            stream << "Number of BEs: " << nrBasicElements() << std::endl;
+            stream << "Number of dynamic elements: " << nrDynamicElements() << std::endl;
+            stream << "Number of elements: " << nrElements() << std::endl;
         }
         
         // Explicitly instantiate the class.
