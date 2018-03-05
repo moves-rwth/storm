@@ -18,6 +18,8 @@
 #include "storm/modelchecker/results/HybridQuantitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 
+#include "storm/utility/Stopwatch.h"
+
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/InvalidOperationException.h"
@@ -79,12 +81,16 @@ namespace storm {
                             // Compute the vector that is to be added as a compensation for removing the absorbing states.
                             storm::dd::Add<DdType, ValueType> b = (statesWithProbabilityGreater0NonPsi.template toAdd<ValueType>() * rateMatrix * psiStates.swapVariables(model.getRowColumnMetaVariablePairs()).template toAdd<ValueType>()).sumAbstract(model.getColumnVariables()) / model.getManager().getConstant(uniformizationRate);
                             
+                            storm::utility::Stopwatch conversionWatch(true);
+                            
                             // Create an ODD for the translation to an explicit representation.
                             storm::dd::Odd odd = statesWithProbabilityGreater0NonPsi.createOdd();
                             
                             // Convert the symbolic parts to their explicit representation.
                             storm::storage::SparseMatrix<ValueType> explicitUniformizedMatrix = uniformizedMatrix.toMatrix(odd, odd);
                             std::vector<ValueType> explicitB = b.toVector(odd);
+                            conversionWatch.stop();
+                            STORM_LOG_INFO("Converting symbolic matrix/vector to explicit representation done in " << conversionWatch.getTimeInMilliseconds() << "ms.");
                             
                             // Finally compute the transient probabilities.
                             std::vector<ValueType> values(statesWithProbabilityGreater0NonPsi.getNonZeroCount(), storm::utility::zero<ValueType>());
@@ -106,12 +112,18 @@ namespace storm {
                             // Filter the unbounded result such that it only contains values for the relevant states.
                             unboundedResult->filter(SymbolicQualitativeCheckResult<DdType>(model.getReachableStates(), relevantStates));
                             
+                            storm::utility::Stopwatch conversionWatch;
+                            
                             // Build an ODD for the relevant states.
+                            conversionWatch.start();
                             storm::dd::Odd odd = relevantStates.createOdd();
+                            conversionWatch.stop();
                             
                             std::vector<ValueType> result;
                             if (unboundedResult->isHybridQuantitativeCheckResult()) {
+                                conversionWatch.start();
                                 std::unique_ptr<CheckResult> explicitUnboundedResult = unboundedResult->asHybridQuantitativeCheckResult<DdType, ValueType>().toExplicitQuantitativeCheckResult();
+                                conversionWatch.stop();
                                 result = std::move(explicitUnboundedResult->asExplicitQuantitativeCheckResult<ValueType>().getValueVector());
                             } else {
                                 STORM_LOG_THROW(unboundedResult->isSymbolicQuantitativeCheckResult(), storm::exceptions::InvalidStateException, "Expected check result of different type.");
@@ -123,8 +135,11 @@ namespace storm {
                             
                             // Compute the uniformized matrix.
                             storm::dd::Add<DdType, ValueType> uniformizedMatrix = computeUniformizedMatrix(model, rateMatrix, exitRateVector, relevantStates, uniformizationRate);
+                            conversionWatch.start();
                             storm::storage::SparseMatrix<ValueType> explicitUniformizedMatrix = uniformizedMatrix.toMatrix(odd, odd);
-                            
+                            conversionWatch.stop();
+                            STORM_LOG_INFO("Converting symbolic matrix/vector to explicit representation done in " << conversionWatch.getTimeInMilliseconds() << "ms.");
+
                             // Compute the transient probabilities.
                             result = storm::modelchecker::helper::SparseCtmcCslHelper::computeTransientProbabilities<ValueType>(env, explicitUniformizedMatrix, nullptr, lowerBound, uniformizationRate, result);
                             
@@ -146,10 +161,12 @@ namespace storm {
                                 storm::dd::Add<DdType, ValueType> b = (statesWithProbabilityGreater0NonPsi.template toAdd<ValueType>() * rateMatrix * psiStates.swapVariables(model.getRowColumnMetaVariablePairs()).template toAdd<ValueType>()).sumAbstract(model.getColumnVariables()) / model.getManager().getConstant(uniformizationRate);
                                 
                                 // Build an ODD for the relevant states and translate the symbolic parts to their explicit representation.
+                                storm::utility::Stopwatch conversionWatch(true);
                                 storm::dd::Odd odd = statesWithProbabilityGreater0NonPsi.createOdd();
                                 storm::storage::SparseMatrix<ValueType> explicitUniformizedMatrix = uniformizedMatrix.toMatrix(odd, odd);
                                 std::vector<ValueType> explicitB = b.toVector(odd);
-                                
+                                conversionWatch.stop();
+
                                 // Compute the transient probabilities.
                                 std::vector<ValueType> values(statesWithProbabilityGreater0NonPsi.getNonZeroCount(), storm::utility::zero<ValueType>());
                                 std::vector<ValueType> subResult = storm::modelchecker::helper::SparseCtmcCslHelper::computeTransientProbabilities(env, explicitUniformizedMatrix, &explicitB, upperBound - lowerBound, uniformizationRate, values);
@@ -164,13 +181,15 @@ namespace storm {
                                 
                                 // Filter the unbounded result such that it only contains values for the relevant states.
                                 hybridResult.filter(SymbolicQualitativeCheckResult<DdType>(model.getReachableStates(), relevantStates));
-                                
+                                                                
                                 // Build an ODD for the relevant states.
+                                conversionWatch.start();
                                 odd = relevantStates.createOdd();
                                 
                                 std::unique_ptr<CheckResult> explicitResult = hybridResult.toExplicitQuantitativeCheckResult();
+                                conversionWatch.stop();
                                 std::vector<ValueType> newSubresult = std::move(explicitResult->asExplicitQuantitativeCheckResult<ValueType>().getValueVector());
-                                
+
                                 // Then compute the transient probabilities of being in such a state after t time units. For this,
                                 // we must re-uniformize the CTMC, so we need to compute the second uniformized matrix.
                                 uniformizationRate =  1.02 * (relevantStates.template toAdd<ValueType>() * exitRateVector).getMax();
@@ -185,19 +204,26 @@ namespace storm {
                                 
                                 // Finally, we compute the second set of transient probabilities.
                                 uniformizedMatrix = computeUniformizedMatrix(model, rateMatrix, exitRateVector, relevantStates, uniformizationRate);
+                                conversionWatch.start();
                                 explicitUniformizedMatrix = uniformizedMatrix.toMatrix(odd, odd);
-                                
+                                conversionWatch.stop();
+                                STORM_LOG_INFO("Converting symbolic matrix/vector to explicit representation done in " << conversionWatch.getTimeInMilliseconds() << "ms.");
+
                                 newSubresult = storm::modelchecker::helper::SparseCtmcCslHelper::computeTransientProbabilities<ValueType>(env, explicitUniformizedMatrix, nullptr, lowerBound, uniformizationRate, newSubresult);
                                 
                                 return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType>(model.getReachableStates(), !relevantStates && model.getReachableStates(), model.getManager().template getAddZero<ValueType>(), relevantStates, odd, newSubresult));
                             } else {
                                 // In this case, the interval is of the form [t, t] with t != 0, t != inf.
                                 
+                                storm::utility::Stopwatch conversionWatch;
+                                
                                 // Build an ODD for the relevant states.
+                                conversionWatch.start();
                                 storm::dd::Odd odd = statesWithProbabilityGreater0.createOdd();
-                                
+
                                 std::vector<ValueType> newSubresult = psiStates.template toAdd<ValueType>().toVector(odd);
-                                
+                                conversionWatch.stop();
+
                                 // Then compute the transient probabilities of being in such a state after t time units. For this,
                                 // we must re-uniformize the CTMC, so we need to compute the second uniformized matrix.
                                 ValueType uniformizationRate =  1.02 * (statesWithProbabilityGreater0.template toAdd<ValueType>() * exitRateVector).getMax();
@@ -205,8 +231,11 @@ namespace storm {
                                 
                                 // Finally, we compute the second set of transient probabilities.
                                 storm::dd::Add<DdType, ValueType> uniformizedMatrix = computeUniformizedMatrix(model, rateMatrix, exitRateVector, statesWithProbabilityGreater0, uniformizationRate);
+                                conversionWatch.start();
                                 storm::storage::SparseMatrix<ValueType> explicitUniformizedMatrix = uniformizedMatrix.toMatrix(odd, odd);
-                                
+                                conversionWatch.stop();
+                                STORM_LOG_INFO("Converting symbolic matrix/vector to explicit representation done in " << conversionWatch.getTimeInMilliseconds() << "ms.");
+
                                 newSubresult = storm::modelchecker::helper::SparseCtmcCslHelper::computeTransientProbabilities<ValueType>(env, explicitUniformizedMatrix, nullptr, lowerBound, uniformizationRate, newSubresult);
                                 
                                 return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType>(model.getReachableStates(), !statesWithProbabilityGreater0 && model.getReachableStates(), model.getManager().template getAddZero<ValueType>(), statesWithProbabilityGreater0, odd, newSubresult));
@@ -229,8 +258,12 @@ namespace storm {
                 // Only compute the result if the model has a state-based reward model.
                 STORM_LOG_THROW(rewardModel.hasStateRewards(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
                 
+                storm::utility::Stopwatch conversionWatch;
+                
                 // Create ODD for the translation.
+                conversionWatch.start();
                 storm::dd::Odd odd = model.getReachableStates().createOdd();
+                conversionWatch.stop();
                 
                 // Initialize result to state rewards of the model.
                 std::vector<ValueType> result = rewardModel.getStateRewardVector().toVector(odd);
@@ -242,7 +275,11 @@ namespace storm {
                     
                     storm::dd::Add<DdType, ValueType> uniformizedMatrix = computeUniformizedMatrix(model, rateMatrix, exitRateVector, model.getReachableStates(), uniformizationRate);
                     
+                    conversionWatch.start();
                     storm::storage::SparseMatrix<ValueType> explicitUniformizedMatrix = uniformizedMatrix.toMatrix(odd, odd);
+                    conversionWatch.stop();
+                    STORM_LOG_INFO("Converting symbolic matrix/vector to explicit representation done in " << conversionWatch.getTimeInMilliseconds() << "ms.");
+
                     result = storm::modelchecker::helper::SparseCtmcCslHelper::computeTransientProbabilities<ValueType>(env, explicitUniformizedMatrix, nullptr, timeBound, uniformizationRate, result);
                 }
                 
@@ -270,17 +307,25 @@ namespace storm {
                 ValueType uniformizationRate = 1.02 * exitRateVector.getMax();
                 STORM_LOG_THROW(uniformizationRate > 0, storm::exceptions::InvalidStateException, "The uniformization rate must be positive.");
                 
+                storm::utility::Stopwatch conversionWatch;
+                
                 // Create ODD for the translation.
+                conversionWatch.start();
                 storm::dd::Odd odd = model.getReachableStates().createOdd();
+                conversionWatch.stop();
                 
                 // Compute the uniformized matrix.
                 storm::dd::Add<DdType, ValueType> uniformizedMatrix = computeUniformizedMatrix(model, rateMatrix, exitRateVector,  model.getReachableStates(), uniformizationRate);
+                conversionWatch.start();
                 storm::storage::SparseMatrix<ValueType> explicitUniformizedMatrix = uniformizedMatrix.toMatrix(odd, odd);
+                conversionWatch.stop();
                 
                 // Then compute the state reward vector to use in the computation.
                 storm::dd::Add<DdType, ValueType> totalRewardVector = rewardModel.getTotalRewardVector(rateMatrix, model.getColumnVariables(), exitRateVector, false);
                 std::vector<ValueType> explicitTotalRewardVector = totalRewardVector.toVector(odd);
-                                
+                conversionWatch.stop();
+                STORM_LOG_INFO("Converting symbolic matrix/vector to explicit representation done in " << conversionWatch.getTimeInMilliseconds() << "ms.");
+
                 // Finally, compute the transient probabilities.
                 std::vector<ValueType> result = storm::modelchecker::helper::SparseCtmcCslHelper::computeTransientProbabilities<ValueType, true>(env, explicitUniformizedMatrix, nullptr, timeBound, uniformizationRate, explicitTotalRewardVector);
                 return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType, ValueType>(model.getReachableStates(), model.getManager().getBddZero(), model.getManager().template getAddZero<ValueType>(), model.getReachableStates(), std::move(odd), std::move(result)));
@@ -295,12 +340,16 @@ namespace storm {
             std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeLongRunAverageProbabilities(Environment const& env, storm::models::symbolic::Ctmc<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& rateMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector, storm::dd::Bdd<DdType> const& psiStates) {
                 storm::dd::Add<DdType, ValueType> probabilityMatrix = computeProbabilityMatrix(rateMatrix, exitRateVector);
                 
+                storm::utility::Stopwatch conversionWatch(true);
+                
                 // Create ODD for the translation.
                 storm::dd::Odd odd = model.getReachableStates().createOdd();
                 
                 storm::storage::SparseMatrix<ValueType> explicitProbabilityMatrix = probabilityMatrix.toMatrix(odd, odd);
                 std::vector<ValueType> explicitExitRateVector = exitRateVector.toVector(odd);
-                
+                conversionWatch.stop();
+                STORM_LOG_INFO("Converting symbolic matrix/vector to explicit representation done in " << conversionWatch.getTimeInMilliseconds() << "ms.");
+
                 std::vector<ValueType> result = storm::modelchecker::helper::SparseCtmcCslHelper::computeLongRunAverageProbabilities(env, storm::solver::SolveGoal<ValueType>(), explicitProbabilityMatrix, psiStates.toVector(odd), &explicitExitRateVector);
 
                 return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType, ValueType>(model.getReachableStates(), model.getManager().getBddZero(), model.getManager().template getAddZero<ValueType>(), model.getReachableStates(), std::move(odd), std::move(result)));
@@ -312,12 +361,16 @@ namespace storm {
                 STORM_LOG_THROW(!rewardModel.empty(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
                 storm::dd::Add<DdType, ValueType> probabilityMatrix = computeProbabilityMatrix(rateMatrix, exitRateVector);
                 
+                storm::utility::Stopwatch conversionWatch(true);
+                
                 // Create ODD for the translation.
                 storm::dd::Odd odd = model.getReachableStates().createOdd();
                 
                 storm::storage::SparseMatrix<ValueType> explicitProbabilityMatrix = probabilityMatrix.toMatrix(odd, odd);
                 std::vector<ValueType> explicitExitRateVector = exitRateVector.toVector(odd);
-                
+                conversionWatch.stop();
+                STORM_LOG_INFO("Converting symbolic matrix/vector to explicit representation done in " << conversionWatch.getTimeInMilliseconds() << "ms.");
+
                 std::vector<ValueType> result = storm::modelchecker::helper::SparseCtmcCslHelper::computeLongRunAverageRewards(env, storm::solver::SolveGoal<ValueType>(), explicitProbabilityMatrix, rewardModel.getTotalRewardVector(probabilityMatrix, model.getColumnVariables(), exitRateVector, true).toVector(odd), &explicitExitRateVector);
                 
                 return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType, ValueType>(model.getReachableStates(), model.getManager().getBddZero(), model.getManager().template getAddZero<ValueType>(), model.getReachableStates(), std::move(odd), std::move(result)));

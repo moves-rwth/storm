@@ -20,10 +20,11 @@
 #include "storm/modelchecker/results/SymbolicQuantitativeCheckResult.h"
 #include "storm/modelchecker/results/HybridQuantitativeCheckResult.h"
 
+#include "storm/utility/Stopwatch.h"
+
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/UncheckedRequirementException.h"
-
 
 namespace storm {
     namespace modelchecker {
@@ -46,8 +47,12 @@ namespace storm {
                 } else {
                     // If there are maybe states, we need to solve an equation system.
                     if (!maybeStates.isZero()) {
+                        storm::utility::Stopwatch conversionWatch;
+                        
                         // Create the ODD for the translation between symbolic and explicit storage.
+                        conversionWatch.start();
                         storm::dd::Odd odd = maybeStates.createOdd();
+                        conversionWatch.stop();
                         
                         // Create the matrix and the vector for the equation system.
                         storm::dd::Add<DdType, ValueType> maybeStatesAdd = maybeStates.template toAdd<ValueType>();
@@ -83,9 +88,12 @@ namespace storm {
                         std::vector<ValueType> x(maybeStates.getNonZeroCount(), storm::utility::convertNumber<ValueType>(0.5));
                         
                         // Translate the symbolic matrix/vector to their explicit representations and solve the equation system.
+                        conversionWatch.start();
                         storm::storage::SparseMatrix<ValueType> explicitSubmatrix = submatrix.toMatrix(odd, odd);
                         std::vector<ValueType> b = subvector.toVector(odd);
-                            
+                        conversionWatch.stop();
+                        STORM_LOG_INFO("Converting symbolic matrix/vector to explicit representation done in " << conversionWatch.getTimeInMilliseconds() << "ms.");
+                        
                         std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(env, std::move(explicitSubmatrix));
                         solver->setBounds(storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
                         solver->solveEquations(env, x, b);
@@ -122,8 +130,12 @@ namespace storm {
 
                 // If there are maybe states, we need to perform matrix-vector multiplications.
                 if (!maybeStates.isZero()) {
+                    storm::utility::Stopwatch conversionWatch;
+                    
                     // Create the ODD for the translation between symbolic and explicit storage.
+                    conversionWatch.start();
                     storm::dd::Odd odd = maybeStates.createOdd();
+                    conversionWatch.stop();
                     
                     // Create the matrix and the vector for the equation system.
                     storm::dd::Add<DdType, ValueType> maybeStatesAdd = maybeStates.template toAdd<ValueType>();
@@ -144,9 +156,12 @@ namespace storm {
                     std::vector<ValueType> x(maybeStates.getNonZeroCount(), storm::utility::zero<ValueType>());
                     
                     // Translate the symbolic matrix/vector to their explicit representations.
+                    conversionWatch.start();
                     storm::storage::SparseMatrix<ValueType> explicitSubmatrix = submatrix.toMatrix(odd, odd);
                     std::vector<ValueType> b = subvector.toVector(odd);
-                    
+                    conversionWatch.stop();
+                    STORM_LOG_INFO("Converting symbolic matrix/vector to explicit representation done in " << conversionWatch.getTimeInMilliseconds() << "ms.");
+
                     auto multiplier = storm::solver::MultiplierFactory<ValueType>().create(env, explicitSubmatrix);
                     multiplier->repeatedMultiply(env, x, &b, stepBound);
 
@@ -162,6 +177,8 @@ namespace storm {
                 // Only compute the result if the model has at least one reward this->getModel().
                 STORM_LOG_THROW(rewardModel.hasStateRewards(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
                 
+                storm::utility::Stopwatch conversionWatch(true);
+                
                 // Create the ODD for the translation between symbolic and explicit storage.
                 storm::dd::Odd odd = model.getReachableStates().createOdd();
                 
@@ -170,7 +187,9 @@ namespace storm {
                 
                 // Translate the symbolic matrix to its explicit representations.
                 storm::storage::SparseMatrix<ValueType> explicitMatrix = transitionMatrix.toMatrix(odd, odd);
-                
+                conversionWatch.stop();
+                STORM_LOG_INFO("Converting symbolic matrix/vector to explicit representation done in " << conversionWatch.getTimeInMilliseconds() << "ms.");
+
                 // Perform the matrix-vector multiplication.
                 auto multiplier = storm::solver::MultiplierFactory<ValueType>().create(env, explicitMatrix);
                 multiplier->repeatedMultiply(env, x, nullptr, stepBound);
@@ -187,16 +206,20 @@ namespace storm {
                 // Compute the reward vector to add in each step based on the available reward models.
                 storm::dd::Add<DdType, ValueType> totalRewardVector = rewardModel.getTotalRewardVector(transitionMatrix, model.getColumnVariables());
                 
-                // Create the ODD for the translation between symbolic and explicit storage.
-                storm::dd::Odd odd = model.getReachableStates().createOdd();
-                
                 // Create the solution vector.
                 std::vector<ValueType> x(model.getNumberOfStates(), storm::utility::zero<ValueType>());
+
+                storm::utility::Stopwatch conversionWatch(true);
+                
+                // Create the ODD for the translation between symbolic and explicit storage.
+                storm::dd::Odd odd = model.getReachableStates().createOdd();
                 
                 // Translate the symbolic matrix/vector to their explicit representations.
                 storm::storage::SparseMatrix<ValueType> explicitMatrix = transitionMatrix.toMatrix(odd, odd);
                 std::vector<ValueType> b = totalRewardVector.toVector(odd);
-                
+                conversionWatch.stop();
+                STORM_LOG_INFO("Converting symbolic matrix/vector to explicit representation done in " << conversionWatch.getTimeInMilliseconds() << "ms.");
+
                 // Perform the matrix-vector multiplication.
                 auto multiplier = storm::solver::MultiplierFactory<ValueType>().create(env, explicitMatrix);
                 multiplier->repeatedMultiply(env, x, &b, stepBound);
@@ -239,8 +262,12 @@ namespace storm {
                 } else {
                     // If there are maybe states, we need to solve an equation system.
                     if (!maybeStates.isZero()) {
+                        storm::utility::Stopwatch conversionWatch;
+                        
                         // Create the ODD for the translation between symbolic and explicit storage.
+                        conversionWatch.start();
                         storm::dd::Odd odd = maybeStates.createOdd();
+                        conversionWatch.stop();
                         
                         // Create the matrix and the vector for the equation system.
                         storm::dd::Add<DdType, ValueType> maybeStatesAdd = maybeStates.template toAdd<ValueType>();
@@ -281,9 +308,12 @@ namespace storm {
                         std::vector<ValueType> x(maybeStates.getNonZeroCount(), storm::utility::convertNumber<ValueType>(0.5));
                         
                         // Translate the symbolic matrix/vector to their explicit representations.
+                        conversionWatch.start();
                         storm::storage::SparseMatrix<ValueType> explicitSubmatrix = submatrix.toMatrix(odd, odd);
                         std::vector<ValueType> b = subvector.toVector(odd);
-                        
+                        conversionWatch.stop();
+                        STORM_LOG_INFO("Converting symbolic matrix/vector to explicit representation done in " << conversionWatch.getTimeInMilliseconds() << "ms.");
+
                         // Create the upper bounds vector if one was requested.
                         boost::optional<std::vector<ValueType>> upperBounds;
                         if (oneStepTargetProbs) {
@@ -311,8 +341,11 @@ namespace storm {
             template<storm::dd::DdType DdType, typename ValueType>
             std::unique_ptr<CheckResult> HybridDtmcPrctlHelper<DdType, ValueType>::computeLongRunAverageProbabilities(Environment const& env, storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, storm::dd::Bdd<DdType> const& targetStates) {
                 // Create ODD for the translation.
+                storm::utility::Stopwatch conversionWatch(true);
                 storm::dd::Odd odd = model.getReachableStates().createOdd();
                 storm::storage::SparseMatrix<ValueType> explicitProbabilityMatrix = model.getTransitionMatrix().toMatrix(odd, odd);
+                conversionWatch.stop();
+                STORM_LOG_INFO("Converting symbolic matrix/vector to explicit representation done in " << conversionWatch.getTimeInMilliseconds() << "ms.");
 
                 std::vector<ValueType> result = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeLongRunAverageProbabilities(env, storm::solver::SolveGoal<ValueType>(), explicitProbabilityMatrix, targetStates.toVector(odd));
                 return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType, ValueType>(model.getReachableStates(), model.getManager().getBddZero(), model.getManager().template getAddZero<ValueType>(), model.getReachableStates(), std::move(odd), std::move(result)));
@@ -321,9 +354,12 @@ namespace storm {
             template<storm::dd::DdType DdType, typename ValueType>
             std::unique_ptr<CheckResult> HybridDtmcPrctlHelper<DdType, ValueType>::computeLongRunAverageRewards(Environment const& env, storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, RewardModelType const& rewardModel) {
                 // Create ODD for the translation.
+                storm::utility::Stopwatch conversionWatch(true);
                 storm::dd::Odd odd = model.getReachableStates().createOdd();
                 storm::storage::SparseMatrix<ValueType> explicitProbabilityMatrix = model.getTransitionMatrix().toMatrix(odd, odd);
-                
+                conversionWatch.stop();
+                STORM_LOG_INFO("Converting symbolic matrix/vector to explicit representation done in " << conversionWatch.getTimeInMilliseconds() << "ms.");
+
                 std::vector<ValueType> result = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeLongRunAverageRewards(env, storm::solver::SolveGoal<ValueType>(), explicitProbabilityMatrix, rewardModel.getTotalRewardVector(model.getTransitionMatrix(), model.getColumnVariables()).toVector(odd));
                 return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType, ValueType>(model.getReachableStates(), model.getManager().getBddZero(), model.getManager().template getAddZero<ValueType>(), model.getReachableStates(), std::move(odd), std::move(result)));
             }

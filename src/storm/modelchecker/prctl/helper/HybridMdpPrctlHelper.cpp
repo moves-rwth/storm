@@ -23,6 +23,8 @@
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/solver/Multiplier.h"
 
+#include "storm/utility/Stopwatch.h"
+
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/UncheckedRequirementException.h"
 
@@ -174,8 +176,12 @@ namespace storm {
                             extendedMaybeStates |= maybeStates.relationalProduct(transitionMatrixBdd.existsAbstract(model.getNondeterminismVariables()), model.getRowVariables(), model.getColumnVariables());
                         }
                         
+                        storm::utility::Stopwatch conversionWatch;
+                        
                         // Create the ODD for the translation between symbolic and explicit storage.
+                        conversionWatch.start();
                         storm::dd::Odd odd = extendedMaybeStates.createOdd();
+                        conversionWatch.stop();
                         
                         // Convert the maybe states BDD to an ADD.
                         storm::dd::Add<DdType, ValueType> maybeStatesAdd = maybeStates.template toAdd<ValueType>();
@@ -191,20 +197,21 @@ namespace storm {
                             submatrix *= extendedMaybeStates.template toAdd<ValueType>().swapVariables(model.getRowColumnMetaVariablePairs());
 
                             // Only translate the matrix for now.
+                            conversionWatch.start();
                             explicitRepresentation.first = submatrix.toMatrix(model.getNondeterminismVariables(), odd, odd);
                             
                             // Get all original maybe states in the extended matrix.
                             solverRequirementsData.properMaybeStates = maybeStates.toVector(odd);
-                            
+
                             // Compute the target states within the set of extended maybe states.
                             storm::storage::BitVector targetStates = (extendedMaybeStates && statesWithProbability01.second).toVector(odd);
-                            
+                            conversionWatch.stop();
+
                             // Eliminate the end components and remove the states that are not interesting (target or non-filter).
                             eliminateEndComponentsAndExtendedStatesUntilProbabilities(explicitRepresentation, solverRequirementsData, targetStates);
                             
                             // The solution becomes unique after end components have been eliminated.
                             uniqueSolution = true;
-
                         } else {
                             // Then compute the vector that contains the one-step probabilities to a state with probability 1 for all
                             // maybe states.
@@ -217,12 +224,16 @@ namespace storm {
                             submatrix *= maybeStatesAdd.swapVariables(model.getRowColumnMetaVariablePairs());
                             
                             // Translate the symbolic matrix/vector to their explicit representations and solve the equation system.
+                            conversionWatch.start();
                             explicitRepresentation = submatrix.toMatrixVector(subvector, model.getNondeterminismVariables(), odd, odd);
+                            conversionWatch.stop();
 
                             if (requirements.requiresValidInitialScheduler()) {
                                 solverRequirementsData.initialScheduler = computeValidInitialSchedulerForUntilProbabilities<ValueType>(explicitRepresentation.first, explicitRepresentation.second);
                             }
                         }
+                        
+                        STORM_LOG_INFO("Converting symbolic matrix/vector to explicit representation done in " << conversionWatch.getTimeInMilliseconds() << "ms.");
                         
                         // Create the solution vector.
                         std::vector<ValueType> x(explicitRepresentation.first.getRowGroupCount(), storm::utility::zero<ValueType>());
@@ -287,8 +298,12 @@ namespace storm {
 
                 // If there are maybe states, we need to perform matrix-vector multiplications.
                 if (!maybeStates.isZero()) {
+                    storm::utility::Stopwatch conversionWatch;
+                    
                     // Create the ODD for the translation between symbolic and explicit storage.
+                    conversionWatch.start();
                     storm::dd::Odd odd = maybeStates.createOdd();
+                    conversionWatch.stop();
                     
                     // Create the matrix and the vector for the equation system.
                     storm::dd::Add<DdType, ValueType> maybeStatesAdd = maybeStates.template toAdd<ValueType>();
@@ -309,8 +324,11 @@ namespace storm {
                     std::vector<ValueType> x(maybeStates.getNonZeroCount(), storm::utility::zero<ValueType>());
                     
                     // Translate the symbolic matrix/vector to their explicit representations.
+                    conversionWatch.start();
                     std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> explicitRepresentation = submatrix.toMatrixVector(subvector, model.getNondeterminismVariables(), odd, odd);
-                    
+                    conversionWatch.stop();
+                    STORM_LOG_INFO("Converting symbolic matrix/vector to explicit representation done in " << conversionWatch.getTimeInMilliseconds() << "ms.");
+
                     auto multiplier = storm::solver::MultiplierFactory<ValueType>().create(env, explicitRepresentation.first);
                     multiplier->repeatedMultiplyAndReduce(env, dir, x, &explicitRepresentation.second, stepBound);
                     
@@ -326,6 +344,8 @@ namespace storm {
                 // Only compute the result if the model has at least one reward this->getModel().
                 STORM_LOG_THROW(rewardModel.hasStateRewards(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
                 
+                storm::utility::Stopwatch conversionWatch;
+                
                 // Create the ODD for the translation between symbolic and explicit storage.
                 storm::dd::Odd odd = model.getReachableStates().createOdd();
                 
@@ -334,7 +354,9 @@ namespace storm {
                 
                 // Create the solution vector (and initialize it to the state rewards of the model).
                 std::vector<ValueType> x = rewardModel.getStateRewardVector().toVector(odd);
-                
+                conversionWatch.stop();
+                STORM_LOG_INFO("Converting symbolic matrix/vector to explicit representation done in " << conversionWatch.getTimeInMilliseconds() << "ms.");
+
                 // Perform the matrix-vector multiplication.
                 auto multiplier = storm::solver::MultiplierFactory<ValueType>().create(env, explicitMatrix);
                 multiplier->repeatedMultiplyAndReduce(env, dir, x, nullptr, stepBound);
@@ -351,15 +373,19 @@ namespace storm {
                 // Compute the reward vector to add in each step based on the available reward models.
                 storm::dd::Add<DdType, ValueType> totalRewardVector = rewardModel.getTotalRewardVector(transitionMatrix, model.getColumnVariables());
                 
+                // Create the solution vector.
+                std::vector<ValueType> x(model.getNumberOfStates(), storm::utility::zero<ValueType>());
+
+                storm::utility::Stopwatch conversionWatch(true);
+                
                 // Create the ODD for the translation between symbolic and explicit storage.
                 storm::dd::Odd odd = model.getReachableStates().createOdd();
                 
-                // Create the solution vector.
-                std::vector<ValueType> x(model.getNumberOfStates(), storm::utility::zero<ValueType>());
-                
                 // Translate the symbolic matrix/vector to their explicit representations.
                 std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> explicitRepresentation = transitionMatrix.toMatrixVector(totalRewardVector, model.getNondeterminismVariables(), odd, odd);
-                
+                conversionWatch.stop();
+                STORM_LOG_INFO("Converting symbolic matrix/vector to explicit representation done in " << conversionWatch.getTimeInMilliseconds() << "ms.");
+
                 // Perform the matrix-vector multiplication.
                     auto multiplier = storm::solver::MultiplierFactory<ValueType>().create(env, explicitRepresentation.first);
                     multiplier->repeatedMultiplyAndReduce(env, dir, x, &explicitRepresentation.second, stepBound);
@@ -546,8 +572,12 @@ namespace storm {
                         // Compute the set of maybe states that we are required to keep in the translation to explicit.
                         storm::dd::Bdd<DdType> requiredMaybeStates = extendMaybeStates ? maybeStatesWithTargetStates : maybeStates;
                         
+                        storm::utility::Stopwatch conversionWatch;
+                        
                         // Create the ODD for the translation between symbolic and explicit storage.
+                        conversionWatch.start();
                         storm::dd::Odd odd = requiredMaybeStates.createOdd();
+                        conversionWatch.stop();
                         
                         // Create the matrix and the vector for the equation system.
                         storm::dd::Add<DdType, ValueType> maybeStatesAdd = maybeStates.template toAdd<ValueType>();
@@ -562,14 +592,19 @@ namespace storm {
                         // Then compute the reward vector to use in the computation.
                         storm::dd::Add<DdType, ValueType> subvector = rewardModel.getTotalRewardVector(maybeStatesAdd, choiceFilterAdd, submatrix, model.getColumnVariables());
 
+                        conversionWatch.start();
                         std::vector<uint_fast64_t> rowGroupSizes = (submatrix.notZero().existsAbstract(model.getColumnVariables()) || subvector.notZero()).template toAdd<uint_fast64_t>().sumAbstract(model.getNondeterminismVariables()).toVector(odd);
+                        conversionWatch.stop();
                         
                         // Finally cut away all columns targeting non-maybe states (or non-(maybe or target) states, respectively).
                         submatrix *= extendMaybeStates ? maybeStatesWithTargetStates.swapVariables(model.getRowColumnMetaVariablePairs()).template toAdd<ValueType>() : maybeStatesAdd.swapVariables(model.getRowColumnMetaVariablePairs());
                         
                         // Translate the symbolic matrix/vector to their explicit representations.
+                        conversionWatch.start();
                         std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> explicitRepresentation = submatrix.toMatrixVector(std::move(rowGroupSizes), subvector, model.getRowVariables(), model.getColumnVariables(), model.getNondeterminismVariables(), odd, odd);
-                        
+                        conversionWatch.stop();
+                        STORM_LOG_INFO("Converting symbolic matrix/vector to explicit representation done in " << conversionWatch.getTimeInMilliseconds() << "ms.");
+
                         // Fulfill the solver's requirements.
                         SolverRequirementsData<ValueType> solverRequirementsData;
                         if (extendMaybeStates) {
