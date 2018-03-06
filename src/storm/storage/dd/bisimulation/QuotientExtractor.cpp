@@ -821,6 +821,7 @@ namespace storm {
             QuotientExtractor<DdType, ValueType>::QuotientExtractor() : useRepresentatives(false) {
                 auto const& settings = storm::settings::getModule<storm::settings::modules::BisimulationSettings>();
                 this->useRepresentatives = settings.isUseRepresentativesSet();
+                this->useOriginalVariables = settings.isUseOriginalVariablesSet();
                 this->quotientFormat = settings.getQuotientFormat();
             }
             
@@ -834,7 +835,7 @@ namespace storm {
                     result = extractDdQuotient(model, partition, preservationInformation);
                 }
                 auto end = std::chrono::high_resolution_clock::now();
-                STORM_LOG_TRACE("Quotient extraction completed in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
+                STORM_LOG_INFO("Quotient extraction completed in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
                 
                 STORM_LOG_THROW(result, storm::exceptions::NotSupportedException, "Quotient could not be extracted.");
                 
@@ -855,7 +856,7 @@ namespace storm {
                 InternalSparseQuotientExtractor<DdType, ValueType> sparseExtractor(model, partitionAsBdd, partition.getBlockVariable(), partition.getNumberOfBlocks(), representatives);
                 storm::storage::SparseMatrix<ValueType> quotientTransitionMatrix = sparseExtractor.extractTransitionMatrix(model.getTransitionMatrix());
                 auto end = std::chrono::high_resolution_clock::now();
-                STORM_LOG_TRACE("Quotient transition matrix extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
+                STORM_LOG_INFO("Quotient transition matrix extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
 
                 start = std::chrono::high_resolution_clock::now();
                 storm::models::sparse::StateLabeling quotientStateLabeling(partition.getNumberOfBlocks());
@@ -877,7 +878,7 @@ namespace storm {
                     }
                 }
                 end = std::chrono::high_resolution_clock::now();
-                STORM_LOG_TRACE("Quotient labels extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
+                STORM_LOG_INFO("Quotient labels extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
 
                 start = std::chrono::high_resolution_clock::now();
                 std::unordered_map<std::string, storm::models::sparse::StandardRewardModel<ValueType>> quotientRewardModels;
@@ -897,7 +898,7 @@ namespace storm {
                     quotientRewardModels.emplace(rewardModelName, storm::models::sparse::StandardRewardModel<ValueType>(std::move(quotientStateRewards), std::move(quotientStateActionRewards), boost::none));
                 }
                 end = std::chrono::high_resolution_clock::now();
-                STORM_LOG_TRACE("Reward models extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
+                STORM_LOG_INFO("Reward models extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
 
                 std::shared_ptr<storm::models::sparse::Model<ValueType>> result;
                 if (model.getType() == storm::models::ModelType::Dtmc) {
@@ -921,7 +922,12 @@ namespace storm {
 
             template<storm::dd::DdType DdType, typename ValueType>
             std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> QuotientExtractor<DdType, ValueType>::extractDdQuotient(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& partition, PreservationInformation<DdType, ValueType> const& preservationInformation) {
-                return extractQuotientUsingBlockVariables(model, partition, preservationInformation);
+                
+                if (this->useOriginalVariables) {
+                    return extractQuotientUsingOriginalVariables(model, partition, preservationInformation);
+                } else {
+                    return extractQuotientUsingBlockVariables(model, partition, preservationInformation);
+                }
             }
 
             template<storm::dd::DdType DdType, typename ValueType>
@@ -930,10 +936,6 @@ namespace storm {
                 
                 bool useRepresentativesForThisExtraction = this->useRepresentatives;
                 if (modelType == storm::models::ModelType::Dtmc || modelType == storm::models::ModelType::Ctmc || modelType == storm::models::ModelType::Mdp || modelType == storm::models::ModelType::MarkovAutomaton) {
-                    if (modelType == storm::models::ModelType::Mdp || modelType == storm::models::ModelType::MarkovAutomaton) {
-                        STORM_LOG_WARN_COND(!useRepresentativesForThisExtraction, "Using representatives is unsupported for MDPs, falling back to regular extraction.");
-                        useRepresentativesForThisExtraction = false;
-                    }
                     
                     // Sanity checks.
                     STORM_LOG_ASSERT(partition.getNumberOfStates() == model.getNumberOfStates(), "Mismatching partition size.");
@@ -942,16 +944,20 @@ namespace storm {
                     std::set<storm::expressions::Variable> blockVariableSet = {partition.getBlockVariable()};
                     std::set<storm::expressions::Variable> blockPrimeVariableSet = {partition.getPrimedBlockVariable()};
                     std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> blockMetaVariablePairs = {std::make_pair(partition.getBlockVariable(), partition.getPrimedBlockVariable())};
+
+                    auto start = std::chrono::high_resolution_clock::now();
                     
+                    // Compute representatives.
                     storm::dd::Bdd<DdType> partitionAsBdd = partition.storedAsBdd() ? partition.asBdd() : partition.asAdd().notZero();
+                    partitionAsBdd = partitionAsBdd.renameVariables(model.getColumnVariables(), model.getRowVariables());
+                    auto representatives = InternalRepresentativeComputer<DdType>(partitionAsBdd, model.getRowVariables()).getRepresentatives();
+
                     if (useRepresentativesForThisExtraction) {
-                        storm::dd::Bdd<DdType> partitionAsBddOverPrimedBlockVariable = partitionAsBdd.renameVariables(blockVariableSet, blockPrimeVariableSet);
-                        storm::dd::Bdd<DdType> representativePartition = partitionAsBddOverPrimedBlockVariable.existsAbstractRepresentative(model.getColumnVariables()).renameVariables(model.getColumnVariables(), blockVariableSet);
-                        partitionAsBdd = (representativePartition && partitionAsBddOverPrimedBlockVariable).existsAbstract(blockPrimeVariableSet);
+                        storm::dd::Bdd<DdType> partitionAsBddOverPrimedBlockVariables = partitionAsBdd.renameVariables(blockVariableSet, blockPrimeVariableSet);
+                        storm::dd::Bdd<DdType> tmp = (representatives && partitionAsBddOverPrimedBlockVariables).renameVariablesConcretize(model.getRowVariables(), blockVariableSet);
+                        partitionAsBdd = (tmp && partitionAsBddOverPrimedBlockVariables).existsAbstract(blockPrimeVariableSet);
                     }
                     
-                    auto start = std::chrono::high_resolution_clock::now();
-                    partitionAsBdd = partitionAsBdd.renameVariables(model.getColumnVariables(), model.getRowVariables());
                     storm::dd::Bdd<DdType> reachableStates = partitionAsBdd.existsAbstract(model.getRowVariables());
                     storm::dd::Bdd<DdType> initialStates = (model.getInitialStates() && partitionAsBdd).existsAbstract(model.getRowVariables());
                     
@@ -972,7 +978,7 @@ namespace storm {
                         }
                     }
                     auto end = std::chrono::high_resolution_clock::now();
-                    STORM_LOG_TRACE("Quotient labels extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
+                    STORM_LOG_INFO("Quotient labels extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
 
                     start = std::chrono::high_resolution_clock::now();
                     std::set<storm::expressions::Variable> blockAndRowVariables;
@@ -983,7 +989,6 @@ namespace storm {
                     storm::dd::Add<DdType, ValueType> quotientTransitionMatrix = model.getTransitionMatrix().multiplyMatrix(partitionAsAdd.renameVariables(blockAndRowVariables, blockPrimeAndColumnVariables), model.getColumnVariables());
                     
                     // Pick a representative from each block.
-                    auto representatives = InternalRepresentativeComputer<DdType>(partitionAsBdd, model.getRowVariables()).getRepresentatives();
                     partitionAsBdd &= representatives;
                     partitionAsAdd *= partitionAsBdd.template toAdd<ValueType>();
 
@@ -998,7 +1003,7 @@ namespace storm {
                     }
                     STORM_LOG_ASSERT(quotientTransitionMatrix.sumAbstract(blockPrimeVariableSet).equalModuloPrecision(quotientTransitionMatrix.notZero().existsAbstract(blockPrimeVariableSet).template toAdd<ValueType>(), storm::utility::convertNumber<ValueType>(1e-6)), "Illegal non-probabilistic matrix.");
                     
-                    STORM_LOG_TRACE("Quotient transition matrix extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
+                    STORM_LOG_INFO("Quotient transition matrix extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
 
                     storm::dd::Bdd<DdType> quotientTransitionMatrixBdd = quotientTransitionMatrix.notZero();
                     storm::dd::Bdd<DdType> deadlockStates = !quotientTransitionMatrixBdd.existsAbstract(blockPrimeVariableSet) && reachableStates;
@@ -1021,7 +1026,7 @@ namespace storm {
                         quotientRewardModels.emplace(rewardModelName, storm::models::symbolic::StandardRewardModel<DdType, ValueType>(quotientStateRewards, quotientStateActionRewards, boost::none));
                     }
                     end = std::chrono::high_resolution_clock::now();
-                    STORM_LOG_TRACE("Reward models extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
+                    STORM_LOG_INFO("Reward models extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
 
                     if (modelType == storm::models::ModelType::Dtmc) {
                         return std::shared_ptr<storm::models::symbolic::Dtmc<DdType, ValueType>>(new storm::models::symbolic::Dtmc<DdType, ValueType>(model.getManager().asSharedPointer(), reachableStates, initialStates, deadlockStates, quotientTransitionMatrix, blockVariableSet, blockPrimeVariableSet, blockMetaVariablePairs, preservedLabelBdds, quotientRewardModels));
@@ -1031,6 +1036,124 @@ namespace storm {
                         return std::shared_ptr<storm::models::symbolic::Mdp<DdType, ValueType>>(new storm::models::symbolic::Mdp<DdType, ValueType>(model.getManager().asSharedPointer(), reachableStates, initialStates, deadlockStates, quotientTransitionMatrix, blockVariableSet, blockPrimeVariableSet, blockMetaVariablePairs, model.getNondeterminismVariables(), preservedLabelBdds, quotientRewardModels));
                     } else {
                         return std::shared_ptr<storm::models::symbolic::MarkovAutomaton<DdType, ValueType>>(new storm::models::symbolic::MarkovAutomaton<DdType, ValueType>(model.getManager().asSharedPointer(), model. template as<storm::models::symbolic::MarkovAutomaton<DdType, ValueType>>()->getMarkovianMarker(), reachableStates, initialStates, deadlockStates, quotientTransitionMatrix, blockVariableSet, blockPrimeVariableSet, blockMetaVariablePairs, model.getNondeterminismVariables(), preservedLabelBdds, quotientRewardModels));
+                    }
+                } else {
+                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Cannot extract quotient for this model type.");
+                }
+            }
+            
+            template<storm::dd::DdType DdType, typename ValueType>
+            std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> QuotientExtractor<DdType, ValueType>::extractQuotientUsingOriginalVariables(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& partition, PreservationInformation<DdType, ValueType> const& preservationInformation) {
+                auto modelType = model.getType();
+                
+                bool useRepresentativesForThisExtraction = this->useRepresentatives;
+                if (modelType == storm::models::ModelType::Dtmc || modelType == storm::models::ModelType::Ctmc || modelType == storm::models::ModelType::Mdp || modelType == storm::models::ModelType::MarkovAutomaton) {
+                    STORM_LOG_WARN_COND(!this->useRepresentatives, "Using representatives is unsupported for this extraction, falling back to regular extraction.");
+                    
+                    // Sanity checks.
+                    STORM_LOG_ASSERT(partition.getNumberOfStates() == model.getNumberOfStates(), "Mismatching partition size.");
+                    STORM_LOG_ASSERT(partition.getStates().renameVariables(model.getColumnVariables(), model.getRowVariables()) == model.getReachableStates(), "Mismatching partition.");
+                    
+                    std::set<storm::expressions::Variable> blockVariableSet = {partition.getBlockVariable()};
+                    std::set<storm::expressions::Variable> blockPrimeVariableSet = {partition.getPrimedBlockVariable()};
+                    std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> blockMetaVariablePairs = {std::make_pair(partition.getBlockVariable(), partition.getPrimedBlockVariable())};
+                    
+                    auto start = std::chrono::high_resolution_clock::now();
+
+                    // Compute representatives.
+                    storm::dd::Bdd<DdType> partitionAsBdd = partition.storedAsBdd() ? partition.asBdd() : partition.asAdd().notZero();
+                    partitionAsBdd = partitionAsBdd.renameVariables(model.getColumnVariables(), model.getRowVariables());
+                    auto representatives = InternalRepresentativeComputer<DdType>(partitionAsBdd, model.getRowVariables()).getRepresentatives();
+                    
+                    if (useRepresentativesForThisExtraction) {
+                        storm::dd::Bdd<DdType> partitionAsBddOverPrimedBlockVariables = partitionAsBdd.renameVariables(blockVariableSet, blockPrimeVariableSet);
+                        storm::dd::Bdd<DdType> tmp = (representatives && partitionAsBddOverPrimedBlockVariables).renameVariablesConcretize(model.getRowVariables(), blockVariableSet);
+                        partitionAsBdd = (tmp && partitionAsBddOverPrimedBlockVariables).existsAbstract(blockPrimeVariableSet);
+                    }
+
+                    storm::dd::Bdd<DdType> reachableStates = partitionAsBdd.existsAbstract(model.getRowVariables()).renameVariablesAbstract(blockVariableSet, model.getRowVariables());
+                    storm::dd::Bdd<DdType> initialStates = (model.getInitialStates() && partitionAsBdd).existsAbstract(model.getRowVariables()).renameVariablesAbstract(blockVariableSet, model.getRowVariables());
+                    
+                    std::map<std::string, storm::dd::Bdd<DdType>> preservedLabelBdds;
+                    for (auto const& label : preservationInformation.getLabels()) {
+                        preservedLabelBdds.emplace(label, (model.getStates(label) && partitionAsBdd).existsAbstract(model.getRowVariables()).renameVariablesAbstract(blockVariableSet, model.getRowVariables()));
+                    }
+                    for (auto const& expression : preservationInformation.getExpressions()) {
+                        std::stringstream stream;
+                        stream << expression;
+                        std::string expressionAsString = stream.str();
+                        
+                        auto it = preservedLabelBdds.find(expressionAsString);
+                        if (it != preservedLabelBdds.end()) {
+                            STORM_LOG_WARN("Duplicate label '" << expressionAsString << "', dropping second label definition.");
+                        } else {
+                            preservedLabelBdds.emplace(stream.str(), (model.getStates(expression) && partitionAsBdd).existsAbstract(model.getRowVariables()).renameVariablesAbstract(blockVariableSet, model.getRowVariables()));
+                        }
+                    }
+                    auto end = std::chrono::high_resolution_clock::now();
+                    STORM_LOG_INFO("Quotient labels extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
+                    
+                    start = std::chrono::high_resolution_clock::now();
+                    std::set<storm::expressions::Variable> blockAndRowVariables;
+                    std::set_union(blockVariableSet.begin(), blockVariableSet.end(), model.getRowVariables().begin(), model.getRowVariables().end(), std::inserter(blockAndRowVariables, blockAndRowVariables.end()));
+                    std::set<storm::expressions::Variable> blockPrimeAndColumnVariables;
+                    std::set_union(blockPrimeVariableSet.begin(), blockPrimeVariableSet.end(), model.getColumnVariables().begin(), model.getColumnVariables().end(), std::inserter(blockPrimeAndColumnVariables, blockPrimeAndColumnVariables.end()));
+                    storm::dd::Add<DdType, ValueType> partitionAsAdd = partitionAsBdd.template toAdd<ValueType>();
+                    storm::dd::Add<DdType, ValueType> quotientTransitionMatrix = model.getTransitionMatrix().multiplyMatrix(partitionAsAdd.renameVariables(model.getRowVariables(), model.getColumnVariables()), model.getColumnVariables()).renameVariablesAbstract(blockVariableSet, model.getColumnVariables());
+
+                    // Pick a representative from each block.
+                    partitionAsBdd &= representatives;
+                    partitionAsAdd = partitionAsBdd.template toAdd<ValueType>();
+
+                    // Workaround for problem with CUDD. Matrix-Matrix multiplication yields other result than multiplication+sum-abstract...
+                    if (DdType == storm::dd::DdType::CUDD) {
+                        quotientTransitionMatrix = (quotientTransitionMatrix * partitionAsAdd).sumAbstract(model.getRowVariables()).renameVariablesAbstract(blockVariableSet, model.getRowVariables());
+                    } else {
+                        quotientTransitionMatrix = quotientTransitionMatrix.multiplyMatrix(partitionAsAdd, model.getRowVariables()).renameVariablesAbstract(blockVariableSet, model.getRowVariables());
+                    }
+                    end = std::chrono::high_resolution_clock::now();
+                    
+                    // Check quotient matrix for sanity.
+                    if (std::is_same<ValueType, storm::RationalNumber>::value) {
+                        STORM_LOG_ASSERT(quotientTransitionMatrix.greater(storm::utility::one<ValueType>()).isZero(), "Illegal entries in quotient matrix.");
+                    } else {
+                        STORM_LOG_ASSERT(quotientTransitionMatrix.greater(storm::utility::one<ValueType>() + storm::utility::convertNumber<ValueType>(1e-6)).isZero(), "Illegal entries in quotient matrix.");
+                    }
+                    STORM_LOG_ASSERT(quotientTransitionMatrix.sumAbstract(model.getColumnVariables()).equalModuloPrecision(quotientTransitionMatrix.notZero().existsAbstract(model.getColumnVariables()).template toAdd<ValueType>(), storm::utility::convertNumber<ValueType>(1e-6)), "Illegal probabilistic matrix.");
+                    
+                    STORM_LOG_INFO("Quotient transition matrix extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
+                    
+                    storm::dd::Bdd<DdType> quotientTransitionMatrixBdd = quotientTransitionMatrix.notZero();
+                    storm::dd::Bdd<DdType> deadlockStates = !quotientTransitionMatrixBdd.existsAbstract(model.getColumnVariables()) && reachableStates;
+                    
+                    start = std::chrono::high_resolution_clock::now();
+                    std::unordered_map<std::string, storm::models::symbolic::StandardRewardModel<DdType, ValueType>> quotientRewardModels;
+                    for (auto const& rewardModelName : preservationInformation.getRewardModelNames()) {
+                        auto const& rewardModel = model.getRewardModel(rewardModelName);
+                        
+                        boost::optional<storm::dd::Add<DdType, ValueType>> quotientStateRewards;
+                        if (rewardModel.hasStateRewards()) {
+                            quotientStateRewards = rewardModel.getStateRewardVector().multiplyMatrix(partitionAsAdd, model.getRowVariables()).renameVariablesAbstract(blockVariableSet, model.getRowVariables());
+                        }
+                        
+                        boost::optional<storm::dd::Add<DdType, ValueType>> quotientStateActionRewards;
+                        if (rewardModel.hasStateActionRewards()) {
+                            quotientStateActionRewards = rewardModel.getStateActionRewardVector().multiplyMatrix(partitionAsAdd, model.getRowVariables()).renameVariablesAbstract(blockVariableSet, model.getRowVariables());
+                        }
+                        
+                        quotientRewardModels.emplace(rewardModelName, storm::models::symbolic::StandardRewardModel<DdType, ValueType>(quotientStateRewards, quotientStateActionRewards, boost::none));
+                    }
+                    end = std::chrono::high_resolution_clock::now();
+                    STORM_LOG_INFO("Reward models extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
+                    
+                    if (modelType == storm::models::ModelType::Dtmc) {
+                        return std::shared_ptr<storm::models::symbolic::Dtmc<DdType, ValueType>>(new storm::models::symbolic::Dtmc<DdType, ValueType>(model.getManager().asSharedPointer(), reachableStates, initialStates, deadlockStates, quotientTransitionMatrix, model.getRowVariables(), model.getColumnVariables(), model.getRowColumnMetaVariablePairs(), preservedLabelBdds, quotientRewardModels));
+                    } else if (modelType == storm::models::ModelType::Ctmc) {
+                        return std::shared_ptr<storm::models::symbolic::Ctmc<DdType, ValueType>>(new storm::models::symbolic::Ctmc<DdType, ValueType>(model.getManager().asSharedPointer(), reachableStates, initialStates, deadlockStates, quotientTransitionMatrix, model.getRowVariables(), model.getColumnVariables(), model.getRowColumnMetaVariablePairs(), preservedLabelBdds, quotientRewardModels));
+                    } else if (modelType == storm::models::ModelType::Mdp) {
+                        return std::shared_ptr<storm::models::symbolic::Mdp<DdType, ValueType>>(new storm::models::symbolic::Mdp<DdType, ValueType>(model.getManager().asSharedPointer(), reachableStates, initialStates, deadlockStates, quotientTransitionMatrix, model.getRowVariables(), model.getColumnVariables(), model.getRowColumnMetaVariablePairs(), model.getNondeterminismVariables(), preservedLabelBdds, quotientRewardModels));
+                    } else {
+                        return std::shared_ptr<storm::models::symbolic::MarkovAutomaton<DdType, ValueType>>(new storm::models::symbolic::MarkovAutomaton<DdType, ValueType>(model.getManager().asSharedPointer(), model. template as<storm::models::symbolic::MarkovAutomaton<DdType, ValueType>>()->getMarkovianMarker(), reachableStates, initialStates, deadlockStates, quotientTransitionMatrix, model.getRowVariables(), model.getColumnVariables(), model.getRowColumnMetaVariablePairs(), model.getNondeterminismVariables(), preservedLabelBdds, quotientRewardModels));
                     }
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Cannot extract quotient for this model type.");

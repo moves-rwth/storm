@@ -17,12 +17,13 @@ namespace storm {
         considerRelativeTerminationCriterion = minMaxSettings.getConvergenceCriterion() == storm::settings::modules::MinMaxEquationSolverSettings::ConvergenceCriterion::Relative;
         STORM_LOG_ASSERT(considerRelativeTerminationCriterion || minMaxSettings.getConvergenceCriterion() == storm::settings::modules::MinMaxEquationSolverSettings::ConvergenceCriterion::Absolute, "Unknown convergence criterion");
         multiplicationStyle = minMaxSettings.getValueIterationMultiplicationStyle();
+        forceBounds = minMaxSettings.isForceBoundsSet();
+        symmetricUpdates = minMaxSettings.isForceIntervalIterationSymmetricUpdatesSet();
     }
 
     MinMaxSolverEnvironment::~MinMaxSolverEnvironment() {
         // Intentionally left empty
     }
-
     
     storm::solver::MinMaxMethod const& MinMaxSolverEnvironment::getMethod() const {
         return minMaxMethod;
@@ -32,8 +33,8 @@ namespace storm {
         return methodSetFromDefault;
     }
     
-    void MinMaxSolverEnvironment::setMethod(storm::solver::MinMaxMethod value) {
-        methodSetFromDefault = false;
+    void MinMaxSolverEnvironment::setMethod(storm::solver::MinMaxMethod value, bool isSetFromDefault) {
+        methodSetFromDefault = isSetFromDefault;
         minMaxMethod = value;
     }
     
@@ -69,6 +70,20 @@ namespace storm {
         multiplicationStyle = value;
     }
     
+    bool MinMaxSolverEnvironment::isForceBoundsSet() const {
+        return forceBounds;
+    }
+    
+    void MinMaxSolverEnvironment::setForceBounds(bool value) {
+        forceBounds = value;
+    }
 
-
+    bool MinMaxSolverEnvironment::isSymmetricUpdatesSet() const {
+        return symmetricUpdates;
+    }
+    
+    void MinMaxSolverEnvironment::setSymmetricUpdates(bool value) {
+        symmetricUpdates = value;
+    }
+    
 }

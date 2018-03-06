@@ -196,10 +196,17 @@ namespace storm {
                 }
             }
             
+            template <storm::dd::DdType Type, typename ValueType>
+            template<typename NewValueType>
+            StandardRewardModel<Type, NewValueType> StandardRewardModel<Type, ValueType>::toValueType() const {
+                return StandardRewardModel<Type, NewValueType>(this->hasStateRewards() ? boost::make_optional(this->getStateRewardVector().template toValueType<NewValueType>()) : boost::none, this->hasStateActionRewards() ? boost::make_optional(this->getStateActionRewardVector().template toValueType<NewValueType>()) : boost::none, this->hasTransitionRewards() ? boost::make_optional(this->getTransitionRewardMatrix().template toValueType<NewValueType>()) : boost::none);
+            }
+            
             template class StandardRewardModel<storm::dd::DdType::CUDD, double>;
             template class StandardRewardModel<storm::dd::DdType::Sylvan, double>;
 
             template class StandardRewardModel<storm::dd::DdType::Sylvan, storm::RationalNumber>;
+            template StandardRewardModel<storm::dd::DdType::Sylvan, double> StandardRewardModel<storm::dd::DdType::Sylvan, storm::RationalNumber>::toValueType() const;
             template class StandardRewardModel<storm::dd::DdType::Sylvan, storm::RationalFunction>;
 
         }

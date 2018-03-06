@@ -196,7 +196,7 @@ namespace storm {
 
             try {
                 // Start parsing.
-                bool succeeded = qi::phrase_parse(iter, last, *this, boost::spirit::ascii::space | qi::lit("//") >> *(qi::char_ - (qi::eol | qi::eoi)) >> (qi::eol | qi::eoi), result);
+                bool succeeded = qi::phrase_parse(iter, last, *this, storm::spirit_encoding::space_type() | qi::lit("//") >> *(qi::char_ - (qi::eol | qi::eoi)) >> (qi::eol | qi::eoi), result);
                 STORM_LOG_THROW(succeeded, storm::exceptions::WrongFormatException, "Could not parse expression '" << expressionString << "'.");
                 STORM_LOG_DEBUG("Parsed expression successfully.");
             } catch (qi::expectation_failure<PositionIteratorType> const& e) {

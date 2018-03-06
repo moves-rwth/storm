@@ -1,6 +1,7 @@
 #pragma once
 
 #include "storm/solver/LinearEquationSolver.h"
+#include "storm/solver/Multiplier.h"
 #include "storm/solver/GameSolver.h"
 #include "SolverSelectionOptions.h"
 
@@ -26,8 +27,7 @@ namespace storm {
             bool solveGameValueIteration(Environment const& env, OptimizationDirection player1Dir, OptimizationDirection player2Dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
 
             // Computes p2Matrix * x + b, reduces the result w.r.t. player 2 choices, and then reduces the result w.r.t. player 1 choices.
-            void multiplyAndReduce(OptimizationDirection player1Dir, OptimizationDirection player2Dir, std::vector<ValueType>& x, std::vector<ValueType> const* b,
-                                   storm::solver::LinearEquationSolver<ValueType> const& linEqSolver, std::vector<ValueType>& multiplyResult, std::vector<ValueType>& p2ReducedMultiplyResult, std::vector<ValueType>& p1ReducedMultiplyResult) const;
+            void multiplyAndReduce(Environment const& env, OptimizationDirection player1Dir, OptimizationDirection player2Dir, std::vector<ValueType>& x, std::vector<ValueType> const* b, storm::solver::Multiplier<ValueType> const& multiplier, std::vector<ValueType>& multiplyResult, std::vector<ValueType>& p2ReducedMultiplyResult, std::vector<ValueType>& p1ReducedMultiplyResult) const;
             
             // Solves the equation system given by the two choice selections
             void getInducedMatrixVector(std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<uint_fast64_t> const& player1Choices, std::vector<uint_fast64_t> const& player2Choices, storm::storage::SparseMatrix<ValueType>& inducedMatrix, std::vector<ValueType>& inducedVector) const;
@@ -43,7 +43,7 @@ namespace storm {
             };
             
             // possibly cached data
-            mutable std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> linEqSolverPlayer2Matrix;
+            mutable std::unique_ptr<storm::solver::Multiplier<ValueType>> multiplierPlayer2Matrix;
             mutable std::unique_ptr<std::vector<ValueType>> auxiliaryP2RowVector; // player2Matrix.rowCount() entries
             mutable std::unique_ptr<std::vector<ValueType>> auxiliaryP2RowGroupVector; // player2Matrix.rowGroupCount() entries
             mutable std::unique_ptr<std::vector<ValueType>> auxiliaryP1RowGroupVector; // player1Matrix.rowGroupCount() entries

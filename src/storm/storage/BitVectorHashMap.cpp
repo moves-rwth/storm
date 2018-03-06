@@ -96,10 +96,12 @@ namespace storm {
             std::swap(oldValues, values);
             
             // Now iterate through the elements and reinsert them in the new storage.
+            uint64_t oldSize = numberOfElements;
             numberOfElements = 0;
             for (auto bucketIndex : oldOccupied) {
                 findOrAddAndGetBucket(oldBuckets.get(bucketIndex * bucketSize, bucketSize), oldValues[bucketIndex]);
             }
+            STORM_LOG_ASSERT(oldSize == numberOfElements, "Size mismatch in rehashing. Size before was " << oldSize << " and new size is " << numberOfElements << ".");
         }
         
         template<class ValueType, class Hash>

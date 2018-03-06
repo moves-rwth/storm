@@ -11,13 +11,15 @@ namespace storm {
     namespace dd {
         namespace bisimulation {
             
+            static const uint64_t NO_ELEMENT_MARKER = -1ull;
+            
             InternalSylvanSignatureRefinerBase::InternalSylvanSignatureRefinerBase(storm::dd::DdManager<storm::dd::DdType::Sylvan> const& manager, storm::expressions::Variable const& blockVariable, std::set<storm::expressions::Variable> const& stateVariables, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& nondeterminismVariables, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& nonBlockVariables, InternalSignatureRefinerOptions const& options) : manager(manager), blockVariable(blockVariable), stateVariables(stateVariables), nondeterminismVariables(nondeterminismVariables), nonBlockVariables(nonBlockVariables), options(options), numberOfBlockVariables(manager.getMetaVariable(blockVariable).getNumberOfDdVariables()), blockCube(manager.getMetaVariable(blockVariable).getCube()), nextFreeBlockIndex(0), numberOfRefinements(0), currentCapacity(1ull << 20), resizeFlag(0) {
                 
                 // Perform garbage collection to clean up stuff not needed anymore.
                 LACE_ME;
                 sylvan_gc();
                 
-                table.resize(3 * currentCapacity);
+                table.resize(3 * currentCapacity, NO_ELEMENT_MARKER);
             }
                         
             template<typename ValueType>
@@ -30,13 +32,14 @@ namespace storm {
             Partition<storm::dd::DdType::Sylvan, ValueType> InternalSignatureRefiner<storm::dd::DdType::Sylvan, ValueType>::refine(Partition<storm::dd::DdType::Sylvan, ValueType> const& oldPartition, Signature<storm::dd::DdType::Sylvan, ValueType> const& signature) {
                 std::pair<storm::dd::Bdd<storm::dd::DdType::Sylvan>, boost::optional<storm::dd::Bdd<storm::dd::DdType::Sylvan>>> newPartitionDds = refine(oldPartition, signature.getSignatureAdd());
                 ++numberOfRefinements;
+                
                 return oldPartition.replacePartition(newPartitionDds.first, nextFreeBlockIndex, nextFreeBlockIndex, newPartitionDds.second);
             }
             
             template<typename ValueType>
             void InternalSignatureRefiner<storm::dd::DdType::Sylvan, ValueType>::clearCaches() {
                 for (auto& e : this->table) {
-                    e = 0ull;
+                    e = NO_ELEMENT_MARKER;
                 }
                 for (auto& e : this->signatures) {
                     e = 0ull;
@@ -142,7 +145,7 @@ namespace storm {
                 
                 uint64_t oldCapacity = refiner->currentCapacity;
                 refiner->currentCapacity <<= 1;
-                refiner->table = std::vector<uint64_t>(3 * refiner->currentCapacity);
+                refiner->table = std::vector<uint64_t>(3 * refiner->currentCapacity, NO_ELEMENT_MARKER);
                 
                 CALL(sylvan_rehash, 0, oldCapacity, refiner);
                 
@@ -173,13 +176,13 @@ namespace storm {
                     ptr = refiner->table.data() + pos*3;
                     a = *ptr;
                     if (a == sig) {
-                        while ((b=ptr[1]) == 0) continue;
+                        while ((b=ptr[1]) == NO_ELEMENT_MARKER) continue;
                         if (b == previous_block) {
-                            while ((c=ptr[2]) == 0) continue;
+                            while ((c=ptr[2]) == NO_ELEMENT_MARKER) continue;
                             return c;
                         }
-                    } else if (a == 0) {
-                        if (cas(ptr, 0, sig)) {
+                    } else if (a == NO_ELEMENT_MARKER) {
+                        if (cas(ptr, NO_ELEMENT_MARKER, sig)) {
                             c = ptr[2] = __sync_fetch_and_add(&refiner->nextFreeBlockIndex, 1);
                             ptr[1] = previous_block;
                             return c;
@@ -189,7 +192,7 @@ namespace storm {
                     }
                     pos++;
                     if (pos >= refiner->currentCapacity) pos = 0;
-                    if (++count >= 128) return 0;
+                    if (++count >= 128) return NO_ELEMENT_MARKER;
                 }
             }
             
@@ -219,11 +222,11 @@ namespace storm {
                 }
                 return sylvan_cube(vars, e.data());
             }
-            
+                        
             TASK_3(BDD, sylvan_assign_block, BDD, sig, BDD, previous_block, InternalSylvanSignatureRefinerBase*, refiner)
             {
                 assert(previous_block != mtbdd_false); // if so, incorrect call!
-                
+             
                 // maybe do garbage collection
                 sylvan_gc_test();
                 
@@ -232,21 +235,25 @@ namespace storm {
                     sig = (uint64_t)-1;
                 }
                 
-                // try to claim previous block number
-                assert(previous_block != sylvan_false);
-                const uint64_t p_b = CALL(sylvan_decode_block, previous_block);
-                assert(p_b < refiner->signatures.size());
-
-                for (;;) {
-                    BDD cur = *(volatile BDD*)&refiner->signatures[p_b];
-                    if (cur == sig) return previous_block;
-                    if (cur != 0) break;
-                    if (cas(&refiner->signatures[p_b], 0, sig)) return previous_block;
+                if (refiner->options.reuseBlockNumbers) {
+                    // try to claim previous block number
+                    assert(previous_block != sylvan_false);
+                    const uint64_t p_b = CALL(sylvan_decode_block, previous_block);
+                    assert(p_b < refiner->signatures.size());
+                    
+                    for (;;) {
+                        BDD cur = *(volatile BDD*)&refiner->signatures[p_b];
+                        if (cur == sig) return previous_block;
+                        if (cur != 0) break;
+                        if (cas(&refiner->signatures[p_b], 0, sig)) return previous_block;
+                    }
                 }
                 
                 // no previous block number, search or insert
                 uint64_t c;
-                while ((c = sylvan_search_or_insert(sig, previous_block, refiner)) == 0) CALL(sylvan_grow, refiner);
+                while ((c = sylvan_search_or_insert(sig, previous_block, refiner)) == NO_ELEMENT_MARKER) {
+                    CALL(sylvan_grow, refiner);
+                }
                 
                 return CALL(sylvan_encode_block, refiner->blockCube.getInternalBdd().getSylvanBdd().GetBDD(), refiner->numberOfBlockVariables, c);
             }

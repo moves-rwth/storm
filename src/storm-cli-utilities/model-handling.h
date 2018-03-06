@@ -665,7 +665,7 @@ namespace storm {
             return model;
         }
         
-        template <storm::dd::DdType DdType, typename ValueType>
+        template <storm::dd::DdType DdType, typename BuildValueType, typename VerificationValueType = BuildValueType>
         void processInputWithValueTypeAndDdlib(SymbolicInput const& input) {
             auto coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
             auto abstractionSettings = storm::settings::getModule<storm::settings::modules::AbstractionSettings>();
@@ -674,19 +674,26 @@ namespace storm {
             storm::settings::modules::CoreSettings::Engine engine = coreSettings.getEngine();
             
             if (engine == storm::settings::modules::CoreSettings::Engine::AbstractionRefinement && abstractionSettings.getAbstractionRefinementMethod() == storm::settings::modules::AbstractionSettings::Method::Games) {
-                verifyWithAbstractionRefinementEngine<DdType, ValueType>(input);
+                verifyWithAbstractionRefinementEngine<DdType, VerificationValueType>(input);
             } else if (engine == storm::settings::modules::CoreSettings::Engine::Exploration) {
-                verifyWithExplorationEngine<ValueType>(input);
+                verifyWithExplorationEngine<VerificationValueType>(input);
             } else {
-                std::shared_ptr<storm::models::ModelBase> model = buildPreprocessExportModelWithValueTypeAndDdlib<DdType, ValueType>(input, engine);
+                std::shared_ptr<storm::models::ModelBase> model = buildPreprocessExportModelWithValueTypeAndDdlib<DdType, BuildValueType>(input, engine);
                 
                 if (model) {
+                    if (!std::is_same<BuildValueType, VerificationValueType>::value) {
+                        if (model->isSymbolicModel()) {
+                            auto symbolicModel = model->as<storm::models::symbolic::Model<DdType, BuildValueType>>();
+                            model = symbolicModel->template toValueType<VerificationValueType>();
+                        }
+                    }
+                    
                     if (coreSettings.isCounterexampleSet()) {
                         auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
-                        generateCounterexamples<ValueType>(model, input);
+                        generateCounterexamples<VerificationValueType>(model, input);
                     } else {
                         auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
-                        verifyModel<DdType, ValueType>(model, input, coreSettings);
+                        verifyModel<DdType, VerificationValueType>(model, input, coreSettings);
                     }
                 }
             }
@@ -696,10 +703,14 @@ namespace storm {
         void processInputWithValueType(SymbolicInput const& input) {
             auto coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
             auto generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
+            auto bisimulationSettings = storm::settings::getModule<storm::settings::modules::BisimulationSettings>();
             
             if (coreSettings.getDdLibraryType() == storm::dd::DdType::CUDD && coreSettings.isDdLibraryTypeSetFromDefaultValue() && generalSettings.isExactSet()) {
                 STORM_LOG_INFO("Switching to DD library sylvan to allow for rational arithmetic.");
-                processInputWithValueTypeAndDdlib<storm::dd::DdType::Sylvan, ValueType>(input);
+                processInputWithValueTypeAndDdlib<storm::dd::DdType::Sylvan, storm::RationalNumber>(input);
+            } else if (coreSettings.getDdLibraryType() == storm::dd::DdType::CUDD && coreSettings.isDdLibraryTypeSetFromDefaultValue() && std::is_same<ValueType, double>::value && generalSettings.isBisimulationSet() && bisimulationSettings.useExactArithmeticInDdBisimulation()) {
+                STORM_LOG_INFO("Switching to DD library sylvan to allow for rational arithmetic.");
+                processInputWithValueTypeAndDdlib<storm::dd::DdType::Sylvan, storm::RationalNumber, double>(input);
             } else if (coreSettings.getDdLibraryType() == storm::dd::DdType::CUDD) {
                 processInputWithValueTypeAndDdlib<storm::dd::DdType::CUDD, ValueType>(input);
             } else {

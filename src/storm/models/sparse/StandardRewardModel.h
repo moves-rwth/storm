@@ -254,6 +254,13 @@ namespace storm {
                  storm::storage::BitVector getStatesWithZeroReward(storm::storage::SparseMatrix<MatrixValueType> const& transitionMatrix) const;
                 
                 /*!
+                 * Returns the set of states for which all associated rewards (state, action or transition rewards) satisfy the given filter.
+                 * @param transitionMatrix the transition matrix of the model (used to determine the actions and transitions that belong to a state)
+                 */
+                template<typename MatrixValueType>
+                storm::storage::BitVector getStatesWithFilter(storm::storage::SparseMatrix<MatrixValueType> const& transitionMatrix, std::function<bool(ValueType const&)> const& filter) const;
+                
+                /*!
                  * Returns the set of choices at which all rewards (state-, action- and transition-rewards) are zero.
                  *
                  * @param transitionMatrix the transition matrix of the model (used to determine the state that belongs to a choice
@@ -261,7 +268,14 @@ namespace storm {
                  */
                  template<typename MatrixValueType>
                  storm::storage::BitVector getChoicesWithZeroReward(storm::storage::SparseMatrix<MatrixValueType> const& transitionMatrix) const;
-                 
+
+                /*!
+                 * Returns the set of choices for which all associated rewards (state, action or transition rewards) satisfy the given filter.
+                 * @param transitionMatrix the transition matrix of the model (used to determine the actions and transitions that belong to a state)
+                 */
+                template<typename MatrixValueType>
+                storm::storage::BitVector getChoicesWithFilter(storm::storage::SparseMatrix<MatrixValueType> const& transitionMatrix, std::function<bool(ValueType const&)> const& filter) const;
+
                 /*!
                  * Sets the given value in the state-action reward vector at the given row. This assumes that the reward
                  * model has state-action rewards.

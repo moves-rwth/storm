@@ -17,7 +17,6 @@ namespace storm {
             typedef typename SparseMdpModelType::RewardModelType RewardModelType;
             
             explicit SparseMdpPrctlModelChecker(SparseMdpModelType const& model);
-            explicit SparseMdpPrctlModelChecker(SparseMdpModelType const& model, std::unique_ptr<storm::solver::MinMaxLinearEquationSolverFactory<ValueType>>&& MinMaxLinearEquationSolverFactory);
             
             // The implemented methods of the AbstractModelChecker interface.
             virtual bool canHandle(CheckTask<storm::logic::Formula, ValueType> const& checkTask) const override;
@@ -33,9 +32,6 @@ namespace storm {
             virtual std::unique_ptr<CheckResult> computeLongRunAverageRewards(Environment const& env, storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::LongRunAverageRewardFormula, ValueType> const& checkTask) override;
             virtual std::unique_ptr<CheckResult> checkMultiObjectiveFormula(Environment const& env, CheckTask<storm::logic::MultiObjectiveFormula, ValueType> const& checkTask) override;
             
-        private:
-            // An object that is used for retrieving solvers for systems of linear equations that are the result of nondeterministic choices.
-            std::unique_ptr<storm::solver::MinMaxLinearEquationSolverFactory<ValueType>> minMaxLinearEquationSolverFactory;
         };
     } // namespace modelchecker
 } // namespace storm

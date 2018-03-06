@@ -147,7 +147,7 @@ namespace storm {
             start = (qi::eps >> filterProperty[phoenix::push_back(qi::_val, qi::_1)]
                      | qi::eps(phoenix::bind(&FormulaParserGrammar::areConstantDefinitionsAllowed, phoenix::ref(*this))) >> constantDefinition
                      | qi::eps)
-                     % +(qi::char_("\n;")) >> qi::skip(boost::spirit::ascii::space | qi::lit("//") >> *(qi::char_ - (qi::eol | qi::eoi)))[qi::eps] >> qi::eoi;
+                     % +(qi::char_("\n;")) >> qi::skip(storm::spirit_encoding::space_type() | qi::lit("//") >> *(qi::char_ - (qi::eol | qi::eoi)))[qi::eps] >> qi::eoi;
             start.name("start");
             
             // Enable the following lines to print debug output for most the rules.

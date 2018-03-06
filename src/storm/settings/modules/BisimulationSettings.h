@@ -57,6 +57,20 @@ namespace storm {
                 bool isUseRepresentativesSet() const;
                 
                 /*!
+                 * Retrieves whether the extracted quotient model is supposed to use the same variables as the original
+                 * model.
+                 * NOTE: only applies to DD-based bisimulation.
+                 */
+                bool isUseOriginalVariablesSet() const;
+                
+                /*!
+                 * Retrieves whether exact arithmetic is to be used in symbolic bisimulation minimization.
+                 *
+                 * @return True iff exact arithmetic is to be used in symbolic bisimulation minimization.
+                 */
+                bool useExactArithmeticInDdBisimulation() const;
+                
+                /*!
                  * Retrieves the mode to compute signatures.
                  */
                 storm::dd::bisimulation::SignatureMode getSignatureMode() const;
@@ -85,12 +99,14 @@ namespace storm {
                 // Define the string names of the options as constants.
                 static const std::string typeOptionName;
                 static const std::string representativeOptionName;
+                static const std::string originalVariablesOptionName;
                 static const std::string quotientFormatOptionName;
                 static const std::string signatureModeOptionName;
                 static const std::string reuseOptionName;
                 static const std::string initialPartitionOptionName;
                 static const std::string refinementModeOptionName;
                 static const std::string parallelismModeOptionName;
+                static const std::string exactArithmeticDdOptionName;
             };
         } // namespace modules
     } // namespace settings

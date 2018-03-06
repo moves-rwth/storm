@@ -2,6 +2,11 @@
 
 #include <boost/algorithm/string/join.hpp>
 
+#include "storm/models/symbolic/Dtmc.h"
+#include "storm/models/symbolic/Ctmc.h"
+#include "storm/models/symbolic/Mdp.h"
+#include "storm/models/symbolic/MarkovAutomaton.h"
+
 #include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/exceptions/InvalidOperationException.h"
 
@@ -212,6 +217,11 @@ namespace storm {
             }
             
             template<storm::dd::DdType Type, typename ValueType>
+            std::map<std::string, storm::dd::Bdd<Type>> const& Model<Type, ValueType>::getLabelToBddMap() const {
+                return labelToBddMap;
+            }
+            
+            template<storm::dd::DdType Type, typename ValueType>
             storm::dd::Add<Type, ValueType> Model<Type, ValueType>::getRowColumnIdentity() const {
                 return (storm::utility::dd::getRowColumnDiagonal<Type>(this->getManager(), this->getRowColumnMetaVariablePairs()) && this->getReachableStates()).template toAdd<ValueType>();
             }
@@ -372,11 +382,30 @@ namespace storm {
                 return parameters;
             }
             
+            template<storm::dd::DdType Type, typename ValueType>
+            template<typename NewValueType>
+            std::shared_ptr<Model<Type, NewValueType>> Model<Type, ValueType>::toValueType() const {
+                // Make a huge branching here as we cannot make a templated function virtual.
+                if (this->getType() == storm::models::ModelType::Dtmc) {
+                    return this->template as<storm::models::symbolic::Dtmc<Type, ValueType>>()->template toValueType<NewValueType>();
+                } else if (this->getType() == storm::models::ModelType::Ctmc) {
+                    return this->template as<storm::models::symbolic::Ctmc<Type, ValueType>>()->template toValueType<NewValueType>();
+                } else if (this->getType() == storm::models::ModelType::Mdp) {
+                    return this->template as<storm::models::symbolic::Mdp<Type, ValueType>>()->template toValueType<NewValueType>();
+                } else if (this->getType() == storm::models::ModelType::MarkovAutomaton) {
+                    return this->template as<storm::models::symbolic::MarkovAutomaton<Type, ValueType>>()->template toValueType<NewValueType>();
+                }
+                
+                STORM_LOG_WARN("Could not convert value type of model.");
+                return nullptr;
+            }
+            
             // Explicitly instantiate the template class.
             template class Model<storm::dd::DdType::CUDD, double>;
             template class Model<storm::dd::DdType::Sylvan, double>;
             
             template class Model<storm::dd::DdType::Sylvan, storm::RationalNumber>;
+            template std::shared_ptr<Model<storm::dd::DdType::Sylvan, double>> Model<storm::dd::DdType::Sylvan, storm::RationalNumber>::toValueType() const;
             template class Model<storm::dd::DdType::Sylvan, storm::RationalFunction>;
         } // namespace symbolic
     } // namespace models

@@ -44,6 +44,8 @@ namespace storm {
         bool isZero(ValueType const& a);
 
         bool isAlmostZero(double const& a);
+
+        bool isAlmostOne(double const& a);
         
         template<typename ValueType>
         bool isConstant(ValueType const& a);

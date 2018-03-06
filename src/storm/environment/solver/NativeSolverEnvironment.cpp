@@ -18,6 +18,9 @@ namespace storm {
         STORM_LOG_ASSERT(considerRelativeTerminationCriterion || nativeSettings.getConvergenceCriterion() == storm::settings::modules::NativeEquationSolverSettings::ConvergenceCriterion::Absolute, "Unknown convergence criterion");
         powerMethodMultiplicationStyle = nativeSettings.getPowerMethodMultiplicationStyle();
         sorOmega = storm::utility::convertNumber<storm::RationalNumber>(nativeSettings.getOmega());
+        forceBounds = nativeSettings.isForceBoundsSet();
+        symmetricUpdates = nativeSettings.isForcePowerMethodSymmetricUpdatesSet();
+
     }
 
     NativeSolverEnvironment::~NativeSolverEnvironment() {
@@ -77,4 +80,20 @@ namespace storm {
         sorOmega = value;
     }
 
+    bool NativeSolverEnvironment::isForceBoundsSet() const {
+        return forceBounds;
+    }
+    
+    void NativeSolverEnvironment::setForceBounds(bool value) {
+        forceBounds = value;
+    }
+
+    bool NativeSolverEnvironment::isSymmetricUpdatesSet() const {
+        return symmetricUpdates;
+    }
+    
+    void NativeSolverEnvironment::setSymmetricUpdates(bool value) {
+        symmetricUpdates = value;
+    }
+  
 }

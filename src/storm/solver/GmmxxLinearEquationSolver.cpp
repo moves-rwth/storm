@@ -5,7 +5,6 @@
 
 #include "storm/adapters/GmmxxAdapter.h"
 
-#include "storm/solver/GmmxxMultiplier.h"
 #include "storm/environment/solver/GmmxxSolverEnvironment.h"
 
 #include "storm/utility/vector.h"
@@ -117,35 +116,6 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void GmmxxLinearEquationSolver<ValueType>::multiply(std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<ValueType>& result) const {
-            multiplier.multAdd(*gmmxxA, x, b, result);
-            
-            if (!this->isCachingEnabled()) {
-                clearCache();
-            }
-        }
-        
-        template<typename ValueType>
-        void GmmxxLinearEquationSolver<ValueType>::multiplyAndReduce(OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<ValueType>& result, std::vector<uint_fast64_t>* choices) const {
-            multiplier.multAddReduce(dir, rowGroupIndices, *gmmxxA, x, b, result, choices);
-        }
-        
-        template<typename ValueType>
-        bool GmmxxLinearEquationSolver<ValueType>::supportsGaussSeidelMultiplication() const {
-            return true;
-        }
-        
-        template<typename ValueType>
-        void GmmxxLinearEquationSolver<ValueType>::multiplyGaussSeidel(std::vector<ValueType>& x, std::vector<ValueType> const* b) const {
-            multiplier.multAddGaussSeidelBackward(*gmmxxA, x, b);
-        }
-
-        template<typename ValueType>
-        void GmmxxLinearEquationSolver<ValueType>::multiplyAndReduceGaussSeidel(OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<uint64_t>* choices) const {
-            multiplier.multAddReduceGaussSeidel(dir, rowGroupIndices, *gmmxxA, x, b, choices);
-        }
-        
-        template<typename ValueType>
         LinearEquationSolverProblemFormat GmmxxLinearEquationSolver<ValueType>::getEquationProblemFormat(Environment const& env) const {
             return LinearEquationSolverProblemFormat::EquationSystem;
         }
@@ -168,7 +138,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> GmmxxLinearEquationSolverFactory<ValueType>::create(Environment const& env, LinearEquationSolverTask const& task) const {
+        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> GmmxxLinearEquationSolverFactory<ValueType>::create(Environment const& env) const {
             return std::make_unique<storm::solver::GmmxxLinearEquationSolver<ValueType>>();
         }
         

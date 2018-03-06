@@ -9,6 +9,7 @@
 #include "storm/settings/modules/IOSettings.h"
 #include "storm/settings/modules/DebugSettings.h"
 #include "storm/settings/modules/EigenEquationSolverSettings.h"
+#include "storm/settings/modules/ModelCheckerSettings.h"
 #include "storm/settings/modules/GmmxxEquationSolverSettings.h"
 #include "storm/settings/modules/NativeEquationSolverSettings.h"
 #include "storm/settings/modules/EliminationSettings.h"
@@ -34,6 +35,7 @@ namespace storm {
             storm::settings::addModule<storm::settings::modules::CoreSettings>();
 
             storm::settings::addModule<storm::settings::modules::DebugSettings>();
+            storm::settings::addModule<storm::settings::modules::ModelCheckerSettings>();
             storm::settings::addModule<storm::settings::modules::NativeEquationSolverSettings>();
             storm::settings::addModule<storm::settings::modules::GmmxxEquationSolverSettings>();
             storm::settings::addModule<storm::settings::modules::EigenEquationSolverSettings>();

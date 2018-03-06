@@ -131,6 +131,14 @@ namespace storm {
              */
             StronglyConnectedComponentDecomposition& operator=(StronglyConnectedComponentDecomposition&& other);
             
+            
+            /*!
+             * Sorts the SCCs topologically: The ith block can only reach states in block j<i
+             * @param longestChainSize if not nullptr, this value is set to the length m of the longest
+             * chain of SCCs B_1 B_2 ... B_m such that B_i can reach B_(i-1).
+             */
+            void sortTopologically(storm::storage::SparseMatrix<ValueType> const& transitions, uint64_t* longestChainSize = nullptr);
+            
         private:
             /*!
              * Performs the SCC decomposition of the given model. As a side-effect this fills the vector of

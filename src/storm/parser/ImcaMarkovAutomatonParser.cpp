@@ -248,7 +248,7 @@ namespace storm {
             try {
                 // Start parsing.
                 ImcaParserGrammar<ValueType> grammar;
-                bool succeeded = qi::phrase_parse(iter, last, grammar, boost::spirit::ascii::space | qi::lit("//") >> *(qi::char_ - (qi::eol | qi::eoi)) >> (qi::eol | qi::eoi), components);
+                bool succeeded = qi::phrase_parse(iter, last, grammar, storm::spirit_encoding::space_type() | qi::lit("//") >> *(qi::char_ - (qi::eol | qi::eoi)) >> (qi::eol | qi::eoi), components);
                 STORM_LOG_THROW(succeeded, storm::exceptions::WrongFormatException, "Could not parse imca file.");
                 STORM_LOG_DEBUG("Parsed imca file successfully.");
             } catch (qi::expectation_failure<PositionIteratorType> const& e) {

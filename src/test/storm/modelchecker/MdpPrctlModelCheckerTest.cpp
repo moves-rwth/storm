@@ -19,6 +19,7 @@
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
 #include "storm/modelchecker/results/QualitativeCheckResult.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
+#include "storm/environment/solver/TopologicalSolverEnvironment.h"
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/logic/Formulas.h"
 #include "storm/storage/jani/Property.h"
@@ -39,6 +40,22 @@ namespace {
             return env;
         }
     };
+    class SparseDoubleIntervalIterationEnvironment {
+    public:
+        static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan; // Unused for sparse models
+        static const storm::settings::modules::CoreSettings::Engine engine = storm::settings::modules::CoreSettings::Engine::Sparse;
+        static const bool isExact = false;
+        typedef double ValueType;
+        typedef storm::models::sparse::Mdp<ValueType> ModelType;
+        static storm::Environment createEnvironment() {
+            storm::Environment env;
+            env.solver().setForceSoundness(true);
+            env.solver().minMax().setMethod(storm::solver::MinMaxMethod::IntervalIteration);
+            env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6));
+            env.solver().minMax().setRelativeTerminationCriterion(false);
+            return env;
+        }
+    };
     class SparseDoubleSoundValueIterationEnvironment {
     public:
         static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan; // Unused for sparse models
@@ -49,12 +66,48 @@ namespace {
         static storm::Environment createEnvironment() {
             storm::Environment env;
             env.solver().setForceSoundness(true);
-            env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
+            env.solver().minMax().setMethod(storm::solver::MinMaxMethod::SoundValueIteration);
             env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6));
             env.solver().minMax().setRelativeTerminationCriterion(false);
             return env;
         }
     };
+    
+    class SparseDoubleTopologicalValueIterationEnvironment {
+    public:
+        static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan; // Unused for sparse models
+        static const storm::settings::modules::CoreSettings::Engine engine = storm::settings::modules::CoreSettings::Engine::Sparse;
+        static const bool isExact = false;
+        typedef double ValueType;
+        typedef storm::models::sparse::Mdp<ValueType> ModelType;
+        static storm::Environment createEnvironment() {
+            storm::Environment env;
+            env.solver().minMax().setMethod(storm::solver::MinMaxMethod::Topological);
+            env.solver().topological().setUnderlyingMinMaxMethod(storm::solver::MinMaxMethod::ValueIteration);
+            env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
+            env.solver().minMax().setRelativeTerminationCriterion(false);
+            return env;
+        }
+    };
+    
+    class SparseDoubleTopologicalSoundValueIterationEnvironment {
+    public:
+        static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan; // Unused for sparse models
+        static const storm::settings::modules::CoreSettings::Engine engine = storm::settings::modules::CoreSettings::Engine::Sparse;
+        static const bool isExact = false;
+        typedef double ValueType;
+        typedef storm::models::sparse::Mdp<ValueType> ModelType;
+        static storm::Environment createEnvironment() {
+            storm::Environment env;
+            env.solver().setForceSoundness(true);
+            env.solver().minMax().setMethod(storm::solver::MinMaxMethod::Topological);
+            env.solver().topological().setUnderlyingMinMaxMethod(storm::solver::MinMaxMethod::SoundValueIteration);
+            env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6));
+            env.solver().minMax().setRelativeTerminationCriterion(false);
+            return env;
+        }
+    };
+    
     class SparseRationalPolicyIterationEnvironment {
     public:
         static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan; // Unused for sparse models
@@ -119,7 +172,7 @@ namespace {
         static storm::Environment createEnvironment() {
             storm::Environment env;
             env.solver().setForceSoundness(true);
-            env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
+            env.solver().minMax().setMethod(storm::solver::MinMaxMethod::SoundValueIteration);
             env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6));
             env.solver().minMax().setRelativeTerminationCriterion(false);
             return env;
@@ -282,7 +335,10 @@ namespace {
   
     typedef ::testing::Types<
             SparseDoubleValueIterationEnvironment,
+            SparseDoubleIntervalIterationEnvironment,
             SparseDoubleSoundValueIterationEnvironment,
+            SparseDoubleTopologicalValueIterationEnvironment,
+            SparseDoubleTopologicalSoundValueIterationEnvironment,
             SparseRationalPolicyIterationEnvironment,
             SparseRationalRationalSearchEnvironment,
             HybridCuddDoubleValueIterationEnvironment,
