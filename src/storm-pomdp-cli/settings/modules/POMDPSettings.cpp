@@ -20,7 +20,7 @@ namespace storm {
             const std::string selfloopReductionOption = "selfloopreduction";
             const std::string memoryBoundOption = "memorybound";
             const std::string memoryPatternOption = "memorypattern";
-            std::vector<std::string> memoryPatterns = {"trivial", "fixedcounter", "selectivecounter", "ring", "settablebits", "full"};
+            std::vector<std::string> memoryPatterns = {"trivial", "fixedcounter", "selectivecounter", "ring", "fixedring", "settablebits", "full"};
             const std::string fscmode = "fscmode";
             std::vector<std::string> fscModes = {"standard", "simple-linear", "simple-linear-inverse"};
             const std::string transformBinaryOption = "transformbinary";
@@ -76,7 +76,9 @@ namespace storm {
                 } else if (pattern == "selectivecounter") {
                     return storm::storage::PomdpMemoryPattern::SelectiveCounter;
                 } else if (pattern == "ring") {
-                    return storm::storage::PomdpMemoryPattern::Ring;
+                    return storm::storage::PomdpMemoryPattern::SelectiveRing;
+                } else if (pattern == "fixedring") {
+                    return storm::storage::PomdpMemoryPattern::FixedRing;
                 } else if (pattern == "settablebits") {
                     return storm::storage::PomdpMemoryPattern::SettableBits;
                 } else if (pattern == "full") {

@@ -80,7 +80,9 @@ namespace storm {
                     return "fixedcounter";
                 case PomdpMemoryPattern::SelectiveCounter:
                     return "selectivecounter";
-                case PomdpMemoryPattern::Ring:
+                case PomdpMemoryPattern::FixedRing:
+                    return "fixedring";
+                case PomdpMemoryPattern::SelectiveRing:
                     return "ring";
                 case PomdpMemoryPattern::SettableBits:
                     return "settablebits";
@@ -99,8 +101,10 @@ namespace storm {
                     return buildFixedCountingMemory(numStates);
                 case PomdpMemoryPattern::SelectiveCounter:
                     return buildSelectiveCountingMemory(numStates);
-                case PomdpMemoryPattern::Ring:
-                    return buildRingMemory(numStates);
+                case PomdpMemoryPattern::FixedRing:
+                    return buildFixedRingMemory(numStates);
+                case PomdpMemoryPattern::SelectiveRing:
+                    return buildSelectiveRingMemory(numStates);
                 case PomdpMemoryPattern::SettableBits:
                     return buildSettableBitsMemory(numStates);
                 case PomdpMemoryPattern::Full:
@@ -129,7 +133,15 @@ namespace storm {
             return PomdpMemory(transitions, 0);
         }
         
-        PomdpMemory PomdpMemoryBuilder::buildRingMemory(uint64_t numStates) const {
+        PomdpMemory PomdpMemoryBuilder::buildFixedRingMemory(uint64_t numStates) const {
+            std::vector<storm::storage::BitVector> transitions(numStates, storm::storage::BitVector(numStates, false));
+            for (uint64_t state = 0; state < numStates; ++state) {
+                transitions[state].set((state + 1) % numStates);
+            }
+            return PomdpMemory(transitions, 0);
+        }
+        
+        PomdpMemory PomdpMemoryBuilder::buildSelectiveRingMemory(uint64_t numStates) const {
             std::vector<storm::storage::BitVector> transitions(numStates, storm::storage::BitVector(numStates, false));
             for (uint64_t state = 0; state < numStates; ++state) {
                 transitions[state].set(state);

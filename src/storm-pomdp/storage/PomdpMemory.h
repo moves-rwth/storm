@@ -23,7 +23,7 @@ namespace storm {
         };
         
         enum class PomdpMemoryPattern {
-            Trivial, FixedCounter, SelectiveCounter, Ring, SettableBits, Full
+            Trivial, FixedCounter, SelectiveCounter, FixedRing, SelectiveRing, SettableBits, Full
         };
         
         std::string toString(PomdpMemoryPattern const& pattern);
@@ -45,8 +45,12 @@ namespace storm {
             PomdpMemory buildSelectiveCountingMemory(uint64_t numStates) const;
             
             // Builds a memory structure that consists of a ring of the given number of states.
+            // Every state has a transition to the successor state
+            PomdpMemory buildFixedRingMemory(uint64_t numStates) const;
+
+            // Builds a memory structure that consists of a ring of the given number of states.
             // Every state has a transition to the successor state and a selfloop
-            PomdpMemory buildRingMemory(uint64_t numStates) const;
+            PomdpMemory buildSelectiveRingMemory(uint64_t numStates) const;
             
             // Builds a memory structure that represents floor(log(numStates)) bits that can only be set from zero to one or from zero to zero.
             PomdpMemory buildSettableBitsMemory(uint64_t numStates) const;
