@@ -307,8 +307,6 @@ namespace storm {
 
             bool useGaussSeidelMultiplication = multiplicationStyle == storm::solver::MultiplicationStyle::GaussSeidel;
             
-            std::vector<ValueType>* originalX = currentX;
-            
             bool converged = false;
             bool terminate = this->terminateNow(*currentX, guarantee);
             uint64_t iterations = currentIterations;
@@ -320,21 +318,16 @@ namespace storm {
                     this->multiplier->multiply(env, *currentX, &b, *newX);
                 }
                 
-                // Now check for termination.
+                // Check for convergence.
                 converged = storm::utility::vector::equalModuloPrecision<ValueType>(*currentX, *newX, precision, relative);
+
+                // Check for termination.
+                std::swap(currentX, newX);
+                ++iterations;
                 terminate = this->terminateNow(*currentX, guarantee);
                 
                 // Potentially show progress.
                 this->showProgressIterative(iterations);
-                
-                // Set up next iteration.
-                std::swap(currentX, newX);
-                ++iterations;
-            }
-            
-            // Swap the pointers so that the output is always in currentX.
-            if (originalX == newX) {
-                std::swap(currentX, newX);
             }
             
             return PowerIterationResult(iterations - currentIterations, converged ? SolverStatus::Converged : (terminate ? SolverStatus::TerminatedEarly : SolverStatus::MaximalIterationsExceeded));
@@ -883,6 +876,8 @@ namespace storm {
             bool relative = env.solver().native().getRelativeTerminationCriterion();
             auto multiplicationStyle = env.solver().native().getPowerMethodMultiplicationStyle();
             
+            std::vector<ImpreciseType> const* originalX = &x;
+            
             std::vector<ImpreciseType>* currentX = &x;
             std::vector<ImpreciseType>* newX = &tmpX;
 
@@ -907,10 +902,10 @@ namespace storm {
                 
                 // Make sure that currentX and rationalX are not aliased.
                 std::vector<RationalType>* temporaryRational = TemporaryHelper<RationalType, ImpreciseType>::getTemporary(rationalX, currentX, newX);
-                
+
                 // Sharpen solution and place it in the temporary rational.
                 bool foundSolution = sharpen(p, rationalA, *currentX, rationalB, *temporaryRational);
-                
+
                 // After sharpen, if a solution was found, it is contained in the free rational.
                 
                 if (foundSolution) {
@@ -921,6 +916,11 @@ namespace storm {
                     // Increase the precision.
                     precision = precision / 10;
                 }
+            }
+            
+            // Swap the two vectors if the current result is not in the original x.
+            if (currentX != originalX) {
+                std::swap(x, tmpX);
             }
             
             if (status == SolverStatus::InProgress && overallIterations == maxIter) {

@@ -322,6 +322,7 @@ namespace storm {
                 
                 // Then compute the state reward vector to use in the computation.
                 storm::dd::Add<DdType, ValueType> totalRewardVector = rewardModel.getTotalRewardVector(rateMatrix, model.getColumnVariables(), exitRateVector, false);
+                conversionWatch.start();
                 std::vector<ValueType> explicitTotalRewardVector = totalRewardVector.toVector(odd);
                 conversionWatch.stop();
                 STORM_LOG_INFO("Converting symbolic matrix/vector to explicit representation done in " << conversionWatch.getTimeInMilliseconds() << "ms.");

@@ -288,8 +288,6 @@ namespace storm {
             // Proceed with the iterations as long as the method did not converge or reach the maximum number of iterations.
             uint64_t iterations = currentIterations;
             
-            std::vector<ValueType>* originalX = currentX;
-            
             SolverStatus status = SolverStatus::InProgress;
             while (status == SolverStatus::InProgress) {
                 // Compute x' = min/max(A*x + b).
@@ -313,11 +311,6 @@ namespace storm {
 
                 // Potentially show progress.
                 this->showProgressIterative(iterations);
-            }
-            
-            // Swap the pointers so that the output is always in currentX.
-            if (originalX == newX) {
-                std::swap(currentX, newX);
             }
             
             return ValueIterationResult(iterations - currentIterations, status);
@@ -1282,7 +1275,9 @@ namespace storm {
         template<typename ValueType>
         template<typename RationalType, typename ImpreciseType>
         bool IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsRationalSearchHelper(Environment const& env, OptimizationDirection dir, IterativeMinMaxLinearEquationSolver<ImpreciseType> const& impreciseSolver, storm::storage::SparseMatrix<RationalType> const& rationalA, std::vector<RationalType>& rationalX, std::vector<RationalType> const& rationalB, storm::storage::SparseMatrix<ImpreciseType> const& A, std::vector<ImpreciseType>& x, std::vector<ImpreciseType> const& b, std::vector<ImpreciseType>& tmpX) const {
-            
+
+            std::vector<ImpreciseType> const* originalX = &x;
+
             std::vector<ImpreciseType>* currentX = &x;
             std::vector<ImpreciseType>* newX = &tmpX;
 
@@ -1322,6 +1317,11 @@ namespace storm {
                     // Increase the precision.
                     precision /= storm::utility::convertNumber<ValueType>(static_cast<uint64_t>(10));
                 }
+            }
+            
+            // Swap the two vectors if the current result is not in the original x.
+            if (currentX != originalX) {
+                std::swap(x, tmpX);
             }
             
             if (status == SolverStatus::InProgress && overallIterations == env.solver().minMax().getMaximalNumberOfIterations()) {
