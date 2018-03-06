@@ -18,6 +18,7 @@ namespace storm {
             const std::string MinMaxEquationSolverSettings::precisionOptionName = "precision";
             const std::string MinMaxEquationSolverSettings::absoluteOptionName = "absolute";
             const std::string MinMaxEquationSolverSettings::lraMethodOptionName = "lramethod";
+            const std::string MinMaxEquationSolverSettings::markovAutomatonBoundedReachabilityMethodOptionName = "mamethod";
             const std::string MinMaxEquationSolverSettings::valueIterationMultiplicationStyleOptionName = "vimult";
             const std::string MinMaxEquationSolverSettings::intervalIterationSymmetricUpdatesOptionName = "symmetricupdates";
             const std::string MinMaxEquationSolverSettings::forceBoundsOptionName = "forcebounds";
@@ -37,6 +38,9 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, lraMethodOptionName, false, "Sets which method is preferred for computing long run averages.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of a long run average computation method.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(lraMethods)).setDefaultValueString("vi").build()).build());
 
+                std::vector<std::string> maMethods = {"imca", "unifplus"};
+                this->addOption(storm::settings::OptionBuilder(moduleName, markovAutomatonBoundedReachabilityMethodOptionName, true, "The method to use to solve bounded reachability queries on MAs.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the method to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(maMethods)).setDefaultValueString("unifplus").build()).build());
+                
                 std::vector<std::string> multiplicationStyles = {"gaussseidel", "regular", "gs", "r"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, valueIterationMultiplicationStyleOptionName, false, "Sets which method multiplication style to prefer for value iteration.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of a multiplication style.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(multiplicationStyles)).setDefaultValueString("gaussseidel").build()).build());
@@ -108,6 +112,14 @@ namespace storm {
                     return storm::solver::LraMethod::LinearProgramming;
                 }
                 STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown lra solving technique '" << lraMethodString << "'.");
+            }
+            
+            MinMaxEquationSolverSettings::MarkovAutomatonBoundedReachabilityMethod MinMaxEquationSolverSettings::getMarkovAutomatonBoundedReachabilityMethod() const {
+                std::string techniqueAsString = this->getOption(markovAutomatonBoundedReachabilityMethodOptionName).getArgumentByName("name").getValueAsString();
+                if (techniqueAsString == "imca") {
+                    return MinMaxEquationSolverSettings::MarkovAutomatonBoundedReachabilityMethod::Imca;
+                }
+                return MinMaxEquationSolverSettings::MarkovAutomatonBoundedReachabilityMethod::UnifPlus;
             }
 
             storm::solver::MultiplicationStyle MinMaxEquationSolverSettings::getValueIterationMultiplicationStyle() const {

@@ -60,7 +60,7 @@ namespace storm {
             
             STORM_LOG_INFO("Found " << this->sortedSccDecomposition->size() << " SCC(s). Average size is " << static_cast<double>(this->A->getRowGroupCount()) / static_cast<double>(this->sortedSccDecomposition->size()) << ".");
             if (this->longestSccChainSize) {
-                std::cout << "Longest SCC chain size is " << this->longestSccChainSize.get() << std::endl;
+                STORM_LOG_INFO("Longest SCC chain size is " << this->longestSccChainSize.get());
             }
             
             bool returnValue = true;

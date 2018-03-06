@@ -38,7 +38,6 @@
 #include "storm/settings/modules/JaniExportSettings.h"
 #include "storm/settings/modules/JitBuilderSettings.h"
 #include "storm/settings/modules/MultiObjectiveSettings.h"
-#include "storm/settings/modules/MarkovAutomatonSettings.h"
 #include "storm/settings/modules/MultiplierSettings.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/file.h"
@@ -552,7 +551,6 @@ namespace storm {
             storm::settings::addModule<storm::settings::modules::JaniExportSettings>();
             storm::settings::addModule<storm::settings::modules::JitBuilderSettings>();
             storm::settings::addModule<storm::settings::modules::MultiObjectiveSettings>();
-            storm::settings::addModule<storm::settings::modules::MarkovAutomatonSettings>();
             storm::settings::addModule<storm::settings::modules::MultiplierSettings>();
         }
 
