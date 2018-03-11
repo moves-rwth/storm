@@ -185,11 +185,6 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 	# using GCC
 	if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.0)
 		message(FATAL_ERROR "gcc version must be at least 5.0.")
-	elseif (CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL 7.0 OR CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 7.0)
-		if (STORM_USE_LTO)
-			set(STORM_USE_LTO OFF)
-			message(WARNING "Disabling link-time optimization, because of known incompatibility of LTO with gcc >= 7.")
-		endif()
 	endif()
 
 	set(STORM_COMPILER_GCC ON)
