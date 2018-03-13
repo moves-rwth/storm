@@ -24,7 +24,7 @@ namespace {
         }
     };
     
-    class NativeDoubleSoundPowerEnvironment {
+    class NativeDoubleSoundValueIterationEnvironment {
     public:
         typedef double ValueType;
         static const bool isExact = false;
@@ -32,7 +32,7 @@ namespace {
             storm::Environment env;
             env.solver().setForceSoundness(true);
             env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Native);
-            env.solver().native().setMethod(storm::solver::NativeLinearEquationSolverMethod::SoundPower);
+            env.solver().native().setMethod(storm::solver::NativeLinearEquationSolverMethod::SoundValueIteration);
             env.solver().native().setRelativeTerminationCriterion(false);
             env.solver().native().setPrecision(storm::utility::convertNumber<storm::RationalNumber, std::string>("1e-6"));
             return env;
@@ -293,7 +293,7 @@ namespace {
   
     typedef ::testing::Types<
             NativeDoublePowerEnvironment,
-            NativeDoubleSoundPowerEnvironment,
+            NativeDoubleSoundValueIterationEnvironment,
             NativeDoubleIntervalIterationEnvironment,
             NativeDoubleJacobiEnvironment,
             NativeDoubleGaussSeidelEnvironment,

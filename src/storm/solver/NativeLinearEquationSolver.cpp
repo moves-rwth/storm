@@ -566,7 +566,7 @@ namespace storm {
         
         
         template<typename ValueType>
-        bool NativeLinearEquationSolver<ValueType>::solveEquationsSoundPower(Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+        bool NativeLinearEquationSolver<ValueType>::solveEquationsSoundValueIteration(Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
 
             // Prepare the solution vectors.
             assert(x.size() == this->A->getRowCount());
@@ -906,9 +906,9 @@ namespace storm {
                 } else {
                     STORM_LOG_WARN("The selected solution method does not guarantee exact results.");
                 }
-            } else if (env.solver().isForceSoundness() && method != NativeLinearEquationSolverMethod::SoundPower && method != NativeLinearEquationSolverMethod::IntervalIteration && method != NativeLinearEquationSolverMethod::RationalSearch) {
+            } else if (env.solver().isForceSoundness() && method != NativeLinearEquationSolverMethod::SoundValueIteration && method != NativeLinearEquationSolverMethod::IntervalIteration && method != NativeLinearEquationSolverMethod::RationalSearch) {
                 if (env.solver().native().isMethodSetFromDefault()) {
-                    method = NativeLinearEquationSolverMethod::SoundPower;
+                    method = NativeLinearEquationSolverMethod::SoundValueIteration;
                     STORM_LOG_INFO("Selecting '" + toString(method) + "' as the solution technique to guarantee sound results. If you want to override this, please explicitly specify a different method.");
                 } else {
                     STORM_LOG_WARN("The selected solution method does not guarantee sound results.");
@@ -931,8 +931,8 @@ namespace storm {
                     return this->solveEquationsWalkerChae(env, x, b);
                 case NativeLinearEquationSolverMethod::Power:
                     return this->solveEquationsPower(env, x, b);
-                case NativeLinearEquationSolverMethod::SoundPower:
-                    return this->solveEquationsSoundPower(env, x, b);
+                case NativeLinearEquationSolverMethod::SoundValueIteration:
+                    return this->solveEquationsSoundValueIteration(env, x, b);
                 case NativeLinearEquationSolverMethod::IntervalIteration:
                     return this->solveEquationsIntervalIteration(env, x, b);
                 case NativeLinearEquationSolverMethod::RationalSearch:
@@ -945,7 +945,7 @@ namespace storm {
         template<typename ValueType>
         LinearEquationSolverProblemFormat NativeLinearEquationSolver<ValueType>::getEquationProblemFormat(Environment const& env) const {
             auto method = getMethod(env, storm::NumberTraits<ValueType>::IsExact);
-            if (method == NativeLinearEquationSolverMethod::Power || method == NativeLinearEquationSolverMethod::SoundPower || method == NativeLinearEquationSolverMethod::RationalSearch || method == NativeLinearEquationSolverMethod::IntervalIteration) {
+            if (method == NativeLinearEquationSolverMethod::Power || method == NativeLinearEquationSolverMethod::SoundValueIteration || method == NativeLinearEquationSolverMethod::RationalSearch || method == NativeLinearEquationSolverMethod::IntervalIteration) {
                 return LinearEquationSolverProblemFormat::FixedPointSystem;
             } else {
                 return LinearEquationSolverProblemFormat::EquationSystem;

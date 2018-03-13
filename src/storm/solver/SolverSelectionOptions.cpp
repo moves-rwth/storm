@@ -94,8 +94,8 @@ namespace storm {
                     return "WalkerChae";
                 case NativeLinearEquationSolverMethod::Power:
                     return "Power";
-                case NativeLinearEquationSolverMethod::SoundPower:
-                    return "SoundPower";
+                case NativeLinearEquationSolverMethod::SoundValueIteration:
+                    return "SoundValueIteration";
                 case NativeLinearEquationSolverMethod::IntervalIteration:
                     return "IntervalIteration";
                 case NativeLinearEquationSolverMethod::RationalSearch:

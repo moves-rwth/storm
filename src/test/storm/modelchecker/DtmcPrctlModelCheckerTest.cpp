@@ -206,7 +206,7 @@ namespace {
         }
     };
 
-    class SparseNativeSoundPowerEnvironment {
+    class SparseNativeSoundValueIterationEnvironment {
     public:
         static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan; // unused for sparse models
         static const storm::settings::modules::CoreSettings::Engine engine = storm::settings::modules::CoreSettings::Engine::Sparse;
@@ -217,7 +217,7 @@ namespace {
             storm::Environment env;
             env.solver().setForceSoundness(true);
             env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Native);
-            env.solver().native().setMethod(storm::solver::NativeLinearEquationSolverMethod::SoundPower);
+            env.solver().native().setMethod(storm::solver::NativeLinearEquationSolverMethod::SoundValueIteration);
             env.solver().native().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6));
             return env;
         }
@@ -304,7 +304,7 @@ namespace {
         }
     };
     
-    class HybridCuddNativeSoundPowerEnvironment {
+    class HybridCuddNativeSoundValueIterationEnvironment {
     public:
         static const storm::dd::DdType ddType = storm::dd::DdType::CUDD;
         static const storm::settings::modules::CoreSettings::Engine engine = storm::settings::modules::CoreSettings::Engine::Hybrid;
@@ -481,13 +481,13 @@ namespace {
             SparseNativeWalkerChaeEnvironment,
             SparseNativeSorEnvironment,
             SparseNativePowerEnvironment,
-            SparseNativeSoundPowerEnvironment,
+            SparseNativeSoundValueIterationEnvironment,
             SparseNativeIntervalIterationEnvironment,
             SparseNativeRationalSearchEnvironment,
             SparseTopologicalEigenLUEnvironment,
             HybridSylvanGmmxxGmresEnvironment,
             HybridCuddNativeJacobiEnvironment,
-            HybridCuddNativeSoundPowerEnvironment,
+            HybridCuddNativeSoundValueIterationEnvironment,
             HybridSylvanNativeRationalSearchEnvironment,
             DdSylvanNativePowerEnvironment,
             DdCuddNativeJacobiEnvironment,
