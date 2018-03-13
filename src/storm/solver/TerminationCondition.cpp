@@ -149,10 +149,14 @@ namespace storm {
             return guarantee == SolverGuarantee::GreaterOrEqual;
         }
         
+        template class TerminationCondition<double>;
+        template class NoTerminationCondition<double>;
         template class TerminateIfFilteredSumExceedsThreshold<double>;
         template class TerminateIfFilteredExtremumExceedsThreshold<double>;
         template class TerminateIfFilteredExtremumBelowThreshold<double>;
 #ifdef STORM_HAVE_CARL
+        template class TerminationCondition<storm::RationalNumber>;
+        template class NoTerminationCondition<storm::RationalNumber>;
         template class TerminateIfFilteredSumExceedsThreshold<storm::RationalNumber>;
         template class TerminateIfFilteredExtremumExceedsThreshold<storm::RationalNumber>;
         template class TerminateIfFilteredExtremumBelowThreshold<storm::RationalNumber>;
