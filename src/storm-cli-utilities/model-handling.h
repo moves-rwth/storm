@@ -679,10 +679,11 @@ namespace storm {
                 verifyWithExplorationEngine<VerificationValueType>(input);
             } else {
                 std::shared_ptr<storm::models::ModelBase> model = buildPreprocessExportModelWithValueTypeAndDdlib<DdType, BuildValueType>(input, engine);
-                
+
                 if (model) {
                     if (!std::is_same<BuildValueType, VerificationValueType>::value) {
                         if (model->isSymbolicModel()) {
+                            STORM_LOG_INFO("Converting symbolic model value type to fit the verification value type.");
                             auto symbolicModel = model->as<storm::models::symbolic::Model<DdType, BuildValueType>>();
                             model = symbolicModel->template toValueType<VerificationValueType>();
                         }
