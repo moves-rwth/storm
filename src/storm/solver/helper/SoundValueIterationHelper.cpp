@@ -296,7 +296,6 @@ namespace storm {
                                        << ".");
     
                 }
-                
             
             template<typename ValueType>
             bool SoundValueIterationHelper<ValueType>::checkConvergencePhase1() {

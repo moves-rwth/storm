@@ -7,6 +7,7 @@
 #include "storm/solver/LinearEquationSolver.h"
 #include "storm/solver/Multiplier.h"
 #include "storm/solver/StandardMinMaxLinearEquationSolver.h"
+#include "storm/solver/helper/SoundValueIterationHelper.h"
 
 #include "storm/solver/SolverStatus.h"
 
@@ -80,6 +81,7 @@ namespace storm {
             mutable std::unique_ptr<storm::solver::Multiplier<ValueType>> multiplierA;
             mutable std::unique_ptr<std::vector<ValueType>> auxiliaryRowGroupVector; // A.rowGroupCount() entries
             mutable std::unique_ptr<std::vector<ValueType>> auxiliaryRowGroupVector2; // A.rowGroupCount() entries
+            mutable std::unique_ptr<storm::solver::helper::SoundValueIterationHelper<ValueType>> soundValueIterationHelper;
             
             SolverStatus updateStatusIfNotConverged(SolverStatus status, std::vector<ValueType> const& x, uint64_t iterations, uint64_t maximalNumberOfIterations, SolverGuarantee const& guarantee) const;
             static void reportStatus(SolverStatus status, uint64_t iterations);

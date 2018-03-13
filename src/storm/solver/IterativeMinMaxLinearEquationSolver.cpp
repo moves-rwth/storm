@@ -10,7 +10,6 @@
 #include "storm/utility/KwekMehlhorn.h"
 #include "storm/utility/NumberTraits.h"
 
-#include "storm/solver/helper/SoundValueIterationHelper.h"
 #include "storm/utility/Stopwatch.h"
 #include "storm/utility/vector.h"
 #include "storm/utility/macros.h"
@@ -608,21 +607,23 @@ namespace storm {
         template<typename ValueType>
         bool IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsSoundValueIteration(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
 
-            // Prepare the solution vectors.
+            // Prepare the solution vectors and the helper.
             assert(x.size() == this->A->getRowGroupCount());
             if (!this->auxiliaryRowGroupVector) {
                 this->auxiliaryRowGroupVector = std::make_unique<std::vector<ValueType>>();
             }
-
-            // TODO: implement caching for the helper
-            storm::solver::helper::SoundValueIterationHelper<ValueType> helper(*this->A, x, *this->auxiliaryRowGroupVector, env.solver().minMax().getRelativeTerminationCriterion(), storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()));
-
+            if (!this->soundValueIterationHelper) {
+                this->soundValueIterationHelper = std::make_unique<storm::solver::helper::SoundValueIterationHelper<ValueType>>(*this->A, x, *this->auxiliaryRowGroupVector, env.solver().minMax().getRelativeTerminationCriterion(), storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()));
+            } else {
+                this->soundValueIterationHelper = std::make_unique<storm::solver::helper::SoundValueIterationHelper<ValueType>>(std::move(*this->soundValueIterationHelper), x, *this->auxiliaryRowGroupVector, env.solver().minMax().getRelativeTerminationCriterion(), storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()));
+            }
+            
             // Prepare initial bounds for the solution (if given)
             if (this->hasLowerBound()) {
-                helper.setLowerBound(this->getLowerBound(true));
+                this->soundValueIterationHelper->setLowerBound(this->getLowerBound(true));
             }
             if (this->hasUpperBound()) {
-                helper.setUpperBound(this->getUpperBound(true));
+                this->soundValueIterationHelper->setUpperBound(this->getUpperBound(true));
             }
             
             storm::storage::BitVector const* relevantValuesPtr = nullptr;
@@ -635,8 +636,8 @@ namespace storm {
             uint64_t iterations = 0;
             
             while (status == SolverStatus::InProgress && iterations < env.solver().minMax().getMaximalNumberOfIterations()) {
-                helper.performIterationStep(dir, b);
-                if (helper.checkConvergenceUpdateBounds(dir, relevantValuesPtr)) {
+                this->soundValueIterationHelper->performIterationStep(dir, b);
+                if (this->soundValueIterationHelper->checkConvergenceUpdateBounds(dir, relevantValuesPtr)) {
                     status = SolverStatus::Converged;
                 }
 
@@ -648,7 +649,7 @@ namespace storm {
                 // Potentially show progress.
                 this->showProgressIterative(iterations);
             }
-            helper.setSolutionVector();
+            this->soundValueIterationHelper->setSolutionVector();
             
             // If requested, we store the scheduler for retrieval.
             if (this->isTrackSchedulerSet()) {
@@ -1000,6 +1001,7 @@ namespace storm {
             multiplierA.reset();
             auxiliaryRowGroupVector.reset();
             auxiliaryRowGroupVector2.reset();
+            soundValueIterationHelper.reset();
             StandardMinMaxLinearEquationSolver<ValueType>::clearCache();
         }
         

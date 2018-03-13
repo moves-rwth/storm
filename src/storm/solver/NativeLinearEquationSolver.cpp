@@ -568,21 +568,23 @@ namespace storm {
         template<typename ValueType>
         bool NativeLinearEquationSolver<ValueType>::solveEquationsSoundValueIteration(Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
 
-            // Prepare the solution vectors.
+            // Prepare the solution vectors and the helper.
             assert(x.size() == this->A->getRowCount());
             if (!this->cachedRowVector) {
                 this->cachedRowVector = std::make_unique<std::vector<ValueType>>();
             }
-            
-            // TODO: implement caching for the helper
-            storm::solver::helper::SoundValueIterationHelper<ValueType> helper(*this->A, x, *this->cachedRowVector, env.solver().native().getRelativeTerminationCriterion(), storm::utility::convertNumber<ValueType>(env.solver().native().getPrecision()));
+            if (!this->soundValueIterationHelper) {
+                this->soundValueIterationHelper = std::make_unique<storm::solver::helper::SoundValueIterationHelper<ValueType>>(*this->A, x, *this->cachedRowVector, env.solver().native().getRelativeTerminationCriterion(), storm::utility::convertNumber<ValueType>(env.solver().native().getPrecision()));
+            } else {
+                this->soundValueIterationHelper = std::make_unique<storm::solver::helper::SoundValueIterationHelper<ValueType>>(std::move(*this->soundValueIterationHelper), x, *this->cachedRowVector, env.solver().native().getRelativeTerminationCriterion(), storm::utility::convertNumber<ValueType>(env.solver().native().getPrecision()));
+            }
 
             // Prepare initial bounds for the solution (if given)
             if (this->hasLowerBound()) {
-                helper.setLowerBound(this->getLowerBound(true));
+                this->soundValueIterationHelper->setLowerBound(this->getLowerBound(true));
             }
             if (this->hasUpperBound()) {
-                helper.setUpperBound(this->getUpperBound(true));
+                this->soundValueIterationHelper->setUpperBound(this->getUpperBound(true));
             }
             
             storm::storage::BitVector const* relevantValuesPtr = nullptr;
@@ -596,8 +598,8 @@ namespace storm {
             uint64_t iterations = 0;
             
             while (!converged && iterations < env.solver().native().getMaximalNumberOfIterations()) {
-                helper.performIterationStep(b);
-                if (helper.checkConvergenceUpdateBounds(relevantValuesPtr)) {
+                this->soundValueIterationHelper->performIterationStep(b);
+                if (this->soundValueIterationHelper->checkConvergenceUpdateBounds(relevantValuesPtr)) {
                     converged = true;
                 }
 
@@ -610,7 +612,7 @@ namespace storm {
                 // Potentially show progress.
                 this->showProgressIterative(iterations);
             }
-            helper.setSolutionVector();
+            this->soundValueIterationHelper->setSolutionVector();
             
             this->logIterations(converged, terminate, iterations);
             
@@ -973,6 +975,7 @@ namespace storm {
             cachedRowVector2.reset();
             walkerChaeData.reset();
             multiplier.reset();
+            soundValueIterationHelper.reset();
             LinearEquationSolver<ValueType>::clearCache();
         }
         
