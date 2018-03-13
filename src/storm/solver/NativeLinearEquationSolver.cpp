@@ -603,8 +603,8 @@ namespace storm {
                     converged = true;
                 }
 
-                // todo: custom termination check
-                // terminate = ....
+                // Check whether we terminate early.
+                terminate = this->hasCustomTerminationCondition() && this->soundValueIterationHelper->checkCustomTerminationCondition(this->getTerminationCondition());
                 
                 // Update environment variables.
                 ++iterations;

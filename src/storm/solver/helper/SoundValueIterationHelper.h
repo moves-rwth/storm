@@ -3,6 +3,7 @@
 #include <vector>
 
 #include "storm/solver/OptimizationDirection.h"
+#include "storm/solver/TerminationCondition.h"
 
 namespace storm {
     
@@ -61,6 +62,11 @@ namespace storm {
                  */
                 bool checkConvergenceUpdateBounds(storm::storage::BitVector const* relevantValues = nullptr);
                 
+                /*!
+                 * Checks whether the provided termination condition triggers termination
+                 */
+                bool checkCustomTerminationCondition(storm::solver::TerminationCondition<ValueType> const& condition);
+                
             private:
                 
                 enum class InternalOptimizationDirection {
@@ -92,7 +98,6 @@ namespace storm {
                 template<InternalOptimizationDirection dir>
                 void checkIfDecisionValueBlocks();
                 
-                
                 // Auxiliary helper functions to avoid case distinctions due to different optimization directions
                 template<InternalOptimizationDirection dir>
                 inline bool better(ValueType const& val1, ValueType const& val2) {
@@ -118,7 +123,6 @@ namespace storm {
                 inline uint64_t& getSecondaryIndex() {
                     return (dir == InternalOptimizationDirection::Maximize) ? minIndex : maxIndex;
                 }
-                
                 
                 std::vector<ValueType>& x;
                 std::vector<ValueType>& y;

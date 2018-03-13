@@ -21,6 +21,18 @@ namespace {
             return env;
         }
     };
+    
+    class DoubleSVIEnvironment {
+    public:
+        typedef double ValueType;
+        static storm::Environment createEnvironment() {
+            storm::Environment env;
+            env.solver().minMax().setMethod(storm::solver::MinMaxMethod::SoundValueIteration);
+            env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6));
+            return env;
+        }
+    };
+    
     class RationalPiEnvironment {
     public:
         typedef storm::RationalNumber ValueType;
@@ -44,6 +56,7 @@ namespace {
   
     typedef ::testing::Types<
             DoubleViEnvironment,
+            DoubleSVIEnvironment,
             RationalPiEnvironment
     > TestingTypes;
     

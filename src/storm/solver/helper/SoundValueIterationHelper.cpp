@@ -294,8 +294,27 @@ namespace storm {
                                        << ". Decision value is "
                                        << (hasDecisionValue ? decisionValue : storm::utility::zero<ValueType>()) << (hasDecisionValue ? "" : "(none)")
                                        << ".");
-    
                 }
+            
+            template<typename ValueType>
+            bool SoundValueIterationHelper<ValueType>::checkCustomTerminationCondition(storm::solver::TerminationCondition<ValueType> const& condition) {
+                if (condition.requiresGuarantee(storm::solver::SolverGuarantee::GreaterOrEqual)) {
+                    if (hasUpperBound && condition.terminateNow(
+                            [&](uint64_t const& i) {
+                                return x[i] + y[i] * upperBound;
+                            }, storm::solver::SolverGuarantee::GreaterOrEqual)) {
+                        return true;
+                    }
+                } else if (condition.requiresGuarantee(storm::solver::SolverGuarantee::LessOrEqual)) {
+                    if (hasLowerBound && condition.terminateNow(
+                            [&](uint64_t const& i) {
+                                return x[i] + y[i] * lowerBound;
+                            }, storm::solver::SolverGuarantee::LessOrEqual)) {
+                        return true;
+                    }
+                }
+                return false;
+            }
             
             template<typename ValueType>
             bool SoundValueIterationHelper<ValueType>::checkConvergencePhase1() {

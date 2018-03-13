@@ -438,6 +438,8 @@ namespace {
     TYPED_TEST(MdpPrctlModelCheckerTest, consensus) {
         std::string formulasString = "Pmax=? [F \"finished\"]";
                     formulasString += "; Pmax=? [F \"all_coins_equal_1\"]";
+                    formulasString += "; P<0.8 [F \"all_coins_equal_1\"]";
+                    formulasString += "; P<0.9 [F \"all_coins_equal_1\"]";
                     formulasString += "; Rmax=? [F \"all_coins_equal_1\"]";
                     formulasString += "; Rmin=? [F \"all_coins_equal_1\"]";
                     formulasString += "; Rmax=? [F \"finished\"]";
@@ -459,15 +461,21 @@ namespace {
         EXPECT_NEAR(this->parseNumber("57/64"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
  
         result = checker->check(this->env(), tasks[2]);
-        EXPECT_TRUE(storm::utility::isInfinity(this->getQuantitativeResultAtInitialState(model, result)));
+        EXPECT_FALSE(this->getQualitativeResultAtInitialState(model, result));
  
         result = checker->check(this->env(), tasks[3]);
-        EXPECT_TRUE(storm::utility::isInfinity(this->getQuantitativeResultAtInitialState(model, result)));
+        EXPECT_TRUE(this->getQualitativeResultAtInitialState(model, result));
  
         result = checker->check(this->env(), tasks[4]);
+        EXPECT_TRUE(storm::utility::isInfinity(this->getQuantitativeResultAtInitialState(model, result)));
+ 
+        result = checker->check(this->env(), tasks[5]);
+        EXPECT_TRUE(storm::utility::isInfinity(this->getQuantitativeResultAtInitialState(model, result)));
+ 
+        result = checker->check(this->env(), tasks[6]);
         EXPECT_NEAR(this->parseNumber("75"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
 
-        result = checker->check(this->env(), tasks[5]);
+        result = checker->check(this->env(), tasks[7]);
         EXPECT_NEAR(this->parseNumber("48"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
     }
     

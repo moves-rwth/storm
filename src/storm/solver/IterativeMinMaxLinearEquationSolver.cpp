@@ -636,15 +636,18 @@ namespace storm {
             uint64_t iterations = 0;
             
             while (status == SolverStatus::InProgress && iterations < env.solver().minMax().getMaximalNumberOfIterations()) {
+                ++iterations;
                 this->soundValueIterationHelper->performIterationStep(dir, b);
                 if (this->soundValueIterationHelper->checkConvergenceUpdateBounds(dir, relevantValuesPtr)) {
                     status = SolverStatus::Converged;
+                } else {
+                    // Update the status accordingly
+                    if (this->hasCustomTerminationCondition() && this->soundValueIterationHelper->checkCustomTerminationCondition(this->getTerminationCondition())) {
+                        status = SolverStatus::TerminatedEarly;
+                    } else if (iterations >= env.solver().minMax().getMaximalNumberOfIterations()) {
+                        status = SolverStatus::MaximalIterationsExceeded;
+                    }
                 }
-
-                // Update environment variables.
-                ++iterations;
-                // TODO: Implement custom termination criterion. We would need to add our errors to the stepBoundedX values (only if in second phase)
-                status = updateStatusIfNotConverged(status, x, iterations, env.solver().minMax().getMaximalNumberOfIterations(), SolverGuarantee::None);
                 
                 // Potentially show progress.
                 this->showProgressIterative(iterations);
