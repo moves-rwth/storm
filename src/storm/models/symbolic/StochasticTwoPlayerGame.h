@@ -117,6 +117,9 @@ namespace storm {
                  */
                 storm::dd::Bdd<Type> getIllegalPlayer2Mask() const;
                 
+                template<typename NewValueType>
+                std::shared_ptr<StochasticTwoPlayerGame<Type, NewValueType>> toValueType() const;
+                
             private:
                 /*!
                  * Prepare all illegal masks.

@@ -29,11 +29,11 @@ namespace storm {
             template <storm::dd::DdType DdType, typename ValueType>
             class PartitionRefiner;
             
-            template <storm::dd::DdType DdType, typename ValueType>
+            template <storm::dd::DdType DdType, typename ValueType, typename ExportValueType>
             class PartialQuotientExtractor;
         }
         
-        template <storm::dd::DdType DdType, typename ValueType>
+        template <storm::dd::DdType DdType, typename ValueType, typename ExportValueType = ValueType>
         class BisimulationDecomposition {
         public:
             BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::storage::BisimulationType const& bisimulationType);
@@ -64,7 +64,7 @@ namespace storm {
             /*!
              * Retrieves the quotient model after the bisimulation decomposition was computed.
              */
-            std::shared_ptr<storm::models::Model<ValueType>> getQuotient() const;
+            std::shared_ptr<storm::models::Model<ExportValueType>> getQuotient() const;
             
         private:
             void initialize();
@@ -80,7 +80,7 @@ namespace storm {
             std::unique_ptr<bisimulation::PartitionRefiner<DdType, ValueType>> refiner;
             
             // A quotient extractor that is used when the fixpoint has not been reached yet.
-            mutable std::unique_ptr<bisimulation::PartialQuotientExtractor<DdType, ValueType>> partialQuotientExtractor;
+            mutable std::unique_ptr<bisimulation::PartialQuotientExtractor<DdType, ValueType, ExportValueType>> partialQuotientExtractor;
             
             // A flag indicating whether progress is reported.
             bool verboseProgress;
