@@ -23,6 +23,8 @@ namespace storm {
             
             Multiplier(storm::storage::SparseMatrix<ValueType> const& matrix);
             
+            virtual ~Multiplier() = default;
+            
             /*
              * Clears the currently cached data of this multiplier in order to free some memory.
              */

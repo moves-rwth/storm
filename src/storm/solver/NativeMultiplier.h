@@ -16,6 +16,7 @@ namespace storm {
         class NativeMultiplier : public Multiplier<ValueType> {
         public:
             NativeMultiplier(storm::storage::SparseMatrix<ValueType> const& matrix);
+            virtual ~NativeMultiplier() = default;
             
             virtual void multiply(Environment const& env, std::vector<ValueType> const& x, std::vector<ValueType> const* b, std::vector<ValueType>& result) const override;
             virtual void multiplyGaussSeidel(Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const* b) const override;

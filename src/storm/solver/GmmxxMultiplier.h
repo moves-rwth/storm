@@ -19,6 +19,7 @@ namespace storm {
         class GmmxxMultiplier : public Multiplier<ValueType> {
         public:
             GmmxxMultiplier(storm::storage::SparseMatrix<ValueType> const& matrix);
+            virtual ~GmmxxMultiplier() = default;
             
             virtual void multiply(Environment const& env, std::vector<ValueType> const& x, std::vector<ValueType> const* b, std::vector<ValueType>& result) const override;
             virtual void multiplyGaussSeidel(Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const* b) const override;
