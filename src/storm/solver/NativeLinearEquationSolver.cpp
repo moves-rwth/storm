@@ -245,10 +245,10 @@ namespace storm {
             std::vector<ValueType>* nextX = &walkerChaeData->newX;
 
             std::vector<ValueType> tmp = walkerChaeData->matrix.getRowSumVector();
-            storm::utility::vector::applyPointwise(tmp, walkerChaeData->b, walkerChaeData->b, [this] (ValueType const& first, ValueType const& second) { return walkerChaeData->t * first + second; } );
+            storm::utility::vector::applyPointwise(tmp, walkerChaeData->b, walkerChaeData->b, [this] (ValueType const& first, ValueType const& second) -> ValueType { return walkerChaeData->t * first + second; } );
             
             // Add t to all entries of x.
-            storm::utility::vector::applyPointwise(x, x, [this] (ValueType const& value) { return value + walkerChaeData->t; });
+            storm::utility::vector::applyPointwise(x, x, [this] (ValueType const& value) -> ValueType { return value + walkerChaeData->t; });
 
             // Create a vector that always holds Ax.
             std::vector<ValueType> currentAx(x.size());
@@ -288,7 +288,7 @@ namespace storm {
             x.resize(this->A->getRowCount());
             
             // Finalize solution vector.
-            storm::utility::vector::applyPointwise(x, x, [this] (ValueType const& value) { return value - walkerChaeData->t; } );
+            storm::utility::vector::applyPointwise(x, x, [this] (ValueType const& value) -> ValueType { return value - walkerChaeData->t; } );
             
             if (!this->isCachingEnabled()) {
                 clearCache();
@@ -547,7 +547,7 @@ namespace storm {
             }
             
             // We take the means of the lower and upper bound so we guarantee the desired precision.
-            storm::utility::vector::applyPointwise(*lowerX, *upperX, *lowerX, [] (ValueType const& a, ValueType const& b) { return (a + b) / storm::utility::convertNumber<ValueType>(2.0); });
+            storm::utility::vector::applyPointwise(*lowerX, *upperX, *lowerX, [] (ValueType const& a, ValueType const& b) -> ValueType { return (a + b) / storm::utility::convertNumber<ValueType>(2.0); });
 
             // Since we shuffled the pointer around, we need to write the actual results to the input/output vector x.
             if (&x == tmp) {
