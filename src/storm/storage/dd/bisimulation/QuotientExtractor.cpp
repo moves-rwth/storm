@@ -913,7 +913,7 @@ namespace storm {
                     boost::optional<storm::storage::BitVector> markovianStates = sparseExtractor.extractSetExists(markovAutomaton.getMarkovianStates());
                     storm::storage::sparse::ModelComponents<ExportValueType> modelComponents(std::move(quotientTransitionMatrix), std::move(quotientStateLabeling), std::move(quotientRewardModels), false, std::move(markovianStates));
                     modelComponents.exitRates = sparseExtractor.extractStateVector(markovAutomaton.getExitRateVector());
-                    
+                                        
                     result = std::make_shared<storm::models::sparse::MarkovAutomaton<ExportValueType>>(std::move(modelComponents));
                 }
                 

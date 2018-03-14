@@ -261,6 +261,7 @@ namespace storm {
                 for (ValueType const& rate : exitRateVector) {
                     lambda = std::max(rate, lambda);
                 }
+                STORM_LOG_TRACE("Initial lambda is " << lambda << ".");
                 uint64_t N;
                 ValueType maxNorm = storm::utility::zero<ValueType>();
 
@@ -369,6 +370,7 @@ namespace storm {
 
                     // (6) Double lambda.
                     lambda *= 2;
+                    STORM_LOG_TRACE("Increased lambda to " << lambda << ", max diff is " << maxNorm << ".");
 
                 } while (maxNorm > epsilon * (1 - kappa));
 

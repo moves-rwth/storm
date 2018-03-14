@@ -66,7 +66,7 @@ namespace storm {
                 
                 // Compute the vector of exit rates.
                 this->exitRateVector = (this->getTransitionMatrix() * this->markovianMarker.template toAdd<ValueType>()).sumAbstract(columnAndNondeterminsmVariables);
-                
+                                
                 // Modify the transition matrix so all choices are probabilistic and the Markovian choices additionally
                 // have a rate.
                 this->transitionMatrix = this->transitionMatrix / this->markovianChoices.ite(this->exitRateVector, this->getManager().template getAddOne<ValueType>());
@@ -105,7 +105,7 @@ namespace storm {
             template<storm::dd::DdType Type, typename ValueType>
             MarkovAutomaton<Type, ValueType> MarkovAutomaton<Type, ValueType>::close() {
                 // Create the new transition matrix by deleting all Markovian transitions from probabilistic states.
-                storm::dd::Add<Type, ValueType> newTransitionMatrix = this->probabilisticStates.ite(this->getTransitionMatrix() * (!this->getMarkovianMarker()).template toAdd<ValueType>(), this->getTransitionMatrix());
+                storm::dd::Add<Type, ValueType> newTransitionMatrix = this->probabilisticStates.ite(this->getTransitionMatrix() * (!this->getMarkovianMarker()).template toAdd<ValueType>(), this->getTransitionMatrix() * this->getExitRateVector());
                 
                 return MarkovAutomaton<Type, ValueType>(this->getManagerAsSharedPointer(), this->getMarkovianMarker(), this->getReachableStates(), this->getInitialStates(), this->getDeadlockStates(), newTransitionMatrix, this->getRowVariables(), this->getRowExpressionAdapter(), this->getColumnVariables(), this->getRowColumnMetaVariablePairs(), this->getNondeterminismVariables(), this->getLabelToExpressionMap(), this->getRewardModels());
             }
