@@ -282,9 +282,24 @@ namespace storm {
             
             template<typename ValueType>
             void SoundValueIterationHelper<ValueType>::setSolutionVector() {
-                STORM_LOG_WARN_COND(hasLowerBound && hasUpperBound, "No lower or upper result bound could be computed within the given number of Iterations.");
-            
-                ValueType meanBound = (upperBound + lowerBound) / storm::utility::convertNumber<ValueType>(2.0);
+                
+                // Due to a custom termination criterion it might be the case that one of the bounds was not yet established.
+                ValueType meanBound;
+                if (!hasLowerBound) {
+                    STORM_LOG_WARN("No lower result bound was computed during sound value iteration.");
+                    if (hasUpperBound) {
+                        meanBound = upperBound;
+                    } else {
+                        STORM_LOG_WARN("No upper result bound was computed during sound value iteration.");
+                        meanBound = storm::utility::zero<ValueType>();
+                    }
+                } else if (!hasUpperBound) {
+                        STORM_LOG_WARN("No upper result bound was computed during sound value iteration.");
+                        meanBound = lowerBound;
+                } else {
+                    meanBound = (upperBound + lowerBound) / storm::utility::convertNumber<ValueType>(2.0);
+                }
+                
                 storm::utility::vector::applyPointwise(x, y, x, [&meanBound] (ValueType const& xi, ValueType const& yi) { return xi + yi * meanBound; });
                 
                 STORM_LOG_INFO("Sound Value Iteration terminated with lower value bound "
