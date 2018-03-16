@@ -15,6 +15,7 @@
 #include "storm/settings/modules/EigenEquationSolverSettings.h"
 #include "storm/settings/modules/GmmxxEquationSolverSettings.h"
 #include "storm/settings/modules/NativeEquationSolverSettings.h"
+#include "storm/settings/modules/TopologicalEquationSolverSettings.h"
 #include "storm/settings/modules/EliminationSettings.h"
 #include "storm/settings/modules/MinMaxEquationSolverSettings.h"
 #include "storm/settings/modules/GameSolverSettings.h"
@@ -43,6 +44,7 @@ namespace storm {
             storm::settings::addModule<storm::settings::modules::GmmxxEquationSolverSettings>();
             storm::settings::addModule<storm::settings::modules::EigenEquationSolverSettings>();
             storm::settings::addModule<storm::settings::modules::NativeEquationSolverSettings>();
+            storm::settings::addModule<storm::settings::modules::TopologicalEquationSolverSettings>();
             storm::settings::addModule<storm::settings::modules::EliminationSettings>();
             storm::settings::addModule<storm::settings::modules::MinMaxEquationSolverSettings>();
             storm::settings::addModule<storm::settings::modules::GameSolverSettings>();
