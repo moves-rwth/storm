@@ -50,14 +50,38 @@ namespace storm {
          * @param symred Flag whether symmetry reduction should be used.
          * @param allowModularisation Flag whether modularisation should be applied if possible.
          * @param enableDC Flag whether Don't Care propagation should be used.
-         * @param approximationError Allowed approximation error, 0 indicates no approximation.
+         *
+         * @return Result.
          */
         template <typename ValueType>
-        void analyzeDFT(storm::storage::DFT<ValueType> const& dft, std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties, bool symred, bool allowModularisation, bool enableDC, double approximationError) {
+        typename storm::modelchecker::DFTModelChecker<ValueType>::dft_results analyzeDFT(storm::storage::DFT<ValueType> const& dft, std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties, bool symred, bool allowModularisation, bool enableDC) {
             storm::modelchecker::DFTModelChecker<ValueType> modelChecker;
-            modelChecker.check(dft, properties, symred, allowModularisation, enableDC, approximationError);
+            typename storm::modelchecker::DFTModelChecker<ValueType>::dft_results results = modelChecker.check(dft, properties, symred, allowModularisation, enableDC, 0.0);
             modelChecker.printTimings();
             modelChecker.printResults();
+            return results;
+        }
+
+        /*!
+         * Approximate the analysis result of the given DFT according to the given properties.
+         * First the Markov model is built from the DFT and then this model is checked against the given properties.
+         *
+         * @param dft DFT.
+         * @param properties PCTL formulas capturing the properties to check.
+         * @param symred Flag whether symmetry reduction should be used.
+         * @param allowModularisation Flag whether modularisation should be applied if possible.
+         * @param enableDC Flag whether Don't Care propagation should be used.
+         * @param approximationError Allowed approximation error.
+         *
+         * @return Result.
+         */
+        template <typename ValueType>
+        typename storm::modelchecker::DFTModelChecker<ValueType>::dft_results analyzeDFTApprox(storm::storage::DFT<ValueType> const& dft, std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties, bool symred, bool allowModularisation, bool enableDC, double approximationError) {
+            storm::modelchecker::DFTModelChecker<ValueType> modelChecker;
+            typename storm::modelchecker::DFTModelChecker<ValueType>::dft_results results = modelChecker.check(dft, properties, symred, allowModularisation, enableDC, approximationError);
+            modelChecker.printTimings();
+            modelChecker.printResults();
+            return results;
         }
 
 

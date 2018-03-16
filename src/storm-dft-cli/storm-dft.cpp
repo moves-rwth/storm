@@ -95,12 +95,6 @@ void processOptions() {
             }
         }
 
-        // Set possible approximation error
-        double approximationError = 0.0;
-        if (faultTreeSettings.isApproximationErrorSet()) {
-            approximationError = faultTreeSettings.getApproximationError();
-        }
-
         // Build properties
         STORM_LOG_THROW(!properties.empty(), storm::exceptions::InvalidSettingsException, "No property given.");
         std::string propString = properties[0];
@@ -111,7 +105,12 @@ void processOptions() {
         STORM_LOG_ASSERT(props.size() > 0, "No properties found.");
 
         // Carry out the actual analysis
-        storm::api::analyzeDFT<ValueType>(*dft, props, faultTreeSettings.useSymmetryReduction(), faultTreeSettings.useModularisation(), !faultTreeSettings.isDisableDC(), approximationError);
+        if (faultTreeSettings.isApproximationErrorSet()) {
+            // Approximate analysis
+            storm::api::analyzeDFTApprox<ValueType>(*dft, props, faultTreeSettings.useSymmetryReduction(), faultTreeSettings.useModularisation(), !faultTreeSettings.isDisableDC(), faultTreeSettings.getApproximationError());
+        } else {
+            storm::api::analyzeDFT<ValueType>(*dft, props, faultTreeSettings.useSymmetryReduction(), faultTreeSettings.useModularisation(), !faultTreeSettings.isDisableDC());
+        }
 }
 
 /*!

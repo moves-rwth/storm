@@ -14,7 +14,7 @@ namespace storm {
     namespace modelchecker {
 
         template<typename ValueType>
-        void DFTModelChecker<ValueType>::check(storm::storage::DFT<ValueType> const& origDft, std::vector<std::shared_ptr<const storm::logic::Formula>> const& properties, bool symred, bool allowModularisation, bool enableDC, double approximationError) {
+        typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::check(storm::storage::DFT<ValueType> const& origDft, std::vector<std::shared_ptr<const storm::logic::Formula>> const& properties, bool symred, bool allowModularisation, bool enableDC, double approximationError) {
             // Initialize
             this->approximationError = approximationError;
             totalTimer.start();
@@ -33,11 +33,11 @@ namespace storm {
                 for (ValueType result : resultsValue) {
                     checkResults.push_back(result);
                 }
-
             } else {
                 checkResults = checkHelper(dft, properties, symred, allowModularisation, enableDC, approximationError);
             }
             totalTimer.stop();
+            return checkResults;
         }
 
         template<typename ValueType>
