@@ -360,4 +360,20 @@ jobs:
         - docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD";
         - docker commit storm mvolk/storm:travis;
         - docker push mvolk/storm:travis;
+  allow_failures:
+    - stage: Build (1st run)
+      os: linux
+      env: CONFIG=DefaultReleaseTravis LINUX=ubuntu-17.10 COMPILER=gcc
+    - stage: Build (2nd run)
+      os: linux
+      env: CONFIG=DefaultReleaseTravis LINUX=ubuntu-17.10 COMPILER=gcc
+    - stage: Build (3rd run)
+      os: linux
+      env: CONFIG=DefaultReleaseTravis LINUX=ubuntu-17.10 COMPILER=gcc
+    - stage: Build (4th run)
+      os: linux
+      env: CONFIG=DefaultReleaseTravis LINUX=ubuntu-17.10 COMPILER=gcc
+    - stage: Test all
+      os: linux
+      env: CONFIG=DefaultReleaseTravis LINUX=ubuntu-17.10 COMPILER=gcc
 

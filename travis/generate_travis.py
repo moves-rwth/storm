@@ -27,6 +27,8 @@ stages = [
 
 
 if __name__ == "__main__":
+    allow_failures = []
+
     s = ""
     # Initial config
     s += "#\n"
@@ -130,15 +132,19 @@ if __name__ == "__main__":
 
         # Linux via Docker
         for config in configs_linux:
+            allow_fail = ""
             linux = config[0]
             compiler = config[1]
             build_type = config[2]
             s += "    # {} - {}\n".format(linux, build_type)
             buildConfig = ""
             buildConfig += "    - stage: {}\n".format(stage[0])
+            allow_fail += "    - stage: {}\n".format(stage[0])
             buildConfig += "      os: linux\n"
+            allow_fail += "      os: linux\n"
             buildConfig += "      compiler: {}\n".format(compiler)
             buildConfig += "      env: CONFIG={} LINUX={} COMPILER={}\n".format(build_type, linux, compiler)
+            allow_fail += "      env: CONFIG={} LINUX={} COMPILER={}\n".format(build_type, linux, compiler)
             buildConfig += "      install:\n"
             if stage[1] == "Build1":
                 buildConfig += "        - rm -rf build\n"
@@ -162,5 +168,11 @@ if __name__ == "__main__":
                 else:
                     assert False
             s += buildConfig
+            if "Travis" in build_type and "Release" in build_type:
+                allow_failures.append(allow_fail)
 
+    if len(allow_failures) > 0:
+        s += "  allow_failures:\n"
+        for fail in allow_failures:
+            s += fail
     print(s)
