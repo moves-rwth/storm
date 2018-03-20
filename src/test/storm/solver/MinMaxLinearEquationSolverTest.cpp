@@ -152,7 +152,7 @@ namespace {
         solver->setBounds(this->parseNumber("0"), this->parseNumber("2"));
         storm::solver::MinMaxLinearEquationSolverRequirements req = solver->getRequirements(this->env());
         req.clearBounds();
-        ASSERT_TRUE(req.empty());
+        ASSERT_FALSE(req.hasEnabledRequirement());
         ASSERT_NO_THROW(solver->solveEquations(this->env(), storm::OptimizationDirection::Minimize, x, b));
         EXPECT_NEAR(x[0], this->parseNumber("0.5"), this->precision());
         

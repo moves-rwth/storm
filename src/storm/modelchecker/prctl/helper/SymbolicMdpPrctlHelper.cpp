@@ -75,20 +75,20 @@ namespace storm {
                 // Check requirements of solver.
                 storm::solver::MinMaxLinearEquationSolverRequirements requirements = solver->getRequirements(env, dir);
                 boost::optional<storm::dd::Bdd<DdType>> initialScheduler;
-                if (!requirements.empty()) {
-                    if (requirements.requires(storm::solver::MinMaxLinearEquationSolverRequirements::Element::ValidInitialScheduler)) {
+                if (requirements.hasEnabledRequirement()) {
+                    if (requirements.validInitialScheduler()) {
                         STORM_LOG_DEBUG("Computing valid scheduler, because the solver requires it.");
                         initialScheduler = computeValidSchedulerHint(EquationSystemType::UntilProbabilities, model, transitionMatrix, maybeStates, statesWithProbability1);
                         requirements.clearValidInitialScheduler();
                     }
                     requirements.clearBounds();
-                    if (requirements.requiresNoEndComponents()) {
+                    if (requirements.noEndComponents()) {
                         // Check whether there are end components
                         if (storm::utility::graph::performProb0E(model, transitionMatrix.notZero(), maybeStates, !maybeStates && model.getReachableStates()).isZero()) {
                             requirements.clearNoEndComponents();
                         }
                     }
-                    STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "Could not establish requirements of solver.");
+                    STORM_LOG_THROW(!requirements.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + requirements.getEnabledRequirementsAsString() + " not checked.");
                 }
                 if (initialScheduler) {
                     solver->setInitialScheduler(initialScheduler.get());
@@ -246,20 +246,20 @@ namespace storm {
                 // Check requirements of solver.
                 storm::solver::MinMaxLinearEquationSolverRequirements requirements = solver->getRequirements(env, dir);
                 boost::optional<storm::dd::Bdd<DdType>> initialScheduler;
-                if (!requirements.empty()) {
-                    if (requirements.requires(storm::solver::MinMaxLinearEquationSolverRequirements::Element::ValidInitialScheduler)) {
+                if (requirements.hasEnabledRequirement()) {
+                    if (requirements.validInitialScheduler()) {
                         STORM_LOG_DEBUG("Computing valid scheduler, because the solver requires it.");
                         initialScheduler = computeValidSchedulerHint(EquationSystemType::ExpectedRewards, model, transitionMatrix, maybeStates, targetStates);
                         requirements.clearValidInitialScheduler();
                     }
                     requirements.clearLowerBounds();
-                    if (requirements.requiresNoEndComponents()) {
+                    if (requirements.noEndComponents()) {
                         // Check whether there are end components
                         if (storm::utility::graph::performProb0E(model, transitionMatrixBdd, maybeStates, !maybeStates && model.getReachableStates()).isZero()) {
                             requirements.clearNoEndComponents();
                         }
                     }
-                    STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "Could not establish requirements of solver.");
+                    STORM_LOG_THROW(!requirements.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + requirements.getEnabledRequirementsAsString() + " not checked.");
                 }
                 if (initialScheduler) {
                     solver->setInitialScheduler(initialScheduler.get());

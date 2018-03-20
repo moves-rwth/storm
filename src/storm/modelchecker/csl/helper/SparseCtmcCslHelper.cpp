@@ -492,7 +492,8 @@ namespace storm {
                     {
                         // Check solver requirements
                         storm::solver::GeneralLinearEquationSolverFactory<ValueType> linearEquationSolverFactory;
-                        STORM_LOG_THROW(linearEquationSolverFactory.getRequirements(env).empty(), storm::exceptions::UncheckedRequirementException, "At least one requirement of the linear equation solver could not be matched.");
+                        auto requirements = linearEquationSolverFactory.getRequirements(env);
+                        STORM_LOG_THROW(!requirements.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + requirements.getEnabledRequirementsAsString() + " not checked.");
                         // Check whether we have the right input format for the solver.
                         STORM_LOG_THROW(linearEquationSolverFactory.getEquationProblemFormat(env) == storm::solver::LinearEquationSolverProblemFormat::EquationSystem, storm::exceptions::FormatUnsupportedBySolverException, "The selected solver does not support the required format.");
                         std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(env, std::move(bsccEquationSystem));
@@ -565,7 +566,8 @@ namespace storm {
                     {
                         storm::solver::GeneralLinearEquationSolverFactory<ValueType> linearEquationSolverFactory;
                         // Check solver requirements
-                        STORM_LOG_THROW(linearEquationSolverFactory.getRequirements(env).empty(), storm::exceptions::UncheckedRequirementException, "At least one requirement of the linear equation solver could not be matched.");
+                        auto requirements = linearEquationSolverFactory.getRequirements(env);
+                        STORM_LOG_THROW(!requirements.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + requirements.getEnabledRequirementsAsString() + " not checked.");
                         // Check whether we have the right input format for the solver.
                         STORM_LOG_THROW(linearEquationSolverFactory.getEquationProblemFormat(env) == storm::solver::LinearEquationSolverProblemFormat::EquationSystem, storm::exceptions::FormatUnsupportedBySolverException, "The selected solver does not support the required format.");
                         std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(env, std::move(rewardEquationSystemMatrix));

@@ -152,7 +152,7 @@ namespace storm {
             // The solution of the min-max equation system will always be unique (assuming graph-preserving instantiations).
             auto req = solverFactory->getRequirements(env, true, boost::none, true);
             req.clearBounds();
-            STORM_LOG_THROW(req.empty(), storm::exceptions::UncheckedRequirementException, "Unchecked solver requirement.");
+            STORM_LOG_THROW(!req.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + req.getEnabledRequirementsAsString() + " not checked.");
             solverFactory->setRequirementsChecked(true);
         }
 
@@ -191,11 +191,11 @@ namespace storm {
             // The solution of the min-max equation system will always be unique (assuming graph-preserving instantiations).
             auto req = solverFactory->getRequirements(env, true, boost::none, true);
             req.clearLowerBounds();
-            if (req.requiresUpperBounds()) {
+            if (req.upperBounds()) {
                 solvingRequiresUpperRewardBounds = true;
                 req.clearUpperBounds();
             }
-            STORM_LOG_THROW(req.empty(), storm::exceptions::UncheckedRequirementException, "Unchecked solver requirement.");
+            STORM_LOG_THROW(!req.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + req.getEnabledRequirementsAsString() + " not checked.");
             solverFactory->setRequirementsChecked(true);
 
 

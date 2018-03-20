@@ -72,7 +72,7 @@ namespace storm {
                         auto req = linearEquationSolverFactory.getRequirements(env);
                         req.clearLowerBounds();
                         req.clearUpperBounds();
-                        STORM_LOG_THROW(req.empty(), storm::exceptions::UncheckedRequirementException, "At least one requirement of the linear equation solver could not be matched.");
+                        STORM_LOG_THROW(!req.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + req.getEnabledRequirementsAsString() + " not checked.");
                         
                         // Check whether we need to create an equation system.
                         bool convertToEquationSystem = linearEquationSolverFactory.getEquationProblemFormat(env) == storm::solver::LinearEquationSolverProblemFormat::EquationSystem;
@@ -285,14 +285,14 @@ namespace storm {
                         storm::solver::GeneralLinearEquationSolverFactory<ValueType> linearEquationSolverFactory;
                         auto req = linearEquationSolverFactory.getRequirements(env);
                         req.clearLowerBounds();
-                        if (req.requiresUpperBounds()) {
+                        if (req.upperBounds()) {
                             storm::dd::Add<DdType, ValueType> targetStatesAsColumn = targetStates.template toAdd<ValueType>();
                             targetStatesAsColumn = targetStatesAsColumn.swapVariables(model.getRowColumnMetaVariablePairs());
                             oneStepTargetProbs = submatrix * targetStatesAsColumn;
                             oneStepTargetProbs = oneStepTargetProbs->sumAbstract(model.getColumnVariables());
                             req.clearUpperBounds();
                         }
-                        STORM_LOG_THROW(req.empty(), storm::exceptions::UncheckedRequirementException, "At least one requirement of the linear equation solver could not be matched.");
+                        STORM_LOG_THROW(!req.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + req.getEnabledRequirementsAsString() + " not checked.");
                         
                         // Check whether we need to create an equation system.
                         bool convertToEquationSystem = linearEquationSolverFactory.getEquationProblemFormat(env) == storm::solver::LinearEquationSolverProblemFormat::EquationSystem;

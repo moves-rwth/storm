@@ -155,18 +155,18 @@ namespace storm {
                         SolverRequirementsData<ValueType> solverRequirementsData;
                         bool extendMaybeStates = false;
                         
-                        if (!clearedRequirements.empty()) {
-                            if (clearedRequirements.requiresNoEndComponents()) {
+                        if (clearedRequirements.hasEnabledRequirement()) {
+                            if (clearedRequirements.noEndComponents()) {
                                 STORM_LOG_DEBUG("Scheduling EC elimination, because the solver requires it.");
                                 extendMaybeStates = true;
                                 clearedRequirements.clearNoEndComponents();
                             }
-                            if (clearedRequirements.requiresValidInitialScheduler()) {
+                            if (clearedRequirements.validInitialScheduler()) {
                                 STORM_LOG_DEBUG("Scheduling valid scheduler computation, because the solver requires it.");
                                 clearedRequirements.clearValidInitialScheduler();
                             }
                             clearedRequirements.clearBounds();
-                            STORM_LOG_THROW(clearedRequirements.empty(), storm::exceptions::UncheckedRequirementException, "Cannot establish requirements for solver.");
+                            STORM_LOG_THROW(!clearedRequirements.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + clearedRequirements.getEnabledRequirementsAsString() + " not checked.");
                         }
 
                         storm::dd::Bdd<DdType> extendedMaybeStates = maybeStates;
@@ -228,7 +228,7 @@ namespace storm {
                             explicitRepresentation = submatrix.toMatrixVector(subvector, model.getNondeterminismVariables(), odd, odd);
                             conversionWatch.stop();
 
-                            if (requirements.requiresValidInitialScheduler()) {
+                            if (requirements.validInitialScheduler()) {
                                 solverRequirementsData.initialScheduler = computeValidInitialSchedulerForUntilProbabilities<ValueType>(explicitRepresentation.first, explicitRepresentation.second);
                             }
                         }
@@ -251,7 +251,7 @@ namespace storm {
                         solver->solveEquations(env, dir, x, explicitRepresentation.second);
                         
                         // If we included some target and non-filter states in the ODD, we need to expand the result from the solver.
-                        if (requirements.requiresNoEndComponents() && solverRequirementsData.ecInformation) {
+                        if (requirements.noEndComponents() && solverRequirementsData.ecInformation) {
                             std::vector<ValueType> extendedVector(solverRequirementsData.properMaybeStates.getNumberOfSetBits());
                             solverRequirementsData.ecInformation.get().setValues(extendedVector, solverRequirementsData.properMaybeStates, x);
                             x = std::move(extendedVector);
@@ -549,24 +549,24 @@ namespace storm {
                         storm::solver::MinMaxLinearEquationSolverRequirements requirements = linearEquationSolverFactory.getRequirements(env, uniqueSolution, dir);
                         storm::solver::MinMaxLinearEquationSolverRequirements clearedRequirements = requirements;
                         bool extendMaybeStates = false;
-                        if (!clearedRequirements.empty()) {
-                            if (clearedRequirements.requiresNoEndComponents()) {
+                        if (clearedRequirements.hasEnabledRequirement()) {
+                            if (clearedRequirements.noEndComponents()) {
                                 STORM_LOG_DEBUG("Scheduling EC elimination, because the solver requires it.");
                                 extendMaybeStates = true;
                                 clearedRequirements.clearNoEndComponents();
                             }
-                            if (clearedRequirements.requiresValidInitialScheduler()) {
+                            if (clearedRequirements.validInitialScheduler()) {
                                 STORM_LOG_DEBUG("Computing valid scheduler, because the solver requires it.");
                                 extendMaybeStates = true;
                                 clearedRequirements.clearValidInitialScheduler();
                             }
                             clearedRequirements.clearLowerBounds();
-                            if (clearedRequirements.requiresUpperBounds()) {
+                            if (clearedRequirements.upperBounds()) {
                                 STORM_LOG_DEBUG("Computing upper bounds, because the solver requires it.");
                                 extendMaybeStates = true;
                                 clearedRequirements.clearUpperBounds();
                             }
-                            STORM_LOG_THROW(clearedRequirements.empty(), storm::exceptions::UncheckedRequirementException, "Cannot establish requirements for solver.");
+                            STORM_LOG_THROW(!clearedRequirements.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + clearedRequirements.getEnabledRequirementsAsString() + " not checked.");
                         }
 
                         // Compute the set of maybe states that we are required to keep in the translation to explicit.
@@ -611,17 +611,17 @@ namespace storm {
                             storm::storage::BitVector targetStates = computeTargetStatesForReachabilityRewardsFromExplicitRepresentation(explicitRepresentation.first);
                             solverRequirementsData.properMaybeStates = ~targetStates;
 
-                            if (requirements.requiresNoEndComponents()) {
-                                eliminateEndComponentsAndTargetStatesReachabilityRewards(explicitRepresentation, solverRequirementsData, targetStates, requirements.requiresUpperBounds());
+                            if (requirements.noEndComponents()) {
+                                eliminateEndComponentsAndTargetStatesReachabilityRewards(explicitRepresentation, solverRequirementsData, targetStates, requirements.upperBounds());
                                 // The solution becomes unique after end components have been eliminated.
                                 uniqueSolution = true;
                             } else {
-                                if (requirements.requiresValidInitialScheduler()) {
+                                if (requirements.validInitialScheduler()) {
                                     // Compute a valid initial scheduler.
                                     solverRequirementsData.initialScheduler = computeValidInitialSchedulerForReachabilityRewards<ValueType>(explicitRepresentation.first, solverRequirementsData.properMaybeStates, targetStates);
                                 }
                                 
-                                if (requirements.requiresUpperBounds()) {
+                                if (requirements.upperBounds()) {
                                     solverRequirementsData.oneStepTargetProbabilities = computeOneStepTargetProbabilitiesFromExtendedExplicitRepresentation(explicitRepresentation.first, solverRequirementsData.properMaybeStates, targetStates);
                                 }
                                 
@@ -641,7 +641,7 @@ namespace storm {
                         solver->setHasUniqueSolution(uniqueSolution);
                         
                         // If the solver requires upper bounds, compute them now.
-                        if (requirements.requiresUpperBounds()) {
+                        if (requirements.upperBounds()) {
                             setUpperRewardBounds(*solver, dir, explicitRepresentation.first, explicitRepresentation.second, solverRequirementsData.oneStepTargetProbabilities.get());
                         }
                         
@@ -657,7 +657,7 @@ namespace storm {
                         solver->solveEquations(env, dir, x, explicitRepresentation.second);
 
                         // If we eliminated end components, we need to extend the solution vector.
-                        if (requirements.requiresNoEndComponents() && solverRequirementsData.ecInformation) {
+                        if (requirements.noEndComponents() && solverRequirementsData.ecInformation) {
                             std::vector<ValueType> extendedVector(solverRequirementsData.properMaybeStates.getNumberOfSetBits());
                             solverRequirementsData.ecInformation.get().setValues(extendedVector, solverRequirementsData.properMaybeStates, x);
                             x = std::move(extendedVector);

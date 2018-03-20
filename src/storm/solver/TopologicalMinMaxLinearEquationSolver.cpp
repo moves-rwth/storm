@@ -8,7 +8,7 @@
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/InvalidEnvironmentException.h"
 #include "storm/exceptions/UnexpectedException.h"
-#include "storm/exceptions/UnmetRequirementException.h"
+#include "storm/exceptions/UncheckedRequirementException.h"
 
 namespace storm {
     namespace solver {
@@ -184,13 +184,13 @@ namespace storm {
                 this->sccSolver->setInitialScheduler(std::move(choices));
             }
             auto req = this->sccSolver->getRequirements(sccSolverEnvironment, dir);
-            if (req.requiresUpperBounds() && this->hasUpperBound()) {
+            if (req.upperBounds() && this->hasUpperBound()) {
                 req.clearUpperBounds();
             }
-            if (req.requiresLowerBounds() && this->hasLowerBound()) {
+            if (req.lowerBounds() && this->hasLowerBound()) {
                 req.clearLowerBounds();
             }
-            STORM_LOG_THROW(req.empty(), storm::exceptions::UnmetRequirementException, "Requirements of underlying solver not met.");
+            STORM_LOG_THROW(!req.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + req.getEnabledRequirementsAsString() + " not checked.");
             this->sccSolver->setRequirementsChecked(true);
             
             bool res = this->sccSolver->solveEquations(sccSolverEnvironment, dir, x, b);
@@ -252,16 +252,16 @@ namespace storm {
             
             // Requirements
             auto req = this->sccSolver->getRequirements(sccSolverEnvironment, dir);
-            if (req.requiresUpperBounds() && this->hasUpperBound()) {
+            if (req.upperBounds() && this->hasUpperBound()) {
                 req.clearUpperBounds();
             }
-            if (req.requiresLowerBounds() && this->hasLowerBound()) {
+            if (req.lowerBounds() && this->hasLowerBound()) {
                 req.clearLowerBounds();
             }
-            if (req.requiresValidInitialScheduler() && this->hasInitialScheduler()) {
+            if (req.validInitialScheduler() && this->hasInitialScheduler()) {
                 req.clearValidInitialScheduler();
             }
-            STORM_LOG_THROW(req.empty(), storm::exceptions::UnmetRequirementException, "Requirements of underlying solver not met.");
+            STORM_LOG_THROW(!req.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + req.getEnabledRequirementsAsString() + " not checked.");
             this->sccSolver->setRequirementsChecked(true);
 
             // Invoke scc solver

@@ -128,7 +128,7 @@ namespace storm {
                         linEqSolver->setUpperBound(upperBound.get());
                         req.clearUpperBounds();
                     }
-                    STORM_LOG_THROW(req.empty(), storm::exceptions::UncheckedRequirementException, "At least one requirement was not checked.");
+                    STORM_LOG_THROW(!req.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + req.getEnabledRequirementsAsString() + " not checked.");
                 }
                 
                 // Prepare the right hand side of the equation system
@@ -487,11 +487,11 @@ namespace storm {
                         storm::solver::LinearEquationSolverRequirements requirements = linearEquationSolverFactory.getRequirements(env);
                         boost::optional<std::vector<ValueType>> upperRewardBounds;
                         requirements.clearLowerBounds();
-                        if (requirements.requiresUpperBounds()) {
+                        if (requirements.upperBounds()) {
                             upperRewardBounds = computeUpperRewardBounds(submatrix, b, transitionMatrix.getConstrainedRowSumVector(maybeStates, rew0States));
                             requirements.clearUpperBounds();
                         }
-                        STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "There are unchecked requirements of the solver.");
+                        STORM_LOG_THROW(!requirements.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + requirements.getEnabledRequirementsAsString() + " not checked.");
                         
                         // If necessary, convert the matrix from the fixpoint notation to the form needed for the equation system.
                         if (convertToEquationSystem) {

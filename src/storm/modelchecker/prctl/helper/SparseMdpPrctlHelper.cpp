@@ -158,7 +158,7 @@ namespace storm {
                         minMaxSolver->setUpperBound(upperBound.get());
                         req.clearUpperBounds();
                     }
-                    STORM_LOG_THROW(req.empty(), storm::exceptions::UncheckedRequirementException, "At least one requirement was not checked.");
+                    STORM_LOG_THROW(!req.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + req.getEnabledRequirementsAsString() + " not checked.");
                     minMaxSolver->setRequirementsChecked();
                 } else {
                     auto choicesTmp = minMaxSolver->getSchedulerChoices();
@@ -437,10 +437,9 @@ namespace storm {
                 bool hasSchedulerHint = hint.isExplicitModelCheckerHint() && hint.template asExplicitModelCheckerHint<ValueType>().hasSchedulerHint();
                 storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType> minMaxLinearEquationSolverFactory;
                 storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(env, result.uniqueSolution, dir, hasSchedulerHint);
-                if (!requirements.empty()) {
-                    
+                if (requirements.hasEnabledRequirement()) {
                     // If the solver still requires no end-components, we have to eliminate them later.
-                    if (requirements.requiresNoEndComponents()) {
+                    if (requirements.noEndComponents()) {
                         STORM_LOG_ASSERT(!result.hasUniqueSolution(), "The solver requires to eliminate the end components although the solution is already assumed to be unique.");
                         STORM_LOG_DEBUG("Scheduling EC elimination, because the solver requires it.");
                         result.eliminateEndComponents = true;
@@ -450,7 +449,7 @@ namespace storm {
                     }
                     
                     // If the solver requires an initial scheduler, compute one now.
-                    if (requirements.requires(storm::solver::MinMaxLinearEquationSolverRequirements::Element::ValidInitialScheduler)) {
+                    if (requirements.validInitialScheduler()) {
                         STORM_LOG_DEBUG("Computing valid scheduler, because the solver requires it.");
                         result.schedulerHint = computeValidSchedulerHint(env, type, transitionMatrix, backwardTransitions, maybeStates, phiStates, targetStates);
                         requirements.clearValidInitialScheduler();
@@ -462,11 +461,11 @@ namespace storm {
                     } else if (type == SolutionType::ExpectedRewards) {
                         requirements.clearLowerBounds();
                     }
-                    if (requirements.requiresUpperBounds()) {
+                    if (requirements.upperBounds()) {
                         result.computeUpperBounds = true;
                         requirements.clearUpperBounds();
                     }
-                    STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "There are unchecked requirements of the solver.");
+                    STORM_LOG_THROW(!requirements.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + requirements.getEnabledRequirementsAsString() + " not checked.");
                 } else {
                     STORM_LOG_DEBUG("Solver has no requirements.");
                 }
@@ -1343,7 +1342,8 @@ namespace storm {
                 storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType> minMaxLinearEquationSolverFactory;
                 storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(env, true, goal.direction());
                 requirements.clearBounds();
-                STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "Cannot establish requirements for solver.");
+                STORM_LOG_THROW(!requirements.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + requirements.getEnabledRequirementsAsString() + " not checked.");
+
                 
                 std::vector<ValueType> sspResult(numberOfSspStates);
                 goal.restrictRelevantValues(statesNotContainedInAnyMec);

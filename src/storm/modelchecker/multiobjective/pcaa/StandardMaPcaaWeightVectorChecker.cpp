@@ -314,7 +314,7 @@ namespace storm {
                     result->solver->setUpperBound(upperBound.get());
                     req.clearUpperBounds();
                 }
-                STORM_LOG_THROW(req.empty(), storm::exceptions::UncheckedRequirementException, "At least one requirement of the MinMaxSolver was not met.");
+                STORM_LOG_THROW(!req.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + req.getEnabledRequirementsAsString() + " not checked.");
                 result->solver->setRequirementsChecked(true);
                 result->solver->setOptimizationDirection(storm::solver::OptimizationDirection::Maximize);
                 
