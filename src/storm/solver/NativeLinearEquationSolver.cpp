@@ -957,14 +957,13 @@ namespace storm {
         template<typename ValueType>
         LinearEquationSolverRequirements NativeLinearEquationSolver<ValueType>::getRequirements(Environment const& env) const {
             LinearEquationSolverRequirements requirements;
-            if (env.solver().native().isForceBoundsSet()) {
-                requirements.requireBounds();
-            }
             auto method = getMethod(env, storm::NumberTraits<ValueType>::IsExact);
             if (method == NativeLinearEquationSolverMethod::IntervalIteration) {
                 requirements.requireBounds();
             } else if (method == NativeLinearEquationSolverMethod::RationalSearch) {
                 requirements.requireLowerBounds();
+            } else if (method == NativeLinearEquationSolverMethod::SoundValueIteration) {
+                requirements.requireBounds(false);
             }
             return requirements;
         }

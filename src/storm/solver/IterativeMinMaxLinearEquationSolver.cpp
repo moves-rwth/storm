@@ -264,12 +264,9 @@ namespace storm {
                 if (!this->hasUniqueSolution()) {
                     requirements.requireNoEndComponents();
                 }
+                requirements.requireBounds(false);
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidEnvironmentException, "Unsupported technique for iterative MinMax linear equation solver.");
-            }
-        
-            if (env.solver().minMax().isForceBoundsSet()) {
-                requirements.requireBounds();
             }
             return requirements;
         }
