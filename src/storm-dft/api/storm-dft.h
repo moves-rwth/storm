@@ -10,8 +10,7 @@
 #include "storm-dft/modelchecker/dft/DFTASFChecker.h"
 
 #include "storm-dft/transformations/DftToGspnTransformator.h"
-#include "storm-gspn/storage/gspn/GSPN.h"
-#include "storm-gspn/storm-gspn.h"
+#include "storm-gspn/api/storm-gspn.h"
 
 namespace storm {
     namespace api {
@@ -145,7 +144,7 @@ namespace storm {
             storm::gspn::GSPN* gspn = gspnTransformator.obtainGSPN();
             uint64_t toplevelFailedPlace = gspnTransformator.toplevelFailedPlaceId();
 
-            storm::handleGSPNExportSettings(*gspn);
+            storm::api::handleGSPNExportSettings(*gspn);
 
             std::shared_ptr<storm::expressions::ExpressionManager> const& exprManager = gspn->getExpressionManager();
             storm::builder::JaniGSPNBuilder builder(*gspn);

@@ -3,7 +3,7 @@
 #include "storm-gspn/storage/gspn/GSPN.h"
 #include "storm-gspn/storage/gspn/GspnBuilder.h"
 #include "storm-gspn/builder/JaniGSPNBuilder.h"
-#include "storm-gspn/storm-gspn.h"
+#include "storm-gspn/api/storm-gspn.h"
 
 #include "storm/exceptions/BaseException.h"
 #include "storm/exceptions/WrongFormatException.h"
@@ -108,10 +108,10 @@ int main(const int argc, const char **argv) {
             gspn->setCapacities(capacities);
         }
 
-        storm::handleGSPNExportSettings(*gspn);
+        storm::api::handleGSPNExportSettings(*gspn);
         
         if(storm::settings::getModule<storm::settings::modules::JaniExportSettings>().isJaniFileSet()) {
-            storm::jani::Model* model = storm::buildJani(*gspn);
+            storm::jani::Model* model = storm::api::buildJani(*gspn);
             storm::api::exportJaniModel(*model, properties, storm::settings::getModule<storm::settings::modules::JaniExportSettings>().getJaniFilename());
             delete model;
         }
