@@ -23,8 +23,7 @@ namespace storm {
             const std::string NativeEquationSolverSettings::precisionOptionName = "precision";
             const std::string NativeEquationSolverSettings::absoluteOptionName = "absolute";
             const std::string NativeEquationSolverSettings::powerMethodMultiplicationStyleOptionName = "powmult";
-            const std::string NativeEquationSolverSettings::forceBoundsOptionName = "forcebounds";
-            const std::string NativeEquationSolverSettings::powerMethodSymmetricUpdatesOptionName = "symmetricupdates";
+            const std::string NativeEquationSolverSettings::intervalIterationSymmetricUpdatesOptionName = "symmetricupdates";
 
             NativeEquationSolverSettings::NativeEquationSolverSettings() : ModuleSettings(moduleName) {
                 std::vector<std::string> methods = { "jacobi", "gaussseidel", "sor", "walkerchae", "power", "sound-value-iteration", "svi", "interval-iteration", "ii", "ratsearch" };
@@ -42,9 +41,7 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, powerMethodMultiplicationStyleOptionName, false, "Sets which method multiplication style to prefer for the power method.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of a multiplication style.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(multiplicationStyles)).setDefaultValueString("gaussseidel").build()).build());
                                 
-                this->addOption(storm::settings::OptionBuilder(moduleName, forceBoundsOptionName, false, "If set, the equation solver always require that a priori bounds for the solution are computed.").build());
-                
-                this->addOption(storm::settings::OptionBuilder(moduleName, powerMethodSymmetricUpdatesOptionName, false, "If set, interval iteration performs an update on both, lower and upper bound in each iteration").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, intervalIterationSymmetricUpdatesOptionName, false, "If set, interval iteration performs an update on both, lower and upper bound in each iteration").build());
             }
             
             bool NativeEquationSolverSettings::isLinearEquationSystemTechniqueSet() const {
@@ -115,12 +112,8 @@ namespace storm {
                 STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown multiplication style '" << multiplicationStyleString << "'.");
             }
             
-            bool NativeEquationSolverSettings::isForcePowerMethodSymmetricUpdatesSet() const {
-                return this->getOption(powerMethodSymmetricUpdatesOptionName).getHasOptionBeenSet();
-            }
-
-            bool NativeEquationSolverSettings::isForceBoundsSet() const {
-                return this->getOption(forceBoundsOptionName).getHasOptionBeenSet();
+            bool NativeEquationSolverSettings::isForceIntervalIterationSymmetricUpdatesSet() const {
+                return this->getOption(intervalIterationSymmetricUpdatesOptionName).getHasOptionBeenSet();
             }
 
             bool NativeEquationSolverSettings::check() const {

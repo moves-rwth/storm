@@ -21,7 +21,6 @@ namespace storm {
             const std::string MinMaxEquationSolverSettings::markovAutomatonBoundedReachabilityMethodOptionName = "mamethod";
             const std::string MinMaxEquationSolverSettings::valueIterationMultiplicationStyleOptionName = "vimult";
             const std::string MinMaxEquationSolverSettings::intervalIterationSymmetricUpdatesOptionName = "symmetricupdates";
-            const std::string MinMaxEquationSolverSettings::forceBoundsOptionName = "forcebounds";
 
             MinMaxEquationSolverSettings::MinMaxEquationSolverSettings() : ModuleSettings(moduleName) {
                 std::vector<std::string> minMaxSolvingTechniques = {"vi", "value-iteration", "pi", "policy-iteration", "lp", "linear-programming", "rs", "ratsearch", "ii", "interval-iteration", "svi", "sound-value-iteration", "topological"};
@@ -46,8 +45,6 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of a multiplication style.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(multiplicationStyles)).setDefaultValueString("gaussseidel").build()).build());
                 
                 this->addOption(storm::settings::OptionBuilder(moduleName, intervalIterationSymmetricUpdatesOptionName, false, "If set, interval iteration performs an update on both, lower and upper bound in each iteration").build());
-                
-                this->addOption(storm::settings::OptionBuilder(moduleName, forceBoundsOptionName, false, "If set, minmax solver always require that a priori bounds for the solution are computed.").build());
                 
             }
             
@@ -136,9 +133,6 @@ namespace storm {
                 return this->getOption(intervalIterationSymmetricUpdatesOptionName).getHasOptionBeenSet();
             }
             
-            bool MinMaxEquationSolverSettings::isForceBoundsSet() const {
-                return this->getOption(forceBoundsOptionName).getHasOptionBeenSet();
-            }
         }
     }
 }

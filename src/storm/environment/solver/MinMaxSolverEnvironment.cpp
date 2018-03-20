@@ -17,7 +17,6 @@ namespace storm {
         considerRelativeTerminationCriterion = minMaxSettings.getConvergenceCriterion() == storm::settings::modules::MinMaxEquationSolverSettings::ConvergenceCriterion::Relative;
         STORM_LOG_ASSERT(considerRelativeTerminationCriterion || minMaxSettings.getConvergenceCriterion() == storm::settings::modules::MinMaxEquationSolverSettings::ConvergenceCriterion::Absolute, "Unknown convergence criterion");
         multiplicationStyle = minMaxSettings.getValueIterationMultiplicationStyle();
-        forceBounds = minMaxSettings.isForceBoundsSet();
         symmetricUpdates = minMaxSettings.isForceIntervalIterationSymmetricUpdatesSet();
     }
 
@@ -70,14 +69,6 @@ namespace storm {
         multiplicationStyle = value;
     }
     
-    bool MinMaxSolverEnvironment::isForceBoundsSet() const {
-        return forceBounds;
-    }
-    
-    void MinMaxSolverEnvironment::setForceBounds(bool value) {
-        forceBounds = value;
-    }
-
     bool MinMaxSolverEnvironment::isSymmetricUpdatesSet() const {
         return symmetricUpdates;
     }

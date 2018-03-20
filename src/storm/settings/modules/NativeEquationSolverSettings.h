@@ -94,9 +94,9 @@ namespace storm {
                 ConvergenceCriterion getConvergenceCriterion() const;
                 
                 /*!
-                 * Retrievew whether updates in power method have to be made symmetrically
+                 * Retrievew whether updates in interval iteration have to be made symmetrically
                  */
-                bool isForcePowerMethodSymmetricUpdatesSet() const;
+                bool isForceIntervalIterationSymmetricUpdatesSet() const;
                 
                 /*!
                  * Retrieves the multiplication style to use in the power method.
@@ -123,7 +123,7 @@ namespace storm {
                 static const std::string maximalIterationsOptionShortName;
                 static const std::string precisionOptionName;
                 static const std::string absoluteOptionName;
-                static const std::string powerMethodSymmetricUpdatesOptionName;
+                static const std::string intervalIterationSymmetricUpdatesOptionName;
                 static const std::string powerMethodMultiplicationStyleOptionName;
                 static const std::string forceBoundsOptionName;
 

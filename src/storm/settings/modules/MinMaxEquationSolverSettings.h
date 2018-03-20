@@ -112,11 +112,6 @@ namespace storm {
                  */
                 bool isForceIntervalIterationSymmetricUpdatesSet() const;
                 
-                /*!
-                 * Retrieves whether the  force bounds option has been set.
-                 */
-                bool isForceBoundsSet() const;
-                
                 // The name of the module.
                 static const std::string moduleName;
                 
