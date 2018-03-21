@@ -1322,6 +1322,24 @@ namespace storm {
                 return getUsedLabelSet(*solver.getModel(), variableInformation);
             }
             
+            static void ruleOutSingleSolution(storm::solver::SmtSolver& solver, boost::container::flat_set<uint_fast64_t> const& labelSet, VariableInformation& variableInformation, RelevancyInformation const& relevancyInformation) {
+                std::vector<storm::expressions::Expression> formulae;
+                
+                boost::container::flat_set<uint_fast64_t> unknownLabels;
+                std::set_difference(labelSet.begin(), labelSet.end(), relevancyInformation.knownLabels.begin(), relevancyInformation.knownLabels.end(), std::inserter(unknownLabels, unknownLabels.end()));
+                for (auto const& label : unknownLabels) {
+                    formulae.emplace_back(!variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(label)));
+                }
+                boost::container::flat_set<uint_fast64_t> remainingLabels;
+                std::set_difference(relevancyInformation.relevantLabels.begin(), relevancyInformation.relevantLabels.end(), labelSet.begin(), labelSet.end(), std::inserter(remainingLabels, remainingLabels.end()));
+                for (auto const& label : remainingLabels) {
+                    formulae.emplace_back(variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(label)));
+                }
+                
+                STORM_LOG_DEBUG("Ruling out single solution.");
+                assertDisjunction(solver, formulae, *variableInformation.manager);
+            }
+            
             /*!
              * Analyzes the given sub-model that has a maximal reachability of zero (i.e. no psi states are reachable) and tries to construct assertions that aim to make at least one psi state reachable.
              *
@@ -1606,10 +1624,10 @@ namespace storm {
                 
                 STORM_LOG_DEBUG("Invoking model checker.");
                 if (model.isOfType(storm::models::ModelType::Dtmc)) {
-                    allStatesResult = storm::modelchecker::helper::SparseDtmcPrctlHelper<T>::computeUntilProbabilities(env, false, model.getTransitionMatrix(), model.getBackwardTransitions(), phiStates, psiStates, false, storm::solver::GeneralLinearEquationSolverFactory<T>());
+                    allStatesResult = storm::modelchecker::helper::SparseDtmcPrctlHelper<T>::computeUntilProbabilities(env, false, model.getTransitionMatrix(), model.getBackwardTransitions(), phiStates, psiStates, false);
                 } else {
                     storm::modelchecker::helper::SparseMdpPrctlHelper<T> modelCheckerHelper;
-                    allStatesResult = std::move(modelCheckerHelper.computeUntilProbabilities(env, false, model.getTransitionMatrix(), model.getBackwardTransitions(), phiStates, psiStates, false, false, storm::solver::GeneralMinMaxLinearEquationSolverFactory<T>()).values);
+                    allStatesResult = std::move(modelCheckerHelper.computeUntilProbabilities(env, false, model.getTransitionMatrix(), model.getBackwardTransitions(), phiStates, psiStates, false, false).values);
                 }
                 for (auto state : model.getInitialStates()) {
                     result = std::max(result, allStatesResult[state]);
@@ -1618,6 +1636,19 @@ namespace storm {
             }
             
         public:
+            struct Options {
+                Options(bool checkThresholdFeasible = false) : checkThresholdFeasible(checkThresholdFeasible) {
+                    auto const& settings = storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>();
+                    
+                    encodeReachability = settings.isEncodeReachabilitySet();
+                    useDynamicConstraints = settings.isUseDynamicConstraintsSet();
+                }
+                
+                bool checkThresholdFeasible;
+                bool encodeReachability;
+                bool useDynamicConstraints;
+            };
+            
             /*!
              * Computes the minimal command set that is needed in the given model to exceed the given probability threshold for satisfying phi until psi.
              *
@@ -1627,10 +1658,9 @@ namespace storm {
              * @param psiStates A bit vector characterizing all psi states in the model.
              * @param probabilityThreshold The threshold that is to be achieved or exceeded.
              * @param strictBound Indicates whether the threshold needs to be achieved (true) or exceeded (false).
-             * @param checkThresholdFeasible If set, it is verified that the model can actually achieve/exceed the given probability value. If this check
-             * is made and fails, an exception is thrown.
+             * @param options A set of options for customization.
              */
-            static boost::container::flat_set<uint_fast64_t> getMinimalLabelSet(Environment const& env, storm::storage::SymbolicModelDescription const& symbolicModel, storm::models::sparse::Model<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, double probabilityThreshold, bool strictBound, boost::container::flat_set<uint_fast64_t> const& dontCareLabels = boost::container::flat_set<uint_fast64_t>(), bool checkThresholdFeasible = false, bool includeReachabilityEncoding = false) {
+            static boost::container::flat_set<uint_fast64_t> getMinimalLabelSet(Environment const& env, storm::storage::SymbolicModelDescription const& symbolicModel, storm::models::sparse::Model<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, double probabilityThreshold, bool strictBound, boost::container::flat_set<uint_fast64_t> const& dontCareLabels = boost::container::flat_set<uint_fast64_t>(), Options const& options = Options()) {
 #ifdef STORM_HAVE_Z3
                 // Set up all clocks used for time measurement.
                 auto totalClock = std::chrono::high_resolution_clock::now();
@@ -1669,7 +1699,7 @@ namespace storm {
                 
                 // (1) Check whether its possible to exceed the threshold if checkThresholdFeasible is set.
                 double maximalReachabilityProbability = 0;
-                if (checkThresholdFeasible) {
+                if (options.checkThresholdFeasible) {
                     maximalReachabilityProbability = computeMaximalReachabilityProbability(env, model, phiStates, psiStates);
                     
                     STORM_LOG_THROW((strictBound && maximalReachabilityProbability >= probabilityThreshold) || (!strictBound && maximalReachabilityProbability > probabilityThreshold), storm::exceptions::InvalidArgumentException, "Given probability threshold " << probabilityThreshold << " can not be " << (strictBound ? "achieved" : "exceeded") << " in model with maximal reachability probability of " << maximalReachabilityProbability << ".");
@@ -1684,7 +1714,7 @@ namespace storm {
                 std::unique_ptr<storm::solver::SmtSolver> solver = std::make_unique<storm::solver::Z3SmtSolver>(*manager);
                 
                 // (4) Create the variables for the relevant commands.
-                VariableInformation variableInformation = createVariables(manager, model, psiStates, relevancyInformation, includeReachabilityEncoding);
+                VariableInformation variableInformation = createVariables(manager, model, psiStates, relevancyInformation, options.encodeReachability);
                 STORM_LOG_DEBUG("Created variables.");
 
                 // (5) Now assert an adder whose result variables can later be used to constrain the nummber of label
@@ -1697,7 +1727,7 @@ namespace storm {
                 STORM_LOG_DEBUG("Asserting cuts.");
                 assertCuts(symbolicModel, model, labelSets, psiStates, variableInformation, relevancyInformation, *solver);
                 STORM_LOG_DEBUG("Asserted cuts.");
-                if (includeReachabilityEncoding) {
+                if (options.encodeReachability) {
                     assertReachabilityCuts(model, labelSets, psiStates, variableInformation, relevancyInformation, *solver);
                     STORM_LOG_DEBUG("Asserted reachability cuts.");
                 }
@@ -1749,15 +1779,22 @@ namespace storm {
                     // Depending on whether the threshold was successfully achieved or not, we proceed by either analyzing the bad solution or stopping the iteration process.
                     analysisClock = std::chrono::high_resolution_clock::now();
                     if ((strictBound && maximalReachabilityProbability < probabilityThreshold) || (!strictBound && maximalReachabilityProbability <= probabilityThreshold)) {
-                        if (maximalReachabilityProbability == 0) {
+                        if (maximalReachabilityProbability == storm::utility::zero<T>()) {
                             ++zeroProbabilityCount;
-                            
-                            // If there was no target state reachable, analyze the solution and guide the solver into the right direction.
-                            analyzeZeroProbabilitySolution(*solver, *subModel, subLabelSets, model, labelSets, phiStates, psiStates, commandSet, variableInformation, relevancyInformation);
+                        }
+                        
+                        if (options.useDynamicConstraints) {
+                            if (maximalReachabilityProbability == storm::utility::zero<T>()) {
+                                // If there was no target state reachable, analyze the solution and guide the solver into the right direction.
+                                analyzeZeroProbabilitySolution(*solver, *subModel, subLabelSets, model, labelSets, phiStates, psiStates, commandSet, variableInformation, relevancyInformation);
+                            } else {
+                                // If the reachability probability was greater than zero (i.e. there is a reachable target state), but the probability was insufficient to exceed
+                                // the given threshold, we analyze the solution and try to guide the solver into the right direction.
+                                analyzeInsufficientProbabilitySolution(*solver, *subModel, subLabelSets, model, labelSets, phiStates, psiStates, commandSet, variableInformation, relevancyInformation);
+                            }
                         } else {
-                            // If the reachability probability was greater than zero (i.e. there is a reachable target state), but the probability was insufficient to exceed
-                            // the given threshold, we analyze the solution and try to guide the solver into the right direction.
-                            analyzeInsufficientProbabilitySolution(*solver, *subModel, subLabelSets, model, labelSets, phiStates, psiStates, commandSet, variableInformation, relevancyInformation);
+                            // Do not guide solver, just rule out current solution.
+                            ruleOutSingleSolution(*solver, commandSet, variableInformation, relevancyInformation);
                         }
                     } else {
                         done = true;
@@ -1770,7 +1807,7 @@ namespace storm {
                     if (static_cast<uint64_t>(durationSinceLastMessage) >= progressDelay || lastSize < commandSet.size()) {
                         auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(now - totalClock).count();
                         if (lastSize < commandSet.size()) {
-                            std::cout << "Improved lower bound to " << commandSet.size() << " after " << milliseconds << "s." << std::endl;
+                            std::cout << "Improved lower bound to " << commandSet.size() << " after " << milliseconds << "ms." << std::endl;
                             lastSize = commandSet.size();
                         } else {
                             std::cout << "Lower bound on label set size is " << commandSet.size() << " after " << milliseconds << "ms (checked " << iterations << " models, " << zeroProbabilityCount << " could not reach the target set)." << std::endl;
@@ -1948,7 +1985,7 @@ namespace storm {
 
                 // Delegate the actual computation work to the function of equal name.
                 auto startTime = std::chrono::high_resolution_clock::now();
-                auto labelSet = getMinimalLabelSet(env, symbolicModel, model, phiStates, psiStates, threshold, strictBound, boost::container::flat_set<uint_fast64_t>(), true, storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>().isEncodeReachabilitySet());
+                auto labelSet = getMinimalLabelSet(env, symbolicModel, model, phiStates, psiStates, threshold, strictBound, boost::container::flat_set<uint_fast64_t>(), true);
                 auto endTime = std::chrono::high_resolution_clock::now();
                 std::cout << std::endl << "Computed minimal label set of size " << labelSet.size() << " in " << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << "ms." << std::endl;
 

@@ -34,6 +34,8 @@ namespace storm {
             private:
                 virtual bool refineWrtStateActionRewards(storm::dd::Add<DdType, ValueType> const& stateActionRewards) override;
                 
+                virtual bool refineWrtStateRewards(storm::dd::Add<DdType, ValueType> const& stateRewards) override;
+                
                 // The model to refine.
                 storm::models::symbolic::NondeterministicModel<DdType, ValueType> const& model;
                 

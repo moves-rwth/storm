@@ -141,6 +141,9 @@ namespace storm {
                  */
                 storm::dd::Add<Type, ValueType> const& getExitRateVector() const;
                 
+                template<typename NewValueType>
+                std::shared_ptr<Ctmc<Type, NewValueType>> toValueType() const;
+                
             private:
                 mutable boost::optional<storm::dd::Add<Type, ValueType>> exitRates;
             };

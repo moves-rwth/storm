@@ -9,7 +9,7 @@
 namespace storm {
     namespace utility {
 
-        ProgressMeasurement::ProgressMeasurement(std::string const& itemName) : itemName(itemName) {
+        ProgressMeasurement::ProgressMeasurement(std::string const& itemName) : itemName(itemName), maxCount(0) {
             delay = storm::settings::getModule<storm::settings::modules::GeneralSettings>().getShowProgressDelay();
         }
         

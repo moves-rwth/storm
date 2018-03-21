@@ -31,44 +31,46 @@ namespace storm {
             }
         }
         
-        template <storm::dd::DdType DdType, typename ValueType>
-        BisimulationDecomposition<DdType, ValueType>::BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::storage::BisimulationType const& bisimulationType) : model(model), preservationInformation(model), refiner(createRefiner(model, Partition<DdType, ValueType>::create(model, bisimulationType, preservationInformation))) {
+        template <storm::dd::DdType DdType, typename ValueType, typename ExportValueType>
+        BisimulationDecomposition<DdType, ValueType, ExportValueType>::BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::storage::BisimulationType const& bisimulationType) : model(model), preservationInformation(model), refiner(createRefiner(model, Partition<DdType, ValueType>::create(model, bisimulationType, preservationInformation))) {
             this->initialize();
         }
       
-        template <storm::dd::DdType DdType, typename ValueType>
-        BisimulationDecomposition<DdType, ValueType>::BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::storage::BisimulationType const& bisimulationType, bisimulation::PreservationInformation<DdType, ValueType> const& preservationInformation) : model(model), preservationInformation(preservationInformation), refiner(createRefiner(model, Partition<DdType, ValueType>::create(model, bisimulationType, preservationInformation))) {
+        template <storm::dd::DdType DdType, typename ValueType, typename ExportValueType>
+        BisimulationDecomposition<DdType, ValueType, ExportValueType>::BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::storage::BisimulationType const& bisimulationType, bisimulation::PreservationInformation<DdType, ValueType> const& preservationInformation) : model(model), preservationInformation(preservationInformation), refiner(createRefiner(model, Partition<DdType, ValueType>::create(model, bisimulationType, preservationInformation))) {
             this->initialize();
         }
   
-        template <storm::dd::DdType DdType, typename ValueType>
-        BisimulationDecomposition<DdType, ValueType>::BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, storm::storage::BisimulationType const& bisimulationType) : model(model), preservationInformation(model, formulas), refiner(createRefiner(model, Partition<DdType, ValueType>::create(model, bisimulationType, formulas))) {
+        template <storm::dd::DdType DdType, typename ValueType, typename ExportValueType>
+        BisimulationDecomposition<DdType, ValueType, ExportValueType>::BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, storm::storage::BisimulationType const& bisimulationType) : model(model), preservationInformation(model, formulas), refiner(createRefiner(model, Partition<DdType, ValueType>::create(model, bisimulationType, formulas))) {
             this->initialize();
         }
         
-        template <storm::dd::DdType DdType, typename ValueType>
-        BisimulationDecomposition<DdType, ValueType>::BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& initialPartition, bisimulation::PreservationInformation<DdType, ValueType> const& preservationInformation) : model(model), preservationInformation(preservationInformation), refiner(createRefiner(model, initialPartition)) {
+        template <storm::dd::DdType DdType, typename ValueType, typename ExportValueType>
+        BisimulationDecomposition<DdType, ValueType, ExportValueType>::BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& initialPartition, bisimulation::PreservationInformation<DdType, ValueType> const& preservationInformation) : model(model), preservationInformation(preservationInformation), refiner(createRefiner(model, initialPartition)) {
             this->initialize();
         }
         
-        template <storm::dd::DdType DdType, typename ValueType>
-        BisimulationDecomposition<DdType, ValueType>::~BisimulationDecomposition() = default;
+        template <storm::dd::DdType DdType, typename ValueType, typename ExportValueType>
+        BisimulationDecomposition<DdType, ValueType, ExportValueType>::~BisimulationDecomposition() = default;
         
-        template <storm::dd::DdType DdType, typename ValueType>
-        void BisimulationDecomposition<DdType, ValueType>::initialize() {
+        template <storm::dd::DdType DdType, typename ValueType, typename ExportValueType>
+        void BisimulationDecomposition<DdType, ValueType, ExportValueType>::initialize() {
             auto const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
-            showProgress = generalSettings.isVerboseSet();
+            verboseProgress = generalSettings.isVerboseSet();
             showProgressDelay = generalSettings.getShowProgressDelay();
-            this->refineWrtRewardModels();
             
-            STORM_LOG_TRACE("Initial partition has " << refiner->getStatePartition().getNumberOfBlocks() << " blocks.");
-#ifndef NDEBUG
+            auto start = std::chrono::high_resolution_clock::now();
+            this->refineWrtRewardModels();
+            auto end = std::chrono::high_resolution_clock::now();
+            STORM_LOG_INFO("Refining with respect to reward models took " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
+            
+            STORM_LOG_INFO("Initial partition has " << refiner->getStatePartition().getNumberOfBlocks() << " blocks.");
             STORM_LOG_TRACE("Initial partition has " << refiner->getStatePartition().getNodeCount() << " nodes.");
-#endif
         }
         
-        template <storm::dd::DdType DdType, typename ValueType>
-        void BisimulationDecomposition<DdType, ValueType>::compute(bisimulation::SignatureMode const& mode) {
+        template <storm::dd::DdType DdType, typename ValueType, typename ExportValueType>
+        void BisimulationDecomposition<DdType, ValueType, ExportValueType>::compute(bisimulation::SignatureMode const& mode) {
             STORM_LOG_ASSERT(refiner, "No suitable refiner.");
             STORM_LOG_ASSERT(this->refiner->getStatus() != Status::FixedPoint, "Can only proceed if no fixpoint has been reached yet.");
 
@@ -80,25 +82,22 @@ namespace storm {
                 refined = refiner->refine(mode);
 
                 ++iterations;
-                STORM_LOG_TRACE("After iteration " << iterations << " partition has " << refiner->getStatePartition().getNumberOfBlocks() << " blocks.");
                 
-                if (showProgress) {
-                    auto now = std::chrono::high_resolution_clock::now();
-                    auto durationSinceLastMessage = std::chrono::duration_cast<std::chrono::seconds>(now - timeOfLastMessage).count();
-                    if (static_cast<uint64_t>(durationSinceLastMessage) >= showProgressDelay) {
-                        auto durationSinceStart = std::chrono::duration_cast<std::chrono::seconds>(now - start).count();
-                        STORM_LOG_INFO("State partition after " << iterations << " iterations (" << durationSinceStart << "s) has " << refiner->getStatePartition().getNumberOfBlocks() << " blocks.");
-                        timeOfLastMessage = std::chrono::high_resolution_clock::now();
-                    }
+                auto now = std::chrono::high_resolution_clock::now();
+                auto durationSinceLastMessage = std::chrono::duration_cast<std::chrono::milliseconds>(now - timeOfLastMessage).count();
+                if (static_cast<uint64_t>(durationSinceLastMessage) >= showProgressDelay * 1000 || verboseProgress) {
+                    auto durationSinceStart = std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count();
+                    STORM_LOG_INFO("State partition after " << iterations << " iterations (" << durationSinceStart << "ms) has " << refiner->getStatePartition().getNumberOfBlocks() << " blocks.");
+                    timeOfLastMessage = std::chrono::high_resolution_clock::now();
                 }
             }
             auto end = std::chrono::high_resolution_clock::now();
             
-            STORM_LOG_DEBUG("Partition refinement completed in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms (" << iterations << " iterations).");
+            STORM_LOG_INFO("Partition refinement completed in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms (" << iterations << " iterations, signature: " << std::chrono::duration_cast<std::chrono::milliseconds>(refiner->getTotalSignatureTime()).count() << "ms, refinement: " << std::chrono::duration_cast<std::chrono::milliseconds>(refiner->getTotalRefinementTime()).count() << "ms).");
         }
 
-        template <storm::dd::DdType DdType, typename ValueType>
-        bool BisimulationDecomposition<DdType, ValueType>::compute(uint64_t steps, bisimulation::SignatureMode const& mode) {
+        template <storm::dd::DdType DdType, typename ValueType, typename ExportValueType>
+        bool BisimulationDecomposition<DdType, ValueType, ExportValueType>::compute(uint64_t steps, bisimulation::SignatureMode const& mode) {
             STORM_LOG_ASSERT(refiner, "No suitable refiner.");
             STORM_LOG_ASSERT(this->refiner->getStatus() != Status::FixedPoint, "Can only proceed if no fixpoint has been reached yet.");
             STORM_LOG_ASSERT(steps > 0, "Can only perform positive number of steps.");
@@ -112,49 +111,47 @@ namespace storm {
                 
                 ++iterations;
                 
-                if (showProgress) {
-                    auto now = std::chrono::high_resolution_clock::now();
-                    auto durationSinceLastMessage = std::chrono::duration_cast<std::chrono::seconds>(now - timeOfLastMessage).count();
-                    if (static_cast<uint64_t>(durationSinceLastMessage) >= showProgressDelay) {
-                        auto durationSinceStart = std::chrono::duration_cast<std::chrono::seconds>(now - start).count();
-                        STORM_LOG_INFO("State partition after " << iterations << " iterations (" << durationSinceStart << "ms) has " << refiner->getStatePartition().getNumberOfBlocks() << " blocks.");
-                        timeOfLastMessage = std::chrono::high_resolution_clock::now();
-                    }
+                auto now = std::chrono::high_resolution_clock::now();
+                auto durationSinceLastMessage = std::chrono::duration_cast<std::chrono::seconds>(now - timeOfLastMessage).count();
+                if (static_cast<uint64_t>(durationSinceLastMessage) >= showProgressDelay || verboseProgress) {
+                    auto durationSinceStart = std::chrono::duration_cast<std::chrono::seconds>(now - start).count();
+                    STORM_LOG_INFO("State partition after " << iterations << " iterations (" << durationSinceStart << "ms) has " << refiner->getStatePartition().getNumberOfBlocks() << " blocks.");
+                    timeOfLastMessage = std::chrono::high_resolution_clock::now();
                 }
             }
             
             return !refined;
         }
         
-        template <storm::dd::DdType DdType, typename ValueType>
-        bool BisimulationDecomposition<DdType, ValueType>::getReachedFixedPoint() const {
+        template <storm::dd::DdType DdType, typename ValueType, typename ExportValueType>
+        bool BisimulationDecomposition<DdType, ValueType, ExportValueType>::getReachedFixedPoint() const {
             return this->refiner->getStatus() == Status::FixedPoint;
         }
         
-        template <storm::dd::DdType DdType, typename ValueType>
-        std::shared_ptr<storm::models::Model<ValueType>> BisimulationDecomposition<DdType, ValueType>::getQuotient() const {
-            std::shared_ptr<storm::models::Model<ValueType>> quotient;
+        template <storm::dd::DdType DdType, typename ValueType, typename ExportValueType>
+        std::shared_ptr<storm::models::Model<ExportValueType>> BisimulationDecomposition<DdType, ValueType, ExportValueType>::getQuotient() const {
+            std::shared_ptr<storm::models::Model<ExportValueType>> quotient;
             if (this->refiner->getStatus() == Status::FixedPoint) {
-                STORM_LOG_TRACE("Starting full quotient extraction.");
-                QuotientExtractor<DdType, ValueType> extractor;
+                STORM_LOG_INFO("Starting full quotient extraction.");
+                QuotientExtractor<DdType, ValueType, ExportValueType> extractor;
                 quotient = extractor.extract(model, refiner->getStatePartition(), preservationInformation);
             } else {
                 STORM_LOG_THROW(model.getType() == storm::models::ModelType::Dtmc || model.getType() == storm::models::ModelType::Mdp, storm::exceptions::InvalidOperationException, "Can only extract partial quotient for discrete-time models.");
                 
-                STORM_LOG_TRACE("Starting partial quotient extraction.");
+                STORM_LOG_INFO("Starting partial quotient extraction.");
                 if (!partialQuotientExtractor) {
-                    partialQuotientExtractor = std::make_unique<bisimulation::PartialQuotientExtractor<DdType, ValueType>>(model);
+                    partialQuotientExtractor = std::make_unique<bisimulation::PartialQuotientExtractor<DdType, ValueType, ExportValueType>>(model);
                 }
 
                 quotient = partialQuotientExtractor->extract(refiner->getStatePartition(), preservationInformation);
             }
 
-            STORM_LOG_TRACE("Quotient extraction done.");
+            STORM_LOG_INFO("Quotient extraction done.");
             return quotient;
         }
         
-        template <storm::dd::DdType DdType, typename ValueType>
-        void BisimulationDecomposition<DdType, ValueType>::refineWrtRewardModels() {
+        template <storm::dd::DdType DdType, typename ValueType, typename ExportValueType>
+        void BisimulationDecomposition<DdType, ValueType, ExportValueType>::refineWrtRewardModels() {
             for (auto const& rewardModelName : this->preservationInformation.getRewardModelNames()) {
                 auto const& rewardModel = this->model.getRewardModel(rewardModelName);
                 refiner->refineWrtRewardModel(rewardModel);
@@ -165,6 +162,7 @@ namespace storm {
 
         template class BisimulationDecomposition<storm::dd::DdType::Sylvan, double>;
         template class BisimulationDecomposition<storm::dd::DdType::Sylvan, storm::RationalNumber>;
+        template class BisimulationDecomposition<storm::dd::DdType::Sylvan, storm::RationalNumber, double>;
         template class BisimulationDecomposition<storm::dd::DdType::Sylvan, storm::RationalFunction>;
         
     }

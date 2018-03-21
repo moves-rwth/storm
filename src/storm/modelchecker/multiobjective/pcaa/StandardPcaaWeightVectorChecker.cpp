@@ -179,22 +179,21 @@ namespace storm {
                 solver->setTrackScheduler(true);
                 solver->setHasUniqueSolution(true);
                 solver->setOptimizationDirection(storm::solver::OptimizationDirection::Maximize);
-                auto req = solver->getRequirements(env, storm::solver::OptimizationDirection::Maximize, true);
-                setBoundsToSolver(*solver, req.requiresLowerBounds(), req.requiresUpperBounds(), weightVector, objectivesWithNoUpperTimeBound, ecQuotient->matrix, ecQuotient->rowsWithSumLessOne, ecQuotient->auxChoiceValues);
+                auto req = solver->getRequirements(env, storm::solver::OptimizationDirection::Maximize);
+                setBoundsToSolver(*solver, req.lowerBounds(), req.upperBounds(), weightVector, objectivesWithNoUpperTimeBound, ecQuotient->matrix, ecQuotient->rowsWithSumLessOne, ecQuotient->auxChoiceValues);
                 if (solver->hasLowerBound()) {
                     req.clearLowerBounds();
                 }
                 if (solver->hasUpperBound()) {
                     req.clearUpperBounds();
                 }
-                STORM_LOG_THROW(req.empty(), storm::exceptions::UncheckedRequirementException, "At least one requirement was not checked.");
+                STORM_LOG_THROW(!req.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + req.getEnabledRequirementsAsString() + " not checked.");
                 solver->setRequirementsChecked(true);
                 
                 // Use the (0...0) vector as initial guess for the solution.
                 std::fill(ecQuotient->auxStateValues.begin(), ecQuotient->auxStateValues.end(), storm::utility::zero<ValueType>());
                 
                 solver->solveEquations(env, ecQuotient->auxStateValues, ecQuotient->auxChoiceValues);
-
                 this->weightedResult = std::vector<ValueType>(transitionMatrix.getRowGroupCount());
                 
                 transformReducedSolutionToOriginalModel(ecQuotient->matrix, ecQuotient->auxStateValues, solver->getSchedulerChoices(), ecQuotient->ecqToOriginalChoiceMapping, ecQuotient->originalToEcqStateMapping, this->weightedResult, this->optimalChoices);
@@ -267,17 +266,15 @@ namespace storm {
                                solver->clearBounds();
                                storm::storage::BitVector submatrixRowsWithSumLessOne = deterministicMatrix.getRowFilter(maybeStates, maybeStates) % maybeStates;
                                submatrixRowsWithSumLessOne.complement();
-                               this->setBoundsToSolver(*solver, req.requiresLowerBounds(), req.requiresUpperBounds(), objIndex, submatrix, submatrixRowsWithSumLessOne, b);
+                               this->setBoundsToSolver(*solver, req.lowerBounds(), req.upperBounds(), objIndex, submatrix, submatrixRowsWithSumLessOne, b);
                                if (solver->hasLowerBound()) {
                                    req.clearLowerBounds();
                                }
                                if (solver->hasUpperBound()) {
                                    req.clearUpperBounds();
                                }
-
-                               STORM_LOG_THROW(req.empty(), storm::exceptions::UncheckedRequirementException, "At least one requirement of the LinearEquationSolver was not met.");
+                               STORM_LOG_THROW(!req.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + req.getEnabledRequirementsAsString() + " not checked.");
                                solver->solveEquations(env, x, b);
-
                                // Set the result for this objective accordingly
                                storm::utility::vector::setVectorValues<ValueType>(objectiveResults[objIndex], maybeStates, x);
                            }

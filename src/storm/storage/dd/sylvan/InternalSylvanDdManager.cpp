@@ -64,25 +64,39 @@ namespace storm {
                 }
                 lace_startup(0, 0, 0);
                 
-                // Each node takes 24 bytes and the maximal memory is specified in megabytes.
-                uint_fast64_t totalNodesToStore = storm::settings::getModule<storm::settings::modules::SylvanSettings>().getMaximalMemory() * 1024 * 1024 / 24;
+                // Table/cache size computation taken from newer version of sylvan.
+                uint64_t memorycap = storm::settings::getModule<storm::settings::modules::SylvanSettings>().getMaximalMemory() * 1024 * 1024;
                 
-                // Compute the power of two that still fits within the total numbers to store.
-                uint_fast64_t powerOfTwo = findLargestPowerOfTwoFitting(totalNodesToStore);
+                uint64_t table_ratio = 0;
+                uint64_t initial_ratio = 0;
                 
-                STORM_LOG_THROW(powerOfTwo >= 16, storm::exceptions::InvalidSettingsException, "Too little memory assigned to sylvan.");
-                
-                uint64_t maxTableSize = 1ull << powerOfTwo;
-                uint64_t maxCacheSize = 1ull << (powerOfTwo - 1);
-                if (maxTableSize + maxCacheSize > totalNodesToStore) {
-                    maxTableSize >>= 1;
+                uint64_t max_t = 1;
+                uint64_t max_c = 1;
+                if (table_ratio > 0) {
+                    max_t <<= table_ratio;
+                } else {
+                    max_c <<= -table_ratio;
                 }
                 
-                uint64_t initialTableSize = 1ull << std::max(powerOfTwo - 4, static_cast<uint_fast64_t>(16));
-                uint64_t initialCacheSize = initialTableSize;
+                uint64_t cur = max_t * 24 + max_c * 36;
+                STORM_LOG_THROW(cur <= memorycap, storm::exceptions::InvalidSettingsException, "Memory cap incompatible with default table ratio.");
                 
-                STORM_LOG_DEBUG("Initializing sylvan. Initial/max table size: " << initialTableSize << "/" << maxTableSize << ", initial/max cache size: " << initialCacheSize << "/" << maxCacheSize << ".");
-                sylvan::Sylvan::initPackage(initialTableSize, maxTableSize, initialCacheSize, maxCacheSize);
+                while (2*cur < memorycap && max_t < 0x0000040000000000) {
+                    max_t *= 2;
+                    max_c *= 2;
+                    cur *= 2;
+                }
+                
+                uint64_t min_t = max_t, min_c = max_c;
+                while (initial_ratio > 0 && min_t > 0x1000 && min_c > 0x1000) {
+                    min_t >>= 1;
+                    min_c >>= 1;
+                    initial_ratio--;
+                }
+                // End of copied code.
+                
+                STORM_LOG_DEBUG("Initializing sylvan library. Initial/max table size: " << min_t << "/" << max_t << ", initial/max cache size: " << min_c << "/" << max_c << ".");
+                sylvan::Sylvan::initPackage(min_t, max_t, min_c, max_c);
 
                 sylvan::Sylvan::initBdd();
                 sylvan::Sylvan::initMtbdd();

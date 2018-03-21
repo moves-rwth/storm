@@ -42,12 +42,22 @@ namespace storm {
                     } else {
                         choicePartitionAsBdd = this->choicePartition.asAdd().notZero();
                     }
+                    
+                    auto signatureStart = std::chrono::high_resolution_clock::now();
                     Signature<DdType, ValueType> stateSignature(choicePartitionAsBdd.existsAbstract(model.getNondeterminismVariables()).template toAdd<ValueType>());
+                    auto signatureEnd = std::chrono::high_resolution_clock::now();
+                    this->totalSignatureTime += (signatureEnd - signatureStart);
                     
                     // If the choice partition changed, refine the state partition.
                     STORM_LOG_TRACE("Refining state partition.");
+                    auto refinementStart = std::chrono::high_resolution_clock::now();
                     Partition<DdType, ValueType> newStatePartition = this->internalRefine(stateSignature, this->stateSignatureRefiner, this->statePartition);
+                    auto refinementEnd = std::chrono::high_resolution_clock::now();
                     
+                    auto signatureTime = std::chrono::duration_cast<std::chrono::milliseconds>(signatureEnd - signatureStart).count();
+                    auto refinementTime = std::chrono::duration_cast<std::chrono::milliseconds>(refinementEnd - refinementStart).count();
+                    STORM_LOG_INFO("Refinement " << (this->refinements-1) << " produced " << newStatePartition.getNumberOfBlocks() << " blocks and was completed in " << (signatureTime + refinementTime) << "ms (signature: " << signatureTime << "ms, refinement: " << refinementTime << "ms).");
+
                     if (newStatePartition == this->statePartition) {
                         this->status = Status::FixedPoint;
                         return false;
@@ -61,6 +71,18 @@ namespace storm {
             template<storm::dd::DdType DdType, typename ValueType>
             Partition<DdType, ValueType> const& NondeterministicModelPartitionRefiner<DdType, ValueType>::getChoicePartition() const {
                 return choicePartition;
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
+            bool NondeterministicModelPartitionRefiner<DdType, ValueType>::refineWrtStateRewards(storm::dd::Add<DdType, ValueType> const& stateRewards) {
+                STORM_LOG_TRACE("Refining with respect to state rewards.");
+                Partition<DdType, ValueType> newStatePartition = this->stateSignatureRefiner.refine(this->statePartition, Signature<DdType, ValueType>(stateRewards));
+                if (newStatePartition == this->statePartition) {
+                    return false;
+                } else {
+                    this->statePartition = newStatePartition;
+                    return true;
+                }
             }
             
             template<storm::dd::DdType DdType, typename ValueType>

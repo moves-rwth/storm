@@ -25,6 +25,7 @@
 #include "storm/environment/solver/NativeSolverEnvironment.h"
 #include "storm/environment/solver/GmmxxSolverEnvironment.h"
 #include "storm/environment/solver/EigenSolverEnvironment.h"
+#include "storm/environment/solver/TopologicalSolverEnvironment.h"
 
 namespace {
     
@@ -205,7 +206,7 @@ namespace {
         }
     };
 
-    class SparseNativeSoundPowerEnvironment {
+    class SparseNativeSoundValueIterationEnvironment {
     public:
         static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan; // unused for sparse models
         static const storm::settings::modules::CoreSettings::Engine engine = storm::settings::modules::CoreSettings::Engine::Sparse;
@@ -216,7 +217,25 @@ namespace {
             storm::Environment env;
             env.solver().setForceSoundness(true);
             env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Native);
-            env.solver().native().setMethod(storm::solver::NativeLinearEquationSolverMethod::Power);
+            env.solver().native().setMethod(storm::solver::NativeLinearEquationSolverMethod::SoundValueIteration);
+            env.solver().native().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6));
+            return env;
+        }
+    };
+
+    class SparseNativeIntervalIterationEnvironment {
+    public:
+        static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan; // unused for sparse models
+        static const storm::settings::modules::CoreSettings::Engine engine = storm::settings::modules::CoreSettings::Engine::Sparse;
+        static const bool isExact = false;
+        typedef double ValueType;
+        typedef storm::models::sparse::Dtmc<ValueType> ModelType;
+        static storm::Environment createEnvironment() {
+            storm::Environment env;
+            env.solver().setForceSoundness(true);
+            env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Native);
+            env.solver().native().setMethod(storm::solver::NativeLinearEquationSolverMethod::IntervalIteration);
+            env.solver().native().setRelativeTerminationCriterion(false);
             env.solver().native().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6));
             return env;
         }
@@ -233,6 +252,22 @@ namespace {
             storm::Environment env;
             env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Native);
             env.solver().native().setMethod(storm::solver::NativeLinearEquationSolverMethod::RationalSearch);
+            return env;
+        }
+    };
+
+    class SparseTopologicalEigenLUEnvironment {
+    public:
+        static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan; // unused for sparse models
+        static const storm::settings::modules::CoreSettings::Engine engine = storm::settings::modules::CoreSettings::Engine::Sparse;
+        static const bool isExact = true;
+        typedef storm::RationalNumber ValueType;
+        typedef storm::models::sparse::Dtmc<ValueType> ModelType;
+        static storm::Environment createEnvironment() {
+            storm::Environment env;
+            env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Topological);
+            env.solver().topological().setUnderlyingEquationSolverType(storm::solver::EquationSolverType::Eigen);
+            env.solver().eigen().setMethod(storm::solver::EigenLinearEquationSolverMethod::SparseLU);
             return env;
         }
     };
@@ -269,7 +304,7 @@ namespace {
         }
     };
     
-    class HybridCuddNativeSoundPowerEnvironment {
+    class HybridCuddNativeSoundValueIterationEnvironment {
     public:
         static const storm::dd::DdType ddType = storm::dd::DdType::CUDD;
         static const storm::settings::modules::CoreSettings::Engine engine = storm::settings::modules::CoreSettings::Engine::Hybrid;
@@ -446,11 +481,13 @@ namespace {
             SparseNativeWalkerChaeEnvironment,
             SparseNativeSorEnvironment,
             SparseNativePowerEnvironment,
-            SparseNativeSoundPowerEnvironment,
+            SparseNativeSoundValueIterationEnvironment,
+            SparseNativeIntervalIterationEnvironment,
             SparseNativeRationalSearchEnvironment,
+            SparseTopologicalEigenLUEnvironment,
             HybridSylvanGmmxxGmresEnvironment,
             HybridCuddNativeJacobiEnvironment,
-            HybridCuddNativeSoundPowerEnvironment,
+            HybridCuddNativeSoundValueIterationEnvironment,
             HybridSylvanNativeRationalSearchEnvironment,
             DdSylvanNativePowerEnvironment,
             DdCuddNativeJacobiEnvironment,

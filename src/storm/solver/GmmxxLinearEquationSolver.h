@@ -5,10 +5,8 @@
 
 #include "storm/utility/gmm.h"
 
-#include "storm/solver/GmmxxMultiplier.h"
-
 #include "storm/solver/LinearEquationSolver.h"
-#include "SolverSelectionOptions.h"
+#include "storm/solver/SolverSelectionOptions.h"
 
 namespace storm {
     namespace solver {
@@ -27,12 +25,6 @@ namespace storm {
             virtual void setMatrix(storm::storage::SparseMatrix<ValueType> const& A) override;
             virtual void setMatrix(storm::storage::SparseMatrix<ValueType>&& A) override;
             
-            virtual void multiply(std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<ValueType>& result) const override;
-            virtual void multiplyAndReduce(OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<ValueType>& result, std::vector<uint_fast64_t>* choices = nullptr) const override;
-            virtual bool supportsGaussSeidelMultiplication() const override;
-            virtual void multiplyGaussSeidel(std::vector<ValueType>& x, std::vector<ValueType> const* b) const override;
-            virtual void multiplyAndReduceGaussSeidel(OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<uint_fast64_t>* choices = nullptr) const override;
-
             virtual LinearEquationSolverProblemFormat getEquationProblemFormat(Environment const& env) const override;
             
             virtual void clearCache() const override;
@@ -50,9 +42,6 @@ namespace storm {
             // The matrix in gmm++ format.
             std::unique_ptr<gmm::csr_matrix<ValueType>> gmmxxA;
             
-            // A multiplier object used to dispatch the multiplication calls.
-            GmmxxMultiplier<ValueType> multiplier;
-            
             // cached data obtained during solving
             mutable std::unique_ptr<gmm::ilu_precond<gmm::csr_matrix<ValueType>>> iluPreconditioner;
             mutable std::unique_ptr<gmm::diagonal_precond<gmm::csr_matrix<ValueType>>> diagonalPreconditioner;
@@ -63,7 +52,7 @@ namespace storm {
         public:
             using LinearEquationSolverFactory<ValueType>::create;
             
-            virtual std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> create(Environment const& env, LinearEquationSolverTask const& task = LinearEquationSolverTask::Unspecified) const override;
+            virtual std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> create(Environment const& env) const override;
             
             virtual std::unique_ptr<LinearEquationSolverFactory<ValueType>> clone() const override;
 

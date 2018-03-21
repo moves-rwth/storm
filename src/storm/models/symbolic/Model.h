@@ -327,6 +327,12 @@ namespace storm {
                 
                 std::set<storm::RationalFunctionVariable> const& getParameters() const;
                 
+                template<typename NewValueType>
+                typename std::enable_if<!std::is_same<ValueType, NewValueType>::value, std::shared_ptr<Model<Type, NewValueType>>>::type toValueType() const;
+                
+                template<typename NewValueType>
+                typename std::enable_if<std::is_same<ValueType, NewValueType>::value, std::shared_ptr<Model<Type, NewValueType>>>::type toValueType() const;
+
             protected:
                 /*!
                  * Sets the transition matrix of the model.
@@ -341,6 +347,13 @@ namespace storm {
                  * @returns The mapping of labels to their defining expressions.
                  */
                 std::map<std::string, storm::expressions::Expression> const& getLabelToExpressionMap() const;
+                
+                /*!
+                 * Retrieves the mapping of labels to their defining expressions.
+                 *
+                 * @returns The mapping of labels to their defining expressions.
+                 */
+                std::map<std::string, storm::dd::Bdd<Type>> const& getLabelToBddMap() const;
                 
                 /*!
                  * Prints the information header (number of states and transitions) of the model to the specified stream.

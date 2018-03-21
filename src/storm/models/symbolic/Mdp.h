@@ -83,6 +83,9 @@ namespace storm {
                     std::map<std::string, storm::dd::Bdd<Type>> labelToBddMap = std::map<std::string, storm::dd::Bdd<Type>>(),
                     std::unordered_map<std::string, RewardModelType> const& rewardModels = std::unordered_map<std::string, RewardModelType>());
                 
+                template<typename NewValueType>
+                std::shared_ptr<Mdp<Type, NewValueType>> toValueType() const;
+
             };
             
         } // namespace symbolic

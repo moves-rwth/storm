@@ -48,7 +48,11 @@ namespace storm {
         bool isAlmostZero(double const& a) {
             return a < 1e-12 && a > -1e-12;
         }
-
+        
+        bool isAlmostOne(double const& a) {
+            return a < (1.0 + 1e-12) && a > (1.0 - 1e-12);
+        }
+        
         template<typename ValueType>
         bool isConstant(ValueType const&) {
             return true;

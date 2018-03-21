@@ -2,6 +2,9 @@
 
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/storage/SparseMatrix.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/CoreSettings.h"
 
 #include "storm/utility/constants.h"
 #include "storm/exceptions/NotSupportedException.h"
@@ -11,60 +14,113 @@
 namespace storm {
     namespace solver {
         
-        template<typename T>
-        GmmxxMultiplier<T>::GmmxxMultiplier() : storm::utility::VectorHelper<T>() {
+        template<typename ValueType>
+        GmmxxMultiplier<ValueType>::GmmxxMultiplier(storm::storage::SparseMatrix<ValueType> const& matrix) : Multiplier<ValueType>(matrix) {
             // Intentionally left empty.
         }
         
-        template<typename T>
-        void GmmxxMultiplier<T>::multAdd(gmm::csr_matrix<T> const& matrix, std::vector<T> const& x, std::vector<T> const* b, std::vector<T>& result) const {
-            if (this->parallelize()) {
-                multAddParallel(matrix, x, b, result);
-            } else {
-                if (b) {
-                    gmm::mult_add(matrix, x, *b, result);
-                } else {
-                    gmm::mult(matrix, x, result);
-                }
+        template<typename ValueType>
+        void GmmxxMultiplier<ValueType>::initialize() const {
+            if (gmmMatrix.nrows() == 0) {
+                gmmMatrix = std::move(*storm::adapters::GmmxxAdapter<ValueType>().toGmmxxSparseMatrix(this->matrix));
             }
         }
         
-        template<typename T>
-        void GmmxxMultiplier<T>::multAddGaussSeidelBackward(gmm::csr_matrix<T> const& matrix, std::vector<T>& x, std::vector<T> const* b) const {
-            STORM_LOG_ASSERT(matrix.nr == matrix.nc, "Expecting square matrix.");
-            if (b) {
-                gmm::mult_add_by_row_bwd(matrix, x, *b, x, gmm::abstract_dense());
-            } else {
-                gmm::mult_by_row_bwd(matrix, x, x, gmm::abstract_dense());
-            }
+        template<typename ValueType>
+        void GmmxxMultiplier<ValueType>::clearCache() const {
+            gmmMatrix = gmm::csr_matrix<ValueType>();
+            Multiplier<ValueType>::clearCache();
         }
         
-        template<typename T>
-        void GmmxxMultiplier<T>::multAddReduce(storm::solver::OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, gmm::csr_matrix<T> const& matrix, std::vector<T> const& x, std::vector<T> const* b, std::vector<T>& result, std::vector<uint64_t>* choices) const {
-            std::vector<T>* target = &result;
-            std::unique_ptr<std::vector<T>> temporary;
+        template<typename ValueType>
+        bool GmmxxMultiplier<ValueType>::parallelize(Environment const& env) const {
+#ifdef STORM_HAVE_INTELTBB
+            return storm::settings::getModule<storm::settings::modules::CoreSettings>().isUseIntelTbbSet();
+#else
+            return false;
+#endif
+        }
+        
+        template<typename ValueType>
+        void GmmxxMultiplier<ValueType>::multiply(Environment const& env, std::vector<ValueType> const& x, std::vector<ValueType> const* b, std::vector<ValueType>& result) const {
+            initialize();
+            std::vector<ValueType>* target = &result;
             if (&x == &result) {
-                STORM_LOG_WARN("Using temporary in 'multAddReduce'.");
-                temporary = std::make_unique<std::vector<T>>(x.size());
-                target = temporary.get();
+                if (this->cachedVector) {
+                    this->cachedVector->resize(x.size());
+                } else {
+                    this->cachedVector = std::make_unique<std::vector<ValueType>>(x.size());
+                }
+                target = this->cachedVector.get();
             }
-            
-            if (this->parallelize()) {
-                multAddReduceParallel(dir, rowGroupIndices, matrix, x, b, *target, choices);
+            if (parallelize(env)) {
+                multAddParallel(x, b, *target);
             } else {
-                multAddReduceHelper(dir, rowGroupIndices, matrix, x, b, *target, choices);
+                multAdd(x, b, *target);
+            }
+            if (&x == &result) {
+                std::swap(result, *this->cachedVector);
             }
         }
         
-        template<typename T>
-        void GmmxxMultiplier<T>::multAddReduceGaussSeidel(storm::solver::OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, gmm::csr_matrix<T> const& matrix, std::vector<T>& x, std::vector<T> const* b, std::vector<uint64_t>* choices) const {
-            multAddReduceHelper(dir, rowGroupIndices, matrix, x, b, x, choices);
+        template<typename ValueType>
+        void GmmxxMultiplier<ValueType>::multiplyGaussSeidel(Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const* b) const {
+            initialize();
+            STORM_LOG_ASSERT(gmmMatrix.nr == gmmMatrix.nc, "Expecting square matrix.");
+            if (b) {
+                gmm::mult_add_by_row_bwd(gmmMatrix, x, *b, x, gmm::abstract_dense());
+            } else {
+                gmm::mult_by_row_bwd(gmmMatrix, x, x, gmm::abstract_dense());
+            }
         }
         
-        template<typename T>
-        void GmmxxMultiplier<T>::multAddReduceHelper(storm::solver::OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, gmm::csr_matrix<T> const& matrix, std::vector<T> const& x, std::vector<T> const* b, std::vector<T>& result, std::vector<uint64_t>* choices) const {
-            typedef std::vector<T> VectorType;
-            typedef gmm::csr_matrix<T> MatrixType;
+        template<typename ValueType>
+        void GmmxxMultiplier<ValueType>::multiplyAndReduce(Environment const& env, OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType> const& x, std::vector<ValueType> const* b, std::vector<ValueType>& result, std::vector<uint_fast64_t>* choices) const {
+            initialize();
+            std::vector<ValueType>* target = &result;
+            if (&x == &result) {
+                if (this->cachedVector) {
+                    this->cachedVector->resize(x.size());
+                } else {
+                    this->cachedVector = std::make_unique<std::vector<ValueType>>(x.size());
+                }
+                target = this->cachedVector.get();
+            }
+            if (parallelize(env)) {
+                multAddReduceParallel(dir, rowGroupIndices, x, b, *target, choices);
+            } else {
+                multAddReduceHelper(dir, rowGroupIndices, x, b, *target, choices);
+            }
+            if (&x == &result) {
+                std::swap(result, *this->cachedVector);
+            }
+        }
+        
+        template<typename ValueType>
+        void GmmxxMultiplier<ValueType>::multiplyAndReduceGaussSeidel(Environment const& env, OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<uint_fast64_t>* choices) const {
+            initialize();
+            multAddReduceHelper(dir, rowGroupIndices, x, b, x, choices);
+        }
+        
+        template<typename ValueType>
+        void GmmxxMultiplier<ValueType>::multiplyRow(uint64_t const& rowIndex, std::vector<ValueType> const& x, ValueType& value) const {
+            initialize();
+            value += vect_sp(gmm::mat_const_row(gmmMatrix, rowIndex), x, typename gmm::linalg_traits<gmm::csr_matrix<ValueType>>::storage_type(), typename gmm::linalg_traits<std::vector<ValueType>>::storage_type());
+        }
+
+        template<typename ValueType>
+        void GmmxxMultiplier<ValueType>::multAdd(std::vector<ValueType> const& x, std::vector<ValueType> const* b, std::vector<ValueType>& result) const {
+            if (b) {
+                gmm::mult_add(gmmMatrix, x, *b, result);
+            } else {
+                gmm::mult(gmmMatrix, x, result);
+            }
+        }
+        
+        template<typename ValueType>
+        void GmmxxMultiplier<ValueType>::multAddReduceHelper(storm::solver::OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType> const& x, std::vector<ValueType> const* b, std::vector<ValueType>& result, std::vector<uint64_t>* choices) const {
+            typedef std::vector<ValueType> VectorType;
+            typedef gmm::csr_matrix<ValueType> MatrixType;
             
             typename gmm::linalg_traits<VectorType>::const_iterator add_it, add_ite;
             if (b) {
@@ -72,7 +128,7 @@ namespace storm {
                 add_ite = gmm::vect_begin(*b) - 1;
             }
             typename gmm::linalg_traits<VectorType>::iterator target_it = gmm::vect_end(result) - 1;
-            typename gmm::linalg_traits<MatrixType>::const_row_iterator itr = mat_row_const_end(matrix) - 1;
+            typename gmm::linalg_traits<MatrixType>::const_row_iterator itr = mat_row_const_end(gmmMatrix) - 1;
             typename std::vector<uint64_t>::iterator choice_it;
             if (choices) {
                 choice_it = choices->end() - 1;
@@ -84,7 +140,7 @@ namespace storm {
                     *choice_it = 0;
                 }
 
-                T currentValue = storm::utility::zero<T>();
+                ValueType currentValue = storm::utility::zero<ValueType>();
                 
                 // Only multiply and reduce if the row group is not empty.
                 if (*row_group_it != *(row_group_it + 1)) {
@@ -103,7 +159,7 @@ namespace storm {
                     --itr;
                     
                     for (uint64_t row = *row_group_it + 1, rowEnd = *(row_group_it + 1); row < rowEnd; ++row, --itr, --add_it) {
-                        T newValue = b ? *add_it : storm::utility::zero<T>();
+                        ValueType newValue = b ? *add_it : storm::utility::zero<ValueType>();
                         newValue += vect_sp(gmm::linalg_traits<MatrixType>::row(itr), x);
                         
                         if (choices) {
@@ -127,29 +183,29 @@ namespace storm {
         }
         
         template<>
-        void GmmxxMultiplier<storm::RationalFunction>::multAddReduceHelper(storm::solver::OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, gmm::csr_matrix<storm::RationalFunction> const& matrix, std::vector<storm::RationalFunction> const& x, std::vector<storm::RationalFunction> const* b, std::vector<storm::RationalFunction>& result, std::vector<uint64_t>* choices) const {
+        void GmmxxMultiplier<storm::RationalFunction>::multAddReduceHelper(storm::solver::OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<storm::RationalFunction> const& x, std::vector<storm::RationalFunction> const* b, std::vector<storm::RationalFunction>& result, std::vector<uint64_t>* choices) const {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported for this data type.");
         }
         
-        template<typename T>
-        void GmmxxMultiplier<T>::multAddParallel(gmm::csr_matrix<T> const& matrix, std::vector<T> const& x, std::vector<T> const* b, std::vector<T>& result) const {
+        template<typename ValueType>
+        void GmmxxMultiplier<ValueType>::multAddParallel(std::vector<ValueType> const& x, std::vector<ValueType> const* b, std::vector<ValueType>& result) const {
 #ifdef STORM_HAVE_INTELTBB
             if (b) {
-                gmm::mult_add_parallel(matrix, x, *b, result);
+                gmm::mult_add_parallel(gmmMatrix, x, *b, result);
             } else {
-                gmm::mult_parallel(matrix, x, result);
+                gmm::mult_parallel(gmmMatrix, x, result);
             }
 #else
             STORM_LOG_WARN("Storm was built without support for Intel TBB, defaulting to sequential version.");
-            multAdd(matrix, x, b, result);
+            multAdd(x, b, result);
 #endif
         }
         
 #ifdef STORM_HAVE_INTELTBB
-        template<typename T>
+        template<typename ValueType>
         class TbbMultAddReduceFunctor {
         public:
-            TbbMultAddReduceFunctor(storm::solver::OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, gmm::csr_matrix<T> const& matrix, std::vector<T> const& x, std::vector<T> const* b, std::vector<T>& result, std::vector<uint64_t>* choices) : dir(dir), rowGroupIndices(rowGroupIndices), matrix(matrix), x(x), b(b), result(result), choices(choices) {
+            TbbMultAddReduceFunctor(storm::solver::OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, gmm::csr_matrix<ValueType> const& matrix, std::vector<ValueType> const& x, std::vector<ValueType> const* b, std::vector<ValueType>& result, std::vector<uint64_t>* choices) : dir(dir), rowGroupIndices(rowGroupIndices), matrix(matrix), x(x), b(b), result(result), choices(choices) {
                 // Intentionally left empty.
             }
             
@@ -158,7 +214,7 @@ namespace storm {
                 auto groupIte = rowGroupIndices.begin() + range.end();
 
                 auto itr = mat_row_const_begin(matrix) + *groupIt;
-                typename std::vector<T>::const_iterator bIt;
+                typename std::vector<ValueType>::const_iterator bIt;
                 if (b) {
                     bIt = b->begin() + *groupIt;
                 }
@@ -174,7 +230,7 @@ namespace storm {
                         *choiceIt = 0;
                     }
                     
-                    T currentValue = storm::utility::zero<T>();
+                    ValueType currentValue = storm::utility::zero<ValueType>();
                     
                     // Only multiply and reduce if the row group is not empty.
                     if (*groupIt != *(groupIt + 1)) {
@@ -186,7 +242,7 @@ namespace storm {
                         ++itr;
                         
                         for (auto itre = mat_row_const_begin(matrix) + *(groupIt + 1); itr != itre; ++itr) {
-                            T newValue = vect_sp(gmm::linalg_traits<gmm::csr_matrix<T>>::row(itr), x, typename gmm::linalg_traits<gmm::csr_matrix<T>>::storage_type(), typename gmm::linalg_traits<std::vector<T>>::storage_type());
+                            ValueType newValue = vect_sp(gmm::linalg_traits<gmm::csr_matrix<ValueType>>::row(itr), x, typename gmm::linalg_traits<gmm::csr_matrix<ValueType>>::storage_type(), typename gmm::linalg_traits<std::vector<ValueType>>::storage_type());
                             if (b) {
                                 newValue += *bIt;
                                 ++bIt;
@@ -208,26 +264,26 @@ namespace storm {
         private:
             storm::solver::OptimizationDirection dir;
             std::vector<uint64_t> const& rowGroupIndices;
-            gmm::csr_matrix<T> const& matrix;
-            std::vector<T> const& x;
-            std::vector<T> const* b;
-            std::vector<T>& result;
+            gmm::csr_matrix<ValueType> const& matrix;
+            std::vector<ValueType> const& x;
+            std::vector<ValueType> const* b;
+            std::vector<ValueType>& result;
             std::vector<uint64_t>* choices;
         };
 #endif
         
-        template<typename T>
-        void GmmxxMultiplier<T>::multAddReduceParallel(storm::solver::OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, gmm::csr_matrix<T> const& matrix, std::vector<T> const& x, std::vector<T> const* b, std::vector<T>& result, std::vector<uint64_t>* choices) const {
+        template<typename ValueType>
+        void GmmxxMultiplier<ValueType>::multAddReduceParallel(storm::solver::OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType> const& x, std::vector<ValueType> const* b, std::vector<ValueType>& result, std::vector<uint64_t>* choices) const {
 #ifdef STORM_HAVE_INTELTBB
-            tbb::parallel_for(tbb::blocked_range<unsigned long>(0, rowGroupIndices.size() - 1, 10), TbbMultAddReduceFunctor<T>(dir, rowGroupIndices, matrix, x, b, result, choices));
+            tbb::parallel_for(tbb::blocked_range<unsigned long>(0, rowGroupIndices.size() - 1, 10), TbbMultAddReduceFunctor<ValueType>(dir, rowGroupIndices, this->gmmMatrix, x, b, result, choices));
 #else
             STORM_LOG_WARN("Storm was built without support for Intel TBB, defaulting to sequential version.");
-            multAddReduce(dir, rowGroupIndices, matrix, x, b, result, choices);
+            multAddReduceHelper(dir, rowGroupIndices, x, b, result, choices);
 #endif
         }
         
         template<>
-        void GmmxxMultiplier<storm::RationalFunction>::multAddReduceParallel(storm::solver::OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, gmm::csr_matrix<storm::RationalFunction> const& matrix, std::vector<storm::RationalFunction> const& x, std::vector<storm::RationalFunction> const* b, std::vector<storm::RationalFunction>& result, std::vector<uint64_t>* choices) const {
+        void GmmxxMultiplier<storm::RationalFunction>::multAddReduceParallel(storm::solver::OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<storm::RationalFunction> const& x, std::vector<storm::RationalFunction> const* b, std::vector<storm::RationalFunction>& result, std::vector<uint64_t>* choices) const {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "This operation is not supported.");
         }
         

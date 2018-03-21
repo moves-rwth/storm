@@ -114,7 +114,7 @@ namespace storm {
         
         uint_fast64_t VariableInformation::getTotalBitOffset(bool roundTo64Bit) const {
             uint_fast64_t result = totalBitOffset;
-            if (roundTo64Bit) {
+            if (roundTo64Bit & ((result & ((1ull << 6) - 1)) != 0)) {
                 result = ((result >> 6) + 1) << 6;
             }
             return result;

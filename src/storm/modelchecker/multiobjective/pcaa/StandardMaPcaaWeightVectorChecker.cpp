@@ -303,7 +303,7 @@ namespace storm {
                 result->solver->setHasUniqueSolution(true);
                 result->solver->setTrackScheduler(true);
                 result->solver->setCachingEnabled(true);
-                auto req = result->solver->getRequirements(env, storm::solver::OptimizationDirection::Maximize, true);
+                auto req = result->solver->getRequirements(env, storm::solver::OptimizationDirection::Maximize, false);
                 boost::optional<ValueType> lowerBound = this->computeWeightedResultBound(true, weightVector, storm::storage::BitVector(weightVector.size(), true));
                 if (lowerBound) {
                     result->solver->setLowerBound(lowerBound.get());
@@ -314,7 +314,7 @@ namespace storm {
                     result->solver->setUpperBound(upperBound.get());
                     req.clearUpperBounds();
                 }
-                STORM_LOG_THROW(req.empty(), storm::exceptions::UncheckedRequirementException, "At least one requirement of the MinMaxSolver was not met.");
+                STORM_LOG_THROW(!req.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + req.getEnabledRequirementsAsString() + " not checked.");
                 result->solver->setRequirementsChecked(true);
                 result->solver->setOptimizationDirection(storm::solver::OptimizationDirection::Maximize);
                 

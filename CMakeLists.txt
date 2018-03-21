@@ -181,6 +181,7 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
 	set(STORM_COMPILER_ID "AppleClang")
 	set(CMAKE_MACOSX_RPATH ON)	
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+	set(GCC ON)
 	# using GCC
 	if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.0)
 		message(FATAL_ERROR "gcc version must be at least 5.0.")
@@ -405,20 +406,26 @@ get_git_head_revision(STORM_VERSION_REFSPEC STORM_VERSION_GIT_HASH)
 git_describe_checkout(STORM_GIT_VERSION_STRING)
 
 # parse the git tag into variables
-string(REGEX REPLACE "^([0-9]+)\\..*" "\\1" STORM_VERSION_MAJOR "${STORM_GIT_VERSION_STRING}")
-string(REGEX REPLACE "^[0-9]+\\.([0-9]+).*" "\\1" STORM_VERSION_MINOR "${STORM_GIT_VERSION_STRING}")
-string(REGEX REPLACE "^[0-9]+\\.[0-9]+\\.([0-9]+).*" "\\1" STORM_VERSION_PATCH "${STORM_GIT_VERSION_STRING}")
-string(REGEX REPLACE "^[0-9]+\\.[0-9]+\\.[0-9]+\\-([0-9]+)\\-.*" "\\1" STORM_VERSION_COMMITS_AHEAD "${STORM_GIT_VERSION_STRING}")
-string(REGEX REPLACE "^[0-9]+\\.[0-9]+\\.[0-9]+\\-[0-9]+\\-([a-z0-9]+).*" "\\1" STORM_VERSION_TAG_HASH "${STORM_GIT_VERSION_STRING}")
-string(REGEX REPLACE "^[0-9]+\\.[0-9]+\\.[0-9]+\\-[0-9]+\\-[a-z0-9]+\\-(.*)" "\\1" STORM_VERSION_APPENDIX "${STORM_GIT_VERSION_STRING}")
-	
+# start with major.minor.patch
+string(REGEX MATCH "^([0-9]+)\\.([0-9]+)\\.([0-9]+)(.*)$" STORM_VERSION_MATCH "${STORM_GIT_VERSION_STRING}")
+set(STORM_VERSION_MAJOR "${CMAKE_MATCH_1}")
+set(STORM_VERSION_MINOR "${CMAKE_MATCH_2}")
+set(STORM_VERSION_PATCH "${CMAKE_MATCH_3}")
+set(STORM_GIT_VERSION_REST "${CMAKE_MATCH_4}")
+# parse rest of the form (-label)-commitsahead-hash-appendix
+string(REGEX MATCH "^(\\-([a-z][a-z0-9\\.]+))?\\-([0-9]+)\\-([a-z0-9]+)(\\-.*)?$" STORM_VERSION_REST_MATCH "${STORM_GIT_VERSION_REST}")
+set(STORM_VERSION_LABEL "${CMAKE_MATCH_2}") # might be empty
+set(STORM_VERSION_COMMITS_AHEAD "${CMAKE_MATCH_3}")
+set(STORM_VERSION_TAG_HASH "${CMAKE_MATCH_4}")
+set(STORM_VERSION_APPENDIX "${CMAKE_MATCH_5}") # might be empty
+
 # now check whether the git version lookup failed
 if (STORM_VERSION_MAJOR MATCHES "NOTFOUND")
 	include(version.cmake)
-	set(STORM_VERSION_GIT_HASH "")
+	set(STORM_VERSION_LABEL "")
 	set(STORM_VERSION_COMMITS_AHEAD 0)
+	set(STORM_VERSION_GIT_HASH "")
 	set(STORM_VERSION_DIRTY boost::none)
-
 	message(WARNING "Storm - git version information not available, statically assuming version ${STORM_VERSION_MAJOR}.${STORM_VERSION_MINOR}.${STORM_VERSION_PATCH}.")
 else()
 	if ("${STORM_VERSION_APPENDIX}" MATCHES "^.*dirty.*$")
@@ -428,20 +435,34 @@ else()
 	endif()
 endif()
 
+# check whether there is a label ('alpha', 'pre', etc.)
+if ("${STORM_VERSION_LABEL}" STREQUAL "")
+	set(STORM_VERSION_LABEL_STRING "")
+else()
+	set(STORM_VERSION_LABEL_STRING "-${STORM_VERSION_LABEL}")
+endif()
+
+# check for development version with commits ahead of latest tag
 set(STORM_VERSION_DEV "false")
 set(STORM_VERSION_DEV_STRING "")
 if(STORM_VERSION_COMMITS_AHEAD)
-	MATH(EXPR STORM_VERSION_DEV_PATCH "${STORM_VERSION_PATCH}+1")
+	if ("${STORM_VERSION_LABEL}" STREQUAL "")
+		# increase patch number to indicate newer version
+		MATH(EXPR STORM_VERSION_DEV_PATCH "${STORM_VERSION_PATCH}+1")
+	else()
+		set(STORM_VERSION_DEV_PATCH "${STORM_VERSION_PATCH}")
+	endif()
 	set(STORM_VERSION_DEV "true")
 	set(STORM_VERSION_DEV_STRING " (dev)")
 else()
 	set(STORM_VERSION_DEV_PATCH ${STORM_VERSION_PATCH})
 endif()
 
+# set final Storm version
 set(STORM_VERSION "${STORM_VERSION_MAJOR}.${STORM_VERSION_MINOR}.${STORM_VERSION_DEV_PATCH}")
-set(STORM_VERSION_STRING "${STORM_VERSION}${STORM_VERSION_DEV_STRING}")
+set(STORM_VERSION_STRING "${STORM_VERSION}${STORM_VERSION_LABEL_STRING}${STORM_VERSION_DEV_STRING}")
 
-message(STATUS "Storm - version is ${STORM_VERSION_STRING} (version ${STORM_VERSION_MAJOR}.${STORM_VERSION_MINOR}.${STORM_VERSION_PATCH} + ${STORM_VERSION_COMMITS_AHEAD} commits), building from git: ${STORM_VERSION_GIT_HASH} (dirty: ${STORM_VERSION_DIRTY}).")
+message(STATUS "Storm - version is ${STORM_VERSION_STRING} (version ${STORM_VERSION_MAJOR}.${STORM_VERSION_MINOR}.${STORM_VERSION_PATCH}${STORM_VERSION_LABEL_STRING} + ${STORM_VERSION_COMMITS_AHEAD} commits), building from git: ${STORM_VERSION_GIT_HASH} (dirty: ${STORM_VERSION_DIRTY}).")
 
 
 # Configure a header file to pass some of the CMake settings to the source code

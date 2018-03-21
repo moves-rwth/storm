@@ -1667,7 +1667,7 @@ namespace storm {
                         
                         result += extendedTransitions;
                     }
-                                        
+                    
                     return ComposerResult<Type, ValueType>(result, automaton.transientLocationAssignments, transientEdgeAssignments, illegalFragment, numberOfUsedNondeterminismVariables);
                 } else if (modelType == storm::jani::ModelType::DTMC || modelType == storm::jani::ModelType::CTMC) {
                     // Simply add all actions, but make sure to include the missing global variable identities.
@@ -1830,7 +1830,7 @@ namespace storm {
                         // For DTMCs, we can simply add the identity of the global module for all deadlock states.
                         transitionMatrix += deadlockStatesAdd * globalIdentity;
                     } else if (modelType == storm::jani::ModelType::MDP || modelType == storm::jani::ModelType::LTS || modelType == storm::jani::ModelType::MA) {
-                        // For MDPs, however, we need to select an action associated with the self-loop, if we do not
+                        // For nondeterministic models, however, we need to select an action associated with the self-loop, if we do not
                         // want to attach a lot of self-loops to the deadlock states.
                         storm::dd::Add<Type, ValueType> action = encodeAction(boost::none, modelType == storm::jani::ModelType::MA ? boost::make_optional(true) : boost::none, variables);
                         
@@ -1967,10 +1967,10 @@ namespace storm {
             // Create a builder to compose and build the model.
             CombinedEdgesSystemComposer<Type, ValueType> composer(preparedModel, actionInformation, variables, rewardVariables);
             ComposerResult<Type, ValueType> system = composer.compose();
-            
+
             // Postprocess the variables in place.
             postprocessVariables(preparedModel.getModelType(), system, variables);
-            
+
             // Postprocess the system in place and get the states that were terminal (i.e. whose transitions were cut off).
             storm::dd::Bdd<Type> terminalStates = postprocessSystem(preparedModel, system, variables, options);
             
