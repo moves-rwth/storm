@@ -1,0 +1,5 @@
+toplevel "A";
+"A" and "B" "C" "F";
+"F" fdep "B" "C";
+"B" lambda=0.4 dorm=0;
+"C" lambda=0.8 dorm=0;
