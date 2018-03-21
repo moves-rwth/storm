@@ -33,12 +33,12 @@ Storm has been developed at RWTH Aachen University.
 * Christian Dehnert
 * Sebastian Junges
 * Joost-Pieter Katoen
+* Tim Quatmann
 * Matthias Volk
 
 ###### Developers (lexicographical order)
 * Philipp Berger
 * David Korzeniewski
-* Tim Quatmann
 
 ###### Contributors (lexicographical order)
 * Dimitri Bohlender
