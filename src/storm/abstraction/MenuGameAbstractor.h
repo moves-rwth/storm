@@ -48,6 +48,9 @@ namespace storm {
             /// Exports a representation of the current abstraction state in the dot format.
             virtual void exportToDot(std::string const& filename, storm::dd::Bdd<DdType> const& highlightStatesBdd, storm::dd::Bdd<DdType> const& filter) const = 0;
 
+            /// Retrieves the number of predicates currently in use.
+            virtual uint64_t getNumberOfPredicates() const = 0;
+            
         protected:
             void exportToDot(storm::abstraction::MenuGame<DdType, ValueType> const& currentGame, std::string const& filename, storm::dd::Bdd<DdType> const& highlightStatesBdd, storm::dd::Bdd<DdType> const& filter) const;
         };

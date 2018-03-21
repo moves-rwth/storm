@@ -109,6 +109,8 @@ namespace storm {
                  */
                 void exportToDot(std::string const& filename, storm::dd::Bdd<DdType> const& highlightStates, storm::dd::Bdd<DdType> const& filter) const override;
                 
+                virtual uint64_t getNumberOfPredicates() const override;
+                
             protected:
                 using MenuGameAbstractor<DdType, ValueType>::exportToDot;
                 

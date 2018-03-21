@@ -208,6 +208,11 @@ namespace storm {
                 this->exportToDot(*currentGame, filename, highlightStates, filter);
             }
             
+            template <storm::dd::DdType DdType, typename ValueType>
+            uint64_t JaniMenuGameAbstractor<DdType, ValueType>::getNumberOfPredicates() const {
+                return abstractionInformation.getNumberOfPredicates();
+            }
+            
             // Explicitly instantiate the class.
             template class JaniMenuGameAbstractor<storm::dd::DdType::CUDD, double>;
             template class JaniMenuGameAbstractor<storm::dd::DdType::Sylvan, double>;
