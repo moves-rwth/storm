@@ -345,7 +345,7 @@ namespace {
         auto requirements = factory.getRequirements(this->env());
         requirements.clearUpperBounds();
         requirements.clearLowerBounds();
-        ASSERT_TRUE(requirements.empty());
+        ASSERT_FALSE(requirements.hasEnabledRequirement());
         auto solver = factory.create(this->env(), A);
         solver->setBounds(this->parseNumber("-100"), this->parseNumber("100"));
         ASSERT_NO_THROW(solver->solveEquations(this->env(), x, b));

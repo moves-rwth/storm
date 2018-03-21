@@ -458,10 +458,6 @@ namespace storm {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidEnvironmentException, "The selected min max technique is not supported by this solver.");
             }
 
-            if (env.solver().minMax().isForceBoundsSet()) {
-                requirements.requireBounds();
-            }
-            
             return requirements;
         }
         

@@ -120,9 +120,7 @@ namespace storm {
                 requirements.requireNoEndComponents();
             }
             
-            if (env.solver().minMax().isForceBoundsSet()) {
-                requirements.requireBounds();
-            }
+            requirements.requireBounds(false);
             
             return  requirements;
         }
