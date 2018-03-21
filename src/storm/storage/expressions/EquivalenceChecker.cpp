@@ -13,12 +13,22 @@ namespace storm {
             }
         }
         
+        void EquivalenceChecker::addConstraints(std::vector<storm::expressions::Expression> const& constraints) {
+            for (auto const& constraint : constraints) {
+                this->smtSolver->add(constraint);
+            }
+        }
+        
         bool EquivalenceChecker::areEquivalent(storm::expressions::Expression const& first, storm::expressions::Expression const& second) {
             this->smtSolver->push();
             this->smtSolver->add((first && !second) || (!first && second));
             bool equivalent = smtSolver->check() == storm::solver::SmtSolver::CheckResult::Unsat;
             this->smtSolver->pop();
             return equivalent;
+        }
+        
+        bool EquivalenceChecker::areEquivalentModuloNegation(storm::expressions::Expression const& first, storm::expressions::Expression const& second) {
+            return this->areEquivalent(first, second) || this->areEquivalent(first, !second);
         }
         
     }

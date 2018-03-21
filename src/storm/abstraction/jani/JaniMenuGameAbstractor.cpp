@@ -154,8 +154,14 @@ namespace storm {
                 auto auxVariables = abstractionInformation.getAuxVariableSet(0, abstractionInformation.getAuxVariableCount());
                 variablesToAbstract.insert(auxVariables.begin(), auxVariables.end());
                 
+                // Compute which states are non-terminal.
+                storm::dd::Bdd<DdType> nonTerminalStates = this->abstractionInformation.getDdManager().getBddOne();
+                for (auto const& expression : this->terminalStateExpressions) {
+                    nonTerminalStates &= !this->getStates(expression);
+                }
+                
                 // Do a reachability analysis on the raw transition relation.
-                storm::dd::Bdd<DdType> transitionRelation = game.bdd.existsAbstract(variablesToAbstract);
+                storm::dd::Bdd<DdType> transitionRelation = nonTerminalStates && game.bdd.existsAbstract(variablesToAbstract);
                 storm::dd::Bdd<DdType> initialStates = initialLocationsBdd && initialStateAbstractor.getAbstractStates();
                 initialStates.addMetaVariables(abstractionInformation.getSourcePredicateVariables());
                 storm::dd::Bdd<DdType> reachableStates = storm::utility::dd::computeReachableStates(initialStates, transitionRelation, abstractionInformation.getSourceVariables(), abstractionInformation.getSuccessorVariables());
@@ -211,6 +217,11 @@ namespace storm {
             template <storm::dd::DdType DdType, typename ValueType>
             uint64_t JaniMenuGameAbstractor<DdType, ValueType>::getNumberOfPredicates() const {
                 return abstractionInformation.getNumberOfPredicates();
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
+            void JaniMenuGameAbstractor<DdType, ValueType>::addTerminalStates(storm::expressions::Expression const& expression) {
+                terminalStateExpressions.emplace_back(expression);
             }
             
             // Explicitly instantiate the class.

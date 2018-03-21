@@ -59,6 +59,8 @@ namespace storm {
         template<storm::dd::DdType Type, typename ValueType>
         MenuGameRefiner<Type, ValueType>::MenuGameRefiner(MenuGameAbstractor<Type, ValueType>& abstractor, std::unique_ptr<storm::solver::SmtSolver>&& smtSolver) : abstractor(abstractor), useInterpolation(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isUseInterpolationSet()), splitAll(false), splitPredicates(false), addedAllGuardsFlag(false), pivotSelectionHeuristic(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getPivotSelectionHeuristic()), splitter(), equivalenceChecker(std::move(smtSolver)) {
             
+            equivalenceChecker.addConstraints(abstractor.getAbstractionInformation().getConstraints());
+            
             AbstractionSettings::SplitMode splitMode = storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getSplitMode();
             splitAll = splitMode == AbstractionSettings::SplitMode::All;
             splitPredicates = splitMode == AbstractionSettings::SplitMode::NonGuard;
@@ -325,7 +327,7 @@ namespace storm {
                 }
                 for (auto const& otherPredicate : otherRefinementPredicates) {
                     for (uint64_t index = 0; index < possibleRefinementPredicates.size(); ++index) {
-                        if (equivalenceChecker.areEquivalent(otherPredicate, possibleRefinementPredicates[index])) {
+                        if (equivalenceChecker.areEquivalentModuloNegation(otherPredicate, possibleRefinementPredicates[index])) {
                             ++refinementPredicateIndexToCount[index];
                         }
                     }
@@ -726,13 +728,13 @@ namespace storm {
                         // set or in the set that is to be added.
                         bool addAtom = true;
                         for (auto const& oldPredicate : abstractionInformation.getPredicates()) {
-                            if (equivalenceChecker.areEquivalent(atom, oldPredicate)) {
+                            if (equivalenceChecker.areEquivalent(atom, oldPredicate) || equivalenceChecker.areEquivalent(atom, !oldPredicate)) {
                                 addAtom = false;
                                 break;
                             }
                         }
                         for (auto const& addedAtom : cleanedAtoms) {
-                            if (equivalenceChecker.areEquivalent(addedAtom, atom)) {
+                            if (equivalenceChecker.areEquivalent(addedAtom, atom) || equivalenceChecker.areEquivalent(addedAtom, !atom)) {
                                 addAtom = false;
                                 break;
                             }

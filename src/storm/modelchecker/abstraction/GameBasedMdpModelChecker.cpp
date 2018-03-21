@@ -342,6 +342,10 @@ namespace storm {
             } else {
                 abstractor = std::make_shared<storm::abstraction::jani::JaniMenuGameAbstractor<Type, ValueType>>(preprocessedModel.asJaniModel(), smtSolverFactory);
             }
+            if (!constraintExpression.isTrue()) {
+                abstractor->addTerminalStates(!constraintExpression);
+            }
+            abstractor->addTerminalStates(targetStateExpression);
             
             // Create a refiner that can be used to refine the abstraction when needed.
             storm::abstraction::MenuGameRefiner<Type, ValueType> refiner(*abstractor, smtSolverFactory->create(preprocessedModel.getManager()));
