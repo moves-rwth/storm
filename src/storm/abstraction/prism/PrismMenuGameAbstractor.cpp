@@ -203,6 +203,11 @@ namespace storm {
                 this->exportToDot(*currentGame, filename, highlightStates, filter);
             }
             
+            template <storm::dd::DdType DdType, typename ValueType>
+            uint64_t PrismMenuGameAbstractor<DdType, ValueType>::getNumberOfPredicates() const {
+                return abstractionInformation.getNumberOfPredicates();
+            }
+            
             // Explicitly instantiate the class.
             template class PrismMenuGameAbstractor<storm::dd::DdType::CUDD, double>;
             template class PrismMenuGameAbstractor<storm::dd::DdType::Sylvan, double>;
