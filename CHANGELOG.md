@@ -8,6 +8,8 @@ Version 1.2.x
 -------------
 
 ### Version 1.2.2 (to be released)
+- `storm-dft`: improvements in Galileo parser
+- `storm-dft`: test cases for DFT analysis
 
 ### Version 1.2.1 (2018/02)
 - Multi-dimensional reward bounded reachability properties for DTMCs.
