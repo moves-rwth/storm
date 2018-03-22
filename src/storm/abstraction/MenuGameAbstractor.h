@@ -24,6 +24,7 @@ namespace storm {
         template <storm::dd::DdType DdType, typename ValueType>
         class MenuGameAbstractor {
         public:
+            MenuGameAbstractor();
             virtual ~MenuGameAbstractor() = default;
 
             /// Retrieves the abstraction.
@@ -58,8 +59,25 @@ namespace storm {
              */
             virtual void addTerminalStates(storm::expressions::Expression const& expression) = 0;
             
+            /*!
+             * Sets the expression characterizing the target states. For this to work, appropriate predicates must have
+             * been used to refine the abstraction, otherwise this will fail.
+             */
+            void setTargetStates(storm::expressions::Expression const& targetStateExpression);
+
+            storm::expressions::Expression const& getTargetStateExpression() const;
+            bool hasTargetStateExpression() const;
+            
         protected:
+            bool isRestrictToRelevantStatesSet() const;
+            
             void exportToDot(storm::abstraction::MenuGame<DdType, ValueType> const& currentGame, std::string const& filename, storm::dd::Bdd<DdType> const& highlightStatesBdd, storm::dd::Bdd<DdType> const& filter) const;
+            
+        private:
+            bool restrictToRelevantStates;
+            
+            // An expression characterizing the target states.
+            storm::expressions::Expression targetStateExpression;
         };
         
     }

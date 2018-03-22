@@ -4,6 +4,9 @@
 
 #include "storm/models/symbolic/StandardRewardModel.h"
 
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/AbstractionSettings.h"
+
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
 #include "storm/utility/dd.h"
@@ -14,6 +17,11 @@
 
 namespace storm {
     namespace abstraction {
+        
+        template <storm::dd::DdType DdType, typename ValueType>
+        MenuGameAbstractor<DdType, ValueType>::MenuGameAbstractor() : restrictToRelevantStates(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isRestrictToRelevantStatesSet()) {
+            // Intentionally left empty.
+        }
         
         template <typename ValueType>
         std::string getStateName(std::pair<storm::expressions::SimpleValuation, ValueType> const& stateValue, std::set<storm::expressions::Variable> const& locationVariables, std::set<storm::expressions::Variable> const& predicateVariables, storm::expressions::Variable const& bottomVariable) {
@@ -43,6 +51,11 @@ namespace storm {
                 stateName << "bot";
             }
             return stateName.str();
+        }
+        
+        template <storm::dd::DdType DdType, typename ValueType>
+        bool MenuGameAbstractor<DdType, ValueType>::isRestrictToRelevantStatesSet() const {
+            return restrictToRelevantStates;
         }
         
         template <storm::dd::DdType DdType, typename ValueType>
@@ -133,6 +146,21 @@ namespace storm {
             
             out << "}" << std::endl;
             storm::utility::closeFile(out);
+        }
+        
+        template <storm::dd::DdType DdType, typename ValueType>
+        void MenuGameAbstractor<DdType, ValueType>::setTargetStates(storm::expressions::Expression const& targetStateExpression) {
+            this->targetStateExpression = targetStateExpression;
+        }
+        
+        template <storm::dd::DdType DdType, typename ValueType>
+        storm::expressions::Expression const& MenuGameAbstractor<DdType, ValueType>::getTargetStateExpression() const {
+            return this->targetStateExpression;
+        }
+        
+        template <storm::dd::DdType DdType, typename ValueType>
+        bool MenuGameAbstractor<DdType, ValueType>::hasTargetStateExpression() const {
+            return this->targetStateExpression.isInitialized();
         }
         
         template class MenuGameAbstractor<storm::dd::DdType::CUDD, double>;

@@ -346,6 +346,7 @@ namespace storm {
                 abstractor->addTerminalStates(!constraintExpression);
             }
             abstractor->addTerminalStates(targetStateExpression);
+            abstractor->setTargetStates(targetStateExpression);
             
             // Create a refiner that can be used to refine the abstraction when needed.
             storm::abstraction::MenuGameRefiner<Type, ValueType> refiner(*abstractor, smtSolverFactory->create(preprocessedModel.getManager()));

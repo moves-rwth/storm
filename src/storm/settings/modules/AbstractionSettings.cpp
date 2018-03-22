@@ -21,6 +21,7 @@ namespace storm {
             const std::string AbstractionSettings::precisionOptionName = "precision";
             const std::string AbstractionSettings::pivotHeuristicOptionName = "pivot-heuristic";
             const std::string AbstractionSettings::reuseResultsOptionName = "reuse";
+            const std::string AbstractionSettings::restrictToRelevantStatesOptionName = "relevant";
             
             AbstractionSettings::AbstractionSettings() : ModuleSettings(moduleName) {
                 std::vector<std::string> methods = {"games", "bisimulation", "bisim"};
@@ -64,6 +65,11 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("mode", "The mode to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(reuseModes))
                                              .setDefaultValueString("all").build())
                                 .build());
+                
+                this->addOption(storm::settings::OptionBuilder(moduleName, restrictToRelevantStatesOptionName, true, "Sets whether to restrict to relevant states during the abstraction.")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("value", "The value of the flag.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(onOff))
+                                             .setDefaultValueString("off").build())
+                                .build());
             }
             
             AbstractionSettings::Method AbstractionSettings::getAbstractionRefinementMethod() const {
@@ -102,6 +108,10 @@ namespace storm {
             
             bool AbstractionSettings::isUseInterpolationSet() const {
                 return this->getOption(useInterpolationOptionName).getArgumentByName("value").getValueAsString() == "on";
+            }
+            
+            bool AbstractionSettings::isRestrictToRelevantStatesSet() const {
+                return this->getOption(restrictToRelevantStatesOptionName).getArgumentByName("value").getValueAsString() == "on";
             }
             
             double AbstractionSettings::getPrecision() const {

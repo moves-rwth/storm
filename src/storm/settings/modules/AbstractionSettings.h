@@ -93,6 +93,13 @@ namespace storm {
                  */
                 ReuseMode getReuseMode() const;
                 
+                /*!
+                 * Retrieves whether only relevant states are to be considered.
+                 *
+                 * @return True iff the option was set.
+                 */
+                bool isRestrictToRelevantStatesSet() const;
+                
                 const static std::string moduleName;
                 
             private:
@@ -104,6 +111,7 @@ namespace storm {
                 const static std::string precisionOptionName;
                 const static std::string pivotHeuristicOptionName;
                 const static std::string reuseResultsOptionName;
+                const static std::string restrictToRelevantStatesOptionName;
             };
             
         }
