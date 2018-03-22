@@ -5,6 +5,7 @@
 #include "storm/storage/dd/DdManager.h"
 
 #include "storm/storage/SparseMatrix.h"
+#include "storm/storage/BitVector.h"
 
 #include "storm/utility/macros.h"
 #include "storm/utility/constants.h"
@@ -922,14 +923,14 @@ namespace storm {
         }
         
         template<typename ValueType>
-        std::vector<uint64_t> InternalAdd<DdType::Sylvan, ValueType>::decodeGroupLabels(std::vector<uint_fast64_t> const& ddGroupVariableIndices) const {
+        std::vector<uint64_t> InternalAdd<DdType::Sylvan, ValueType>::decodeGroupLabels(std::vector<uint_fast64_t> const& ddGroupVariableIndices, storm::storage::BitVector const& ddLabelVariableIndices) const {
             std::vector<uint64_t> result;
-            decodeGroupLabelsRec(mtbdd_regular(this->getSylvanMtbdd().GetMTBDD()), result, ddGroupVariableIndices, 0, ddGroupVariableIndices.size(), 0);
+            decodeGroupLabelsRec(mtbdd_regular(this->getSylvanMtbdd().GetMTBDD()), result, ddGroupVariableIndices, ddLabelVariableIndices, 0, ddGroupVariableIndices.size(), 0);
             return result;
         }
         
         template<typename ValueType>
-        void InternalAdd<DdType::Sylvan, ValueType>::decodeGroupLabelsRec(MTBDD dd, std::vector<uint64_t>& labels, std::vector<uint_fast64_t> const& ddGroupVariableIndices, uint_fast64_t currentLevel, uint_fast64_t maxLevel, uint64_t label) const {
+        void InternalAdd<DdType::Sylvan, ValueType>::decodeGroupLabelsRec(MTBDD dd, std::vector<uint64_t>& labels, std::vector<uint_fast64_t> const& ddGroupVariableIndices, storm::storage::BitVector const& ddLabelVariableIndices, uint_fast64_t currentLevel, uint_fast64_t maxLevel, uint64_t label) const {
             // For the empty DD, we do not need to create a group.
             if (mtbdd_isleaf(dd) && mtbdd_iszero(dd)) {
                 return;
@@ -937,17 +938,26 @@ namespace storm {
 
             if (currentLevel == maxLevel) {
                 labels.push_back(label);
-            } else if (mtbdd_isleaf(dd) || ddGroupVariableIndices[currentLevel] < mtbdd_getvar(dd)) {
-                decodeGroupLabelsRec(dd, labels, ddGroupVariableIndices, currentLevel + 1, maxLevel, label << 1);
-                decodeGroupLabelsRec(dd, labels, ddGroupVariableIndices, currentLevel + 1, maxLevel, (label << 1) | 1);
             } else {
-                // Otherwise, we compute the ODDs for both the then- and else successors.
-                MTBDD thenDdNode = mtbdd_gethigh(dd);
-                MTBDD elseDdNode = mtbdd_getlow(dd);
-
-                decodeGroupLabelsRec(mtbdd_regular(elseDdNode), labels, ddGroupVariableIndices, currentLevel + 1, maxLevel, label << 1);
-                decodeGroupLabelsRec(mtbdd_regular(thenDdNode), labels, ddGroupVariableIndices, currentLevel + 1, maxLevel, (label << 1) | 1 );
+                uint64_t elseLabel = label;
+                uint64_t thenLabel = label;
                 
+                if (ddLabelVariableIndices.get(currentLevel)) {
+                    elseLabel <<= 1;
+                    thenLabel = (thenLabel << 1) | 1;
+                }
+                
+                if (mtbdd_isleaf(dd) || ddGroupVariableIndices[currentLevel] < mtbdd_getvar(dd)) {
+                    decodeGroupLabelsRec(dd, labels, ddGroupVariableIndices, ddLabelVariableIndices, currentLevel + 1, maxLevel, elseLabel);
+                    decodeGroupLabelsRec(dd, labels, ddGroupVariableIndices, ddLabelVariableIndices, currentLevel + 1, maxLevel, thenLabel);
+                } else {
+                    // Otherwise, we compute the ODDs for both the then- and else successors.
+                    MTBDD thenDdNode = mtbdd_gethigh(dd);
+                    MTBDD elseDdNode = mtbdd_getlow(dd);
+                    
+                    decodeGroupLabelsRec(mtbdd_regular(elseDdNode), labels, ddGroupVariableIndices, ddLabelVariableIndices, currentLevel + 1, maxLevel, elseLabel);
+                    decodeGroupLabelsRec(mtbdd_regular(thenDdNode), labels, ddGroupVariableIndices, ddLabelVariableIndices, currentLevel + 1, maxLevel, thenLabel);
+                }
             }
         }
         

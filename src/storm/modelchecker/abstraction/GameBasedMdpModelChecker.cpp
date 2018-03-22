@@ -476,9 +476,12 @@ namespace storm {
                     } else {
                         STORM_LOG_TRACE("Using hybrid solving.");
 
-                        storm::dd::Odd odd = (maybeMin || maybeMax || targetStates).createOdd();
+                        auto relevantStates = maybeMin || maybeMax || targetStates;
+                        auto relevantStatesAdd = relevantStates.template toAdd<ValueType>();
+                        storm::dd::Odd odd = relevantStates.createOdd();
                         
-                        std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<uint64_t>> transitionMatrixLabeling = game.getTransitionMatrix().toLabeledMatrix(game.getRowVariables(), game.getColumnVariables(), game.getNondeterminismVariables(), odd, odd, true);
+                        auto relevantStatesTransitionMatrix = game.getTransitionMatrix() * relevantStatesAdd * relevantStatesAdd.swapVariables(game.getRowColumnMetaVariablePairs());
+                        std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<uint64_t>> transitionMatrixLabeling = relevantStatesTransitionMatrix.toLabeledMatrix(game.getRowVariables(), game.getColumnVariables(), game.getNondeterminismVariables(), game.getPlayer1Variables(), odd, odd, true);
                         auto const& transitionMatrix = transitionMatrixLabeling.first;
                         auto const& labeling = transitionMatrixLabeling.second;
                         

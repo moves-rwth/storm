@@ -6,6 +6,7 @@
 #include "storm/storage/dd/Odd.h"
 
 #include "storm/storage/SparseMatrix.h"
+#include "storm/storage/BitVector.h"
 
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
@@ -525,14 +526,15 @@ namespace storm {
         }
         
         template<typename ValueType>
-        std::vector<uint64_t> InternalAdd<DdType::CUDD, ValueType>::decodeGroupLabels(std::vector<uint_fast64_t> const& ddGroupVariableIndices) const {
+        std::vector<uint64_t> InternalAdd<DdType::CUDD, ValueType>::decodeGroupLabels(std::vector<uint_fast64_t> const& ddGroupVariableIndices, storm::storage::BitVector const& ddLabelVariableIndices) const {
             std::vector<uint64_t> result;
-            decodeGroupLabelsRec(this->getCuddDdNode(), result, ddGroupVariableIndices, 0, ddGroupVariableIndices.size(), 0);
+            std::cout << ddLabelVariableIndices << std::endl;
+            decodeGroupLabelsRec(this->getCuddDdNode(), result, ddGroupVariableIndices, ddLabelVariableIndices, 0, ddGroupVariableIndices.size(), 0);
             return result;
         }
         
         template<typename ValueType>
-        void InternalAdd<DdType::CUDD, ValueType>::decodeGroupLabelsRec(DdNode* dd, std::vector<uint64_t>& labels, std::vector<uint_fast64_t> const& ddGroupVariableIndices, uint_fast64_t currentLevel, uint_fast64_t maxLevel, uint64_t label) const {
+        void InternalAdd<DdType::CUDD, ValueType>::decodeGroupLabelsRec(DdNode* dd, std::vector<uint64_t>& labels, std::vector<uint_fast64_t> const& ddGroupVariableIndices, storm::storage::BitVector const& ddLabelVariableIndices, uint_fast64_t currentLevel, uint_fast64_t maxLevel, uint64_t label) const {
             // For the empty DD, we do not need to create a group.
             if (dd == Cudd_ReadZero(ddManager->getCuddManager().getManager())) {
                 return;
@@ -540,12 +542,23 @@ namespace storm {
             
             if (currentLevel == maxLevel) {
                 labels.push_back(label);
-            } else if (ddGroupVariableIndices[currentLevel] < Cudd_NodeReadIndex(dd)) {
-                decodeGroupLabelsRec(dd, labels, ddGroupVariableIndices, currentLevel + 1, maxLevel, label << 1);
-                decodeGroupLabelsRec(dd, labels, ddGroupVariableIndices, currentLevel + 1, maxLevel, (label << 1) | 1);
             } else {
-                decodeGroupLabelsRec(Cudd_E(dd), labels, ddGroupVariableIndices, currentLevel + 1, maxLevel, label << 1);
-                decodeGroupLabelsRec(Cudd_T(dd), labels, ddGroupVariableIndices, currentLevel + 1, maxLevel, (label << 1) | 1 );
+                uint64_t elseLabel = label;
+                uint64_t thenLabel = label;
+
+                std::cout << "currentLevel " << currentLevel << " is in labels? " << ddLabelVariableIndices.get(currentLevel) << std::endl;
+                if (ddLabelVariableIndices.get(currentLevel)) {
+                    elseLabel <<= 1;
+                    thenLabel = (thenLabel << 1) | 1;
+                }
+                
+                if (ddGroupVariableIndices[currentLevel] < Cudd_NodeReadIndex(dd)) {
+                    decodeGroupLabelsRec(dd, labels, ddGroupVariableIndices, ddLabelVariableIndices, currentLevel + 1, maxLevel, elseLabel);
+                    decodeGroupLabelsRec(dd, labels, ddGroupVariableIndices, ddLabelVariableIndices, currentLevel + 1, maxLevel, thenLabel);
+                } else {
+                    decodeGroupLabelsRec(Cudd_E(dd), labels, ddGroupVariableIndices, ddLabelVariableIndices, currentLevel + 1, maxLevel, elseLabel);
+                    decodeGroupLabelsRec(Cudd_T(dd), labels, ddGroupVariableIndices, ddLabelVariableIndices, currentLevel + 1, maxLevel, thenLabel);
+                }
             }
         }
         

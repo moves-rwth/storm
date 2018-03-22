@@ -655,7 +655,7 @@ namespace storm {
              * @return The matrix that is represented by this ADD and a vector corresponding to row labeling
              * (if requested).
              */
-            std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<uint64_t>> toLabeledMatrix(std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::set<storm::expressions::Variable> const& groupMetaVariables, storm::dd::Odd const& rowOdd, storm::dd::Odd const& columnOdd, bool buildLabeling = false) const;
+            std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<uint64_t>> toLabeledMatrix(std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::set<storm::expressions::Variable> const& groupMetaVariables, std::set<storm::expressions::Variable> const& labelMetaVariables, storm::dd::Odd const& rowOdd, storm::dd::Odd const& columnOdd, bool buildLabeling = false) const;
             
             /*!
              * Converts the ADD to a row-grouped (sparse) matrix and the given vector to a row-grouped vector.
