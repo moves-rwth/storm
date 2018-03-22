@@ -22,6 +22,7 @@ namespace storm {
             const std::string AbstractionSettings::pivotHeuristicOptionName = "pivot-heuristic";
             const std::string AbstractionSettings::reuseResultsOptionName = "reuse";
             const std::string AbstractionSettings::restrictToRelevantStatesOptionName = "relevant";
+            const std::string AbstractionSettings::solveModeOptionName = "solve";
             
             AbstractionSettings::AbstractionSettings() : ModuleSettings(moduleName) {
                 std::vector<std::string> methods = {"games", "bisimulation", "bisim"};
@@ -42,7 +43,13 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("mode", "The mode to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(splitModes))
                                              .setDefaultValueString("all").build())
                                 .build());
-                
+
+                std::vector<std::string> solveModes = {"dd", "hybrid"};
+                this->addOption(storm::settings::OptionBuilder(moduleName, solveModeOptionName, true, "Sets how the abstractions are solved.")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("mode", "The mode to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(solveModes))
+                                             .setDefaultValueString("dd").build())
+                                .build());
+
                 this->addOption(storm::settings::OptionBuilder(moduleName, addAllGuardsOptionName, true, "Sets whether all guards are added as initial predicates.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("value", "The value of the flag.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(onOff))
                                              .setDefaultValueString("on").build())
@@ -96,6 +103,14 @@ namespace storm {
                     return SplitMode::NonGuard;
                 }
                 return SplitMode::All;
+            }
+            
+            AbstractionSettings::SolveMode AbstractionSettings::getSolveMode() const {
+                std::string solveModeAsString = this->getOption(solveModeOptionName).getArgumentByName("mode").getValueAsString();
+                if (solveModeAsString == "dd") {
+                    return SolveMode::Dd;
+                }
+                return SolveMode::Hybrid;
             }
             
             bool AbstractionSettings::isAddAllGuardsSet() const {

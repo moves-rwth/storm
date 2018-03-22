@@ -562,6 +562,15 @@ namespace storm {
             std::vector<InternalAdd<DdType::Sylvan, ValueType>> splitIntoGroups(std::vector<uint_fast64_t> const& ddGroupVariableIndices) const;
             
             /*!
+             * Splits the ADD into several ADDs that differ in the encoding of the given group variables (given via indices).
+             * The labeling is then made by interpreting the group encodings as binary encodings.
+             *
+             * @param ddGroupVariableIndices The indices of the variables that are used to distinguish the groups.
+             * @return A vector of ADDs that are the separate groups (wrt. to the encoding of the given variables).
+             */
+            std::vector<uint64_t> decodeGroupLabels(std::vector<uint_fast64_t> const& ddGroupVariableIndices) const;
+            
+            /*!
              * Simultaneously splits the ADD and the given vector ADD into several ADDs that differ in the encoding of
              * the given group variables (given via indices).
              *
@@ -650,6 +659,19 @@ namespace storm {
              * @param targetVector The vector to which the translated DD-based vector is to be added.
              */
             void composeWithExplicitVectorRec(MTBDD dd, bool negated, std::vector<uint_fast64_t> const* offsets, uint_fast64_t currentLevel, uint_fast64_t maxLevel, uint_fast64_t currentOffset, Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<ValueType>& targetVector, std::function<ValueType (ValueType const&, ValueType const&)> const& function) const;
+            
+            /*!
+             * Splits the given matrix DD into the labelings of the gropus using the given group variables.
+             *
+             * @param dd The DD to split.
+             * @param labels A vector that is to be filled with the labels of the individual groups.
+             * @param ddGroupVariableIndices The (sorted) indices of all DD group variables that need to be considered.
+             * @param currentLevel The currently considered level in the DD.
+             * @param maxLevel The number of levels that need to be considered.
+             * @param remainingMetaVariables The meta variables that remain in the DDs after the groups have been split.
+             * @param label The currently followed label.
+             */
+            void decodeGroupLabelsRec(MTBDD dd, std::vector<uint64_t>& labels, std::vector<uint_fast64_t> const& ddGroupVariableIndices, uint_fast64_t currentLevel, uint_fast64_t maxLevel, uint64_t label) const;
             
             /*!
              * Splits the given matrix DD into the groups using the given group variables.

@@ -14,6 +14,8 @@
 
 #include "storm/logic/Bound.h"
 
+#include "storm/settings/modules/AbstractionSettings.h"
+
 #include "storm/utility/ConstantsComparator.h"
 #include "storm/utility/solver.h"
 #include "storm/utility/graph.h"
@@ -95,6 +97,9 @@ namespace storm {
             
             /// A flag indicating whether to reuse the quantitative results.
             bool reuseQuantitativeResults;
+            
+            /// The mode selected for solving the abstraction.
+            storm::settings::modules::AbstractionSettings::SolveMode solveMode;
         };
     }
 }

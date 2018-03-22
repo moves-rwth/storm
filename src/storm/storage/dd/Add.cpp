@@ -703,11 +703,11 @@ namespace storm {
             }
             
             // Create the canonical row group sizes and build the matrix.
-            return toMatrix(rowMetaVariables, columnMetaVariables, groupMetaVariables, rowOdd, columnOdd);
+            return toLabeledMatrix(rowMetaVariables, columnMetaVariables, groupMetaVariables, rowOdd, columnOdd).first;
         }
 
         template<DdType LibraryType, typename ValueType>
-        storm::storage::SparseMatrix<ValueType> Add<LibraryType, ValueType>::toMatrix(std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::set<storm::expressions::Variable> const& groupMetaVariables, storm::dd::Odd const& rowOdd, storm::dd::Odd const& columnOdd) const {
+        std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<uint64_t>> Add<LibraryType, ValueType>::toLabeledMatrix(std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::set<storm::expressions::Variable> const& groupMetaVariables, storm::dd::Odd const& rowOdd, storm::dd::Odd const& columnOdd, bool buildLabeling) const {
             std::vector<uint_fast64_t> ddRowVariableIndices;
             std::vector<uint_fast64_t> ddColumnVariableIndices;
             std::vector<uint_fast64_t> ddGroupVariableIndices;
@@ -760,11 +760,23 @@ namespace storm {
                 groups.push_back(Add<LibraryType, ValueType>(this->getDdManager(), internalAdd, rowAndColumnMetaVariables));
             }
             
+            // Create the group labelings if requested.
+            std::vector<uint64_t> groupLabels;
+            if (buildLabeling) {
+                groupLabels = internalAdd.decodeGroupLabels(ddGroupVariableIndices);
+                STORM_LOG_ASSERT(groupLabels.size() == groups.size(), "Mismatching label sizes.");
+            }
+            
             // Create the actual storage for the non-zero entries.
             std::vector<storm::storage::MatrixEntry<uint_fast64_t, ValueType>> columnsAndValues(this->getNonZeroCount());
             
             // Now compute the indices at which the individual rows start.
             std::vector<uint_fast64_t> rowIndications(rowGroupIndices.back() + 1);
+            
+            std::vector<uint64_t> labeling;
+            if (buildLabeling) {
+                labeling.resize(rowGroupIndices.back());
+            }
             
             std::vector<InternalAdd<LibraryType, uint_fast64_t>> statesWithGroupEnabled(groups.size());
             InternalAdd<LibraryType, uint_fast64_t> stateToRowGroupCount = this->getDdManager().template getAddZero<uint_fast64_t>();
@@ -779,6 +791,11 @@ namespace storm {
                 
                 statesWithGroupEnabled[i] = groupNotZero.existsAbstract(columnMetaVariables).template toAdd<uint_fast64_t>();
                 statesWithGroupEnabled[i].composeWithExplicitVector(rowOdd, ddRowVariableIndices, rowGroupIndices, std::plus<uint_fast64_t>());
+                
+                if (buildLabeling) {
+                    uint64_t currentLabel = groupLabels[i];
+                    statesWithGroupEnabled[i].composeWithExplicitVector(rowOdd, ddRowVariableIndices, labeling, [currentLabel] (uint_fast64_t a, uint_fast64_t l) { return currentLabel; });
+                }
             }
             
             // Since we modified the rowGroupIndices, we need to restore the correct values.
@@ -812,9 +829,9 @@ namespace storm {
             }
             rowIndications[0] = 0;
             
-            return storm::storage::SparseMatrix<ValueType>(columnOdd.getTotalOffset(), std::move(rowIndications), std::move(columnsAndValues), std::move(rowGroupIndices));
+            return std::make_pair(storm::storage::SparseMatrix<ValueType>(columnOdd.getTotalOffset(), std::move(rowIndications), std::move(columnsAndValues), std::move(rowGroupIndices)), labeling);
         }
-
+        
         template<DdType LibraryType, typename ValueType>
         std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> Add<LibraryType, ValueType>::toMatrixVector(storm::dd::Add<LibraryType, ValueType> const& vector, std::set<storm::expressions::Variable> const& groupMetaVariables, storm::dd::Odd const& rowOdd, storm::dd::Odd const& columnOdd) const {
             std::set<storm::expressions::Variable> rowMetaVariables;

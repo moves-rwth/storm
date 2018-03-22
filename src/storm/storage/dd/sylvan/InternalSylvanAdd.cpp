@@ -922,6 +922,36 @@ namespace storm {
         }
         
         template<typename ValueType>
+        std::vector<uint64_t> InternalAdd<DdType::Sylvan, ValueType>::decodeGroupLabels(std::vector<uint_fast64_t> const& ddGroupVariableIndices) const {
+            std::vector<uint64_t> result;
+            decodeGroupLabelsRec(mtbdd_regular(this->getSylvanMtbdd().GetMTBDD()), result, ddGroupVariableIndices, 0, ddGroupVariableIndices.size(), 0);
+            return result;
+        }
+        
+        template<typename ValueType>
+        void InternalAdd<DdType::Sylvan, ValueType>::decodeGroupLabelsRec(MTBDD dd, std::vector<uint64_t>& labels, std::vector<uint_fast64_t> const& ddGroupVariableIndices, uint_fast64_t currentLevel, uint_fast64_t maxLevel, uint64_t label) const {
+            // For the empty DD, we do not need to create a group.
+            if (mtbdd_isleaf(dd) && mtbdd_iszero(dd)) {
+                return;
+            }
+
+            if (currentLevel == maxLevel) {
+                labels.push_back(label);
+            } else if (mtbdd_isleaf(dd) || ddGroupVariableIndices[currentLevel] < mtbdd_getvar(dd)) {
+                decodeGroupLabelsRec(dd, labels, ddGroupVariableIndices, currentLevel + 1, maxLevel, label << 1);
+                decodeGroupLabelsRec(dd, labels, ddGroupVariableIndices, currentLevel + 1, maxLevel, (label << 1) | 1);
+            } else {
+                // Otherwise, we compute the ODDs for both the then- and else successors.
+                MTBDD thenDdNode = mtbdd_gethigh(dd);
+                MTBDD elseDdNode = mtbdd_getlow(dd);
+
+                decodeGroupLabelsRec(mtbdd_regular(elseDdNode), labels, ddGroupVariableIndices, currentLevel + 1, maxLevel, label << 1);
+                decodeGroupLabelsRec(mtbdd_regular(thenDdNode), labels, ddGroupVariableIndices, currentLevel + 1, maxLevel, (label << 1) | 1 );
+                
+            }
+        }
+        
+        template<typename ValueType>
         std::vector<InternalAdd<DdType::Sylvan, ValueType>> InternalAdd<DdType::Sylvan, ValueType>::splitIntoGroups(std::vector<uint_fast64_t> const& ddGroupVariableIndices) const {
             std::vector<InternalAdd<DdType::Sylvan, ValueType>> result;
             splitIntoGroupsRec(mtbdd_regular(this->getSylvanMtbdd().GetMTBDD()), mtbdd_hascomp(this->getSylvanMtbdd().GetMTBDD()), result, ddGroupVariableIndices, 0, ddGroupVariableIndices.size());

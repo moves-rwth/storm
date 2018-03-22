@@ -27,6 +27,10 @@ namespace storm {
                     All, None, Qualitative, Quantitative
                 };
                 
+                enum class SolveMode {
+                    Dd, Hybrid
+                };
+                
                 /*!
                  * Creates a new set of abstraction settings.
                  */
@@ -100,6 +104,11 @@ namespace storm {
                  */
                 bool isRestrictToRelevantStatesSet() const;
                 
+                /*!
+                 * Retrieves the mode with which to solve the games.
+                 */
+                SolveMode getSolveMode() const;
+                
                 const static std::string moduleName;
                 
             private:
@@ -112,6 +121,7 @@ namespace storm {
                 const static std::string pivotHeuristicOptionName;
                 const static std::string reuseResultsOptionName;
                 const static std::string restrictToRelevantStatesOptionName;
+                const static std::string solveModeOptionName;
             };
             
         }
