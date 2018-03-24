@@ -1084,7 +1084,7 @@ namespace storm {
             }
 
             template <storm::dd::DdType Type, typename ValueType>
-            GameProb01Result<Type> performProb0(storm::models::symbolic::StochasticTwoPlayerGame<Type, ValueType> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool producePlayer1Strategy, bool producePlayer2Strategy) {
+            SymbolicGameProb01Result<Type> performProb0(storm::models::symbolic::StochasticTwoPlayerGame<Type, ValueType> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool producePlayer1Strategy, bool producePlayer2Strategy) {
 
                 // The solution sets.
                 storm::dd::Bdd<Type> player1States = psiStates;
@@ -1147,11 +1147,11 @@ namespace storm {
                     player1StrategyBdd = onlyProb0Successors.existsAbstractRepresentative(model.getPlayer1Variables());
                 }
                 
-                return GameProb01Result<Type>(player1States, player2States, player1StrategyBdd, player2StrategyBdd);
+                return SymbolicGameProb01Result<Type>(player1States, player2States, player1StrategyBdd, player2StrategyBdd);
             }
             
             template <storm::dd::DdType Type, typename ValueType>
-            GameProb01Result<Type> performProb1(storm::models::symbolic::StochasticTwoPlayerGame<Type, ValueType> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool producePlayer1Strategy, bool producePlayer2Strategy, boost::optional<storm::dd::Bdd<Type>> const& player1Candidates) {
+            SymbolicGameProb01Result<Type> performProb1(storm::models::symbolic::StochasticTwoPlayerGame<Type, ValueType> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool producePlayer1Strategy, bool producePlayer2Strategy, boost::optional<storm::dd::Bdd<Type>> const& player1Candidates) {
                 
                 // Create the potential prob1 states of player 1.
                 storm::dd::Bdd<Type> maybePlayer1States = model.getReachableStates();
@@ -1284,7 +1284,7 @@ namespace storm {
                     }
                 }
                 
-                return GameProb01Result<Type>(maybePlayer1States, maybePlayer2States, player1StrategyBdd, player2StrategyBdd);
+                return SymbolicGameProb01Result<Type>(maybePlayer1States, maybePlayer2States, player1StrategyBdd, player2StrategyBdd);
             }
             
             template <typename T>
@@ -1568,9 +1568,9 @@ namespace storm {
 
             template std::pair<storm::dd::Bdd<storm::dd::DdType::CUDD>, storm::dd::Bdd<storm::dd::DdType::CUDD>> performProb01Min(storm::models::symbolic::NondeterministicModel<storm::dd::DdType::CUDD, double> const& model, storm::dd::Bdd<storm::dd::DdType::CUDD> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::CUDD> const& phiStates, storm::dd::Bdd<storm::dd::DdType::CUDD> const& psiStates);
 
-            template GameProb01Result<storm::dd::DdType::CUDD> performProb0(storm::models::symbolic::StochasticTwoPlayerGame<storm::dd::DdType::CUDD, double> const& model, storm::dd::Bdd<storm::dd::DdType::CUDD> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::CUDD> const& phiStates, storm::dd::Bdd<storm::dd::DdType::CUDD> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool producePlayer1Strategy, bool producePlayer2Strategy);
+            template SymbolicGameProb01Result<storm::dd::DdType::CUDD> performProb0(storm::models::symbolic::StochasticTwoPlayerGame<storm::dd::DdType::CUDD, double> const& model, storm::dd::Bdd<storm::dd::DdType::CUDD> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::CUDD> const& phiStates, storm::dd::Bdd<storm::dd::DdType::CUDD> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool producePlayer1Strategy, bool producePlayer2Strategy);
             
-            template GameProb01Result<storm::dd::DdType::CUDD> performProb1(storm::models::symbolic::StochasticTwoPlayerGame<storm::dd::DdType::CUDD, double> const& model, storm::dd::Bdd<storm::dd::DdType::CUDD> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::CUDD> const& phiStates, storm::dd::Bdd<storm::dd::DdType::CUDD> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool producePlayer1Strategy, bool producePlayer2Strategy, boost::optional<storm::dd::Bdd<storm::dd::DdType::CUDD>> const& player1Candidates);
+            template SymbolicGameProb01Result<storm::dd::DdType::CUDD> performProb1(storm::models::symbolic::StochasticTwoPlayerGame<storm::dd::DdType::CUDD, double> const& model, storm::dd::Bdd<storm::dd::DdType::CUDD> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::CUDD> const& phiStates, storm::dd::Bdd<storm::dd::DdType::CUDD> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool producePlayer1Strategy, bool producePlayer2Strategy, boost::optional<storm::dd::Bdd<storm::dd::DdType::CUDD>> const& player1Candidates);
 
             // Instantiations for Sylvan (double).
             
@@ -1608,9 +1608,9 @@ namespace storm {
 
             template std::pair<storm::dd::Bdd<storm::dd::DdType::Sylvan>, storm::dd::Bdd<storm::dd::DdType::Sylvan>> performProb01Min(storm::models::symbolic::NondeterministicModel<storm::dd::DdType::Sylvan, double> const& model, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& phiStates, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& psiStates);
 
-            template GameProb01Result<storm::dd::DdType::Sylvan> performProb0(storm::models::symbolic::StochasticTwoPlayerGame<storm::dd::DdType::Sylvan> const& model, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& phiStates, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool producePlayer1Strategy, bool producePlayer2Strategy);
+            template SymbolicGameProb01Result<storm::dd::DdType::Sylvan> performProb0(storm::models::symbolic::StochasticTwoPlayerGame<storm::dd::DdType::Sylvan> const& model, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& phiStates, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool producePlayer1Strategy, bool producePlayer2Strategy);
 
-            template GameProb01Result<storm::dd::DdType::Sylvan> performProb1(storm::models::symbolic::StochasticTwoPlayerGame<storm::dd::DdType::Sylvan> const& model, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& phiStates, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool producePlayer1Strategy, bool producePlayer2Strategy, boost::optional<storm::dd::Bdd<storm::dd::DdType::Sylvan>> const& player1Candidates);
+            template SymbolicGameProb01Result<storm::dd::DdType::Sylvan> performProb1(storm::models::symbolic::StochasticTwoPlayerGame<storm::dd::DdType::Sylvan> const& model, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& phiStates, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool producePlayer1Strategy, bool producePlayer2Strategy, boost::optional<storm::dd::Bdd<storm::dd::DdType::Sylvan>> const& player1Candidates);
 
             // Instantiations for Sylvan (rational number).
             

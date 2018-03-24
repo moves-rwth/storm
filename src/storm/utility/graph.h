@@ -10,7 +10,9 @@
 #include "storm/storage/Scheduler.h"
 #include "storm/models/sparse/NondeterministicModel.h"
 #include "storm/models/sparse/DeterministicModel.h"
+
 #include "storm/storage/dd/DdType.h"
+#include "storm/storage/dd/Bdd.h"
 
 #include "storm/solver/OptimizationDirection.h"
 
@@ -542,9 +544,9 @@ namespace storm {
             std::pair<storm::dd::Bdd<Type>, storm::dd::Bdd<Type>> performProb01Min(storm::models::symbolic::NondeterministicModel<Type, ValueType> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates);
 
             template <storm::dd::DdType Type>
-            struct GameProb01Result {
-                GameProb01Result() = default;
-                GameProb01Result(storm::dd::Bdd<Type> const& player1States, storm::dd::Bdd<Type> const& player2States, boost::optional<storm::dd::Bdd<Type>> const& player1Strategy = boost::none, boost::optional<storm::dd::Bdd<Type>> const& player2Strategy = boost::none) : player1States(player1States), player2States(player2States), player1Strategy(player1Strategy), player2Strategy(player2Strategy) {
+            struct SymbolicGameProb01Result {
+                SymbolicGameProb01Result() = default;
+                SymbolicGameProb01Result(storm::dd::Bdd<Type> const& player1States, storm::dd::Bdd<Type> const& player2States, boost::optional<storm::dd::Bdd<Type>> const& player1Strategy = boost::none, boost::optional<storm::dd::Bdd<Type>> const& player2Strategy = boost::none) : player1States(player1States), player2States(player2States), player1Strategy(player1Strategy), player2Strategy(player2Strategy) {
                     // Intentionally left empty.
                 }
                 
@@ -597,7 +599,7 @@ namespace storm {
              * @param producePlayer2Strategy A flag indicating whether the strategy of player 2 shall be produced.
              */
             template <storm::dd::DdType Type, typename ValueType>
-            GameProb01Result<Type> performProb0(storm::models::symbolic::StochasticTwoPlayerGame<Type, ValueType> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool producePlayer1Strategy = false, bool producePlayer2Strategy = false);
+            SymbolicGameProb01Result<Type> performProb0(storm::models::symbolic::StochasticTwoPlayerGame<Type, ValueType> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool producePlayer1Strategy = false, bool producePlayer2Strategy = false);
             
             /*!
              * Computes the set of states that have probability 1 given the strategies of the two players.
@@ -611,7 +613,7 @@ namespace storm {
              * @param player1Candidates If given, this set constrains the candidates of player 1 states that are considered.
              */
             template <storm::dd::DdType Type, typename ValueType>
-            GameProb01Result<Type> performProb1(storm::models::symbolic::StochasticTwoPlayerGame<Type, ValueType> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool producePlayer1Strategy = false, bool producePlayer2Strategy = false, boost::optional<storm::dd::Bdd<Type>> const& player1Candidates = boost::none);
+            SymbolicGameProb01Result<Type> performProb1(storm::models::symbolic::StochasticTwoPlayerGame<Type, ValueType> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool producePlayer1Strategy = false, bool producePlayer2Strategy = false, boost::optional<storm::dd::Bdd<Type>> const& player1Candidates = boost::none);
             
             /*!
              * Performs a topological sort of the states of the system according to the given transitions.

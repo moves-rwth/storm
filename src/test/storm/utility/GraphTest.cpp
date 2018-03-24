@@ -227,7 +227,7 @@ TEST(GraphTest, SymbolicProb01StochasticGameDieSmall) {
     // The target states are those states where !(s < 3).
     storm::dd::Bdd<storm::dd::DdType::CUDD> targetStates = !abstractor.getStates(initialPredicates[0]) && game.getReachableStates();
     
-    storm::utility::graph::GameProb01Result<storm::dd::DdType::CUDD> result = storm::utility::graph::performProb0(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Minimize, storm::OptimizationDirection::Minimize, true, true);
+    storm::utility::graph::SymbolicGameProb01Result<storm::dd::DdType::CUDD> result = storm::utility::graph::performProb0(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Minimize, storm::OptimizationDirection::Minimize, true, true);
     EXPECT_EQ(0ull, result.getPlayer1States().getNonZeroCount());
     EXPECT_TRUE(result.hasPlayer1Strategy());
     EXPECT_TRUE(result.hasPlayer2Strategy());
@@ -366,7 +366,7 @@ TEST(GraphTest, SymbolicProb01StochasticGameTwoDice) {
     // The target states are those states where s1 == 7 & s2 == 7 & d1 + d2 == 2.
     storm::dd::Bdd<storm::dd::DdType::CUDD> targetStates = abstractor.getStates(initialPredicates[7]) && abstractor.getStates(initialPredicates[22]) && abstractor.getStates(initialPredicates[9]) && abstractor.getStates(initialPredicates[24]) && game.getReachableStates();
     
-    storm::utility::graph::GameProb01Result<storm::dd::DdType::CUDD> result = storm::utility::graph::performProb0(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Minimize, storm::OptimizationDirection::Minimize, true, true);
+    storm::utility::graph::SymbolicGameProb01Result<storm::dd::DdType::CUDD> result = storm::utility::graph::performProb0(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Minimize, storm::OptimizationDirection::Minimize, true, true);
     EXPECT_EQ(153ull, result.getPlayer1States().getNonZeroCount());
     ASSERT_TRUE(result.hasPlayer1Strategy());
     ASSERT_TRUE(result.hasPlayer2Strategy());
@@ -538,7 +538,7 @@ TEST(GraphTest, SymbolicProb01StochasticGameWlan) {
     // The target states are those states where col == 2.
     storm::dd::Bdd<storm::dd::DdType::CUDD> targetStates = abstractor.getStates(initialPredicates[2]) && game.getReachableStates();
     
-    storm::utility::graph::GameProb01Result<storm::dd::DdType::CUDD> result = storm::utility::graph::performProb0(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Minimize, storm::OptimizationDirection::Minimize, true, true);
+    storm::utility::graph::SymbolicGameProb01Result<storm::dd::DdType::CUDD> result = storm::utility::graph::performProb0(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Minimize, storm::OptimizationDirection::Minimize, true, true);
     EXPECT_EQ(2831ull, result.getPlayer1States().getNonZeroCount());
     EXPECT_TRUE(result.hasPlayer1Strategy());
     EXPECT_TRUE(result.hasPlayer2Strategy());

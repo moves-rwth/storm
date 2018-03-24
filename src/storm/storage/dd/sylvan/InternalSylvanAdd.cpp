@@ -884,16 +884,24 @@ namespace storm {
         
         template<typename ValueType>
         void InternalAdd<DdType::Sylvan, ValueType>::composeWithExplicitVector(storm::dd::Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<ValueType>& targetVector, std::function<ValueType (ValueType const&, ValueType const&)> const& function) const {
-            composeWithExplicitVectorRec(mtbdd_regular(this->getSylvanMtbdd().GetMTBDD()), mtbdd_hascomp(this->getSylvanMtbdd().GetMTBDD()), nullptr, 0, ddVariableIndices.size(), 0, odd, ddVariableIndices, targetVector, function);
+            forEachRec(this->getSylvanMtbdd().GetMTBDD(), 0, ddVariableIndices.size(), 0, odd, ddVariableIndices, [&function, &targetVector] (uint64_t const& offset, ValueType const& value) { targetVector[offset] = function(targetVector[offset], value); });
         }
         
         template<typename ValueType>
         void InternalAdd<DdType::Sylvan, ValueType>::composeWithExplicitVector(storm::dd::Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<uint_fast64_t> const& offsets, std::vector<ValueType>& targetVector, std::function<ValueType (ValueType const&, ValueType const&)> const& function) const {
-            composeWithExplicitVectorRec(mtbdd_regular(this->getSylvanMtbdd().GetMTBDD()), mtbdd_hascomp(this->getSylvanMtbdd().GetMTBDD()), &offsets, 0, ddVariableIndices.size(), 0, odd, ddVariableIndices, targetVector, function);
+            forEachRec(this->getSylvanMtbdd().GetMTBDD(), 0, ddVariableIndices.size(), 0, odd, ddVariableIndices,  [&function, &targetVector, &offsets] (uint64_t const& offset, ValueType const& value) {
+                ValueType& targetValue = targetVector[offsets[offset]];
+                targetValue = function(targetValue, value);
+            });
         }
         
         template<typename ValueType>
-        void InternalAdd<DdType::Sylvan, ValueType>::composeWithExplicitVectorRec(MTBDD dd, bool negated, std::vector<uint_fast64_t> const* offsets, uint_fast64_t currentLevel, uint_fast64_t maxLevel, uint_fast64_t currentOffset, Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<ValueType>& targetVector, std::function<ValueType (ValueType const&, ValueType const&)> const& function) const {
+        void InternalAdd<DdType::Sylvan, ValueType>::forEach(Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::function<void (uint64_t const&, ValueType const&)> const& function) const {
+            forEachRec(this->getSylvanMtbdd().GetMTBDD(), 0, ddVariableIndices.size(), 0, odd, ddVariableIndices, function);
+        }
+        
+        template<typename ValueType>
+        void InternalAdd<DdType::Sylvan, ValueType>::forEachRec(MTBDD dd, uint_fast64_t currentLevel, uint_fast64_t maxLevel, uint_fast64_t currentOffset, Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::function<void (uint64_t const&, ValueType const&)> const& function) const {
             // For the empty DD, we do not need to add any entries.
             if (mtbdd_isleaf(dd) && mtbdd_iszero(dd)) {
                 return;
@@ -901,24 +909,19 @@ namespace storm {
             
             // If we are at the maximal level, the value to be set is stored as a constant in the DD.
             if (currentLevel == maxLevel) {
-                ValueType& targetValue = targetVector[offsets != nullptr ? (*offsets)[currentOffset] : currentOffset];
-                targetValue = function(targetValue, getValue(dd));
+                function(currentOffset, getValue(dd));
             } else if (mtbdd_isleaf(dd) || ddVariableIndices[currentLevel] < mtbdd_getvar(dd)) {
                 // If we skipped a level, we need to enumerate the explicit entries for the case in which the bit is set
                 // and for the one in which it is not set.
-                composeWithExplicitVectorRec(dd, negated, offsets, currentLevel + 1, maxLevel, currentOffset, odd.getElseSuccessor(), ddVariableIndices, targetVector, function);
-                composeWithExplicitVectorRec(dd, negated, offsets, currentLevel + 1, maxLevel, currentOffset + odd.getElseOffset(), odd.getThenSuccessor(), ddVariableIndices, targetVector, function);
+                forEachRec(dd, currentLevel + 1, maxLevel, currentOffset, odd.getElseSuccessor(), ddVariableIndices, function);
+                forEachRec(dd, currentLevel + 1, maxLevel, currentOffset + odd.getElseOffset(), odd.getThenSuccessor(), ddVariableIndices, function);
             } else {
                 // Otherwise, we simply recursively call the function for both (different) cases.
                 MTBDD thenNode = mtbdd_gethigh(dd);
                 MTBDD elseNode = mtbdd_getlow(dd);
                 
-                // Determine whether we have to evaluate the successors as if they were complemented.
-                bool elseComplemented = mtbdd_hascomp(elseNode) ^ negated;
-                bool thenComplemented = mtbdd_hascomp(thenNode) ^ negated;
-                
-                composeWithExplicitVectorRec(mtbdd_regular(elseNode), elseComplemented, offsets, currentLevel + 1, maxLevel, currentOffset, odd.getElseSuccessor(), ddVariableIndices, targetVector, function);
-                composeWithExplicitVectorRec(mtbdd_regular(thenNode), thenComplemented, offsets, currentLevel + 1, maxLevel, currentOffset + odd.getElseOffset(), odd.getThenSuccessor(), ddVariableIndices, targetVector, function);
+                forEachRec(elseNode, currentLevel + 1, maxLevel, currentOffset, odd.getElseSuccessor(), ddVariableIndices, function);
+                forEachRec(thenNode, currentLevel + 1, maxLevel, currentOffset + odd.getElseOffset(), odd.getThenSuccessor(), ddVariableIndices, function);
             }
         }
         

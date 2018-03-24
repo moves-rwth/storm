@@ -44,7 +44,7 @@ namespace storm {
                                              .setDefaultValueString("all").build())
                                 .build());
 
-                std::vector<std::string> solveModes = {"dd", "hybrid"};
+                std::vector<std::string> solveModes = {"dd", "sparse"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, solveModeOptionName, true, "Sets how the abstractions are solved.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("mode", "The mode to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(solveModes))
                                              .setDefaultValueString("dd").build())
@@ -110,7 +110,7 @@ namespace storm {
                 if (solveModeAsString == "dd") {
                     return SolveMode::Dd;
                 }
-                return SolveMode::Hybrid;
+                return SolveMode::Sparse;
             }
             
             bool AbstractionSettings::isAddAllGuardsSet() const {

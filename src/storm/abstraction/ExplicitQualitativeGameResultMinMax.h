@@ -3,15 +3,14 @@
 #include "storm/storage/dd/DdType.h"
 
 #include "storm/abstraction/SymbolicQualitativeResultMinMax.h"
-#include "storm/abstraction/QualitativeMdpResult.h"
+#include "storm/abstraction/QualitativeGameResult.h"
 
 namespace storm {
     namespace abstraction {
         
-        template<storm::dd::DdType Type>
-        class QualitativeMdpResultMinMax : public SymbolicQualitativeResultMinMax<Type> {
+        class ExplicitQualitativeGameResultMinMax : public QualitativeResultMinMax {
         public:
-            QualitativeMdpResultMinMax() = default;
+            ExplicitQualitativeGameResultMinMax() = default;
             
             virtual QualitativeResult<Type> const& getProb0(storm::OptimizationDirection const& dir) const override {
                 if (dir == storm::OptimizationDirection::Minimize) {
@@ -29,10 +28,10 @@ namespace storm {
                 }
             }
             
-            QualitativeMdpResult<Type> prob0Min;
-            QualitativeMdpResult<Type> prob1Min;
-            QualitativeMdpResult<Type> prob0Max;
-            QualitativeMdpResult<Type> prob1Max;
+            QualitativeGameResult<Type> prob0Min;
+            QualitativeGameResult<Type> prob1Min;
+            QualitativeGameResult<Type> prob0Max;
+            QualitativeGameResult<Type> prob1Max;
         };
         
     }

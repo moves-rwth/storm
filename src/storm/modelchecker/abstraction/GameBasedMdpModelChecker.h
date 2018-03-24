@@ -27,6 +27,15 @@ namespace storm {
 
         template<storm::dd::DdType Type, typename ValueType>
         class MenuGameAbstractor;
+        
+        template<storm::dd::DdType Type, typename ValueType>
+        class MenuGameRefiner;
+        
+        template<storm::dd::DdType Type>
+        class QualitativeGameResultMinMax;
+        
+        template<storm::dd::DdType Type, typename ValueType>
+        struct QuantitativeGameResult;
     }
     
     namespace modelchecker {
@@ -59,6 +68,9 @@ namespace storm {
              */
             std::unique_ptr<CheckResult> performGameBasedAbstractionRefinement(Environment const& env, CheckTask<storm::logic::Formula> const& checkTask, storm::expressions::Expression const& constraintExpression, storm::expressions::Expression const& targetStateExpression);
             
+            std::unique_ptr<CheckResult> performSymbolicAbstractionSolutionStep(Environment const& env, CheckTask<storm::logic::Formula> const& checkTask, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::OptimizationDirection player1Direction, storm::dd::Bdd<Type> const& initialStates, storm::dd::Bdd<Type> const& constraintStates, storm::dd::Bdd<Type> const& targetStates, storm::abstraction::MenuGameRefiner<Type, ValueType> const& refiner, boost::optional<QualitativeGameResultMinMax<Type>>& previousQualitativeResult, boost::optional<abstraction::QuantitativeGameResult<Type, ValueType>>& previousMinQuantitativeResult);
+            std::unique_ptr<CheckResult> performExplicitAbstractionSolutionStep(Environment const& env, CheckTask<storm::logic::Formula> const& checkTask, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::OptimizationDirection player1Direction, storm::dd::Bdd<Type> const& initialStates, storm::dd::Bdd<Type> const& constraintStates, storm::dd::Bdd<Type> const& targetStates, storm::abstraction::MenuGameRefiner<Type, ValueType> const& refiner);
+
             /*!
              * Retrieves the initial predicates for the abstraction.
              */

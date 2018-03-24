@@ -550,6 +550,18 @@ namespace storm {
             void composeWithExplicitVector(Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<ValueType>& targetVector, std::function<ValueType (ValueType const&, ValueType const&)> const& function) const;
             
             /*!
+             * Composes the ADD with an explicit vector by performing a specified function between the entries of this
+             * ADD and the explicit vector.
+             *
+             * @param odd The ODD to use for the translation from symbolic to explicit positions.
+             * @param ddVariableIndices The indices of the DD variables present in this ADD.
+             * @param targetVector The explicit vector that is to be composed with the ADD. The results are written to
+             * this vector again.
+             * @param function The function to perform in the composition.
+             */
+            void forEach(Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::function<void (uint64_t const&, ValueType const&)> const& function) const;
+            
+            /*!
              * Composes the (row-grouped) ADD with an explicit vector by performing a specified function between the
              * entries of this ADD and the explicit vector.
              *
@@ -646,18 +658,18 @@ namespace storm {
             
         private:
             /*!
-             * Performs a recursive step to perform the given function between the given DD-based vector and the given
-             * explicit vector.
+             * Performs a recursive step for forEach.
              *
-             * @param dd The DD to add to the explicit vector.
+             * @param dd The DD to traverse.
              * @param currentLevel The currently considered level in the DD.
              * @param maxLevel The number of levels that need to be considered.
              * @param currentOffset The current offset.
              * @param odd The ODD used for the translation.
              * @param ddVariableIndices The (sorted) indices of all DD variables that need to be considered.
-             * @param targetVector The vector to which the translated DD-based vector is to be added.
+             * @param function The callback invoked for every element. The first argument is the offset and the second
+             * is the value.
              */
-            void composeWithExplicitVectorRec(DdNode const* dd, std::vector<uint_fast64_t> const* offsets, uint_fast64_t currentLevel, uint_fast64_t maxLevel, uint_fast64_t currentOffset, Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<ValueType>& targetVector, std::function<ValueType (ValueType const&, ValueType const&)> const& function) const;
+            void forEachRec(DdNode const* dd, uint_fast64_t currentLevel, uint_fast64_t maxLevel, uint_fast64_t currentOffset, Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::function<void (uint64_t const&, ValueType const&)> const& function) const;
             
             /*!
              * Splits the given matrix DD into the groups using the given group variables.

@@ -810,13 +810,11 @@ namespace storm {
                 }
                 
                 statesWithGroupEnabled[i] = groupNotZero.existsAbstract(columnMetaVariables).template toAdd<uint_fast64_t>();
-                statesWithGroupEnabled[i].composeWithExplicitVector(rowOdd, ddRowVariableIndices, rowGroupIndices, std::plus<uint_fast64_t>());
-                
                 if (buildLabeling) {
                     uint64_t currentLabel = groupLabels[i];
-                    std::cout << "current label is " << currentLabel << std::endl;
-                    // statesWithGroupEnabled[i].composeWithExplicitVector(rowOdd, ddRowVariableIndices, labeling, [currentLabel] (uint_fast64_t a, uint_fast64_t l) { return currentLabel; });
+                    statesWithGroupEnabled[i].forEach(rowOdd, ddRowVariableIndices, [currentLabel, &rowGroupIndices, &labeling] (uint64_t const& offset, uint_fast64_t const& value) { labeling[rowGroupIndices[offset]] = currentLabel; });
                 }
+                statesWithGroupEnabled[i].composeWithExplicitVector(rowOdd, ddRowVariableIndices, rowGroupIndices, std::plus<uint_fast64_t>());
             }
             
             // Since we modified the rowGroupIndices, we need to restore the correct values.

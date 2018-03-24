@@ -8,7 +8,11 @@ namespace storm {
         bool QualitativeResultMinMax::isSymbolic() const {
             return false;
         }
-        
+
+        bool QualitativeResultMinMax::isExplicit() const {
+            return false;
+        }
+
         template<storm::dd::DdType Type>
         SymbolicQualitativeResultMinMax<Type> const& QualitativeResultMinMax::asSymbolicQualitativeResultMinMax() const {
             return static_cast<SymbolicQualitativeResultMinMax<Type> const&>(*this);

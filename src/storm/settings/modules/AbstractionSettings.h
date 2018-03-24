@@ -28,7 +28,7 @@ namespace storm {
                 };
                 
                 enum class SolveMode {
-                    Dd, Hybrid
+                    Dd, Sparse
                 };
                 
                 /*!
