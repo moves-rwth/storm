@@ -23,6 +23,7 @@ namespace storm {
             const std::string AbstractionSettings::reuseResultsOptionName = "reuse";
             const std::string AbstractionSettings::restrictToRelevantStatesOptionName = "relevant";
             const std::string AbstractionSettings::solveModeOptionName = "solve";
+            const std::string AbstractionSettings::maximalAbstractionOptionName = "maxabs";
             
             AbstractionSettings::AbstractionSettings() : ModuleSettings(moduleName) {
                 std::vector<std::string> methods = {"games", "bisimulation", "bisim"};
@@ -30,6 +31,8 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the method to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(methods))
                                              .setDefaultValueString("bisim").build())
                                 .build());
+                
+                this->addOption(storm::settings::OptionBuilder(moduleName, maximalAbstractionOptionName, false, "The maximal number of abstraction to perform before solving is aborted.").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("count", "The maximal abstraction count.").setDefaultValueUnsignedInteger(20000).build()).build());
                 
                 std::vector<std::string> onOff = {"on", "off"};
                 
@@ -157,6 +160,10 @@ namespace storm {
                     return ReuseMode::Quantitative;
                 }
                 return ReuseMode::All;
+            }
+            
+            uint_fast64_t AbstractionSettings::getMaximalAbstractionCount() const {
+                return this->getOption(maximalAbstractionOptionName).getArgumentByName("count").getValueAsUnsignedInteger();
             }
             
         }

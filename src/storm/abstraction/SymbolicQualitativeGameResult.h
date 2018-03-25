@@ -8,6 +8,7 @@ namespace storm {
         
         template <storm::dd::DdType Type>
         class SymbolicQualitativeGameResult : public storm::utility::graph::SymbolicGameProb01Result<Type>, public SymbolicQualitativeResult<Type> {
+        public:
             SymbolicQualitativeGameResult() = default;
             
             SymbolicQualitativeGameResult(storm::utility::graph::SymbolicGameProb01Result<Type> const& prob01Result);

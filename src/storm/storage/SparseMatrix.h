@@ -579,6 +579,12 @@ namespace storm {
              */
             std::vector<index_type> const& getRowGroupIndices() const;
             
+            /*!
+             * Swaps the grouping of rows of this matrix.
+             *
+             * @return The old grouping of rows of this matrix.
+             */
+            std::vector<index_type> swapRowGroupIndices(std::vector<index_type>&& newRowGrouping);
             
             /*!
              * Sets the row grouping to the given one.

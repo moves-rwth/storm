@@ -9,8 +9,8 @@
 
 #include "storm/storage/SymbolicModelDescription.h"
 
-#include "storm/abstraction/QualitativeGameResult.h"
-#include "storm/abstraction/QualitativeGameResultMinMax.h"
+#include "storm/abstraction/SymbolicQualitativeGameResult.h"
+#include "storm/abstraction/SymbolicQualitativeGameResultMinMax.h"
 
 #include "storm/logic/Bound.h"
 
@@ -32,16 +32,21 @@ namespace storm {
         class MenuGameRefiner;
         
         template<storm::dd::DdType Type>
-        class QualitativeGameResultMinMax;
+        class SymbolicQualitativeGameResultMinMax;
         
         template<storm::dd::DdType Type, typename ValueType>
-        struct QuantitativeGameResult;
+        class SymbolicQuantitativeGameResult;
+        
+        class ExplicitQualitativeGameResult;
+        class ExplicitQualitativeGameResultMinMax;
     }
     
     namespace modelchecker {
         
-        using storm::abstraction::QualitativeGameResult;
-        using storm::abstraction::QualitativeGameResultMinMax;
+        using storm::abstraction::SymbolicQualitativeGameResult;
+        using storm::abstraction::SymbolicQualitativeGameResultMinMax;
+        using storm::abstraction::ExplicitQualitativeGameResult;
+        using storm::abstraction::ExplicitQualitativeGameResultMinMax;
         
         template<storm::dd::DdType Type, typename ModelType>
         class GameBasedMdpModelChecker : public AbstractModelChecker<ModelType> {
@@ -68,8 +73,8 @@ namespace storm {
              */
             std::unique_ptr<CheckResult> performGameBasedAbstractionRefinement(Environment const& env, CheckTask<storm::logic::Formula> const& checkTask, storm::expressions::Expression const& constraintExpression, storm::expressions::Expression const& targetStateExpression);
             
-            std::unique_ptr<CheckResult> performSymbolicAbstractionSolutionStep(Environment const& env, CheckTask<storm::logic::Formula> const& checkTask, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::OptimizationDirection player1Direction, storm::dd::Bdd<Type> const& initialStates, storm::dd::Bdd<Type> const& constraintStates, storm::dd::Bdd<Type> const& targetStates, storm::abstraction::MenuGameRefiner<Type, ValueType> const& refiner, boost::optional<QualitativeGameResultMinMax<Type>>& previousQualitativeResult, boost::optional<abstraction::QuantitativeGameResult<Type, ValueType>>& previousMinQuantitativeResult);
-            std::unique_ptr<CheckResult> performExplicitAbstractionSolutionStep(Environment const& env, CheckTask<storm::logic::Formula> const& checkTask, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::OptimizationDirection player1Direction, storm::dd::Bdd<Type> const& initialStates, storm::dd::Bdd<Type> const& constraintStates, storm::dd::Bdd<Type> const& targetStates, storm::abstraction::MenuGameRefiner<Type, ValueType> const& refiner);
+            std::unique_ptr<CheckResult> performSymbolicAbstractionSolutionStep(Environment const& env, CheckTask<storm::logic::Formula> const& checkTask, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::OptimizationDirection player1Direction, storm::dd::Bdd<Type> const& initialStates, storm::dd::Bdd<Type> const& constraintStates, storm::dd::Bdd<Type> const& targetStates, storm::abstraction::MenuGameRefiner<Type, ValueType> const& refiner, boost::optional<SymbolicQualitativeGameResultMinMax<Type>>& previousQualitativeResult, boost::optional<abstraction::SymbolicQuantitativeGameResult<Type, ValueType>>& previousMinQuantitativeResult);
+            std::unique_ptr<CheckResult> performExplicitAbstractionSolutionStep(Environment const& env, CheckTask<storm::logic::Formula> const& checkTask, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::OptimizationDirection player1Direction, storm::dd::Bdd<Type> const& initialStates, storm::dd::Bdd<Type> const& constraintStates, storm::dd::Bdd<Type> const& targetStates, storm::abstraction::MenuGameRefiner<Type, ValueType> const& refiner, boost::optional<ExplicitQualitativeGameResultMinMax>& previousQualitativeResult);
 
             /*!
              * Retrieves the initial predicates for the abstraction.
@@ -85,7 +90,9 @@ namespace storm {
              * Performs a qualitative check on the the given game to compute the (player 1) states that have probability
              * 0 or 1, respectively, to reach a target state and only visiting constraint states before.
              */
-            QualitativeGameResultMinMax<Type> computeProb01States(boost::optional<QualitativeGameResultMinMax<Type>> const& previousQualitativeResult, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::OptimizationDirection player1Direction, storm::dd::Bdd<Type> const& transitionMatrixBdd, storm::dd::Bdd<Type> const& constraintStates, storm::dd::Bdd<Type> const& targetStates);
+            SymbolicQualitativeGameResultMinMax<Type> computeProb01States(boost::optional<SymbolicQualitativeGameResultMinMax<Type>> const& previousQualitativeResult, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::OptimizationDirection player1Direction, storm::dd::Bdd<Type> const& transitionMatrixBdd, storm::dd::Bdd<Type> const& constraintStates, storm::dd::Bdd<Type> const& targetStates);
+            
+            ExplicitQualitativeGameResultMinMax computeProb01States(boost::optional<ExplicitQualitativeGameResultMinMax> const& previousQualitativeResult, storm::OptimizationDirection player1Direction, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint64_t> const& player1RowGrouping, storm::storage::SparseMatrix<ValueType> const& player1BackwardTransitions, std::vector<uint64_t> const& player2BackwardTransitions, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates);
             
             void printStatistics(storm::abstraction::MenuGameAbstractor<Type, ValueType> const& abstractor, storm::abstraction::MenuGame<Type, ValueType> const& game) const;
             
@@ -109,6 +116,9 @@ namespace storm {
             
             /// A flag indicating whether to reuse the quantitative results.
             bool reuseQuantitativeResults;
+            
+            /// The maximal number of abstractions to perform.
+            uint64_t maximalNumberOfAbstractions;
             
             /// The mode selected for solving the abstraction.
             storm::settings::modules::AbstractionSettings::SolveMode solveMode;

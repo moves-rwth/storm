@@ -109,6 +109,13 @@ namespace storm {
                  */
                 SolveMode getSolveMode() const;
                 
+                /*!
+                 * Retrieves the maximal number of abstractions to perform until giving up on converging.
+                 *
+                 * @return The maximal abstraction count.
+                 */
+                uint_fast64_t getMaximalAbstractionCount() const;
+                
                 const static std::string moduleName;
                 
             private:
@@ -122,6 +129,7 @@ namespace storm {
                 const static std::string reuseResultsOptionName;
                 const static std::string restrictToRelevantStatesOptionName;
                 const static std::string solveModeOptionName;
+                const static std::string maximalAbstractionOptionName;
             };
             
         }

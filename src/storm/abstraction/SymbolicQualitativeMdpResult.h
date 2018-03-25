@@ -9,6 +9,7 @@ namespace storm {
         
         template <storm::dd::DdType Type>
         class SymbolicQualitativeMdpResult : public SymbolicQualitativeResult<Type> {
+        public:
             SymbolicQualitativeMdpResult() = default;
             
             SymbolicQualitativeMdpResult(storm::dd::Bdd<Type> const& states);

@@ -3,6 +3,7 @@
 #include "storm/storage/dd/DdType.h"
 
 #include "storm/abstraction/SymbolicQualitativeResultMinMax.h"
+#include "storm/abstraction/SymbolicQualitativeGameResult.h"
 
 namespace storm {
     namespace abstraction {
@@ -15,10 +16,10 @@ namespace storm {
             virtual SymbolicQualitativeResult<Type> const& getProb0(storm::OptimizationDirection const& dir) const override;
             virtual SymbolicQualitativeResult<Type> const& getProb1(storm::OptimizationDirection const& dir) const override;
             
-            SymbolicQualitativeResult<Type> prob0Min;
-            SymbolicQualitativeResult<Type> prob1Min;
-            SymbolicQualitativeResult<Type> prob0Max;
-            SymbolicQualitativeResult<Type> prob1Max;
+            SymbolicQualitativeGameResult<Type> prob0Min;
+            SymbolicQualitativeGameResult<Type> prob1Min;
+            SymbolicQualitativeGameResult<Type> prob0Max;
+            SymbolicQualitativeGameResult<Type> prob1Max;
         };
 
     }

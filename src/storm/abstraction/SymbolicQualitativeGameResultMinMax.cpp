@@ -21,8 +21,8 @@ namespace storm {
             }
         }
         
-        template class SymbolicQualitativeResultMinMax<storm::dd::DdType::CUDD>;
-        template class SymbolicQualitativeResultMinMax<storm::dd::DdType::Sylvan>;
+        template class SymbolicQualitativeGameResultMinMax<storm::dd::DdType::CUDD>;
+        template class SymbolicQualitativeGameResultMinMax<storm::dd::DdType::Sylvan>;
 
     }
 }
