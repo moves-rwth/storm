@@ -1084,7 +1084,7 @@ namespace storm {
             }
 
             template <typename ValueType>
-            ExplicitGameProb01Result performProb0(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint64_t> const& player1RowGrouping, storm::storage::SparseMatrix<ValueType> const& player1BackwardTransitions, std::vector<uint64_t> const& player2BackwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool producePlayer1Strategy, bool producePlayer2Strategy) {
+            ExplicitGameProb01Result performProb0(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint64_t> const& player1Groups, storm::storage::SparseMatrix<ValueType> const& player1BackwardTransitions, std::vector<uint64_t> const& player2BackwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool producePlayer1Strategy, bool producePlayer2Strategy) {
              
                 ExplicitGameProb01Result result(psiStates, storm::storage::BitVector(transitionMatrix.getRowGroupCount()));
                 
@@ -1134,7 +1134,7 @@ namespace storm {
                                     bool addPlayer1State = false;
                                     if (player1Strategy == OptimizationDirection::Minimize) {
                                         bool allPlayer2Successors = true;
-                                        for (uint64_t player2State = player1RowGrouping[player1Predecessor]; player2State < player1RowGrouping[player1Predecessor + 1]; ++player2State) {
+                                        for (uint64_t player2State = player1Groups[player1Predecessor]; player2State < player1Groups[player1Predecessor + 1]; ++player2State) {
                                             if (!result.player2States.get(player2State)) {
                                                 allPlayer2Successors = false;
                                                 break;
@@ -1170,18 +1170,18 @@ namespace storm {
                             // At least one player 2 successor is a state with probability 0, find it.
                             bool foundProb0Successor = false;
                             uint64_t player2State;
-                            for (player2State = player1RowGrouping[player1State]; player2State < player1RowGrouping[player1State + 1]; ++player2State) {
+                            for (player2State = player1Groups[player1State]; player2State < player1Groups[player1State + 1]; ++player2State) {
                                 if (result.player2States.get(player2State)) {
-                                    result.player1Strategy.get()[player1State] = player2State - player1RowGrouping[player1State];
+                                    result.player1Strategy.get()[player1State] = player2State;
                                     foundProb0Successor = true;
                                     break;
                                 }
                             }
                             STORM_LOG_ASSERT(foundProb0Successor, "Expected at least one state 2 successor with probability 0.");
-                            result.player1Strategy.get()[player1State] = player2State - player1RowGrouping[player1State];
+                            result.player1Strategy.get()[player1State] = player2State;
                         } else {
                             // Since all player 2 successors are states with probability 0, just pick any.
-                            result.player1Strategy.get()[player1State] = 0;
+                            result.player1Strategy.get()[player1State] = player1Groups[player1State];
                         }
                     }
                 }
@@ -1211,10 +1211,10 @@ namespace storm {
                             }
                             
                             STORM_LOG_ASSERT(foundProb0SuccessorDistribution, "Expected at least one distribution with only successors with probability 0.");
-                            result.player2Strategy.get()[player2State] = row - transitionMatrix.getRowGroupIndices()[player2State];
+                            result.player2Strategy.get()[player2State] = row;
                         } else {
                             // Since all player 1 successors are states with probability 0, just pick any.
-                            result.player2Strategy.get()[player2State] = 0;
+                            result.player2Strategy.get()[player2State] = transitionMatrix.getRowGroupIndices()[player2State];
                         }
                     }
                 }
@@ -1290,8 +1290,8 @@ namespace storm {
             }
             
             template <typename ValueType>
-            ExplicitGameProb01Result performProb1(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint64_t> const& player1RowGrouping, storm::storage::SparseMatrix<ValueType> const& player1BackwardTransitions, std::vector<uint64_t> const& player2BackwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool producePlayer1Strategy, bool producePlayer2Strategy, boost::optional<storm::storage::BitVector> const& player1Candidates) {
-
+            ExplicitGameProb01Result performProb1(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint64_t> const& player1Groups, storm::storage::SparseMatrix<ValueType> const& player1BackwardTransitions, std::vector<uint64_t> const& player2BackwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool producePlayer1Strategy, bool producePlayer2Strategy, boost::optional<storm::storage::BitVector> const& player1Candidates) {
+                
                 // During the execution, the two state sets in the result hold the potential player 1/2 states.
                 ExplicitGameProb01Result result;
                 if (player1Candidates) {
@@ -1335,8 +1335,8 @@ namespace storm {
                             if (!player2Solution.get(player2PredecessorEntry.getColumn())) {
                                 bool addPlayer2State = player2Strategy == storm::OptimizationDirection::Minimize ? true : false;
                                 
-                                uint64_t validChoice = 0;
-                                for (uint64_t row = transitionMatrix.getRowGroupIndices()[player2Predecessor]; row < transitionMatrix.getRowGroupIndices()[player2Predecessor + 1]; ++row) {
+                                uint64_t validChoice = transitionMatrix.getRowGroupIndices()[player2Predecessor];
+                                for (uint64_t row = validChoice; row < transitionMatrix.getRowGroupIndices()[player2Predecessor + 1]; ++row) {
                                     bool choiceHasSolutionSuccessor = false;
                                     bool choiceStaysInMaybeStates = true;
                                     for (auto const& entry : transitionMatrix.getRow(row)) {
@@ -1351,7 +1351,7 @@ namespace storm {
                                     
                                     if (choiceHasSolutionSuccessor && choiceStaysInMaybeStates) {
                                         if (player2Strategy == storm::OptimizationDirection::Maximize) {
-                                            validChoice = row - transitionMatrix.getRowGroupIndices()[player2Predecessor];
+                                            validChoice = row;
                                             addPlayer2State = true;
                                             break;
                                         }
@@ -1374,11 +1374,11 @@ namespace storm {
                                     if (!player1Solution.get(player1Predecessor)) {
                                         bool addPlayer1State = player1Strategy == storm::OptimizationDirection::Minimize ? true : false;
                                         
-                                        validChoice = 0;
-                                        for (uint64_t player2Successor = player1RowGrouping[player1Predecessor]; player2Successor < player1RowGrouping[player1Predecessor + 1]; ++player2Successor) {
+                                        validChoice = player1Groups[player1Predecessor];
+                                        for (uint64_t player2Successor = validChoice; player2Successor < player1Groups[player1Predecessor + 1]; ++player2Successor) {
                                             if (player2Solution.get(player2Successor)) {
                                                 if (player1Strategy == storm::OptimizationDirection::Maximize) {
-                                                    validChoice = player2Successor - player1RowGrouping[player1Predecessor];
+                                                    validChoice = player2Successor;
                                                     addPlayer1State = true;
                                                     break;
                                                 }
@@ -1395,7 +1395,7 @@ namespace storm {
                                                 result.player1Strategy.get()[player1Predecessor] = validChoice;
                                             }
                                             
-                                            stack.emplace_back();
+                                            stack.emplace_back(player1Predecessor);
                                         }
                                     }
                                 }

@@ -534,15 +534,18 @@ namespace storm {
             std::vector<uint64_t> player1RowGrouping = transitionMatrix.swapRowGroupIndices(std::move(tmpPlayer2RowGrouping));
             auto const& player2RowGrouping = transitionMatrix.getRowGroupIndices();
 
-            // Create the backward transitions for both players.
+            // Create the player 1 groups and backward transitions (for both players).
+            std::vector<uint64_t> player1Groups(player1RowGrouping.size());
             storm::storage::SparseMatrix<ValueType> player1BackwardTransitions = transitionMatrix.transpose(true);
             std::vector<uint64_t> player2BackwardTransitions(transitionMatrix.getRowGroupCount());
+
             uint64_t player2State = 0;
             for (uint64_t player1State = 0; player1State < player2RowGrouping.size() - 1; ++player1State) {
                 while (player1RowGrouping[player1State + 1] > player2RowGrouping[player2State]) {
                     player2BackwardTransitions[player2State] = player1State;
                     ++player2State;
                 }
+                player1Groups[player1State + 1] = player2State;
             }
             
             storm::storage::BitVector initialStates = initialStatesBdd.toVector(odd);
@@ -551,7 +554,7 @@ namespace storm {
 
             // (1) compute all states with probability 0/1 wrt. to the two different player 2 goals (min/max).
             auto qualitativeStart = std::chrono::high_resolution_clock::now();
-            ExplicitQualitativeGameResultMinMax qualitativeResult = computeProb01States(previousQualitativeResult, player1Direction, transitionMatrix, player1RowGrouping, player1BackwardTransitions, player2BackwardTransitions, constraintStates, targetStates);
+            ExplicitQualitativeGameResultMinMax qualitativeResult = computeProb01States(previousQualitativeResult, player1Direction, transitionMatrix, player1Groups, player1BackwardTransitions, player2BackwardTransitions, constraintStates, targetStates);
 //            std::unique_ptr<CheckResult> result = checkForResultAfterQualitativeCheck<Type, ValueType>(checkTask, initialStates, qualitativeResult);
 //            if (result) {
 //                return result;
@@ -627,7 +630,7 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type, typename ModelType>
-        ExplicitQualitativeGameResultMinMax GameBasedMdpModelChecker<Type, ModelType>::computeProb01States(boost::optional<ExplicitQualitativeGameResultMinMax> const& previousQualitativeResult, storm::OptimizationDirection player1Direction, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint64_t> const& player1RowGrouping, storm::storage::SparseMatrix<ValueType> const& player1BackwardTransitions, std::vector<uint64_t> const& player2BackwardTransitions, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates) {
+        ExplicitQualitativeGameResultMinMax GameBasedMdpModelChecker<Type, ModelType>::computeProb01States(boost::optional<ExplicitQualitativeGameResultMinMax> const& previousQualitativeResult, storm::OptimizationDirection player1Direction, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint64_t> const& player1Groups, storm::storage::SparseMatrix<ValueType> const& player1BackwardTransitions, std::vector<uint64_t> const& player2BackwardTransitions, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates) {
             
             ExplicitQualitativeGameResultMinMax result;
             
@@ -676,10 +679,10 @@ namespace storm {
 //                    result.prob1Min = storm::utility::graph::performProb1(game, transitionMatrixBdd, constraintStates, targetStates, player1Direction, storm::OptimizationDirection::Minimize, true, true, boost::make_optional(prob1MaxMaxMdp));
 //                }
 //            } else {
-                result.prob0Min = storm::utility::graph::performProb0(transitionMatrix, player1RowGrouping, player1BackwardTransitions, player2BackwardTransitions, constraintStates, targetStates, player1Direction, storm::OptimizationDirection::Minimize, true, true);
-                result.prob1Min = storm::utility::graph::performProb1(transitionMatrix, player1RowGrouping, player1BackwardTransitions, player2BackwardTransitions, constraintStates, targetStates, player1Direction, storm::OptimizationDirection::Minimize, true, true);
-                result.prob0Max = storm::utility::graph::performProb0(transitionMatrix, player1RowGrouping, player1BackwardTransitions, player2BackwardTransitions, constraintStates, targetStates, player1Direction, storm::OptimizationDirection::Maximize, true, true);
-                result.prob1Max = storm::utility::graph::performProb1(transitionMatrix, player1RowGrouping, player1BackwardTransitions, player2BackwardTransitions, constraintStates, targetStates, player1Direction, storm::OptimizationDirection::Maximize, true, true);
+                result.prob0Min = storm::utility::graph::performProb0(transitionMatrix, player1Groups, player1BackwardTransitions, player2BackwardTransitions, constraintStates, targetStates, player1Direction, storm::OptimizationDirection::Minimize, true, true);
+                result.prob1Min = storm::utility::graph::performProb1(transitionMatrix, player1Groups, player1BackwardTransitions, player2BackwardTransitions, constraintStates, targetStates, player1Direction, storm::OptimizationDirection::Minimize, true, true);
+                result.prob0Max = storm::utility::graph::performProb0(transitionMatrix, player1Groups, player1BackwardTransitions, player2BackwardTransitions, constraintStates, targetStates, player1Direction, storm::OptimizationDirection::Maximize, true, true);
+                result.prob1Max = storm::utility::graph::performProb1(transitionMatrix, player1Groups, player1BackwardTransitions, player2BackwardTransitions, constraintStates, targetStates, player1Direction, storm::OptimizationDirection::Maximize, true, true);
 //            }
             
             STORM_LOG_TRACE("Qualitative precomputation completed.");
