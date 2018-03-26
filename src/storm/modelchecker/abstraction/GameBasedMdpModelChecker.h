@@ -39,6 +39,8 @@ namespace storm {
         
         class ExplicitQualitativeGameResult;
         class ExplicitQualitativeGameResultMinMax;
+        class ExplicitGameStrategy;
+        class ExplicitGameStrategyPair;
     }
     
     namespace modelchecker {
@@ -92,7 +94,7 @@ namespace storm {
              */
             SymbolicQualitativeGameResultMinMax<Type> computeProb01States(boost::optional<SymbolicQualitativeGameResultMinMax<Type>> const& previousQualitativeResult, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::OptimizationDirection player1Direction, storm::dd::Bdd<Type> const& transitionMatrixBdd, storm::dd::Bdd<Type> const& constraintStates, storm::dd::Bdd<Type> const& targetStates);
             
-            ExplicitQualitativeGameResultMinMax computeProb01States(boost::optional<ExplicitQualitativeGameResultMinMax> const& previousQualitativeResult, storm::OptimizationDirection player1Direction, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint64_t> const& player1RowGrouping, storm::storage::SparseMatrix<ValueType> const& player1BackwardTransitions, std::vector<uint64_t> const& player2BackwardTransitions, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates);
+            ExplicitQualitativeGameResultMinMax computeProb01States(boost::optional<ExplicitQualitativeGameResultMinMax> const& previousQualitativeResult, storm::OptimizationDirection player1Direction, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint64_t> const& player1RowGrouping, storm::storage::SparseMatrix<ValueType> const& player1BackwardTransitions, std::vector<uint64_t> const& player2BackwardTransitions, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, abstraction::ExplicitGameStrategyPair& minStrategyPair, abstraction::ExplicitGameStrategyPair& maxStrategyPair);
             
             void printStatistics(storm::abstraction::MenuGameAbstractor<Type, ValueType> const& abstractor, storm::abstraction::MenuGame<Type, ValueType> const& game) const;
             

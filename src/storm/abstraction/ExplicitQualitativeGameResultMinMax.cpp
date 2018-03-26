@@ -19,6 +19,21 @@ namespace storm {
             }
         }
         
+        ExplicitQualitativeGameResult& ExplicitQualitativeGameResultMinMax::getProb0(storm::OptimizationDirection const& dir) {
+            if (dir == storm::OptimizationDirection::Minimize) {
+                return prob0Min;
+            } else {
+                return prob0Max;
+            }
+        }
+        
+        ExplicitQualitativeGameResult& ExplicitQualitativeGameResultMinMax::getProb1(storm::OptimizationDirection const& dir) {
+            if (dir == storm::OptimizationDirection::Minimize) {
+                return prob1Min;
+            } else {
+                return prob1Max;
+            }
+        }
     }
 }
 

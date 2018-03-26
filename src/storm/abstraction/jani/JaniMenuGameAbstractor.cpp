@@ -61,10 +61,10 @@ namespace storm {
                     totalNumberOfCommands += automaton.getNumberOfEdges();
                 }
                 
-                // NOTE: currently we assume that 100 player 2 variables suffice, which corresponds to 2^100 possible
+                // NOTE: currently we assume that 64 player 2 variables suffice, which corresponds to 2^64 possible
                 // choices. If for some reason this should not be enough, we could grow this vector dynamically, but
                 // odds are that it's impossible to treat such models in any event.
-                abstractionInformation.createEncodingVariables(static_cast<uint_fast64_t>(std::ceil(std::log2(totalNumberOfCommands))), 100, static_cast<uint_fast64_t>(std::ceil(std::log2(maximalUpdateCount))));
+                abstractionInformation.createEncodingVariables(static_cast<uint_fast64_t>(std::ceil(std::log2(totalNumberOfCommands))), 64, static_cast<uint_fast64_t>(std::ceil(std::log2(maximalUpdateCount))));
                 
                 // For each module of the concrete program, we create an abstract counterpart.
                 bool useDecomposition = storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isUseDecompositionSet();

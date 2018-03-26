@@ -4,8 +4,11 @@
 #include "storm/abstraction/MenuGameAbstractor.h"
 
 #include "storm/storage/BitVector.h"
+#include "storm/abstraction/ExplicitQualitativeGameResultMinMax.h"
+#include "storm/abstraction/ExplicitGameStrategyPair.h"
 
 #include "storm/storage/dd/DdManager.h"
+#include "storm/storage/dd/Odd.h"
 #include "storm/utility/dd.h"
 #include "storm/utility/solver.h"
 
@@ -42,7 +45,7 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type, typename ValueType>
-        MostProbablePathsResult<Type, ValueType>::MostProbablePathsResult(storm::dd::Add<Type, ValueType> const& maxProbabilities, storm::dd::Bdd<Type> const& spanningTree) : maxProbabilities(maxProbabilities), spanningTree(spanningTree) {
+        SymbolicMostProbablePathsResult<Type, ValueType>::SymbolicMostProbablePathsResult(storm::dd::Add<Type, ValueType> const& maxProbabilities, storm::dd::Bdd<Type> const& spanningTree) : maxProbabilities(maxProbabilities), spanningTree(spanningTree) {
             // Intentionally left empty.
         }
         
@@ -54,7 +57,7 @@ namespace storm {
         };
         
         template<storm::dd::DdType Type, typename ValueType>
-        PivotStateResult<Type, ValueType>::PivotStateResult(storm::dd::Bdd<Type> const& pivotState, storm::OptimizationDirection fromDirection, boost::optional<MostProbablePathsResult<Type, ValueType>> const& mostProbablePathsResult) : pivotState(pivotState), fromDirection(fromDirection), mostProbablePathsResult(mostProbablePathsResult) {
+        SymbolicPivotStateResult<Type, ValueType>::SymbolicPivotStateResult(storm::dd::Bdd<Type> const& pivotState, storm::OptimizationDirection fromDirection, boost::optional<SymbolicMostProbablePathsResult<Type, ValueType>> const& symbolicMostProbablePathsResult) : pivotState(pivotState), fromDirection(fromDirection), symbolicMostProbablePathsResult(symbolicMostProbablePathsResult) {
             // Intentionally left empty.
         }
         
@@ -89,7 +92,7 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type, typename ValueType>
-        MostProbablePathsResult<Type, ValueType> getMostProbablePathSpanningTree(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& transitionFilter) {
+        SymbolicMostProbablePathsResult<Type, ValueType> getMostProbablePathSpanningTree(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& transitionFilter) {
             storm::dd::Add<Type, ValueType> maxProbabilities = game.getInitialStates().template toAdd<ValueType>();
             
             storm::dd::Bdd<Type> border = game.getInitialStates();
@@ -120,11 +123,11 @@ namespace storm {
                 border = updateStates;
             }
             
-            return MostProbablePathsResult<Type, ValueType>(maxProbabilities, spanningTree);
+            return SymbolicMostProbablePathsResult<Type, ValueType>(maxProbabilities, spanningTree);
         }
                 
         template<storm::dd::DdType Type, typename ValueType>
-        PivotStateResult<Type, ValueType> pickPivotState(AbstractionSettings::PivotSelectionHeuristic const& heuristic, storm::abstraction::MenuGame<Type, ValueType> const& game, PivotStateCandidatesResult<Type> const& pivotStateCandidateResult, boost::optional<SymbolicQualitativeGameResultMinMax<Type>> const& qualitativeResult, boost::optional<SymbolicQuantitativeGameResultMinMax<Type, ValueType>> const& quantitativeResult) {
+        SymbolicPivotStateResult<Type, ValueType> pickPivotState(AbstractionSettings::PivotSelectionHeuristic const& heuristic, storm::abstraction::MenuGame<Type, ValueType> const& game, PivotStateCandidatesResult<Type> const& pivotStateCandidateResult, boost::optional<SymbolicQualitativeGameResultMinMax<Type>> const& qualitativeResult, boost::optional<SymbolicQuantitativeGameResultMinMax<Type, ValueType>> const& quantitativeResult) {
             
             // Get easy access to strategies.
             storm::dd::Bdd<Type> minPlayer1Strategy;
@@ -163,7 +166,7 @@ namespace storm {
                 bool foundPivotState = !frontierPivotStates.isZero();
                 if (foundPivotState) {
                     STORM_LOG_TRACE("Picked pivot state from " << frontierPivotStates.getNonZeroCount() << " candidates on level " << level << ", " << pivotStates.getNonZeroCount() << " candidates in total.");
-                    return PivotStateResult<Type, ValueType>(frontierPivotStates.existsAbstractRepresentative(rowVariables), storm::OptimizationDirection::Minimize);
+                    return SymbolicPivotStateResult<Type, ValueType>(frontierPivotStates.existsAbstractRepresentative(rowVariables), storm::OptimizationDirection::Minimize);
                 } else {
                     // Otherwise, we perform a simulatenous BFS in the sense that we make one step in both the min and max
                     // transitions and check for pivot states we encounter.
@@ -195,7 +198,7 @@ namespace storm {
                                 }
                                 
                                 STORM_LOG_TRACE("Picked pivot state with difference " << diffValue << " from " << numberOfPivotStateCandidatesOnLevel << " candidates on level " << level << ", " << pivotStates.getNonZeroCount() << " candidates in total.");
-                                return PivotStateResult<Type, ValueType>(direction == storm::OptimizationDirection::Minimize ? diffMin.maxAbstractRepresentative(rowVariables) : diffMax.maxAbstractRepresentative(rowVariables), direction);
+                                return SymbolicPivotStateResult<Type, ValueType>(direction == storm::OptimizationDirection::Minimize ? diffMin.maxAbstractRepresentative(rowVariables) : diffMax.maxAbstractRepresentative(rowVariables), direction);
                             } else {
                                 STORM_LOG_TRACE("Picked pivot state from " << numberOfPivotStateCandidatesOnLevel << " candidates on level " << level << ", " << pivotStates.getNonZeroCount() << " candidates in total.");
                                 
@@ -206,18 +209,18 @@ namespace storm {
                                     direction = storm::OptimizationDirection::Maximize;
                                 }
                                 
-                                return PivotStateResult<Type, ValueType>(direction == storm::OptimizationDirection::Minimize ? frontierMinPivotStates.existsAbstractRepresentative(rowVariables) : frontierMaxPivotStates.existsAbstractRepresentative(rowVariables), direction);
+                                return SymbolicPivotStateResult<Type, ValueType>(direction == storm::OptimizationDirection::Minimize ? frontierMinPivotStates.existsAbstractRepresentative(rowVariables) : frontierMaxPivotStates.existsAbstractRepresentative(rowVariables), direction);
                             }
                         }
                     }
                 }
             } else {
                 // Compute the most probable paths to the reachable states and the corresponding spanning trees.
-                MostProbablePathsResult<Type, ValueType> minMostProbablePathsResult = getMostProbablePathSpanningTree(game, minPlayer1Strategy && minPlayer2Strategy);
-                MostProbablePathsResult<Type, ValueType> maxMostProbablePathsResult = getMostProbablePathSpanningTree(game, maxPlayer1Strategy && maxPlayer2Strategy);
+                SymbolicMostProbablePathsResult<Type, ValueType> minSymbolicMostProbablePathsResult = getMostProbablePathSpanningTree(game, minPlayer1Strategy && minPlayer2Strategy);
+                SymbolicMostProbablePathsResult<Type, ValueType> maxSymbolicMostProbablePathsResult = getMostProbablePathSpanningTree(game, maxPlayer1Strategy && maxPlayer2Strategy);
                 storm::dd::Bdd<Type> selectedPivotState;
                 
-                storm::dd::Add<Type, ValueType> score = pivotStates.template toAdd<ValueType>() * minMostProbablePathsResult.maxProbabilities.maximum(maxMostProbablePathsResult.maxProbabilities);
+                storm::dd::Add<Type, ValueType> score = pivotStates.template toAdd<ValueType>() * minSymbolicMostProbablePathsResult.maxProbabilities.maximum(maxSymbolicMostProbablePathsResult.maxProbabilities);
                 
                 if (heuristic == AbstractionSettings::PivotSelectionHeuristic::MaxWeightedDeviation && quantitativeResult) {
                     score = score * (quantitativeResult.get().max.values - quantitativeResult.get().min.values);
@@ -227,15 +230,15 @@ namespace storm {
 
                 storm::OptimizationDirection fromDirection = storm::OptimizationDirection::Minimize;
                 storm::dd::Add<Type, ValueType> selectedPivotStateAsAdd = selectedPivotState.template toAdd<ValueType>();
-                if ((selectedPivotStateAsAdd * maxMostProbablePathsResult.maxProbabilities).getMax() > (selectedPivotStateAsAdd * minMostProbablePathsResult.maxProbabilities).getMax()) {
+                if ((selectedPivotStateAsAdd * maxSymbolicMostProbablePathsResult.maxProbabilities).getMax() > (selectedPivotStateAsAdd * minSymbolicMostProbablePathsResult.maxProbabilities).getMax()) {
                     fromDirection = storm::OptimizationDirection::Maximize;
                 }
                 
-                return PivotStateResult<Type, ValueType>(selectedPivotState, fromDirection, fromDirection == storm::OptimizationDirection::Minimize ? minMostProbablePathsResult : maxMostProbablePathsResult);
+                return SymbolicPivotStateResult<Type, ValueType>(selectedPivotState, fromDirection, fromDirection == storm::OptimizationDirection::Minimize ? minSymbolicMostProbablePathsResult : maxSymbolicMostProbablePathsResult);
             }
             
             STORM_LOG_ASSERT(false, "This point must not be reached, because then no pivot state could be found.");
-            return PivotStateResult<Type, ValueType>(storm::dd::Bdd<Type>(), storm::OptimizationDirection::Minimize);
+            return SymbolicPivotStateResult<Type, ValueType>(storm::dd::Bdd<Type>(), storm::OptimizationDirection::Minimize);
         }
         
         template <storm::dd::DdType Type, typename ValueType>
@@ -522,23 +525,23 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type, typename ValueType>
-        boost::optional<RefinementPredicates> MenuGameRefiner<Type, ValueType>::derivePredicatesFromInterpolation(storm::abstraction::MenuGame<Type, ValueType> const& game, PivotStateResult<Type, ValueType> const& pivotStateResult, storm::dd::Bdd<Type> const& minPlayer1Strategy, storm::dd::Bdd<Type> const& minPlayer2Strategy, storm::dd::Bdd<Type> const& maxPlayer1Strategy, storm::dd::Bdd<Type> const& maxPlayer2Strategy) const {
+        boost::optional<RefinementPredicates> MenuGameRefiner<Type, ValueType>::derivePredicatesFromInterpolation(storm::abstraction::MenuGame<Type, ValueType> const& game, SymbolicPivotStateResult<Type, ValueType> const& symbolicPivotStateResult, storm::dd::Bdd<Type> const& minPlayer1Strategy, storm::dd::Bdd<Type> const& minPlayer2Strategy, storm::dd::Bdd<Type> const& maxPlayer1Strategy, storm::dd::Bdd<Type> const& maxPlayer2Strategy) const {
             
             AbstractionInformation<Type> const& abstractionInformation = abstractor.get().getAbstractionInformation();
             
             // Compute the most probable path from any initial state to the pivot state.
-            MostProbablePathsResult<Type, ValueType> mostProbablePathsResult;
-            if (!pivotStateResult.mostProbablePathsResult) {
-                mostProbablePathsResult = getMostProbablePathSpanningTree(game, pivotStateResult.fromDirection == storm::OptimizationDirection::Minimize ? minPlayer1Strategy && minPlayer2Strategy : maxPlayer1Strategy && maxPlayer2Strategy);
+            SymbolicMostProbablePathsResult<Type, ValueType> symbolicMostProbablePathsResult;
+            if (!symbolicPivotStateResult.symbolicMostProbablePathsResult) {
+                symbolicMostProbablePathsResult = getMostProbablePathSpanningTree(game, symbolicPivotStateResult.fromDirection == storm::OptimizationDirection::Minimize ? minPlayer1Strategy && minPlayer2Strategy : maxPlayer1Strategy && maxPlayer2Strategy);
             } else {
-                mostProbablePathsResult = pivotStateResult.mostProbablePathsResult.get();
+                symbolicMostProbablePathsResult = symbolicPivotStateResult.symbolicMostProbablePathsResult.get();
             }
             
             // Create a new expression manager that we can use for the interpolation.
             std::shared_ptr<storm::expressions::ExpressionManager> interpolationManager = abstractionInformation.getExpressionManager().clone();
             
             // Build the trace of the most probable path in terms of which predicates hold in each step.
-            std::pair<std::vector<std::vector<storm::expressions::Expression>>, std::map<storm::expressions::Variable, storm::expressions::Expression>> traceAndVariableSubstitution = buildTrace(*interpolationManager, game, mostProbablePathsResult.spanningTree, pivotStateResult.pivotState);
+            std::pair<std::vector<std::vector<storm::expressions::Expression>>, std::map<storm::expressions::Variable, storm::expressions::Expression>> traceAndVariableSubstitution = buildTrace(*interpolationManager, game, symbolicMostProbablePathsResult.spanningTree, symbolicPivotStateResult.pivotState);
             auto const& trace = traceAndVariableSubstitution.first;
             auto const& variableSubstitution = traceAndVariableSubstitution.second;
 
@@ -615,11 +618,11 @@ namespace storm {
             STORM_LOG_ASSERT(!pivotStateCandidatesResult.pivotStates.isZero(), "Unable to proceed without pivot state candidates.");
             
             // Now that we have the pivot state candidates, we need to pick one.
-            PivotStateResult<Type, ValueType> pivotStateResult = pickPivotState<Type, ValueType>(pivotSelectionHeuristic, game, pivotStateCandidatesResult, qualitativeResult, boost::none);
+            SymbolicPivotStateResult<Type, ValueType> SymbolicPivotStateResult = pickPivotState<Type, ValueType>(pivotSelectionHeuristic, game, pivotStateCandidatesResult, qualitativeResult, boost::none);
 
 //            // SANITY CHECK TO MAKE SURE OUR STRATEGIES ARE NOT BROKEN.
 //            // FIXME.
-//            auto min1ChoiceInPivot = pivotStateResult.pivotState && game.getExtendedTransitionMatrix().toBdd() && minPlayer1Strategy;
+//            auto min1ChoiceInPivot = SymbolicPivotStateResult.pivotState && game.getExtendedTransitionMatrix().toBdd() && minPlayer1Strategy;
 //            STORM_LOG_ASSERT(!min1ChoiceInPivot.isZero(), "wth?");
 //            bool min1ChoiceInPivotIsProb0Min = !(min1ChoiceInPivot && qualitativeResult.prob0Min.getPlayer2States()).isZero();
 //            bool min1ChoiceInPivotIsProb0Max = !(min1ChoiceInPivot && qualitativeResult.prob0Max.getPlayer2States()).isZero();
@@ -643,7 +646,7 @@ namespace storm {
 //            std::cout << "max/min choice there? " << min1MinPlayer2Choice << std::endl;
 //            std::cout << "max/max choice there? " << min1MaxPlayer2Choice << std::endl;
 //
-//            auto max1ChoiceInPivot = pivotStateResult.pivotState && game.getExtendedTransitionMatrix().toBdd() && maxPlayer1Strategy;
+//            auto max1ChoiceInPivot = SymbolicPivotStateResult.pivotState && game.getExtendedTransitionMatrix().toBdd() && maxPlayer1Strategy;
 //            STORM_LOG_ASSERT(!max1ChoiceInPivot.isZero(), "wth?");
 //            bool max1ChoiceInPivotIsProb0Min = !(max1ChoiceInPivot && qualitativeResult.prob0Min.getPlayer2States()).isZero();
 //            bool max1ChoiceInPivotIsProb0Max = !(max1ChoiceInPivot && qualitativeResult.prob0Max.getPlayer2States()).isZero();
@@ -661,12 +664,12 @@ namespace storm {
 
             boost::optional<RefinementPredicates> predicates;
             if (useInterpolation) {
-                predicates = derivePredicatesFromInterpolation(game, pivotStateResult, minPlayer1Strategy, minPlayer2Strategy, maxPlayer1Strategy, maxPlayer2Strategy);
+                predicates = derivePredicatesFromInterpolation(game, SymbolicPivotStateResult, minPlayer1Strategy, minPlayer2Strategy, maxPlayer1Strategy, maxPlayer2Strategy);
             }
             if (predicates) {
                 STORM_LOG_TRACE("Obtained predicates by interpolation.");
             } else {
-                predicates = derivePredicatesFromPivotState(game, pivotStateResult.pivotState, minPlayer1Strategy, minPlayer2Strategy, maxPlayer1Strategy, maxPlayer2Strategy);
+                predicates = derivePredicatesFromPivotState(game, SymbolicPivotStateResult.pivotState, minPlayer1Strategy, minPlayer2Strategy, maxPlayer1Strategy, maxPlayer2Strategy);
             }
             STORM_LOG_THROW(static_cast<bool>(predicates), storm::exceptions::InvalidStateException, "Predicates needed to continue.");
             
@@ -674,6 +677,130 @@ namespace storm {
             std::vector<storm::expressions::Expression> preparedPredicates = preprocessPredicates(predicates.get().getPredicates(), predicates.get().getSource());
             performRefinement(createGlobalRefinement(preparedPredicates));
             return true;
+        }
+        
+        template<typename ValueType>
+        ExplicitMostProbablePathsResult<ValueType>::ExplicitMostProbablePathsResult(ValueType const& maxProbability, std::vector<std::pair<uint64_t, uint64_t>>&& predecessors) : maxProbability(maxProbability), predecessors(std::move(predecessors)) {
+            // Intentionally left empty.
+        }
+        
+        template<typename ValueType>
+        ExplicitPivotStateResult<ValueType>::ExplicitPivotStateResult(uint64_t pivotState, storm::OptimizationDirection fromDirection, boost::optional<ExplicitMostProbablePathsResult<ValueType>>&& explicitMostProbablePathsResult) : pivotState(pivotState), fromDirection(fromDirection), explicitMostProbablePathsResult(std::move(explicitMostProbablePathsResult)) {
+            // Intentionally left empty.
+        }
+        
+        template<typename ValueType>
+        ExplicitPivotStateResult<ValueType> pickPivotState(AbstractionSettings::PivotSelectionHeuristic pivotSelectionHeuristic, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint64_t> const& player1Grouping, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& relevantStates, storm::storage::BitVector const& targetStates, ExplicitQualitativeGameResultMinMax const& qualitativeResult, ExplicitGameStrategyPair const& minStrategyPair, ExplicitGameStrategyPair const& maxStrategyPair) {
+            
+            // Perform Dijkstra search that stays within the relevant states and searches for a state in which the
+            // strategies for the (commonly chosen) player 1 action leads to a player 2 state in which the choices differ.
+            ExplicitPivotStateResult<ValueType> explicitPivotStateResult;
+            explicitPivotStateResult.explicitMostProbablePathsResult = ExplicitMostProbablePathsResult<ValueType>();
+            auto& explicitMostProbablePathsResult = explicitPivotStateResult.explicitMostProbablePathsResult.get();
+            
+            bool probabilityDistances = pivotSelectionHeuristic == storm::settings::modules::AbstractionSettings::PivotSelectionHeuristic::MostProbablePath;
+            uint64_t numberOfStates = initialStates.size();
+            ValueType inftyDistance = probabilityDistances ? storm::utility::zero<ValueType>() : storm::utility::infinity<ValueType>();
+            ValueType zeroDistance = probabilityDistances ? storm::utility::one<ValueType>() : storm::utility::zero<ValueType>();
+            std::vector<ValueType> distances(numberOfStates, inftyDistance);
+            explicitMostProbablePathsResult.predecessors.resize(numberOfStates, std::make_pair(0, 0));
+
+            // Use set as priority queue with unique membership; default comparison on pair works fine if distance is
+            // the first entry.
+            std::set<std::pair<ValueType, uint64_t>, std::greater<std::pair<ValueType, uint64_t>>> dijkstraQueue;
+
+            for (auto initialState : initialStates) {
+                if (!relevantStates.get(initialState)) {
+                    continue;
+                }
+                
+                distances[initialState] = zeroDistance;
+                dijkstraQueue.emplace(zeroDistance, initialState);
+            }
+
+            while (!dijkstraQueue.empty()) {
+                uint64_t currentState = (*dijkstraQueue.begin()).second;
+                dijkstraQueue.erase(dijkstraQueue.begin());
+                
+                // Determine whether the current state is a pivot state.
+                bool isPivotState = false;
+                if (minStrategyPair.getPlayer1Strategy().hasDefinedChoice(currentState)) {
+                    uint64_t player2Successor = minStrategyPair.getPlayer1Strategy().getChoice(currentState);
+                    if (minStrategyPair.getPlayer2Strategy().hasDefinedChoice(player2Successor) && maxStrategyPair.getPlayer2Strategy().hasDefinedChoice(player2Successor)) {
+                        isPivotState = true;
+                    }
+                } else if (maxStrategyPair.getPlayer1Strategy().hasDefinedChoice(currentState)) {
+                    uint64_t player2Successor = maxStrategyPair.getPlayer1Strategy().getChoice(currentState);
+                    if (minStrategyPair.getPlayer2Strategy().hasDefinedChoice(player2Successor) && maxStrategyPair.getPlayer2Strategy().hasDefinedChoice(player2Successor)) {
+                        isPivotState = true;
+                    }
+                }
+                
+                // If it is indeed a pivot state, we can abort the search here.
+                if (isPivotState) {
+                    explicitPivotStateResult.pivotState = currentState;
+                    return explicitPivotStateResult;
+                }
+                
+                // Otherwise, we explore all its relevant successors.
+                if (minStrategyPair.getPlayer1Strategy().hasDefinedChoice(currentState)) {
+                    uint64_t minPlayer2Successor = minStrategyPair.getPlayer1Strategy().getChoice(currentState);
+                    uint64_t minPlayer2Choice = minStrategyPair.getPlayer2Strategy().getChoice(minPlayer2Successor);
+                    
+                    for (auto const& entry : transitionMatrix.getRow(minPlayer2Choice)) {
+                        uint64_t player1Successor = entry.getColumn();
+                        if (!relevantStates.get(player1Successor)) {
+                            continue;
+                        }
+                        
+                        ValueType alternateDistance = probabilityDistances ? distances[currentState] * entry.getValue() : distances[currentState] + storm::utility::one<ValueType>();
+                        if ((probabilityDistances && alternateDistance > distances[player1Successor]) || (!probabilityDistances && alternateDistance < distances[player1Successor])) {
+                            distances[player1Successor] = alternateDistance;
+                            explicitMostProbablePathsResult.predecessors[player1Successor] = std::make_pair(currentState, minPlayer2Successor);
+                            dijkstraQueue.emplace(alternateDistance, player1Successor);
+                        }
+                    }
+                }
+                if (maxStrategyPair.getPlayer1Strategy().hasDefinedChoice(currentState)) {
+                    uint64_t maxPlayer2Successor = maxStrategyPair.getPlayer1Strategy().getChoice(currentState);
+                    uint64_t maxPlayer2Choice = maxStrategyPair.getPlayer2Strategy().getChoice(maxPlayer2Successor);
+                    
+                    for (auto const& entry : transitionMatrix.getRow(maxPlayer2Choice)) {
+                        uint64_t player1Successor = entry.getColumn();
+                        if (!relevantStates.get(player1Successor)) {
+                            continue;
+                        }
+                        
+                        ValueType alternateDistance = probabilityDistances ? distances[currentState] * entry.getValue() : distances[currentState] + storm::utility::one<ValueType>();
+                        if ((probabilityDistances && alternateDistance > distances[player1Successor]) || (!probabilityDistances && alternateDistance < distances[player1Successor])) {
+                            distances[player1Successor] = alternateDistance;
+                            explicitMostProbablePathsResult.predecessors[player1Successor] = std::make_pair(currentState, maxPlayer2Successor);
+                            dijkstraQueue.emplace(alternateDistance, player1Successor);
+                        }
+                    }
+                }
+            }
+            
+            // If we arrived at this point, we have explored all relevant states, but none of them was a pivot state,
+            // which can happen when trying to refine using the qualitative result only.
+            return explicitPivotStateResult;
+        }
+        
+        template<storm::dd::DdType Type, typename ValueType>
+        bool MenuGameRefiner<Type, ValueType>::refine(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Odd const& odd, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint64_t> const& player1Grouping, std::vector<uint64_t> const& player1Labeling, std::vector<uint64_t> const& player2Labeling, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, ExplicitQualitativeGameResultMinMax const& qualitativeResult, ExplicitGameStrategyPair const& minStrategyPair, ExplicitGameStrategyPair const& maxStrategyPair) const {
+            
+            // Compute the set of states whose result we have for the min and max case.
+            storm::storage::BitVector relevantStates = (qualitativeResult.getProb0Min().getStates() | qualitativeResult.getProb1Min().getStates()) & (qualitativeResult.getProb0Max().getStates() | qualitativeResult.getProb1Max().getStates());
+            
+            ExplicitPivotStateResult<ValueType> pivotStateResult = pickPivotState(pivotSelectionHeuristic, transitionMatrix, player1Grouping, initialStates, relevantStates, targetStates, qualitativeResult, minStrategyPair, maxStrategyPair);
+            
+            // If there was no pivot state, continue the search.
+            if (!pivotStateResult.pivotState) {
+                return false;
+            }
+            
+            // Otherwise, we can refine.
+            storm::dd::Bdd<Type> pivotState = storm::dd::Bdd<Type>::getEncoding(game.getManager(), pivotStateResult.pivotState.get(), odd, game.getRowVariables());
         }
         
         template<storm::dd::DdType Type, typename ValueType>
@@ -691,16 +818,16 @@ namespace storm {
             STORM_LOG_ASSERT(!pivotStateCandidatesResult.pivotStates.isZero(), "Unable to refine without pivot state candidates.");
             
             // Now that we have the pivot state candidates, we need to pick one.
-            PivotStateResult<Type, ValueType> pivotStateResult = pickPivotState<Type, ValueType>(pivotSelectionHeuristic, game, pivotStateCandidatesResult, boost::none, quantitativeResult);
+            SymbolicPivotStateResult<Type, ValueType> SymbolicPivotStateResult = pickPivotState<Type, ValueType>(pivotSelectionHeuristic, game, pivotStateCandidatesResult, boost::none, quantitativeResult);
 
             boost::optional<RefinementPredicates> predicates;
             if (useInterpolation) {
-                predicates = derivePredicatesFromInterpolation(game, pivotStateResult, minPlayer1Strategy, minPlayer2Strategy, maxPlayer1Strategy, maxPlayer2Strategy);
+                predicates = derivePredicatesFromInterpolation(game, SymbolicPivotStateResult, minPlayer1Strategy, minPlayer2Strategy, maxPlayer1Strategy, maxPlayer2Strategy);
             }
             if (predicates) {
                 STORM_LOG_TRACE("Obtained predicates by interpolation.");
             } else {
-                predicates = derivePredicatesFromPivotState(game, pivotStateResult.pivotState, minPlayer1Strategy, minPlayer2Strategy, maxPlayer1Strategy, maxPlayer2Strategy);
+                predicates = derivePredicatesFromPivotState(game, SymbolicPivotStateResult.pivotState, minPlayer1Strategy, minPlayer2Strategy, maxPlayer1Strategy, maxPlayer2Strategy);
             }
             STORM_LOG_THROW(static_cast<bool>(predicates), storm::exceptions::InvalidStateException, "Predicates needed to continue.");
             

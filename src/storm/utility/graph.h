@@ -49,6 +49,9 @@ namespace storm {
         
     }
     
+    namespace abstraction {
+        class ExplicitGameStrategy;
+    }
     
     namespace utility {
         namespace graph {
@@ -621,32 +624,8 @@ namespace storm {
                     // Intentionally left empty.
                 }
                 
-                ExplicitGameProb01Result(storm::storage::BitVector const& player1States, storm::storage::BitVector const& player2States, boost::optional<std::vector<uint64_t>> const& player1Strategy = boost::none, boost::optional<std::vector<uint64_t>> const& player2Strategy = boost::none) : player1States(player1States), player2States(player2States), player1Strategy(player1Strategy), player2Strategy(player2Strategy) {
+                ExplicitGameProb01Result(storm::storage::BitVector const& player1States, storm::storage::BitVector const& player2States) : player1States(player1States), player2States(player2States) {
                     // Intentionally left empty.
-                }
-                
-                bool hasPlayer1Strategy() const {
-                    return static_cast<bool>(player1Strategy);
-                }
-                
-                std::vector<uint64_t> const& getPlayer1Strategy() const {
-                    return player1Strategy.get();
-                }
-                
-                boost::optional<std::vector<uint64_t>> const& getOptionalPlayer1Strategy() {
-                    return player1Strategy;
-                }
-                
-                bool hasPlayer2Strategy() const {
-                    return static_cast<bool>(player2Strategy);
-                }
-                
-                std::vector<uint64_t> const& getPlayer2Strategy() const {
-                    return player2Strategy.get();
-                }
-                
-                boost::optional<std::vector<uint64_t>> const& getOptionalPlayer2Strategy() {
-                    return player2Strategy;
                 }
                 
                 storm::storage::BitVector const& getPlayer1States() const {
@@ -659,8 +638,6 @@ namespace storm {
                 
                 storm::storage::BitVector player1States;
                 storm::storage::BitVector player2States;
-                boost::optional<std::vector<uint64_t>> player1Strategy;
-                boost::optional<std::vector<uint64_t>> player2Strategy;
             };
             
             /*!
@@ -672,11 +649,15 @@ namespace storm {
              * @param player2BackwardTransitions The backward transitions (player 2 to player 1).
              * @param phiStates The phi states of the model.
              * @param psiStates The psi states of the model.
-             * @param producePlayer1Strategy A flag indicating whether the strategy of player 1 shall be produced.
-             * @param producePlayer2Strategy A flag indicating whether the strategy of player 2 shall be produced.
+             * @param player1Direction The optimization direction of player 1.
+             * @param player2Direction The optimization direction of player 2.
+             * @param player1Strategy If not null, a player 1 strategy is synthesized and the corresponding choices
+             * are written to this strategy.
+             * @param player2Strategy If not null, a player 2 strategy is synthesized and the corresponding choices
+             * are written to this strategy.
              */
             template <typename ValueType>
-            ExplicitGameProb01Result performProb0(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint64_t> const& player1Groups, storm::storage::SparseMatrix<ValueType> const& player1BackwardTransitions, std::vector<uint64_t> const& player2BackwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool producePlayer1Strategy = false, bool producePlayer2Strategy = false);
+            ExplicitGameProb01Result performProb0(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint64_t> const& player1Groups, storm::storage::SparseMatrix<ValueType> const& player1BackwardTransitions, std::vector<uint64_t> const& player2BackwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::OptimizationDirection const& player1Direction, storm::OptimizationDirection const& player2Direction, storm::abstraction::ExplicitGameStrategy* player1Strategy = nullptr, storm::abstraction::ExplicitGameStrategy* player2Strategy = nullptr);
             
             /*!
              * Computes the set of states that have probability 1 given the strategies of the two players.
@@ -687,12 +668,16 @@ namespace storm {
              * @param player2BackwardTransitions The backward transitions (player 2 to player 1).
              * @param phiStates The phi states of the model.
              * @param psiStates The psi states of the model.
-             * @param producePlayer1Strategy A flag indicating whether the strategy of player 1 shall be produced.
-             * @param producePlayer2Strategy A flag indicating whether the strategy of player 2 shall be produced.
+             * @param player1Direction The optimization direction of player 1.
+             * @param player2Direction The optimization direction of player 2.
+             * @param player1Strategy If not null, a player 1 strategy is synthesized and the corresponding choices
+             * are written to this strategy.
+             * @param player2Strategy If not null, a player 2 strategy is synthesized and the corresponding choices
+             * are written to this strategy.
              * @param player1Candidates If given, this set constrains the candidates of player 1 states that are considered.
              */
             template <typename ValueType>
-            ExplicitGameProb01Result performProb1(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint64_t> const& player1Groups, storm::storage::SparseMatrix<ValueType> const& player1BackwardTransitions, std::vector<uint64_t> const& player2BackwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool producePlayer1Strategy = false, bool producePlayer2Strategy = false, boost::optional<storm::storage::BitVector> const& player1Candidates = boost::none);
+            ExplicitGameProb01Result performProb1(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint64_t> const& player1Groups, storm::storage::SparseMatrix<ValueType> const& player1BackwardTransitions, std::vector<uint64_t> const& player2BackwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::OptimizationDirection const& player1Direction, storm::OptimizationDirection const& player2Direction, storm::abstraction::ExplicitGameStrategy* player1Strategy = nullptr, storm::abstraction::ExplicitGameStrategy* player2Strategy = nullptr, boost::optional<storm::storage::BitVector> const& player1Candidates = boost::none);
             
             /*!
              * Performs a topological sort of the states of the system according to the given transitions.

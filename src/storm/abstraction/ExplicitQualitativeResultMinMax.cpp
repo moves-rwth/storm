@@ -25,5 +25,21 @@ namespace storm {
             return getProb1(storm::OptimizationDirection::Maximize);
         }
         
+        ExplicitQualitativeResult& ExplicitQualitativeResultMinMax::getProb0Min() {
+            return getProb0(storm::OptimizationDirection::Minimize);
+        }
+        
+        ExplicitQualitativeResult& ExplicitQualitativeResultMinMax::getProb1Min() {
+            return getProb1(storm::OptimizationDirection::Minimize);
+        }
+        
+        ExplicitQualitativeResult& ExplicitQualitativeResultMinMax::getProb0Max() {
+            return getProb0(storm::OptimizationDirection::Maximize);
+        }
+        
+        ExplicitQualitativeResult& ExplicitQualitativeResultMinMax::getProb1Max() {
+            return getProb1(storm::OptimizationDirection::Maximize);
+        }
+
     }
 }

@@ -10,11 +10,16 @@ namespace storm {
     }
     
     namespace abstraction {
+
+        class ExplicitQualitativeGameResult;
         
         class ExplicitQualitativeResult : public QualitativeResult {
         public:
             virtual ~ExplicitQualitativeResult() = default;
             
+            ExplicitQualitativeGameResult& asExplicitQualitativeGameResult();
+            ExplicitQualitativeGameResult const& asExplicitQualitativeGameResult() const;
+
             virtual storm::storage::BitVector const& getStates() const = 0;
         };
         

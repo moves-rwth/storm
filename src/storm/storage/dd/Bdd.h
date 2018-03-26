@@ -46,6 +46,16 @@ namespace storm {
             Bdd& operator=(Bdd<LibraryType>&& other) = default;
 
             /*!
+             * Constructs the BDD representation of the encoding with the given offset.
+             *
+             * @param ddManager The DD manager responsible for the resulting BDD.
+             * @param targetOffset The offset to encode (interpreted within the ODD).
+             * @param odd The ODD used for the translation from the explicit representation to a symbolic one.
+             * @param metaVariables The meta variables to use for the symbolic encoding.
+             */
+            static Bdd<LibraryType> getEncoding(DdManager<LibraryType> const& ddManager, uint64_t targetOffset, storm::dd::Odd const& odd, std::set<storm::expressions::Variable> const& metaVariables);
+            
+            /*!
              * Constructs a BDD representation of all encodings whose value is true in the given list of truth values.
              *
              * @param ddManager The DD manager responsible for the resulting BDD.

@@ -64,6 +64,11 @@ namespace storm {
         }
         
         template<DdType LibraryType>
+        Bdd<LibraryType> Bdd<LibraryType>::getEncoding(DdManager<LibraryType> const& ddManager, uint64_t targetOffset, storm::dd::Odd const& odd, std::set<storm::expressions::Variable> const& metaVariables) {
+            return Bdd<LibraryType>(ddManager, InternalBdd<LibraryType>::fromVector(&ddManager.getInternalDdManager(), odd, ddManager.getSortedVariableIndices(metaVariables), [targetOffset] (uint64_t offset) { return offset == targetOffset; }), metaVariables);
+        }
+        
+        template<DdType LibraryType>
         bool Bdd<LibraryType>::operator==(Bdd<LibraryType> const& other) const {
             return internalBdd == other.internalBdd;
         }

@@ -12,7 +12,9 @@ namespace storm {
             
             virtual ExplicitQualitativeGameResult const& getProb0(storm::OptimizationDirection const& dir) const override;
             virtual ExplicitQualitativeGameResult const& getProb1(storm::OptimizationDirection const& dir) const override;
-            
+            virtual ExplicitQualitativeGameResult& getProb0(storm::OptimizationDirection const& dir) override;
+            virtual ExplicitQualitativeGameResult& getProb1(storm::OptimizationDirection const& dir) override;
+
             ExplicitQualitativeGameResult prob0Min;
             ExplicitQualitativeGameResult prob1Min;
             ExplicitQualitativeGameResult prob0Max;

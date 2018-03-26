@@ -21,6 +21,14 @@
 #include "storm/utility/solver.h"
 
 namespace storm {
+    namespace dd {
+        class Odd;
+    }
+    
+    namespace storage {
+        class BitVector;
+    }
+    
     namespace abstraction {
 
         template <storm::dd::DdType Type, typename ValueType>
@@ -48,22 +56,47 @@ namespace storm {
         };
 
         template<storm::dd::DdType Type, typename ValueType>
-        struct MostProbablePathsResult {
-            MostProbablePathsResult() = default;
-            MostProbablePathsResult(storm::dd::Add<Type, ValueType> const& maxProbabilities, storm::dd::Bdd<Type> const& spanningTree);
+        struct SymbolicMostProbablePathsResult {
+            SymbolicMostProbablePathsResult() = default;
+            SymbolicMostProbablePathsResult(storm::dd::Add<Type, ValueType> const& maxProbabilities, storm::dd::Bdd<Type> const& spanningTree);
             
             storm::dd::Add<Type, ValueType> maxProbabilities;
             storm::dd::Bdd<Type> spanningTree;
         };
         
         template<storm::dd::DdType Type, typename ValueType>
-        struct PivotStateResult {
-            PivotStateResult(storm::dd::Bdd<Type> const& pivotState, storm::OptimizationDirection fromDirection, boost::optional<MostProbablePathsResult<Type, ValueType>> const& mostProbablePathsResult = boost::none);
+        struct SymbolicPivotStateResult {
+            SymbolicPivotStateResult(storm::dd::Bdd<Type> const& pivotState, storm::OptimizationDirection fromDirection, boost::optional<SymbolicMostProbablePathsResult<Type, ValueType>> const& symbolicMostProbablePathsResult = boost::none);
             
             storm::dd::Bdd<Type> pivotState;
             storm::OptimizationDirection fromDirection;
-            boost::optional<MostProbablePathsResult<Type, ValueType>> mostProbablePathsResult;
+            boost::optional<SymbolicMostProbablePathsResult<Type, ValueType>> symbolicMostProbablePathsResult;
         };
+        
+        template<typename ValueType>
+        struct ExplicitMostProbablePathsResult {
+            ExplicitMostProbablePathsResult() = default;
+            ExplicitMostProbablePathsResult(ValueType const& maxProbability, std::vector<std::pair<uint64_t, uint64_t>>&& predecessors);
+
+            /// The maximal probability with which the state in question is reached.
+            ValueType maxProbability;
+            
+            /// The predecessors for the states to obtain this probability.
+            std::vector<std::pair<uint64_t, uint64_t>> predecessors;
+        };
+        
+        template<typename ValueType>
+        struct ExplicitPivotStateResult {
+            ExplicitPivotStateResult() = default;
+            ExplicitPivotStateResult(uint64_t pivotState, storm::OptimizationDirection fromDirection, boost::optional<ExplicitMostProbablePathsResult<ValueType>>&& explicitMostProbablePathsResult = boost::none);
+            
+            boost::optional<uint64_t> pivotState;
+            storm::OptimizationDirection fromDirection;
+            boost::optional<ExplicitMostProbablePathsResult<ValueType>> explicitMostProbablePathsResult;
+        };
+        
+        class ExplicitQualitativeGameResultMinMax;
+        class ExplicitGameStrategyPair;
         
         template<storm::dd::DdType Type, typename ValueType>
         class MenuGameRefiner {
@@ -86,7 +119,14 @@ namespace storm {
              * @param True if predicates for refinement could be derived, false otherwise.
              */
             bool refine(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& transitionMatrixBdd, SymbolicQualitativeGameResultMinMax<Type> const& qualitativeResult) const;
-            
+
+            /*!
+             * Refines the abstractor based on the qualitative result by trying to derive suitable predicates.
+             *
+             * @param True if predicates for refinement could be derived, false otherwise.
+             */
+            bool refine(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Odd const& odd, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint64_t> const& player1Grouping, std::vector<uint64_t> const& player1Labeling, std::vector<uint64_t> const& player2Labeling, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, ExplicitQualitativeGameResultMinMax const& qualitativeResult, ExplicitGameStrategyPair const& minStrategyPair, ExplicitGameStrategyPair const& maxStrategyPair) const;
+
             /*!
              * Refines the abstractor based on the quantitative result by trying to derive suitable predicates.
              *
@@ -113,7 +153,7 @@ namespace storm {
              */
             std::vector<RefinementCommand> createGlobalRefinement(std::vector<storm::expressions::Expression> const& predicates) const;
             
-            boost::optional<RefinementPredicates> derivePredicatesFromInterpolation(storm::abstraction::MenuGame<Type, ValueType> const& game, PivotStateResult<Type, ValueType> const& pivotStateResult, storm::dd::Bdd<Type> const& minPlayer1Strategy, storm::dd::Bdd<Type> const& minPlayer2Strategy, storm::dd::Bdd<Type> const& maxPlayer1Strategy, storm::dd::Bdd<Type> const& maxPlayer2Strategy) const;
+            boost::optional<RefinementPredicates> derivePredicatesFromInterpolation(storm::abstraction::MenuGame<Type, ValueType> const& game, SymbolicPivotStateResult<Type, ValueType> const& symbolicPivotStateResult, storm::dd::Bdd<Type> const& minPlayer1Strategy, storm::dd::Bdd<Type> const& minPlayer2Strategy, storm::dd::Bdd<Type> const& maxPlayer1Strategy, storm::dd::Bdd<Type> const& maxPlayer2Strategy) const;
             std::pair<std::vector<std::vector<storm::expressions::Expression>>, std::map<storm::expressions::Variable, storm::expressions::Expression>> buildTrace(storm::expressions::ExpressionManager& expressionManager, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& spanningTree, storm::dd::Bdd<Type> const& pivotState) const;
             
             void performRefinement(std::vector<RefinementCommand> const& refinementCommands) const;
