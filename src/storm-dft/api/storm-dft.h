@@ -53,11 +53,13 @@ namespace storm {
          * @return Result.
          */
         template <typename ValueType>
-        typename storm::modelchecker::DFTModelChecker<ValueType>::dft_results analyzeDFT(storm::storage::DFT<ValueType> const& dft, std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties, bool symred, bool allowModularisation, bool enableDC) {
+        typename storm::modelchecker::DFTModelChecker<ValueType>::dft_results analyzeDFT(storm::storage::DFT<ValueType> const& dft, std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties, bool symred, bool allowModularisation, bool enableDC, bool printOutput) {
             storm::modelchecker::DFTModelChecker<ValueType> modelChecker;
             typename storm::modelchecker::DFTModelChecker<ValueType>::dft_results results = modelChecker.check(dft, properties, symred, allowModularisation, enableDC, 0.0);
-            modelChecker.printTimings();
-            modelChecker.printResults();
+            if (printOutput) {
+                modelChecker.printTimings();
+                modelChecker.printResults();
+            }
             return results;
         }
 
@@ -75,11 +77,13 @@ namespace storm {
          * @return Result.
          */
         template <typename ValueType>
-        typename storm::modelchecker::DFTModelChecker<ValueType>::dft_results analyzeDFTApprox(storm::storage::DFT<ValueType> const& dft, std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties, bool symred, bool allowModularisation, bool enableDC, double approximationError) {
+        typename storm::modelchecker::DFTModelChecker<ValueType>::dft_results analyzeDFTApprox(storm::storage::DFT<ValueType> const& dft, std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties, bool symred, bool allowModularisation, bool enableDC, double approximationError, bool printOutput) {
             storm::modelchecker::DFTModelChecker<ValueType> modelChecker;
             typename storm::modelchecker::DFTModelChecker<ValueType>::dft_results results = modelChecker.check(dft, properties, symred, allowModularisation, enableDC, approximationError);
-            modelChecker.printTimings();
-            modelChecker.printResults();
+            if (printOutput) {
+                modelChecker.printTimings();
+                modelChecker.printResults();
+            }
             return results;
         }
 

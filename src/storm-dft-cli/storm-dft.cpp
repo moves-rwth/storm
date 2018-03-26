@@ -107,9 +107,9 @@ void processOptions() {
         // Carry out the actual analysis
         if (faultTreeSettings.isApproximationErrorSet()) {
             // Approximate analysis
-            storm::api::analyzeDFTApprox<ValueType>(*dft, props, faultTreeSettings.useSymmetryReduction(), faultTreeSettings.useModularisation(), !faultTreeSettings.isDisableDC(), faultTreeSettings.getApproximationError());
+            storm::api::analyzeDFTApprox<ValueType>(*dft, props, faultTreeSettings.useSymmetryReduction(), faultTreeSettings.useModularisation(), !faultTreeSettings.isDisableDC(), faultTreeSettings.getApproximationError(), true);
         } else {
-            storm::api::analyzeDFT<ValueType>(*dft, props, faultTreeSettings.useSymmetryReduction(), faultTreeSettings.useModularisation(), !faultTreeSettings.isDisableDC());
+            storm::api::analyzeDFT<ValueType>(*dft, props, faultTreeSettings.useSymmetryReduction(), faultTreeSettings.useModularisation(), !faultTreeSettings.isDisableDC(), true);
         }
 }
 
