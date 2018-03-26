@@ -4,6 +4,8 @@
 #include <fstream>
 #include <boost/algorithm/string/join.hpp>
 
+#include "storm/storage/BitVector.h"
+
 #include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/utility/file.h"
@@ -128,6 +130,26 @@ namespace storm {
             
             dotFile << "}" << std::endl;
             storm::utility::closeFile(dotFile);
+        }
+        
+        void getEncodingRec(Odd const& odd, uint64_t index, uint64_t offset, storm::storage::BitVector& result) {
+            if (odd.isTerminalNode()) {
+                return;
+            }
+            
+            bool thenPath = false;
+            if (odd.getElseOffset() <= offset) {
+                thenPath = true;
+                offset -= odd.getElseOffset();
+                result.set(index);
+            }
+            getEncodingRec(thenPath ? odd.getThenSuccessor() : odd.getElseSuccessor(), index + 1, offset, result);
+        }
+        
+        storm::storage::BitVector Odd::getEncoding(uint64_t offset, uint64_t variableCount) const {
+            storm::storage::BitVector result(variableCount > 0 ? variableCount : this->getHeight());
+            getEncodingRec(*this, 0, offset, result);
+            return result;
         }
         
         void Odd::addToLevelToOddNodesMap(std::map<uint_fast64_t, std::unordered_set<storm::dd::Odd const*>>& levelToOddNodesMap, uint_fast64_t level) const {

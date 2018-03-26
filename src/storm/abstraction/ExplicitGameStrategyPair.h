@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <ostream>
 
 #include "storm/abstraction/ExplicitGameStrategy.h"
 
@@ -21,6 +22,8 @@ namespace storm {
             ExplicitGameStrategy player1Strategy;
             ExplicitGameStrategy player2Strategy;
         };
+        
+        std::ostream& operator<<(std::ostream& out, ExplicitGameStrategyPair const& strategyPair);
         
     }
 }

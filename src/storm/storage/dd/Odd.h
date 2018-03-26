@@ -7,6 +7,10 @@
 #include <unordered_set>
 
 namespace storm {
+    namespace storage {
+        class BitVector;
+    }
+    
     namespace dd {
         class Odd {
         public:
@@ -118,6 +122,15 @@ namespace storm {
              * @param filename The name of the file to which to write the dot output.
              */
             void exportToDot(std::string const& filename) const;
+            
+            /*!
+             * Retrieves the encoding for the given offset.
+             *
+             * @param offset The target offset.
+             * @param variableCount If not null, this indicates how many variables are contained in the encoding. If 0,
+             * this number is automatically determined.
+             */
+            storm::storage::BitVector getEncoding(uint64_t offset, uint64_t variableCount = 0) const;
             
         private:
             /*!

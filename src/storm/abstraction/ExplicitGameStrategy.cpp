@@ -35,5 +35,24 @@ namespace storm {
             }
         }
         
+        std::ostream& operator<<(std::ostream& out, ExplicitGameStrategy const& strategy) {
+            std::vector<uint64_t> undefinedStates;
+            for (uint64_t state = 0; state < strategy.getNumberOfStates(); ++state) {
+                uint64_t choice = strategy.getChoice(state);
+                if (choice == ExplicitGameStrategy::UNDEFINED) {
+                    undefinedStates.emplace_back(state);
+                } else {
+                    out << state << " -> " << choice << std::endl;
+                }
+            }
+            out << "undefined states: ";
+            for (auto state : undefinedStates) {
+                out << state << ", ";
+            }
+            out << std::endl;
+            
+            return out;
+        }
+        
     }
 }

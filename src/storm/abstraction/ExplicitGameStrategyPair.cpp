@@ -27,5 +27,11 @@ namespace storm {
             return player2Strategy;
         }
         
+        std::ostream& operator<<(std::ostream& out, ExplicitGameStrategyPair const& strategyPair) {
+            out << "player 1 strategy: " << std::endl << strategyPair.getPlayer1Strategy() << std::endl;
+            out << "player 2 strategy: " << std::endl << strategyPair.getPlayer2Strategy() << std::endl;
+            return out;
+        }
+        
     }
 }

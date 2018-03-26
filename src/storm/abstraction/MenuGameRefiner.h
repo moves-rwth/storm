@@ -74,25 +74,16 @@ namespace storm {
         };
         
         template<typename ValueType>
-        struct ExplicitMostProbablePathsResult {
-            ExplicitMostProbablePathsResult() = default;
-            ExplicitMostProbablePathsResult(ValueType const& maxProbability, std::vector<std::pair<uint64_t, uint64_t>>&& predecessors);
-
-            /// The maximal probability with which the state in question is reached.
-            ValueType maxProbability;
-            
-            /// The predecessors for the states to obtain this probability.
-            std::vector<std::pair<uint64_t, uint64_t>> predecessors;
-        };
-        
-        template<typename ValueType>
         struct ExplicitPivotStateResult {
             ExplicitPivotStateResult() = default;
-            ExplicitPivotStateResult(uint64_t pivotState, storm::OptimizationDirection fromDirection, boost::optional<ExplicitMostProbablePathsResult<ValueType>>&& explicitMostProbablePathsResult = boost::none);
             
-            boost::optional<uint64_t> pivotState;
-            storm::OptimizationDirection fromDirection;
-            boost::optional<ExplicitMostProbablePathsResult<ValueType>> explicitMostProbablePathsResult;
+            uint64_t pivotState;
+            
+            /// The distance with which the state in question is reached.
+            ValueType distance;
+            
+            /// The predecessors for the states to obtain the given distance.
+            std::vector<std::pair<uint64_t, uint64_t>> predecessors;
         };
         
         class ExplicitQualitativeGameResultMinMax;
@@ -155,7 +146,8 @@ namespace storm {
             
             boost::optional<RefinementPredicates> derivePredicatesFromInterpolation(storm::abstraction::MenuGame<Type, ValueType> const& game, SymbolicPivotStateResult<Type, ValueType> const& symbolicPivotStateResult, storm::dd::Bdd<Type> const& minPlayer1Strategy, storm::dd::Bdd<Type> const& minPlayer2Strategy, storm::dd::Bdd<Type> const& maxPlayer1Strategy, storm::dd::Bdd<Type> const& maxPlayer2Strategy) const;
             std::pair<std::vector<std::vector<storm::expressions::Expression>>, std::map<storm::expressions::Variable, storm::expressions::Expression>> buildTrace(storm::expressions::ExpressionManager& expressionManager, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& spanningTree, storm::dd::Bdd<Type> const& pivotState) const;
-            
+            boost::optional<RefinementPredicates> derivePredicatesFromInterpolation(storm::abstraction::MenuGame<Type, ValueType> const& game, ExplicitPivotStateResult<ValueType> const& pivotStateResult, storm::dd::Odd const& odd) const;
+
             void performRefinement(std::vector<RefinementCommand> const& refinementCommands) const;
             
             /// The underlying abstractor to refine.

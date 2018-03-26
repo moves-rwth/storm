@@ -157,6 +157,12 @@ namespace storm {
                         }
                     }
                 }
+            } else {
+                if (player2Direction == storm::OptimizationDirection::Minimize && (prob1 && initialStates) == initialStates) {
+                    result = std::make_unique<storm::modelchecker::ExplicitQuantitativeCheckResult<ValueType>>(storm::storage::sparse::state_type(0), storm::utility::one<ValueType>());
+                } else if (player2Direction == storm::OptimizationDirection::Maximize && (prob0 && initialStates) == initialStates) {
+                    result = std::make_unique<storm::modelchecker::ExplicitQuantitativeCheckResult<ValueType>>(storm::storage::sparse::state_type(0), storm::utility::zero<ValueType>());
+                }
             }
             
             return result;
@@ -203,6 +209,12 @@ namespace storm {
                             result = std::make_unique<storm::modelchecker::ExplicitQuantitativeCheckResult<ValueType>>(storm::storage::sparse::state_type(0), storm::utility::zero<ValueType>());
                         }
                     }
+                }
+            } else {
+                if (player2Direction == storm::OptimizationDirection::Minimize && initialStates.isSubsetOf(prob1)) {
+                    result = std::make_unique<storm::modelchecker::ExplicitQuantitativeCheckResult<ValueType>>(storm::storage::sparse::state_type(0), storm::utility::one<ValueType>());
+                } else if (player2Direction == storm::OptimizationDirection::Maximize && initialStates.isSubsetOf(prob0)) {
+                    result = std::make_unique<storm::modelchecker::ExplicitQuantitativeCheckResult<ValueType>>(storm::storage::sparse::state_type(0), storm::utility::zero<ValueType>());
                 }
             }
             
