@@ -139,7 +139,13 @@ namespace storm {
              * Retrieves a list of expression that corresponds to the given predicate valuation.
              */
             std::vector<storm::expressions::Expression> getPredicates(storm::storage::BitVector const& predicateValuation) const;
-            
+
+            /*!
+             * Retrieves a list of expression that corresponds to the given predicate valuation that mentions all of the
+             * predicates' truth values *and* the value of the bottom variable (at the first index).
+             */
+            std::vector<storm::expressions::Expression> getPredicatesExcludingBottom(storm::storage::BitVector const& predicateValuation) const;
+
             /*!
              * Retrieves the predicate with the given index.
              *

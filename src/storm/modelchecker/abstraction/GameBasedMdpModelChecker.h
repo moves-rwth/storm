@@ -39,6 +39,13 @@ namespace storm {
         
         class ExplicitQualitativeGameResult;
         class ExplicitQualitativeGameResultMinMax;
+        
+        template<typename ValueType>
+        class ExplicitQuantitativeResult;
+
+        template<typename ValueType>
+        class ExplicitQuantitativeResultMinMax;
+        
         class ExplicitGameStrategy;
         class ExplicitGameStrategyPair;
     }

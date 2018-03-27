@@ -76,6 +76,11 @@ namespace storm {
                 storm::expressions::Expression const& getGuard(uint64_t player1Choice) const override;
                 
                 /*!
+                 * Retrieves the number of updates of the specified player 1 choice.
+                 */
+                virtual uint64_t getNumberOfUpdates(uint64_t player1Choice) const override;
+
+                /*!
                  * Retrieves a mapping from variables to expressions that define their updates wrt. to the given player
                  * 1 choice and auxiliary choice.
                  */

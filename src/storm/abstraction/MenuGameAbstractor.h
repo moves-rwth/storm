@@ -34,6 +34,8 @@ namespace storm {
             virtual AbstractionInformation<DdType> const& getAbstractionInformation() const = 0;
             virtual storm::expressions::Expression const& getGuard(uint64_t player1Choice) const = 0;
             virtual std::pair<uint64_t, uint64_t> getPlayer1ChoiceRange() const = 0;
+            virtual uint64_t getNumberOfUpdates(uint64_t player1Choice) const = 0;
+            std::vector<std::map<storm::expressions::Variable, storm::expressions::Expression>> getVariableUpdates(uint64_t player1Choice) const;
             virtual std::map<storm::expressions::Variable, storm::expressions::Expression> getVariableUpdates(uint64_t player1Choice, uint64_t auxiliaryChoice) const = 0;
             virtual storm::expressions::Expression getInitialExpression() const = 0;
             

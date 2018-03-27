@@ -66,6 +66,11 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
+            uint64_t EdgeAbstractor<DdType, ValueType>::getNumberOfUpdates(uint64_t player1Choice) const {
+                return edge.get().getNumberOfDestinations();
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
             std::map<storm::expressions::Variable, storm::expressions::Expression> EdgeAbstractor<DdType, ValueType>::getVariableUpdates(uint64_t auxiliaryChoice) const {
                 return edge.get().getDestination(auxiliaryChoice).getAsVariableToExpressionMap();
             }

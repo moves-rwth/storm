@@ -120,6 +120,11 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
+            uint64_t JaniMenuGameAbstractor<DdType, ValueType>::getNumberOfUpdates(uint64_t player1Choice) const {
+                return automata.front().getNumberOfUpdates(player1Choice);
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
             std::map<storm::expressions::Variable, storm::expressions::Expression> JaniMenuGameAbstractor<DdType, ValueType>::getVariableUpdates(uint64_t player1Choice, uint64_t auxiliaryChoice) const {
                 return automata.front().getVariableUpdates(player1Choice, auxiliaryChoice);
             }

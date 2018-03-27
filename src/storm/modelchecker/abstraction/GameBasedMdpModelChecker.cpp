@@ -27,6 +27,7 @@
 #include "storm/abstraction/ExplicitGameStrategyPair.h"
 
 #include "storm/abstraction/ExplicitQualitativeGameResultMinMax.h"
+#include "storm/abstraction/ExplicitQuantitativeResultMinMax.h"
 
 #include "storm/logic/FragmentSpecification.h"
 
@@ -49,7 +50,10 @@ namespace storm {
         
         using storm::abstraction::SymbolicQuantitativeGameResult;
         using storm::abstraction::SymbolicQuantitativeGameResultMinMax;
-        
+        using storm::abstraction::ExplicitQuantitativeResult;
+        using storm::abstraction::ExplicitQuantitativeResultMinMax;
+        using storm::abstraction::ExplicitGameStrategyPair;
+
         template<storm::dd::DdType Type, typename ModelType>
         GameBasedMdpModelChecker<Type, ModelType>::GameBasedMdpModelChecker(storm::storage::SymbolicModelDescription const& model, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory) : smtSolverFactory(smtSolverFactory), comparator(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getPrecision()), reuseQualitativeResults(false), reuseQuantitativeResults(false), solveMode(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getSolveMode()) {
             model.requireNoUndefinedConstants();
@@ -385,6 +389,35 @@ namespace storm {
             return result;
         }
         
+        template<typename ValueType>
+        ExplicitQuantitativeResult<ValueType> computeQuantitativeResult(Environment const& env, storm::OptimizationDirection player1Direction, storm::OptimizationDirection player2Direction, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint64_t> const& player1Groups, ExplicitQualitativeGameResultMinMax const& qualitativeResult, storm::storage::BitVector const& maybeStates, ExplicitGameStrategyPair& minStrategyPair) {
+            
+            bool player2Min = player2Direction == storm::OptimizationDirection::Minimize;
+            auto const& player2Prob0States = player2Min ? qualitativeResult.getProb0Min().asExplicitQualitativeGameResult().getPlayer2States() : qualitativeResult.getProb0Max().asExplicitQualitativeGameResult().getPlayer2States();
+            auto const& player2Prob1States = player2Min ? qualitativeResult.getProb1Min().asExplicitQualitativeGameResult().getPlayer2States() : qualitativeResult.getProb1Max().asExplicitQualitativeGameResult().getPlayer2States();
+
+            // Determine which rows to keep.
+            storm::storage::BitVector rows(transitionMatrix.getRowCount());
+            for (uint64_t player2State = 0; player2State < transitionMatrix.getRowGroupCount(); ++player2State) {
+                if (!player2Prob0States.get(player2State) && !player2Prob1States.get(player2State)) {
+                    // Mark all rows that have a maybe state as a successor.
+                    for (uint64_t row = transitionMatrix.getRowGroupIndices()[player2State]; row < transitionMatrix.getRowGroupIndices()[player2State + 1]; ++row) {
+                        bool hasMaybeStateSuccessor = false;
+                        for (auto const& entry : transitionMatrix.getRow(row)) {
+                            if (maybeStates.get(entry.getColumn())) {
+                                hasMaybeStateSuccessor = true;
+                            }
+                        }
+                        if (!hasMaybeStateSuccessor) {
+                            rows.set(row);
+                        }
+                    }
+                }
+            }
+            
+            storm::storage::SparseMatrix<ValueType> submatrix = transitionMatrix.getSubmatrix(true, player2MaybeStates, <#const storm::storage::BitVector &columnConstraint#>)
+        }
+        
         template<storm::dd::DdType Type, typename ModelType>
         std::unique_ptr<CheckResult> GameBasedMdpModelChecker<Type, ModelType>::performGameBasedAbstractionRefinement(Environment const& env, CheckTask<storm::logic::Formula> const& checkTask, storm::expressions::Expression const& constraintExpression, storm::expressions::Expression const& targetStateExpression) {
             STORM_LOG_THROW(checkTask.isOnlyInitialStatesRelevantSet(), storm::exceptions::InvalidPropertyException, "The game-based abstraction refinement model checker can only compute the result for the initial states.");
@@ -430,7 +463,7 @@ namespace storm {
                 auto abstractionStart = std::chrono::high_resolution_clock::now();
                 storm::abstraction::MenuGame<Type, ValueType> game = abstractor->abstract();
                 auto abstractionEnd = std::chrono::high_resolution_clock::now();
-                STORM_LOG_DEBUG("Abstraction in iteration " << iterations << " has " << game.getNumberOfStates() << " (player 1) states, " << game.getNumberOfTransitions() << " transitions, " << game.getBottomStates().getNonZeroCount() << " bottom states (computed in " << std::chrono::duration_cast<std::chrono::milliseconds>(abstractionEnd - abstractionStart).count() << "ms).");
+                STORM_LOG_DEBUG("Abstraction in iteration " << iterations << " has " << game.getNumberOfStates() << " player 1 states, " << game.getNumberOfPlayer2States() << " player 2 states, " << game.getNumberOfTransitions() << " transitions, " << game.getBottomStates().getNonZeroCount() << " bottom states (computed in " << std::chrono::duration_cast<std::chrono::milliseconds>(abstractionEnd - abstractionStart).count() << "ms).");
                 
                 // (2) Prepare initial, constraint and target state BDDs for later use.
                 storm::dd::Bdd<Type> initialStates = game.getInitialStates();
@@ -517,7 +550,6 @@ namespace storm {
                 // At this point, we know that we cannot answer the query without further numeric computation.
                 STORM_LOG_TRACE("Starting numerical solution step.");
                 
-                STORM_LOG_TRACE("Using dd-based solving.");
                 storm::dd::Add<Type, ValueType> initialStatesAdd = initialStates.template toAdd<ValueType>();
                 
                 auto quantitativeStart = std::chrono::high_resolution_clock::now();
@@ -658,6 +690,57 @@ namespace storm {
                 // If all initial states are 'maybe' states and the property we needed to check is a qualitative one,
                 // we can return the result here.
                 return std::make_unique<ExplicitQuantitativeCheckResult<ValueType>>(storm::storage::sparse::state_type(0), ValueType(0.5));
+            }
+            
+            // (4) if we arrived at this point and no refinement was made, we need to compute the quantitative solution.
+            if (!qualitativeRefinement) {
+                // At this point, we know that we cannot answer the query without further numeric computation.
+                STORM_LOG_TRACE("Starting numerical solution step.");
+                
+                auto quantitativeStart = std::chrono::high_resolution_clock::now();
+
+                ExplicitQuantitativeResultMinMax<ValueType> quantitativeResult;
+                quantitativeResult.setMin(computeQuantitativeResult(env, player1Direction, storm::OptimizationDirection::Minimize, transitionMatrix, player1Groups, qualitativeResult, maybeMin, minStrategyPair));
+                
+//                SymbolicQuantitativeGameResultMinMax<Type, ValueType> quantitativeResult;
+//
+//                // (7) Solve the min values and check whether we can give the answer already.
+//                quantitativeResult.min = computeQuantitativeResult(env, player1Direction, storm::OptimizationDirection::Minimize, game, qualitativeResult, initialStatesAdd, maybeMin, reuseQuantitativeResults ? previousMinQuantitativeResult : boost::none);
+//                previousMinQuantitativeResult = quantitativeResult.min;
+//                result = checkForResultAfterQuantitativeCheck<ValueType>(checkTask, storm::OptimizationDirection::Minimize, quantitativeResult.min.getInitialStatesRange());
+//                if (result) {
+//                    return result;
+//                }
+//
+//                // (8) Solve the max values and check whether we can give the answer already.
+//                quantitativeResult.max = computeQuantitativeResult(env, player1Direction, storm::OptimizationDirection::Maximize, game, qualitativeResult, initialStatesAdd, maybeMax, boost::make_optional(quantitativeResult.min));
+//                result = checkForResultAfterQuantitativeCheck<ValueType>(checkTask, storm::OptimizationDirection::Maximize, quantitativeResult.max.getInitialStatesRange());
+//                if (result) {
+//                    return result;
+//                }
+//
+                auto quantitativeEnd = std::chrono::high_resolution_clock::now();
+                STORM_LOG_DEBUG("Obtained quantitative bounds [" << quantitativeResult.getMin().getRange(initialStates).first << ", " << quantitativeResult.getMax().getRange(initialStates).second << "] on the actual value for the initial states in " << std::chrono::duration_cast<std::chrono::milliseconds>(quantitativeEnd - quantitativeStart).count() << "ms.");
+//
+//                // (9) Check whether the lower and upper bounds are close enough to terminate with an answer.
+//                result = checkForResultAfterQuantitativeCheck<ValueType>(quantitativeResult.min.getInitialStatesRange().first, quantitativeResult.max.getInitialStatesRange().second, comparator);
+//                if (result) {
+//                    return result;
+//                }
+//
+//                // Make sure that all strategies are still valid strategies.
+//                STORM_LOG_ASSERT(quantitativeResult.min.getPlayer1Strategy().isZero() || quantitativeResult.min.getPlayer1Strategy().template toAdd<ValueType>().sumAbstract(game.getPlayer1Variables()).getMax() <= 1, "Player 1 strategy for min is illegal.");
+//                STORM_LOG_ASSERT(quantitativeResult.max.getPlayer1Strategy().isZero() || quantitativeResult.max.getPlayer1Strategy().template toAdd<ValueType>().sumAbstract(game.getPlayer1Variables()).getMax() <= 1, "Player 1 strategy for max is illegal.");
+//                STORM_LOG_ASSERT(quantitativeResult.min.getPlayer2Strategy().isZero() || quantitativeResult.min.getPlayer2Strategy().template toAdd<ValueType>().sumAbstract(game.getPlayer2Variables()).getMax() <= 1, "Player 2 strategy for min is illegal.");
+//                STORM_LOG_ASSERT(quantitativeResult.max.getPlayer2Strategy().isZero() || quantitativeResult.max.getPlayer2Strategy().template toAdd<ValueType>().sumAbstract(game.getPlayer2Variables()).getMax() <= 1, "Player 2 strategy for max is illegal.");
+//
+                auto quantitativeRefinementStart = std::chrono::high_resolution_clock::now();
+//
+//                // (10) If we arrived at this point, it means that we have all qualitative and quantitative
+//                // information about the game, but we could not yet answer the query. In this case, we need to refine.
+//                refiner.refine(game, transitionMatrixBdd, quantitativeResult);
+                auto quantitativeRefinementEnd = std::chrono::high_resolution_clock::now();
+                STORM_LOG_DEBUG("Quantitative refinement completed in " << std::chrono::duration_cast<std::chrono::milliseconds>(quantitativeRefinementEnd - quantitativeRefinementStart).count() << "ms.");
             }
             
             return nullptr;

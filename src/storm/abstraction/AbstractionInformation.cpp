@@ -139,6 +139,22 @@ namespace storm {
         }
         
         template<storm::dd::DdType DdType>
+        std::vector<storm::expressions::Expression> AbstractionInformation<DdType>::getPredicatesExcludingBottom(storm::storage::BitVector const& predicateValuation) const {
+            STORM_LOG_ASSERT(predicateValuation.size() == this->getNumberOfPredicates() + 1, "Size of predicate valuation does not match number of predicates.");
+            
+            std::vector<storm::expressions::Expression> result;
+            for (uint64_t index = 0; index < this->getNumberOfPredicates(); ++index) {
+                if (predicateValuation[index + 1]) {
+                    result.push_back(this->getPredicateByIndex(index));
+                } else {
+                    result.push_back(!this->getPredicateByIndex(index));
+                }
+            }
+            
+            return result;
+        }
+        
+        template<storm::dd::DdType DdType>
         storm::expressions::Expression const& AbstractionInformation<DdType>::getPredicateByIndex(uint_fast64_t index) const {
             return predicates[index];
         }

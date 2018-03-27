@@ -52,6 +52,11 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
+            uint64_t AutomatonAbstractor<DdType, ValueType>::getNumberOfUpdates(uint64_t player1Choice) const {
+                return edges[player1Choice].getNumberOfUpdates(player1Choice);
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
             std::map<storm::expressions::Variable, storm::expressions::Expression> AutomatonAbstractor<DdType, ValueType>::getVariableUpdates(uint64_t player1Choice, uint64_t auxiliaryChoice) const {
                 return edges[player1Choice].getVariableUpdates(auxiliaryChoice);
             }

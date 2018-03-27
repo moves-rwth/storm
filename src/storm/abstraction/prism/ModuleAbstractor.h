@@ -61,6 +61,11 @@ namespace storm {
                 storm::expressions::Expression const& getGuard(uint64_t player1Choice) const;
                 
                 /*!
+                 * Retrieves the number of updates of the specified player 1 choice.
+                 */
+                uint64_t getNumberOfUpdates(uint64_t player1Choice) const;
+                
+                /*!
                  * Retrieves a mapping from variables to expressions that define their updates wrt. to the given player
                  * 1 choice and auxiliary choice.
                  */
