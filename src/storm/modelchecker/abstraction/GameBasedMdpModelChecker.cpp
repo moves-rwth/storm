@@ -391,31 +391,30 @@ namespace storm {
         
         template<typename ValueType>
         ExplicitQuantitativeResult<ValueType> computeQuantitativeResult(Environment const& env, storm::OptimizationDirection player1Direction, storm::OptimizationDirection player2Direction, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint64_t> const& player1Groups, ExplicitQualitativeGameResultMinMax const& qualitativeResult, storm::storage::BitVector const& maybeStates, ExplicitGameStrategyPair& minStrategyPair) {
-            
+
+            bool player1Min = player1Direction == storm::OptimizationDirection::Minimize;
             bool player2Min = player2Direction == storm::OptimizationDirection::Minimize;
+            auto const& player1Prob0States = player2Min ? qualitativeResult.getProb0Min().asExplicitQualitativeGameResult().getPlayer1States() : qualitativeResult.getProb0Max().asExplicitQualitativeGameResult().getPlayer1States();
+            auto const& player1Prob1States = player2Min ? qualitativeResult.getProb1Min().asExplicitQualitativeGameResult().getPlayer1States() : qualitativeResult.getProb1Max().asExplicitQualitativeGameResult().getPlayer1States();
             auto const& player2Prob0States = player2Min ? qualitativeResult.getProb0Min().asExplicitQualitativeGameResult().getPlayer2States() : qualitativeResult.getProb0Max().asExplicitQualitativeGameResult().getPlayer2States();
             auto const& player2Prob1States = player2Min ? qualitativeResult.getProb1Min().asExplicitQualitativeGameResult().getPlayer2States() : qualitativeResult.getProb1Max().asExplicitQualitativeGameResult().getPlayer2States();
 
             // Determine which rows to keep.
-            storm::storage::BitVector rows(transitionMatrix.getRowCount());
+            storm::storage::BitVector player2MaybeStates(transitionMatrix.getRowCount());
             for (uint64_t player2State = 0; player2State < transitionMatrix.getRowGroupCount(); ++player2State) {
                 if (!player2Prob0States.get(player2State) && !player2Prob1States.get(player2State)) {
-                    // Mark all rows that have a maybe state as a successor.
-                    for (uint64_t row = transitionMatrix.getRowGroupIndices()[player2State]; row < transitionMatrix.getRowGroupIndices()[player2State + 1]; ++row) {
-                        bool hasMaybeStateSuccessor = false;
-                        for (auto const& entry : transitionMatrix.getRow(row)) {
-                            if (maybeStates.get(entry.getColumn())) {
-                                hasMaybeStateSuccessor = true;
-                            }
-                        }
-                        if (!hasMaybeStateSuccessor) {
-                            rows.set(row);
-                        }
-                    }
+                    player2MaybeStates.set(player2State);
                 }
             }
             
-            storm::storage::SparseMatrix<ValueType> submatrix = transitionMatrix.getSubmatrix(true, player2MaybeStates, <#const storm::storage::BitVector &columnConstraint#>)
+            storm::storage::SparseMatrix<ValueType> submatrix = transitionMatrix.getSubmatrix(true, player2MaybeStates, maybeStates);
+            std::vector<ValueType> b = transitionMatrix.getConstrainedRowGroupSumVector(player2MaybeStates, maybeStates);
+            
+            auto multiplier = storm::solver::MultiplierFactory<ValueType>().create(env, submatrix);
+            multiplier->repeatedMultiplyAndReduce(env, goal.direction(), subresult, &b, stepBound);
+
+            
+            env.
         }
         
         template<storm::dd::DdType Type, typename ModelType>

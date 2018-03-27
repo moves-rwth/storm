@@ -111,6 +111,16 @@ namespace storm {
              * Clears the currently cached data that has been stored during previous calls of the solver.
              */
             virtual void clearCache() const;
+            
+            /*!
+             * Sets whether the solution to the min max equation system is known to be unique.
+             */
+            void setHasUniqueSolution(bool value = true);
+            
+            /*!
+             * Retrieves whether the solution to the min max equation system is assumed to be unique
+             */
+            bool hasUniqueSolution() const;
 
         protected:
             
@@ -128,9 +138,11 @@ namespace storm {
             boost::optional<std::vector<uint_fast64_t>> player2ChoicesHint;
             
         private:
+            /// Whether the solver can assume that the min-max equation system has a unique solution
+            bool uniqueSolution;
+
             /// Whether some of the generated data during solver calls should be cached.
             bool cachingEnabled;
-            
         };
 
         template<typename ValueType>

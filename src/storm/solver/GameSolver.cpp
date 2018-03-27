@@ -10,7 +10,7 @@ namespace storm {
     namespace solver {
         
         template<typename ValueType>
-        GameSolver<ValueType>::GameSolver() : trackSchedulers(false), cachingEnabled(false) {
+        GameSolver<ValueType>::GameSolver() : trackSchedulers(false), uniqueSolution(false), cachingEnabled(false) {
             // Intentionally left empty
         }
         

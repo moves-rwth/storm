@@ -756,7 +756,7 @@ namespace storm {
             
             /*!
              * Selects the rows that are given by the sequence of row indices, allowing to select rows arbitrarily often and with an arbitrary order
-             * The resulting matrix will have a trivial row grouping
+             * The resulting matrix will have a trivial row grouping.
              *
              * @param rowIndexSequence the sequence of row indices which specifies, which rows are contained in the new matrix
              * @param insertDiagonalEntries If set to true, the resulting matrix will have zero entries in column i for
