@@ -410,11 +410,11 @@ namespace storm {
             storm::storage::SparseMatrix<ValueType> submatrix = transitionMatrix.getSubmatrix(true, player2MaybeStates, maybeStates);
             std::vector<ValueType> b = transitionMatrix.getConstrainedRowGroupSumVector(player2MaybeStates, maybeStates);
             
-            auto multiplier = storm::solver::MultiplierFactory<ValueType>().create(env, submatrix);
-            multiplier->repeatedMultiplyAndReduce(env, goal.direction(), subresult, &b, stepBound);
-
-            
-            env.
+//            auto multiplier = storm::solver::MultiplierFactory<ValueType>().create(env, submatrix);
+//            multiplier->repeatedMultiplyAndReduce(env, goal.direction(), subresult, &b, stepBound);
+//
+//
+//            env.
         }
         
         template<storm::dd::DdType Type, typename ModelType>

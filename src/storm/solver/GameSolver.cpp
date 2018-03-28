@@ -100,6 +100,16 @@ namespace storm {
         }
         
         template<typename ValueType>
+        void GameSolver<ValueType>::setHasUniqueSolution(bool value) {
+            this->uniqueSolution = value;
+        }
+        
+        template<typename ValueType>
+        bool GameSolver<ValueType>::hasUniqueSolution() const {
+            return this->uniqueSolution;
+        }
+        
+        template<typename ValueType>
         GameSolverFactory<ValueType>::GameSolverFactory() {
             // Intentionally left empty.
         }

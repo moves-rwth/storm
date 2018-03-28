@@ -240,7 +240,7 @@ namespace storm {
 
             Status status = Status::InProgress;
             while (status == Status::InProgress) {
-                multiplyAndReduce(env, player1Dir, player2Dir, *currentX, &b, *multiplierPlayer2Matrix, reducedPlayer2Result, *newX, trackSchedulersInValueIteration ? &this->getPlayer1SchedulerChoices() : nullptr, trackSchedulersInValueIteration ? &this->getPlayer2SchedulerChoices() : nullptr);
+                multiplyAndReduce(env, player1Dir, player2Dir, *currentX, &b, *multiplierPlayer2Matrix, reducedPlayer2Result, *newX, trackSchedulersInValueIteration ? &this->player1SchedulerChoices.get() : nullptr, trackSchedulersInValueIteration ? &this->player2SchedulerChoices.get() : nullptr);
 
                 // Determine whether the method converged.
                 if (storm::utility::vector::equalModuloPrecision<ValueType>(*currentX, *newX, precision, relative)) {

@@ -851,7 +851,9 @@ namespace storm {
              * @param vector The vector with which to multiply the matrix.
              * @param summand If given, this summand will be added to the result of the multiplication.
              * @param result The vector that is supposed to hold the result of the multiplication after the operation.
-             * @param choices If given, the choices made in the reduction process will be written to this vector.
+             * @param choices If given, the choices made in the reduction process will be written to this vector. Note
+             * that if the direction is maximize, the choice for a row group is only updated if the value obtained with
+             * the 'new' choice has a value strictly better (wrt. to the optimization direction) value.
              * @return The resulting vector the content of the given result vector.
              */
             void multiplyAndReduce(storm::solver::OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType> const& vector, std::vector<ValueType> const* summand, std::vector<ValueType>& result, std::vector<uint_fast64_t>* choices) const;
