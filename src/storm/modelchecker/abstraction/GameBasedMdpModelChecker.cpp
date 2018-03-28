@@ -391,7 +391,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        ExplicitQuantitativeResult<ValueType> computeQuantitativeResult(Environment const& env, storm::OptimizationDirection player1Direction, storm::OptimizationDirection player2Direction, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint64_t> const& player1Groups, ExplicitQualitativeGameResultMinMax const& qualitativeResult, storm::storage::BitVector const& maybeStates, ExplicitGameStrategyPair& minStrategyPair) {
+        ExplicitQuantitativeResult<ValueType> computeQuantitativeResult(Environment const& env, storm::OptimizationDirection player1Direction, storm::OptimizationDirection player2Direction, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint64_t> const& player1Groups, ExplicitQualitativeGameResultMinMax const& qualitativeResult, storm::storage::BitVector const& maybeStates, ExplicitGameStrategyPair& strategyPair) {
 
             bool player1Min = player1Direction == storm::OptimizationDirection::Minimize;
             bool player2Min = player2Direction == storm::OptimizationDirection::Minimize;
@@ -400,18 +400,44 @@ namespace storm {
             auto const& player2Prob0States = player2Min ? qualitativeResult.getProb0Min().asExplicitQualitativeGameResult().getPlayer2States() : qualitativeResult.getProb0Max().asExplicitQualitativeGameResult().getPlayer2States();
             auto const& player2Prob1States = player2Min ? qualitativeResult.getProb1Min().asExplicitQualitativeGameResult().getPlayer2States() : qualitativeResult.getProb1Max().asExplicitQualitativeGameResult().getPlayer2States();
 
-            // Determine which rows to keep.
-            storm::storage::BitVector player2MaybeStates(transitionMatrix.getRowCount());
-            for (uint64_t player2State = 0; player2State < transitionMatrix.getRowGroupCount(); ++player2State) {
-                if (!player2Prob0States.get(player2State) && !player2Prob1States.get(player2State)) {
-                    player2MaybeStates.set(player2State);
-                }
-            }
+            // Determine which row groups to keep.
+            storm::storage::BitVector player2MaybeStates = ~(player2Prob0States | player2Prob1States);
             
+            // Create the sub-game.
+            std::cout << "maybe: " << maybeStates << std::endl;
             storm::storage::SparseMatrix<ValueType> submatrix = transitionMatrix.getSubmatrix(true, player2MaybeStates, maybeStates);
-            std::vector<ValueType> b = transitionMatrix.getConstrainedRowGroupSumVector(player2MaybeStates, maybeStates);
+            std::vector<ValueType> b = transitionMatrix.getConstrainedRowGroupSumVector(player2MaybeStates, player1Prob1States);
+            std::vector<uint64_t> subPlayer1Groups(maybeStates.getNumberOfSetBits() + 1);
+            uint64_t position = 0;
+            uint64_t previousPlayer2States = 0;
+            for (auto state : maybeStates) {
+                subPlayer1Groups[position] = previousPlayer2States;
+                
+                bool hasMaybePlayer2Successor = false;
+                for (uint64_t player2State = player1Groups[state]; player2State < player1Groups[state + 1]; ++player2State) {
+                    if (player2MaybeStates.get(player2State)) {
+                        hasMaybePlayer2Successor = true;
+                        ++previousPlayer2States;
+                    }
+                }
+                STORM_LOG_ASSERT(hasMaybePlayer2Successor, "Player 1 maybe state has no player2 maybe successor.");
+                ++position;
+            }
+            subPlayer1Groups.back() = previousPlayer2States;
+
+            // Solve the sub-game.
+            auto gameSolver = storm::solver::GameSolverFactory<ValueType>().create(env, subPlayer1Groups, submatrix);
+            std::vector<ValueType> lowerValues(maybeStates.getNumberOfSetBits());
+            gameSolver->solveGame(env, player1Direction, player2Direction, lowerValues, b);
             
-            auto gameSolver = storm::solver::GameSolverFactory<ValueType>().create(env, player1Groups, transitionMatrix);
+            // Create combined result for all states.
+            ExplicitQuantitativeResult<ValueType> result(maybeStates.size());
+            storm::utility::vector::setVectorValues(result.getValues(), player1Prob1States, storm::utility::one<ValueType>());
+            storm::utility::vector::setVectorValues(result.getValues(), maybeStates, lowerValues);
+
+            // Obtain strategies from solver and fuse them with the pre-existing strategy pair for the qualitative result.
+            
+            
             exit(-1);
             
         }

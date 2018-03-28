@@ -234,7 +234,7 @@ namespace storm {
              
             std::vector<ValueType>* newX = auxiliaryP1RowGroupVector.get();
             std::vector<ValueType>* currentX = &x;
-             
+                         
             // Proceed with the iterations as long as the method did not converge or reach the maximum number of iterations.
             uint64_t iterations = 0;
 
