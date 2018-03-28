@@ -144,8 +144,6 @@ namespace storm {
             ~MultiplierFactory() = default;
 
             std::unique_ptr<Multiplier<ValueType>> create(Environment const& env, storm::storage::SparseMatrix<ValueType> const& matrix);
-            
-            
         };
         
     }
