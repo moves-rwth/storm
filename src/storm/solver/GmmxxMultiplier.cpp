@@ -162,7 +162,7 @@ namespace storm {
                     --itr;
                     --currentRow;
                     
-                    for (uint64_t row = *row_group_it + 1, rowEnd = *(row_group_it + 1); row < rowEnd; ++row, ++currentRow, --itr, --add_it) {
+                    for (uint64_t row = *row_group_it + 1, rowEnd = *(row_group_it + 1); row < rowEnd; ++row, --currentRow, --itr, --add_it) {
                         ValueType newValue = b ? *add_it : storm::utility::zero<ValueType>();
                         newValue += vect_sp(gmm::linalg_traits<MatrixType>::row(itr), x);
                         
@@ -170,7 +170,7 @@ namespace storm {
                             oldSelectedChoiceValue = newValue;
                         }
 
-                        if (min ? currentValue < oldSelectedChoiceValue : currentValue > oldSelectedChoiceValue) {
+                        if (min ? newValue < currentValue : newValue > currentValue) {
                             currentValue = newValue;
                             if (choices) {
                                 selectedChoice = currentRow - *row_group_it;
