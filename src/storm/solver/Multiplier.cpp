@@ -11,7 +11,6 @@
 #include "storm/solver/SolverSelectionOptions.h"
 #include "storm/solver/NativeMultiplier.h"
 #include "storm/solver/GmmxxMultiplier.h"
-#include "storm/solver/InPlaceMultiplier.h"
 #include "storm/environment/solver/MultiplierEnvironment.h"
 
 namespace storm {
