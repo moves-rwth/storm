@@ -75,7 +75,6 @@ namespace storm {
             std::vector<uint64_t> const* player1Grouping;
             storm::storage::SparseMatrix<storm::storage::sparse::state_type> const* player1Matrix;
             storm::storage::SparseMatrix<ValueType> const& player2Matrix;
-            
         };
     }
 }

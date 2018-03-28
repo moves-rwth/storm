@@ -124,6 +124,16 @@ namespace storm {
             return std::make_unique<StandardGameSolver<ValueType>>(std::move(player1Matrix), std::move(player2Matrix), std::make_unique<GeneralLinearEquationSolverFactory<ValueType>>());
         }
         
+        template<typename ValueType>
+        std::unique_ptr<GameSolver<ValueType>> GameSolverFactory<ValueType>::create(Environment const& env, std::vector<uint64_t> const& player1Grouping, storm::storage::SparseMatrix<ValueType> const& player2Matrix) const {
+            return std::make_unique<StandardGameSolver<ValueType>>(player1Grouping, player2Matrix, std::make_unique<GeneralLinearEquationSolverFactory<ValueType>>());
+        }
+        
+        template<typename ValueType>
+        std::unique_ptr<GameSolver<ValueType>> GameSolverFactory<ValueType>::create(Environment const& env, std::vector<uint64_t>&& player1Grouping, storm::storage::SparseMatrix<ValueType>&& player2Matrix) const {
+            return std::make_unique<StandardGameSolver<ValueType>>(std::move(player1Grouping), std::move(player2Matrix), std::make_unique<GeneralLinearEquationSolverFactory<ValueType>>());
+        }
+        
         template class GameSolver<double>;
         template class GameSolver<storm::RationalNumber>;
         

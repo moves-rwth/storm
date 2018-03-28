@@ -672,27 +672,42 @@ namespace storm {
                 typename std::vector<T>::const_iterator sourceIt = source.begin();
                 typename std::vector<T>::const_iterator sourceIte;
                 typename std::vector<uint_fast64_t>::iterator choiceIt;
-                uint_fast64_t localChoice;
-                if (choices != nullptr) {
+                if (choices) {
                     choiceIt = choices->begin();
                 }
+                
+                // Variables for correctly tracking choices (only update if new choice is strictly better).
+                T oldSelectedChoiceValue;
+                uint64_t selectedChoice;
                 
                 for (; targetIt != targetIte; ++targetIt, ++rowGroupingIt, ++choiceIt) {
                     // Only traverse elements if the row group is non-empty.
                     if (*rowGroupingIt != *(rowGroupingIt + 1)) {
                         *targetIt = *sourceIt;
-                        ++sourceIt;
-                        localChoice = 1;
-                        if (choices != nullptr) {
-                            *choiceIt = 0;
+                        
+                        if (choices) {
+                            selectedChoice = 0;
+                            if (*choiceIt == 0) {
+                                oldSelectedChoiceValue = *targetIt;
+                            }
                         }
-                        for (sourceIte = source.begin() + *(rowGroupingIt + 1); sourceIt != sourceIte; ++sourceIt, ++localChoice) {
+
+                        ++sourceIt;
+                        for (sourceIte = source.begin() + *(rowGroupingIt + 1); sourceIt != sourceIte; ++sourceIt) {
+                            if (choices && selectedChoice == std::distance(source.begin(), sourceIt) - *rowGroupingIt) {
+                                oldSelectedChoiceValue = *sourceIt;
+                            }
+                            
                             if (f(*sourceIt, *targetIt)) {
                                 *targetIt = *sourceIt;
-                                if (choices != nullptr) {
-                                    *choiceIt = localChoice;
+                                if (choices) {
+                                    selectedChoice = std::distance(source.begin(), sourceIt) - *rowGroupingIt;
                                 }
                             }
+                        }
+                        
+                        if (choices && f(*targetIt, oldSelectedChoiceValue)) {
+                            *choiceIt = selectedChoice;
                         }
                     } else {
                         *targetIt = storm::utility::zero<T>();

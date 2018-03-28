@@ -154,9 +154,8 @@ namespace storm {
             virtual std::unique_ptr<GameSolver<ValueType>> create(Environment const& env, storm::storage::SparseMatrix<storm::storage::sparse::state_type> const& player1Matrix, storm::storage::SparseMatrix<ValueType> const& player2Matrix) const;
             virtual std::unique_ptr<GameSolver<ValueType>> create(Environment const& env, storm::storage::SparseMatrix<storm::storage::sparse::state_type>&& player1Matrix, storm::storage::SparseMatrix<ValueType>&& player2Matrix) const;
 
-        private:
-            bool trackScheduler;
-
+            virtual std::unique_ptr<GameSolver<ValueType>> create(Environment const& env, std::vector<uint64_t> const& player1Grouping, storm::storage::SparseMatrix<ValueType> const& player2Matrix) const;
+            virtual std::unique_ptr<GameSolver<ValueType>> create(Environment const& env, std::vector<uint64_t>&& player1Grouping, storm::storage::SparseMatrix<ValueType>&& player2Matrix) const;
         };
         
     } // namespace solver

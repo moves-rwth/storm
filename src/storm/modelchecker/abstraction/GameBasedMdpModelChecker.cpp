@@ -32,6 +32,7 @@
 #include "storm/logic/FragmentSpecification.h"
 
 #include "storm/solver/SymbolicGameSolver.h"
+#include "storm/solver/StandardGameSolver.h"
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/CoreSettings.h"
@@ -410,11 +411,9 @@ namespace storm {
             storm::storage::SparseMatrix<ValueType> submatrix = transitionMatrix.getSubmatrix(true, player2MaybeStates, maybeStates);
             std::vector<ValueType> b = transitionMatrix.getConstrainedRowGroupSumVector(player2MaybeStates, maybeStates);
             
-//            auto multiplier = storm::solver::MultiplierFactory<ValueType>().create(env, submatrix);
-//            multiplier->repeatedMultiplyAndReduce(env, goal.direction(), subresult, &b, stepBound);
-//
-//
-//            env.
+            auto gameSolver = storm::solver::GameSolverFactory<ValueType>().create(env, player1Groups, transitionMatrix);
+            exit(-1);
+            
         }
         
         template<storm::dd::DdType Type, typename ModelType>
