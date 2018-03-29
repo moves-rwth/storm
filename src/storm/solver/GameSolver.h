@@ -39,8 +39,12 @@ namespace storm {
              * @param player2Dir Sets whether player 2 wants to minimize or maximize.
              * @param x The initial guess of the solution. For correctness, the guess has to be less (or equal) to the final solution (unless both players minimize)
              * @param b The vector to add after matrix-vector multiplication.
+             * @param player1Choices If provided along with the storage for player 2 choices, the scheduler decisions
+             * are tracked within these two vectors.
+             * @param player2Choices If provided along with the storage for player 1 choices, the scheduler decisions
+             * are tracked within these two vectors.
              */
-            virtual bool solveGame(Environment const& env, OptimizationDirection player1Dir, OptimizationDirection player2Dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const = 0;
+            virtual bool solveGame(Environment const& env, OptimizationDirection player1Dir, OptimizationDirection player2Dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<uint64_t>* player1Choices = nullptr, std::vector<uint64_t>* player2Choices = nullptr) const = 0;
             
             /*!
              * Performs (repeated) matrix-vector multiplication with the given parameters, i.e. computes

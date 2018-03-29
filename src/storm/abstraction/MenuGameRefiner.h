@@ -91,7 +91,10 @@ namespace storm {
         
         class ExplicitQualitativeGameResultMinMax;
         class ExplicitGameStrategyPair;
-        
+
+        template<typename ValueType>
+        class ExplicitQuantitativeResultMinMax;
+
         template<storm::dd::DdType Type, typename ValueType>
         class MenuGameRefiner {
         public:
@@ -121,6 +124,13 @@ namespace storm {
              */
             bool refine(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Odd const& odd, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint64_t> const& player1Grouping, std::vector<uint64_t> const& player1Labeling, std::vector<uint64_t> const& player2Labeling, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, ExplicitQualitativeGameResultMinMax const& qualitativeResult, ExplicitGameStrategyPair const& minStrategyPair, ExplicitGameStrategyPair const& maxStrategyPair) const;
 
+            /*!
+             * Refines the abstractor based on the qualitative result by trying to derive suitable predicates.
+             *
+             * @param True if predicates for refinement could be derived, false otherwise.
+             */
+            bool refine(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Odd const& odd, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint64_t> const& player1Grouping, std::vector<uint64_t> const& player1Labeling, std::vector<uint64_t> const& player2Labeling, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, ExplicitQuantitativeResultMinMax<ValueType> const& qualitativeResult, ExplicitGameStrategyPair const& minStrategyPair, ExplicitGameStrategyPair const& maxStrategyPair) const;
+            
             /*!
              * Refines the abstractor based on the quantitative result by trying to derive suitable predicates.
              *

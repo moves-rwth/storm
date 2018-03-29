@@ -1395,7 +1395,7 @@ namespace storm {
                         
                         // If we were asked to produce strategies, we propagate that by triggering another iteration.
                         // We only do this if at least one strategy will be produced.
-                        produceStrategiesInIteration = !produceStrategiesInIteration && ((player1Strategy && player1Direction == OptimizationDirection::Maximize) || (player2Strategy && player2Direction == OptimizationDirection::Maximize));
+                        produceStrategiesInIteration = !produceStrategiesInIteration && (player1Strategy || player2Strategy);
                     } else {
                         result.player1States = player1Solution;
                         result.player2States = player2Solution;

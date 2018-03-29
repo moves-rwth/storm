@@ -19,7 +19,7 @@ namespace storm {
             StandardGameSolver(std::vector<uint64_t> const& player1Groups, storm::storage::SparseMatrix<ValueType> const& player2Matrix, std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory);
             StandardGameSolver(std::vector<uint64_t>&& player1Groups, storm::storage::SparseMatrix<ValueType>&& player2Matrix, std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory);
             
-            virtual bool solveGame(Environment const& env, OptimizationDirection player1Dir, OptimizationDirection player2Dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const override;
+            virtual bool solveGame(Environment const& env, OptimizationDirection player1Dir, OptimizationDirection player2Dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<uint64_t>* player1Choices = nullptr, std::vector<uint64_t>* player2Choices = nullptr) const override;
             virtual void repeatedMultiply(Environment const& env, OptimizationDirection player1Dir, OptimizationDirection player2Dir, std::vector<ValueType>& x, std::vector<ValueType> const* b, uint_fast64_t n = 1) const override;
 
             virtual void clearCache() const override;
@@ -27,8 +27,8 @@ namespace storm {
         private:
             GameMethod getMethod(Environment const& env, bool isExactMode) const;
             
-            bool solveGamePolicyIteration(Environment const& env, OptimizationDirection player1Dir, OptimizationDirection player2Dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
-            bool solveGameValueIteration(Environment const& env, OptimizationDirection player1Dir, OptimizationDirection player2Dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
+            bool solveGamePolicyIteration(Environment const& env, OptimizationDirection player1Dir, OptimizationDirection player2Dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<uint64_t>* player1Choices = nullptr, std::vector<uint64_t>* player2Choices = nullptr) const;
+            bool solveGameValueIteration(Environment const& env, OptimizationDirection player1Dir, OptimizationDirection player2Dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<uint64_t>* player1Choices = nullptr, std::vector<uint64_t>* player2Choices = nullptr) const;
 
             // Computes p2Matrix * x + b, reduces the result w.r.t. player 2 choices, and then reduces the result w.r.t. player 1 choices.
             void multiplyAndReduce(Environment const& env, OptimizationDirection player1Dir, OptimizationDirection player2Dir, std::vector<ValueType>& x, std::vector<ValueType> const* b, storm::solver::Multiplier<ValueType> const& multiplier, std::vector<ValueType>& player2ReducedResult, std::vector<ValueType>& player1ReducedResult, std::vector<uint64_t>* player1SchedulerChoices = nullptr, std::vector<uint64_t>* player2SchedulerChoices = nullptr) const;

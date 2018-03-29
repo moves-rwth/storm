@@ -57,12 +57,12 @@ namespace storm {
         }
         
         template<typename ValueType>
-        bool StandardGameSolver<ValueType>::solveGame(Environment const& env, OptimizationDirection player1Dir, OptimizationDirection player2Dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+        bool StandardGameSolver<ValueType>::solveGame(Environment const& env, OptimizationDirection player1Dir, OptimizationDirection player2Dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<uint64_t>* player1Choices, std::vector<uint64_t>* player2Choices) const {
             switch (getMethod(env, std::is_same<ValueType, storm::RationalNumber>::value)) {
                 case GameMethod::ValueIteration:
-                    return solveGameValueIteration(env, player1Dir, player2Dir, x, b);
+                    return solveGameValueIteration(env, player1Dir, player2Dir, x, b, player1Choices, player2Choices);
                 case GameMethod::PolicyIteration:
-                    return solveGamePolicyIteration(env, player1Dir, player2Dir, x, b);
+                    return solveGamePolicyIteration(env, player1Dir, player2Dir, x, b, player1Choices, player2Choices);
                 default:
                     STORM_LOG_THROW(false, storm::exceptions::InvalidEnvironmentException, "This solver does not implement the selected solution method");
             }
@@ -70,21 +70,39 @@ namespace storm {
         }
         
         template<typename ValueType>
-        bool StandardGameSolver<ValueType>::solveGamePolicyIteration(Environment const& env, OptimizationDirection player1Dir, OptimizationDirection player2Dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+        bool StandardGameSolver<ValueType>::solveGamePolicyIteration(Environment const& env, OptimizationDirection player1Dir, OptimizationDirection player2Dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<uint64_t>* providedPlayer1Choices, std::vector<uint64_t>* providedPlayer2Choices) const {
             
             // Create the initial choice selections.
-            std::vector<storm::storage::sparse::state_type> player1Choices;
+            std::vector<storm::storage::sparse::state_type>* player1Choices;
+            std::unique_ptr<std::vector<storm::storage::sparse::state_type>> localPlayer1Choices;
+            std::vector<storm::storage::sparse::state_type>* player2Choices;
+            std::unique_ptr<std::vector<storm::storage::sparse::state_type>> localPlayer2Choices;
+
+            if (providedPlayer1Choices && providedPlayer2Choices) {
+                player1Choices = providedPlayer1Choices;
+                player2Choices = providedPlayer2Choices;
+            } else {
+                localPlayer1Choices = std::make_unique<std::vector<uint64_t>>();
+                player1Choices = localPlayer1Choices.get();
+                localPlayer2Choices = std::make_unique<std::vector<uint64_t>>();
+                player2Choices = localPlayer2Choices.get();
+            }
+            
             if (this->hasSchedulerHints()) {
-                player1Choices = this->player1ChoicesHint.get();
+                *player1Choices = this->player1ChoicesHint.get();
             } else if (this->player1RepresentedByMatrix()) {
                 // Player 1 represented by matrix.
-                player1Choices = std::vector<storm::storage::sparse::state_type>(this->getPlayer1Matrix().getRowGroupCount(), 0);
+                *player1Choices = std::vector<storm::storage::sparse::state_type>(this->getPlayer1Matrix().getRowGroupCount(), 0);
             } else {
                 // Player 1 represented by grouping of player 2 states.
-                player1Choices = this->getPlayer1Grouping();
-                player1Choices.resize(player1Choices.size() - 1);
+                *player1Choices = this->getPlayer1Grouping();
+                player1Choices->resize(player1Choices->size() - 1);
             }
-            std::vector<storm::storage::sparse::state_type> player2Choices = this->hasSchedulerHints() ? this->player2ChoicesHint.get() : std::vector<storm::storage::sparse::state_type>(this->player2Matrix.getRowGroupCount(), 0);
+            if (this->hasSchedulerHints()) {
+                *player2Choices = this->player2ChoicesHint.get();
+            } else if (!(providedPlayer1Choices && providedPlayer2Choices)) {
+                player2Choices->resize(this->player2Matrix.getRowGroupCount());
+            }
             
             if (!auxiliaryP2RowGroupVector) {
                 auxiliaryP2RowGroupVector = std::make_unique<std::vector<ValueType>>(this->player2Matrix.getRowGroupCount());
@@ -119,7 +137,7 @@ namespace storm {
             
             // Solve the equation system induced by the two schedulers.
             storm::storage::SparseMatrix<ValueType> submatrix;
-            getInducedMatrixVector(x, b, player1Choices, player2Choices, submatrix, subB);
+            getInducedMatrixVector(x, b, *player1Choices, *player2Choices, submatrix, subB);
             if (this->linearEquationSolverFactory->getEquationProblemFormat(environmentOfSolver) == LinearEquationSolverProblemFormat::EquationSystem) {
                 submatrix.convertToEquationSystem();
             }
@@ -140,14 +158,14 @@ namespace storm {
                 // FIXME: we need to remove the 0- and 1- states to make the solution unique.
                 submatrixSolver->solveEquations(environmentOfSolver, x, subB);
                 
-                bool schedulerImproved = extractChoices(player1Dir, player2Dir, x, b, *auxiliaryP2RowGroupVector, player1Choices, player2Choices);
+                bool schedulerImproved = extractChoices(player1Dir, player2Dir, x, b, *auxiliaryP2RowGroupVector, *player1Choices, *player2Choices);
                 
                 // If the scheduler did not improve, we are done.
                 if (!schedulerImproved) {
                     status = Status::Converged;
                 } else {
                     // Update the solver.
-                    getInducedMatrixVector(x, b, player1Choices, player2Choices, submatrix, subB);
+                    getInducedMatrixVector(x, b, *player1Choices, *player2Choices, submatrix, subB);
                     submatrix.convertToEquationSystem();
                     submatrixSolver->setMatrix(std::move(submatrix));
                 }
@@ -160,9 +178,9 @@ namespace storm {
             reportStatus(status, iterations);
             
             // If requested, we store the scheduler for retrieval.
-            if (this->isTrackSchedulersSet()) {
-                this->player1SchedulerChoices = std::move(player1Choices);
-                this->player2SchedulerChoices = std::move(player2Choices);
+            if (this->isTrackSchedulersSet() && !(providedPlayer1Choices && providedPlayer2Choices)) {
+                this->player1SchedulerChoices = std::move(*player1Choices);
+                this->player2SchedulerChoices = std::move(*player2Choices);
             }
             
             if (!this->isCachingEnabled()) {
@@ -182,7 +200,7 @@ namespace storm {
         }
 
         template<typename ValueType>
-        bool StandardGameSolver<ValueType>::solveGameValueIteration(Environment const& env, OptimizationDirection player1Dir, OptimizationDirection player2Dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+        bool StandardGameSolver<ValueType>::solveGameValueIteration(Environment const& env, OptimizationDirection player1Dir, OptimizationDirection player2Dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<uint64_t>* player1Choices, std::vector<uint64_t>* player2Choices) const {
                          
             if (!multiplierPlayer2Matrix) {
                 multiplierPlayer2Matrix = storm::solver::MultiplierFactory<ValueType>().create(env, player2Matrix);
@@ -202,7 +220,9 @@ namespace storm {
             
             std::vector<ValueType>& reducedPlayer2Result = *auxiliaryP2RowGroupVector;
             
-            bool trackSchedulersInValueIteration = this->isTrackSchedulersSet() && !this->hasUniqueSolution();
+            bool trackingSchedulersInProvidedStorage = player1Choices && player2Choices;
+            bool trackSchedulers = this->isTrackSchedulersSet() || trackingSchedulersInProvidedStorage;
+            bool trackSchedulersInValueIteration = trackSchedulers && !this->hasUniqueSolution();
             if (this->hasSchedulerHints()) {
                 // Solve the equation system induced by the two schedulers.
                 storm::storage::SparseMatrix<ValueType> submatrix;
@@ -221,11 +241,11 @@ namespace storm {
                 submatrixSolver->solveEquations(env, x, *auxiliaryP1RowGroupVector);
                 
                 // If requested, we store the scheduler for retrieval. Initialize the schedulers to the hint we have.
-                if (trackSchedulersInValueIteration) {
+                if (trackSchedulersInValueIteration && !trackingSchedulersInProvidedStorage) {
                     this->player1SchedulerChoices = this->player1ChoicesHint.get();
                     this->player2SchedulerChoices = this->player2ChoicesHint.get();
                 }
-            } else if (trackSchedulersInValueIteration) {
+            } else if (trackSchedulersInValueIteration && !trackingSchedulersInProvidedStorage) {
                 // If requested, we store the scheduler for retrieval. Create empty schedulers here so we can fill them
                 // during VI.
                 this->player1SchedulerChoices = std::vector<uint_fast64_t>(this->getNumberOfPlayer1States(), 0);
@@ -240,7 +260,9 @@ namespace storm {
 
             Status status = Status::InProgress;
             while (status == Status::InProgress) {
-                multiplyAndReduce(env, player1Dir, player2Dir, *currentX, &b, *multiplierPlayer2Matrix, reducedPlayer2Result, *newX, trackSchedulersInValueIteration ? &this->player1SchedulerChoices.get() : nullptr, trackSchedulersInValueIteration ? &this->player2SchedulerChoices.get() : nullptr);
+                multiplyAndReduce(env, player1Dir, player2Dir, *currentX, &b, *multiplierPlayer2Matrix, reducedPlayer2Result, *newX,
+                                  trackSchedulersInValueIteration ? (trackingSchedulersInProvidedStorage ? player1Choices : &this->player1SchedulerChoices.get()) : nullptr,
+                                  trackSchedulersInValueIteration ? (trackingSchedulersInProvidedStorage ? player2Choices : &this->player2SchedulerChoices.get()) : nullptr);
 
                 // Determine whether the method converged.
                 if (storm::utility::vector::equalModuloPrecision<ValueType>(*currentX, *newX, precision, relative)) {
@@ -262,10 +284,14 @@ namespace storm {
             }
             
             // If requested, we store the scheduler for retrieval.
-            if (this->isTrackSchedulersSet() && this->hasUniqueSolution()) {
-                this->player1SchedulerChoices = std::vector<uint_fast64_t>(this->getNumberOfPlayer1States(), 0);
-                this->player2SchedulerChoices = std::vector<uint_fast64_t>(this->getNumberOfPlayer2States(), 0);
-                extractChoices(player1Dir, player2Dir, x, b, *auxiliaryP2RowGroupVector, this->player1SchedulerChoices.get(), this->player2SchedulerChoices.get());
+            if (trackSchedulers && this->hasUniqueSolution()) {
+                if (trackingSchedulersInProvidedStorage) {
+                    extractChoices(player1Dir, player2Dir, x, b, *auxiliaryP2RowGroupVector, *player1Choices, *player2Choices);
+                } else {
+                    this->player1SchedulerChoices = std::vector<uint_fast64_t>(this->getNumberOfPlayer1States(), 0);
+                    this->player2SchedulerChoices = std::vector<uint_fast64_t>(this->getNumberOfPlayer2States(), 0);
+                    extractChoices(player1Dir, player2Dir, x, b, *auxiliaryP2RowGroupVector, this->player1SchedulerChoices.get(), this->player2SchedulerChoices.get());
+                }
             }
             
             if (!this->isCachingEnabled()) {
