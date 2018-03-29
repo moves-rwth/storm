@@ -21,20 +21,17 @@ namespace storm {
             // Notice that for CTMCs we write the rate matrix instead of probabilities
 
             // Initialize
-            storm::models::ModelType type = sparseModel->getType();
             std::vector<ValueType> exitRates; // Only for CTMCs and MAs.
-            if(sparseModel->getType() == storm::models::ModelType::Ctmc) {
+            if (sparseModel->getType() == storm::models::ModelType::Ctmc) {
                 exitRates = sparseModel->template as<storm::models::sparse::Ctmc<ValueType>>()->getExitRateVector();
-            } else if(sparseModel->getType() == storm::models::ModelType::MarkovAutomaton) {
-                type = storm::models::ModelType::Mdp;
-                STORM_LOG_WARN("Markov automaton is exported as MDP (indication of Markovian choices is not supported in DRN format).");
+            } else if (sparseModel->getType() == storm::models::ModelType::MarkovAutomaton) {
                 exitRates = sparseModel->template as<storm::models::sparse::MarkovAutomaton<ValueType>>()->getExitRates();
             }
 
             // Write header
             os << "// Exported by storm" << std::endl;
             os << "// Original model type: " << sparseModel->getType() << std::endl;
-            os << "@type: " << type << std::endl;
+            os << "@type: " << sparseModel->getType() << std::endl;
             os << "@parameters" << std::endl;
             if (parameters.empty()) {
                 for (std::string const& parameter : getParameters(sparseModel)) {
@@ -59,6 +56,11 @@ namespace storm {
             // Iterate over states and export state information and outgoing transitions
             for (typename storm::storage::SparseMatrix<ValueType>::index_type group = 0; group < matrix.getRowGroupCount(); ++group) {
                 os << "state " << group;
+
+                // Write exit rates for CTMCs and MAs
+                if (!exitRates.empty()) {
+                    os << " !" << exitRates.at(group);
+                }
 
                 // Write state rewards
                 bool first = true;
