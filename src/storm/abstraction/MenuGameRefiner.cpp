@@ -672,6 +672,8 @@ namespace storm {
                     if (!interpolant.isTrue() && !interpolant.isFalse()) {
                         STORM_LOG_DEBUG("Derived new predicate (based on interpolation): " << interpolant);
                         interpolants.push_back(interpolant);
+                    } else {
+                        STORM_LOG_TRACE("Found interpolant is '" << interpolant << "'.");
                     }
                 }
                 return boost::make_optional(RefinementPredicates(RefinementPredicates::Source::Interpolation, interpolants));

@@ -680,12 +680,12 @@ namespace storm {
             std::vector<uint64_t> player2BackwardTransitions(transitionMatrix.getRowGroupCount());
 
             uint64_t player2State = 0;
-            for (uint64_t player1State = 0; player1State < player2RowGrouping.size() - 1; ++player1State) {
+            for (uint64_t player1State = 0; player1State < player1RowGrouping.size() - 1; ++player1State) {
                 while (player1RowGrouping[player1State + 1] > player2RowGrouping[player2State]) {
                     player2BackwardTransitions[player2State] = player1State;
                     ++player2State;
                 }
-                
+
                 player1Groups[player1State + 1] = player2State;
             }
             
