@@ -114,10 +114,10 @@ echo Normalized C++ Standard library location: $(readlink -f $(echo '#include <v
 
 case "$CONFIG" in
 DefaultDebug*)
-    CMAKE_ARGS=(-DCMAKE_BUILD_TYPE=Debug -DSTORM_DEVELOPER=ON -DCMAKE_CXX_FLAGS="$STLARG")
+    CMAKE_ARGS=(-DCMAKE_BUILD_TYPE=Debug -DSTORM_DEVELOPER=ON -DSTORM_PORTABLE=ON -DCMAKE_CXX_FLAGS="$STLARG")
     ;;
 DefaultRelease*)
-    CMAKE_ARGS=(-DCMAKE_BUILD_TYPE=Release -DSTORM_DEVELOPER=OFF -DCMAKE_CXX_FLAGS="$STLARG")
+    CMAKE_ARGS=(-DCMAKE_BUILD_TYPE=Release -DSTORM_DEVELOPER=OFF -DSTORM_PORTABLE=ON -DCMAKE_CXX_FLAGS="$STLARG")
     ;;
 *)
     echo "Unrecognized value of CONFIG: $CONFIG"; exit 1
