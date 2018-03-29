@@ -40,26 +40,27 @@ namespace storm {
             bool sawParameters = false;
             size_t nrStates = 0;
             storm::models::ModelType type;
-
             std::vector<std::string> rewardModelNames;
-
-             std::shared_ptr<storm::storage::sparse::ModelComponents<ValueType, RewardModelType>> modelComponents;
+            std::shared_ptr<storm::storage::sparse::ModelComponents<ValueType, RewardModelType>> modelComponents;
 
             // Parse header
-            while(std::getline(file, line)) {
-                if(line.empty() || boost::starts_with(line, "//")) {
+            while (std::getline(file, line)) {
+                if (line.empty() || boost::starts_with(line, "//")) {
                     continue;
                 }
 
                 if (boost::starts_with(line, "@type: ")) {
+                    // Parse type
                     STORM_LOG_THROW(!sawType, storm::exceptions::WrongFormatException, "Type declared twice");
                     type = storm::models::getModelType(line.substr(7));
                     STORM_LOG_TRACE("Model type: " << type);
                     STORM_LOG_THROW(type != storm::models::ModelType::MarkovAutomaton, storm::exceptions::NotSupportedException, "Markov Automata in DRN format are not supported (unclear indication of Markovian Choices in DRN format)");
                     STORM_LOG_THROW(type != storm::models::ModelType::S2pg, storm::exceptions::NotSupportedException, "Stochastic Two Player Games in DRN format are not supported.");
                     sawType = true;
-                }
-                if(line == "@parameters") {
+
+                } else if (line == "@parameters") {
+                    // Parse parameters
+                    STORM_LOG_THROW(!sawParameters, storm::exceptions::WrongFormatException, "Parameters declared twice");
                     std::getline(file, line);
                     if (line != "") {
                         std::vector<std::string> parameters;
@@ -70,26 +71,28 @@ namespace storm {
                         }
                     }
                     sawParameters = true;
-                }
-                if(line == "@reward_models") {
+
+                } else if (line == "@reward_models") {
+                    // Parse reward models
                     STORM_LOG_THROW(rewardModelNames.size() == 0, storm::exceptions::WrongFormatException, "Reward model names declared twice");
                     std::getline(file, line);
                     boost::split(rewardModelNames, line, boost::is_any_of("\t "));
-                }
-                if(line == "@nr_states") {
+                } else if (line == "@nr_states") {
+                    // Parse no. of states
                     STORM_LOG_THROW(nrStates == 0, storm::exceptions::WrongFormatException, "Number states declared twice");
                     std::getline(file, line);
                     nrStates = NumberParser<size_t>::parse(line);
-
-                }
-                if(line == "@model") {
+                } else if (line == "@model") {
+                    // Parse rest of the model
                     STORM_LOG_THROW(sawType, storm::exceptions::WrongFormatException, "Type has to be declared before model.");
                     STORM_LOG_THROW(sawParameters, storm::exceptions::WrongFormatException, "Parameters have to be declared before model.");
-                    STORM_LOG_THROW(nrStates != 0, storm::exceptions::WrongFormatException, "Nr States has to be declared before model.");
+                    STORM_LOG_THROW(nrStates != 0, storm::exceptions::WrongFormatException, "No. of states has to be declared before model.");
 
                     // Construct model components
                     modelComponents = parseStates(file, type, nrStates, valueParser, rewardModelNames);
                     break;
+                } else {
+                    STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Could not parse line '" << line << "'.");
                 }
             }
             // Done parsing
@@ -182,8 +185,8 @@ namespace storm {
                     } else {
                         ++row;
                     }
-                    line = line.substr(8);
                     STORM_LOG_TRACE("New action: " << row);
+                    line = line.substr(8); //Remove "\taction "
                     // Check for rewards
                     if (boost::starts_with(line, "[")) {
                         // Rewards found
