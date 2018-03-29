@@ -35,6 +35,10 @@ namespace storm {
             }
         }
         
+        uint64_t ExplicitGameStrategy::getNumberOfUndefinedStates() const {
+            return std::count_if(choices.begin(), choices.end(), [] (uint64_t choice) { return choice == UNDEFINED; });
+        }
+        
         std::ostream& operator<<(std::ostream& out, ExplicitGameStrategy const& strategy) {
             std::vector<uint64_t> undefinedStates;
             for (uint64_t state = 0; state < strategy.getNumberOfStates(); ++state) {

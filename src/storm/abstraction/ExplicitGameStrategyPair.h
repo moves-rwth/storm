@@ -18,6 +18,9 @@ namespace storm {
             ExplicitGameStrategy& getPlayer2Strategy();
             ExplicitGameStrategy const& getPlayer2Strategy() const;
 
+            uint64_t getNumberOfUndefinedPlayer1States() const;
+            uint64_t getNumberOfUndefinedPlayer2States() const;
+
         private:
             ExplicitGameStrategy player1Strategy;
             ExplicitGameStrategy player2Strategy;

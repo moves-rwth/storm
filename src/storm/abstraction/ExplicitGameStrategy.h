@@ -19,7 +19,9 @@ namespace storm {
             void setChoice(uint64_t state, uint64_t choice);
             bool hasDefinedChoice(uint64_t state) const;
             void undefineAll();
-                        
+            
+            uint64_t getNumberOfUndefinedStates() const;
+            
         private:
             std::vector<uint64_t> choices;
         };
