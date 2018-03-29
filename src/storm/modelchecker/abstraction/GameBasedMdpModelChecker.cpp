@@ -689,6 +689,14 @@ namespace storm {
                 player1Groups[player1State + 1] = player2State;
             }
             
+            // Lift the player 1 labeling from rows to row groups (player 2 states).
+            for (uint64_t player1State = 0; player1State < player1Groups.size() - 1; ++player1State) {
+                for (uint64_t player2State = player1Groups[player1State]; player2State < player1Groups[player1State + 1]; ++player2State) {
+                    player1Labeling[player2State] = player1Labeling[player2RowGrouping[player2State]];
+                }
+            }
+            player1Labeling.resize(player2RowGrouping.size() - 1);
+            
             // Create explicit representations of important state sets.
             storm::storage::BitVector initialStates = initialStatesBdd.toVector(odd);
             storm::storage::BitVector constraintStates = constraintStatesBdd.toVector(odd);

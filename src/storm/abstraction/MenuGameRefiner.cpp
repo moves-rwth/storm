@@ -394,11 +394,8 @@ namespace storm {
             
             // Derive predicates from lower choice.
             storm::dd::Bdd<Type> lowerChoice = pivotState && game.getExtendedTransitionMatrix().toBdd() && minPlayer1Strategy;
-            lowerChoice.template toAdd<ValueType>().exportToDot("lower.dot");
             storm::dd::Bdd<Type> lowerChoice1 = (lowerChoice && minPlayer2Strategy).existsAbstract(variablesToAbstract);
-            lowerChoice1.template toAdd<ValueType>().exportToDot("lower1.dot");
             storm::dd::Bdd<Type> lowerChoice2 = (lowerChoice && maxPlayer2Strategy).existsAbstract(variablesToAbstract);
-            lowerChoice2.template toAdd<ValueType>().exportToDot("lower2.dot");
 
             bool lowerChoicesDifferent = !lowerChoice1.exclusiveOr(lowerChoice2).isZero() && !lowerChoice1.isZero() && !lowerChoice2.isZero();
             if (lowerChoicesDifferent) {
@@ -610,7 +607,7 @@ namespace storm {
                 
                 // Add variable update expression.
                 predicates.back().emplace_back(allVariableUpdateExpression);
-                
+
                 // Add the guard of the choice.
                 predicates.back().emplace_back(abstractor.get().getGuard(currentAction).changeManager(expressionManager).substitute(substitution));
                 
@@ -649,14 +646,14 @@ namespace storm {
                 for (auto const& predicate : step) {
                     interpolatingSolver.add(predicate);
                 }
-                ++stepCounter;
-                
                 storm::solver::SmtSolver::CheckResult result = interpolatingSolver.check();
                 // If the result already became unsatisfiable
                 if (result == storm::solver::SmtSolver::CheckResult::Unsat) {
-                    STORM_LOG_TRACE("Trace formula became unsatisfiable after step " << (stepCounter - 1) << ".");
+                    STORM_LOG_TRACE("Trace formula became unsatisfiable after step " << stepCounter << ".");
                     break;
                 }
+
+                ++stepCounter;
             }
             
             // Now encode the trace as an SMT problem.
@@ -666,14 +663,14 @@ namespace storm {
                 
                 std::vector<storm::expressions::Expression> interpolants;
                 std::vector<uint64_t> prefix;
-                for (uint64_t step = 0; step + 1 < stepCounter; ++step) {
+                for (uint64_t step = 0; step < stepCounter; ++step) {
                     prefix.push_back(step);
                     storm::expressions::Expression interpolant = interpolatingSolver.getInterpolant(prefix).substitute(variableSubstitution).changeManager(abstractionInformation.getExpressionManager());
                     if (!interpolant.isTrue() && !interpolant.isFalse()) {
                         STORM_LOG_DEBUG("Derived new predicate (based on interpolation): " << interpolant);
                         interpolants.push_back(interpolant);
                     } else {
-                        STORM_LOG_TRACE("Found interpolant is '" << interpolant << "'.");
+                        STORM_LOG_ASSERT(false, "The found interpolant is '" << interpolant << "', which shouldn't happen.");
                     }
                 }
                 return boost::make_optional(RefinementPredicates(RefinementPredicates::Source::Interpolation, interpolants));
@@ -843,6 +840,7 @@ namespace storm {
             bool considerDeviation = (pivotSelectionHeuristic == storm::settings::modules::AbstractionSettings::PivotSelectionHeuristic::NearestMaximalDeviation || pivotSelectionHeuristic == storm::settings::modules::AbstractionSettings::PivotSelectionHeuristic::MaxWeightedDeviation) && lowerValues && upperValues;
             bool foundPivotState = false;
             ValueType pivotStateDeviation = storm::utility::zero<ValueType>();
+            auto const& player2Grouping = transitionMatrix.getRowGroupIndices();
             
             while (!dijkstraQueue.empty()) {
                 auto distanceStatePair = *dijkstraQueue.begin();
@@ -875,8 +873,7 @@ namespace storm {
                     if (minStrategyPair.getPlayer2Strategy().hasDefinedChoice(player2Successor) && maxStrategyPair.getPlayer2Strategy().hasDefinedChoice(player2Successor) && minStrategyPair.getPlayer2Strategy().getChoice(player2Successor) != maxStrategyPair.getPlayer2Strategy().getChoice(player2Successor)) {
                         isPivotState = true;
                     }
-                }
-                
+                }                
                 // If it is indeed a pivot state, we can abort the search here.
                 if (isPivotState) {
                     if (considerDeviation && foundPivotState) {
@@ -905,7 +902,8 @@ namespace storm {
                 if (minStrategyPair.getPlayer1Strategy().hasDefinedChoice(currentState)) {
                     uint64_t minPlayer2Successor = minStrategyPair.getPlayer1Strategy().getChoice(currentState);
                     uint64_t minPlayer2Choice = minStrategyPair.getPlayer2Strategy().getChoice(minPlayer2Successor);
-                    
+                    STORM_LOG_ASSERT(player2Grouping[minPlayer2Successor] <= minPlayer2Choice && minPlayer2Choice < player2Grouping[minPlayer2Successor + 1], "Illegal choice for player 2.");
+
                     for (auto const& entry : transitionMatrix.getRow(minPlayer2Choice)) {
                         uint64_t player1Successor = entry.getColumn();
                         if (!relevantStates.get(player1Successor)) {
@@ -925,7 +923,8 @@ namespace storm {
                 if (maxStrategyPair.getPlayer1Strategy().hasDefinedChoice(currentState)) {
                     uint64_t maxPlayer2Successor = maxStrategyPair.getPlayer1Strategy().getChoice(currentState);
                     uint64_t maxPlayer2Choice = maxStrategyPair.getPlayer2Strategy().getChoice(maxPlayer2Successor);
-                    
+                    STORM_LOG_ASSERT(player2Grouping[maxPlayer2Successor] <= maxPlayer2Choice && maxPlayer2Choice < player2Grouping[maxPlayer2Successor + 1], "Illegal choice for player 2.");
+
                     for (auto const& entry : transitionMatrix.getRow(maxPlayer2Choice)) {
                         uint64_t player1Successor = entry.getColumn();
                         if (!relevantStates.get(player1Successor)) {
@@ -936,7 +935,7 @@ namespace storm {
                         if ((probabilityDistances && alternateDistance > distances[player1Successor]) || (!probabilityDistances && alternateDistance < distances[player1Successor])) {
                             distances[player1Successor] = alternateDistance;
                             if (generatePredecessors) {
-                                result.predecessors[player1Successor] = std::make_pair(currentState, maxPlayer2Successor);
+                                result.predecessors[player1Successor] = std::make_pair(currentState, player1Labeling[maxPlayer2Successor]);
                             }
                             dijkstraQueue.emplace(alternateDistance, player1Successor);
                         }
@@ -977,7 +976,8 @@ namespace storm {
             storm::dd::Bdd<Type> maxPlayer2Strategy = game.getManager().getBddZero();
             if (minStrategyPair.getPlayer1Strategy().hasDefinedChoice(pivotState)) {
                 uint64_t player2State = minStrategyPair.getPlayer1Strategy().getChoice(pivotState);
-                minPlayer1Strategy |= symbolicPivotState && abstractionInformation.encodePlayer1Choice(player1Labeling[transitionMatrix.getRowGroupIndices()[player2State]], abstractionInformation.getPlayer1VariableCount());
+                STORM_LOG_ASSERT(player1Grouping[pivotState] <= player2State && player2State < player1Grouping[pivotState + 1], "Illegal choice for player 1.");
+                minPlayer1Strategy |= symbolicPivotState && abstractionInformation.encodePlayer1Choice(player1Labeling[player2State], abstractionInformation.getPlayer1VariableCount());
                 
                 if (minStrategyPair.getPlayer2Strategy().hasDefinedChoice(player2State)) {
                     uint64_t player2Choice = minStrategyPair.getPlayer2Strategy().getChoice(player2State);
@@ -990,7 +990,8 @@ namespace storm {
             }
             if (maxStrategyPair.getPlayer1Strategy().hasDefinedChoice(pivotState)) {
                 uint64_t player2State = maxStrategyPair.getPlayer1Strategy().getChoice(pivotState);
-                maxPlayer1Strategy |= symbolicPivotState && abstractionInformation.encodePlayer1Choice(player1Labeling[transitionMatrix.getRowGroupIndices()[player2State]], abstractionInformation.getPlayer1VariableCount());
+                STORM_LOG_ASSERT(player1Grouping[pivotState] <= player2State && player2State < player1Grouping[pivotState + 1], "Illegal choice for player 1.");
+                maxPlayer1Strategy |= symbolicPivotState && abstractionInformation.encodePlayer1Choice(player1Labeling[player2State], abstractionInformation.getPlayer1VariableCount());
                 
                 if (minStrategyPair.getPlayer2Strategy().hasDefinedChoice(player2State)) {
                     uint64_t player2Choice = minStrategyPair.getPlayer2Strategy().getChoice(player2State);
@@ -1001,6 +1002,11 @@ namespace storm {
                     maxPlayer2Strategy |= maxPlayer1Strategy && abstractionInformation.encodePlayer2Choice(player2Labeling[player2Choice], 0, game.getPlayer2Variables().size());
                 }
             }
+//            symbolicPivotState.template toAdd<ValueType>().exportToDot("pivot.dot");
+//            minPlayer1Strategy.template toAdd<ValueType>().exportToDot("minpl1.dot");
+//            minPlayer2Strategy.template toAdd<ValueType>().exportToDot("minpl2.dot");
+//            maxPlayer1Strategy.template toAdd<ValueType>().exportToDot("maxpl1.dot");
+//            maxPlayer2Strategy.template toAdd<ValueType>().exportToDot("maxpl2.dot");
             boost::optional<RefinementPredicates> predicates;
             if (useInterpolation) {
                 predicates = derivePredicatesFromInterpolation(game, pivotStateResult, odd);
