@@ -8,7 +8,7 @@ categories: [Installation]
 
 {% include includes/toc.html %}
 
-This guide shows you the options you have to install Storm. For this, we are going to assume that all necessary [dependencies](requirements.html) have been installed on the machine in default locations so they can be found by our build machinery. Also, we are going to assume that your operating system is in the list of supported [operating systems](requirements.html#supported-os). If your operating system is not in this list but is Linux-based, chances are that you can install Storm but you may have to perform additional steps that we do not cover here. If you just want to quickly try Storm and/or are not able to install the dependencies, you might want to check out our [virtual machine]({{ site.github.url }}/documentation/vm/vm.html) image.
+This guide shows you the options you have to install Storm. For this, we are going to assume that all necessary [dependencies](requirements.html) have been installed on the machine in default locations so they can be found by our build machinery. Also, we are going to assume that your operating system is in the list of supported [operating systems](requirements.html#supported-os). If your operating system is not in this list but is Linux-based, chances are that you can install Storm but you may have to perform additional steps that we do not cover here. If you just want to quickly try Storm and/or are not able to install the dependencies, you might want to check out our [virtual machine]({{ site.github.url }}/documentation/vm/vm.html) image or the [Docker container](#docker).
 
 We currently provide two ways of installing Storm:
 
@@ -17,7 +17,7 @@ We currently provide two ways of installing Storm:
     - [Homebrew](#homebrew)
     - The [AUR](https://aur.archlinux.org/packages/stormchecker-git/), thanks to [Sascha Wunderlich](https://www.saschawunderlich.de/university/)!
 
-If you just want to run Storm and you want to run it natively on your machine, then we recommend installing it via a package manager. However, if you want or need to make changes to the Storm code base, you have to obtain the source code and [build it](#building-storm-from-source) yourself. While this is not always a breeze (depending on your operating system), we spent some effort on making this process as easy as possible.
+If you just want to run Storm and you want to run it natively on your machine, then we recommend installing it via a package manager or using the [Docker container](#docker). However, if you want or need to make changes to the Storm code base, you have to obtain the source code and [build it](#building-storm-from-source) yourself. While this is not always a breeze (depending on your operating system), we spent some effort on making this process as easy as possible.
 
 
 ## Homebrew
@@ -135,3 +135,63 @@ $ make check
 ```
 
 will build and run the tests. In case of errors, please do not hesitate to [file an issue](troubleshooting.html#file-an-issue).
+
+## Docker
+
+For easy and fast access to Storm, we provide Docker containers containing Storm in different versions. The Docker containers are similar to the [Virtual machine]({{ site.github.url }}/documentation/vm/vm.html) but come with less overhead and offer more recent versions of Storm.
+
+To use the containers you first have to install [Docker](https://docs.docker.com/install/){:target="_blank"}.
+On macOS you can use [homebrew](https://brew.sh/){:target="_blank"} to install Docker.
+
+```console
+$ brew cask install docker
+```
+
+Next you should start the Docker app and its tray icon should be visible.
+
+Then you have to download the Docker image you want to use. All available images can be found on [DockerHub](https://hub.docker.com/r/mvolk/storm/tags/){:target="_blank"}. Currently we offer the latest release and the most recent development versions of Storm. The most recent versions are built automatically each day and indicated by the suffix `travis`. Furthermore we also provide debug builts indicated by the suffix `-debug`.
+
+Download the Storm container you want to use:
+
+```console
+$ docker pull mvolk/storm:travis
+```
+
+We want to be able to share files between the container and the host system. Therefore you should change the directory to the one you want to share, for example:
+
+```console
+$ cd ~/Desktop/data
+```
+
+The next command starts the previously downloaded image and enables the file sharing with the current directory:
+
+```console
+$ docker run --mount type=bind,source="$(pwd)",target=/data -w /opt/storm/build/bin --rm -it --name storm mvolk/storm:travis
+```
+
+After executing the command you are now within the Docker container indicated by a different prompt:
+
+```console
+root@1234xyz:/opt/storm/build/bin#
+```
+
+The file sharing direcory is located at `/data`.
+Now you can start using Storm within this container:
+
+```console
+$ ./storm --version
+```
+
+To try out file sharing execute:
+
+```console
+$ ./storm --prism ../../resources/examples/testfiles/dtmc/die.pm --io:exportexplicit /data/die.drn
+```
+
+Afterwards there should be a file named `die.drn` in the shared directory now.
+
+In the end exit the container and clean-up is performed automatically.
+
+```console
+$ exit
+```
