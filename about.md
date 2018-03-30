@@ -73,15 +73,15 @@ If you have general feedback, feature request or bug reports, please send us a m
 
 Storm has been developed at the [Chair for Software Modeling and Verification](http://moves.rwth-aachen.de){:target="_blank"} at RWTH Aachen University by
 
-- [Christian Dehnert](https://moves.rwth-aachen.de/people/dehnert/){:target="_blank"}
+- [Christian Hensel](https://moves.rwth-aachen.de/people/hensel/){:target="_blank"}
 - [Sebastian Junges](https://moves.rwth-aachen.de/people/sebastian-junges/){:target="_blank"}
 - [Joost-Pieter Katoen](https://moves.rwth-aachen.de/people/katoen/){:target="_blank"}
+- [Tim Quatman](https://moves.rwth-aachen.de/people/quatmann/){:target="_blank"}
 - [Matthias Volk](https://moves.rwth-aachen.de/people/volk/){:target="_blank"}
 
 and received significant contributions from
 
 - [Philipp Berger](https://moves.rwth-aachen.de/people/berger/){:target="_blank"}
-- [Tim Quatman](https://moves.rwth-aachen.de/people/quatmann/){:target="_blank"}
 
 Furthermore, we are grateful for the feedback and/or patches we received by:
 
