@@ -81,7 +81,7 @@ namespace storm {
                     STORM_LOG_THROW(predicate.hasBooleanType(), storm::exceptions::InvalidArgumentException, "Expecting a predicate of type bool.");
                     predicateIndices.push_back(abstractionInformation.getOrAddPredicate(predicate));
                 }
-                
+
                 // Refine all abstract modules.
                 for (auto& module : modules) {
                     module.refine(predicateIndices);
@@ -171,27 +171,29 @@ namespace storm {
                 storm::dd::Bdd<DdType> initialStates = initialStateAbstractor.getAbstractStates();
                 initialStates.addMetaVariables(abstractionInformation.getSourcePredicateVariables());
                 storm::dd::Bdd<DdType> reachableStates = storm::utility::dd::computeReachableStates(initialStates, transitionRelation, abstractionInformation.getSourceVariables(), abstractionInformation.getSuccessorVariables());
-                
+
+                // Cut transition relation to the reachable states for backward search.
+                transitionRelation &= reachableStates;
+
                 relevantStatesWatch.start();
                 if (this->isRestrictToRelevantStatesSet() && this->hasTargetStateExpression()) {
-                    // Cut transition relation to the reachable states for backward search.
-                    transitionRelation &= reachableStates;
-                
+
                     // Get the target state BDD.
                     storm::dd::Bdd<DdType> targetStates = reachableStates && this->getStates(this->getTargetStateExpression());
-                    
+
                     // In the presence of target states, we keep only states that can reach the target states.
                     reachableStates = storm::utility::dd::computeBackwardsReachableStates(targetStates, reachableStates && !initialStates, transitionRelation, abstractionInformation.getSourceVariables(), abstractionInformation.getSuccessorVariables()) || initialStates;
-                 
+
+                    // Include all successors of reachable states, because the backward search otherwise potentially
+                    // cuts probability 0 choices of these states.
+                    reachableStates = reachableStates || reachableStates.relationalProduct(transitionRelation, abstractionInformation.getSourceVariables(), abstractionInformation.getSuccessorVariables());
+
                     // Cut the transition relation to the 'extended backward reachable states', so we have the appropriate self-
                     // loops of (now) deadlock states.
                     transitionRelation &= reachableStates;
-                    
-                    // Include all successors of reachable states, because the backward search otherwise potentially
-                    // cuts probability 0 choices of these states.
-                    reachableStates |= reachableStates.relationalProduct(transitionRelation, abstractionInformation.getSourceVariables(), abstractionInformation.getSuccessorVariables());
+
                     relevantStatesWatch.stop();
-                    
+
                     STORM_LOG_TRACE("Restricting to relevant states took " << relevantStatesWatch.getTimeInMilliseconds() << "ms.");
                 }
                 
@@ -212,7 +214,7 @@ namespace storm {
                 bool hasBottomStates = !bottomStateResult.states.isZero();
                 
                 // Construct the transition matrix by cutting away the transitions of unreachable states.
-                storm::dd::Add<DdType, ValueType> transitionMatrix = (game.bdd && reachableStates).template toAdd<ValueType>();
+                storm::dd::Add<DdType, ValueType> transitionMatrix = (game.bdd && reachableStates && reachableStates.swapVariables(abstractionInformation.getSourceSuccessorVariablePairs())).template toAdd<ValueType>();
                 transitionMatrix *= commandUpdateProbabilitiesAdd;
                 transitionMatrix += deadlockTransitions;
                 

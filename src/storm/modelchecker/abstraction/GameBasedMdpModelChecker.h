@@ -6,11 +6,13 @@
 #include "storm/storage/prism/Program.h"
 
 #include "storm/storage/dd/DdType.h"
+#include "storm/storage/dd/Odd.h"
 
 #include "storm/storage/SymbolicModelDescription.h"
 
 #include "storm/abstraction/SymbolicQualitativeGameResult.h"
 #include "storm/abstraction/SymbolicQualitativeGameResultMinMax.h"
+#include "storm/abstraction/ExplicitQuantitativeResult.h"
 
 #include "storm/logic/Bound.h"
 
@@ -41,9 +43,6 @@ namespace storm {
         class ExplicitQualitativeGameResultMinMax;
         
         template<typename ValueType>
-        class ExplicitQuantitativeResult;
-
-        template<typename ValueType>
         class ExplicitQuantitativeResultMinMax;
         
         class ExplicitGameStrategy;
@@ -56,6 +55,18 @@ namespace storm {
         using storm::abstraction::SymbolicQualitativeGameResultMinMax;
         using storm::abstraction::ExplicitQualitativeGameResult;
         using storm::abstraction::ExplicitQualitativeGameResultMinMax;
+        using storm::abstraction::ExplicitQuantitativeResult;
+        using storm::abstraction::ExplicitQuantitativeResultMinMax;
+
+        namespace detail {
+            template<typename ValueType>
+            struct PreviousExplicitResult {
+                ExplicitQuantitativeResultMinMax<ValueType> values;
+                std::vector<uint64_t> minPlayer1Labels;
+                std::vector<uint64_t> maxPlayer1Labels;
+                storm::dd::Odd odd;
+            };
+        }
         
         template<storm::dd::DdType Type, typename ModelType>
         class GameBasedMdpModelChecker : public AbstractModelChecker<ModelType> {
@@ -75,7 +86,7 @@ namespace storm {
             virtual bool canHandle(CheckTask<storm::logic::Formula> const& checkTask) const override;
             virtual std::unique_ptr<CheckResult> computeUntilProbabilities(Environment const& env, CheckTask<storm::logic::UntilFormula> const& checkTask) override;
             virtual std::unique_ptr<CheckResult> computeReachabilityProbabilities(Environment const& env, CheckTask<storm::logic::EventuallyFormula> const& checkTask) override;
-            
+    
         private:
             /*!
              * Performs the core part of the abstraction-refinement loop.
@@ -83,7 +94,7 @@ namespace storm {
             std::unique_ptr<CheckResult> performGameBasedAbstractionRefinement(Environment const& env, CheckTask<storm::logic::Formula> const& checkTask, storm::expressions::Expression const& constraintExpression, storm::expressions::Expression const& targetStateExpression);
             
             std::unique_ptr<CheckResult> performSymbolicAbstractionSolutionStep(Environment const& env, CheckTask<storm::logic::Formula> const& checkTask, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::OptimizationDirection player1Direction, storm::dd::Bdd<Type> const& initialStates, storm::dd::Bdd<Type> const& constraintStates, storm::dd::Bdd<Type> const& targetStates, storm::abstraction::MenuGameRefiner<Type, ValueType> const& refiner, boost::optional<SymbolicQualitativeGameResultMinMax<Type>>& previousQualitativeResult, boost::optional<abstraction::SymbolicQuantitativeGameResult<Type, ValueType>>& previousMinQuantitativeResult);
-            std::unique_ptr<CheckResult> performExplicitAbstractionSolutionStep(Environment const& env, CheckTask<storm::logic::Formula> const& checkTask, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::OptimizationDirection player1Direction, storm::dd::Bdd<Type> const& initialStates, storm::dd::Bdd<Type> const& constraintStates, storm::dd::Bdd<Type> const& targetStates, storm::abstraction::MenuGameRefiner<Type, ValueType> const& refiner, boost::optional<ExplicitQualitativeGameResultMinMax>& previousQualitativeResult);
+            std::unique_ptr<CheckResult> performExplicitAbstractionSolutionStep(Environment const& env, CheckTask<storm::logic::Formula> const& checkTask, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::OptimizationDirection player1Direction, storm::dd::Bdd<Type> const& initialStates, storm::dd::Bdd<Type> const& constraintStates, storm::dd::Bdd<Type> const& targetStates, storm::abstraction::MenuGameRefiner<Type, ValueType> const& refiner, boost::optional<detail::PreviousExplicitResult<ValueType>>& previousResult);
 
             /*!
              * Retrieves the initial predicates for the abstraction.
@@ -101,7 +112,7 @@ namespace storm {
              */
             SymbolicQualitativeGameResultMinMax<Type> computeProb01States(boost::optional<SymbolicQualitativeGameResultMinMax<Type>> const& previousQualitativeResult, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::OptimizationDirection player1Direction, storm::dd::Bdd<Type> const& transitionMatrixBdd, storm::dd::Bdd<Type> const& constraintStates, storm::dd::Bdd<Type> const& targetStates);
             
-            ExplicitQualitativeGameResultMinMax computeProb01States(boost::optional<ExplicitQualitativeGameResultMinMax> const& previousQualitativeResult, storm::OptimizationDirection player1Direction, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint64_t> const& player1RowGrouping, storm::storage::SparseMatrix<ValueType> const& player1BackwardTransitions, std::vector<uint64_t> const& player2BackwardTransitions, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, abstraction::ExplicitGameStrategyPair& minStrategyPair, abstraction::ExplicitGameStrategyPair& maxStrategyPair);
+            ExplicitQualitativeGameResultMinMax computeProb01States(boost::optional<detail::PreviousExplicitResult<ValueType>> const& previousResult, storm::dd::Odd const& odd, storm::OptimizationDirection player1Direction, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint64_t> const& player1RowGrouping, storm::storage::SparseMatrix<ValueType> const& player1BackwardTransitions, std::vector<uint64_t> const& player2BackwardTransitions, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, abstraction::ExplicitGameStrategyPair& minStrategyPair, abstraction::ExplicitGameStrategyPair& maxStrategyPair);
             
             void printStatistics(storm::abstraction::MenuGameAbstractor<Type, ValueType> const& abstractor, storm::abstraction::MenuGame<Type, ValueType> const& game) const;
             

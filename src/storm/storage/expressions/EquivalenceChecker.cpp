@@ -21,14 +21,26 @@ namespace storm {
         
         bool EquivalenceChecker::areEquivalent(storm::expressions::Expression const& first, storm::expressions::Expression const& second) {
             this->smtSolver->push();
-            this->smtSolver->add((first && !second) || (!first && second));
+            this->smtSolver->add(!storm::expressions::iff(first, second));
             bool equivalent = smtSolver->check() == storm::solver::SmtSolver::CheckResult::Unsat;
             this->smtSolver->pop();
             return equivalent;
         }
         
         bool EquivalenceChecker::areEquivalentModuloNegation(storm::expressions::Expression const& first, storm::expressions::Expression const& second) {
-            return this->areEquivalent(first, second) || this->areEquivalent(first, !second);
+            this->smtSolver->push();
+            this->smtSolver->add(!storm::expressions::iff(first, second));
+            bool equivalent = smtSolver->check() == storm::solver::SmtSolver::CheckResult::Unsat;
+            if (equivalent) {
+                this->smtSolver->pop();
+                return true;
+            }
+            this->smtSolver->pop();
+            this->smtSolver->push();
+            this->smtSolver->add(!storm::expressions::iff(first, !second));
+            equivalent = smtSolver->check() == storm::solver::SmtSolver::CheckResult::Unsat;
+            this->smtSolver->pop();
+            return equivalent;
         }
         
     }

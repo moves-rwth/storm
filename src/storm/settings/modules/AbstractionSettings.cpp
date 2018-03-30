@@ -24,6 +24,7 @@ namespace storm {
             const std::string AbstractionSettings::restrictToRelevantStatesOptionName = "relevant";
             const std::string AbstractionSettings::solveModeOptionName = "solve";
             const std::string AbstractionSettings::maximalAbstractionOptionName = "maxabs";
+            const std::string AbstractionSettings::rankRefinementPredicatesOptionName = "rankpred";
             
             AbstractionSettings::AbstractionSettings() : ModuleSettings(moduleName) {
                 std::vector<std::string> methods = {"games", "bisimulation", "bisim"};
@@ -77,6 +78,11 @@ namespace storm {
                                 .build());
                 
                 this->addOption(storm::settings::OptionBuilder(moduleName, restrictToRelevantStatesOptionName, true, "Sets whether to restrict to relevant states during the abstraction.")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("value", "The value of the flag.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(onOff))
+                                             .setDefaultValueString("off").build())
+                                .build());
+                
+                this->addOption(storm::settings::OptionBuilder(moduleName, rankRefinementPredicatesOptionName, true, "Sets whether to rank the refinement predicates if there are multiple.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("value", "The value of the flag.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(onOff))
                                              .setDefaultValueString("off").build())
                                 .build());
@@ -164,6 +170,10 @@ namespace storm {
             
             uint_fast64_t AbstractionSettings::getMaximalAbstractionCount() const {
                 return this->getOption(maximalAbstractionOptionName).getArgumentByName("count").getValueAsUnsignedInteger();
+            }
+            
+            bool AbstractionSettings::isRankRefinementPredicatesSet() const {
+                return this->getOption(rankRefinementPredicatesOptionName).getArgumentByName("value").getValueAsString() == "on";
             }
             
         }

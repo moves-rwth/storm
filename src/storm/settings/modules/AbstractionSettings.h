@@ -116,6 +116,13 @@ namespace storm {
                  */
                 uint_fast64_t getMaximalAbstractionCount() const;
                 
+                /*
+                 * Determines whether refinement predicates are to be ranked.
+                 *
+                 * @return True iff the refinement predicates are to be ranked.
+                 */
+                bool isRankRefinementPredicatesSet() const;
+                
                 const static std::string moduleName;
                 
             private:
@@ -130,6 +137,7 @@ namespace storm {
                 const static std::string restrictToRelevantStatesOptionName;
                 const static std::string solveModeOptionName;
                 const static std::string maximalAbstractionOptionName;
+                const static std::string rankRefinementPredicatesOptionName;
             };
             
         }

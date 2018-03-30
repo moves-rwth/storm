@@ -63,14 +63,17 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type, typename ValueType>
-        MenuGameRefiner<Type, ValueType>::MenuGameRefiner(MenuGameAbstractor<Type, ValueType>& abstractor, std::unique_ptr<storm::solver::SmtSolver>&& smtSolver) : abstractor(abstractor), useInterpolation(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isUseInterpolationSet()), splitAll(false), splitPredicates(false), addedAllGuardsFlag(false), pivotSelectionHeuristic(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getPivotSelectionHeuristic()), splitter(), equivalenceChecker(std::move(smtSolver)) {
+        MenuGameRefiner<Type, ValueType>::MenuGameRefiner(MenuGameAbstractor<Type, ValueType>& abstractor, std::unique_ptr<storm::solver::SmtSolver>&& smtSolver) : abstractor(abstractor), useInterpolation(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isUseInterpolationSet()), splitAll(false), splitPredicates(false), rankPredicates(false), addedAllGuardsFlag(false), pivotSelectionHeuristic(), splitter(), equivalenceChecker(std::move(smtSolver)) {
             
-            equivalenceChecker.addConstraints(abstractor.getAbstractionInformation().getConstraints());
+            auto const& abstractionSettings = storm::settings::getModule<storm::settings::modules::AbstractionSettings>();
             
+            pivotSelectionHeuristic = abstractionSettings.getPivotSelectionHeuristic();
             AbstractionSettings::SplitMode splitMode = storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getSplitMode();
             splitAll = splitMode == AbstractionSettings::SplitMode::All;
             splitPredicates = splitMode == AbstractionSettings::SplitMode::NonGuard;
+            rankPredicates = abstractionSettings.isRankRefinementPredicatesSet();
             
+            equivalenceChecker.addConstraints(abstractor.getAbstractionInformation().getConstraints());
             if (storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isAddAllGuardsSet()) {
                 std::vector<storm::expressions::Expression> guards;
                 
@@ -82,7 +85,7 @@ namespace storm {
                     }
                 }
                 performRefinement(createGlobalRefinement(preprocessPredicates(guards, RefinementPredicates::Source::InitialGuard)));
-                
+
                 addedAllGuardsFlag = true;
             }
         }
@@ -298,6 +301,9 @@ namespace storm {
                         for (uint64_t predicateIndex = 0; predicateIndex < lower.size(); ++predicateIndex) {
                             if (lower[predicateIndex] != upper[predicateIndex]) {
                                 possibleRefinementPredicates.push_back(abstractionInformation.getPredicateByIndex(predicateIndex).substitute(variableUpdates).simplify());
+                                if (!rankPredicates) {
+                                    break;
+                                }
                             }
                         }
                         ++orderedUpdateIndex;
@@ -307,49 +313,54 @@ namespace storm {
                 
                 STORM_LOG_ASSERT(!possibleRefinementPredicates.empty(), "Expected refinement predicates.");
                 
-                // Since we can choose any of the deviation predicates to perform the split, we go through the remaining
-                // updates and build all deviation predicates. We can then check whether any of the possible refinement
-                // predicates also eliminates another deviation.
-                std::vector<storm::expressions::Expression> otherRefinementPredicates;
-                for (; orderedUpdateIndex < updateIndicesAndMasses.size(); ++orderedUpdateIndex) {
-                    storm::storage::BitVector const& lower = lowerChoiceUpdateToSuccessorMapping.at(updateIndicesAndMasses[orderedUpdateIndex].first).first;
-                    storm::storage::BitVector const& upper = upperChoiceUpdateToSuccessorMapping.at(updateIndicesAndMasses[orderedUpdateIndex].first).first;
-                    
-                    bool deviates = lower != upper;
-                    if (deviates) {
-                        std::map<storm::expressions::Variable, storm::expressions::Expression> newVariableUpdates = abstractor.get().getVariableUpdates(player1Index, updateIndicesAndMasses[orderedUpdateIndex].first);
-                        for (uint64_t predicateIndex = 0; predicateIndex < lower.size(); ++predicateIndex) {
-                            if (lower[predicateIndex] != upper[predicateIndex]) {
-                                otherRefinementPredicates.push_back(abstractionInformation.getPredicateByIndex(predicateIndex).substitute(newVariableUpdates).simplify());
+                if (rankPredicates) {
+                    // Since we can choose any of the deviation predicates to perform the split, we go through the remaining
+                    // updates and build all deviation predicates. We can then check whether any of the possible refinement
+                    // predicates also eliminates another deviation.
+                    std::vector<storm::expressions::Expression> otherRefinementPredicates;
+                    for (; orderedUpdateIndex < updateIndicesAndMasses.size(); ++orderedUpdateIndex) {
+                        storm::storage::BitVector const& lower = lowerChoiceUpdateToSuccessorMapping.at(updateIndicesAndMasses[orderedUpdateIndex].first).first;
+                        storm::storage::BitVector const& upper = upperChoiceUpdateToSuccessorMapping.at(updateIndicesAndMasses[orderedUpdateIndex].first).first;
+                        
+                        bool deviates = lower != upper;
+                        if (deviates) {
+                            std::map<storm::expressions::Variable, storm::expressions::Expression> newVariableUpdates = abstractor.get().getVariableUpdates(player1Index, updateIndicesAndMasses[orderedUpdateIndex].first);
+                            for (uint64_t predicateIndex = 0; predicateIndex < lower.size(); ++predicateIndex) {
+                                if (lower[predicateIndex] != upper[predicateIndex]) {
+                                    otherRefinementPredicates.push_back(abstractionInformation.getPredicateByIndex(predicateIndex).substitute(newVariableUpdates).simplify());
+                                }
                             }
                         }
                     }
-                }
-                
-                // Finally, go through the refinement predicates and see how many deviations they cover.
-                std::vector<uint64_t> refinementPredicateIndexToCount(possibleRefinementPredicates.size(), 0);
-                for (uint64_t index = 0; index < possibleRefinementPredicates.size(); ++index) {
-                    refinementPredicateIndexToCount[index] = 1;
-                }
-                for (auto const& otherPredicate : otherRefinementPredicates) {
+                    
+                    // Finally, go through the refinement predicates and see how many deviations they cover.
+                    std::vector<uint64_t> refinementPredicateIndexToCount(possibleRefinementPredicates.size(), 0);
                     for (uint64_t index = 0; index < possibleRefinementPredicates.size(); ++index) {
-                        if (equivalenceChecker.areEquivalentModuloNegation(otherPredicate, possibleRefinementPredicates[index])) {
-                            ++refinementPredicateIndexToCount[index];
+                        refinementPredicateIndexToCount[index] = 1;
+                    }
+                    for (auto const& otherPredicate : otherRefinementPredicates) {
+                        for (uint64_t index = 0; index < possibleRefinementPredicates.size(); ++index) {
+                            if (equivalenceChecker.areEquivalentModuloNegation(otherPredicate, possibleRefinementPredicates[index])) {
+                                ++refinementPredicateIndexToCount[index];
+                            }
                         }
                     }
-                }
-
-                // Find predicate that covers the most deviations.
-                uint64_t chosenPredicateIndex = 0;
-                for (uint64_t index = 0; index < possibleRefinementPredicates.size(); ++index) {
-                    if (refinementPredicateIndexToCount[index] > refinementPredicateIndexToCount[chosenPredicateIndex]) {
-                        chosenPredicateIndex = index;
+                    
+                    // Find predicate that covers the most deviations.
+                    uint64_t chosenPredicateIndex = 0;
+                    for (uint64_t index = 0; index < possibleRefinementPredicates.size(); ++index) {
+                        if (refinementPredicateIndexToCount[index] > refinementPredicateIndexToCount[chosenPredicateIndex]) {
+                            chosenPredicateIndex = index;
+                        }
                     }
+                    newPredicate = possibleRefinementPredicates[chosenPredicateIndex];
+                    STORM_LOG_DEBUG("Derived new predicate (based on weakest-precondition): " << newPredicate << ", (equivalent to " << (refinementPredicateIndexToCount[chosenPredicateIndex] - 1) << " other refinement predicates).");
+                } else {
+                    newPredicate = possibleRefinementPredicates.front();
+                    STORM_LOG_DEBUG("Derived new predicate (based on weakest-precondition): " << newPredicate << ".");
                 }
-                newPredicate = possibleRefinementPredicates[chosenPredicateIndex];
 
                 STORM_LOG_ASSERT(newPredicate.isInitialized(), "Could not derive new predicate as there is no deviation.");
-                STORM_LOG_DEBUG("Derived new predicate (based on weakest-precondition): " << newPredicate << ", (equivalent to " << (refinementPredicateIndexToCount[chosenPredicateIndex] - 1) << " other refinement predicates)");
             }
             
             return RefinementPredicates(fromGuard ? RefinementPredicates::Source::Guard : RefinementPredicates::Source::WeakestPrecondition, {newPredicate});
@@ -633,6 +644,9 @@ namespace storm {
 
         template<storm::dd::DdType Type>
         boost::optional<RefinementPredicates> derivePredicatesFromInterpolation(storm::expressions::ExpressionManager& interpolationManager, AbstractionInformation<Type> const& abstractionInformation, std::vector<std::vector<storm::expressions::Expression>> const& trace, std::map<storm::expressions::Variable, storm::expressions::Expression> const& variableSubstitution) {
+            
+            auto start = std::chrono::high_resolution_clock::now();
+            boost::optional<RefinementPredicates> predicates;
 
             // Create solver and interpolation groups.
             storm::solver::MathsatSmtSolver interpolatingSolver(interpolationManager, storm::solver::MathsatSmtSolver::Options(true, false, true));
@@ -671,16 +685,15 @@ namespace storm {
                         STORM_LOG_DEBUG("Derived new predicate (based on interpolation at step " << step << " out of " << stepCounter << "): " << interpolant);
                         interpolants.push_back(interpolant);
                     }
-//                    else {
-//                        STORM_LOG_ASSERT(step == 0false, "The found interpolant (based on interpolation at step " << step << " out of " << stepCounter << ") is '" << interpolant << "', which shouldn't happen.");
-//                    }
                 }
-                return boost::make_optional(RefinementPredicates(RefinementPredicates::Source::Interpolation, interpolants));
+                predicates = boost::make_optional(RefinementPredicates(RefinementPredicates::Source::Interpolation, interpolants));
             } else {
                 STORM_LOG_TRACE("Trace formula is satisfiable, not using interpolation.");
             }
-            
-            return boost::none;
+            auto end = std::chrono::high_resolution_clock::now();
+            STORM_LOG_TRACE("Deriving predicates using interpolation from witness of size " << trace.size() << " took " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
+
+            return predicates;
         }
         
         template<storm::dd::DdType Type, typename ValueType>
@@ -843,6 +856,8 @@ namespace storm {
             bool foundPivotState = false;
             ValueType pivotStateDeviation = storm::utility::zero<ValueType>();
             auto const& player2Grouping = transitionMatrix.getRowGroupIndices();
+
+            uint64_t pivotStates = 0;
             
             while (!dijkstraQueue.empty()) {
                 auto distanceStatePair = *dijkstraQueue.begin();
@@ -878,6 +893,7 @@ namespace storm {
                 }                
                 // If it is indeed a pivot state, we can abort the search here.
                 if (isPivotState) {
+                    
                     if (considerDeviation && foundPivotState) {
                         ValueType deviationOfCurrentState = (*upperValues)[currentState] - (*lowerValues)[currentState];
                         if (deviationOfCurrentState > pivotStateDeviation) {
@@ -913,7 +929,7 @@ namespace storm {
                         }
                         
                         ValueType alternateDistance = probabilityDistances ? currentDistance * entry.getValue() : currentDistance + storm::utility::one<ValueType>();
-                        if ((probabilityDistances && alternateDistance > distances[player1Successor]) || (!probabilityDistances && alternateDistance < distances[player1Successor])) {
+                        if (probabilityDistances ? alternateDistance > distances[player1Successor] : alternateDistance < distances[player1Successor]) {
                             distances[player1Successor] = alternateDistance;
                             if (generatePredecessors) {
                                 result.predecessors[player1Successor] = std::make_pair(currentState, player1Labeling[minPlayer2Successor]);
@@ -934,7 +950,7 @@ namespace storm {
                         }
                         
                         ValueType alternateDistance = probabilityDistances ? currentDistance * entry.getValue() : currentDistance + storm::utility::one<ValueType>();
-                        if ((probabilityDistances && alternateDistance > distances[player1Successor]) || (!probabilityDistances && alternateDistance < distances[player1Successor])) {
+                        if (probabilityDistances ? alternateDistance > distances[player1Successor] : !probabilityDistances && alternateDistance < distances[player1Successor]) {
                             distances[player1Successor] = alternateDistance;
                             if (generatePredecessors) {
                                 result.predecessors[player1Successor] = std::make_pair(currentState, player1Labeling[maxPlayer2Successor]);
@@ -945,6 +961,12 @@ namespace storm {
                 }
             }
             
+            std::cout << "found " << pivotStates << " pivots" << std::endl;
+            
+            if (foundPivotState) {
+                return result;
+            }
+
             // If we arrived at this point, we have explored all relevant states, but none of them was a pivot state,
             // which can happen when trying to refine using the qualitative result only.
             return boost::none;
@@ -1004,6 +1026,7 @@ namespace storm {
                     maxPlayer2Strategy |= maxPlayer1Strategy && abstractionInformation.encodePlayer2Choice(player2Labeling[player2Choice], 0, game.getPlayer2Variables().size());
                 }
             }
+            auto end = std::chrono::high_resolution_clock::now();
 
             boost::optional<RefinementPredicates> predicates;
             if (useInterpolation) {
@@ -1012,6 +1035,7 @@ namespace storm {
             if (!predicates) {
                 predicates = derivePredicatesFromPivotState(game, symbolicPivotState, minPlayer1Strategy, minPlayer2Strategy, maxPlayer1Strategy, maxPlayer2Strategy);
             }
+            end = std::chrono::high_resolution_clock::now();
             STORM_LOG_THROW(static_cast<bool>(predicates), storm::exceptions::InvalidStateException, "Predicates needed to continue.");
             
             std::vector<storm::expressions::Expression> preparedPredicates = preprocessPredicates(predicates.get().getPredicates(), predicates.get().getSource());
@@ -1027,11 +1051,7 @@ namespace storm {
             
             boost::optional<ExplicitPivotStateResult<ValueType>> optionalPivotStateResult = pickPivotState(useInterpolation, pivotSelectionHeuristic, transitionMatrix, player1Grouping, player1Labeling, initialStates, relevantStates, targetStates, minStrategyPair, maxStrategyPair, &quantitativeResult.getMin().getValues(), &quantitativeResult.getMax().getValues());
             
-            // If there was no pivot state, continue the search.
-            if (!optionalPivotStateResult) {
-                STORM_LOG_TRACE("Did not find pivot state in qualitative fragment.");
-                return false;
-            }
+            STORM_LOG_THROW(optionalPivotStateResult, storm::exceptions::InvalidStateException, "Did not find pivot state to proceed.");
             
             // Otherwise, we can refine.
             auto const& pivotStateResult = optionalPivotStateResult.get();
@@ -1121,6 +1141,12 @@ namespace storm {
             return true;
         }
         
+        struct VariableSetHash {
+            std::size_t operator()(std::set<storm::expressions::Variable> const& set) const {
+                return set.size();
+            }
+        };
+        
         template<storm::dd::DdType Type, typename ValueType>
         std::vector<storm::expressions::Expression> MenuGameRefiner<Type, ValueType>::preprocessPredicates(std::vector<storm::expressions::Expression> const& predicates, RefinementPredicates::Source const& source) const {
             bool split = source == RefinementPredicates::Source::WeakestPrecondition && splitPredicates;
@@ -1128,37 +1154,80 @@ namespace storm {
             split |= splitAll;
             
             if (split) {
+                auto start = std::chrono::high_resolution_clock::now();
                 AbstractionInformation<Type> const& abstractionInformation = abstractor.get().getAbstractionInformation();
                 std::vector<storm::expressions::Expression> cleanedAtoms;
                 
+                std::unordered_map<std::set<storm::expressions::Variable>, std::vector<storm::expressions::Expression>, VariableSetHash> predicateClasses;
+                
                 for (auto const& predicate : predicates) {
-                    
                     // Split the predicates.
                     std::vector<storm::expressions::Expression> atoms = splitter.split(predicate);
                     
-                    // Check which of the atoms are redundant in the sense that they are equivalent to a predicate we already have.
+                    // Put the atoms into the right class.
                     for (auto const& atom : atoms) {
-                        // Check whether the newly found atom is equivalent to an atom we already have in the predicate
-                        // set or in the set that is to be added.
-                        bool addAtom = true;
-                        for (auto const& oldPredicate : abstractionInformation.getPredicates()) {
-                            if (equivalenceChecker.areEquivalent(atom, oldPredicate) || equivalenceChecker.areEquivalent(atom, !oldPredicate)) {
-                                addAtom = false;
-                                break;
-                            }
-                        }
-                        for (auto const& addedAtom : cleanedAtoms) {
-                            if (equivalenceChecker.areEquivalent(addedAtom, atom) || equivalenceChecker.areEquivalent(addedAtom, !atom)) {
-                                addAtom = false;
-                                break;
-                            }
-                        }
-                        
-                        if (addAtom) {
-                            cleanedAtoms.push_back(atom);
-                        }
+                        std::set<storm::expressions::Variable> vars = atom.getVariables();
+                        predicateClasses[vars].push_back(atom);
                     }
                 }
+                
+                // Now clean the classes in the sense that redundant predicates are cleaned.
+                for (auto& predicateClass : predicateClasses) {
+                    std::vector<storm::expressions::Expression> cleanedAtomsOfClass;
+                    
+                    for (auto const& predicate : predicateClass.second) {
+                        bool addPredicate = true;
+                        for (auto const& atom : cleanedAtomsOfClass) {
+                            if (predicate.areSame(atom)) {
+                                addPredicate = false;
+                                break;
+                            }
+                            
+                            if (addPredicate && equivalenceChecker.areEquivalentModuloNegation(predicate, atom)) {
+                                addPredicate = false;
+                                break;
+                            }
+                        }
+                        if (addPredicate) {
+                            cleanedAtomsOfClass.push_back(predicate);
+                        }
+                    }
+                    
+                    predicateClass.second = std::move(cleanedAtomsOfClass);
+                }
+
+                std::unordered_map<std::set<storm::expressions::Variable>, std::vector<storm::expressions::Expression>, VariableSetHash> oldPredicateClasses;
+                for (auto const& oldPredicate : abstractionInformation.getPredicates()) {
+                    std::set<storm::expressions::Variable> vars = oldPredicate.getVariables();
+                    
+                    oldPredicateClasses[vars].push_back(oldPredicate);
+                }
+                
+                for (auto const& predicateClass : predicateClasses) {
+                    auto oldPredicateClassIt = oldPredicateClasses.find(predicateClass.first);
+                    if (oldPredicateClassIt != oldPredicateClasses.end()) {
+                        for (auto const& newAtom : predicateClass.second) {
+                            for (auto const& oldPredicate : oldPredicateClassIt->second) {
+                                bool addAtom = true;
+                                if (newAtom.areSame(oldPredicate)) {
+                                    addAtom = false;
+                                    break;
+                                }
+                                if (equivalenceChecker.areEquivalentModuloNegation(newAtom, oldPredicate)) {
+                                    addAtom = false;
+                                    break;
+                                }
+                                if (addAtom) {
+                                    cleanedAtoms.push_back(newAtom);
+                                }
+                            }
+                        }
+                    } else {
+                        cleanedAtoms.insert(cleanedAtoms.end(), predicateClass.second.begin(), predicateClass.second.end());
+                    }
+                }
+                auto end = std::chrono::high_resolution_clock::now();
+                STORM_LOG_TRACE("Preprocessing predicates took " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
                 
                 return cleanedAtoms;
             } else {

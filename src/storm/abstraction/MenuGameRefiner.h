@@ -78,7 +78,7 @@ namespace storm {
             ExplicitPivotStateResult() = default;
             
             uint64_t pivotState;
-            
+                        
             /// The distance with which the state in question is reached.
             ValueType distance;
             
@@ -176,6 +176,9 @@ namespace storm {
             
             /// A flag indicating whether predicates derived from weakest preconditions shall be split before using them for refinement.
             bool splitPredicates;
+            
+            /// A flag indicating whether predicates are to be ranked.
+            bool rankPredicates;
             
             /// A flag indicating whether all guards have been used to refine the abstraction.
             bool addedAllGuardsFlag;

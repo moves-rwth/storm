@@ -970,6 +970,7 @@ namespace storm {
             // Copy over selected entries.
             rowGroupCount = 0;
             index_type rowCount = 0;
+            subEntries = 0;
             for (auto index : rowGroupConstraint) {
                 if (!this->hasTrivialRowGrouping()) {
                     matrixBuilder.newRowGroup(rowCount);
@@ -985,6 +986,7 @@ namespace storm {
                                 matrixBuilder.addNextValue(rowCount, rowGroupCount, storm::utility::zero<ValueType>());
                                 insertedDiagonalElement = true;
                             }
+                            ++subEntries;
                             matrixBuilder.addNextValue(rowCount, columnBitsSetBeforeIndex[it->getColumn()], it->getValue());
                         }
                     }
