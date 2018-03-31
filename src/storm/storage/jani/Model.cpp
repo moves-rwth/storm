@@ -1156,11 +1156,11 @@ namespace storm {
             return false;
         }
         
-        uint64_t Model::encodeAutomatonAndEdgeIndices(uint64_t automatonIndex, uint64_t edgeIndex) const {
+        uint64_t Model::encodeAutomatonAndEdgeIndices(uint64_t automatonIndex, uint64_t edgeIndex) {
             return automatonIndex << 32 | edgeIndex;
         }
         
-        std::pair<uint64_t, uint64_t> Model::decodeAutomatonAndEdgeIndices(uint64_t index) const {
+        std::pair<uint64_t, uint64_t> Model::decodeAutomatonAndEdgeIndices(uint64_t index) {
             return std::make_pair(index >> 32, index & ((1ull << 32) - 1));
         }
 
