@@ -639,6 +639,7 @@ namespace storm {
             }
             
             predicates.back().push_back(initialExpression.changeManager(expressionManager).substitute(lastSubstitution));
+
             return std::make_pair(predicates, stepVariableToCopiedVariableMap);
         }
 
@@ -649,11 +650,13 @@ namespace storm {
             boost::optional<RefinementPredicates> predicates;
 
             // Create solver and interpolation groups.
+            auto assertionStart = std::chrono::high_resolution_clock::now();
             storm::solver::MathsatSmtSolver interpolatingSolver(interpolationManager, storm::solver::MathsatSmtSolver::Options(true, false, true));
             uint64_t stepCounter = 0;
             auto traceIt = trace.rbegin();
             auto traceIte = trace.rend();
             for (; traceIt != traceIte; ++traceIt) {
+                auto iterationStart = std::chrono::high_resolution_clock::now();
                 auto const& step = *traceIt;
                 interpolatingSolver.push();
                 
@@ -661,15 +664,13 @@ namespace storm {
                 for (auto const& predicate : step) {
                     interpolatingSolver.add(predicate);
                 }
-                storm::solver::SmtSolver::CheckResult result = interpolatingSolver.check();
-                // If the result already became unsatisfiable
-                if (result == storm::solver::SmtSolver::CheckResult::Unsat) {
-                    STORM_LOG_TRACE("Trace formula became unsatisfiable after step " << stepCounter << ".");
-                    break;
-                }
+                auto iterationEnd = std::chrono::high_resolution_clock::now();
+                STORM_LOG_TRACE("Asserting step of trace formula took " << std::chrono::duration_cast<std::chrono::milliseconds>(iterationEnd - iterationStart).count() << "ms.");
 
                 ++stepCounter;
             }
+            auto assertionEnd = std::chrono::high_resolution_clock::now();
+            STORM_LOG_TRACE("Asserting trace formula until unsatisfiability took " << std::chrono::duration_cast<std::chrono::milliseconds>(assertionEnd - assertionStart).count() << "ms.");
             
             // Now encode the trace as an SMT problem.
             storm::solver::SmtSolver::CheckResult result = interpolatingSolver.check();
@@ -691,7 +692,12 @@ namespace storm {
                 STORM_LOG_TRACE("Trace formula is satisfiable, not using interpolation.");
             }
             auto end = std::chrono::high_resolution_clock::now();
-            STORM_LOG_TRACE("Deriving predicates using interpolation from witness of size " << trace.size() << " took " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
+            
+            if (predicates) {
+                STORM_LOG_TRACE("Deriving predicates using interpolation from witness of size " << trace.size() << " took " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
+            } else {
+                STORM_LOG_TRACE("Tried deriving predicates using interpolation but failed in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
+            }
 
             return predicates;
         }
@@ -712,8 +718,11 @@ namespace storm {
             std::shared_ptr<storm::expressions::ExpressionManager> interpolationManager = abstractionInformation.getExpressionManager().clone();
             
             // Build the trace of the most probable path in terms of which predicates hold in each step.
+            auto start = std::chrono::high_resolution_clock::now();
             std::pair<std::vector<std::vector<storm::expressions::Expression>>, std::map<storm::expressions::Variable, storm::expressions::Expression>> traceAndVariableSubstitution = buildTrace(*interpolationManager, game, symbolicMostProbablePathsResult.spanningTree, symbolicPivotStateResult.pivotState);
-            
+            auto end = std::chrono::high_resolution_clock::now();
+            STORM_LOG_DEBUG("Building the trace and variable substitution for interpolation from symbolic most-probable paths result took " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
+
             return storm::abstraction::derivePredicatesFromInterpolation(*interpolationManager, abstractionInformation, traceAndVariableSubstitution.first, traceAndVariableSubstitution.second);
         }
         
@@ -725,8 +734,11 @@ namespace storm {
             std::shared_ptr<storm::expressions::ExpressionManager> interpolationManager = abstractionInformation.getExpressionManager().clone();
 
             // Build the trace of the most probable path in terms of which predicates hold in each step.
+            auto start = std::chrono::high_resolution_clock::now();
             std::pair<std::vector<std::vector<storm::expressions::Expression>>, std::map<storm::expressions::Variable, storm::expressions::Expression>> traceAndVariableSubstitution = buildTrace(*interpolationManager, game, pivotStateResult, odd);
-            
+            auto end = std::chrono::high_resolution_clock::now();
+            STORM_LOG_DEBUG("Building the trace and variable substitution for interpolation from explicit most-probable paths result took " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
+
             return storm::abstraction::derivePredicatesFromInterpolation(*interpolationManager, abstractionInformation, traceAndVariableSubstitution.first, traceAndVariableSubstitution.second);
         }
         
@@ -856,8 +868,6 @@ namespace storm {
             bool foundPivotState = false;
             ValueType pivotStateDeviation = storm::utility::zero<ValueType>();
             auto const& player2Grouping = transitionMatrix.getRowGroupIndices();
-
-            uint64_t pivotStates = 0;
             
             while (!dijkstraQueue.empty()) {
                 auto distanceStatePair = *dijkstraQueue.begin();
@@ -960,8 +970,6 @@ namespace storm {
                     }
                 }
             }
-            
-            std::cout << "found " << pivotStates << " pivots" << std::endl;
             
             if (foundPivotState) {
                 return result;

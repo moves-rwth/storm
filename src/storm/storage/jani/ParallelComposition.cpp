@@ -116,7 +116,7 @@ namespace storm {
             return !(vector1 == vector2);
         }
         
-        bool SynchronizationVectorLexicographicalLess::operator()(SynchronizationVector const& vector1, SynchronizationVector const& vector2) {
+        bool SynchronizationVectorLexicographicalLess::operator()(SynchronizationVector const& vector1, SynchronizationVector const& vector2) const {
             STORM_LOG_THROW(vector1.size() == vector2.size(), storm::exceptions::WrongFormatException, "Cannot compare synchronization vectors of different size.");
             for (uint64_t i = 0; i < vector1.size(); ++i) {
                 if (vector1.getInput(i) < vector2.getInput(i)) {

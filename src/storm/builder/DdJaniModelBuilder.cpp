@@ -1275,7 +1275,7 @@ namespace storm {
                     // Finally treat the transient assignments.
                     std::map<storm::expressions::Variable, storm::dd::Add<Type, ValueType>> transientEdgeAssignments;
                     if (!this->transientVariables.empty()) {
-                        performTransientAssignments(edge.getAssignments().getTransientAssignments(), [this, &transientEdgeAssignments, &guard, &sourceLocationAndGuard] (storm::jani::Assignment const& assignment) {
+                        performTransientAssignments(edge.getAssignments().getTransientAssignments(), [this, &transientEdgeAssignments, &sourceLocationAndGuard] (storm::jani::Assignment const& assignment) {
                             transientEdgeAssignments[assignment.getExpressionVariable()] = sourceLocationAndGuard * this->variables.rowExpressionAdapter->translateExpression(assignment.getAssignedExpression());
                         } );
                     }
