@@ -73,7 +73,7 @@ namespace storm {
                     }
 
                     if(rewardModelEntry.second.hasStateRewards()) {
-                        os << rewardModelEntry.second.getStateRewardVector().at(group);
+                        os << storm::utility::to_string(rewardModelEntry.second.getStateRewardVector().at(group));
                     } else {
                         os << "0";
                     }

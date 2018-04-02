@@ -54,14 +54,14 @@ namespace storm {
                     case storm::storage::DFTElementType::AND:
                         STORM_LOG_TRACE("top modularisation called AND");
                         dfts = dft.topModularisation();
-                        STORM_LOG_TRACE("Modularsation into " << dfts.size() << " submodules.");
+                        STORM_LOG_TRACE("Modularisation into " << dfts.size() << " submodules.");
                         nrK = dfts.size();
                         nrM = dfts.size();
                         break;
                     case storm::storage::DFTElementType::OR:
                         STORM_LOG_TRACE("top modularisation called OR");
                         dfts = dft.topModularisation();
-                        STORM_LOG_TRACE("Modularsation into " << dfts.size() << " submodules.");
+                        STORM_LOG_TRACE("Modularisation into " << dfts.size() << " submodules.");
                         nrK = 0;
                         nrM = dfts.size();
                         invResults = true;
@@ -69,7 +69,7 @@ namespace storm {
                     case storm::storage::DFTElementType::VOT:
                         STORM_LOG_TRACE("top modularisation called VOT");
                         dfts = dft.topModularisation();
-                        STORM_LOG_TRACE("Modularsation into " << dfts.size() << " submodules.");
+                        STORM_LOG_TRACE("Modularisation into " << dfts.size() << " submodules.");
                         nrK = std::static_pointer_cast<storm::storage::DFTVot<ValueType> const>(dft.getTopLevelGate())->threshold();
                         nrM = dfts.size();
                         if(nrK <= nrM/2) {
