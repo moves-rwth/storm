@@ -280,7 +280,33 @@ $ storm --explicit die.tra die.lab --transrew die.tra.rew --prop "R=? [F \"done\
 ## Running Storm on parametric models
 
 {:.alert .alert-info}
-Coming soon.
+More coming soon.
+
+Many model description contain constants, which may be left unspecified. We refer to these open constants as parameters.
+In what follows, we assume that the parameter is graph-preserving, that is, it does not influence the topology of the underlying Markov model. 
+
+### Obtaining closed-form solutions for simple properties
+
+We can run storm to obtain closed-form solutions.
+To that end, we use the binary storm-pars, which contains support for parametric models.
+
+#### Example 5 (Obtaining closed-form solutions for parametric models)
+
+The following model is an adaption of the Knuth-Yao die used above.
+The probability of flipping heads is now given by p.
+
+{% include includes/show_model.html name="parametric version of Knuth-Yao die" class="parametric_knuth_yao" path="prism/parametric_die.pm" %}
+
+We can consider the probability of a die roll reflecting an outcome of one.
+
+```console
+$ storm-pars --prism parametric-die.pm --prop "P=? [F s=7&d=1]"
+```
+
+The result is an expression over the parameter p.
+
+{% include includes/show_output.html class="closed_form_parametric_models" path="parametric/closed_form.out" %}
+
 
 ## Running Storm on GSPNs
 

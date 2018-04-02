@@ -1,0 +1,23 @@
+Storm-pars 1.2.2-alpha
+
+Command line arguments: --prism parametric_die.pm --prop P=? [F s=7&d=1] 
+Current working directory: ~/storm/release-build
+
+Time for model construction: 0.024s.
+
+-------------------------------------------------------------- 
+Model type: 	DTMC (sparse)
+States: 	13
+Transitions: 	20
+Reward Models:  none
+State Labels: 	3 labels
+   * deadlock -> 0 item(s)
+   * init -> 1 item(s)
+   * ((s = 7) & (d = 1)) -> 1 item(s)
+Choice Labels: 	none
+-------------------------------------------------------------- 
+
+Model checking property P=? [F ((s = 7) & (d = 1))] ...
+Result (initial states): 
+((p)^2)/(p+1)
+Time for model checking: 0.002s.
