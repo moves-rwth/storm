@@ -36,6 +36,13 @@ namespace storm {
                 
                 // Assert the guard of the command.
                 smtSolver->add(edge.getGuard());
+                
+                // Construct assigned variables.
+                for (auto const& destination : edge.getDestinations()) {
+                    for (auto const& assignment : destination.getOrderedAssignments()) {
+                        assignedVariables.insert(assignment.getExpressionVariable());
+                    }
+                }
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
@@ -73,6 +80,11 @@ namespace storm {
             template <storm::dd::DdType DdType, typename ValueType>
             std::map<storm::expressions::Variable, storm::expressions::Expression> EdgeAbstractor<DdType, ValueType>::getVariableUpdates(uint64_t auxiliaryChoice) const {
                 return edge.get().getDestination(auxiliaryChoice).getAsVariableToExpressionMap();
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
+            std::set<storm::expressions::Variable> const& EdgeAbstractor<DdType, ValueType>::getAssignedVariables() const {
+                return assignedVariables;
             }
             
             template <storm::dd::DdType DdType, typename ValueType>

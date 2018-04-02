@@ -82,6 +82,11 @@ namespace storm {
                 std::map<storm::expressions::Variable, storm::expressions::Expression> getVariableUpdates(uint64_t auxiliaryChoice) const;
                 
                 /*!
+                 * Retrieves the assigned variables.
+                 */
+                std::set<storm::expressions::Variable> const& getAssignedVariables() const;
+                
+                /*!
                  * Computes the abstraction of the command wrt. to the current set of predicates.
                  *
                  * @return The abstraction of the command in the form of a BDD together with the number of DD variables
@@ -222,6 +227,9 @@ namespace storm {
                 
                 // The concrete command this abstract command refers to.
                 std::reference_wrapper<storm::prism::Command const> command;
+                
+                // The variables to which this command assigns expressions.
+                std::set<storm::expressions::Variable> assignedVariables;
                 
                 // The local expression-related information.
                 LocalExpressionInformation<DdType> localExpressionInformation;

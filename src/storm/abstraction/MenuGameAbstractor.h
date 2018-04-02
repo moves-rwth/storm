@@ -37,6 +37,7 @@ namespace storm {
             virtual uint64_t getNumberOfUpdates(uint64_t player1Choice) const = 0;
             std::vector<std::map<storm::expressions::Variable, storm::expressions::Expression>> getVariableUpdates(uint64_t player1Choice) const;
             virtual std::map<storm::expressions::Variable, storm::expressions::Expression> getVariableUpdates(uint64_t player1Choice, uint64_t auxiliaryChoice) const = 0;
+            virtual std::set<storm::expressions::Variable> const& getAssignedVariables(uint64_t player1Choice) const = 0;
             virtual storm::expressions::Expression getInitialExpression() const = 0;
             
             /*!

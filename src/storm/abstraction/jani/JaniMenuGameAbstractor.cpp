@@ -130,6 +130,11 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
+            std::set<storm::expressions::Variable> const& JaniMenuGameAbstractor<DdType, ValueType>::getAssignedVariables(uint64_t player1Choice) const {
+                return automata.front().getAssignedVariables(player1Choice);
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
             std::pair<uint64_t, uint64_t> JaniMenuGameAbstractor<DdType, ValueType>::getPlayer1ChoiceRange() const {
                 return std::make_pair(0, automata.front().getNumberOfEdges());
             }
@@ -219,7 +224,7 @@ namespace storm {
                 bool hasBottomStates = !bottomStateResult.states.isZero();
                 
                 // Construct the transition matrix by cutting away the transitions of unreachable states.
-                storm::dd::Add<DdType, ValueType> transitionMatrix = (game.bdd && reachableStates).template toAdd<ValueType>();
+                storm::dd::Add<DdType, ValueType> transitionMatrix = (game.bdd && reachableStates && reachableStates.swapVariables(abstractionInformation.getSourceSuccessorVariablePairs())).template toAdd<ValueType>();
                 transitionMatrix *= edgeDecoratorAdd;
                 transitionMatrix += deadlockTransitions;
                 

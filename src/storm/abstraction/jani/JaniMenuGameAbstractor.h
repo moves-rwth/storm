@@ -87,6 +87,11 @@ namespace storm {
                 std::map<storm::expressions::Variable, storm::expressions::Expression> getVariableUpdates(uint64_t player1Choice, uint64_t auxiliaryChoice) const override;
                 
                 /*!
+                 * Retrieves the variables assigned by the given player 1 choice.
+                 */
+                virtual std::set<storm::expressions::Variable> const& getAssignedVariables(uint64_t player1Choice) const override;
+                
+                /*!
                  * Retrieves the range of player 1 choices.
                  */
                 std::pair<uint64_t, uint64_t> getPlayer1ChoiceRange() const override;

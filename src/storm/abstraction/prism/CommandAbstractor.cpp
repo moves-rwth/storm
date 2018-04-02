@@ -36,6 +36,13 @@ namespace storm {
                 
                 // Assert the guard of the command.
                 smtSolver->add(command.getGuardExpression());
+                
+                // Construct assigned variables.
+                for (auto const& update : command.getUpdates()) {
+                    for (auto const& assignment : update.getAssignments()) {
+                        assignedVariables.insert(assignment.getVariable());
+                    }
+                }
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
@@ -73,6 +80,11 @@ namespace storm {
             template <storm::dd::DdType DdType, typename ValueType>
             std::map<storm::expressions::Variable, storm::expressions::Expression> CommandAbstractor<DdType, ValueType>::getVariableUpdates(uint64_t auxiliaryChoice) const {
                 return command.get().getUpdate(auxiliaryChoice).getAsVariableToExpressionMap();
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
+            std::set<storm::expressions::Variable> const& CommandAbstractor<DdType, ValueType>::getAssignedVariables() const {
+                return assignedVariables;
             }
             
             template <storm::dd::DdType DdType, typename ValueType>

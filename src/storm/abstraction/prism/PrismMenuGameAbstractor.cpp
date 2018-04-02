@@ -126,6 +126,11 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
+            std::set<storm::expressions::Variable> const& PrismMenuGameAbstractor<DdType, ValueType>::getAssignedVariables(uint64_t player1Choice) const {
+                return modules.front().getAssignedVariables(player1Choice);
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
             std::pair<uint64_t, uint64_t> PrismMenuGameAbstractor<DdType, ValueType>::getPlayer1ChoiceRange() const {
                 return std::make_pair(0, modules.front().getCommands().size());
             }

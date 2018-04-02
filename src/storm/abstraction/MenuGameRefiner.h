@@ -157,11 +157,17 @@ namespace storm {
              */
             std::vector<RefinementCommand> createGlobalRefinement(std::vector<storm::expressions::Expression> const& predicates) const;
             
+            boost::optional<RefinementPredicates> derivePredicatesFromInterpolationFromTrace(storm::expressions::ExpressionManager& interpolationManager, std::vector<std::vector<storm::expressions::Expression>> const& trace, std::map<storm::expressions::Variable, storm::expressions::Expression> const& variableSubstitution) const;
+            
             boost::optional<RefinementPredicates> derivePredicatesFromInterpolation(storm::abstraction::MenuGame<Type, ValueType> const& game, SymbolicPivotStateResult<Type, ValueType> const& symbolicPivotStateResult, storm::dd::Bdd<Type> const& minPlayer1Strategy, storm::dd::Bdd<Type> const& minPlayer2Strategy, storm::dd::Bdd<Type> const& maxPlayer1Strategy, storm::dd::Bdd<Type> const& maxPlayer2Strategy) const;
             std::pair<std::vector<std::vector<storm::expressions::Expression>>, std::map<storm::expressions::Variable, storm::expressions::Expression>> buildTrace(storm::expressions::ExpressionManager& expressionManager, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& spanningTree, storm::dd::Bdd<Type> const& pivotState) const;
             
-            std::pair<std::vector<std::vector<storm::expressions::Expression>>, std::map<storm::expressions::Variable, storm::expressions::Expression>> buildTrace(storm::expressions::ExpressionManager& expressionManager, storm::abstraction::MenuGame<Type, ValueType> const& game, ExplicitPivotStateResult<ValueType> const& pivotStateResult, storm::dd::Odd const& odd) const;
+            std::pair<std::vector<uint64_t>, std::vector<uint64_t>> buildReversedLabeledPath(ExplicitPivotStateResult<ValueType> const& pivotStateResult) const;
+            std::pair<std::vector<std::vector<storm::expressions::Expression>>, std::map<storm::expressions::Variable, storm::expressions::Expression>> buildTraceFromReversedLabeledPath(storm::expressions::ExpressionManager& expressionManager, std::vector<uint64_t> const& reversedPath, std::vector<uint64_t> const& reversedLabels, storm::dd::Odd const& odd, std::vector<uint64_t> const* stateToOffset = nullptr) const;
             boost::optional<RefinementPredicates> derivePredicatesFromInterpolation(storm::abstraction::MenuGame<Type, ValueType> const& game, ExplicitPivotStateResult<ValueType> const& pivotStateResult, storm::dd::Odd const& odd) const;
+
+            boost::optional<RefinementPredicates> derivePredicatesFromInterpolationKShortestPaths(storm::dd::Odd const& odd, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint64_t> const& player1Grouping, std::vector<uint64_t> const& player1Labeling, std::vector<uint64_t> const& player2Labeling, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, ValueType minProbability, ValueType maxProbability, ExplicitGameStrategyPair const& maxStrategyPair) const;
+            boost::optional<RefinementPredicates> derivePredicatesFromInterpolationReversedPath(storm::dd::Odd const& odd, storm::expressions::ExpressionManager& interpolationManager, std::vector<uint64_t> const& reversedPath, std::vector<uint64_t> const& stateToOffset, std::vector<uint64_t> const& player1Labels) const;
 
             void performRefinement(std::vector<RefinementCommand> const& refinementCommands) const;
             

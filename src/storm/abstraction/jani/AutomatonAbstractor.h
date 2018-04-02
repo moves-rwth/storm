@@ -69,6 +69,11 @@ namespace storm {
                 std::map<storm::expressions::Variable, storm::expressions::Expression> getVariableUpdates(uint64_t player1Choice, uint64_t auxiliaryChoice) const;
                 
                 /*!
+                 * Retrieves the variables assigned by the given player 1 choice.
+                 */
+                std::set<storm::expressions::Variable> const& getAssignedVariables(uint64_t player1Choice) const;
+                
+                /*!
                  * Computes the abstraction of the module wrt. to the current set of predicates.
                  *
                  * @return The abstraction of the module in the form of a BDD together with how many option variables were used.

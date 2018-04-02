@@ -12,6 +12,7 @@
 #include "storm/storage/dd/Odd.h"
 #include "storm/utility/dd.h"
 #include "storm/utility/solver.h"
+#include "storm/utility/shortestPaths.h"
 
 #include "storm/solver/MathsatSmtSolver.h"
 
@@ -478,6 +479,10 @@ namespace storm {
             for (auto& predicate : predicates.back()) {
                 predicate = predicate.changeManager(expressionManager);
             }
+            // Add ranges of variables.
+            for (auto const& pred : abstractionInformation.getConstraints()) {
+                predicates.back().push_back(pred.changeManager(expressionManager));
+            }
             
             // Perform a backward search for an initial state.
             storm::dd::Bdd<Type> currentState = pivotState;
@@ -526,7 +531,10 @@ namespace storm {
                 for (auto& predicate : predicates.back()) {
                     predicate = predicate.changeManager(expressionManager).substitute(substitution);
                 }
-                
+                // Add ranges of variables.
+                for (auto const& pred : abstractionInformation.getConstraints()) {
+                    predicates.back().push_back(pred.changeManager(expressionManager).substitute(substitution));
+                }
                 // Move backwards one step.
                 lastSubstitution = std::move(substitution);
                 currentState = predecessorTransition.existsAbstract(variablesToAbstract);
@@ -540,13 +548,34 @@ namespace storm {
         const uint64_t ExplicitPivotStateResult<ValueType>::NO_PREDECESSOR = std::numeric_limits<uint64_t>::max();
         
         template<storm::dd::DdType Type, typename ValueType>
-        std::pair<std::vector<std::vector<storm::expressions::Expression>>, std::map<storm::expressions::Variable, storm::expressions::Expression>> MenuGameRefiner<Type, ValueType>::buildTrace(storm::expressions::ExpressionManager& expressionManager, storm::abstraction::MenuGame<Type, ValueType> const& game, ExplicitPivotStateResult<ValueType> const& pivotStateResult, storm::dd::Odd const& odd) const {
+        std::pair<std::vector<uint64_t>, std::vector<uint64_t>> MenuGameRefiner<Type, ValueType>::buildReversedLabeledPath(ExplicitPivotStateResult<ValueType> const& pivotStateResult) const {
             
-            std::vector<std::vector<storm::expressions::Expression>> predicates;
+            std::pair<std::vector<uint64_t>, std::vector<uint64_t>> result;
+            result.first.emplace_back(pivotStateResult.pivotState);
+            
+            uint64_t currentState = pivotStateResult.predecessors[pivotStateResult.pivotState].first;
+            uint64_t currentAction = pivotStateResult.predecessors[pivotStateResult.pivotState].second;
+            while (currentState != ExplicitPivotStateResult<ValueType>::NO_PREDECESSOR) {
+                STORM_LOG_ASSERT(currentAction != ExplicitPivotStateResult<ValueType>::NO_PREDECESSOR, "Expected predecessor action.");
+                result.first.emplace_back(currentState);
+                result.second.emplace_back(currentAction);
+                currentAction = pivotStateResult.predecessors[currentState].second;
+                currentState = pivotStateResult.predecessors[currentState].first;
+            }
+            
+            STORM_LOG_ASSERT(result.first.size() == result.second.size() + 1, "Path size mismatch.");
+            return result;
+        }
 
+        template<storm::dd::DdType Type, typename ValueType>
+        std::pair<std::vector<std::vector<storm::expressions::Expression>>, std::map<storm::expressions::Variable, storm::expressions::Expression>> MenuGameRefiner<Type, ValueType>::buildTraceFromReversedLabeledPath(storm::expressions::ExpressionManager& expressionManager, std::vector<uint64_t> const& reversedPath, std::vector<uint64_t> const& reversedLabels, storm::dd::Odd const& odd, std::vector<uint64_t> const* stateToOffset) const {
+            STORM_LOG_ASSERT(reversedPath.size() == reversedLabels.size() + 1, "Path size mismatch.");
+
+            std::vector<std::vector<storm::expressions::Expression>> predicates;
+            
             AbstractionInformation<Type> const& abstractionInformation = abstractor.get().getAbstractionInformation();
             storm::expressions::Expression initialExpression = abstractor.get().getInitialExpression();
-
+            
             std::set<storm::expressions::Variable> oldVariables = initialExpression.getVariables();
             for (auto const& predicate : abstractionInformation.getPredicates()) {
                 std::set<storm::expressions::Variable> usedVariables = predicate.getVariables();
@@ -557,94 +586,128 @@ namespace storm {
             for (auto const& variable : oldVariables) {
                 oldToNewVariables[variable] = expressionManager.getVariable(variable.getName());
             }
-            std::map<storm::expressions::Variable, storm::expressions::Expression> lastSubstitution;
+            std::map<storm::expressions::Variable, storm::expressions::Expression> currentSubstitution;
             for (auto const& variable : oldToNewVariables) {
-                lastSubstitution[variable.second] = variable.second;
+                currentSubstitution[variable.second] = variable.second;
             }
             std::map<storm::expressions::Variable, storm::expressions::Expression> stepVariableToCopiedVariableMap;
             
-            // The state valuation also includes the bottom state, so we need to reserve one more than the number of
-            // predicates here.
-            storm::storage::BitVector extendedPredicateValuation = odd.getEncoding(pivotStateResult.pivotState, abstractionInformation.getNumberOfPredicates() + 1);
+            auto pathIt = reversedPath.rbegin();
             
-            // Decode pivot state.
+            // Decode initial state. The state valuation also includes the bottom state, so we need to reserve one more
+            // than the number of predicates here.
+            storm::storage::BitVector extendedPredicateValuation = odd.getEncoding(stateToOffset ? (*stateToOffset)[*pathIt] : *pathIt, abstractionInformation.getNumberOfPredicates() + 1);
+            ++pathIt;
+            
+            // Add all predicates of initial block.
             predicates.emplace_back(abstractionInformation.getPredicatesExcludingBottom(extendedPredicateValuation));
             for (auto& predicate : predicates.back()) {
                 predicate = predicate.changeManager(expressionManager);
             }
             
-            // Perform a backward traversal from the pivot state along the chosen predecessors until there is no more
-            // predecessors.
-            uint64_t currentState = pivotStateResult.predecessors[pivotStateResult.pivotState].first;
-            uint64_t currentAction = pivotStateResult.predecessors[pivotStateResult.pivotState].second;
-            while (currentState != ExplicitPivotStateResult<ValueType>::NO_PREDECESSOR) {
-                // Create a new copy of each variable to use for this step.
-                std::map<storm::expressions::Variable, storm::expressions::Expression> substitution;
-                for (auto const& variablePair : oldToNewVariables) {
-                    storm::expressions::Variable variableCopy = expressionManager.declareVariableCopy(variablePair.second);
-                    substitution[variablePair.second] = variableCopy;
-                    stepVariableToCopiedVariableMap[variableCopy] = variablePair.second;
+            // Add ranges of further constraints.
+            for (auto const& pred : abstractionInformation.getConstraints()) {
+                predicates.back().push_back(pred.changeManager(expressionManager));
+            }
+            
+            // Add initial expression.
+            predicates.back().push_back(initialExpression.changeManager(expressionManager));
+
+            // Traverse the path and construct necessary formula parts.
+            auto actionIt = reversedLabels.rbegin();
+            for (; pathIt != reversedPath.rend(); ++pathIt) {
+                
+                // Add new predicate frame.
+                predicates.emplace_back();
+                
+                // Add guard of action.
+                predicates.back().emplace_back(abstractor.get().getGuard(*actionIt).changeManager(expressionManager).substitute(currentSubstitution));
+
+                // Determine which variables are affected by the updates of the player 1 choice.
+                std::set<storm::expressions::Variable> const& assignedVariables = abstractor.get().getAssignedVariables(*actionIt);
+                
+                // Create new instances of the affected variables.
+                std::map<storm::expressions::Variable, storm::expressions::Variable> newVariableMaps;
+                for (auto const& variable : assignedVariables) {
+                    storm::expressions::Variable variableCopy = expressionManager.declareVariableCopy(variable);
+                    newVariableMaps[oldToNewVariables.at(variable)] = variableCopy;
+                    stepVariableToCopiedVariableMap[variableCopy] = variable;
                 }
                 
-                // Retrieve the variable updates that the predecessor needs to perform to get to the current state.
-                auto variableUpdateVector = abstractor.get().getVariableUpdates(currentAction);
+                // Retrieves the possible updates to the variables.
+                auto variableUpdateVector = abstractor.get().getVariableUpdates(*actionIt);
+                
+                // Encode these updates.
                 storm::expressions::Expression allVariableUpdateExpression;
                 for (auto const& variableUpdates : variableUpdateVector) {
                     storm::expressions::Expression variableUpdateExpression;
-                    for (auto const& oldNewVariablePair : oldToNewVariables) {
-                        storm::expressions::Variable const& newVariable = oldNewVariablePair.second;
-                        
-                        // If the variable was set, use its update expression.
-                        auto updateIt = variableUpdates.find(oldNewVariablePair.first);
-                        if (updateIt != variableUpdates.end()) {
-                            auto const& update = *updateIt;
-                            
-                            if (update.second.hasBooleanType()) {
-                                variableUpdateExpression = variableUpdateExpression && storm::expressions::iff(lastSubstitution.at(newVariable), update.second.changeManager(expressionManager).substitute(substitution));
-                            } else {
-                                variableUpdateExpression = variableUpdateExpression && lastSubstitution.at(newVariable) == update.second.changeManager(expressionManager).substitute(substitution);
-                            }
+                    for (auto const& update : variableUpdates) {
+                        if (update.second.hasBooleanType()) {
+                            variableUpdateExpression = variableUpdateExpression && storm::expressions::iff(newVariableMaps.at(update.first), update.second.changeManager(expressionManager).substitute(currentSubstitution));
                         } else {
-                            // Otherwise, make sure that the new variable maintains the old value.
-                            if (newVariable.hasBooleanType()) {
-                                variableUpdateExpression = variableUpdateExpression && storm::expressions::iff(lastSubstitution.at(newVariable), substitution.at(newVariable));
-                            } else {
-                                variableUpdateExpression = variableUpdateExpression && lastSubstitution.at(newVariable) == substitution.at(newVariable);
-                            }
+                            variableUpdateExpression = variableUpdateExpression && newVariableMaps.at(update.first) == update.second.changeManager(expressionManager).substitute(currentSubstitution);
                         }
                     }
                     
                     allVariableUpdateExpression = allVariableUpdateExpression || variableUpdateExpression;
                 }
-                
-                // Add variable update expression.
                 predicates.back().emplace_back(allVariableUpdateExpression);
-
-                // Add the guard of the choice.
-                predicates.back().emplace_back(abstractor.get().getGuard(currentAction).changeManager(expressionManager).substitute(substitution));
                 
-                // Retrieve the predicate valuation in the predecessor.
-                extendedPredicateValuation = odd.getEncoding(currentState, abstractionInformation.getNumberOfPredicates() + 1);
-                predicates.emplace_back(abstractionInformation.getPredicatesExcludingBottom(extendedPredicateValuation));
-                for (auto& predicate : predicates.back()) {
-                    predicate = predicate.changeManager(expressionManager).substitute(substitution);
+                // Incorporate the new variables in the current substitution.
+                for (auto const& variablePair : newVariableMaps) {
+                    currentSubstitution[variablePair.first] = variablePair.second;
                 }
                 
-                // Move backwards one step.
-                lastSubstitution = std::move(substitution);
-
-                std::pair<uint64_t, uint64_t> predecessorPair = pivotStateResult.predecessors[currentState];
-                currentState = predecessorPair.first;
-                currentAction = predecessorPair.second;
+                // Decode current state.
+                extendedPredicateValuation = odd.getEncoding(stateToOffset ? (*stateToOffset)[*pathIt] : *pathIt, abstractionInformation.getNumberOfPredicates() + 1);
+                
+                // Encode the predicates whose value might have changed.
+                // FIXME: could be optimized by precomputation.
+                for (uint64_t predicateIndex = 0; predicateIndex < abstractionInformation.getNumberOfPredicates(); ++predicateIndex) {
+                    auto const& predicate = abstractionInformation.getPredicateByIndex(predicateIndex);
+                    std::set<storm::expressions::Variable> usedVariables = predicate.getVariables();
+                    
+                    bool containsAssignedVariables = false;
+                    for (auto usedIt = usedVariables.begin(), assignedIt = assignedVariables.begin();;) {
+                        if (usedIt == usedVariables.end() || assignedIt == assignedVariables.end()) {
+                            break;
+                        }
+                        
+                        if (*usedIt == *assignedIt) {
+                            containsAssignedVariables = true;
+                            break;
+                        }
+                        
+                        if (*usedIt < *assignedIt) {
+                            ++usedIt;
+                        } else {
+                            ++assignedIt;
+                        }
+                    }
+                    
+                    if (containsAssignedVariables) {
+                        auto transformedPredicate = predicate.changeManager(expressionManager).substitute(currentSubstitution);
+                        predicates.back().emplace_back(extendedPredicateValuation.get(predicateIndex + 1) ? transformedPredicate : !transformedPredicate);
+                    }
+                }
+                
+                // Enforce ranges of all assigned variables.
+//                for (auto const& variablePair : newVariableMaps) {
+//                    for (auto const& )
+//                }
+                
+                ++actionIt;
             }
             
-            predicates.back().push_back(initialExpression.changeManager(expressionManager).substitute(lastSubstitution));
+            std::reverse(predicates.begin(), predicates.end());
 
             return std::make_pair(predicates, stepVariableToCopiedVariableMap);
         }
-
-        template<storm::dd::DdType Type>
-        boost::optional<RefinementPredicates> derivePredicatesFromInterpolation(storm::expressions::ExpressionManager& interpolationManager, AbstractionInformation<Type> const& abstractionInformation, std::vector<std::vector<storm::expressions::Expression>> const& trace, std::map<storm::expressions::Variable, storm::expressions::Expression> const& variableSubstitution) {
+        
+        template<storm::dd::DdType Type, typename ValueType>
+        boost::optional<RefinementPredicates> MenuGameRefiner<Type, ValueType>::derivePredicatesFromInterpolationFromTrace(storm::expressions::ExpressionManager& interpolationManager, std::vector<std::vector<storm::expressions::Expression>> const& trace, std::map<storm::expressions::Variable, storm::expressions::Expression> const& variableSubstitution) const {
+            
+            AbstractionInformation<Type> const& abstractionInformation = abstractor.get().getAbstractionInformation();
             
             auto start = std::chrono::high_resolution_clock::now();
             boost::optional<RefinementPredicates> predicates;
@@ -656,7 +719,6 @@ namespace storm {
             auto traceIt = trace.rbegin();
             auto traceIte = trace.rend();
             for (; traceIt != traceIte; ++traceIt) {
-                auto iterationStart = std::chrono::high_resolution_clock::now();
                 auto const& step = *traceIt;
                 interpolatingSolver.push();
                 
@@ -664,13 +726,11 @@ namespace storm {
                 for (auto const& predicate : step) {
                     interpolatingSolver.add(predicate);
                 }
-                auto iterationEnd = std::chrono::high_resolution_clock::now();
-                STORM_LOG_TRACE("Asserting step of trace formula took " << std::chrono::duration_cast<std::chrono::milliseconds>(iterationEnd - iterationStart).count() << "ms.");
 
                 ++stepCounter;
             }
             auto assertionEnd = std::chrono::high_resolution_clock::now();
-            STORM_LOG_TRACE("Asserting trace formula until unsatisfiability took " << std::chrono::duration_cast<std::chrono::milliseconds>(assertionEnd - assertionStart).count() << "ms.");
+            STORM_LOG_TRACE("Asserting trace formula took " << std::chrono::duration_cast<std::chrono::milliseconds>(assertionEnd - assertionStart).count() << "ms.");
             
             // Now encode the trace as an SMT problem.
             storm::solver::SmtSolver::CheckResult result = interpolatingSolver.check();
@@ -682,11 +742,18 @@ namespace storm {
                 for (uint64_t step = 0; step < stepCounter; ++step) {
                     prefix.push_back(step);
                     storm::expressions::Expression interpolant = interpolatingSolver.getInterpolant(prefix).substitute(variableSubstitution).changeManager(abstractionInformation.getExpressionManager());
-                    if (!interpolant.isTrue() && !interpolant.isFalse()) {
+                    if (interpolant.isFalse()) {
+                        // If the interpolant is false, it means that the prefix has become unsatisfiable.
+                        break;
+                    }
+                    if (!interpolant.isTrue()) {
                         STORM_LOG_DEBUG("Derived new predicate (based on interpolation at step " << step << " out of " << stepCounter << "): " << interpolant);
                         interpolants.push_back(interpolant);
                     }
                 }
+                
+                STORM_LOG_ASSERT(!interpolants.empty(), "Expected to have non-empty set of interpolants.");
+                
                 predicates = boost::make_optional(RefinementPredicates(RefinementPredicates::Source::Interpolation, interpolants));
             } else {
                 STORM_LOG_TRACE("Trace formula is satisfiable, not using interpolation.");
@@ -723,7 +790,7 @@ namespace storm {
             auto end = std::chrono::high_resolution_clock::now();
             STORM_LOG_DEBUG("Building the trace and variable substitution for interpolation from symbolic most-probable paths result took " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
 
-            return storm::abstraction::derivePredicatesFromInterpolation(*interpolationManager, abstractionInformation, traceAndVariableSubstitution.first, traceAndVariableSubstitution.second);
+            return derivePredicatesFromInterpolationFromTrace(*interpolationManager, traceAndVariableSubstitution.first, traceAndVariableSubstitution.second);
         }
         
         template<storm::dd::DdType Type, typename ValueType>
@@ -735,11 +802,18 @@ namespace storm {
 
             // Build the trace of the most probable path in terms of which predicates hold in each step.
             auto start = std::chrono::high_resolution_clock::now();
-            std::pair<std::vector<std::vector<storm::expressions::Expression>>, std::map<storm::expressions::Variable, storm::expressions::Expression>> traceAndVariableSubstitution = buildTrace(*interpolationManager, game, pivotStateResult, odd);
+            std::pair<std::vector<uint64_t>, std::vector<uint64_t>> labeledReversedPath = buildReversedLabeledPath(pivotStateResult);
+            
+            // If the initial state is the pivot state, we can stop here.
+            if (labeledReversedPath.first.size() == 1) {
+                return boost::none;
+            }
+            
+            std::pair<std::vector<std::vector<storm::expressions::Expression>>, std::map<storm::expressions::Variable, storm::expressions::Expression>> traceAndVariableSubstitution = buildTraceFromReversedLabeledPath(*interpolationManager, labeledReversedPath.first, labeledReversedPath.second, odd);
             auto end = std::chrono::high_resolution_clock::now();
             STORM_LOG_DEBUG("Building the trace and variable substitution for interpolation from explicit most-probable paths result took " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
 
-            return storm::abstraction::derivePredicatesFromInterpolation(*interpolationManager, abstractionInformation, traceAndVariableSubstitution.first, traceAndVariableSubstitution.second);
+            return derivePredicatesFromInterpolationFromTrace(*interpolationManager, traceAndVariableSubstitution.first, traceAndVariableSubstitution.second);
         }
         
         template<storm::dd::DdType Type, typename ValueType>
@@ -981,7 +1055,110 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type, typename ValueType>
+        boost::optional<RefinementPredicates> MenuGameRefiner<Type, ValueType>::derivePredicatesFromInterpolationReversedPath(storm::dd::Odd const& odd, storm::expressions::ExpressionManager& interpolationManager, std::vector<uint64_t> const& reversedPath, std::vector<uint64_t> const& stateToOffset, std::vector<uint64_t> const& reversedLabels) const {
+            
+            // Build the trace of the most probable path in terms of which predicates hold in each step.
+            auto start = std::chrono::high_resolution_clock::now();
+            std::pair<std::vector<std::vector<storm::expressions::Expression>>, std::map<storm::expressions::Variable, storm::expressions::Expression>> traceAndVariableSubstitution = buildTraceFromReversedLabeledPath(interpolationManager, reversedPath, reversedLabels, odd, &stateToOffset);
+            auto end = std::chrono::high_resolution_clock::now();
+            STORM_LOG_DEBUG("Building the trace and variable substitution for interpolation from explicit most-probable paths result took " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
+            
+            return derivePredicatesFromInterpolationFromTrace(interpolationManager, traceAndVariableSubstitution.first, traceAndVariableSubstitution.second);
+        }
+        
+        template<storm::dd::DdType Type, typename ValueType>
+        boost::optional<RefinementPredicates> MenuGameRefiner<Type, ValueType>::derivePredicatesFromInterpolationKShortestPaths(storm::dd::Odd const& odd, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint64_t> const& player1Grouping, std::vector<uint64_t> const& player1Labeling, std::vector<uint64_t> const& player2Labeling, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, ValueType minProbability, ValueType maxProbability, ExplicitGameStrategyPair const& maxStrategyPair) const {
+            
+            // Extract the underlying DTMC of the max strategy pair.
+            
+            // Start by determining which states are reachable.
+            storm::storage::BitVector reachableStatesInMaxFragment(initialStates);
+            std::vector<uint64_t> stack(initialStates.begin(), initialStates.end());
+            while (!stack.empty()) {
+                uint64_t currentState = stack.back();
+                stack.pop_back();
+                
+                uint64_t player2Successor = maxStrategyPair.getPlayer1Strategy().getChoice(currentState);
+                uint64_t player2Choice = maxStrategyPair.getPlayer2Strategy().getChoice(player2Successor);
+                for (auto const& successorEntry : transitionMatrix.getRow(player2Choice)) {
+                    if (!reachableStatesInMaxFragment.get(successorEntry.getColumn())) {
+                        reachableStatesInMaxFragment.set(successorEntry.getColumn());
+                        if (!targetStates.get(successorEntry.getColumn())) {
+                            stack.push_back(successorEntry.getColumn());
+                        }
+                    }
+                }
+            }
+            
+            uint64_t numberOfReachableStates = reachableStatesInMaxFragment.getNumberOfSetBits();
+            std::vector<uint64_t> reachableStatesWithLowerIndex = reachableStatesInMaxFragment.getNumberOfSetBitsBeforeIndices();
+            
+            // Now construct the matrix just for these entries.
+            storm::storage::SparseMatrixBuilder<ValueType> builder(numberOfReachableStates, numberOfReachableStates);
+            storm::storage::BitVector dtmcInitialStates(numberOfReachableStates);
+            typename storm::utility::ksp::ShortestPathsGenerator<ValueType>::StateProbMap targetProbabilities;
+            std::vector<uint64_t> stateToOffset(numberOfReachableStates);
+            std::vector<uint64_t> dtmcPlayer1Labels(numberOfReachableStates);
+            uint64_t currentRow = 0;
+            for (auto currentState : reachableStatesInMaxFragment) {
+                stateToOffset[currentRow] = currentState;
+                if (targetStates.get(currentState)) {
+                    targetProbabilities[currentRow] = storm::utility::one<ValueType>();
+                    builder.addNextValue(currentRow, currentRow, storm::utility::one<ValueType>());
+                } else {
+                    uint64_t player2Successor = maxStrategyPair.getPlayer1Strategy().getChoice(currentState);
+                    dtmcPlayer1Labels[currentRow] = player1Labeling[player2Successor];
+                    uint64_t player2Choice = maxStrategyPair.getPlayer2Strategy().getChoice(player2Successor);
+                    
+                    for (auto const& successorEntry : transitionMatrix.getRow(player2Choice)) {
+                        builder.addNextValue(currentRow, reachableStatesWithLowerIndex[successorEntry.getColumn()], successorEntry.getValue());
+                    }
+                }
+                
+                if (initialStates.get(currentState)) {
+                    dtmcInitialStates.set(currentRow);
+                }
+                ++currentRow;
+            }
+            storm::storage::SparseMatrix<ValueType> dtmcMatrix = builder.build();
+
+            // Create a new expression manager that we can use for the interpolation.
+            AbstractionInformation<Type> const& abstractionInformation = abstractor.get().getAbstractionInformation();
+            std::shared_ptr<storm::expressions::ExpressionManager> interpolationManager = abstractionInformation.getExpressionManager().clone();
+            
+            // Use a path generator to compute k-shortest-paths.
+            storm::utility::ksp::ShortestPathsGenerator<ValueType> pathGenerator(dtmcMatrix, targetProbabilities, dtmcInitialStates, storm::utility::ksp::MatrixFormat::straight);
+            uint64_t currentShortestPath = 1;
+            bool considerNextPath = true;
+            
+            boost::optional<RefinementPredicates> result;
+            
+            while (currentShortestPath < 100 && considerNextPath) {
+                auto reversedPath = pathGenerator.getPathAsList(currentShortestPath);
+                std::vector<uint64_t> reversedLabels;
+                for (auto stateIt = reversedPath.rbegin(); stateIt != reversedPath.rend() - 1; ++stateIt) {
+                    reversedLabels.push_back(player1Labeling[maxStrategyPair.getPlayer1Strategy().getChoice(stateToOffset[*stateIt])]);
+                }
+                
+                boost::optional<RefinementPredicates> pathPredicates = derivePredicatesFromInterpolationReversedPath(odd, *interpolationManager, reversedPath, stateToOffset, reversedLabels);
+                if (pathPredicates) {
+                    if (!result) {
+                        result = RefinementPredicates(RefinementPredicates::Source::Interpolation, pathPredicates.get().getPredicates());
+                    } else {
+                        result.get().addPredicates(pathPredicates.get().getPredicates());
+                    }
+                }
+                ++currentShortestPath;
+            }
+
+            exit(-1);
+            return result;
+        }
+        
+        template<storm::dd::DdType Type, typename ValueType>
         bool MenuGameRefiner<Type, ValueType>::refine(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Odd const& odd, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint64_t> const& player1Grouping, std::vector<uint64_t> const& player1Labeling, std::vector<uint64_t> const& player2Labeling, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, ExplicitQualitativeGameResultMinMax const& qualitativeResult, ExplicitGameStrategyPair const& minStrategyPair, ExplicitGameStrategyPair const& maxStrategyPair) const {
+            
+//            boost::optional<RefinementPredicates> kShortestPathPredicates = derivePredicatesFromInterpolationKShortestPaths(odd, transitionMatrix, player1Grouping, player1Labeling, player2Labeling, initialStates, constraintStates, targetStates, storm::utility::zero<ValueType>(), storm::utility::one<ValueType>(), maxStrategyPair);
             
             // Compute the set of states whose result we have for the min and max case.
             storm::storage::BitVector relevantStates = (qualitativeResult.getProb0Min().getStates() | qualitativeResult.getProb1Min().getStates()) & (qualitativeResult.getProb0Max().getStates() | qualitativeResult.getProb1Max().getStates());
@@ -1053,6 +1230,11 @@ namespace storm {
         
         template<storm::dd::DdType Type, typename ValueType>
         bool MenuGameRefiner<Type, ValueType>::refine(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Odd const& odd, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint64_t> const& player1Grouping, std::vector<uint64_t> const& player1Labeling, std::vector<uint64_t> const& player2Labeling, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, ExplicitQuantitativeResultMinMax<ValueType> const& quantitativeResult, ExplicitGameStrategyPair const& minStrategyPair, ExplicitGameStrategyPair const& maxStrategyPair) const {
+            
+            ValueType lower = quantitativeResult.getMin().getRange(initialStates).first;
+            ValueType upper = quantitativeResult.getMax().getRange(initialStates).second;
+            
+//            boost::optional<RefinementPredicates> kShortestPathPredicates = derivePredicatesFromInterpolationKShortestPaths(odd, transitionMatrix, player1Grouping, player1Labeling, player2Labeling, initialStates, constraintStates, targetStates, lower, upper, maxStrategyPair);
             
             // Compute the set of states whose result we have for the min and max case.
             storm::storage::BitVector relevantStates(odd.getTotalOffset(), true);

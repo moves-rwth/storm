@@ -56,6 +56,11 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
+            std::set<storm::expressions::Variable> const& ModuleAbstractor<DdType, ValueType>::getAssignedVariables(uint64_t player1Choice) const {
+                return commands[player1Choice].getAssignedVariables();
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
             GameBddResult<DdType> ModuleAbstractor<DdType, ValueType>::abstract() {
                 // First, we retrieve the abstractions of all commands.
                 std::vector<GameBddResult<DdType>> commandDdsAndUsedOptionVariableCounts;
