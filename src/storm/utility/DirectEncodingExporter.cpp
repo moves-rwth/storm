@@ -21,20 +21,17 @@ namespace storm {
             // Notice that for CTMCs we write the rate matrix instead of probabilities
 
             // Initialize
-            storm::models::ModelType type = sparseModel->getType();
             std::vector<ValueType> exitRates; // Only for CTMCs and MAs.
-            if(sparseModel->getType() == storm::models::ModelType::Ctmc) {
+            if (sparseModel->getType() == storm::models::ModelType::Ctmc) {
                 exitRates = sparseModel->template as<storm::models::sparse::Ctmc<ValueType>>()->getExitRateVector();
-            } else if(sparseModel->getType() == storm::models::ModelType::MarkovAutomaton) {
-                type = storm::models::ModelType::Mdp;
-                STORM_LOG_WARN("Markov automaton is exported as MDP (indication of Markovian choices is not supported in DRN format).");
+            } else if (sparseModel->getType() == storm::models::ModelType::MarkovAutomaton) {
                 exitRates = sparseModel->template as<storm::models::sparse::MarkovAutomaton<ValueType>>()->getExitRates();
             }
 
             // Write header
             os << "// Exported by storm" << std::endl;
             os << "// Original model type: " << sparseModel->getType() << std::endl;
-            os << "@type: " << type << std::endl;
+            os << "@type: " << sparseModel->getType() << std::endl;
             os << "@parameters" << std::endl;
             if (parameters.empty()) {
                 for (std::string const& parameter : getParameters(sparseModel)) {
@@ -55,9 +52,15 @@ namespace storm {
             os << "@model" << std::endl;
 
             storm::storage::SparseMatrix<ValueType> const& matrix = sparseModel->getTransitionMatrix();
-            
+
+            // Iterate over states and export state information and outgoing transitions
             for (typename storm::storage::SparseMatrix<ValueType>::index_type group = 0; group < matrix.getRowGroupCount(); ++group) {
                 os << "state " << group;
+
+                // Write exit rates for CTMCs and MAs
+                if (!exitRates.empty()) {
+                    os << " !" << exitRates.at(group);
+                }
 
                 // Write state rewards
                 bool first = true;
@@ -92,22 +95,23 @@ namespace storm {
 
                 // Iterate over all actions
                 for (typename storm::storage::SparseMatrix<ValueType>::index_type row = start; row < end; ++row) {
-                    // Print the actual row.
+                    // Write choice
                     if (sparseModel->hasChoiceLabeling()) {
                         os << "\taction ";
                         bool lfirst = true;
                         for (auto const& label : sparseModel->getChoiceLabeling().getLabelsOfChoice(row)) {
                             if (!lfirst) {
                                 os << "_";
+                                lfirst = false;
                             }
                             os << label;
-                            lfirst = false;
                         }
                     } else {
                         os << "\taction " << row - start;
                     }
+
+                    // Write action rewards
                     bool first = true;
-                    // Write transition rewards
                     for (auto const& rewardModelEntry : sparseModel->getRewardModels()) {
                         if (first) {
                             os << " [";
@@ -116,7 +120,7 @@ namespace storm {
                             os << ", ";
                         }
 
-                        if(rewardModelEntry.second.hasStateActionRewards()) {
+                        if (rewardModelEntry.second.hasStateActionRewards()) {
                             os << storm::utility::to_string(rewardModelEntry.second.getStateActionRewardVector().at(row));
                         } else {
                             os << "0";
@@ -126,19 +130,18 @@ namespace storm {
                     if (!first) {
                         os << "]";
                     }
-
                     os << std::endl;
-                    
-                    // Write probabilities
-                    for(auto it = matrix.begin(row); it != matrix.end(row); ++it) {
+
+                    // Write transitions
+                    for (auto it = matrix.begin(row); it != matrix.end(row); ++it) {
                         ValueType prob = it->getValue();
                         os << "\t\t" << it->getColumn() << " : ";
                         os << storm::utility::to_string(prob) << std::endl;
                     }
-                    
+
                 }
-            } // end matrix iteration
-            
+            } // end state iteration
+
         }
 
         template<typename ValueType>
@@ -146,9 +149,6 @@ namespace storm {
             return {};
         }
 
-        template void explicitExportSparseModel<double>(std::ostream& os, std::shared_ptr<storm::models::sparse::Model<double>> sparseModel, std::vector<std::string> const& parameters);
-
-#ifdef STORM_HAVE_CARL
         template<>
         std::vector<std::string> getParameters(std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> sparseModel) {
             std::vector<std::string> parameters;
@@ -167,8 +167,9 @@ namespace storm {
             return parameters;
         }
 
+        // Template instantiations
+        template void explicitExportSparseModel<double>(std::ostream& os, std::shared_ptr<storm::models::sparse::Model<double>> sparseModel, std::vector<std::string> const& parameters);
         template void explicitExportSparseModel<storm::RationalNumber>(std::ostream& os, std::shared_ptr<storm::models::sparse::Model<storm::RationalNumber>> sparseModel, std::vector<std::string> const& parameters);
         template void explicitExportSparseModel<storm::RationalFunction>(std::ostream& os, std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> sparseModel, std::vector<std::string> const& parameters);
-#endif
     }
 }

@@ -217,7 +217,7 @@ namespace storm {
             auto buildSettings = storm::settings::getModule<storm::settings::modules::BuildSettings>();
             std::shared_ptr<storm::models::ModelBase> result;
             if (input.model) {
-                if (engine == storm::settings::modules::CoreSettings::Engine::Dd || engine == storm::settings::modules::CoreSettings::Engine::Hybrid || engine == storm::settings::modules::CoreSettings::Engine::AbstractionRefinement) {
+                if (engine == storm::settings::modules::CoreSettings::Engine::Dd || engine == storm::settings::modules::CoreSettings::Engine::Hybrid || engine == storm::settings::modules::CoreSettings::Engine::DdSparse || engine == storm::settings::modules::CoreSettings::Engine::AbstractionRefinement) {
                     result = buildModelDd<DdType, ValueType>(input);
                 } else if (engine == storm::settings::modules::CoreSettings::Engine::Sparse) {
                     result = buildModelSparse<ValueType>(input, buildSettings);
@@ -348,6 +348,25 @@ namespace storm {
                 result = std::make_unique<std::pair<std::shared_ptr<storm::models::Model<ExportValueType>>, bool>>(newModel, true);
             } else {
                 result = std::make_unique<std::pair<std::shared_ptr<storm::models::Model<ExportValueType>>, bool>>(symbolicModel->template toValueType<ExportValueType>(), !std::is_same<ValueType, ExportValueType>::value);
+            }
+            
+            if (result && result->first->isSymbolicModel() && storm::settings::getModule<storm::settings::modules::CoreSettings>().getEngine() == storm::settings::modules::CoreSettings::Engine::DdSparse) {
+                // Mark as changed.
+                result->second = true;
+                
+                std::shared_ptr<storm::models::symbolic::Model<DdType, ExportValueType>> symbolicModel = result->first->template as<storm::models::symbolic::Model<DdType, ExportValueType>>();
+                if (symbolicModel->isOfType(storm::models::ModelType::Dtmc)) {
+                    storm::transformer::SymbolicDtmcToSparseDtmcTransformer<DdType, ExportValueType> transformer;
+                    result->first = transformer.translate(*symbolicModel->template as<storm::models::symbolic::Dtmc<DdType, ExportValueType>>());
+                } else if (symbolicModel->isOfType(storm::models::ModelType::Ctmc)) {
+                    storm::transformer::SymbolicCtmcToSparseCtmcTransformer<DdType, ExportValueType> transformer;
+                    result->first = transformer.translate(*symbolicModel->template as<storm::models::symbolic::Ctmc<DdType, ExportValueType>>());
+                } else if (symbolicModel->isOfType(storm::models::ModelType::Mdp)) {
+                    storm::transformer::SymbolicMdpToSparseMdpTransformer<DdType, ExportValueType> transformer;
+                    result->first = transformer.translate(*symbolicModel->template as<storm::models::symbolic::Mdp<DdType, ExportValueType>>());
+                } else {
+                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The translation to a sparse model is not supported for the given model type.");
+                }
             }
             
             return *result;

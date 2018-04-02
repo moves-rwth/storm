@@ -162,6 +162,10 @@ namespace storm {
         SymbolicParetoCurveCheckResult<Type, ValueType> const& CheckResult::asSymbolicParetoCurveCheckResult() const {
             return dynamic_cast<SymbolicParetoCurveCheckResult<Type, ValueType> const&>(*this);
         }
+
+        bool CheckResult::hasScheduler() const {
+            return false;
+        }
         
         // Explicitly instantiate the template functions.
         template QuantitativeCheckResult<double>& CheckResult::asQuantitativeCheckResult();

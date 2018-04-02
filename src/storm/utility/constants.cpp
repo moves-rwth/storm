@@ -163,13 +163,26 @@ namespace storm {
         
         template<typename ValueType>
         ValueType minimum(std::vector<ValueType> const& values) {
-            return minmax(values).first;
+            assert(!values.empty());
+            ValueType min = values.front();
+            for (auto const& vt : values) {
+                if (vt < min) {
+                    min = vt;
+                }
+            }
+            return min;
         }
-        
         
         template<typename ValueType>
         ValueType maximum(std::vector<ValueType> const& values) {
-            return minmax(values).second;
+            assert(!values.empty());
+            ValueType max = values.front();
+            for (auto const& vt : values) {
+                if (vt > max) {
+                    max = vt;
+                }
+            }
+            return max;
         }
         
         template<typename K, typename ValueType>
@@ -896,7 +909,7 @@ namespace storm {
         template bool isZero(int const& value);
         template bool isConstant(int const& value);
         template bool isInfinity(int const& value);
-        
+
         // uint32_t
         template uint32_t one();
         template uint32_t zero();
@@ -905,7 +918,7 @@ namespace storm {
         template bool isZero(uint32_t const& value);
         template bool isConstant(uint32_t const& value);
         template bool isInfinity(uint32_t const& value);
-        
+
         // storm::storage::sparse::state_type
         template storm::storage::sparse::state_type one();
         template storm::storage::sparse::state_type zero();
@@ -914,11 +927,11 @@ namespace storm {
         template bool isZero(storm::storage::sparse::state_type const& value);
         template bool isConstant(storm::storage::sparse::state_type const& value);
         template bool isInfinity(storm::storage::sparse::state_type const& value);
-        
+
         // other instantiations
         template unsigned long convertNumber(long const&);
         template double convertNumber(long const&);
-        
+
 #if defined(STORM_HAVE_CLN)
         // Instantiations for (CLN) rational number.
         template storm::ClnRationalNumber one();
@@ -942,7 +955,7 @@ namespace storm {
         template storm::ClnRationalNumber min(storm::ClnRationalNumber const& first, storm::ClnRationalNumber const& second);
         template std::string to_string(storm::ClnRationalNumber const& value);
 #endif
-        
+
 #if defined(STORM_HAVE_GMP)
         // Instantiations for (GMP) rational number.
         template storm::GmpRationalNumber one();
@@ -965,10 +978,10 @@ namespace storm {
         template storm::GmpRationalNumber min(storm::GmpRationalNumber const& first, storm::GmpRationalNumber const& second);
         template std::string to_string(storm::GmpRationalNumber const& value);
 #endif
-        
+
 #if defined(STORM_HAVE_CARL) && defined(STORM_HAVE_GMP) && defined(STORM_HAVE_CLN)
 #endif
-        
+
 #ifdef STORM_HAVE_CARL
         // Instantiations for rational function.
         template RationalFunction one();
