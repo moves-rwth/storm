@@ -79,7 +79,7 @@ namespace storm {
                 
                 this->addOption(storm::settings::OptionBuilder(moduleName, restrictToRelevantStatesOptionName, true, "Sets whether to restrict to relevant states during the abstraction.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("value", "The value of the flag.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(onOff))
-                                             .setDefaultValueString("off").build())
+                                             .setDefaultValueString("on").build())
                                 .build());
                 
                 this->addOption(storm::settings::OptionBuilder(moduleName, rankRefinementPredicatesOptionName, true, "Sets whether to rank the refinement predicates if there are multiple.")
