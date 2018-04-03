@@ -177,8 +177,6 @@ namespace storm {
              * Shows progress if this solver is asked to do so.
              */
             void showProgressIterative(uint64_t iterations, boost::optional<uint64_t> const& bound = boost::none) const;
-            
-            virtual void setPrecision(ValueType const& precision);
 
         protected:
             /*!
