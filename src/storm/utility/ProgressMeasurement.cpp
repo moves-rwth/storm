@@ -1,6 +1,7 @@
 #include "storm/utility/ProgressMeasurement.h"
 
 #include <sstream>
+#include <limits>
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GeneralSettings.h"
@@ -9,7 +10,7 @@
 namespace storm {
     namespace utility {
 
-        ProgressMeasurement::ProgressMeasurement(std::string const& itemName) : itemName(itemName), maxCount(0) {
+        ProgressMeasurement::ProgressMeasurement(std::string const& itemName) : itemName(itemName), maxCount(std::numeric_limits<uint64_t>::max()) {
             delay = storm::settings::getModule<storm::settings::modules::GeneralSettings>().getShowProgressDelay();
         }
         
@@ -48,7 +49,7 @@ namespace storm {
         }
         
         bool ProgressMeasurement::isMaxCountSet() const {
-            return this->maxCount > 0;
+            return this->maxCount < std::numeric_limits<uint64_t>::max();
         }
         
         uint64_t ProgressMeasurement::getMaxCount() const {
@@ -61,7 +62,7 @@ namespace storm {
         }
         
         void ProgressMeasurement::unsetMaxCount() {
-            this->maxCount = 0;
+            this->maxCount = std::numeric_limits<uint64_t>::max();
         }
         
         uint64_t ProgressMeasurement::getShowProgressDelay() const {
