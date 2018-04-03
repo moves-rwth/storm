@@ -145,6 +145,22 @@ namespace storm {
             return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(numericResult)));
         }
 
+        template <typename SparseCtmcModelType>
+        std::vector<typename SparseCtmcModelType::ValueType> SparseCtmcCslModelChecker<SparseCtmcModelType>::computeTransientProbabilities(Environment const& env, CheckTask<storm::logic::BoundedUntilFormula, ValueType> const& checkTask) {
+            storm::logic::BoundedUntilFormula const& pathFormula = checkTask.getFormula();
+            std::unique_ptr<CheckResult> leftResultPointer = this->check(env, pathFormula.getLeftSubformula());
+            std::unique_ptr<CheckResult> rightResultPointer = this->check(env, pathFormula.getRightSubformula());
+            ExplicitQualitativeCheckResult const& leftResult = leftResultPointer->asExplicitQualitativeCheckResult();;
+            ExplicitQualitativeCheckResult const& rightResult = rightResultPointer->asExplicitQualitativeCheckResult();
+
+            STORM_LOG_THROW(pathFormula.getTimeBoundReference().isTimeBound(), storm::exceptions::NotImplementedException, "Currently step-bounded or reward-bounded properties on CTMCs are not supported.");
+            STORM_LOG_THROW(pathFormula.hasUpperBound(), storm::exceptions::NotImplementedException, "Computation needs upper limit for time bound.");
+            double upperBound = pathFormula.getNonStrictUpperBound<double>();
+
+            std::vector<ValueType> result = storm::modelchecker::helper::SparseCtmcCslHelper::computeAllTransientProbabilities(env, this->getModel().getTransitionMatrix(), this->getModel().getBackwardTransitions(), this->getModel().getInitialStates(), leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector(), this->getModel().getExitRateVector(), upperBound);
+            return result;
+        }
+
         // Explicitly instantiate the model checker.
         template class SparseCtmcCslModelChecker<storm::models::sparse::Ctmc<double>>;
 

@@ -598,6 +598,79 @@ namespace storm {
             }
 
             template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
+            std::vector<ValueType> SparseCtmcCslHelper::computeAllTransientProbabilities(Environment const& env, storm::storage::SparseMatrix<ValueType> const& rateMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, std::vector<ValueType> const& exitRates, double timeBound) {
+
+                // Compute transient probabilities going from initial state
+                // Instead of y=Px we now compute y=xP <=> y^T=P^Tx^T via transposition
+                uint_fast64_t numberOfStates = rateMatrix.getRowCount();
+
+                // Create the result vector.
+                std::vector<ValueType> result;
+
+                storm::storage::SparseMatrix<ValueType> transposedMatrix(rateMatrix);
+                transposedMatrix.makeRowsAbsorbing(psiStates);
+                std::vector<ValueType> newRates = exitRates;
+                for (auto const& state : psiStates) {
+                    newRates[state] = storm::utility::one<ValueType>();
+                }
+
+                // Identify all maybe states which have a probability greater than 0 to be reached from the initial state.
+                //storm::storage::BitVector statesWithProbabilityGreater0 = storm::utility::graph::performProbGreater0(transposedMatrix, phiStates, initialStates);
+                //STORM_LOG_INFO("Found " << statesWithProbabilityGreater0.getNumberOfSetBits() << " states with probability greater 0.");
+
+                //storm::storage::BitVector relevantStates = statesWithProbabilityGreater0 & ~initialStates;//phiStates | psiStates;
+                storm::storage::BitVector relevantStates(numberOfStates, true);
+                STORM_LOG_INFO(relevantStates.getNumberOfSetBits() << " relevant states.");
+
+                if (!relevantStates.empty()) {
+                    // Find the maximal rate of all relevant states to take it as the uniformization rate.
+                    ValueType uniformizationRate = 0;
+                    for (auto const& state : relevantStates) {
+                        uniformizationRate = std::max(uniformizationRate, newRates[state]);
+                    }
+                    uniformizationRate *= 1.02;
+                    STORM_LOG_THROW(uniformizationRate > 0, storm::exceptions::InvalidStateException, "The uniformization rate must be positive.");
+
+                    transposedMatrix = transposedMatrix.transpose();
+
+                    // Compute the uniformized matrix.
+                    storm::storage::SparseMatrix<ValueType> uniformizedMatrix = computeUniformizedMatrix(transposedMatrix, relevantStates, uniformizationRate, newRates);
+
+                    // Compute the vector that is to be added as a compensation for removing the absorbing states.
+                    /*std::vector<ValueType> b = transposedMatrix.getConstrainedRowSumVector(relevantStates, initialStates);
+                    for (auto& element : b) {
+                        element /= uniformizationRate;
+                        std::cout << element << std::endl;
+                    }*/
+
+                    std::vector<ValueType> values(relevantStates.getNumberOfSetBits(), storm::utility::zero<ValueType>());
+                    // Set initial states
+                    size_t i = 0;
+                    ValueType initDist = storm::utility::one<ValueType>() / initialStates.getNumberOfSetBits();
+                    for (auto const& state : relevantStates) {
+                        if (initialStates.get(state)) {
+                            values[i] = initDist;
+                        }
+                        ++i;
+                    }
+                    // Finally compute the transient probabilities.
+                    std::vector<ValueType> subresult = computeTransientProbabilities<ValueType>(env, uniformizedMatrix, nullptr, timeBound, uniformizationRate, values);
+
+                    result = std::vector<ValueType>(numberOfStates, storm::utility::zero<ValueType>());
+                    storm::utility::vector::setVectorValues(result, relevantStates, subresult);
+                } else {
+                    result = std::vector<ValueType>(numberOfStates, storm::utility::zero<ValueType>());
+                }
+
+                return result;
+            }
+
+            template <typename ValueType, typename std::enable_if<!storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
+            std::vector<ValueType> SparseCtmcCslHelper::computeAllTransientProbabilities(Environment const&, storm::storage::SparseMatrix<ValueType> const&, storm::storage::SparseMatrix<ValueType> const&, storm::storage::BitVector const&, storm::storage::BitVector const&, storm::storage::BitVector const&, std::vector<ValueType> const&, double) {
+                STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Computing bounded until probabilities is unsupported for this value type.");
+            }
+
+            template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
             storm::storage::SparseMatrix<ValueType> SparseCtmcCslHelper::computeUniformizedMatrix(storm::storage::SparseMatrix<ValueType> const& rateMatrix, storm::storage::BitVector const& maybeStates, ValueType uniformizationRate, std::vector<ValueType> const& exitRates) {
                 STORM_LOG_DEBUG("Computing uniformized matrix using uniformization rate " << uniformizationRate << ".");
                 STORM_LOG_DEBUG("Keeping " << maybeStates.getNumberOfSetBits() << " rows.");
@@ -748,6 +821,8 @@ namespace storm {
             template std::vector<double> SparseCtmcCslHelper::computeLongRunAverageRewards(Environment const& env, storm::solver::SolveGoal<double>&& goal, storm::storage::SparseMatrix<double> const& probabilityMatrix, std::vector<double> const& stateRewardVector, std::vector<double> const* exitRateVector);
             
             template std::vector<double> SparseCtmcCslHelper::computeCumulativeRewards(Environment const& env, storm::solver::SolveGoal<double>&& goal, storm::storage::SparseMatrix<double> const& rateMatrix, std::vector<double> const& exitRateVector, storm::models::sparse::StandardRewardModel<double> const& rewardModel, double timeBound);
+
+            template std::vector<double> SparseCtmcCslHelper::computeAllTransientProbabilities(Environment const& env, storm::storage::SparseMatrix<double> const& rateMatrix, storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, std::vector<double> const& exitRates, double timeBound);
             
             template storm::storage::SparseMatrix<double> SparseCtmcCslHelper::computeUniformizedMatrix(storm::storage::SparseMatrix<double> const& rateMatrix, storm::storage::BitVector const& maybeStates, double uniformizationRate, std::vector<double> const& exitRates);
             
@@ -783,6 +858,9 @@ namespace storm {
 
             template std::vector<storm::RationalNumber> SparseCtmcCslHelper::computeCumulativeRewards(Environment const& env, storm::solver::SolveGoal<storm::RationalNumber>&& goal, storm::storage::SparseMatrix<storm::RationalNumber> const& rateMatrix, std::vector<storm::RationalNumber> const& exitRateVector, storm::models::sparse::StandardRewardModel<storm::RationalNumber> const& rewardModel, double timeBound);
             template std::vector<storm::RationalFunction> SparseCtmcCslHelper::computeCumulativeRewards(Environment const& env, storm::solver::SolveGoal<storm::RationalFunction>&& goal, storm::storage::SparseMatrix<storm::RationalFunction> const& rateMatrix, std::vector<storm::RationalFunction> const& exitRateVector, storm::models::sparse::StandardRewardModel<storm::RationalFunction> const& rewardModel, double timeBound);
+
+            template std::vector<storm::RationalNumber> SparseCtmcCslHelper::computeAllTransientProbabilities(Environment const& env, storm::storage::SparseMatrix<storm::RationalNumber> const& rateMatrix, storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, std::vector<storm::RationalNumber> const& exitRates, double timeBound);
+            template std::vector<storm::RationalFunction> SparseCtmcCslHelper::computeAllTransientProbabilities(Environment const& env, storm::storage::SparseMatrix<storm::RationalFunction> const& rateMatrix, storm::storage::SparseMatrix<storm::RationalFunction> const& backwardTransitions, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, std::vector<storm::RationalFunction> const& exitRates, double timeBound);
 
             template storm::storage::SparseMatrix<double> SparseCtmcCslHelper::computeProbabilityMatrix(storm::storage::SparseMatrix<double> const& rateMatrix, std::vector<double> const& exitRates);
             template storm::storage::SparseMatrix<storm::RationalNumber> SparseCtmcCslHelper::computeProbabilityMatrix(storm::storage::SparseMatrix<storm::RationalNumber> const& rateMatrix, std::vector<storm::RationalNumber> const& exitRates);
