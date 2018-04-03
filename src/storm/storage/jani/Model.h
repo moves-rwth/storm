@@ -228,13 +228,8 @@ namespace storm {
             /*!
              * Retrieves the manager responsible for the expressions in the JANI model.
              */
-            storm::expressions::ExpressionManager& getExpressionManager();
+            storm::expressions::ExpressionManager& getExpressionManager() const;
 
-            /*!
-             * Retrieves the manager responsible for the expressions in the JANI model.
-             */
-            storm::expressions::ExpressionManager const& getExpressionManager() const;
-            
             /*!
              * Adds the given automaton to the automata of this model.
              */
@@ -452,8 +447,8 @@ namespace storm {
             /*!
              * Encode and decode a tuple of automaton and edge index in one 64-bit index.
              */
-            uint64_t encodeAutomatonAndEdgeIndices(uint64_t automatonIndex, uint64_t edgeIndex) const;
-            std::pair<uint64_t, uint64_t> decodeAutomatonAndEdgeIndices(uint64_t index) const;
+            static uint64_t encodeAutomatonAndEdgeIndices(uint64_t automatonIndex, uint64_t edgeIndex);
+            static std::pair<uint64_t, uint64_t> decodeAutomatonAndEdgeIndices(uint64_t index);
 
             /*!
              * Creates a new model that only contains the selected edges. The edge indices encode the automata and
