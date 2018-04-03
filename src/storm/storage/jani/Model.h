@@ -228,13 +228,8 @@ namespace storm {
             /*!
              * Retrieves the manager responsible for the expressions in the JANI model.
              */
-            storm::expressions::ExpressionManager& getExpressionManager();
+            storm::expressions::ExpressionManager& getExpressionManager() const;
 
-            /*!
-             * Retrieves the manager responsible for the expressions in the JANI model.
-             */
-            storm::expressions::ExpressionManager const& getExpressionManager() const;
-            
             /*!
              * Adds the given automaton to the automata of this model.
              */

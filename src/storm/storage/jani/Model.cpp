@@ -689,14 +689,10 @@ namespace storm {
             return false;
         }
         
-        storm::expressions::ExpressionManager& Model::getExpressionManager() {
+        storm::expressions::ExpressionManager& Model::getExpressionManager() const {
             return *expressionManager;
         }
-        
-        storm::expressions::ExpressionManager const& Model::getExpressionManager() const {
-            return *expressionManager;
-        }
-        
+
         uint64_t Model::addAutomaton(Automaton const& automaton) {
             auto it = automatonToIndex.find(automaton.getName());
             STORM_LOG_THROW(it == automatonToIndex.end(), storm::exceptions::WrongFormatException, "Automaton with name '" << automaton.getName() << "' already exists.");
