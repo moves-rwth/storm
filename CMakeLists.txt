@@ -402,22 +402,32 @@ endif(DOXYGEN_FOUND)
 
 # try to obtain the current version from git.
 include(GetGitRevisionDescription)
+message (STATUS "Storm - git hash ${STORM_VERSION_GIT_HASH}")
+message (STATUS "Storm - git version refspec ${STORM_VERSION_REFSPEC}")
+message (STATUS "Storm - git version string ${STORM_GIT_VERSION_STRING}")
 get_git_head_revision(STORM_VERSION_REFSPEC STORM_VERSION_GIT_HASH)
 git_describe_checkout(STORM_GIT_VERSION_STRING)
+message (STATUS "Storm - git hash ${STORM_VERSION_GIT_HASH}")
+message (STATUS "Storm - git version refspec ${STORM_VERSION_REFSPEC}")
+message (STATUS "Storm - git version string ${STORM_GIT_VERSION_STRING}")
 
 # parse the git tag into variables
 # start with major.minor.patch
 string(REGEX MATCH "^([0-9]+)\\.([0-9]+)\\.([0-9]+)(.*)$" STORM_VERSION_MATCH "${STORM_GIT_VERSION_STRING}")
+message (STATUS "Storm - version match ${STORM_VERSION_MATCH}")
 set(STORM_VERSION_MAJOR "${CMAKE_MATCH_1}")
 set(STORM_VERSION_MINOR "${CMAKE_MATCH_2}")
 set(STORM_VERSION_PATCH "${CMAKE_MATCH_3}")
 set(STORM_GIT_VERSION_REST "${CMAKE_MATCH_4}")
+message (STATUS "Storm - version ${STORM_VERSION_MAJOR}.${STORM_VERSION_MINOR}.${STORM_VERSION_PATCH}")
 # parse rest of the form (-label)-commitsahead-hash-appendix
 string(REGEX MATCH "^(\\-([a-z][a-z0-9\\.]+))?\\-([0-9]+)\\-([a-z0-9]+)(\\-.*)?$" STORM_VERSION_REST_MATCH "${STORM_GIT_VERSION_REST}")
+message (STATUS "Storm - version rest match ${STORM_VERSION_REST_MATCH}")
 set(STORM_VERSION_LABEL "${CMAKE_MATCH_2}") # might be empty
 set(STORM_VERSION_COMMITS_AHEAD "${CMAKE_MATCH_3}")
 set(STORM_VERSION_TAG_HASH "${CMAKE_MATCH_4}")
 set(STORM_VERSION_APPENDIX "${CMAKE_MATCH_5}") # might be empty
+message (STATUS "Storm - version rest ${STORM_VERSION_LABEL} / ${STORM_VERSION_COMMITS_AHEAD} / ${STORM_VERSION_TAG_HASH} / STORM_VERSION_APPENDIX")
 
 # now check whether the git version lookup failed
 if (STORM_VERSION_MAJOR MATCHES "NOTFOUND")
