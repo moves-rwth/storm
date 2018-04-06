@@ -157,9 +157,9 @@ if(Z3_FOUND)
     endif()
 
     if(STORM_HAVE_Z3_OPTIMIZE)
-        message (STATUS "Storm - Linking with Z3. (Z3 version supports optimization)")
+        message (STATUS "Storm - Linking with Z3 (version ${Z3_VERSION}). (Z3 version supports optimization)")
     else()
-        message (STATUS "Storm - Linking with Z3. (Z3 version does not support optimization)")
+        message (STATUS "Storm - Linking with Z3 (version ${Z3_VERSION}). (Z3 version does not support optimization)")
     endif()
 
     add_imported_library(z3 SHARED ${Z3_LIBRARIES} ${Z3_INCLUDE_DIRS})
