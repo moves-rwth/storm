@@ -488,7 +488,7 @@ namespace storm {
             auto timeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
             STORM_LOG_DEBUG("Computed qualitative solution in " << timeInMilliseconds << "ms.");
             
-            return result;
+            return std::move(result); // move() required by, e.g., clang 3.8
         }
         
         template<typename ModelType>
@@ -598,7 +598,7 @@ namespace storm {
             }
             STORM_LOG_DEBUG("Computed qualitative solution in " << timeInMilliseconds << "ms.");
             
-            return result;
+            return std::move(result); // move() required by, e.g., clang 3.8
         }
 
         template<typename ModelType>
@@ -644,7 +644,7 @@ namespace storm {
             auto timeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
             STORM_LOG_DEBUG("Computed qualitative solution in " << timeInMilliseconds << "ms.");
             
-            return result;
+            return std::move(result); // move() required by, e.g., clang 3.8
         }
         
         template<typename ModelType>
