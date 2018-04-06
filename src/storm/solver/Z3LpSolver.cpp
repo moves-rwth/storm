@@ -127,7 +127,7 @@ namespace storm {
         template<typename ValueType>
         storm::expressions::Variable Z3LpSolver<ValueType>::addBinaryVariable(std::string const& name, ValueType objectiveFunctionCoefficient) {
             storm::expressions::Variable newVariable = this->manager->declareVariable(name, this->manager->getIntegerType());
-            solver->add(expressionAdapter->translateExpression((newVariable.getExpression() >= this->manager->rational(storm::utility::one<storm::RationalNumber>())) && (newVariable.getExpression() <= this->manager->rational(storm::utility::one<storm::RationalNumber>()))));
+            solver->add(expressionAdapter->translateExpression((newVariable.getExpression() >= this->manager->rational(storm::utility::zero<storm::RationalNumber>())) && (newVariable.getExpression() <= this->manager->rational(storm::utility::one<storm::RationalNumber>()))));
             optimizationFunction = optimizationFunction + this->manager->rational(objectiveFunctionCoefficient) * newVariable;
             return newVariable;
         }
