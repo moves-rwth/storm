@@ -26,7 +26,6 @@ namespace storm {
         
         template<typename ValueType>
         Z3LpSolver<ValueType>::Z3LpSolver(std::string const& name, OptimizationDirection const& optDir) : LpSolver<ValueType>(optDir) {
-            STORM_LOG_WARN_COND(name == "", "Z3 does not support names for solvers");
             z3::config config;
             config.set("model", true);
             context = std::unique_ptr<z3::context>(new z3::context(config));
@@ -137,7 +136,6 @@ namespace storm {
         void Z3LpSolver<ValueType>::addConstraint(std::string const& name, storm::expressions::Expression const& constraint) {
             STORM_LOG_THROW(constraint.isRelationalExpression(), storm::exceptions::InvalidArgumentException, "Illegal constraint is not a relational expression.");
             STORM_LOG_THROW(constraint.getOperator() != storm::expressions::OperatorType::NotEqual, storm::exceptions::InvalidArgumentException, "Illegal constraint uses inequality operator.");
-            STORM_LOG_WARN_COND(name == "", "Z3 does not support names for constraints");
             solver->add(expressionAdapter->translateExpression(constraint));
         }
         

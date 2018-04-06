@@ -68,6 +68,11 @@ namespace storm {
             storm::models::sparse::StateLabeling labelling(transitionMatrix.getRowGroupCount());
 
             labelling.addLabel("init", symbolicMdp.getInitialStates().toVector(odd));
+            symbolicMdp.getDeadlockStates().template toAdd<ValueType>().exportToDot("deadlock.dot");
+            std::cout << "height " << odd.getHeight() << std::endl;
+            for (auto const& var : symbolicMdp.getDeadlockStates().getContainedMetaVariables()) {
+                std::cout << "var " << var.getName() << " = " << symbolicMdp.getManager().getMetaVariable(var).getNumberOfDdVariables() << " dd vars" << std::endl;
+            }
             labelling.addLabel("deadlock", symbolicMdp.getDeadlockStates().toVector(odd));
             for(auto const& label : symbolicMdp.getLabels()) {
                 labelling.addLabel(label, symbolicMdp.getStates(label).toVector(odd));
