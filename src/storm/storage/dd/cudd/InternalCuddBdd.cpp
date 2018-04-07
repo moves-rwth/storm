@@ -294,7 +294,7 @@ namespace storm {
             } else if (dd == Cudd_ReadOne(manager.getManager()) && complement) {
                 return;
             }
-            
+                        
             // If we are at the maximal level, the value to be set is stored as a constant in the DD.
             if (currentRowLevel == maxLevel) {
                 result.set(currentRowOffset, true);

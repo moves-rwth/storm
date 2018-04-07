@@ -1006,7 +1006,10 @@ namespace storm {
                     STORM_LOG_INFO("Quotient transition matrix extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
 
                     storm::dd::Bdd<DdType> quotientTransitionMatrixBdd = quotientTransitionMatrix.notZero();
-                    storm::dd::Bdd<DdType> deadlockStates = !quotientTransitionMatrixBdd.existsAbstract(blockPrimeVariableSet) && reachableStates;
+                    
+                    std::set<storm::expressions::Variable> blockPrimeAndNondeterminismVariables = model.getNondeterminismVariables();
+                    blockPrimeAndNondeterminismVariables.insert(blockPrimeVariableSet.begin(), blockPrimeVariableSet.end());
+                    storm::dd::Bdd<DdType> deadlockStates = !quotientTransitionMatrixBdd.existsAbstract(blockPrimeAndNondeterminismVariables) && reachableStates;
                     
                     start = std::chrono::high_resolution_clock::now();
                     std::unordered_map<std::string, storm::models::symbolic::StandardRewardModel<DdType, ValueType>> quotientRewardModels;
@@ -1127,7 +1130,10 @@ namespace storm {
                     STORM_LOG_INFO("Quotient transition matrix extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
                     
                     storm::dd::Bdd<DdType> quotientTransitionMatrixBdd = quotientTransitionMatrix.notZero();
-                    storm::dd::Bdd<DdType> deadlockStates = !quotientTransitionMatrixBdd.existsAbstract(model.getColumnVariables()) && reachableStates;
+                    
+                    std::set<storm::expressions::Variable> columnAndNondeterminismVariables = model.getColumnVariables();
+                    columnAndNondeterminismVariables.insert(model.getNondeterminismVariables().begin(), model.getNondeterminismVariables().end());
+                    storm::dd::Bdd<DdType> deadlockStates = !quotientTransitionMatrixBdd.existsAbstract(columnAndNondeterminismVariables) && reachableStates;
                     
                     start = std::chrono::high_resolution_clock::now();
                     std::unordered_map<std::string, storm::models::symbolic::StandardRewardModel<DdType, ValueType>> quotientRewardModels;
