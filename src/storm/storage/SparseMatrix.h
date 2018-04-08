@@ -799,6 +799,11 @@ namespace storm {
              * Sets all diagonal elements to zero.
              */
             void deleteDiagonalEntries();
+
+            /*!
+             * Sets all diagonal elements to zero.
+             */
+            void deleteDiagonalEntries(storm::storage::BitVector const& states);
             
             /*!
              * Calculates the Jacobi decomposition of this sparse matrix. For this operation, the matrix must be square.

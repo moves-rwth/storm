@@ -330,7 +330,87 @@ namespace storm {
                 }
                 return result;
             }
-            
+
+            template<typename ValueType, typename RewardModelType>
+            std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeAllUntilProbabilities(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
+
+                uint_fast64_t numberOfStates = transitionMatrix.getRowCount();
+                std::vector<ValueType> result(numberOfStates, storm::utility::zero<ValueType>());
+
+                // We need to identify the maybe states (states which have a probability for satisfying the until formula
+                // that is strictly between 0 and 1) and the states that satisfy the formula with probability 1.
+                //storm::storage::BitVector maybeStates, statesWithProbability1;
+                storm::storage::BitVector relevantStates(numberOfStates, true);
+
+                // Get all states that have probability 0 and 1 of satisfying the until-formula.
+                //std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(transitionMatrix, phiStates, initialStates);
+                //storm::storage::BitVector statesWithProbability0 = std::move(statesWithProbability01.first);
+                //statesWithProbability1 = std::move(statesWithProbability01.second);
+                //maybeStates = ~(statesWithProbability0 | statesWithProbability1);
+
+                //STORM_LOG_INFO("Preprocessing: " << statesWithProbability1.getNumberOfSetBits() << " states with probability 1, " << statesWithProbability0.getNumberOfSetBits() << " with probability 0 (" << maybeStates.getNumberOfSetBits() << " states remaining).");
+
+                // Set values of resulting vector that are known exactly.
+                //storm::utility::vector::setVectorValues<ValueType>(result, statesWithProbability0, storm::utility::zero<ValueType>());
+                //storm::utility::vector::setVectorValues<ValueType>(result, statesWithProbability1, storm::utility::one<ValueType>());
+
+                // Compute exact probabilities for some states.
+                if (!relevantStates.empty()) {
+                    // In this case we have to compute the probabilities.
+
+                    // Check whether we need to convert the input to equation system format.
+                    storm::solver::GeneralLinearEquationSolverFactory<ValueType> linearEquationSolverFactory;
+                    bool convertToEquationSystem = linearEquationSolverFactory.getEquationProblemFormat(env) == storm::solver::LinearEquationSolverProblemFormat::EquationSystem;
+
+                    // We can eliminate the rows and columns from the original transition probability matrix.
+                    storm::storage::SparseMatrix<ValueType> submatrix(transitionMatrix);
+                    submatrix.makeRowsAbsorbing(psiStates);
+                    submatrix.deleteDiagonalEntries(psiStates);
+                    storm::storage::BitVector failState(numberOfStates, false);
+                    failState.set(0, true);
+                    submatrix.deleteDiagonalEntries(failState);
+                    submatrix = submatrix.transpose();
+                    submatrix = submatrix.getSubmatrix(true, relevantStates, relevantStates, convertToEquationSystem);
+
+                    if (convertToEquationSystem) {
+                        // Converting the matrix from the fixpoint notation to the form needed for the equation
+                        // system. That is, we go from x = A*x + b to (I-A)x = b.
+                        submatrix.convertToEquationSystem();
+                    }
+
+                    // Initialize the x vector with 0.5 for each element.
+                    // This is the initial guess for the iterative solvers. It should be safe as for all
+                    // 'maybe' states we know that the probability is strictly larger than 0.
+                    std::vector<ValueType> x = std::vector<ValueType>(relevantStates.getNumberOfSetBits(), storm::utility::convertNumber<ValueType>(0.5));
+                    //std::vector<ValueType> x = std::vector<ValueType>(relevantStates.getNumberOfSetBits(), storm::utility::zero<ValueType>());
+
+                    std::vector<ValueType> b(relevantStates.getNumberOfSetBits(), storm::utility::zero<ValueType>());
+                    // Set initial states
+                    size_t i = 0;
+                    ValueType initDist = storm::utility::one<ValueType>() / storm::utility::convertNumber<ValueType>(initialStates.getNumberOfSetBits());
+                    for (auto const& state : relevantStates) {
+                        if (initialStates.get(state)) {
+                            b[i] = initDist;
+                        }
+                        ++i;
+                    }
+
+                    // Prepare the right-hand side of the equation system. For entry i this corresponds to
+                    // the accumulated probability of going from state i to some 'yes' state.
+                    //std::vector<ValueType> b = transitionMatrix.getConstrainedRowSumVector(relevantStates, statesWithProbability1);
+
+                    // Now solve the created system of linear equations.
+                    goal.restrictRelevantValues(relevantStates);
+                    std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = storm::solver::configureLinearEquationSolver(env, std::move(goal), linearEquationSolverFactory, std::move(submatrix));
+                    solver->setBounds(storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
+                    solver->solveEquations(env, x, b);
+
+                    // Set values of resulting vector according to result.
+                    storm::utility::vector::setVectorValues<ValueType>(result, relevantStates, x);
+                }
+                return result;
+            }
+
             template<typename ValueType, typename RewardModelType>
             std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeGloballyProbabilities(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& psiStates, bool qualitative) {
                 goal.oneMinus();
