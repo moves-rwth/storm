@@ -250,7 +250,7 @@ namespace storm {
                 std::vector<ValueType> result(transitionMatrix.getRowCount(), storm::utility::zero<ValueType>());
                 
                 // We need to identify the maybe states (states which have a probability for satisfying the until formula
-                // that is strictly between 0 and 1) and the states that satisfy the formula with probablity 1.
+                // that is strictly between 0 and 1) and the states that satisfy the formula with probability 1.
                 storm::storage::BitVector maybeStates, statesWithProbability1;
                 
                 if (hint.isExplicitModelCheckerHint() && hint.template asExplicitModelCheckerHint<ValueType>().getComputeOnlyMaybeStates()) {
@@ -290,7 +290,7 @@ namespace storm {
                     storm::utility::vector::setVectorValues<ValueType>(result, maybeStates, storm::utility::convertNumber<ValueType>(0.5));
                 } else {
                     if (!maybeStates.empty()) {
-                        // In this case we have have to compute the probabilities.
+                        // In this case we have to compute the probabilities.
                         
                         // Check whether we need to convert the input to equation system format.
                         storm::solver::GeneralLinearEquationSolverFactory<ValueType> linearEquationSolverFactory;
