@@ -341,7 +341,7 @@ namespace storm {
                     std::list<uint_fast64_t> const& relevantChoicesForState = choiceInformation.relevantChoicesForRelevantStates.at(state);
                     for (uint_fast64_t row : relevantChoicesForState) {
                         for (auto const& successorEntry : mdp.getTransitionMatrix().getRow(row)) {
-                            if (stateInformation.relevantStates.get(successorEntry.getColumn())) {
+                            if (stateInformation.relevantStates.get(successorEntry.getColumn()) && resultingMap.find(std::make_pair(state, successorEntry.getColumn())) == resultingMap.end()) {
                                 variableNameBuffer.str("");
                                 variableNameBuffer.clear();
                                 variableNameBuffer << "t" << state << "to" << successorEntry.getColumn();
