@@ -277,6 +277,11 @@ namespace storm {
             return Expression(std::shared_ptr<BaseExpression>(new BinaryNumericalFunctionExpression(first.getBaseExpression().getManager(), first.getType().power(second.getType()), first.getBaseExpressionPointer(), second.getBaseExpressionPointer(), BinaryNumericalFunctionExpression::OperatorType::Power)));
         }
         
+        Expression operator%(Expression const& first, Expression const& second) {
+            assertSameManager(first.getBaseExpression(), second.getBaseExpression());
+            return Expression(std::shared_ptr<BaseExpression>(new BinaryNumericalFunctionExpression(first.getBaseExpression().getManager(), first.getType().power(second.getType()), first.getBaseExpressionPointer(), second.getBaseExpressionPointer(), BinaryNumericalFunctionExpression::OperatorType::Modulo)));
+        }
+        
         Expression operator&&(Expression const& first, Expression const& second) {
             if (!first.isInitialized()) {
                 return second;

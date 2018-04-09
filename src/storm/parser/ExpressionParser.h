@@ -149,15 +149,16 @@ namespace storm {
             // A parser used for recognizing the operators at the "multiplication" precedence level.
             multiplicationOperatorStruct multiplicationOperator_;
 
-            struct infixPowerOperatorStruct : qi::symbols<char, storm::expressions::OperatorType> {
-                infixPowerOperatorStruct() {
+            struct infixPowerModuloOperatorStruct : qi::symbols<char, storm::expressions::OperatorType> {
+                infixPowerModuloOperatorStruct() {
                     add
-                    ("^", storm::expressions::OperatorType::Power);
+                    ("^", storm::expressions::OperatorType::Power)
+                    ("%", storm::expressions::OperatorType::Modulo);
                 }
             };
             
             // A parser used for recognizing the operators at the "power" precedence level.
-            infixPowerOperatorStruct infixPowerOperator_;
+            infixPowerModuloOperatorStruct infixPowerModuloOperator_;
             
             struct unaryOperatorStruct : qi::symbols<char, storm::expressions::OperatorType> {
                 unaryOperatorStruct() {
@@ -192,15 +193,16 @@ namespace storm {
             // A parser used for recognizing the operators at the "min/max" precedence level.
             minMaxOperatorStruct minMaxOperator_;
             
-            struct prefixPowerOperatorStruct : qi::symbols<char, storm::expressions::OperatorType> {
-                prefixPowerOperatorStruct() {
+            struct prefixPowerModuloOperatorStruct : qi::symbols<char, storm::expressions::OperatorType> {
+                prefixPowerModuloOperatorStruct() {
                     add
-                    ("pow", storm::expressions::OperatorType::Power);
+                    ("pow", storm::expressions::OperatorType::Power)
+                    ("mod", storm::expressions::OperatorType::Modulo);
                 }
             };
 
             // A parser used for recognizing the operators at the "power" precedence level.
-            prefixPowerOperatorStruct prefixPowerOperator_;
+            prefixPowerModuloOperatorStruct prefixPowerModuloOperator_;
             
             
             ExpressionCreator* expressionCreator;
@@ -218,8 +220,8 @@ namespace storm {
             qi::rule<Iterator, storm::expressions::Expression(), qi::locals<bool>, Skipper> equalityExpression;
             qi::rule<Iterator, storm::expressions::Expression(), qi::locals<bool>, Skipper> plusExpression;
             qi::rule<Iterator, storm::expressions::Expression(), qi::locals<bool>, Skipper> multiplicationExpression;
-            qi::rule<Iterator, storm::expressions::Expression(), qi::locals<bool>, Skipper> prefixPowerExpression;
-            qi::rule<Iterator, storm::expressions::Expression(), qi::locals<bool>, Skipper> infixPowerExpression;
+            qi::rule<Iterator, storm::expressions::Expression(), qi::locals<bool>, Skipper> prefixPowerModuloExpression;
+            qi::rule<Iterator, storm::expressions::Expression(), qi::locals<bool>, Skipper> infixPowerModuloExpression;
             qi::rule<Iterator, storm::expressions::Expression(), Skipper> unaryExpression;
             qi::rule<Iterator, storm::expressions::Expression(), Skipper> atomicExpression;
             qi::rule<Iterator, storm::expressions::Expression(), Skipper> literalExpression;
