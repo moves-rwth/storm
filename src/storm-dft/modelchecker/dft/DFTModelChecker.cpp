@@ -28,6 +28,18 @@ namespace storm {
             if (properties[0]->isTimeOperatorFormula() && allowModularisation) {
                 // Use parallel composition as modularisation approach for expected time
                 std::shared_ptr<storm::models::sparse::Model<ValueType>> model = buildModelViaComposition(dft, properties, symred, true, enableDC, approximationError);
+
+                // Export the model if required
+                // TODO move this outside of the model checker?
+                if (storm::settings::getModule<storm::settings::modules::IOSettings>().isExportExplicitSet()) {
+                    std::ofstream stream;
+                    storm::utility::openFile(storm::settings::getModule<storm::settings::modules::IOSettings>().getExportExplicitFilename(), stream);
+                    std::vector<std::string> parameterNames;
+                    // TODO fill parameter names
+                    storm::exporter::explicitExportSparseModel(stream, model, parameterNames);
+                    storm::utility::closeFile(stream);
+                }
+
                 // Model checking
                 std::vector<ValueType> resultsValue = checkModel(model, properties);
                 for (ValueType result : resultsValue) {
