@@ -220,7 +220,7 @@ namespace storm {
         }
         
         boost::any ToExprtkStringVisitor::visit(RationalLiteralExpression const& expression, boost::any const&) {
-            stream << "(" << expression.getValueAsDouble() << ")";
+            stream << std::setprecision(15) << "(" << expression.getValueAsDouble() << ")";
             return boost::any();
         }
     }
