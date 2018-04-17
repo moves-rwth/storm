@@ -328,14 +328,14 @@ namespace storm {
                 STORM_LOG_ASSERT(mElements[rewrites[1]]->parents().front()->isGate(), "Rewritten element has no parent gate.");
                 DFTGatePointer originalParent = std::static_pointer_cast<DFTGate<ValueType>>(mElements[rewrites[1]]->parents().front());
                 std::string newParentName = builder.getUniqueName(originalParent->name());
-                
+
                 // Accumulate children names
                 std::vector<std::string> childrenNames;
                 for (size_t i = 1; i < rewrites.size(); ++i) {
-                    STORM_LOG_ASSERT(mElements[rewrites[i]]->parents().front()->id() == originalParent->id(), "Children have the same father");
+                    STORM_LOG_ASSERT(mElements[rewrites[i]]->parents().front()->id() == originalParent->id(), "Children have not the same father for rewrite " << mElements[rewrites[i]]->name());
                     childrenNames.push_back(mElements[rewrites[i]]->name());
                 }
-                
+
                 // Add element inbetween parent and children
                 switch (originalParent->type()) {
                     case DFTElementType::AND:

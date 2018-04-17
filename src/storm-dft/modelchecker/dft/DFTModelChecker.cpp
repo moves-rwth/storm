@@ -202,7 +202,7 @@ namespace storm {
                     }
 
                     // Build a single CTMC
-                    STORM_LOG_DEBUG("Building Model...");
+                    STORM_LOG_DEBUG("Building Model from DFT with top level element " << ft.getElement(ft.getTopLevelIndex())->toString() << " ...");
                     storm::builder::ExplicitDFTModelBuilder<ValueType> builder(ft, symmetries, enableDC);
                     typename storm::builder::ExplicitDFTModelBuilder<ValueType>::LabelOptions labeloptions(properties);
                     builder.buildModel(labeloptions, 0, 0.0);
