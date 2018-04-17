@@ -745,30 +745,31 @@ namespace storm {
 
         template<typename ValueType>
         std::vector<size_t> DFT<ValueType>::findModularisationRewrite() const {
-           for(auto const& e : mElements) {
-               if(e->isGate() && (e->type() == DFTElementType::AND || e->type() == DFTElementType::OR) ) {
-                   // suitable parent gate! - Lets check the independent submodules of the children
-                   auto const& children = std::static_pointer_cast<DFTGate<ValueType>>(e)->children();
-                   for(auto const& child : children) {
+            for (auto const& element : mElements) {
+                if (element->isGate() && (element->type() == DFTElementType::AND || element->type() == DFTElementType::OR) ) {
+                    // suitable parent gate! - Lets check the independent submodules of the children
+                    auto const& children = std::static_pointer_cast<DFTGate<ValueType>>(element)->children();
+                    for(auto const& child : children) {
 
-                       auto ISD = std::static_pointer_cast<DFTGate<ValueType>>(child)->independentSubDft(true);
-                       // In the ISD, check for other children:
+                        auto independentSubtree = std::static_pointer_cast<DFTGate<ValueType>>(child)->independentSubDft(true);
+                        // In the independent subtree, check for other children:
 
-                       std::vector<size_t> rewrite = {e->id(), child->id()};
-                       for(size_t isdElemId : ISD) {
-                           if(isdElemId == child->id()) continue;
-                           if(std::find_if(children.begin(), children.end(), [&isdElemId](std::shared_ptr<DFTElement<ValueType>> const& e) { return e->id() == isdElemId; } ) != children.end()) {
-                               rewrite.push_back(isdElemId);
-                           }
-                       }
-                       if(rewrite.size() > 2 && rewrite.size() < children.size() - 1) {
-                           return rewrite;
-                       }
+                        std::vector<size_t> rewrite = {element->id(), child->id()};
+                        for(size_t independentSubtreeElementId : independentSubtree) {
+                            if (independentSubtreeElementId == child->id()) continue;
+                            if (std::find_if(children.begin(), children.end(), [&independentSubtreeElementId](std::shared_ptr<DFTElement<ValueType>> const& e) { return e->id() == independentSubtreeElementId; } ) != children.end()) {
+                                // element in subtree is also child
+                                rewrite.push_back(independentSubtreeElementId);
+                            }
+                        }
+                        if(rewrite.size() > 2 && rewrite.size() < children.size() - 1) {
+                            return rewrite;
+                        }
 
-                   }
-               }
-           }
-           return {};
+                    }
+                }
+            }
+            return {};
         }
 
 
