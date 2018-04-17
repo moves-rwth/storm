@@ -324,7 +324,12 @@ namespace storm {
         uint_fast64_t convertNumber(ClnRationalNumber const& number) {
             return carl::toInt<carl::uint>(number);
         }
-        
+
+        template<>
+        int_fast64_t convertNumber(ClnRationalNumber const& number) {
+            return carl::toInt<carl::sint>(number);
+        }
+
         template<>
         ClnRationalNumber convertNumber(double const& number) {
             return carl::rationalize<ClnRationalNumber>(number);
@@ -516,7 +521,12 @@ namespace storm {
         uint_fast64_t convertNumber(GmpRationalNumber const& number){
             return carl::toInt<carl::uint>(number);
         }
-        
+
+        template<>
+        int_fast64_t convertNumber(GmpRationalNumber const& number){
+            return carl::toInt<carl::sint>(number);
+        }
+
         template<>
         GmpRationalNumber convertNumber(double const& number){
             return carl::rationalize<GmpRationalNumber>(number);

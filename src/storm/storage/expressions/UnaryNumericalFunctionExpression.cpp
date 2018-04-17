@@ -74,12 +74,22 @@ namespace storm {
                     operandEvaluation = operandSimplified->evaluateAsRational();
                 }
                 
+                bool rationalToInteger = this->getOperatorType() == OperatorType::Floor || this->getOperatorType() == OperatorType::Ceil;
                 if (operandSimplified->hasIntegerType()) {
                     int_fast64_t value = 0;
                     switch (this->getOperatorType()) {
                         case OperatorType::Minus: value = -boost::get<int_fast64_t>(operandEvaluation); break;
                         case OperatorType::Floor: value = std::floor(boost::get<int_fast64_t>(operandEvaluation)); break;
                         case OperatorType::Ceil: value = std::ceil(boost::get<int_fast64_t>(operandEvaluation)); break;
+                    }
+                    return std::shared_ptr<BaseExpression>(new IntegerLiteralExpression(this->getManager(), value));
+                } else if (rationalToInteger) {
+                    int_fast64_t value = 0;
+                    switch (this->getOperatorType()) {
+                        case OperatorType::Floor: value = storm::utility::convertNumber<int_fast64_t>(storm::RationalNumber(carl::floor(boost::get<storm::RationalNumber>(operandEvaluation)))); break;
+                        case OperatorType::Ceil: value = storm::utility::convertNumber<int_fast64_t>(storm::RationalNumber(carl::ceil(boost::get<storm::RationalNumber>(operandEvaluation)))); break;
+                        default:
+                            STORM_LOG_ASSERT(false, "Unexpected rational to integer conversion.");
                     }
                     return std::shared_ptr<BaseExpression>(new IntegerLiteralExpression(this->getManager(), value));
                 } else {
