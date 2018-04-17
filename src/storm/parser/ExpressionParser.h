@@ -18,6 +18,8 @@ namespace storm {
         template<typename NumberType>
         struct RationalPolicies : boost::spirit::qi::strict_real_policies<NumberType> {
             static const bool expect_dot = true;
+            static const bool allow_leading_dot = true;
+            static const bool allow_trailing_dot = false;
             
             template <typename It, typename Attr>
             static bool parse_nan(It&, It const&, Attr&) { return false; }
