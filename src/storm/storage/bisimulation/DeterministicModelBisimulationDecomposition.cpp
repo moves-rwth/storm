@@ -419,7 +419,7 @@ namespace storm {
             // the sorting is over. Otherwise, this interferes with the data used in the sorting process.
             storm::storage::sparse::state_type originalBlockIndex = block.getBeginIndex();
             auto split = this->partition.splitBlock(block,
-                                                     [&weakStateLabels,&block,originalBlockIndex,this] (storm::storage::sparse::state_type state1, storm::storage::sparse::state_type state2) {
+                                                     [&weakStateLabels, originalBlockIndex,this] (storm::storage::sparse::state_type state1, storm::storage::sparse::state_type state2) {
                                                          return weakStateLabels[this->partition.getPosition(state1) - originalBlockIndex] < weakStateLabels[this->partition.getPosition(state2) - originalBlockIndex];
                                                      },
                                                      [this, &splitterQueue, &block] (bisimulation::Block<BlockDataType>& newBlock) {

@@ -9,7 +9,7 @@ namespace storm {
 
         template<typename ValueType>
         BucketPriorityQueue<ValueType>::BucketPriorityQueue(size_t nrBuckets, double lowerValue, double ratio) : lowerValue(lowerValue), logBase(std::log(ratio)), nrBuckets(nrBuckets), nrUnsortedItems(0), buckets(nrBuckets), currentBucket(nrBuckets) {
-            compare = ([this](HeuristicPointer a, HeuristicPointer b) {
+            compare = ([](HeuristicPointer a, HeuristicPointer b) {
                 return *a < *b;
             });
         }
