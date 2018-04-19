@@ -28,13 +28,13 @@ linux)
     set -e
     case "$CONFIG" in
     *DebugTravis)
-        docker run -d -it --name storm --privileged mvolk/carl:travis-debug
+        docker run -d -it --name storm --privileged movesrwth/carl:travis-debug
         ;;
     *ReleaseTravis)
-        docker run -d -it --name storm --privileged mvolk/carl:travis
+        docker run -d -it --name storm --privileged movesrwth/carl:travis
         ;;
     *)
-        docker run -d -it --name storm --privileged mvolk/storm-basesystem:$LINUX
+        docker run -d -it --name storm --privileged movesrwth/storm-basesystem:$LINUX
         ;;
     esac
     # Copy local content into container

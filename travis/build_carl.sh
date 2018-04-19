@@ -12,7 +12,7 @@ linux)
     docker rm -f carl &>/dev/null
     # Run container
     set -e
-    docker run -d -it --name carl --privileged mvolk/storm-basesystem:$LINUX
+    docker run -d -it --name carl --privileged movesrwth/storm-basesystem:$LINUX
     # Copy local content into container
     docker cp travis/build_carl_helper.sh carl:/opt/
     set +e

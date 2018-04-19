@@ -92,11 +92,11 @@ if __name__ == "__main__":
             buildConfig += "      after_success:\n"
             buildConfig += '        - docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD";\n'
             if "Debug" in build_type:
-                buildConfig += "        - docker commit carl mvolk/carl:travis-debug;\n"
-                buildConfig += "        - docker push mvolk/carl:travis-debug;\n"
+                buildConfig += "        - docker commit carl movesrwth/carl:travis-debug;\n"
+                buildConfig += "        - docker push movesrwth/carl:travis-debug;\n"
             elif "Release" in build_type:
-                buildConfig += "        - docker commit carl mvolk/carl:travis;\n"
-                buildConfig += "        - docker push mvolk/carl:travis;\n"
+                buildConfig += "        - docker commit carl movesrwth/carl:travis;\n"
+                buildConfig += "        - docker push movesrwth/carl:travis;\n"
             else:
                 assert False
             s += buildConfig
@@ -160,11 +160,11 @@ if __name__ == "__main__":
                 buildConfig += "      after_success:\n"
                 buildConfig += '        - docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD";\n'
                 if "Debug" in build_type:
-                    buildConfig += "        - docker commit storm mvolk/storm:travis-debug;\n"
-                    buildConfig += "        - docker push mvolk/storm:travis-debug;\n"
+                    buildConfig += "        - docker commit storm movesrwth/storm:travis-debug;\n"
+                    buildConfig += "        - docker push movesrwth/storm:travis-debug;\n"
                 elif "Release" in build_type:
-                    buildConfig += "        - docker commit storm mvolk/storm:travis;\n"
-                    buildConfig += "        - docker push mvolk/storm:travis;\n"
+                    buildConfig += "        - docker commit storm movesrwth/storm:travis;\n"
+                    buildConfig += "        - docker push movesrwth/storm:travis;\n"
                 else:
                     assert False
             s += buildConfig
