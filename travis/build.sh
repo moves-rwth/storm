@@ -38,7 +38,7 @@ linux)
         ;;
     esac
     # Copy local content into container
-    docker exec storm mkdir opt/storm
+    docker exec storm mkdir /opt/storm
     docker cp . storm:/opt/storm
     set +e
 
