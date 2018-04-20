@@ -149,12 +149,12 @@ $ brew cask install docker
 
 Next you should start the Docker app and its tray icon should be visible.
 
-Then you have to download the Docker image you want to use. All available images can be found on [DockerHub](https://hub.docker.com/r/mvolk/storm/tags/){:target="_blank"}. Currently we offer the latest release and the most recent development versions of Storm. The most recent versions are built automatically each day and indicated by the suffix `travis`. Furthermore we also provide debug builts indicated by the suffix `-debug`.
+Then you have to download the Docker image you want to use. All available images can be found on [DockerHub](https://hub.docker.com/r/movesrwth/storm/tags/){:target="_blank"}. Currently we offer the latest release and the most recent development versions of Storm. The most recent versions are built automatically each day and indicated by the suffix `travis`. Furthermore we also provide debug builts indicated by the suffix `-debug`.
 
 Download the Storm container you want to use:
 
 ```console
-$ docker pull mvolk/storm:travis
+$ docker pull movesrwth/storm:travis
 ```
 
 We want to be able to share files between the container and the host system. Therefore you should change the directory to the one you want to share, for example:
@@ -166,7 +166,7 @@ $ cd ~/Desktop/data
 The next command starts the previously downloaded image and enables the file sharing with the current directory:
 
 ```console
-$ docker run --mount type=bind,source="$(pwd)",target=/data -w /opt/storm/build/bin --rm -it --name storm mvolk/storm:travis
+$ docker run --mount type=bind,source="$(pwd)",target=/data -w /opt/storm/build/bin --rm -it --name storm movesrwth/storm:travis
 ```
 
 After executing the command you are now within the Docker container indicated by a different prompt:
