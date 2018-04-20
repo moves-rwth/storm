@@ -18,14 +18,14 @@ linux)
     set +e
 
     # Execute main process
-    timeout $TIMEOUT_LINUX docker exec carl bash -c "
+    docker exec carl bash -c "
         export CONFIG=$CONFIG;
         export COMPILER=$COMPILER;
         export N_JOBS=$N_JOBS;
         export STLARG=;
         export OS=$OS;
         cd /opt/;
-        ./build_carl_helper.sh"
+        timeout $TIMEOUT_LINUX ./build_carl_helper.sh"
     ;;
 
 osx)
