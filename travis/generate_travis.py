@@ -7,6 +7,8 @@ configs_linux = [
     ("debian-9", "gcc", "DefaultRelease"),
     ("ubuntu-17.10", "gcc", "DefaultDebugTravis"),
     ("ubuntu-17.10", "gcc", "DefaultReleaseTravis"),
+    ("ubuntu-18.04", "gcc", "DefaultDebug"),
+    ("ubuntu-18.04", "gcc", "DefaultRelease"),
 ]
 
 # Configurations for Mac
