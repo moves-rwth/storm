@@ -168,7 +168,6 @@ namespace storm {
             if (piStructure.count("lower") > 0) {
                 pi.lowerBound = parseExpression(piStructure.at("lower"), "Lower bound for property interval", {}, {});
                 // TODO substitute constants.
-                std::cout << "have lower bound" << std::endl;
                 STORM_LOG_THROW(!pi.lowerBound.containsVariables(), storm::exceptions::NotSupportedException, "Only constant expressions are supported as lower bounds");
             }
             if (piStructure.count("lower-exclusive") > 0) {
@@ -177,7 +176,6 @@ namespace storm {
                 
             }
             if (piStructure.count("upper") > 0) {
-                std::cout << "have upper bound" << std::endl;
                 pi.upperBound = parseExpression(piStructure.at("upper"), "Upper bound for property interval", {}, {});
                 // TODO substitute constants.
                 STORM_LOG_THROW(!pi.upperBound.containsVariables(), storm::exceptions::NotSupportedException, "Only constant expressions are supported as upper bounds");
