@@ -212,11 +212,14 @@ namespace storm {
                 if (!SynchronizationVector::isNoActionInput(actionName)) {
                     components.push_back(i);
                     uint64_t actionIndex = oldModel.getActionIndex(actionName);
+                    // store that automaton occurs in the sync vector.
                     participatingAutomataAndActions.push_back(std::make_pair(composedAutomata[i], actionIndex));
+                    // Store for later that this action is one of the possible actions that synchronise
                     synchronizingActionIndices[i].insert(actionIndex);
                 }
             }
-            
+
+            // What is the action label that should be attached to the composed actions
             uint64_t resultingActionIndex = Model::SILENT_ACTION_INDEX;
             if (vector.getOutput() != Model::SILENT_ACTION_NAME) {
                 if (newModel.hasAction(vector.getOutput())) {
