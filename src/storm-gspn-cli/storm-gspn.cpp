@@ -44,6 +44,7 @@ void initializeSettings() {
     
     // Register all known settings modules.
     storm::settings::addModule<storm::settings::modules::GeneralSettings>();
+    storm::settings::addModule<storm::settings::modules::IOSettings>();
     storm::settings::addModule<storm::settings::modules::GSPNSettings>();
     storm::settings::addModule<storm::settings::modules::GSPNExportSettings>();
     storm::settings::addModule<storm::settings::modules::CoreSettings>();
@@ -92,7 +93,7 @@ int main(const int argc, const char **argv) {
         auto gspn = parser.parse(storm::settings::getModule<storm::settings::modules::GSPNSettings>().getGspnFilename());
 
         std::string formulaString = "";
-        if (!storm::settings::getModule<storm::settings::modules::IOSettings>().isPropertySet()) {
+        if (storm::settings::getModule<storm::settings::modules::IOSettings>().isPropertySet()) {
             formulaString = storm::settings::getModule<storm::settings::modules::IOSettings>().getProperty();
         }
         boost::optional<std::set<std::string>> propertyFilter;
