@@ -533,6 +533,11 @@ namespace storm {
                 stream << space3 << "<initialMarking>" << std::endl;
                 stream << space4 << "<value>Default," << place.getNumberOfInitialTokens() << "</value>" << std::endl;
                 stream << space3 << "</initialMarking>" << std::endl;
+                if(place.hasRestrictedCapacity()) {
+                    stream << space3 << "<capacity>" << std::endl;
+                    stream << space4 << "<value>Default," << place.getCapacity() << "</value>" << std::endl;
+                    stream << space3 << "</capacity>" << std::endl;
+                }
                 stream << space2 << "</place>" << std::endl;
             }
 

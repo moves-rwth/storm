@@ -34,6 +34,7 @@ namespace storm {
         }
 
         uint64_t Place::getCapacity() const {
+            assert(hasRestrictedCapacity());
             return capacity.get();
         }
         
