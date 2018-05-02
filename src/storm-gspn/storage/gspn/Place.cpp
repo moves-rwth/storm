@@ -29,7 +29,7 @@ namespace storm {
             return this->numberOfInitialTokens;
         }
 
-        void Place::setCapacity(uint64_t cap) {
+        void Place::setCapacity(boost::optional<uint64_t> cap) {
             this->capacity = cap;
         }
 

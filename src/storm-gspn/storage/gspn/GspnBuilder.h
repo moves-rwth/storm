@@ -25,7 +25,7 @@ namespace storm {
              *                 A capacity of -1 indicates an unbounded place.
              * @param initialTokens The number of inital tokens in the place.
              */
-            uint_fast64_t addPlace(int_fast64_t const& capacity = 1, uint_fast64_t const& initialTokens = 0, std::string const& name = "");
+            uint_fast64_t addPlace(boost::optional<uint64_t> capacity = 1, uint_fast64_t const& initialTokens = 0, std::string const& name = "");
             
             void setPlaceLayoutInfo(uint64_t placeId, LayoutInfo const& layoutInfo);
 
