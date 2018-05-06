@@ -620,6 +620,60 @@ namespace storm {
                 }
             }
 
+            // add arcs for immediate transitions
+            for (const auto &trans : timedTransitions) {
+                // add input arcs
+                for (auto const& inEntry : trans.getInputPlaces()) {
+                    stream << space2 << "<arc ";
+                    stream << "id=\"arc" << i++ << "\" ";
+                    stream << "source=\"" << places.at(inEntry.first).getName() << "\" ";
+                    stream << "target=\"" << trans.getName() << "\" ";
+                    stream << ">" << std::endl;
+
+                    stream << space3 << "<inscription>" << std::endl;
+                    stream << space4 << "<value>Default," << inEntry.second << "</value>" << std::endl;
+                    stream << space3 << "</inscription>" << std::endl;
+
+                    stream << space3 << "<type value=\"normal\" />" << std::endl;
+
+                    stream << space2 << "</arc>" << std::endl;
+                }
+
+                // add inhibition arcs
+                for (auto const& inhEntry : trans.getInhibitionPlaces()) {
+                    stream << space2 << "<arc ";
+                    stream << "id=\"arc" << i++ << "\" ";
+                    stream << "source=\"" << places.at(inhEntry.first).getName() << "\" ";
+                    stream << "target=\"" << trans.getName() << "\" ";
+                    stream << ">" << std::endl;
+
+                    stream << space3 << "<inscription>" << std::endl;
+                    stream << space4 << "<value>Default," << inhEntry.second << "</value>" << std::endl;
+                    stream << space3 << "</inscription>" << std::endl;
+
+                    stream << space3 << "<type value=\"inhibition\" />" << std::endl;
+
+                    stream << space2 << "</arc>" << std::endl;
+                }
+
+                // add output arcs
+                for (auto const& outEntry : trans.getOutputPlaces()) {
+                    stream << space2 << "<arc ";
+                    stream << "id=\"arc" << i++ << "\" ";
+                    stream << "source=\"" << trans.getName() << "\" ";
+                    stream << "target=\"" << places.at(outEntry.first).getName() << "\" ";
+                    stream << ">" << std::endl;
+
+                    stream << space3 << "<inscription>" << std::endl;
+                    stream << space4 << "<value>Default," << outEntry.second << "</value>" << std::endl;
+                    stream << space3 << "</inscription>" << std::endl;
+
+                    stream << space3 << "<type value=\"normal\" />" << std::endl;
+
+                    stream << space2 << "</arc>" << std::endl;
+                }
+            }
+
             stream << space << "</net>" << std::endl;
             stream << "</pnml>" << std::endl;
         }
