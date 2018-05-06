@@ -13,7 +13,6 @@
 #include "storm/exceptions/WrongFormatException.h"
 
 #include <cmath>
-#include <storm/exceptions/InvalidJaniException.h>
 
 namespace storm {
     namespace generator {
@@ -44,6 +43,7 @@ namespace storm {
             for (auto const& integerVariable : program.getGlobalIntegerVariables()) {
                 int_fast64_t lowerBound = integerVariable.getLowerBoundExpression().evaluateAsInt();
                 int_fast64_t upperBound = integerVariable.getUpperBoundExpression().evaluateAsInt();
+                STORM_LOG_THROW(lowerBound <= upperBound, storm::exceptions::WrongFormatException, "Lower bound must not be above upper bound");
                 uint_fast64_t bitwidth = static_cast<uint_fast64_t>(std::ceil(std::log2(upperBound - lowerBound + 1)));
                 integerVariables.emplace_back(integerVariable.getExpressionVariable(), lowerBound, upperBound, totalBitOffset, bitwidth, true);
                 totalBitOffset += bitwidth;
@@ -56,6 +56,7 @@ namespace storm {
                 for (auto const& integerVariable : module.getIntegerVariables()) {
                     int_fast64_t lowerBound = integerVariable.getLowerBoundExpression().evaluateAsInt();
                     int_fast64_t upperBound = integerVariable.getUpperBoundExpression().evaluateAsInt();
+                    STORM_LOG_THROW(lowerBound <= upperBound, storm::exceptions::WrongFormatException, "Lower bound must not be above upper bound");
                     uint_fast64_t bitwidth = static_cast<uint_fast64_t>(std::ceil(std::log2(upperBound - lowerBound + 1)));
                     integerVariables.emplace_back(integerVariable.getExpressionVariable(), lowerBound, upperBound, totalBitOffset, bitwidth);
                     totalBitOffset += bitwidth;
