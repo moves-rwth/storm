@@ -13,6 +13,7 @@
 #include "storm/exceptions/WrongFormatException.h"
 
 #include <cmath>
+#include <storm/exceptions/InvalidJaniException.h>
 
 namespace storm {
     namespace generator {
@@ -29,7 +30,13 @@ namespace storm {
             // Intentionally left empty.
         }
         
-        VariableInformation::VariableInformation(storm::prism::Program const& program) : totalBitOffset(0) {
+        VariableInformation::VariableInformation(storm::prism::Program const& program, bool outOfBoundsState) : totalBitOffset(0) {
+            if(outOfBoundsState) {
+                deadlockBit = 0;
+                ++totalBitOffset;
+            } else {
+                deadlockBit = boost::none;
+            }
             for (auto const& booleanVariable : program.getGlobalBooleanVariables()) {
                 booleanVariables.emplace_back(booleanVariable.getExpressionVariable(), totalBitOffset, true);
                 ++totalBitOffset;
@@ -58,13 +65,19 @@ namespace storm {
             sortVariables();
         }
         
-        VariableInformation::VariableInformation(storm::jani::Model const& model, std::vector<std::reference_wrapper<storm::jani::Automaton const>> const& parallelAutomata) : totalBitOffset(0) {
+        VariableInformation::VariableInformation(storm::jani::Model const& model, std::vector<std::reference_wrapper<storm::jani::Automaton const>> const& parallelAutomata, bool outOfBoundsState) : totalBitOffset(0) {
             // Check that the model does not contain non-transient unbounded integer or non-transient real variables.
             STORM_LOG_THROW(!model.getGlobalVariables().containsNonTransientRealVariables(), storm::exceptions::InvalidArgumentException, "Cannot build model from JANI model that contains global non-transient real variables.");
             STORM_LOG_THROW(!model.getGlobalVariables().containsNonTransientUnboundedIntegerVariables(), storm::exceptions::InvalidArgumentException, "Cannot build model from JANI model that contains non-transient unbounded integer variables.");
             for (auto const& automaton : model.getAutomata()) {
                 STORM_LOG_THROW(!automaton.getVariables().containsNonTransientUnboundedIntegerVariables(), storm::exceptions::InvalidArgumentException, "Cannot build model from JANI model that contains non-transient unbounded integer variables in automaton '" << automaton.getName() << "'.");
                 STORM_LOG_THROW(!automaton.getVariables().containsNonTransientRealVariables(), storm::exceptions::InvalidArgumentException, "Cannot build model from JANI model that contains non-transient real variables in automaton '" << automaton.getName() << "'.");
+            }
+            if(outOfBoundsState) {
+                deadlockBit = 0;
+                ++totalBitOffset;
+            } else {
+                deadlockBit = boost::none;
             }
             
             for (auto const& variable : model.getGlobalVariables().getBooleanVariables()) {

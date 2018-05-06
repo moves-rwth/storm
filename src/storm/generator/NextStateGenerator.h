@@ -95,6 +95,9 @@ namespace storm {
             
             /// A comparator used to compare constants.
             storm::utility::ConstantsComparator<ValueType> comparator;
+
+            /// A state that encodes the outOfBoundsState
+            CompressedState outOfBoundsState;
         };
     }
 }
