@@ -1,5 +1,7 @@
 #include "storm-dft/api/storm-dft.h"
 
+#include "storm-dft/settings/modules/FaultTreeSettings.h"
+
 namespace storm {
     namespace api {
 
@@ -27,13 +29,25 @@ namespace storm {
 
         template<>
         void transformToGSPN(storm::storage::DFT<double> const& dft) {
+            bool smart = true;
+
+            // Set Don't Care elements
+            std::set<uint64_t> dontCareElements;
+            storm::settings::modules::FaultTreeSettings const& ftSettings = storm::settings::getModule<storm::settings::modules::FaultTreeSettings>();
+            if (!ftSettings.isDisableDC()) {
+                // Insert all elements as Don't Care elements
+                for (std::size_t i = 0; i < dft.nrElements(); i++) {
+                    dontCareElements.insert(dft.getElement(i)->id());
+                }
+            }
+
             // Transform to GSPN
             storm::transformations::dft::DftToGspnTransformator<double> gspnTransformator(dft);
-            bool smart = true;
-            gspnTransformator.transform(smart);
+            gspnTransformator.transform(dontCareElements, smart);
             storm::gspn::GSPN* gspn = gspnTransformator.obtainGSPN();
             uint64_t toplevelFailedPlace = gspnTransformator.toplevelFailedPlaceId();
 
+            // Export
             storm::api::handleGSPNExportSettings(*gspn);
 
             std::shared_ptr<storm::expressions::ExpressionManager> const& exprManager = gspn->getExpressionManager();

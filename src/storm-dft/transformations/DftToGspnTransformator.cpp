@@ -16,7 +16,8 @@ namespace storm {
             }
 
             template <typename ValueType>
-            void DftToGspnTransformator<ValueType>::transform(bool smart) {
+            void DftToGspnTransformator<ValueType>::transform(std::set<uint64_t> const& dontCareElements, bool smart) {
+                this->dontCareElements = dontCareElements;
                 this->smart = smart;
                 builder.setGspnName("DftToGspnTransformation");
 				

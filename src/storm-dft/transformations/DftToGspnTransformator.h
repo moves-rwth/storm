@@ -24,8 +24,12 @@ namespace storm {
 
                 /*!
                  * Transform the DFT to a GSPN.
+                 *
+                 * @param dontCareElements Set of DFT elements which should have Don't Care propagation.
+                 * @param smart Flag indicating if smart semantics should be used.
+                 *              Smart semantics will only generate necessary parts of the GSPNs.
                  */
-                void transform(bool smart = true);
+                void transform(std::set<uint64_t> const& dontCareElements, bool smart = true);
 
                 /*!
                  * Extract Gspn by building
@@ -188,13 +192,16 @@ namespace storm {
                 storm::storage::DFT<ValueType> const& mDft;
                 storm::gspn::GspnBuilder builder;
 
+                // Options
+                bool smart;
+                std::set<uint64_t> dontCareElements;
+
                 // Interface places for DFT elements
                 std::vector<uint64_t> failedPlaces;
                 std::map<uint64_t, uint64_t> unavailablePlaces;
                 std::map<uint64_t, uint64_t> activePlaces;
                 std::map<uint64_t, uint64_t> disabledPlaces;
-                bool smart;
-                
+
                 static constexpr const char* STR_FAILING = "_failing";			// Name standard for transitions that point towards a place, which in turn indicates the failure of a gate.
                 static constexpr const char* STR_FAILED = "_failed";			// Name standard for place which indicates the failure of a gate.
                 static constexpr const char* STR_FAILSAVING = "_failsaving";	// Name standard for transition that point towards a place, which in turn indicates the failsave state of a gate.
