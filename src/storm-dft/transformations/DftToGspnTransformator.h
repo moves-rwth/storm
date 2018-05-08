@@ -28,8 +28,9 @@ namespace storm {
                  * @param dontCareElements Set of DFT elements which should have Don't Care propagation.
                  * @param smart Flag indicating if smart semantics should be used.
                  *              Smart semantics will only generate necessary parts of the GSPNs.
+                 * @param mergeDCFailed Flag indicating if Don't Care places and Failed places should be merged.
                  */
-                void transform(std::set<uint64_t> const& dontCareElements, bool smart = true);
+                void transform(std::set<uint64_t> const& dontCareElements, bool smart = true, bool mergeDCFailed = true);
 
                 /*!
                  * Extract Gspn by building
@@ -194,6 +195,7 @@ namespace storm {
 
                 // Options
                 bool smart;
+                bool mergedDCFailed;
                 std::set<uint64_t> dontCareElements;
 
                 // Interface places for DFT elements

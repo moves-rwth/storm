@@ -29,7 +29,9 @@ namespace storm {
 
         template<>
         void transformToGSPN(storm::storage::DFT<double> const& dft) {
+            // TODO make choosable
             bool smart = true;
+            bool mergeDCFailed = true;
 
             // Set Don't Care elements
             std::set<uint64_t> dontCareElements;
@@ -43,7 +45,7 @@ namespace storm {
 
             // Transform to GSPN
             storm::transformations::dft::DftToGspnTransformator<double> gspnTransformator(dft);
-            gspnTransformator.transform(dontCareElements, smart);
+            gspnTransformator.transform(dontCareElements, smart, mergeDCFailed);
             storm::gspn::GSPN* gspn = gspnTransformator.obtainGSPN();
             uint64_t toplevelFailedPlace = gspnTransformator.toplevelFailedPlaceId();
 
