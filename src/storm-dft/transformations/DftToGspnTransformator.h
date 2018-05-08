@@ -42,19 +42,19 @@ namespace storm {
                  * Get failed place id of top level element.
                  */
                 uint64_t toplevelFailedPlaceId();
-                
+
             private:
                 /*!
 				 * Translate all elements of the GSPN.
 				 */
-				void translateGSPNElements();
+                void translateGSPNElements();
 
-				/*!
-				 * Translate a GSPN Basic Event.
-				 * 
-				 * @param dftBE The Basic Event.
-				 */
-				void translateBE(std::shared_ptr<storm::storage::DFTBE<ValueType> const> dftBE);
+                /*!
+                 * Translate a GSPN Basic Event.
+                 *
+                 * @param dftBE The Basic Event.
+                 */
+                void translateBE(std::shared_ptr<storm::storage::DFTBE<ValueType> const> dftBE);
 
                 /*!
                  * Translate a GSPN CONSTF (Constant Failure, a Basic Event that has already failed).
@@ -70,34 +70,34 @@ namespace storm {
                  */
                 void translateCONSTS(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dftConstS);
 
-				/*!
-				 * Translate a GSPN AND.
-				 * 
-				 * @param dftAnd The AND gate.
-				 */
-				void translateAND(std::shared_ptr<storm::storage::DFTAnd<ValueType> const> dftAnd);
-				
-				/*!
-				 * Translate a GSPN OR.
-				 * 
-				 * @param dftOr The OR gate.
-				 */
-				void translateOR(std::shared_ptr<storm::storage::DFTOr<ValueType> const> dftOr);
-				
-				/*!
-				 * Translate a GSPN VOT.
-				 * 
-				 * @param dftVot The VOT gate.
-				 */
-				void translateVOT(std::shared_ptr<storm::storage::DFTVot<ValueType> const> dftVot);
-				
-				/*!
-				 * Translate a GSPN PAND.
-				 *
-				 * @param dftPand The PAND gate.
+                /*!
+                 * Translate a GSPN AND.
+                 *
+                 * @param dftAnd The AND gate.
+                 */
+                void translateAND(std::shared_ptr<storm::storage::DFTAnd<ValueType> const> dftAnd);
+
+                /*!
+                 * Translate a GSPN OR.
+                 *
+                 * @param dftOr The OR gate.
+                 */
+                void translateOR(std::shared_ptr<storm::storage::DFTOr<ValueType> const> dftOr);
+
+                /*!
+                 * Translate a GSPN VOT.
+                 *
+                 * @param dftVot The VOT gate.
+                 */
+                void translateVOT(std::shared_ptr<storm::storage::DFTVot<ValueType> const> dftVot);
+
+                /*!
+                 * Translate a GSPN PAND.
+                 *
+                 * @param dftPand The PAND gate.
                  * @param inclusive Flag wether the PAND is inclusive (children are allowed to fail simultaneously and the PAND will fail nevertheless)
-				 */
-				void translatePAND(std::shared_ptr<storm::storage::DFTPand<ValueType> const> dftPand, bool inclusive = true);
+                 */
+                void translatePAND(std::shared_ptr<storm::storage::DFTPand<ValueType> const> dftPand, bool inclusive = true);
 
                 /*!
                  * Translate a GSPN POR.
@@ -107,20 +107,20 @@ namespace storm {
                  */
                 void translatePOR(std::shared_ptr<storm::storage::DFTPor<ValueType> const> dftPor, bool inclusive = true);
 
-				/*!
-				 * Translate a GSPN SPARE.
-				 * 
-				 * @param dftSpare The SPARE gate.
-				 */
-				void translateSPARE(std::shared_ptr<storm::storage::DFTSpare<ValueType> const> dftSpare);
+                /*!
+                 * Translate a GSPN SPARE.
+                 *
+                 * @param dftSpare The SPARE gate.
+                 */
+                void translateSPARE(std::shared_ptr<storm::storage::DFTSpare<ValueType> const> dftSpare);
 
-				/*!
-				 * Translate a GSPN PDEP (FDEP is included with a probability of 1).
+                /*!
+                 * Translate a GSPN PDEP (FDEP is included with a probability of 1).
                  *
                  * @param dftDependency The PDEP gate.
                  */
-				void translatePDEP(std::shared_ptr<storm::storage::DFTDependency<ValueType> const> dftDependency);
-				
+                void translatePDEP(std::shared_ptr<storm::storage::DFTDependency<ValueType> const> dftDependency);
+
                 /*!
                  * Translate a GSPN SEQ.
                  *
@@ -128,23 +128,23 @@ namespace storm {
                  */
                 void translateSeq(std::shared_ptr<storm::storage::DFTSeq<ValueType> const> dftSeq);
 
-				/*!
-				 * Check if the element is active intially.
-				 *
-				 * @param dFTElement DFT element.
+                /*!
+                 * Check if the element is active intially.
+                 *
+                 * @param dFTElement DFT element.
                  *
                  * @return True iff element is active initially.
-				 */
+                 */
                 bool isActiveInitially(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dFTElement);
-				 
-				/*!
-				 * Get the priority of the element.
-				 * The priority is two times the length of the shortest path to the top event.
-				 *
-				 * @param priority The priority of the gate. Top Event has priority 0,  its children 2, its grandchildren 4, ...
-				 *
-				 * @param dftElement The element whose priority shall be determined.
-				 */
+
+                /*!
+                 * Get the priority of the element.
+                 * The priority is two times the length of the shortest path to the top event.
+                 *
+                 * @param priority The priority of the gate. Top Event has priority 0,  its children 2, its grandchildren 4, ...
+                 *
+                 * @param dftElement The element whose priority shall be determined.
+                 */
                 uint64_t getFailPriority(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dFTElement);
 
                 /*!
@@ -156,7 +156,8 @@ namespace storm {
                  *
                  * @return Id of added failed place.
                  */
-                uint64_t addFailedPlace(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dftElement, storm::gspn::LayoutInfo const& layoutInfo, bool initialFailed = false);
+                uint64_t
+                addFailedPlace(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dftElement, storm::gspn::LayoutInfo const &layoutInfo, bool initialFailed = false);
 
                 /*!
                  * Add unavailable place for element.
@@ -167,7 +168,8 @@ namespace storm {
                  *
                  * @return Id of added unavailable place.
                  */
-                uint64_t addUnavailablePlace(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dftElement, storm::gspn::LayoutInfo const& layoutInfo, bool initialAvailable = true);
+                uint64_t addUnavailablePlace(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dftElement, storm::gspn::LayoutInfo const &layoutInfo,
+                                             bool initialAvailable = true);
 
                 /*!
                  * Add disabled place for element.
@@ -193,9 +195,12 @@ namespace storm {
                 storm::storage::DFT<ValueType> const& mDft;
                 storm::gspn::GspnBuilder builder;
 
-                // Options
+                // Transformation options
+                // Flag indicating if smart semantics should be used. Smart semantics will only generate necessary parts of the GSPNs.
                 bool smart;
+                // Flag indicating if Don't Care places and Failed places should be merged.
                 bool mergedDCFailed;
+                // Set of DFT elements which should have Don't Care propagation.
                 std::set<uint64_t> dontCareElements;
 
                 // Interface places for DFT elements
@@ -204,12 +209,13 @@ namespace storm {
                 std::map<uint64_t, uint64_t> activePlaces;
                 std::map<uint64_t, uint64_t> disabledPlaces;
 
-                static constexpr const char* STR_FAILING = "_failing";			// Name standard for transitions that point towards a place, which in turn indicates the failure of a gate.
-                static constexpr const char* STR_FAILED = "_failed";			// Name standard for place which indicates the failure of a gate.
-                static constexpr const char* STR_FAILSAVING = "_failsaving";	// Name standard for transition that point towards a place, which in turn indicates the failsave state of a gate.
-                static constexpr const char* STR_FAILSAVE = "_failsave";		// Name standard for place which indicates the failsave state of a gate.
-                static constexpr const char* STR_ACTIVATING = "_activating";	// Name standard for transition that point towards a place, which in turn indicates its activity.
+                static constexpr const char* STR_FAILING = "_failing";          // Name standard for transitions that point towards a place, which in turn indicates the failure of a gate.
+                static constexpr const char* STR_FAILED = "_failed";            // Name standard for place which indicates the failure of a gate.
+                static constexpr const char* STR_FAILSAVING = "_failsaving";    // Name standard for transition that point towards a place, which in turn indicates the failsave state of a gate.
+                static constexpr const char* STR_FAILSAVE = "_failsave";        // Name standard for place which indicates the failsave state of a gate.
+                static constexpr const char* STR_ACTIVATING = "_activating";    // Name standard for transition that point towards a place, which in turn indicates its activity.
                 static constexpr const char* STR_ACTIVATED = "_active";         // Name standard for place which indicates the activity.
+                static constexpr const char* STR_DONTCARE = "_dontcare";        // Name standard for place which indicates Don't Care.
             };
         }
     }
