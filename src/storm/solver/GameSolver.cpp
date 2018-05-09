@@ -100,33 +100,17 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void GameSolver<ValueType>::setLowerBound(ValueType const& value) {
-            lowerBound = value;
-        }
-        
-        template<typename ValueType>
-        void GameSolver<ValueType>::setUpperBound(ValueType const& value) {
-            upperBound = value;
-        }
-        
-        template<typename ValueType>
-        void GameSolver<ValueType>::setBounds(ValueType const& lower, ValueType const& upper) {
-            setLowerBound(lower);
-            setUpperBound(upper);
-        }
-        
-        template<typename ValueType>
         GameSolverFactory<ValueType>::GameSolverFactory() {
             // Intentionally left empty.
         }
         
         template<typename ValueType>
-        std::unique_ptr<GameSolver<ValueType>> GameSolverFactory<ValueType>::create(storm::storage::SparseMatrix<storm::storage::sparse::state_type> const& player1Matrix, storm::storage::SparseMatrix<ValueType> const& player2Matrix) const {
+        std::unique_ptr<GameSolver<ValueType>> GameSolverFactory<ValueType>::create(Environment const& env, storm::storage::SparseMatrix<storm::storage::sparse::state_type> const& player1Matrix, storm::storage::SparseMatrix<ValueType> const& player2Matrix) const {
             return std::make_unique<StandardGameSolver<ValueType>>(player1Matrix, player2Matrix, std::make_unique<GeneralLinearEquationSolverFactory<ValueType>>());
         }
                 
         template<typename ValueType>
-        std::unique_ptr<GameSolver<ValueType>> GameSolverFactory<ValueType>::create(storm::storage::SparseMatrix<storm::storage::sparse::state_type>&& player1Matrix, storm::storage::SparseMatrix<ValueType>&& player2Matrix) const {
+        std::unique_ptr<GameSolver<ValueType>> GameSolverFactory<ValueType>::create(Environment const& env, storm::storage::SparseMatrix<storm::storage::sparse::state_type>&& player1Matrix, storm::storage::SparseMatrix<ValueType>&& player2Matrix) const {
             return std::make_unique<StandardGameSolver<ValueType>>(std::move(player1Matrix), std::move(player2Matrix), std::make_unique<GeneralLinearEquationSolverFactory<ValueType>>());
         }
         

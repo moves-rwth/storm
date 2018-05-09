@@ -6,10 +6,12 @@
 #include "storm/storage/expressions/IntegerLiteralExpression.h"
 #include "storm/storage/expressions/RationalLiteralExpression.h"
 #include "storm/storage/expressions/ExpressionVisitor.h"
+
 #include "storm/utility/macros.h"
+#include "storm/utility/constants.h"
+#include "storm/utility/NumberTraits.h"
 #include "storm/exceptions/InvalidTypeException.h"
 #include "storm/exceptions/InvalidStateException.h"
-
 
 namespace storm {
     namespace expressions {
@@ -31,6 +33,7 @@ namespace storm {
                 case OperatorType::Min: result = storm::expressions::OperatorType::Min; break;
                 case OperatorType::Max: result = storm::expressions::OperatorType::Max; break;
                 case OperatorType::Power: result = storm::expressions::OperatorType::Power; break;
+                case OperatorType::Modulo: result = storm::expressions::OperatorType::Modulo; break;
             }
             return result;
         }
@@ -49,6 +52,7 @@ namespace storm {
                 case OperatorType::Min: result = std::min(firstOperandEvaluation, secondOperandEvaluation); break;
                 case OperatorType::Max: result = std::max(firstOperandEvaluation, secondOperandEvaluation); break;
                 case OperatorType::Power: result = static_cast<int_fast64_t>(std::pow(firstOperandEvaluation, secondOperandEvaluation)); break;
+                case OperatorType::Modulo: result = firstOperandEvaluation % secondOperandEvaluation; break;
             }
             return result;
         }
@@ -67,6 +71,7 @@ namespace storm {
                 case OperatorType::Min: result = std::min(firstOperandEvaluation, secondOperandEvaluation); break;
                 case OperatorType::Max: result = std::max(firstOperandEvaluation, secondOperandEvaluation); break;
                 case OperatorType::Power: result = std::pow(firstOperandEvaluation, secondOperandEvaluation); break;
+                case OperatorType::Modulo: result = std::fmod(firstOperandEvaluation, secondOperandEvaluation); break;
             }
             return result;
         }
@@ -79,7 +84,7 @@ namespace storm {
                 if (this->hasIntegerType()) {
                     int_fast64_t firstOperandEvaluation = firstOperandSimplified->evaluateAsInt();
                     int_fast64_t secondOperandEvaluation = secondOperandSimplified->evaluateAsInt();
-                    int_fast64_t newValue = 0;
+                    boost::optional<int_fast64_t> newValue;
                     switch (this->getOperatorType()) {
                         case OperatorType::Plus: newValue = firstOperandEvaluation + secondOperandEvaluation; break;
                         case OperatorType::Minus: newValue = firstOperandEvaluation - secondOperandEvaluation; break;
@@ -87,28 +92,40 @@ namespace storm {
                         case OperatorType::Min: newValue = std::min(firstOperandEvaluation, secondOperandEvaluation); break;
                         case OperatorType::Max: newValue = std::max(firstOperandEvaluation, secondOperandEvaluation); break;
                         case OperatorType::Power: newValue = static_cast<int_fast64_t>(std::pow(firstOperandEvaluation, secondOperandEvaluation)); break;
-                        case OperatorType::Divide: STORM_LOG_THROW(false, storm::exceptions::InvalidStateException, "Unable to simplify division."); break;
+                        case OperatorType::Modulo: newValue = firstOperandEvaluation % secondOperandEvaluation; break;
+                        case OperatorType::Divide: break; // do not simplify division.
                     }
-                    return std::shared_ptr<BaseExpression>(new IntegerLiteralExpression(this->getManager(), newValue));
+                    if (newValue) {
+                        return std::shared_ptr<BaseExpression>(new IntegerLiteralExpression(this->getManager(), newValue.get()));
+                    }
                 } else if (this->hasRationalType()) {
                     storm::RationalNumber firstOperandEvaluation = firstOperandSimplified->evaluateAsRational();
                     storm::RationalNumber secondOperandEvaluation = secondOperandSimplified->evaluateAsRational();
-                    storm::RationalNumber newValue = 0;
+                    boost::optional<storm::RationalNumber> newValue;
                     switch (this->getOperatorType()) {
                         case OperatorType::Plus: newValue = firstOperandEvaluation + secondOperandEvaluation; break;
                         case OperatorType::Minus: newValue = firstOperandEvaluation - secondOperandEvaluation; break;
                         case OperatorType::Times: newValue = firstOperandEvaluation * secondOperandEvaluation; break;
                         case OperatorType::Min: newValue = std::min(firstOperandEvaluation, secondOperandEvaluation); break;
                         case OperatorType::Max: newValue = std::max(firstOperandEvaluation, secondOperandEvaluation); break;
+                        case OperatorType::Divide: newValue = firstOperandEvaluation / secondOperandEvaluation; break;
                         case OperatorType::Power: {
-                            STORM_LOG_THROW(carl::isInteger(secondOperandEvaluation), storm::exceptions::InvalidStateException, "Can not simplify pow() with fractional exponent.");
-                            std::size_t exponent = carl::toInt<carl::uint>(secondOperandEvaluation);
-                            newValue = carl::pow(firstOperandEvaluation, exponent);
+                            if (carl::isInteger(secondOperandEvaluation)) {
+                                std::size_t exponent = carl::toInt<carl::uint>(secondOperandEvaluation);
+                                newValue = carl::pow(firstOperandEvaluation, exponent);
+                            }
                             break;
                         }
-                        case OperatorType::Divide: STORM_LOG_THROW(false, storm::exceptions::InvalidStateException, "Unable to simplify division."); break;
+                        case OperatorType::Modulo: {
+                            if (carl::isInteger(firstOperandEvaluation) && carl::isInteger(secondOperandEvaluation)) {
+                                newValue = storm::utility::mod(storm::utility::numerator(firstOperandEvaluation), storm::utility::numerator(secondOperandEvaluation));
+                            }
+                            break;
+                        }
                     }
-                    return std::shared_ptr<BaseExpression>(new RationalLiteralExpression(this->getManager(), newValue));
+                    if (newValue) {
+                        return std::shared_ptr<BaseExpression>(new RationalLiteralExpression(this->getManager(), newValue.get()));
+                    }
                 }
             }
             
@@ -137,6 +154,7 @@ namespace storm {
                 case OperatorType::Min: stream << "min(" << *this->getFirstOperand() << ", " << *this->getSecondOperand() << ")"; break;
                 case OperatorType::Max: stream << "max(" << *this->getFirstOperand() << ", " << *this->getSecondOperand() << ")"; break;
                 case OperatorType::Power: stream << *this->getFirstOperand() << " ^ " << *this->getSecondOperand(); break;
+                case OperatorType::Modulo: stream << *this->getFirstOperand() << " % " << *this->getSecondOperand(); break;
             }
             stream << ")";
         }

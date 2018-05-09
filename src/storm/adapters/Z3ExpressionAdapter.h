@@ -16,6 +16,10 @@
 #include "storm/storage/expressions/ExpressionVisitor.h"
 
 namespace storm {
+    namespace expressions {
+        class BaseExpression;
+    }
+    
     namespace adapters {
 
 #ifdef STORM_HAVE_Z3
@@ -99,6 +103,9 @@ namespace storm {
 
             // A mapping from z3 declarations to the corresponding variables.
             std::unordered_map<Z3_func_decl, storm::expressions::Variable> declarationToVariableMapping;
+
+            // A cache of already translated constraints. Only valid during the translation of one expression.
+            std::unordered_map<storm::expressions::BaseExpression const*, z3::expr> expressionCache;
         };
 #endif
     } // namespace adapters

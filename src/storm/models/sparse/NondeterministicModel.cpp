@@ -27,11 +27,6 @@ namespace storm {
             }
             
             template<typename ValueType, typename RewardModelType>
-            uint_fast64_t NondeterministicModel<ValueType, RewardModelType>::getNumberOfChoices() const {
-                return this->getTransitionMatrix().getRowCount();
-            }
-            
-            template<typename ValueType, typename RewardModelType>
             std::vector<uint_fast64_t> const& NondeterministicModel<ValueType, RewardModelType>::getNondeterministicChoiceIndices() const {
                 return this->getTransitionMatrix().getRowGroupIndices();
             }
@@ -51,22 +46,11 @@ namespace storm {
             
             template<typename ValueType, typename RewardModelType>
             std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> NondeterministicModel<ValueType, RewardModelType>::applyScheduler(storm::storage::Scheduler<ValueType> const& scheduler, bool dropUnreachableStates) {
-                if (scheduler.isMemorylessScheduler()) {
-                    auto memStruct = storm::storage::MemoryStructureBuilder<ValueType, RewardModelType>::buildTrivialMemoryStructure(*this);
-                    auto memoryProduct = memStruct.product(*this);
-                    if (!dropUnreachableStates) {
-                        memoryProduct.setBuildFullProduct();
-                    }
-                    return memoryProduct.build(scheduler);
-                } else {
-                    boost::optional<storm::storage::MemoryStructure> const& memStruct = scheduler.getMemoryStructure();
-                    STORM_LOG_ASSERT(memStruct, "Memoryless scheduler without memory structure.");
-                    auto memoryProduct = memStruct->product(*this);
-                    if (!dropUnreachableStates) {
-                        memoryProduct.setBuildFullProduct();
-                    }
-                    return memoryProduct.build(scheduler);
+                storm::storage::SparseModelMemoryProduct<ValueType, RewardModelType> memoryProduct(*this, scheduler);
+                if (!dropUnreachableStates) {
+                    memoryProduct.setBuildFullProduct();
                 }
+                return memoryProduct.build();
             }
             
             template<typename ValueType, typename RewardModelType>

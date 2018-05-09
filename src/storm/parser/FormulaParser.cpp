@@ -5,7 +5,6 @@
 #include "storm/parser/SpiritErrorHandler.h"
 
 #include "storm/storage/prism/Program.h"
-#include "storm/storage/jani/Model.h"
 
 #include "storm/logic/Formulas.h"
 
@@ -97,7 +96,7 @@ namespace storm {
             // Create grammar.
             try {
                 // Start parsing.
-                bool succeeded = qi::phrase_parse(iter, last, *grammar, boost::spirit::ascii::space | qi::lit("//") >> *(qi::char_ - (qi::eol | qi::eoi)) >> (qi::eol | qi::eoi), result);
+                bool succeeded = qi::phrase_parse(iter, last, *grammar, storm::spirit_encoding::space_type() | qi::lit("//") >> *(qi::char_ - (qi::eol | qi::eoi)) >> (qi::eol | qi::eoi), result);
                 STORM_LOG_THROW(succeeded, storm::exceptions::WrongFormatException, "Could not parse formula.");
                 STORM_LOG_DEBUG("Parsed formula successfully.");
             } catch (qi::expectation_failure<PositionIteratorType> const& e) {

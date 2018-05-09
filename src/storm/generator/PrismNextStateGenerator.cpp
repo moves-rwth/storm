@@ -33,7 +33,7 @@ namespace storm {
                         
             // Only after checking validity of the program, we initialize the variable information.
             this->checkValid();
-            this->variableInformation = VariableInformation(program);
+            this->variableInformation = VariableInformation(program, options.isAddOutOfBoundsStateSet());
             
             // Create a proper evalator.
             this->evaluator = std::make_unique<storm::expressions::ExpressionEvaluator<ValueType>>(program.getManager());
@@ -318,7 +318,11 @@ namespace storm {
                     ++integerIt;
                 }
                 int_fast64_t assignedValue = this->evaluator->asInt(assignmentIt->getExpression());
-                if (this->options.isExplorationChecksSet()) {
+                if (this->options.isAddOutOfBoundsStateSet()) {
+                    if (assignedValue < integerIt->lowerBound || assignedValue > integerIt->upperBound) {
+                        return this->outOfBoundsState;
+                    }
+                } else if (this->options.isExplorationChecksSet()) {
                     STORM_LOG_THROW(assignedValue >= integerIt->lowerBound, storm::exceptions::WrongFormatException, "The update " << update << " leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << assignmentIt->getVariableName() << "'.");
                     STORM_LOG_THROW(assignedValue <= integerIt->upperBound, storm::exceptions::WrongFormatException, "The update " << update << " leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << assignmentIt->getVariableName() << "'.");
                 }
@@ -601,7 +605,6 @@ namespace storm {
         
         template<typename ValueType, typename StateType>
         std::shared_ptr<storm::storage::sparse::ChoiceOrigins> PrismNextStateGenerator<ValueType, StateType>::generateChoiceOrigins(std::vector<boost::any>& dataForChoiceOrigins) const {
-            
             if (!this->getOptions().isBuildChoiceOriginsSet()) {
                 return nullptr;
             }

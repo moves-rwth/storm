@@ -6,8 +6,7 @@
 #include "storm/utility/dd.h"
 #include "storm/utility/constants.h"
 
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/NativeEquationSolverSettings.h"
+#include "storm/environment/solver/NativeSolverEnvironment.h"
 
 #include "storm/utility/KwekMehlhorn.h"
 #include "storm/utility/macros.h"
@@ -17,109 +16,69 @@
 namespace storm {
     namespace solver {
         
-        template<typename ValueType>
-        SymbolicNativeLinearEquationSolverSettings<ValueType>::SymbolicNativeLinearEquationSolverSettings() {
-            // Get the settings object to customize linear solving.
-            storm::settings::modules::NativeEquationSolverSettings const& settings = storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>();
-            
-            // Get appropriate settings.
-            switch (settings.getLinearEquationSystemMethod()) {
-                case storm::settings::modules::NativeEquationSolverSettings::LinearEquationMethod::Power:
-                    this->method = SolutionMethod::Power;
-                    break;
-                case storm::settings::modules::NativeEquationSolverSettings::LinearEquationMethod::RationalSearch:
-                    this->method = SolutionMethod::RationalSearch;
-                    break;
-                case storm::settings::modules::NativeEquationSolverSettings::LinearEquationMethod::Jacobi:
-                default:
-                    this->method = SolutionMethod::Jacobi;
-                    break;
-            }
-
-            // Adjust the method if none was specified and we are using rational numbers.
-            if (std::is_same<ValueType, storm::RationalNumber>::value) {
-                if (settings.isLinearEquationSystemTechniqueSetFromDefaultValue() && this->method != SolutionMethod::RationalSearch) {
-                    STORM_LOG_INFO("Selecting 'rational search' as the solution technique to guarantee exact results. If you want to override this, please explicitly specify a different method.");
-                    this->method = SolutionMethod::RationalSearch;
-                }
-            }
-            
-            maximalNumberOfIterations = settings.getMaximalIterationCount();
-            precision = storm::utility::convertNumber<ValueType>(settings.getPrecision());
-            relative = settings.getConvergenceCriterion() == storm::settings::modules::NativeEquationSolverSettings::ConvergenceCriterion::Relative;
-        }
-        
-        template<typename ValueType>
-        void SymbolicNativeLinearEquationSolverSettings<ValueType>::setPrecision(ValueType precision) {
-            this->precision = precision;
-        }
-        
-        template<typename ValueType>
-        void SymbolicNativeLinearEquationSolverSettings<ValueType>::setMaximalNumberOfIterations(uint64_t maximalNumberOfIterations) {
-            this->maximalNumberOfIterations = maximalNumberOfIterations;
-        }
-        
-        template<typename ValueType>
-        void SymbolicNativeLinearEquationSolverSettings<ValueType>::setRelativeTerminationCriterion(bool value) {
-            this->relative = value;
-        }
-        
-        template<typename ValueType>
-        void SymbolicNativeLinearEquationSolverSettings<ValueType>::setSolutionMethod(SolutionMethod const& method) {
-            this->method = method;
-        }
-        
-        template<typename ValueType>
-        ValueType SymbolicNativeLinearEquationSolverSettings<ValueType>::getPrecision() const {
-            return precision;
-        }
-        
-        template<typename ValueType>
-        uint64_t SymbolicNativeLinearEquationSolverSettings<ValueType>::getMaximalNumberOfIterations() const {
-            return maximalNumberOfIterations;
-        }
-        
-        template<typename ValueType>
-        bool SymbolicNativeLinearEquationSolverSettings<ValueType>::getRelativeTerminationCriterion() const {
-            return relative;
-        }
-
-        template<typename ValueType>
-        typename SymbolicNativeLinearEquationSolverSettings<ValueType>::SolutionMethod SymbolicNativeLinearEquationSolverSettings<ValueType>::getSolutionMethod() const {
-            return this->method;
-        }
-
         template<storm::dd::DdType DdType, typename ValueType>
-        SymbolicNativeLinearEquationSolver<DdType, ValueType>::SymbolicNativeLinearEquationSolver(SymbolicNativeLinearEquationSolverSettings<ValueType> const& settings) : SymbolicLinearEquationSolver<DdType, ValueType>(), settings(settings) {
+        SymbolicNativeLinearEquationSolver<DdType, ValueType>::SymbolicNativeLinearEquationSolver() : SymbolicLinearEquationSolver<DdType, ValueType>() {
             // Intentionally left empty.
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        SymbolicNativeLinearEquationSolver<DdType, ValueType>::SymbolicNativeLinearEquationSolver(storm::dd::Add<DdType, ValueType> const& A, storm::dd::Bdd<DdType> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs, SymbolicNativeLinearEquationSolverSettings<ValueType> const& settings) : SymbolicNativeLinearEquationSolver(allRows, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs, settings) {
+        SymbolicNativeLinearEquationSolver<DdType, ValueType>::SymbolicNativeLinearEquationSolver(storm::dd::Add<DdType, ValueType> const& A, storm::dd::Bdd<DdType> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) : SymbolicNativeLinearEquationSolver(allRows, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs) {
             this->setMatrix(A);
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        SymbolicNativeLinearEquationSolver<DdType, ValueType>::SymbolicNativeLinearEquationSolver(storm::dd::Bdd<DdType> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs, SymbolicNativeLinearEquationSolverSettings<ValueType> const& settings) : SymbolicLinearEquationSolver<DdType, ValueType>(allRows, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs), settings(settings) {
+        SymbolicNativeLinearEquationSolver<DdType, ValueType>::SymbolicNativeLinearEquationSolver(storm::dd::Bdd<DdType> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) : SymbolicLinearEquationSolver<DdType, ValueType>(allRows, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs) {
             // Intentionally left empty.
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        storm::dd::Add<DdType, ValueType>  SymbolicNativeLinearEquationSolver<DdType, ValueType>::solveEquations(storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const {
-            if (this->getSettings().getSolutionMethod() == SymbolicNativeLinearEquationSolverSettings<ValueType>::SolutionMethod::Jacobi) {
-                return solveEquationsJacobi(x, b);
-            } else if (this->getSettings().getSolutionMethod() == SymbolicNativeLinearEquationSolverSettings<ValueType>::SolutionMethod::Power) {
-                return solveEquationsPower(x, b);
-            } else if (this->getSettings().getSolutionMethod() == SymbolicNativeLinearEquationSolverSettings<ValueType>::SolutionMethod::RationalSearch) {
-                return solveEquationsRationalSearch(x, b);
+        NativeLinearEquationSolverMethod SymbolicNativeLinearEquationSolver<DdType, ValueType>::getMethod(Environment const& env, bool isExactMode) const {
+            // Adjust the method if it is not supported by this solver.
+            // none was specified and we want exact computations
+            auto method = env.solver().native().getMethod();
+            
+            if (isExactMode) {
+                if (method != NativeLinearEquationSolverMethod::RationalSearch) {
+                    if (env.solver().native().isMethodSetFromDefault()) {
+                        method = NativeLinearEquationSolverMethod::RationalSearch;
+                        STORM_LOG_INFO("Selecting '" + toString(method) + "' as the solution technique to guarantee exact results. If you want to override this, please explicitly specify a different method.");
+                    } else {
+                        STORM_LOG_WARN("The selected solution method does not guarantee exact results.");
+                    }
+                }
+            } else {
+                if (method != NativeLinearEquationSolverMethod::Power && method != NativeLinearEquationSolverMethod::RationalSearch && method != NativeLinearEquationSolverMethod::Jacobi) {
+                    method = NativeLinearEquationSolverMethod::Jacobi;
+                    STORM_LOG_INFO("The selected solution method is not supported in the dd engine. Falling back to  '" + toString(method) + "'.");
+                }
+                STORM_LOG_WARN_COND_DEBUG(!env.solver().isForceSoundness(), "Sound computations are not supported in the Dd engine.");
             }
-            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The selected solution technique is not supported.");
+            return method;
         }
 
         template<storm::dd::DdType DdType, typename ValueType>
-        storm::dd::Add<DdType, ValueType> SymbolicNativeLinearEquationSolver<DdType, ValueType>::solveEquationsJacobi(storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const {
+        storm::dd::Add<DdType, ValueType>  SymbolicNativeLinearEquationSolver<DdType, ValueType>::solveEquations(Environment const& env, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const {
+            switch(getMethod(env, std::is_same<ValueType, storm::RationalNumber>::value)) {
+                case NativeLinearEquationSolverMethod::Jacobi:
+                    return solveEquationsJacobi(env, x, b);
+                case NativeLinearEquationSolverMethod::Power:
+                    return solveEquationsPower(env, x, b);
+                case NativeLinearEquationSolverMethod::RationalSearch:
+                    return solveEquationsRationalSearch(env, x, b);
+                default:
+                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The selected solution technique is not supported.");
+                    return storm::dd::Add<DdType, ValueType>();
+            }
+        }
+
+        template<storm::dd::DdType DdType, typename ValueType>
+        storm::dd::Add<DdType, ValueType> SymbolicNativeLinearEquationSolver<DdType, ValueType>::solveEquationsJacobi(Environment const& env, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const {
             storm::dd::DdManager<DdType>& manager = this->getDdManager();
 
+            ValueType precision = storm::utility::convertNumber<ValueType>(env.solver().native().getPrecision());
+            uint64_t maxIter = env.solver().native().getMaximalNumberOfIterations();
+            bool relative = env.solver().native().getRelativeTerminationCriterion();
+            
             STORM_LOG_INFO("Solving symbolic linear equation system with NativeLinearEquationSolver (jacobi)");
 
             // Start by computing the Jacobi decomposition of the matrix A.
@@ -129,7 +88,7 @@ namespace storm {
             storm::dd::Add<DdType, ValueType> lu = diagonal.ite(manager.template getAddZero<ValueType>(), this->A);
             storm::dd::Add<DdType, ValueType> diagonalAdd = diagonal.template toAdd<ValueType>();
             storm::dd::Add<DdType, ValueType> diag = diagonalAdd.multiplyMatrix(this->A, this->columnMetaVariables);
-            
+
             storm::dd::Add<DdType, ValueType> scaledLu = lu / diag;
             storm::dd::Add<DdType, ValueType> scaledB = b / diag;
             
@@ -138,12 +97,12 @@ namespace storm {
             uint_fast64_t iterationCount = 0;
             bool converged = false;
             
-            while (!converged && iterationCount < this->getSettings().getMaximalNumberOfIterations()) {
+            while (!converged && iterationCount < maxIter) {
                 storm::dd::Add<DdType, ValueType> xCopyAsColumn = xCopy.swapVariables(this->rowColumnMetaVariablePairs);
                 storm::dd::Add<DdType, ValueType> tmp = scaledB - scaledLu.multiplyMatrix(xCopyAsColumn, this->columnMetaVariables);
                 
                 // Now check if the process already converged within our precision.
-                converged = tmp.equalModuloPrecision(xCopy, this->getSettings().getPrecision(), this->getSettings().getRelativeTerminationCriterion());
+                converged = tmp.equalModuloPrecision(xCopy, precision, relative);
                 
                 xCopy = tmp;
                 
@@ -186,9 +145,10 @@ namespace storm {
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        storm::dd::Add<DdType, ValueType> SymbolicNativeLinearEquationSolver<DdType, ValueType>::solveEquationsPower(storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const {
+        storm::dd::Add<DdType, ValueType> SymbolicNativeLinearEquationSolver<DdType, ValueType>::solveEquationsPower(Environment const& env, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const {
             STORM_LOG_INFO("Solving symbolic linear equation system with NativeLinearEquationSolver (power)");
-            PowerIterationResult result = performPowerIteration(this->getLowerBoundsVector(), b, this->getSettings().getPrecision(), this->getSettings().getRelativeTerminationCriterion(), this->getSettings().getMaximalNumberOfIterations());
+            ValueType precision = storm::utility::convertNumber<ValueType>(env.solver().native().getPrecision());
+            PowerIterationResult result = performPowerIteration(x, b, precision, env.solver().native().getRelativeTerminationCriterion(), env.solver().native().getMaximalNumberOfIterations());
             
             if (result.status == SolverStatus::Converged) {
                 STORM_LOG_INFO("Iterative solver (power iteration) converged in " << result.iterations << " iterations.");
@@ -214,10 +174,10 @@ namespace storm {
             
             storm::dd::Add<DdType, RationalType> sharpenedX;
             
-            for (uint64_t p = 1; p < precision; ++p) {
-                sharpenedX = x.sharpenKwekMehlhorn(precision);
+            for (uint64_t p = 1; p <= precision; ++p) {
+                sharpenedX = x.sharpenKwekMehlhorn(p);
+
                 isSolution = rationalSolver.isSolutionFixedPoint(sharpenedX, rationalB);
-                
                 if (isSolution) {
                     break;
                 }
@@ -228,18 +188,21 @@ namespace storm {
         
         template<storm::dd::DdType DdType, typename ValueType>
         template<typename RationalType, typename ImpreciseType>
-        storm::dd::Add<DdType, RationalType> SymbolicNativeLinearEquationSolver<DdType, ValueType>::solveEquationsRationalSearchHelper(SymbolicNativeLinearEquationSolver<DdType, RationalType> const& rationalSolver, SymbolicNativeLinearEquationSolver<DdType, ImpreciseType> const& impreciseSolver, storm::dd::Add<DdType, RationalType> const& rationalB, storm::dd::Add<DdType, ImpreciseType> const& x, storm::dd::Add<DdType, ImpreciseType> const& b) const {
+        storm::dd::Add<DdType, RationalType> SymbolicNativeLinearEquationSolver<DdType, ValueType>::solveEquationsRationalSearchHelper(Environment const& env, SymbolicNativeLinearEquationSolver<DdType, RationalType> const& rationalSolver, SymbolicNativeLinearEquationSolver<DdType, ImpreciseType> const& impreciseSolver, storm::dd::Add<DdType, RationalType> const& rationalB, storm::dd::Add<DdType, ImpreciseType> const& x, storm::dd::Add<DdType, ImpreciseType> const& b) const {
             
-            // Storage for the rational sharpened vector.
+            // Storage for the rational sharpened vector and the power iteration intermediate vector.
             storm::dd::Add<DdType, RationalType> sharpenedX;
+            storm::dd::Add<DdType, ImpreciseType> currentX = x;
             
             // The actual rational search.
             uint64_t overallIterations = 0;
             uint64_t powerIterationInvocations = 0;
-            ValueType precision = this->getSettings().getPrecision();
+            ValueType precision = storm::utility::convertNumber<ValueType>(env.solver().native().getPrecision());
+            uint64_t maxIter = env.solver().native().getMaximalNumberOfIterations();
+            bool relative = env.solver().native().getRelativeTerminationCriterion();
             SolverStatus status = SolverStatus::InProgress;
-            while (status == SolverStatus::InProgress && overallIterations < this->getSettings().getMaximalNumberOfIterations()) {
-                typename SymbolicNativeLinearEquationSolver<DdType, ImpreciseType>::PowerIterationResult result = impreciseSolver.performPowerIteration(x, b, storm::utility::convertNumber<ImpreciseType, ValueType>(precision), this->getSettings().getRelativeTerminationCriterion(), this->settings.getMaximalNumberOfIterations());
+            while (status == SolverStatus::InProgress && overallIterations < maxIter) {
+                typename SymbolicNativeLinearEquationSolver<DdType, ImpreciseType>::PowerIterationResult result = impreciseSolver.performPowerIteration(currentX, b, storm::utility::convertNumber<ImpreciseType, ValueType>(precision), relative, maxIter - overallIterations);
                 
                 ++powerIterationInvocations;
                 STORM_LOG_TRACE("Completed " << powerIterationInvocations << " power iteration invocations, the last one with precision " << precision << " completed in " << result.iterations << " iterations.");
@@ -256,7 +219,8 @@ namespace storm {
                 if (isSolution) {
                     status = SolverStatus::Converged;
                 } else {
-                    precision /= 10;
+                    currentX = result.values;
+                    precision /= storm::utility::convertNumber<ValueType, uint64_t>(10);
                 }
             }
             
@@ -275,24 +239,24 @@ namespace storm {
         
         template<storm::dd::DdType DdType, typename ValueType>
         template<typename ImpreciseType>
-        typename std::enable_if<std::is_same<ValueType, ImpreciseType>::value && storm::NumberTraits<ValueType>::IsExact, storm::dd::Add<DdType, ValueType>>::type SymbolicNativeLinearEquationSolver<DdType, ValueType>::solveEquationsRationalSearchHelper(storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const {
-            return solveEquationsRationalSearchHelper<ValueType, ValueType>(*this, *this, b, this->getLowerBoundsVector(), b);
+        typename std::enable_if<std::is_same<ValueType, ImpreciseType>::value && storm::NumberTraits<ValueType>::IsExact, storm::dd::Add<DdType, ValueType>>::type SymbolicNativeLinearEquationSolver<DdType, ValueType>::solveEquationsRationalSearchHelper(Environment const& env, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const {
+            return solveEquationsRationalSearchHelper<ValueType, ValueType>(env, *this, *this, b, this->getLowerBoundsVector(), b);
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
         template<typename ImpreciseType>
-        typename std::enable_if<std::is_same<ValueType, ImpreciseType>::value && !storm::NumberTraits<ValueType>::IsExact, storm::dd::Add<DdType, ValueType>>::type SymbolicNativeLinearEquationSolver<DdType, ValueType>::solveEquationsRationalSearchHelper(storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const {
+        typename std::enable_if<std::is_same<ValueType, ImpreciseType>::value && !storm::NumberTraits<ValueType>::IsExact, storm::dd::Add<DdType, ValueType>>::type SymbolicNativeLinearEquationSolver<DdType, ValueType>::solveEquationsRationalSearchHelper(Environment const& env, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const {
             
             storm::dd::Add<DdType, storm::RationalNumber> rationalB = b.template toValueType<storm::RationalNumber>();
             SymbolicNativeLinearEquationSolver<DdType, storm::RationalNumber> rationalSolver(this->A.template toValueType<storm::RationalNumber>(), this->allRows, this->rowMetaVariables, this->columnMetaVariables, this->rowColumnMetaVariablePairs);
             
-            storm::dd::Add<DdType, storm::RationalNumber> rationalResult = solveEquationsRationalSearchHelper<storm::RationalNumber, ImpreciseType>(rationalSolver, *this, rationalB, this->getLowerBoundsVector(), b);
+            storm::dd::Add<DdType, storm::RationalNumber> rationalResult = solveEquationsRationalSearchHelper<storm::RationalNumber, ImpreciseType>(env, rationalSolver, *this, rationalB, this->getLowerBoundsVector(), b);
             return rationalResult.template toValueType<ValueType>();
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
         template<typename ImpreciseType>
-        typename std::enable_if<!std::is_same<ValueType, ImpreciseType>::value, storm::dd::Add<DdType, ValueType>>::type SymbolicNativeLinearEquationSolver<DdType, ValueType>::solveEquationsRationalSearchHelper(storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const {
+        typename std::enable_if<!std::is_same<ValueType, ImpreciseType>::value, storm::dd::Add<DdType, ValueType>>::type SymbolicNativeLinearEquationSolver<DdType, ValueType>::solveEquationsRationalSearchHelper(Environment const& env, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const {
             
             // First try to find a solution using the imprecise value type.
             storm::dd::Add<DdType, ValueType> rationalResult;
@@ -302,63 +266,46 @@ namespace storm {
                 storm::dd::Add<DdType, ImpreciseType> impreciseB = b.template toValueType<ImpreciseType>();
                 SymbolicNativeLinearEquationSolver<DdType, ImpreciseType> impreciseSolver(this->A.template toValueType<ImpreciseType>(), this->allRows, this->rowMetaVariables, this->columnMetaVariables, this->rowColumnMetaVariablePairs);
                 
-                rationalResult = solveEquationsRationalSearchHelper<ValueType, ImpreciseType>(*this, impreciseSolver, b, impreciseX, impreciseB);
+                rationalResult = solveEquationsRationalSearchHelper<ValueType, ImpreciseType>(env, *this, impreciseSolver, b, impreciseX, impreciseB);
             } catch (storm::exceptions::PrecisionExceededException const& e) {
                 STORM_LOG_WARN("Precision of value type was exceeded, trying to recover by switching to rational arithmetic.");
                 
                 // Fall back to precise value type if the precision of the imprecise value type was exceeded.
-                rationalResult = solveEquationsRationalSearchHelper<ValueType, ValueType>(*this, *this, b, impreciseX.template toValueType<ValueType>(), b);
+                rationalResult = solveEquationsRationalSearchHelper<ValueType, ValueType>(env, *this, *this, b, impreciseX.template toValueType<ValueType>(), b);
             }
             return rationalResult.template toValueType<ValueType>();
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        storm::dd::Add<DdType, ValueType> SymbolicNativeLinearEquationSolver<DdType, ValueType>::solveEquationsRationalSearch(storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const {
+        storm::dd::Add<DdType, ValueType> SymbolicNativeLinearEquationSolver<DdType, ValueType>::solveEquationsRationalSearch(Environment const& env, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const {
             STORM_LOG_INFO("Solving symbolic linear equation system with NativeLinearEquationSolver (rational search)");
-            return solveEquationsRationalSearchHelper<double>(x, b);
+            return solveEquationsRationalSearchHelper<double>(env, x, b);
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        LinearEquationSolverProblemFormat SymbolicNativeLinearEquationSolver<DdType, ValueType>::getEquationProblemFormat() const {
-            if (this->getSettings().getSolutionMethod() == SymbolicNativeLinearEquationSolverSettings<ValueType>::SolutionMethod::Jacobi) {
+        LinearEquationSolverProblemFormat SymbolicNativeLinearEquationSolver<DdType, ValueType>::getEquationProblemFormat(Environment const& env) const {
+            auto method = getMethod(env, std::is_same<ValueType, storm::RationalNumber>::value);
+            if (method == NativeLinearEquationSolverMethod::Jacobi) {
                 return LinearEquationSolverProblemFormat::EquationSystem;
             }
             return LinearEquationSolverProblemFormat::FixedPointSystem;
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        LinearEquationSolverRequirements SymbolicNativeLinearEquationSolver<DdType, ValueType>::getRequirements() const {
+        LinearEquationSolverRequirements SymbolicNativeLinearEquationSolver<DdType, ValueType>::getRequirements(Environment const& env) const {
             LinearEquationSolverRequirements requirements;
-            
-            if (this->getSettings().getSolutionMethod() == SymbolicNativeLinearEquationSolverSettings<ValueType>::SolutionMethod::Power || this->getSettings().getSolutionMethod() == SymbolicNativeLinearEquationSolverSettings<ValueType>::SolutionMethod::RationalSearch) {
+            auto method = getMethod(env, std::is_same<ValueType, storm::RationalNumber>::value);
+            if (method == NativeLinearEquationSolverMethod::RationalSearch) {
                 requirements.requireLowerBounds();
             }
-            
             return requirements;
         }
         
-        template<storm::dd::DdType DdType, typename ValueType>
-        SymbolicNativeLinearEquationSolverSettings<ValueType> const& SymbolicNativeLinearEquationSolver<DdType, ValueType>::getSettings() const {
-            return settings;
-        }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, ValueType>> SymbolicNativeLinearEquationSolverFactory<DdType, ValueType>::create() const {
-            return std::make_unique<SymbolicNativeLinearEquationSolver<DdType, ValueType>>(settings);
+        std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, ValueType>> SymbolicNativeLinearEquationSolverFactory<DdType, ValueType>::create(Environment const& env) const {
+            return std::make_unique<SymbolicNativeLinearEquationSolver<DdType, ValueType>>();
         }
-    
-        template<storm::dd::DdType DdType, typename ValueType>
-        SymbolicNativeLinearEquationSolverSettings<ValueType>& SymbolicNativeLinearEquationSolverFactory<DdType, ValueType>::getSettings() {
-            return settings;
-        }
-        
-        template<storm::dd::DdType DdType, typename ValueType>
-        SymbolicNativeLinearEquationSolverSettings<ValueType> const& SymbolicNativeLinearEquationSolverFactory<DdType, ValueType>::getSettings() const {
-            return settings;
-        }
-
-        template class SymbolicNativeLinearEquationSolverSettings<double>;
-        template class SymbolicNativeLinearEquationSolverSettings<storm::RationalNumber>;
 
         template class SymbolicNativeLinearEquationSolver<storm::dd::DdType::CUDD, double>;
         template class SymbolicNativeLinearEquationSolver<storm::dd::DdType::CUDD, storm::RationalNumber>;

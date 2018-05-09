@@ -7,11 +7,13 @@
 #include "storm/models/symbolic/Dtmc.h"
 #include "storm/models/symbolic/Ctmc.h"
 #include "storm/models/symbolic/Mdp.h"
+#include "storm/models/symbolic/MarkovAutomaton.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
 
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/Mdp.h"
+#include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 
 #include "storm/storage/dd/bisimulation/PreservationInformation.h"
@@ -220,10 +222,10 @@ namespace storm {
                 spp::sparse_hash_map<BDD, bool> visitedNodes;
             };
 
-            template<storm::dd::DdType DdType, typename ValueType>
+            template<storm::dd::DdType DdType, typename ValueType, typename ExportValueType = ValueType>
             class InternalSparseQuotientExtractor;
 
-            template<storm::dd::DdType DdType, typename ValueType>
+            template<storm::dd::DdType DdType, typename ValueType, typename ExportValueType = ValueType>
             class InternalSparseQuotientExtractorBase {
             public:
                 InternalSparseQuotientExtractorBase(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Bdd<DdType> const& partitionBdd, storm::expressions::Variable const& blockVariable, uint64_t numberOfBlocks, storm::dd::Bdd<DdType> const& representatives) : model(model), manager(model.getManager()), isNondeterministic(false), partitionBdd(partitionBdd), numberOfBlocks(numberOfBlocks), blockVariable(blockVariable), representatives(representatives), matrixEntriesCreated(false) {
@@ -257,23 +259,23 @@ namespace storm {
 
                 virtual ~InternalSparseQuotientExtractorBase() = default;
 
-                storm::storage::SparseMatrix<ValueType> extractTransitionMatrix(storm::dd::Add<DdType, ValueType> const& transitionMatrix) {
+                storm::storage::SparseMatrix<ExportValueType> extractTransitionMatrix(storm::dd::Add<DdType, ValueType> const& transitionMatrix) {
                     return extractMatrixInternal(transitionMatrix);
                 }
                 
-                std::vector<ValueType> extractStateVector(storm::dd::Add<DdType, ValueType> const& vector) {
+                std::vector<ExportValueType> extractStateVector(storm::dd::Add<DdType, ValueType> const& vector) {
                     return extractVectorInternal(vector, this->rowVariablesCube, this->odd);
                 }
 
-                std::vector<ValueType> extractStateActionVector(storm::dd::Add<DdType, ValueType> const& vector) {
+                std::vector<ExportValueType> extractStateActionVector(storm::dd::Add<DdType, ValueType> const& vector) {
                     if (!this->isNondeterministic) {
                         return extractStateVector(vector);
                     } else {
                         STORM_LOG_ASSERT(!this->rowPermutation.empty(), "Expected proper row permutation.");
-                        std::vector<ValueType> valueVector = extractVectorInternal(vector, this->allSourceVariablesCube, this->nondeterminismOdd);
+                        std::vector<ExportValueType> valueVector = extractVectorInternal(vector, this->allSourceVariablesCube, this->nondeterminismOdd);
 
                         // Reorder the values according to the known row permutation.
-                        std::vector<ValueType> reorderedValues(valueVector.size());
+                        std::vector<ExportValueType> reorderedValues(valueVector.size());
                         for (uint64_t pos = 0; pos < valueVector.size(); ++pos) {
                             reorderedValues[pos] = valueVector[rowPermutation[pos]];
                         }
@@ -290,14 +292,14 @@ namespace storm {
                 }
 
             protected:
-                virtual storm::storage::SparseMatrix<ValueType> extractMatrixInternal(storm::dd::Add<DdType, ValueType> const& matrix) = 0;
+                virtual storm::storage::SparseMatrix<ExportValueType> extractMatrixInternal(storm::dd::Add<DdType, ValueType> const& matrix) = 0;
                 
-                virtual std::vector<ValueType> extractVectorInternal(storm::dd::Add<DdType, ValueType> const& vector, storm::dd::Bdd<DdType> const& variablesCube, storm::dd::Odd const& odd) = 0;
+                virtual std::vector<ExportValueType> extractVectorInternal(storm::dd::Add<DdType, ValueType> const& vector, storm::dd::Bdd<DdType> const& variablesCube, storm::dd::Odd const& odd) = 0;
                 
-                storm::storage::SparseMatrix<ValueType> createMatrixFromEntries() {
+                storm::storage::SparseMatrix<ExportValueType> createMatrixFromEntries() {
                     for (auto& row : matrixEntries) {
                         std::sort(row.begin(), row.end(),
-                                  [] (storm::storage::MatrixEntry<uint_fast64_t, ValueType> const& a, storm::storage::MatrixEntry<uint_fast64_t, ValueType> const& b) {
+                                  [] (storm::storage::MatrixEntry<uint_fast64_t, ExportValueType> const& a, storm::storage::MatrixEntry<uint_fast64_t, ExportValueType> const& b) {
                                       return a.getColumn() < b.getColumn();
                                   });
                     }
@@ -305,12 +307,12 @@ namespace storm {
                     rowPermutation = std::vector<uint64_t>(matrixEntries.size());
                     std::iota(rowPermutation.begin(), rowPermutation.end(), 0ull);
                     if (this->isNondeterministic) {
-                        std::sort(rowPermutation.begin(), rowPermutation.end(), [this] (uint64_t first, uint64_t second) { return this->rowToState[first] < this->rowToState[second]; } );
+                        std::stable_sort(rowPermutation.begin(), rowPermutation.end(), [this] (uint64_t first, uint64_t second) { return this->rowToState[first] < this->rowToState[second]; } );
                     }
                     
                     uint64_t rowCounter = 0;
                     uint64_t lastState = this->isNondeterministic ? rowToState[rowPermutation.front()] : 0;
-                    storm::storage::SparseMatrixBuilder<ValueType> builder(matrixEntries.size(), this->numberOfBlocks, 0, true, this->isNondeterministic);
+                    storm::storage::SparseMatrixBuilder<ExportValueType> builder(matrixEntries.size(), this->numberOfBlocks, 0, true, this->isNondeterministic);
                     if (this->isNondeterministic) {
                         builder.newRowGroup(0);
                     }
@@ -341,7 +343,7 @@ namespace storm {
                     return builder.build();
                 }
 
-                void addMatrixEntry(uint64_t row, uint64_t column, ValueType const& value) {
+                void addMatrixEntry(uint64_t row, uint64_t column, ExportValueType const& value) {
                     this->matrixEntries[row].emplace_back(column, value);
                 }
                 
@@ -388,7 +390,7 @@ namespace storm {
                 bool matrixEntriesCreated;
                 
                 // The entries of the quotient matrix that is built.
-                std::vector<std::vector<storm::storage::MatrixEntry<uint_fast64_t, ValueType>>> matrixEntries;
+                std::vector<std::vector<storm::storage::MatrixEntry<uint_fast64_t, ExportValueType>>> matrixEntries;
                 
                 // A vector storing for each row which state it belongs to.
                 std::vector<uint64_t> rowToState;
@@ -619,33 +621,33 @@ namespace storm {
                 spp::sparse_hash_map<DdNode const*, uint64_t> blockToOffset;
             };
 
-            template<typename ValueType>
-            class InternalSparseQuotientExtractor<storm::dd::DdType::Sylvan, ValueType> : public InternalSparseQuotientExtractorBase<storm::dd::DdType::Sylvan, ValueType> {
+            template<typename ValueType, typename ExportValueType>
+            class InternalSparseQuotientExtractor<storm::dd::DdType::Sylvan, ValueType, ExportValueType> : public InternalSparseQuotientExtractorBase<storm::dd::DdType::Sylvan, ValueType, ExportValueType> {
             public:
-                InternalSparseQuotientExtractor(storm::models::symbolic::Model<storm::dd::DdType::Sylvan, ValueType> const& model, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& partitionBdd, storm::expressions::Variable const& blockVariable, uint64_t numberOfBlocks, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& representatives) : InternalSparseQuotientExtractorBase<storm::dd::DdType::Sylvan, ValueType>(model, partitionBdd, blockVariable, numberOfBlocks, representatives) {
+                InternalSparseQuotientExtractor(storm::models::symbolic::Model<storm::dd::DdType::Sylvan, ValueType> const& model, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& partitionBdd, storm::expressions::Variable const& blockVariable, uint64_t numberOfBlocks, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& representatives) : InternalSparseQuotientExtractorBase<storm::dd::DdType::Sylvan, ValueType, ExportValueType>(model, partitionBdd, blockVariable, numberOfBlocks, representatives) {
                     this->createBlockToOffsetMapping();
                 }
                 
             private:
-                virtual storm::storage::SparseMatrix<ValueType> extractMatrixInternal(storm::dd::Add<storm::dd::DdType::Sylvan, ValueType> const& matrix) override {
+                virtual storm::storage::SparseMatrix<ExportValueType> extractMatrixInternal(storm::dd::Add<storm::dd::DdType::Sylvan, ValueType> const& matrix) override {
                     this->createMatrixEntryStorage();
                     extractTransitionMatrixRec(matrix.getInternalAdd().getSylvanMtbdd().GetMTBDD(), this->isNondeterministic ? this->nondeterminismOdd : this->odd, 0, this->partitionBdd.getInternalBdd().getSylvanBdd().GetBDD(), this->representatives.getInternalBdd().getSylvanBdd().GetBDD(), this->allSourceVariablesCube.getInternalBdd().getSylvanBdd().GetBDD(), this->nondeterminismVariablesCube.getInternalBdd().getSylvanBdd().GetBDD(), this->isNondeterministic ? &this->odd : nullptr, 0);
                     return this->createMatrixFromEntries();
                 }
                 
-                virtual std::vector<ValueType> extractVectorInternal(storm::dd::Add<storm::dd::DdType::Sylvan, ValueType> const& vector, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& variablesCube, storm::dd::Odd const& odd) override {
-                    std::vector<ValueType> result(odd.getTotalOffset());
+                virtual std::vector<ExportValueType> extractVectorInternal(storm::dd::Add<storm::dd::DdType::Sylvan, ValueType> const& vector, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& variablesCube, storm::dd::Odd const& odd) override {
+                    std::vector<ExportValueType> result(odd.getTotalOffset());
                     extractVectorRec(vector.getInternalAdd().getSylvanMtbdd().GetMTBDD(), this->representatives.getInternalBdd().getSylvanBdd().GetBDD(), variablesCube.getInternalBdd().getSylvanBdd().GetBDD(), odd, 0, result);
                     return result;
                 }
                 
-                void extractVectorRec(MTBDD vector, BDD representativesNode, BDD variables, storm::dd::Odd const& odd, uint64_t offset, std::vector<ValueType>& result) {
+                void extractVectorRec(MTBDD vector, BDD representativesNode, BDD variables, storm::dd::Odd const& odd, uint64_t offset, std::vector<ExportValueType>& result) {
                     if (representativesNode == sylvan_false || mtbdd_iszero(vector)) {
                         return;
                     }
                     
                     if (sylvan_isconst(variables)) {
-                        result[offset] = storm::dd::InternalAdd<storm::dd::DdType::Sylvan, ValueType>::getValue(vector);
+                        result[offset] = storm::utility::convertNumber<ExportValueType>(storm::dd::InternalAdd<storm::dd::DdType::Sylvan, ValueType>::getValue(vector));
                     } else {
                         MTBDD vectorT;
                         MTBDD vectorE;
@@ -721,7 +723,7 @@ namespace storm {
                     // If we have moved through all source variables, we must have arrived at a target block encoding.
                     if (sylvan_isconst(variables)) {
                         STORM_LOG_ASSERT(mtbdd_isleaf(transitionMatrixNode), "Expected constant node.");
-                        this->addMatrixEntry(sourceOffset, blockToOffset.at(targetPartitionNode), storm::dd::InternalAdd<storm::dd::DdType::Sylvan, ValueType>::getValue(transitionMatrixNode));
+                        this->addMatrixEntry(sourceOffset, blockToOffset.at(targetPartitionNode), storm::utility::convertNumber<ExportValueType>(storm::dd::InternalAdd<storm::dd::DdType::Sylvan, ValueType>::getValue(transitionMatrixNode)));
                         if (stateOdd) {
                             this->assignRowToState(sourceOffset, stateOffset);
                         }
@@ -815,32 +817,33 @@ namespace storm {
                 spp::sparse_hash_map<BDD, uint64_t> blockToOffset;
             };
 
-            template<storm::dd::DdType DdType, typename ValueType>
-            QuotientExtractor<DdType, ValueType>::QuotientExtractor() : useRepresentatives(false) {
+            template<storm::dd::DdType DdType, typename ValueType, typename ExportValueType>
+            QuotientExtractor<DdType, ValueType, ExportValueType>::QuotientExtractor() : useRepresentatives(false) {
                 auto const& settings = storm::settings::getModule<storm::settings::modules::BisimulationSettings>();
                 this->useRepresentatives = settings.isUseRepresentativesSet();
+                this->useOriginalVariables = settings.isUseOriginalVariablesSet();
                 this->quotientFormat = settings.getQuotientFormat();
             }
             
-            template<storm::dd::DdType DdType, typename ValueType>
-            std::shared_ptr<storm::models::Model<ValueType>> QuotientExtractor<DdType, ValueType>::extract(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& partition, PreservationInformation<DdType, ValueType> const& preservationInformation) {
+            template<storm::dd::DdType DdType, typename ValueType, typename ExportValueType>
+            std::shared_ptr<storm::models::Model<ExportValueType>> QuotientExtractor<DdType, ValueType, ExportValueType>::extract(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& partition, PreservationInformation<DdType, ValueType> const& preservationInformation) {
                 auto start = std::chrono::high_resolution_clock::now();
-                std::shared_ptr<storm::models::Model<ValueType>> result;
+                std::shared_ptr<storm::models::Model<ExportValueType>> result;
                 if (quotientFormat == storm::settings::modules::BisimulationSettings::QuotientFormat::Sparse) {
                     result = extractSparseQuotient(model, partition, preservationInformation);
                 } else {
                     result = extractDdQuotient(model, partition, preservationInformation);
                 }
                 auto end = std::chrono::high_resolution_clock::now();
-                STORM_LOG_TRACE("Quotient extraction completed in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
+                STORM_LOG_INFO("Quotient extraction completed in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
                 
                 STORM_LOG_THROW(result, storm::exceptions::NotSupportedException, "Quotient could not be extracted.");
                 
                 return result;
             }
             
-            template<storm::dd::DdType DdType, typename ValueType>
-            std::shared_ptr<storm::models::sparse::Model<ValueType>> QuotientExtractor<DdType, ValueType>::extractSparseQuotient(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& partition, PreservationInformation<DdType, ValueType> const& preservationInformation) {
+            template<storm::dd::DdType DdType, typename ValueType, typename ExportValueType>
+            std::shared_ptr<storm::models::sparse::Model<ExportValueType>> QuotientExtractor<DdType, ValueType, ExportValueType>::extractSparseQuotient(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& partition, PreservationInformation<DdType, ValueType> const& preservationInformation) {
                 auto states = partition.getStates().swapVariables(model.getRowColumnMetaVariablePairs());
                 
                 storm::dd::Bdd<DdType> partitionAsBdd = partition.storedAsAdd() ? partition.asAdd().toBdd() : partition.asBdd();
@@ -850,10 +853,10 @@ namespace storm {
                 auto representatives = InternalRepresentativeComputer<DdType>(partitionAsBdd, model.getRowVariables()).getRepresentatives();
                 STORM_LOG_ASSERT(representatives.getNonZeroCount() == partition.getNumberOfBlocks(), "Representatives size does not match that of the partition: " << representatives.getNonZeroCount() << " vs. " << partition.getNumberOfBlocks() << ".");
                 STORM_LOG_ASSERT((representatives && partitionAsBdd).existsAbstract(model.getRowVariables()) == partitionAsBdd.existsAbstract(model.getRowVariables()), "Representatives do not cover all blocks.");
-                InternalSparseQuotientExtractor<DdType, ValueType> sparseExtractor(model, partitionAsBdd, partition.getBlockVariable(), partition.getNumberOfBlocks(), representatives);
-                storm::storage::SparseMatrix<ValueType> quotientTransitionMatrix = sparseExtractor.extractTransitionMatrix(model.getTransitionMatrix());
+                InternalSparseQuotientExtractor<DdType, ValueType, ExportValueType> sparseExtractor(model, partitionAsBdd, partition.getBlockVariable(), partition.getNumberOfBlocks(), representatives);
+                storm::storage::SparseMatrix<ExportValueType> quotientTransitionMatrix = sparseExtractor.extractTransitionMatrix(model.getTransitionMatrix());
                 auto end = std::chrono::high_resolution_clock::now();
-                STORM_LOG_TRACE("Quotient transition matrix extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
+                STORM_LOG_INFO("Quotient transition matrix extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
 
                 start = std::chrono::high_resolution_clock::now();
                 storm::models::sparse::StateLabeling quotientStateLabeling(partition.getNumberOfBlocks());
@@ -875,55 +878,64 @@ namespace storm {
                     }
                 }
                 end = std::chrono::high_resolution_clock::now();
-                STORM_LOG_TRACE("Quotient labels extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
+                STORM_LOG_INFO("Quotient labels extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
 
                 start = std::chrono::high_resolution_clock::now();
-                std::unordered_map<std::string, storm::models::sparse::StandardRewardModel<ValueType>> quotientRewardModels;
+                std::unordered_map<std::string, storm::models::sparse::StandardRewardModel<ExportValueType>> quotientRewardModels;
                 for (auto const& rewardModelName : preservationInformation.getRewardModelNames()) {
                     auto const& rewardModel = model.getRewardModel(rewardModelName);
                     
-                    boost::optional<std::vector<ValueType>> quotientStateRewards;
+                    boost::optional<std::vector<ExportValueType>> quotientStateRewards;
                     if (rewardModel.hasStateRewards()) {
                         quotientStateRewards = sparseExtractor.extractStateVector(rewardModel.getStateRewardVector());
                     }
                     
-                    boost::optional<std::vector<ValueType>> quotientStateActionRewards;
+                    boost::optional<std::vector<ExportValueType>> quotientStateActionRewards;
                     if (rewardModel.hasStateActionRewards()) {
                         quotientStateActionRewards = sparseExtractor.extractStateActionVector(rewardModel.getStateActionRewardVector());
                     }
                     
-                    quotientRewardModels.emplace(rewardModelName, storm::models::sparse::StandardRewardModel<ValueType>(std::move(quotientStateRewards), std::move(quotientStateActionRewards), boost::none));
+                    quotientRewardModels.emplace(rewardModelName, storm::models::sparse::StandardRewardModel<ExportValueType>(std::move(quotientStateRewards), std::move(quotientStateActionRewards), boost::none));
                 }
                 end = std::chrono::high_resolution_clock::now();
-                STORM_LOG_TRACE("Reward models extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
+                STORM_LOG_INFO("Reward models extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
 
-                std::shared_ptr<storm::models::sparse::Model<ValueType>> result;
+                std::shared_ptr<storm::models::sparse::Model<ExportValueType>> result;
                 if (model.getType() == storm::models::ModelType::Dtmc) {
-                    result = std::make_shared<storm::models::sparse::Dtmc<ValueType>>(std::move(quotientTransitionMatrix), std::move(quotientStateLabeling), std::move(quotientRewardModels));
+                    result = std::make_shared<storm::models::sparse::Dtmc<ExportValueType>>(std::move(quotientTransitionMatrix), std::move(quotientStateLabeling), std::move(quotientRewardModels));
                 } else if (model.getType() == storm::models::ModelType::Ctmc) {
-                    result = std::make_shared<storm::models::sparse::Ctmc<ValueType>>(std::move(quotientTransitionMatrix), std::move(quotientStateLabeling), std::move(quotientRewardModels));
+                    result = std::make_shared<storm::models::sparse::Ctmc<ExportValueType>>(std::move(quotientTransitionMatrix), std::move(quotientStateLabeling), std::move(quotientRewardModels));
                 } else if (model.getType() == storm::models::ModelType::Mdp) {
-                    result = std::make_shared<storm::models::sparse::Mdp<ValueType>>(std::move(quotientTransitionMatrix), std::move(quotientStateLabeling), std::move(quotientRewardModels));
+                    result = std::make_shared<storm::models::sparse::Mdp<ExportValueType>>(std::move(quotientTransitionMatrix), std::move(quotientStateLabeling), std::move(quotientRewardModels));
+                } else if (model.getType() == storm::models::ModelType::MarkovAutomaton) {
+                    storm::models::symbolic::MarkovAutomaton<DdType, ValueType> const& markovAutomaton = *model.template as<storm::models::symbolic::MarkovAutomaton<DdType, ValueType>>();
+                    
+                    boost::optional<storm::storage::BitVector> markovianStates = sparseExtractor.extractSetExists(markovAutomaton.getMarkovianStates());
+                    storm::storage::sparse::ModelComponents<ExportValueType> modelComponents(std::move(quotientTransitionMatrix), std::move(quotientStateLabeling), std::move(quotientRewardModels), false, std::move(markovianStates));
+                    modelComponents.exitRates = sparseExtractor.extractStateVector(markovAutomaton.getExitRateVector());
+                                        
+                    result = std::make_shared<storm::models::sparse::MarkovAutomaton<ExportValueType>>(std::move(modelComponents));
                 }
                 
                 return result;
             }
 
-            template<storm::dd::DdType DdType, typename ValueType>
-            std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> QuotientExtractor<DdType, ValueType>::extractDdQuotient(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& partition, PreservationInformation<DdType, ValueType> const& preservationInformation) {
-                return extractQuotientUsingBlockVariables(model, partition, preservationInformation);
+            template<storm::dd::DdType DdType, typename ValueType, typename ExportValueType>
+            std::shared_ptr<storm::models::symbolic::Model<DdType, ExportValueType>> QuotientExtractor<DdType, ValueType, ExportValueType>::extractDdQuotient(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& partition, PreservationInformation<DdType, ValueType> const& preservationInformation) {
+                
+                if (this->useOriginalVariables) {
+                    return extractQuotientUsingOriginalVariables(model, partition, preservationInformation);
+                } else {
+                    return extractQuotientUsingBlockVariables(model, partition, preservationInformation);
+                }
             }
 
-            template<storm::dd::DdType DdType, typename ValueType>
-            std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> QuotientExtractor<DdType, ValueType>::extractQuotientUsingBlockVariables(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& partition, PreservationInformation<DdType, ValueType> const& preservationInformation) {
+            template<storm::dd::DdType DdType, typename ValueType, typename ExportValueType>
+            std::shared_ptr<storm::models::symbolic::Model<DdType, ExportValueType>> QuotientExtractor<DdType, ValueType, ExportValueType>::extractQuotientUsingBlockVariables(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& partition, PreservationInformation<DdType, ValueType> const& preservationInformation) {
                 auto modelType = model.getType();
                 
                 bool useRepresentativesForThisExtraction = this->useRepresentatives;
-                if (modelType == storm::models::ModelType::Dtmc || modelType == storm::models::ModelType::Ctmc || modelType == storm::models::ModelType::Mdp) {
-                    if (modelType == storm::models::ModelType::Mdp) {
-                        STORM_LOG_WARN_COND(!useRepresentativesForThisExtraction, "Using representatives is unsupported for MDPs, falling back to regular extraction.");
-                        useRepresentativesForThisExtraction = false;
-                    }
+                if (modelType == storm::models::ModelType::Dtmc || modelType == storm::models::ModelType::Ctmc || modelType == storm::models::ModelType::Mdp || modelType == storm::models::ModelType::MarkovAutomaton) {
                     
                     // Sanity checks.
                     STORM_LOG_ASSERT(partition.getNumberOfStates() == model.getNumberOfStates(), "Mismatching partition size.");
@@ -932,16 +944,20 @@ namespace storm {
                     std::set<storm::expressions::Variable> blockVariableSet = {partition.getBlockVariable()};
                     std::set<storm::expressions::Variable> blockPrimeVariableSet = {partition.getPrimedBlockVariable()};
                     std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> blockMetaVariablePairs = {std::make_pair(partition.getBlockVariable(), partition.getPrimedBlockVariable())};
+
+                    auto start = std::chrono::high_resolution_clock::now();
                     
+                    // Compute representatives.
                     storm::dd::Bdd<DdType> partitionAsBdd = partition.storedAsBdd() ? partition.asBdd() : partition.asAdd().notZero();
+                    partitionAsBdd = partitionAsBdd.renameVariables(model.getColumnVariables(), model.getRowVariables());
+                    auto representatives = InternalRepresentativeComputer<DdType>(partitionAsBdd, model.getRowVariables()).getRepresentatives();
+
                     if (useRepresentativesForThisExtraction) {
-                        storm::dd::Bdd<DdType> partitionAsBddOverPrimedBlockVariable = partitionAsBdd.renameVariables(blockVariableSet, blockPrimeVariableSet);
-                        storm::dd::Bdd<DdType> representativePartition = partitionAsBddOverPrimedBlockVariable.existsAbstractRepresentative(model.getColumnVariables()).renameVariables(model.getColumnVariables(), blockVariableSet);
-                        partitionAsBdd = (representativePartition && partitionAsBddOverPrimedBlockVariable).existsAbstract(blockPrimeVariableSet);
+                        storm::dd::Bdd<DdType> partitionAsBddOverPrimedBlockVariables = partitionAsBdd.renameVariables(blockVariableSet, blockPrimeVariableSet);
+                        storm::dd::Bdd<DdType> tmp = (representatives && partitionAsBddOverPrimedBlockVariables).renameVariablesConcretize(model.getRowVariables(), blockVariableSet);
+                        partitionAsBdd = (tmp && partitionAsBddOverPrimedBlockVariables).existsAbstract(blockPrimeVariableSet);
                     }
                     
-                    auto start = std::chrono::high_resolution_clock::now();
-                    partitionAsBdd = partitionAsBdd.renameVariables(model.getColumnVariables(), model.getRowVariables());
                     storm::dd::Bdd<DdType> reachableStates = partitionAsBdd.existsAbstract(model.getRowVariables());
                     storm::dd::Bdd<DdType> initialStates = (model.getInitialStates() && partitionAsBdd).existsAbstract(model.getRowVariables());
                     
@@ -962,7 +978,7 @@ namespace storm {
                         }
                     }
                     auto end = std::chrono::high_resolution_clock::now();
-                    STORM_LOG_TRACE("Quotient labels extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
+                    STORM_LOG_INFO("Quotient labels extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
 
                     start = std::chrono::high_resolution_clock::now();
                     std::set<storm::expressions::Variable> blockAndRowVariables;
@@ -973,25 +989,27 @@ namespace storm {
                     storm::dd::Add<DdType, ValueType> quotientTransitionMatrix = model.getTransitionMatrix().multiplyMatrix(partitionAsAdd.renameVariables(blockAndRowVariables, blockPrimeAndColumnVariables), model.getColumnVariables());
                     
                     // Pick a representative from each block.
-                    auto representatives = InternalRepresentativeComputer<DdType>(partitionAsBdd, model.getRowVariables()).getRepresentatives();
                     partitionAsBdd &= representatives;
                     partitionAsAdd *= partitionAsBdd.template toAdd<ValueType>();
 
                     quotientTransitionMatrix = quotientTransitionMatrix.multiplyMatrix(partitionAsAdd, model.getRowVariables());
                     end = std::chrono::high_resolution_clock::now();
-                    
+
                     // Check quotient matrix for sanity.
                     if (std::is_same<ValueType, storm::RationalNumber>::value) {
                         STORM_LOG_ASSERT(quotientTransitionMatrix.greater(storm::utility::one<ValueType>()).isZero(), "Illegal entries in quotient matrix.");
                     } else {
                         STORM_LOG_ASSERT(quotientTransitionMatrix.greater(storm::utility::one<ValueType>() + storm::utility::convertNumber<ValueType>(1e-6)).isZero(), "Illegal entries in quotient matrix.");
                     }
-                    STORM_LOG_ASSERT(quotientTransitionMatrix.sumAbstract(blockPrimeVariableSet).equalModuloPrecision(quotientTransitionMatrix.notZero().existsAbstract(blockPrimeVariableSet).template toAdd<ValueType>(), ValueType(1e-6)), "Illegal non-probabilistic matrix.");
+                    STORM_LOG_ASSERT(quotientTransitionMatrix.sumAbstract(blockPrimeVariableSet).equalModuloPrecision(quotientTransitionMatrix.notZero().existsAbstract(blockPrimeVariableSet).template toAdd<ValueType>(), storm::utility::convertNumber<ValueType>(1e-6)), "Illegal non-probabilistic matrix.");
                     
-                    STORM_LOG_TRACE("Quotient transition matrix extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
+                    STORM_LOG_INFO("Quotient transition matrix extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
 
                     storm::dd::Bdd<DdType> quotientTransitionMatrixBdd = quotientTransitionMatrix.notZero();
-                    storm::dd::Bdd<DdType> deadlockStates = !quotientTransitionMatrixBdd.existsAbstract(blockPrimeVariableSet) && reachableStates;
+                    
+                    std::set<storm::expressions::Variable> blockPrimeAndNondeterminismVariables = model.getNondeterminismVariables();
+                    blockPrimeAndNondeterminismVariables.insert(blockPrimeVariableSet.begin(), blockPrimeVariableSet.end());
+                    storm::dd::Bdd<DdType> deadlockStates = !quotientTransitionMatrixBdd.existsAbstract(blockPrimeAndNondeterminismVariables) && reachableStates;
                     
                     start = std::chrono::high_resolution_clock::now();
                     std::unordered_map<std::string, storm::models::symbolic::StandardRewardModel<DdType, ValueType>> quotientRewardModels;
@@ -1011,17 +1029,144 @@ namespace storm {
                         quotientRewardModels.emplace(rewardModelName, storm::models::symbolic::StandardRewardModel<DdType, ValueType>(quotientStateRewards, quotientStateActionRewards, boost::none));
                     }
                     end = std::chrono::high_resolution_clock::now();
-                    STORM_LOG_TRACE("Reward models extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
+                    STORM_LOG_INFO("Reward models extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
 
+                    std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> result;
                     if (modelType == storm::models::ModelType::Dtmc) {
-                        return std::shared_ptr<storm::models::symbolic::Dtmc<DdType, ValueType>>(new storm::models::symbolic::Dtmc<DdType, ValueType>(model.getManager().asSharedPointer(), reachableStates, initialStates, deadlockStates, quotientTransitionMatrix, blockVariableSet, blockPrimeVariableSet, blockMetaVariablePairs, preservedLabelBdds, quotientRewardModels));
+                        result = std::shared_ptr<storm::models::symbolic::Dtmc<DdType, ValueType>>(new storm::models::symbolic::Dtmc<DdType, ValueType>(model.getManager().asSharedPointer(), reachableStates, initialStates, deadlockStates, quotientTransitionMatrix, blockVariableSet, blockPrimeVariableSet, blockMetaVariablePairs, preservedLabelBdds, quotientRewardModels));
                     } else if (modelType == storm::models::ModelType::Ctmc) {
-                        return std::shared_ptr<storm::models::symbolic::Ctmc<DdType, ValueType>>(new storm::models::symbolic::Ctmc<DdType, ValueType>(model.getManager().asSharedPointer(), reachableStates, initialStates, deadlockStates, quotientTransitionMatrix, blockVariableSet, blockPrimeVariableSet, blockMetaVariablePairs, preservedLabelBdds, quotientRewardModels));
+                        result = std::shared_ptr<storm::models::symbolic::Ctmc<DdType, ValueType>>(new storm::models::symbolic::Ctmc<DdType, ValueType>(model.getManager().asSharedPointer(), reachableStates, initialStates, deadlockStates, quotientTransitionMatrix, blockVariableSet, blockPrimeVariableSet, blockMetaVariablePairs, preservedLabelBdds, quotientRewardModels));
                     } else if (modelType == storm::models::ModelType::Mdp) {
-                        return std::shared_ptr<storm::models::symbolic::Mdp<DdType, ValueType>>(new storm::models::symbolic::Mdp<DdType, ValueType>(model.getManager().asSharedPointer(), reachableStates, initialStates, deadlockStates, quotientTransitionMatrix, blockVariableSet, blockPrimeVariableSet, blockMetaVariablePairs, model.getNondeterminismVariables(), preservedLabelBdds, quotientRewardModels));
+                        result = std::shared_ptr<storm::models::symbolic::Mdp<DdType, ValueType>>(new storm::models::symbolic::Mdp<DdType, ValueType>(model.getManager().asSharedPointer(), reachableStates, initialStates, deadlockStates, quotientTransitionMatrix, blockVariableSet, blockPrimeVariableSet, blockMetaVariablePairs, model.getNondeterminismVariables(), preservedLabelBdds, quotientRewardModels));
                     } else {
-                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Unsupported quotient type.");
+                        result = std::shared_ptr<storm::models::symbolic::MarkovAutomaton<DdType, ValueType>>(new storm::models::symbolic::MarkovAutomaton<DdType, ValueType>(model.getManager().asSharedPointer(), model. template as<storm::models::symbolic::MarkovAutomaton<DdType, ValueType>>()->getMarkovianMarker(), reachableStates, initialStates, deadlockStates, quotientTransitionMatrix, blockVariableSet, blockPrimeVariableSet, blockMetaVariablePairs, model.getNondeterminismVariables(), preservedLabelBdds, quotientRewardModels));
                     }
+                    
+                    return result->template toValueType<ExportValueType>();
+                } else {
+                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Cannot extract quotient for this model type.");
+                }
+            }
+            
+            template<storm::dd::DdType DdType, typename ValueType, typename ExportValueType>
+            std::shared_ptr<storm::models::symbolic::Model<DdType, ExportValueType>> QuotientExtractor<DdType, ValueType, ExportValueType>::extractQuotientUsingOriginalVariables(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& partition, PreservationInformation<DdType, ValueType> const& preservationInformation) {
+                auto modelType = model.getType();
+                
+                bool useRepresentativesForThisExtraction = this->useRepresentatives;
+                if (modelType == storm::models::ModelType::Dtmc || modelType == storm::models::ModelType::Ctmc || modelType == storm::models::ModelType::Mdp || modelType == storm::models::ModelType::MarkovAutomaton) {
+                    STORM_LOG_WARN_COND(!this->useRepresentatives, "Using representatives is unsupported for this extraction, falling back to regular extraction.");
+                    
+                    // Sanity checks.
+                    STORM_LOG_ASSERT(partition.getNumberOfStates() == model.getNumberOfStates(), "Mismatching partition size.");
+                    STORM_LOG_ASSERT(partition.getStates().renameVariables(model.getColumnVariables(), model.getRowVariables()) == model.getReachableStates(), "Mismatching partition.");
+                    
+                    std::set<storm::expressions::Variable> blockVariableSet = {partition.getBlockVariable()};
+                    std::set<storm::expressions::Variable> blockPrimeVariableSet = {partition.getPrimedBlockVariable()};
+                    std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> blockMetaVariablePairs = {std::make_pair(partition.getBlockVariable(), partition.getPrimedBlockVariable())};
+                    
+                    auto start = std::chrono::high_resolution_clock::now();
+
+                    // Compute representatives.
+                    storm::dd::Bdd<DdType> partitionAsBdd = partition.storedAsBdd() ? partition.asBdd() : partition.asAdd().notZero();
+                    partitionAsBdd = partitionAsBdd.renameVariables(model.getColumnVariables(), model.getRowVariables());
+                    auto representatives = InternalRepresentativeComputer<DdType>(partitionAsBdd, model.getRowVariables()).getRepresentatives();
+                    
+                    if (useRepresentativesForThisExtraction) {
+                        storm::dd::Bdd<DdType> partitionAsBddOverPrimedBlockVariables = partitionAsBdd.renameVariables(blockVariableSet, blockPrimeVariableSet);
+                        storm::dd::Bdd<DdType> tmp = (representatives && partitionAsBddOverPrimedBlockVariables).renameVariablesConcretize(model.getRowVariables(), blockVariableSet);
+                        partitionAsBdd = (tmp && partitionAsBddOverPrimedBlockVariables).existsAbstract(blockPrimeVariableSet);
+                    }
+
+                    storm::dd::Bdd<DdType> reachableStates = partitionAsBdd.existsAbstract(model.getRowVariables()).renameVariablesAbstract(blockVariableSet, model.getRowVariables());
+                    storm::dd::Bdd<DdType> initialStates = (model.getInitialStates() && partitionAsBdd).existsAbstract(model.getRowVariables()).renameVariablesAbstract(blockVariableSet, model.getRowVariables());
+                    
+                    std::map<std::string, storm::dd::Bdd<DdType>> preservedLabelBdds;
+                    for (auto const& label : preservationInformation.getLabels()) {
+                        preservedLabelBdds.emplace(label, (model.getStates(label) && partitionAsBdd).existsAbstract(model.getRowVariables()).renameVariablesAbstract(blockVariableSet, model.getRowVariables()));
+                    }
+                    for (auto const& expression : preservationInformation.getExpressions()) {
+                        std::stringstream stream;
+                        stream << expression;
+                        std::string expressionAsString = stream.str();
+                        
+                        auto it = preservedLabelBdds.find(expressionAsString);
+                        if (it != preservedLabelBdds.end()) {
+                            STORM_LOG_WARN("Duplicate label '" << expressionAsString << "', dropping second label definition.");
+                        } else {
+                            preservedLabelBdds.emplace(stream.str(), (model.getStates(expression) && partitionAsBdd).existsAbstract(model.getRowVariables()).renameVariablesAbstract(blockVariableSet, model.getRowVariables()));
+                        }
+                    }
+                    auto end = std::chrono::high_resolution_clock::now();
+                    STORM_LOG_INFO("Quotient labels extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
+                    
+                    start = std::chrono::high_resolution_clock::now();
+                    std::set<storm::expressions::Variable> blockAndRowVariables;
+                    std::set_union(blockVariableSet.begin(), blockVariableSet.end(), model.getRowVariables().begin(), model.getRowVariables().end(), std::inserter(blockAndRowVariables, blockAndRowVariables.end()));
+                    std::set<storm::expressions::Variable> blockPrimeAndColumnVariables;
+                    std::set_union(blockPrimeVariableSet.begin(), blockPrimeVariableSet.end(), model.getColumnVariables().begin(), model.getColumnVariables().end(), std::inserter(blockPrimeAndColumnVariables, blockPrimeAndColumnVariables.end()));
+                    storm::dd::Add<DdType, ValueType> partitionAsAdd = partitionAsBdd.template toAdd<ValueType>();
+                    storm::dd::Add<DdType, ValueType> quotientTransitionMatrix = model.getTransitionMatrix().multiplyMatrix(partitionAsAdd.renameVariables(model.getRowVariables(), model.getColumnVariables()), model.getColumnVariables()).renameVariablesAbstract(blockVariableSet, model.getColumnVariables());
+
+                    // Pick a representative from each block.
+                    partitionAsBdd &= representatives;
+                    partitionAsAdd = partitionAsBdd.template toAdd<ValueType>();
+
+                    // Workaround for problem with CUDD. Matrix-Matrix multiplication yields other result than multiplication+sum-abstract...
+                    if (DdType == storm::dd::DdType::CUDD) {
+                        quotientTransitionMatrix = (quotientTransitionMatrix * partitionAsAdd).sumAbstract(model.getRowVariables()).renameVariablesAbstract(blockVariableSet, model.getRowVariables());
+                    } else {
+                        quotientTransitionMatrix = quotientTransitionMatrix.multiplyMatrix(partitionAsAdd, model.getRowVariables()).renameVariablesAbstract(blockVariableSet, model.getRowVariables());
+                    }
+                    end = std::chrono::high_resolution_clock::now();
+                    
+                    // Check quotient matrix for sanity.
+                    if (std::is_same<ValueType, storm::RationalNumber>::value) {
+                        STORM_LOG_ASSERT(quotientTransitionMatrix.greater(storm::utility::one<ValueType>()).isZero(), "Illegal entries in quotient matrix.");
+                    } else {
+                        STORM_LOG_ASSERT(quotientTransitionMatrix.greater(storm::utility::one<ValueType>() + storm::utility::convertNumber<ValueType>(1e-6)).isZero(), "Illegal entries in quotient matrix.");
+                    }
+                    STORM_LOG_ASSERT(quotientTransitionMatrix.sumAbstract(model.getColumnVariables()).equalModuloPrecision(quotientTransitionMatrix.notZero().existsAbstract(model.getColumnVariables()).template toAdd<ValueType>(), storm::utility::convertNumber<ValueType>(1e-6)), "Illegal probabilistic matrix.");
+                    
+                    STORM_LOG_INFO("Quotient transition matrix extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
+                    
+                    storm::dd::Bdd<DdType> quotientTransitionMatrixBdd = quotientTransitionMatrix.notZero();
+                    
+                    std::set<storm::expressions::Variable> columnAndNondeterminismVariables = model.getColumnVariables();
+                    columnAndNondeterminismVariables.insert(model.getNondeterminismVariables().begin(), model.getNondeterminismVariables().end());
+                    storm::dd::Bdd<DdType> deadlockStates = !quotientTransitionMatrixBdd.existsAbstract(columnAndNondeterminismVariables) && reachableStates;
+                    
+                    start = std::chrono::high_resolution_clock::now();
+                    std::unordered_map<std::string, storm::models::symbolic::StandardRewardModel<DdType, ValueType>> quotientRewardModels;
+                    for (auto const& rewardModelName : preservationInformation.getRewardModelNames()) {
+                        auto const& rewardModel = model.getRewardModel(rewardModelName);
+                        
+                        boost::optional<storm::dd::Add<DdType, ValueType>> quotientStateRewards;
+                        if (rewardModel.hasStateRewards()) {
+                            quotientStateRewards = rewardModel.getStateRewardVector().multiplyMatrix(partitionAsAdd, model.getRowVariables()).renameVariablesAbstract(blockVariableSet, model.getRowVariables());
+                        }
+                        
+                        boost::optional<storm::dd::Add<DdType, ValueType>> quotientStateActionRewards;
+                        if (rewardModel.hasStateActionRewards()) {
+                            quotientStateActionRewards = rewardModel.getStateActionRewardVector().multiplyMatrix(partitionAsAdd, model.getRowVariables()).renameVariablesAbstract(blockVariableSet, model.getRowVariables());
+                        }
+                        
+                        quotientRewardModels.emplace(rewardModelName, storm::models::symbolic::StandardRewardModel<DdType, ValueType>(quotientStateRewards, quotientStateActionRewards, boost::none));
+                    }
+                    end = std::chrono::high_resolution_clock::now();
+                    STORM_LOG_INFO("Reward models extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
+                    
+                    std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> result;
+                    if (modelType == storm::models::ModelType::Dtmc) {
+                        result = std::shared_ptr<storm::models::symbolic::Dtmc<DdType, ValueType>>(new storm::models::symbolic::Dtmc<DdType, ValueType>(model.getManager().asSharedPointer(), reachableStates, initialStates, deadlockStates, quotientTransitionMatrix, model.getRowVariables(), model.getColumnVariables(), model.getRowColumnMetaVariablePairs(), preservedLabelBdds, quotientRewardModels));
+                    } else if (modelType == storm::models::ModelType::Ctmc) {
+                        result = std::shared_ptr<storm::models::symbolic::Ctmc<DdType, ValueType>>(new storm::models::symbolic::Ctmc<DdType, ValueType>(model.getManager().asSharedPointer(), reachableStates, initialStates, deadlockStates, quotientTransitionMatrix, model.getRowVariables(), model.getColumnVariables(), model.getRowColumnMetaVariablePairs(), preservedLabelBdds, quotientRewardModels));
+                    } else if (modelType == storm::models::ModelType::Mdp) {
+                        result = std::shared_ptr<storm::models::symbolic::Mdp<DdType, ValueType>>(new storm::models::symbolic::Mdp<DdType, ValueType>(model.getManager().asSharedPointer(), reachableStates, initialStates, deadlockStates, quotientTransitionMatrix, model.getRowVariables(), model.getColumnVariables(), model.getRowColumnMetaVariablePairs(), model.getNondeterminismVariables(), preservedLabelBdds, quotientRewardModels));
+                    } else {
+                        result = std::shared_ptr<storm::models::symbolic::MarkovAutomaton<DdType, ValueType>>(new storm::models::symbolic::MarkovAutomaton<DdType, ValueType>(model.getManager().asSharedPointer(), model. template as<storm::models::symbolic::MarkovAutomaton<DdType, ValueType>>()->getMarkovianMarker(), reachableStates, initialStates, deadlockStates, quotientTransitionMatrix, model.getRowVariables(), model.getColumnVariables(), model.getRowColumnMetaVariablePairs(), model.getNondeterminismVariables(), preservedLabelBdds, quotientRewardModels));
+                    }
+                    
+                    return result->template toValueType<ExportValueType>();
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Cannot extract quotient for this model type.");
                 }
@@ -1031,6 +1176,7 @@ namespace storm {
             
             template class QuotientExtractor<storm::dd::DdType::Sylvan, double>;
             template class QuotientExtractor<storm::dd::DdType::Sylvan, storm::RationalNumber>;
+            template class QuotientExtractor<storm::dd::DdType::Sylvan, storm::RationalNumber, double>;
             template class QuotientExtractor<storm::dd::DdType::Sylvan, storm::RationalFunction>;
             
         }

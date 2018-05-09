@@ -14,14 +14,24 @@ namespace storm {
 
 
         
-        template <typename ValueType>
-        inline void exportDataToCSVFile(std::string filepath, std::vector<std::vector<ValueType>> const& data, boost::optional<std::vector<std::string>> const& columnHeaders) {
+        template <typename DataType, typename Header1Type = DataType, typename Header2Type = DataType>
+        inline void exportDataToCSVFile(std::string filepath, std::vector<std::vector<DataType>> const& data, boost::optional<std::vector<Header1Type>> const& header1 = boost::none, boost::optional<std::vector<Header2Type>> const& header2 = boost::none) {
             std::ofstream filestream;
             storm::utility::openFile(filepath, filestream);
             
-            if(columnHeaders) {
-                for(auto columnIt = columnHeaders->begin(); columnIt != columnHeaders->end(); ++columnIt) {
-                    if(columnIt != columnHeaders->begin()) {
+            if (header1) {
+                for(auto columnIt = header1->begin(); columnIt != header1->end(); ++columnIt) {
+                    if(columnIt != header1->begin()) {
+                        filestream << ",";
+                    }
+                    filestream << *columnIt;
+                }
+                filestream << std::endl;
+            }
+            
+            if (header2) {
+                for(auto columnIt = header2->begin(); columnIt != header2->end(); ++columnIt) {
+                    if(columnIt != header2->begin()) {
                         filestream << ",";
                     }
                     filestream << *columnIt;

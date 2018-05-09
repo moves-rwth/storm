@@ -13,7 +13,7 @@ namespace storm {
             class SylvanSettings : public ModuleSettings {
             public:
                 /*!
-                 * Creates a new set of CUDD settings.
+                 * Creates a new set of Sylvan settings.
                  */
                 SylvanSettings();
                 

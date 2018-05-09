@@ -75,6 +75,12 @@ namespace storm {
                  */
                 bool isBuildStateValuationsSet() const;
 
+                /*!
+                 * Retrieves whether out of bounds state should be added
+                 * @return
+                 */
+                bool isBuildOutOfBoundsStateSet() const;
+
 
                 // The name of the module.
                 static const std::string moduleName;

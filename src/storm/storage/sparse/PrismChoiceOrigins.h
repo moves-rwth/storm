@@ -32,7 +32,7 @@ namespace storm {
                 
                 virtual ~PrismChoiceOrigins() = default;
                 
-                virtual bool isPrismChoiceOrigins() const override ;
+                virtual bool isPrismChoiceOrigins() const override;
                 
                 /*
                  * Returns the number of identifier that are used by this object.

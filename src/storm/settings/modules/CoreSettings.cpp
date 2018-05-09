@@ -39,11 +39,11 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, counterexampleOptionName, false, "Generates a counterexample for the given PRCTL formulas if not satisfied by the model.").setShortName(counterexampleOptionShortName).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, dontFixDeadlockOptionName, false, "If the model contains deadlock states, they need to be fixed by setting this option.").setShortName(dontFixDeadlockOptionShortName).build());
                 
-                std::vector<std::string> engines = {"sparse", "hybrid", "dd", "expl", "abs"};
+                std::vector<std::string> engines = {"sparse", "hybrid", "dd", "dd-to-sparse", "expl", "abs"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, engineOptionName, false, "Sets which engine is used for model building and model checking.").setShortName(engineOptionShortName)
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the engine to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(engines)).setDefaultValueString("sparse").build()).build());
                 
-                std::vector<std::string> linearEquationSolver = {"gmm++", "native", "eigen", "elimination"};
+                std::vector<std::string> linearEquationSolver = {"gmm++", "native", "eigen", "elimination", "topological"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, eqSolverOptionName, false, "Sets which solver is preferred for solving systems of linear equations.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the solver to prefer.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(linearEquationSolver)).setDefaultValueString("gmm++").build()).build());
                 
@@ -86,6 +86,8 @@ namespace storm {
                     return storm::solver::EquationSolverType::Eigen;
                 } else if (equationSolverName == "elimination") {
                     return storm::solver::EquationSolverType::Elimination;
+                } else if (equationSolverName == "topological") {
+                    return storm::solver::EquationSolverType::Topological;
                 }
                 STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown equation solver '" << equationSolverName << "'.");
             }
@@ -162,6 +164,8 @@ namespace storm {
                     engine = CoreSettings::Engine::Hybrid;
                 } else if (engineStr == "dd") {
                     engine = CoreSettings::Engine::Dd;
+                } else if (engineStr == "dd-to-sparse") {
+                    engine = CoreSettings::Engine::DdSparse;
                 } else if (engineStr == "expl") {
                     engine = CoreSettings::Engine::Exploration;
                 } else if (engineStr == "abs") {

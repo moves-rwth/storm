@@ -151,6 +151,12 @@ namespace storm {
              * @return The number of constants defined in the program.
              */
             std::size_t getNumberOfConstants() const;
+
+            /*!
+             * Retrieves the constants that are actually used in the program.
+             * @return
+             */
+            std::vector<Constant> usedConstants() const;
             
             /*!
              * Retrieves whether a global Boolean variable with the given name exists
@@ -597,13 +603,13 @@ namespace storm {
             /*!
              * Converts the PRISM model into an equivalent JANI model.
              */
-            storm::jani::Model toJani(bool allVariablesGlobal = false) const;
+            storm::jani::Model toJani(bool allVariablesGlobal = false, std::string suffix = "") const;
             
             /*!
              * Converts the PRISM model into an equivalent JANI model and retrieves possible label renamings that had
              * to be performed in the process.
              */
-            std::pair<storm::jani::Model, std::map<std::string, std::string>> toJaniWithLabelRenaming(bool allVariablesGlobal = false) const;
+            std::pair<storm::jani::Model, std::map<std::string, std::string>> toJaniWithLabelRenaming(bool allVariablesGlobal = false, std::string suffix = "") const;
             
         private:
             /*!

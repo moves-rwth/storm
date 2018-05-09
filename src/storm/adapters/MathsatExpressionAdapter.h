@@ -116,6 +116,8 @@ namespace storm {
                 msat_term leftResult = boost::any_cast<msat_term>(expression.getFirstOperand()->accept(*this, data));
                 msat_term rightResult = boost::any_cast<msat_term>(expression.getSecondOperand()->accept(*this, data));
 
+                msat_term result = leftResult;
+                int_fast64_t exponent;
 				switch (expression.getOperatorType()) {
 					case storm::expressions::BinaryNumericalFunctionExpression::OperatorType::Plus:
 						return msat_make_plus(env, leftResult, rightResult);
@@ -124,11 +126,21 @@ namespace storm {
 					case storm::expressions::BinaryNumericalFunctionExpression::OperatorType::Times:
 						return msat_make_times(env, leftResult, rightResult);
 					case storm::expressions::BinaryNumericalFunctionExpression::OperatorType::Divide:
-                        STORM_LOG_THROW(false, storm::exceptions::ExpressionEvaluationException, "Cannot evaluate expression: unsupported numerical binary operator: '/' (division) in expression.");
+                        return msat_make_divide(env, leftResult, rightResult);
 					case storm::expressions::BinaryNumericalFunctionExpression::OperatorType::Min:
 						return msat_make_term_ite(env, msat_make_leq(env, leftResult, rightResult), leftResult, rightResult);
 					case storm::expressions::BinaryNumericalFunctionExpression::OperatorType::Max:
 						return msat_make_term_ite(env, msat_make_leq(env, leftResult, rightResult), rightResult, leftResult);
+                    case storm::expressions::BinaryNumericalFunctionExpression::OperatorType::Power:
+                        exponent = expression.getSecondOperand()->evaluateAsInt();
+                        STORM_LOG_THROW(exponent >= 0, storm::exceptions::ExpressionEvaluationException, "Cannot evaluate expression with negative exponent.");
+                        --exponent;
+                        if (exponent > 0) {
+                            for (; exponent > 0; --exponent) {
+                                result = msat_make_times(env, result, leftResult);
+                            }
+                        }
+                        return result;
 					default:
                         STORM_LOG_THROW(false, storm::exceptions::ExpressionEvaluationException, "Cannot evaluate expression: unknown numerical binary operator '" << static_cast<uint_fast64_t>(expression.getOperatorType()) << "' in expression " << expression << ".");
 				}

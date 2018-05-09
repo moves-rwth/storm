@@ -13,7 +13,7 @@
 namespace storm {
     namespace prism {
         
-        storm::jani::Model ToJaniConverter::convert(storm::prism::Program const& program, bool allVariablesGlobal) {
+        storm::jani::Model ToJaniConverter::convert(storm::prism::Program const& program, bool allVariablesGlobal, std::string suffix) {
             std::shared_ptr<storm::expressions::ExpressionManager> manager = program.getManager().getSharedPointer();
                         
             // Start by creating an empty JANI model.
@@ -95,11 +95,11 @@ namespace storm {
                 }
             }
             
-            // Go through the labels and construct assignments to transient variables that are added to the loctions.
+            // Go through the labels and construct assignments to transient variables that are added to the locations.
             std::vector<storm::jani::Assignment> transientLocationAssignments;
             for (auto const& label : program.getLabels()) {
                 bool renameLabel = manager->hasVariable(label.getName()) || program.hasRewardModel(label.getName());
-                std::string finalLabelName = renameLabel ? "label_" + label.getName() : label.getName();
+                std::string finalLabelName = renameLabel ? "label_" + label.getName() + suffix : label.getName();
                 if (renameLabel) {
                     STORM_LOG_WARN_COND(!renameLabel, "Label '" << label.getName() << "' was renamed to '" << finalLabelName << "' in PRISM-to-JANI conversion, as another variable with that name already exists.");
                     labelRenaming[label.getName()] = finalLabelName;
@@ -161,7 +161,7 @@ namespace storm {
                 // Keep track of the action indices contained in this module.
                 std::set<uint_fast64_t> actionIndicesOfModule;
 
-                storm::jani::Automaton automaton(module.getName(), manager->declareIntegerVariable("_loc_prism2jani_" + module.getName()));
+                storm::jani::Automaton automaton(module.getName(), manager->declareIntegerVariable("_loc_prism2jani_" + module.getName() + "_" + suffix));
                 for (auto const& variable : module.getIntegerVariables()) {
                     storm::jani::BoundedIntegerVariable newIntegerVariable = *storm::jani::makeBoundedIntegerVariable(variable.getName(), variable.getExpressionVariable(), variable.hasInitialValue() ? boost::make_optional(variable.getInitialValueExpression()) : boost::none, false, variable.getLowerBoundExpression(), variable.getUpperBoundExpression());
                     std::set<uint_fast64_t> const& accessingModuleIndices = variablesToAccessingModuleIndices[variable.getExpressionVariable()];

@@ -29,9 +29,33 @@ namespace storm {
         }
         
         boost::any CloneVisitor::visit(BoundedUntilFormula const& f, boost::any const& data) const {
-            std::shared_ptr<Formula> left = boost::any_cast<std::shared_ptr<Formula>>(f.getLeftSubformula().accept(*this, data));
-            std::shared_ptr<Formula> right = boost::any_cast<std::shared_ptr<Formula>>(f.getRightSubformula().accept(*this, data));
-            return std::static_pointer_cast<Formula>(std::make_shared<BoundedUntilFormula>(f));
+            std::vector<boost::optional<TimeBound>> lowerBounds, upperBounds;
+            std::vector<TimeBoundReference> timeBoundReferences;
+            for (uint64_t i = 0; i < f.getDimension(); ++i) {
+                if (f.hasLowerBound(i)) {
+                    lowerBounds.emplace_back(TimeBound(f.isLowerBoundStrict(i), f.getLowerBound(i)));
+                } else {
+                    lowerBounds.emplace_back();
+                }
+                if (f.hasUpperBound(i)) {
+                    upperBounds.emplace_back(TimeBound(f.isUpperBoundStrict(i), f.getUpperBound(i)));
+                } else {
+                    upperBounds.emplace_back();
+                }
+                timeBoundReferences.push_back(f.getTimeBoundReference(i));
+            }
+            if (f.hasMultiDimensionalSubformulas()) {
+                std::vector<std::shared_ptr<Formula const>> leftSubformulas, rightSubformulas;
+                for (uint64_t i = 0; i < f.getDimension(); ++i) {
+                    leftSubformulas.push_back(boost::any_cast<std::shared_ptr<Formula>>(f.getLeftSubformula(i).accept(*this, data)));
+                    rightSubformulas.push_back(boost::any_cast<std::shared_ptr<Formula>>(f.getRightSubformula(i).accept(*this, data)));
+                }
+                return std::static_pointer_cast<Formula>(std::make_shared<BoundedUntilFormula>(leftSubformulas, rightSubformulas, lowerBounds, upperBounds, timeBoundReferences));
+            } else {
+                std::shared_ptr<Formula> left = boost::any_cast<std::shared_ptr<Formula>>(f.getLeftSubformula().accept(*this, data));
+                std::shared_ptr<Formula> right = boost::any_cast<std::shared_ptr<Formula>>(f.getRightSubformula().accept(*this, data));
+                return std::static_pointer_cast<Formula>(std::make_shared<BoundedUntilFormula>(left, right, lowerBounds, upperBounds, timeBoundReferences));
+            }
         }
         
         boost::any CloneVisitor::visit(ConditionalFormula const& f, boost::any const& data) const {

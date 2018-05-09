@@ -34,6 +34,18 @@ namespace storm {
         uint_fast64_t MemoryStructure::getNumberOfStates() const {
             return transitions.size();
         }
+        
+        uint_fast64_t MemoryStructure::getSuccessorMemoryState(uint_fast64_t const& currentMemoryState, uint_fast64_t const& modelTransitionIndex) const {
+            for (uint_fast64_t successorMemState = 0; successorMemState < getNumberOfStates(); ++successorMemState) {
+                boost::optional<storm::storage::BitVector> const& matrixEntry = transitions[currentMemoryState][successorMemState];
+                if ((matrixEntry) && matrixEntry.get().get(modelTransitionIndex)) {
+                    return successorMemState;
+                }
+            }
+            STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "The successor memorystate for the given transition could not be found.");
+            return getNumberOfStates();
+        }
+
             
         MemoryStructure MemoryStructure::product(MemoryStructure const& rhs) const {
             uint_fast64_t lhsNumStates = this->getTransitionMatrix().size();

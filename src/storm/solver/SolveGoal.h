@@ -93,8 +93,8 @@ namespace storm {
         };
         
         template<typename ValueType, typename MatrixType>
-        std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> configureMinMaxLinearEquationSolver(SolveGoal<ValueType>&& goal, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& factory, MatrixType&& matrix) {
-            std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = factory.create(std::forward<MatrixType>(matrix));
+        std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> configureMinMaxLinearEquationSolver(Environment const& env, SolveGoal<ValueType>&& goal, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& factory, MatrixType&& matrix) {
+            std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = factory.create(env, std::forward<MatrixType>(matrix));
             solver->setOptimizationDirection(goal.direction());
             if (goal.isBounded()) {
                 if (goal.boundIsALowerBound()) {
@@ -110,8 +110,8 @@ namespace storm {
         }
         
         template<typename ValueType, typename MatrixType>
-        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> configureLinearEquationSolver(SolveGoal<ValueType>&& goal, storm::solver::LinearEquationSolverFactory<ValueType> const& factory, MatrixType&& matrix) {
-            std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = factory.create(std::forward<MatrixType>(matrix));
+        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> configureLinearEquationSolver(Environment const& env, SolveGoal<ValueType>&& goal, storm::solver::LinearEquationSolverFactory<ValueType> const& factory, MatrixType&& matrix) {
+            std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = factory.create(env, std::forward<MatrixType>(matrix));
             if (goal.isBounded()) {
                 solver->setTerminationCondition(std::make_unique<TerminateIfFilteredExtremumExceedsThreshold<ValueType>>(goal.relevantValues(), goal.boundIsStrict(), goal.thresholdValue(), goal.minimize()));
             }
@@ -119,8 +119,8 @@ namespace storm {
         }
         
         template<typename MatrixType>
-        std::unique_ptr<storm::solver::LinearEquationSolver<storm::RationalFunction>> configureLinearEquationSolver(SolveGoal<storm::RationalFunction>&& goal, storm::solver::LinearEquationSolverFactory<storm::RationalFunction> const& factory, MatrixType&& matrix) {
-            std::unique_ptr<storm::solver::LinearEquationSolver<storm::RationalFunction>> solver = factory.create(std::forward<MatrixType>(matrix));
+        std::unique_ptr<storm::solver::LinearEquationSolver<storm::RationalFunction>> configureLinearEquationSolver(Environment const& env, SolveGoal<storm::RationalFunction>&& goal, storm::solver::LinearEquationSolverFactory<storm::RationalFunction> const& factory, MatrixType&& matrix) {
+            std::unique_ptr<storm::solver::LinearEquationSolver<storm::RationalFunction>> solver = factory.create(env, std::forward<MatrixType>(matrix));
             return solver;
         }
         

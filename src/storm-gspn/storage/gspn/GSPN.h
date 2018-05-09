@@ -154,7 +154,10 @@ namespace storm {
             void setTransitionLayoutInfo(uint64_t transitionId, LayoutInfo const& layout) const;
             void setPlaceLayoutInfo(std::map<uint64_t, LayoutInfo> const& placeLayout) const;
             void setTransitionLayoutInfo(std::map<uint64_t, LayoutInfo> const& transitionLayout) const;
-            
+
+            std::map<uint64_t, LayoutInfo> const& getPlaceLayoutInfos() const;
+
+            std::map<uint64_t, LayoutInfo> const& getTransitionLayoutInfos() const;
             
             /*!
              * Performe some checks
@@ -168,7 +171,14 @@ namespace storm {
             void toPnpro(std::ostream& stream) const;
             // TODO doc
             void toPnml(std::ostream& stream) const;
-            
+
+            /*!
+             * Export GSPN in Json format.
+             *
+             * @param stream Outputstream.
+             */
+            void toJson(std::ostream& stream) const;
+
             void writeStatsToStream(std::ostream& stream) const;
         private:
             storm::gspn::Place* getPlace(uint64_t id);

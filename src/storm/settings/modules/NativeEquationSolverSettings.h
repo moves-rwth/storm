@@ -4,6 +4,7 @@
 #include "storm/settings/modules/ModuleSettings.h"
 
 #include "storm/solver/MultiplicationStyle.h"
+#include "storm/solver/SolverSelectionOptions.h"
 
 namespace storm {
     namespace settings {
@@ -14,9 +15,6 @@ namespace storm {
              */
             class NativeEquationSolverSettings : public ModuleSettings {
             public:
-                // An enumeration of all available methods for solving linear equations.
-                enum class LinearEquationMethod { Jacobi, GaussSeidel, SOR, WalkerChae, Power, RationalSearch };
-                
                 // An enumeration of all available convergence criteria.
                 enum class ConvergenceCriterion { Absolute, Relative };
                 
@@ -44,7 +42,7 @@ namespace storm {
                  *
                  * @return The method to use.
                  */
-                LinearEquationMethod getLinearEquationSystemMethod() const;
+                storm::solver::NativeLinearEquationSolverMethod getLinearEquationSystemMethod() const;
                 
                 /*!
                  * Retrieves whether the maximal iteration count has been set.
@@ -96,12 +94,22 @@ namespace storm {
                 ConvergenceCriterion getConvergenceCriterion() const;
                 
                 /*!
+                 * Retrievew whether updates in interval iteration have to be made symmetrically
+                 */
+                bool isForceIntervalIterationSymmetricUpdatesSet() const;
+                
+                /*!
                  * Retrieves the multiplication style to use in the power method.
                  *
                  * @return The multiplication style.
                  */
                 storm::solver::MultiplicationStyle getPowerMethodMultiplicationStyle() const;
                 
+                /*!
+                 * Retrieves whether the  force bounds option has been set.
+                 */
+                bool isForceBoundsSet() const;
+               
                 bool check() const override;
                 
                 // The name of the module.
@@ -115,10 +123,11 @@ namespace storm {
                 static const std::string maximalIterationsOptionShortName;
                 static const std::string precisionOptionName;
                 static const std::string absoluteOptionName;
+                static const std::string intervalIterationSymmetricUpdatesOptionName;
                 static const std::string powerMethodMultiplicationStyleOptionName;
+                static const std::string forceBoundsOptionName;
+
             };
-            
-            std::ostream& operator<<(std::ostream& out, NativeEquationSolverSettings::LinearEquationMethod const& method);
             
         } // namespace modules
     } // namespace settings

@@ -319,7 +319,7 @@ namespace storm {
              * @return The resulting ADD.
              */
             InternalAdd<DdType::Sylvan, ValueType> swapVariables(std::vector<InternalBdd<DdType::Sylvan>> const& from, std::vector<InternalBdd<DdType::Sylvan>> const& to) const;
-
+            
             /*!
              * Permutes the given pairs of DD variables in the ADD. The pairs of meta variables have to be represented by
              * ADDs must have equal length.
@@ -619,6 +619,8 @@ namespace storm {
              * @return The value of the leaf.
              */
             static ValueType getValue(MTBDD const& node);
+            
+            std::string getStringId() const;
             
         private:
             /*!

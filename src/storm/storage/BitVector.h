@@ -317,6 +317,13 @@ namespace storm {
             void complement();
             
             /*!
+             * Increments the (unsigned) number represented by this BitVector by one.
+             * @note Index 0 is assumed to be the least significant bit.
+             * @note Wraps around, i.e., incrementing 11..1 yields 00..0.
+             */
+            void increment();
+            
+            /*!
              * Performs a logical "implies" with the given bit vector. In case the sizes of the bit vectors do not
              * match, only the matching portion is considered and the overlapping bits are set to 0.
              *
@@ -420,6 +427,11 @@ namespace storm {
              */
             void clear();
                         
+            /*!
+             * Sets all bits from the bit vector. Calling full() after this operation will yield true.
+             */
+            void fill();
+            
             /*!
              * Returns the number of bits that are set to true in this bit vector.
              *

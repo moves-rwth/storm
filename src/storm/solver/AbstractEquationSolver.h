@@ -3,10 +3,11 @@
 
 #include <memory>
 #include <chrono>
-
+#include <iostream>
 #include <boost/optional.hpp>
 
 #include "storm/solver/TerminationCondition.h"
+#include "storm/utility/ProgressMeasurement.h"
 
 namespace storm {
     namespace solver {
@@ -97,9 +98,23 @@ namespace storm {
             ValueType const& getLowerBound() const;
             
             /*!
+             * Retrieves the lower bound (if there is any).
+             * If the given flag is true and if there are only local bounds,
+             * the minimum of the local bounds is returned.
+             */
+            ValueType getLowerBound(bool convertLocalBounds) const;
+            
+            /*!
              * Retrieves the upper bound (if there is any).
              */
             ValueType const& getUpperBound() const;
+            
+           /*!
+             * Retrieves the upper bound (if there is any).
+             * If the given flag is true and if there are only local bounds,
+             * the maximum of the local bounds is returned.
+             */
+            ValueType getUpperBound(bool convertLocalBounds) const;
             
             /*!
              * Retrieves a vector containing the lower bounds (if there are any).
@@ -117,6 +132,11 @@ namespace storm {
             void setLowerBounds(std::vector<ValueType> const& values);
             
             /*!
+             * Sets lower bounds for the solution that can potentially be used by the solver.
+             */
+            void setLowerBounds(std::vector<ValueType>&& values);
+            
+            /*!
              * Sets upper bounds for the solution that can potentially be used by the solver.
              */
             void setUpperBounds(std::vector<ValueType> const& values);
@@ -130,6 +150,13 @@ namespace storm {
              * Sets bounds for the solution that can potentially be used by the solver.
              */
             void setBounds(std::vector<ValueType> const& lower, std::vector<ValueType> const& upper);
+            
+            void setBoundsFromOtherSolver(AbstractEquationSolver<ValueType> const& other);
+            
+            /*!
+             * Removes all specified solution bounds
+             */
+            void clearBounds();
             
             /*!
              * Retrieves whether progress is to be shown.
@@ -183,16 +210,8 @@ namespace storm {
             boost::optional<std::vector<ValueType>> upperBounds;
 
         private:
-            // A flag that indicates whether progress is to be shown.
-            bool showProgressFlag;
-            
-            // The delay between progress emission.
-            uint64_t showProgressDelay;
-            
-            // Time points that are used when showing progress.
-            mutable uint64_t iterationOfLastMessage;
-            mutable std::chrono::high_resolution_clock::time_point timeOfStart;
-            mutable std::chrono::high_resolution_clock::time_point timeOfLastMessage;
+            // Indicates the progress of this solver.
+            mutable boost::optional<storm::utility::ProgressMeasurement> progressMeasurement;
         };
         
     }

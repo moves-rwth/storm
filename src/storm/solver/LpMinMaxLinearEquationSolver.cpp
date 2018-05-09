@@ -1,31 +1,33 @@
 #include "storm/solver/LpMinMaxLinearEquationSolver.h"
 
+#include "storm/environment/solver/MinMaxSolverEnvironment.h"
 #include "storm/utility/vector.h"
 #include "storm/utility/macros.h"
-#include "storm/exceptions/InvalidSettingsException.h"
-#include "storm/exceptions/InvalidOperationException.h"
+#include "storm/exceptions/InvalidEnvironmentException.h"
 #include "storm/exceptions/UnexpectedException.h"
 
 namespace storm {
     namespace solver {
         
         template<typename ValueType>
-        LpMinMaxLinearEquationSolver<ValueType>::LpMinMaxLinearEquationSolver(std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory, std::unique_ptr<storm::utility::solver::LpSolverFactory<ValueType>>&& lpSolverFactory) : StandardMinMaxLinearEquationSolver<ValueType>(std::move(linearEquationSolverFactory)), lpSolverFactory(std::move(lpSolverFactory)) {
+        LpMinMaxLinearEquationSolver<ValueType>::LpMinMaxLinearEquationSolver(std::unique_ptr<storm::utility::solver::LpSolverFactory<ValueType>>&& lpSolverFactory) : lpSolverFactory(std::move(lpSolverFactory)) {
             // Intentionally left empty.
         }
         
         template<typename ValueType>
-        LpMinMaxLinearEquationSolver<ValueType>::LpMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory, std::unique_ptr<storm::utility::solver::LpSolverFactory<ValueType>>&& lpSolverFactory) : StandardMinMaxLinearEquationSolver<ValueType>(A, std::move(linearEquationSolverFactory)), lpSolverFactory(std::move(lpSolverFactory)) {
+        LpMinMaxLinearEquationSolver<ValueType>::LpMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, std::unique_ptr<storm::utility::solver::LpSolverFactory<ValueType>>&& lpSolverFactory) : StandardMinMaxLinearEquationSolver<ValueType>(A), lpSolverFactory(std::move(lpSolverFactory)) {
             // Intentionally left empty.
         }
         
         template<typename ValueType>
-        LpMinMaxLinearEquationSolver<ValueType>::LpMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType>&& A, std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory, std::unique_ptr<storm::utility::solver::LpSolverFactory<ValueType>>&& lpSolverFactory) : StandardMinMaxLinearEquationSolver<ValueType>(std::move(A), std::move(linearEquationSolverFactory)), lpSolverFactory(std::move(lpSolverFactory)) {
+        LpMinMaxLinearEquationSolver<ValueType>::LpMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType>&& A, std::unique_ptr<storm::utility::solver::LpSolverFactory<ValueType>>&& lpSolverFactory) : StandardMinMaxLinearEquationSolver<ValueType>(std::move(A)), lpSolverFactory(std::move(lpSolverFactory)) {
             // Intentionally left empty.
         }
         
         template<typename ValueType>
-        bool LpMinMaxLinearEquationSolver<ValueType>::internalSolveEquations(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+        bool LpMinMaxLinearEquationSolver<ValueType>::internalSolveEquations(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+            
+            STORM_LOG_THROW(env.solver().minMax().getMethod() == MinMaxMethod::LinearProgramming, storm::exceptions::InvalidEnvironmentException, "This min max solver does not support the selected technique.");
             
             // Set up the LP solver
             std::unique_ptr<storm::solver::LpSolver<ValueType>> solver = lpSolverFactory->create("");
@@ -108,9 +110,8 @@ namespace storm {
             StandardMinMaxLinearEquationSolver<ValueType>::clearCache();
         }
         
-        
         template<typename ValueType>
-        MinMaxLinearEquationSolverRequirements LpMinMaxLinearEquationSolver<ValueType>::getRequirements(boost::optional<storm::solver::OptimizationDirection> const& direction) const {
+        MinMaxLinearEquationSolverRequirements LpMinMaxLinearEquationSolver<ValueType>::getRequirements(Environment const& env, boost::optional<storm::solver::OptimizationDirection> const& direction, bool const& hasInitialScheduler) const {
             
             MinMaxLinearEquationSolverRequirements requirements;
             
@@ -119,54 +120,15 @@ namespace storm {
                 requirements.requireNoEndComponents();
             }
             
-            return  requirements;
-        }
-
-        
-        template<typename ValueType>
-        LpMinMaxLinearEquationSolverFactory<ValueType>::LpMinMaxLinearEquationSolverFactory(bool trackScheduler) : StandardMinMaxLinearEquationSolverFactory<ValueType>(MinMaxMethodSelection::LinearProgramming, trackScheduler), lpSolverFactory(std::make_unique<storm::utility::solver::LpSolverFactory<ValueType>>()) {
-            // Intentionally left empty
-        }
-        
-        template<typename ValueType>
-        LpMinMaxLinearEquationSolverFactory<ValueType>::LpMinMaxLinearEquationSolverFactory(std::unique_ptr<storm::utility::solver::LpSolverFactory<ValueType>>&& lpSolverFactory, bool trackScheduler) : StandardMinMaxLinearEquationSolverFactory<ValueType>(MinMaxMethodSelection::LinearProgramming, trackScheduler), lpSolverFactory(std::move(lpSolverFactory)) {
-            // Intentionally left empty
-        }
-       
-        template<typename ValueType>
-        LpMinMaxLinearEquationSolverFactory<ValueType>::LpMinMaxLinearEquationSolverFactory(std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory, std::unique_ptr<storm::utility::solver::LpSolverFactory<ValueType>>&& lpSolverFactory, bool trackScheduler) : StandardMinMaxLinearEquationSolverFactory<ValueType>(std::move(linearEquationSolverFactory), MinMaxMethodSelection::LinearProgramming, trackScheduler), lpSolverFactory(std::move(lpSolverFactory)) {
-            // Intentionally left empty
-        }
-        
-        template<typename ValueType>
-        std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> LpMinMaxLinearEquationSolverFactory<ValueType>::create() const {
-            STORM_LOG_ASSERT(this->lpSolverFactory, "Lp solver factory not initialized.");
-            STORM_LOG_ASSERT(this->linearEquationSolverFactory, "Linear equation solver factory not initialized.");
+            requirements.requireBounds(false);
             
-            std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> result = std::make_unique<LpMinMaxLinearEquationSolver<ValueType>>(this->linearEquationSolverFactory->clone(), this->lpSolverFactory->clone());
-            result->setTrackScheduler(this->isTrackSchedulerSet());
-            result->setRequirementsChecked(this->isRequirementsCheckedSet());
-            return result;
-        }
-        
-        template<typename ValueType>
-        void LpMinMaxLinearEquationSolverFactory<ValueType>::setMinMaxMethod(MinMaxMethodSelection const& newMethod) {
-            STORM_LOG_THROW(newMethod == MinMaxMethodSelection::LinearProgramming, storm::exceptions::InvalidOperationException, "The factory can only create linear programming based MinMax solvers.");
-            MinMaxLinearEquationSolverFactory<ValueType>::setMinMaxMethod(newMethod);
-        }
-        
-        template<typename ValueType>
-        void LpMinMaxLinearEquationSolverFactory<ValueType>::setMinMaxMethod(MinMaxMethod const& newMethod) {
-            STORM_LOG_THROW(newMethod == MinMaxMethod::LinearProgramming, storm::exceptions::InvalidOperationException, "The factory can only create linear programming based MinMax solvers.");
-            MinMaxLinearEquationSolverFactory<ValueType>::setMinMaxMethod(newMethod);
+            return  requirements;
         }
         
         template class LpMinMaxLinearEquationSolver<double>;
-        template class LpMinMaxLinearEquationSolverFactory<double>;
         
 #ifdef STORM_HAVE_CARL
         template class LpMinMaxLinearEquationSolver<storm::RationalNumber>;
-        template class LpMinMaxLinearEquationSolverFactory<storm::RationalNumber>;
 #endif
     }
 }

@@ -15,6 +15,7 @@
 
 #include "storm/settings/SettingsManager.h"
 
+#include "storm/utility/Stopwatch.h"
 #include "storm/utility/dd.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/solver.h"
@@ -99,7 +100,7 @@ namespace storm {
             MenuGame<DdType, ValueType> PrismMenuGameAbstractor<DdType, ValueType>::abstract() {
                 if (refinementPerformed) {
                     currentGame = buildGame();
-                    refinementPerformed = true;
+                    refinementPerformed = false;
                 }
                 return *currentGame;
             }
@@ -147,11 +148,47 @@ namespace storm {
                 auto auxVariables = abstractionInformation.getAuxVariableSet(0, abstractionInformation.getAuxVariableCount());
                 variablesToAbstract.insert(auxVariables.begin(), auxVariables.end());
                 
+                storm::utility::Stopwatch relevantStatesWatch(true);
+                storm::dd::Bdd<DdType> nonTerminalStates = this->abstractionInformation.getDdManager().getBddOne();
+                if (this->isRestrictToRelevantStatesSet()) {
+                    // Compute which states are non-terminal.
+                    for (auto const& expression : this->terminalStateExpressions) {
+                        nonTerminalStates &= !this->getStates(expression);
+                    }
+                    if (this->hasTargetStateExpression()) {
+                        nonTerminalStates &= !this->getStates(this->getTargetStateExpression());
+                    }
+                }
+                relevantStatesWatch.stop();
+                
                 // Do a reachability analysis on the raw transition relation.
-                storm::dd::Bdd<DdType> transitionRelation = game.bdd.existsAbstract(variablesToAbstract);
+                storm::dd::Bdd<DdType> transitionRelation = nonTerminalStates && game.bdd.existsAbstract(variablesToAbstract);
                 storm::dd::Bdd<DdType> initialStates = initialStateAbstractor.getAbstractStates();
                 initialStates.addMetaVariables(abstractionInformation.getSourcePredicateVariables());
                 storm::dd::Bdd<DdType> reachableStates = storm::utility::dd::computeReachableStates(initialStates, transitionRelation, abstractionInformation.getSourceVariables(), abstractionInformation.getSuccessorVariables());
+                
+                relevantStatesWatch.start();
+                if (this->isRestrictToRelevantStatesSet() && this->hasTargetStateExpression()) {
+                    // Cut transition relation to the reachable states for backward search.
+                    transitionRelation &= reachableStates;
+                
+                    // Get the target state BDD.
+                    storm::dd::Bdd<DdType> targetStates = reachableStates && this->getStates(this->getTargetStateExpression());
+                    
+                    // In the presence of target states, we keep only states that can reach the target states.
+                    reachableStates = storm::utility::dd::computeBackwardsReachableStates(targetStates, reachableStates && !initialStates, transitionRelation, abstractionInformation.getSourceVariables(), abstractionInformation.getSuccessorVariables()) || initialStates;
+                 
+                    // Cut the transition relation to the 'extended backward reachable states', so we have the appropriate self-
+                    // loops of (now) deadlock states.
+                    transitionRelation &= reachableStates;
+                    
+                    // Include all successors of reachable states, because the backward search otherwise potentially
+                    // cuts probability 0 choices of these states.
+                    reachableStates |= reachableStates.relationalProduct(transitionRelation, abstractionInformation.getSourceVariables(), abstractionInformation.getSuccessorVariables());
+                    relevantStatesWatch.stop();
+                    
+                    STORM_LOG_TRACE("Restricting to relevant states took " << relevantStatesWatch.getTimeInMilliseconds() << "ms.");
+                }
                 
                 // Find the deadlock states in the model. Note that this does not find the 'deadlocks' in bottom states,
                 // as the bottom states are not contained in the reachable states.
@@ -201,6 +238,16 @@ namespace storm {
             template <storm::dd::DdType DdType, typename ValueType>
             void PrismMenuGameAbstractor<DdType, ValueType>::exportToDot(std::string const& filename, storm::dd::Bdd<DdType> const& highlightStates, storm::dd::Bdd<DdType> const& filter) const {
                 this->exportToDot(*currentGame, filename, highlightStates, filter);
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
+            uint64_t PrismMenuGameAbstractor<DdType, ValueType>::getNumberOfPredicates() const {
+                return abstractionInformation.getNumberOfPredicates();
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
+            void PrismMenuGameAbstractor<DdType, ValueType>::addTerminalStates(storm::expressions::Expression const& expression) {
+                terminalStateExpressions.emplace_back(expression);
             }
             
             // Explicitly instantiate the class.

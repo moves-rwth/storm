@@ -49,7 +49,7 @@ namespace storm {
         }
         
         template<typename ModelType, typename StateType>
-        std::unique_ptr<CheckResult> SparseExplorationModelChecker<ModelType, StateType>::computeUntilProbabilities(CheckTask<storm::logic::UntilFormula, ValueType> const& checkTask) {
+        std::unique_ptr<CheckResult> SparseExplorationModelChecker<ModelType, StateType>::computeUntilProbabilities(Environment const& env, CheckTask<storm::logic::UntilFormula, ValueType> const& checkTask) {
             storm::logic::UntilFormula const& untilFormula = checkTask.getFormula();
             storm::logic::Formula const& conditionFormula = untilFormula.getLeftSubformula();
             storm::logic::Formula const& targetFormula = untilFormula.getRightSubformula();
@@ -341,7 +341,7 @@ namespace storm {
                                });
                 } else if (explorationInformation.useProbabilityHeuristic()) {
                     std::transform(row.begin(), row.end(), probabilities.begin(),
-                                   [&bounds, &explorationInformation] (storm::storage::MatrixEntry<StateType, ValueType> const& entry) {
+                                   [] (storm::storage::MatrixEntry<StateType, ValueType> const& entry) {
                                        return entry.getValue();
                                    });
                 }

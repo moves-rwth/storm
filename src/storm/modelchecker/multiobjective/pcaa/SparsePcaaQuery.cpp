@@ -5,8 +5,6 @@
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/modelchecker/multiobjective/Objective.h"
-#include "storm/modelchecker/multiobjective/pcaa/SparseMdpPcaaWeightVectorChecker.h"
-#include "storm/modelchecker/multiobjective/pcaa/SparseMaPcaaWeightVectorChecker.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/MultiObjectiveSettings.h"
 #include "storm/storage/geometry/Hyperrectangle.h"
@@ -22,36 +20,15 @@ namespace storm {
             
             
             template <class SparseModelType, typename GeometryValueType>
-            SparsePcaaQuery<SparseModelType, GeometryValueType>::SparsePcaaQuery(SparseMultiObjectivePreprocessorReturnType<SparseModelType>& preprocessorResult) :
-                originalModel(preprocessorResult.originalModel), originalFormula(preprocessorResult.originalFormula),
-                preprocessedModel(std::move(*preprocessorResult.preprocessedModel)), objectives(std::move(preprocessorResult.objectives)) {
-                
-                initializeWeightVectorChecker(preprocessedModel, objectives, preprocessorResult.possibleECChoices, preprocessorResult.possibleBottomStates);
+            SparsePcaaQuery<SparseModelType, GeometryValueType>::SparsePcaaQuery(SparseMultiObjectivePreprocessorResult<SparseModelType>& preprocessorResult) :
+                originalModel(preprocessorResult.originalModel), originalFormula(preprocessorResult.originalFormula), objectives(preprocessorResult.objectives) {
+
+                this->weightVectorChecker = WeightVectorCheckerFactory<SparseModelType>::create(preprocessorResult);
+
                 this->diracWeightVectorsToBeChecked = storm::storage::BitVector(this->objectives.size(), true);
                 this->overApproximation = storm::storage::geometry::Polytope<GeometryValueType>::createUniversalPolytope();
                 this->underApproximation = storm::storage::geometry::Polytope<GeometryValueType>::createEmptyPolytope();
             }
-            
-            template<>
-            void SparsePcaaQuery<storm::models::sparse::Mdp<double>, storm::RationalNumber>::initializeWeightVectorChecker(storm::models::sparse::Mdp<double> const& model, std::vector<Objective<double>> const& objectives, storm::storage::BitVector const& possibleECActions, storm::storage::BitVector const& possibleBottomStates) {
-                this->weightVectorChecker = std::unique_ptr<SparsePcaaWeightVectorChecker<storm::models::sparse::Mdp<double>>>(new SparseMdpPcaaWeightVectorChecker<storm::models::sparse::Mdp<double>>(model, objectives, possibleECActions, possibleBottomStates));
-            }
-            
-            template<>
-            void SparsePcaaQuery<storm::models::sparse::Mdp<storm::RationalNumber>, storm::RationalNumber>::initializeWeightVectorChecker(storm::models::sparse::Mdp<storm::RationalNumber> const& model, std::vector<Objective<storm::RationalNumber>> const& objectives, storm::storage::BitVector const& possibleECActions, storm::storage::BitVector const& possibleBottomStates) {
-                this->weightVectorChecker = std::unique_ptr<SparsePcaaWeightVectorChecker<storm::models::sparse::Mdp<storm::RationalNumber>>>(new SparseMdpPcaaWeightVectorChecker<storm::models::sparse::Mdp<storm::RationalNumber>>(model, objectives, possibleECActions, possibleBottomStates));
-            }
-            
-            template<>
-            void SparsePcaaQuery<storm::models::sparse::MarkovAutomaton<double>, storm::RationalNumber>::initializeWeightVectorChecker(storm::models::sparse::MarkovAutomaton<double> const& model, std::vector<Objective<double>> const& objectives, storm::storage::BitVector const& possibleECActions, storm::storage::BitVector const& possibleBottomStates) {
-                this->weightVectorChecker = std::unique_ptr<SparsePcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>>(new SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>(model, objectives, possibleECActions, possibleBottomStates));
-            }
-            
-            template<>
-            void SparsePcaaQuery<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>, storm::RationalNumber>::initializeWeightVectorChecker(storm::models::sparse::MarkovAutomaton<storm::RationalNumber> const& model, std::vector<Objective<storm::RationalNumber>> const& objectives, storm::storage::BitVector const& possibleECActions, storm::storage::BitVector const& possibleBottomStates) {
-                this->weightVectorChecker = std::unique_ptr<SparsePcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>>(new SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>(model, objectives, possibleECActions, possibleBottomStates));
-            }
-            
             
             template <class SparseModelType, typename GeometryValueType>
             typename SparsePcaaQuery<SparseModelType, GeometryValueType>::WeightVector SparsePcaaQuery<SparseModelType, GeometryValueType>::findSeparatingVector(Point const& pointToBeSeparated) {
@@ -96,10 +73,10 @@ namespace storm {
             }
             
             template <class SparseModelType, typename GeometryValueType>
-            void SparsePcaaQuery<SparseModelType, GeometryValueType>::performRefinementStep(WeightVector&& direction) {
+            void SparsePcaaQuery<SparseModelType, GeometryValueType>::performRefinementStep(Environment const& env, WeightVector&& direction) {
                 // Normalize the direction vector so that the entries sum up to one
                 storm::utility::vector::scaleVectorInPlace(direction, storm::utility::one<GeometryValueType>() / std::accumulate(direction.begin(), direction.end(), storm::utility::zero<GeometryValueType>()));
-                weightVectorChecker->check(storm::utility::vector::convertNumericVector<typename SparseModelType::ValueType>(direction));
+                weightVectorChecker->check(env, storm::utility::vector::convertNumericVector<typename SparseModelType::ValueType>(direction));
                 STORM_LOG_DEBUG("weighted objectives checker result (under approximation) is " << storm::utility::vector::toString(storm::utility::vector::convertNumericVector<double>(weightVectorChecker->getUnderApproximationOfInitialStateResults())));
                 RefinementStep step;
                 step.weightVector = direction;
@@ -251,7 +228,7 @@ namespace storm {
                 for(auto const& v : underApproxVertices) {
                     pointsForPlotting.push_back(storm::utility::vector::convertNumericVector<double>(v));
                 }
-                storm::utility::exportDataToCSVFile(destinationDir + "underapproximation.csv", pointsForPlotting, columnHeaders);
+                storm::utility::exportDataToCSVFile<double, std::string>(destinationDir + "underapproximation.csv", pointsForPlotting, columnHeaders);
                 
                 pointsForPlotting.clear();
                 overApproxVertices = transformedOverApprox->intersection(boundariesAsPolytope)->getVerticesInClockwiseOrder();
@@ -259,14 +236,14 @@ namespace storm {
                 for(auto const& v : overApproxVertices) {
                     pointsForPlotting.push_back(storm::utility::vector::convertNumericVector<double>(v));
                 }
-                storm::utility::exportDataToCSVFile(destinationDir + "overapproximation.csv", pointsForPlotting, columnHeaders);
+                storm::utility::exportDataToCSVFile<double, std::string>(destinationDir + "overapproximation.csv", pointsForPlotting, columnHeaders);
                 
                 pointsForPlotting.clear();
                 pointsForPlotting.reserve(paretoPoints.size());
                 for(auto const& v : paretoPoints) {
                     pointsForPlotting.push_back(storm::utility::vector::convertNumericVector<double>(v));
                 }
-                storm::utility::exportDataToCSVFile(destinationDir + "paretopoints.csv", pointsForPlotting, columnHeaders);
+                storm::utility::exportDataToCSVFile<double, std::string>(destinationDir + "paretopoints.csv", pointsForPlotting, columnHeaders);
                 
                 pointsForPlotting.clear();
                 auto boundVertices = boundariesAsPolytope->getVerticesInClockwiseOrder();
@@ -274,7 +251,7 @@ namespace storm {
                 for(auto const& v : boundVertices) {
                     pointsForPlotting.push_back(storm::utility::vector::convertNumericVector<double>(v));
                 }
-                storm::utility::exportDataToCSVFile(destinationDir + "boundaries.csv", pointsForPlotting, columnHeaders);
+                storm::utility::exportDataToCSVFile<double, std::string>(destinationDir + "boundaries.csv", pointsForPlotting, columnHeaders);
             }
             
 #ifdef STORM_HAVE_CARL

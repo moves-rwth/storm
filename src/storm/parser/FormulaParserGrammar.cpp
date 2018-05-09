@@ -26,7 +26,7 @@ namespace storm {
             instantaneousRewardFormula = (qi::lit("I=") > expressionParser)[qi::_val = phoenix::bind(&FormulaParserGrammar::createInstantaneousRewardFormula, phoenix::ref(*this), qi::_1)];
             instantaneousRewardFormula.name("instantaneous reward formula");
             
-            cumulativeRewardFormula = ((qi::lit("C<=")[qi::_a = false] | qi::lit("C<")[qi::_a = true]) > expressionParser)[qi::_val = phoenix::bind(&FormulaParserGrammar::createCumulativeRewardFormula, phoenix::ref(*this), qi::_1, qi::_a)];
+            cumulativeRewardFormula = (qi::lit("C") >> timeBounds)[qi::_val = phoenix::bind(&FormulaParserGrammar::createCumulativeRewardFormula, phoenix::ref(*this), qi::_1)];
             cumulativeRewardFormula.name("cumulative reward formula");
             
             totalRewardFormula = (qi::lit("C"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createTotalRewardFormula, phoenix::ref(*this))];
@@ -59,7 +59,7 @@ namespace storm {
             notStateFormula = (unaryBooleanOperator_ >> atomicStateFormulaWithoutExpression)[qi::_val = phoenix::bind(&FormulaParserGrammar::createUnaryBooleanStateFormula, phoenix::ref(*this), qi::_2, qi::_1)] | atomicStateFormula[qi::_val = qi::_1];
             notStateFormula.name("negation formula");
             
-            eventuallyFormula = (qi::lit("F") >> -timeBound >> pathFormulaWithoutUntil(qi::_r1))[qi::_val = phoenix::bind(&FormulaParserGrammar::createEventuallyFormula, phoenix::ref(*this), qi::_1, qi::_r1, qi::_2)];
+            eventuallyFormula = (qi::lit("F") >> (-timeBounds) >> pathFormulaWithoutUntil(qi::_r1))[qi::_val = phoenix::bind(&FormulaParserGrammar::createEventuallyFormula, phoenix::ref(*this), qi::_1, qi::_r1, qi::_2)];
             eventuallyFormula.name("eventually formula");
             
             globallyFormula = (qi::lit("G") >> pathFormulaWithoutUntil(qi::_r1))[qi::_val = phoenix::bind(&FormulaParserGrammar::createGloballyFormula, phoenix::ref(*this), qi::_1)];
@@ -71,17 +71,25 @@ namespace storm {
             pathFormulaWithoutUntil = eventuallyFormula(qi::_r1) | globallyFormula(qi::_r1) | nextFormula(qi::_r1) | stateFormula;
             pathFormulaWithoutUntil.name("path formula");
             
-            untilFormula = pathFormulaWithoutUntil(qi::_r1)[qi::_val = qi::_1] >> *(qi::lit("U") >> -timeBound >> pathFormulaWithoutUntil(qi::_r1))[qi::_val = phoenix::bind(&FormulaParserGrammar::createUntilFormula, phoenix::ref(*this), qi::_val, qi::_1, qi::_2)];
+            untilFormula = pathFormulaWithoutUntil(qi::_r1)[qi::_val = qi::_1] >> *(qi::lit("U") >> (-timeBounds) >> pathFormulaWithoutUntil(qi::_r1))[qi::_val = phoenix::bind(&FormulaParserGrammar::createUntilFormula, phoenix::ref(*this), qi::_val, qi::_1, qi::_2)];
             untilFormula.name("until formula");
             
             conditionalFormula = untilFormula(qi::_r1)[qi::_val = qi::_1] >> *(qi::lit("||") >> untilFormula(storm::logic::FormulaContext::Probability))[qi::_val = phoenix::bind(&FormulaParserGrammar::createConditionalFormula, phoenix::ref(*this), qi::_val, qi::_1, qi::_r1)];
             conditionalFormula.name("conditional formula");
             
-            timeBound = ((-rewardModelName >> qi::lit("[")) > expressionParser > qi::lit(",") > expressionParser > qi::lit("]"))
+            timeBoundReference = (-qi::lit("rew") >> rewardModelName)[qi::_val = phoenix::bind(&FormulaParserGrammar::createTimeBoundReference, phoenix::ref(*this), storm::logic::TimeBoundType::Reward, qi::_1)]
+                                 | (qi::lit("steps"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createTimeBoundReference, phoenix::ref(*this), storm::logic::TimeBoundType::Steps, boost::none)]
+                                 | (-qi::lit("time"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createTimeBoundReference, phoenix::ref(*this), storm::logic::TimeBoundType::Time, boost::none)];
+            timeBoundReference.name("time bound reference");
+            
+            timeBound = ((timeBoundReference >> qi::lit("[")) > expressionParser > qi::lit(",") > expressionParser > qi::lit("]"))
                             [qi::_val = phoenix::bind(&FormulaParserGrammar::createTimeBoundFromInterval, phoenix::ref(*this), qi::_2, qi::_3, qi::_1)]
-                        | (-rewardModelName >> (qi::lit("<=")[qi::_a = true, qi::_b = false] | qi::lit("<")[qi::_a = true, qi::_b = true] | qi::lit(">=")[qi::_a = false, qi::_b = false] | qi::lit(">")[qi::_a = false, qi::_b = true]) >> expressionParser)
+                        | ( timeBoundReference >> (qi::lit("<=")[qi::_a = true, qi::_b = false] | qi::lit("<")[qi::_a = true, qi::_b = true] | qi::lit(">=")[qi::_a = false, qi::_b = false] | qi::lit(">")[qi::_a = false, qi::_b = true]) >> expressionParser)
                             [qi::_val = phoenix::bind(&FormulaParserGrammar::createTimeBoundFromSingleBound, phoenix::ref(*this), qi::_2, qi::_a, qi::_b, qi::_1)];
             timeBound.name("time bound");
+            
+            timeBounds = (timeBound % qi::lit(",")) | (((-qi::lit("^") >> qi::lit("{")) >> (timeBound % qi::lit(","))) >> qi::lit("}"));
+            timeBounds.name("time bounds");
             
             pathFormula = conditionalFormula(qi::_r1);
             pathFormula.name("path formula");
@@ -113,10 +121,10 @@ namespace storm {
             orStateFormula = andStateFormula[qi::_val = qi::_1] >> *(qi::lit("|") >> andStateFormula)[qi::_val = phoenix::bind(&FormulaParserGrammar::createBinaryBooleanStateFormula, phoenix::ref(*this), qi::_val, qi::_1, storm::logic::BinaryBooleanStateFormula::OperatorType::Or)];
             orStateFormula.name("or state formula");
             
-            multiObjectiveFormula = (qi::lit("multi") > qi::lit("(") >> (stateFormula  % qi::lit(",")) >> qi::lit(")"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createMultiObjectiveFormula, phoenix::ref(*this), qi::_1)];
-            multiObjectiveFormula.name("Multi-objective formula");
+            multiFormula = (qi::lit("multi") > qi::lit("(") >> ((pathFormula(storm::logic::FormulaContext::Probability) | stateFormula) % qi::lit(",")) >> qi::lit(")"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createMultiFormula, phoenix::ref(*this), qi::_1)];
+            multiFormula.name("Multi formula");
             
-            stateFormula = (orStateFormula | multiObjectiveFormula);
+            stateFormula = (orStateFormula | multiFormula);
             stateFormula.name("state formula");
             
             identifier %= qi::as_string[qi::raw[qi::lexeme[((qi::alpha | qi::char_('_') | qi::char_('.')) >> *(qi::alnum | qi::char_('_')))]]];
@@ -139,7 +147,7 @@ namespace storm {
             start = (qi::eps >> filterProperty[phoenix::push_back(qi::_val, qi::_1)]
                      | qi::eps(phoenix::bind(&FormulaParserGrammar::areConstantDefinitionsAllowed, phoenix::ref(*this))) >> constantDefinition
                      | qi::eps)
-                     % +(qi::char_("\n;")) >> qi::skip(boost::spirit::ascii::space | qi::lit("//") >> *(qi::char_ - (qi::eol | qi::eoi)))[qi::eps] >> qi::eoi;
+                     % +(qi::char_("\n;")) >> qi::skip(storm::spirit_encoding::space_type() | qi::lit("//") >> *(qi::char_ - (qi::eol | qi::eoi)))[qi::eps] >> qi::eoi;
             start.name("start");
             
             // Enable the following lines to print debug output for most the rules.
@@ -166,7 +174,7 @@ namespace storm {
 //            debug(cumulativeRewardFormula);
 //            debug(totalRewardFormula);
 //            debug(instantaneousRewardFormula);
-//            debug(multiObjectiveFormula);
+//            debug(multiFormula);
             
             // Enable error reporting.
             qi::on_error<qi::fail>(start, handler(qi::_1, qi::_2, qi::_3, qi::_4));
@@ -193,7 +201,7 @@ namespace storm {
             qi::on_error<qi::fail>(cumulativeRewardFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
             qi::on_error<qi::fail>(totalRewardFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
             qi::on_error<qi::fail>(instantaneousRewardFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
-            qi::on_error<qi::fail>(multiObjectiveFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+            qi::on_error<qi::fail>(multiFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
         }
         
         void FormulaParserGrammar::addIdentifierExpression(std::string const& identifier, storm::expressions::Expression const& expression) {
@@ -215,20 +223,29 @@ namespace storm {
             return static_cast<bool>(manager);
         }
         
-        std::tuple<boost::optional<storm::logic::TimeBound>, boost::optional<storm::logic::TimeBound>, boost::optional<std::string>> FormulaParserGrammar::createTimeBoundFromInterval(storm::expressions::Expression const& lowerBound, storm::expressions::Expression const& upperBound, boost::optional<std::string> const& rewardName) const {
+        std::shared_ptr<storm::logic::TimeBoundReference> FormulaParserGrammar::createTimeBoundReference(storm::logic::TimeBoundType const& type, boost::optional<std::string> const& rewardModelName) const {
+            if (type == storm::logic::TimeBoundType::Reward) {
+                STORM_LOG_THROW(rewardModelName, storm::exceptions::WrongFormatException, "Reward bound does not specify a reward model name.");
+                return std::make_shared<storm::logic::TimeBoundReference>(rewardModelName.get());
+            } else {
+                return std::make_shared<storm::logic::TimeBoundReference>(type);
+            }
+        }
+        
+        std::tuple<boost::optional<storm::logic::TimeBound>, boost::optional<storm::logic::TimeBound>, std::shared_ptr<storm::logic::TimeBoundReference>> FormulaParserGrammar::createTimeBoundFromInterval(storm::expressions::Expression const& lowerBound, storm::expressions::Expression const& upperBound, std::shared_ptr<storm::logic::TimeBoundReference> const& timeBoundReference) const {
             // As soon as it somehow does not break everything anymore, I will change return types here.
 
             storm::logic::TimeBound lower(false, lowerBound);
             storm::logic::TimeBound upper(false, upperBound);
-            return std::make_tuple(lower, upper, rewardName);
+            return std::make_tuple(lower, upper, timeBoundReference);
         }
         
-        std::tuple<boost::optional<storm::logic::TimeBound>, boost::optional<storm::logic::TimeBound>, boost::optional<std::string>> FormulaParserGrammar::createTimeBoundFromSingleBound(storm::expressions::Expression const& bound, bool upperBound, bool strict, boost::optional<std::string> const& rewardName) const {
+        std::tuple<boost::optional<storm::logic::TimeBound>, boost::optional<storm::logic::TimeBound>, std::shared_ptr<storm::logic::TimeBoundReference>> FormulaParserGrammar::createTimeBoundFromSingleBound(storm::expressions::Expression const& bound, bool upperBound, bool strict, std::shared_ptr<storm::logic::TimeBoundReference> const& timeBoundReference) const {
             // As soon as it somehow does not break everything anymore, I will change return types here.
             if (upperBound) {
-                return std::make_tuple(boost::none, storm::logic::TimeBound(strict, bound), rewardName);
+                return std::make_tuple(boost::none, storm::logic::TimeBound(strict, bound), timeBoundReference);
             } else {
-                return std::make_tuple(storm::logic::TimeBound(strict, bound), boost::none, rewardName);
+                return std::make_tuple(storm::logic::TimeBound(strict, bound), boost::none, timeBoundReference);
             }
         }
         
@@ -236,8 +253,16 @@ namespace storm {
             return std::shared_ptr<storm::logic::Formula const>(new storm::logic::InstantaneousRewardFormula(timeBound));
         }
         
-        std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createCumulativeRewardFormula(storm::expressions::Expression const& timeBound, bool strict) const {
-            return std::shared_ptr<storm::logic::Formula const>(new storm::logic::CumulativeRewardFormula(storm::logic::TimeBound(strict, timeBound)));
+        std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createCumulativeRewardFormula(std::vector<std::tuple<boost::optional<storm::logic::TimeBound>, boost::optional<storm::logic::TimeBound>, std::shared_ptr<storm::logic::TimeBoundReference>>> const& timeBounds) const {
+            std::vector<storm::logic::TimeBound> bounds;
+            std::vector<storm::logic::TimeBoundReference> timeBoundReferences;
+            for (auto const& timeBound : timeBounds) {
+                STORM_LOG_THROW(!std::get<0>(timeBound), storm::exceptions::WrongFormatException, "Cumulative reward formulas with lower time bound are not allowed.");
+                STORM_LOG_THROW(std::get<1>(timeBound), storm::exceptions::WrongFormatException, "Cumulative reward formulas require an upper bound.");
+                bounds.push_back(std::get<1>(timeBound).get());
+                timeBoundReferences.emplace_back(*std::get<2>(timeBound));
+            }
+            return std::shared_ptr<storm::logic::Formula const>(new storm::logic::CumulativeRewardFormula(bounds, timeBoundReferences));
         }
         
         std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createTotalRewardFormula() const {
@@ -261,13 +286,16 @@ namespace storm {
             return std::shared_ptr<storm::logic::Formula const>(new storm::logic::AtomicLabelFormula(label));
         }
         
-        std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createEventuallyFormula(boost::optional<std::tuple<boost::optional<storm::logic::TimeBound>, boost::optional<storm::logic::TimeBound>, boost::optional<std::string>>> const& timeBound, storm::logic::FormulaContext context, std::shared_ptr<storm::logic::Formula const> const& subformula) const {
-            if (timeBound) {
-                if (std::get<2>(timeBound.get())) {
-                    return std::shared_ptr<storm::logic::Formula const>(new storm::logic::BoundedUntilFormula(createBooleanLiteralFormula(true), subformula, std::get<0>(timeBound.get()), std::get<1>(timeBound.get()), storm::logic::TimeBoundReference(std::get<2>(timeBound.get()).get())));
-                } else {
-                    return std::shared_ptr<storm::logic::Formula const>(new storm::logic::BoundedUntilFormula(createBooleanLiteralFormula(true), subformula, std::get<0>(timeBound.get()), std::get<1>(timeBound.get()), storm::logic::TimeBoundReference(storm::logic::TimeBoundType::Time)));
+        std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createEventuallyFormula(boost::optional<std::vector<std::tuple<boost::optional<storm::logic::TimeBound>, boost::optional<storm::logic::TimeBound>, std::shared_ptr<storm::logic::TimeBoundReference>>>> const& timeBounds, storm::logic::FormulaContext context, std::shared_ptr<storm::logic::Formula const> const& subformula) const {
+            if (timeBounds && !timeBounds.get().empty()) {
+                std::vector<boost::optional<storm::logic::TimeBound>> lowerBounds, upperBounds;
+                std::vector<storm::logic::TimeBoundReference> timeBoundReferences;
+                for (auto const& timeBound : timeBounds.get()) {
+                    lowerBounds.push_back(std::get<0>(timeBound));
+                    upperBounds.push_back(std::get<1>(timeBound));
+                    timeBoundReferences.emplace_back(*std::get<2>(timeBound));
                 }
+                return std::shared_ptr<storm::logic::Formula const>(new storm::logic::BoundedUntilFormula(createBooleanLiteralFormula(true), subformula, lowerBounds, upperBounds, timeBoundReferences));
             } else {
                 return std::shared_ptr<storm::logic::Formula const>(new storm::logic::EventuallyFormula(subformula, context));
             }
@@ -281,14 +309,16 @@ namespace storm {
             return std::shared_ptr<storm::logic::Formula const>(new storm::logic::NextFormula(subformula));
         }
         
-        std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createUntilFormula(std::shared_ptr<storm::logic::Formula const> const& leftSubformula, boost::optional<std::tuple<boost::optional<storm::logic::TimeBound>, boost::optional<storm::logic::TimeBound>, boost::optional<std::string>>> const& timeBound, std::shared_ptr<storm::logic::Formula const> const& rightSubformula) {
-            if (timeBound) {
-                if (std::get<2>(timeBound.get())) {
-                    return std::shared_ptr<storm::logic::Formula const>(new storm::logic::BoundedUntilFormula(leftSubformula, rightSubformula, std::get<0>(timeBound.get()), std::get<1>(timeBound.get()), storm::logic::TimeBoundReference(std::get<2>(timeBound.get()).get())));
-                } else {
-                    return std::shared_ptr<storm::logic::Formula const>(new storm::logic::BoundedUntilFormula(leftSubformula, rightSubformula, std::get<0>(timeBound.get()), std::get<1>(timeBound.get()), storm::logic::TimeBoundReference(storm::logic::TimeBoundType::Time)));
+        std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createUntilFormula(std::shared_ptr<storm::logic::Formula const> const& leftSubformula, boost::optional<std::vector<std::tuple<boost::optional<storm::logic::TimeBound>, boost::optional<storm::logic::TimeBound>, std::shared_ptr<storm::logic::TimeBoundReference>>>> const& timeBounds, std::shared_ptr<storm::logic::Formula const> const& rightSubformula) {
+            if (timeBounds && !timeBounds.get().empty()) {
+                std::vector<boost::optional<storm::logic::TimeBound>> lowerBounds, upperBounds;
+                std::vector<storm::logic::TimeBoundReference> timeBoundReferences;
+                for (auto const& timeBound : timeBounds.get()) {
+                    lowerBounds.push_back(std::get<0>(timeBound));
+                    upperBounds.push_back(std::get<1>(timeBound));
+                    timeBoundReferences.emplace_back(*std::get<2>(timeBound));
                 }
-
+                return std::shared_ptr<storm::logic::Formula const>(new storm::logic::BoundedUntilFormula(leftSubformula, rightSubformula, lowerBounds, upperBounds, timeBoundReferences));
             } else {
                 return std::shared_ptr<storm::logic::Formula const>(new storm::logic::UntilFormula(leftSubformula, rightSubformula));
             }
@@ -343,8 +373,40 @@ namespace storm {
             }
         }
         
-        std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createMultiObjectiveFormula(std::vector<std::shared_ptr<storm::logic::Formula const>> const& subformulas) {
-            return std::shared_ptr<storm::logic::Formula const>(new storm::logic::MultiObjectiveFormula(subformulas));
+        std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createMultiFormula(std::vector<std::shared_ptr<storm::logic::Formula const>> const& subformulas) {
+            bool isMultiDimensionalBoundedUntilFormula = !subformulas.empty();
+            for (auto const& subformula : subformulas) {
+                if (!subformula->isBoundedUntilFormula()) {
+                    isMultiDimensionalBoundedUntilFormula = false;
+                    break;
+                }
+            }
+            
+            if (isMultiDimensionalBoundedUntilFormula) {
+                std::vector<std::shared_ptr<storm::logic::Formula const>> leftSubformulas, rightSubformulas;
+                std::vector<boost::optional<storm::logic::TimeBound>> lowerBounds, upperBounds;
+                std::vector<storm::logic::TimeBoundReference> timeBoundReferences;
+                for (auto const& subformula : subformulas) {
+                    auto const& f = subformula->asBoundedUntilFormula();
+                    STORM_LOG_THROW(!f.isMultiDimensional(), storm::exceptions::WrongFormatException, "Composition of multidimensional bounded until formula must consist of single dimension subformulas. Got '" << f << "' instead.");
+                    leftSubformulas.push_back(f.getLeftSubformula().asSharedPointer());
+                    rightSubformulas.push_back(f.getRightSubformula().asSharedPointer());
+                    if (f.hasLowerBound()) {
+                        lowerBounds.emplace_back(storm::logic::TimeBound(f.isLowerBoundStrict(), f.getLowerBound()));
+                    } else {
+                        lowerBounds.emplace_back();
+                    }
+                     if (f.hasUpperBound()) {
+                        upperBounds.emplace_back(storm::logic::TimeBound(f.isUpperBoundStrict(), f.getUpperBound()));
+                    } else {
+                        upperBounds.emplace_back();
+                    }
+                    timeBoundReferences.push_back(f.getTimeBoundReference());
+                }
+                return std::shared_ptr<storm::logic::Formula const>(new storm::logic::BoundedUntilFormula(leftSubformulas, rightSubformulas, lowerBounds, upperBounds, timeBoundReferences));
+            } else {
+                return std::shared_ptr<storm::logic::Formula const>(new storm::logic::MultiObjectiveFormula(subformulas));
+            }
         }
                                                
         storm::jani::Property FormulaParserGrammar::createProperty(boost::optional<std::string> const& propertyName, storm::modelchecker::FilterType const& filterType, std::shared_ptr<storm::logic::Formula const> const& formula, std::shared_ptr<storm::logic::Formula const> const& states) {

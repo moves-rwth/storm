@@ -36,7 +36,7 @@ namespace storm {
             return boost::get<storm::expressions::Expression>(labelOrExpression);
         }
         
-        BuilderOptions::BuilderOptions(bool buildAllRewardModels, bool buildAllLabels) : buildAllRewardModels(buildAllRewardModels), buildAllLabels(buildAllLabels), buildChoiceLabels(false), buildStateValuations(false), buildChoiceOrigins(false), explorationChecks(false), showProgress(false), showProgressDelay(0) {
+        BuilderOptions::BuilderOptions(bool buildAllRewardModels, bool buildAllLabels) : buildAllRewardModels(buildAllRewardModels), buildAllLabels(buildAllLabels), buildChoiceLabels(false), buildStateValuations(false), buildChoiceOrigins(false), explorationChecks(false), addOutOfBoundsState(false), showProgress(false), showProgressDelay(0) {
             // Intentionally left empty.
         }
         
@@ -159,7 +159,11 @@ namespace storm {
         bool BuilderOptions::isBuildAllLabelsSet() const {
             return buildAllLabels;
         }
-        
+
+        bool BuilderOptions::isAddOutOfBoundsStateSet() const {
+            return addOutOfBoundsState;
+        }
+
         BuilderOptions& BuilderOptions::setBuildAllRewardModels(bool newValue) {
             buildAllRewardModels = newValue;
             return *this;
@@ -226,6 +230,11 @@ namespace storm {
  
         BuilderOptions& BuilderOptions::setBuildChoiceOrigins(bool newValue) {
             buildChoiceOrigins = newValue;
+            return *this;
+        }
+
+        BuilderOptions& BuilderOptions::setAddOutOfBoundsState(bool newValue) {
+            addOutOfBoundsState = newValue;
             return *this;
         }
 

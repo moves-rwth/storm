@@ -1,6 +1,7 @@
 #pragma once
 
 #include "storm/settings/modules/ModuleSettings.h"
+#include "storm/solver/SolverSelectionOptions.h"
 
 namespace storm {
     namespace settings {
@@ -17,9 +18,6 @@ namespace storm {
                 // An enumeration of all available preconditioning methods.
                 enum class PreconditioningMethod { Ilu, Diagonal, None };
                 
-                // An enumeration of all available convergence criteria.
-                enum class ConvergenceCriterion { Absolute, Relative };
-                
                 /*!
                  * Creates a new set of Eigen settings.
                  */
@@ -33,11 +31,18 @@ namespace storm {
                 bool isLinearEquationSystemMethodSet() const;
                 
                 /*!
+                 * Retrieves whether the linear equation system method has been set from the default value.
+                 *
+                 * @return True iff the linear equation system method has been set from the default value.
+                 */
+                bool isLinearEquationSystemMethodSetFromDefault() const;
+                
+                /*!
                  * Retrieves the method that is to be used for solving systems of linear equations.
                  *
                  * @return The method to use.
                  */
-                LinearEquationMethod getLinearEquationSystemMethod() const;
+                storm::solver::EigenLinearEquationSolverMethod getLinearEquationSystemMethod() const;
                 
                 /*!
                  * Retrieves whether the preconditioning method has been set.
@@ -51,7 +56,7 @@ namespace storm {
                  *
                  * @return The method to use.
                  */
-                PreconditioningMethod getPreconditioningMethod() const;
+                storm::solver::EigenLinearEquationSolverPreconditioner getPreconditioningMethod() const;
                 
                 /*!
                  * Retrieves whether the restart iteration count has been set.

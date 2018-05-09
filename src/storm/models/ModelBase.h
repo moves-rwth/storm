@@ -48,7 +48,7 @@ namespace storm {
             std::shared_ptr<ModelType const> as() const {
                 return std::dynamic_pointer_cast<ModelType const>(this->shared_from_this());
             }
-            
+                        
             /*!
              *	@brief Return the actual type of the model.
              *
@@ -71,7 +71,14 @@ namespace storm {
              * @return The number of (non-zero) transitions of the model.
              */
             virtual uint_fast64_t getNumberOfTransitions() const = 0;
-                        
+
+            /*!
+             * Returns the number of choices ine the model.
+             *
+             * @return The number of choices in of the model.
+             */
+            virtual uint_fast64_t getNumberOfChoices() const = 0;
+
             /*!
              * Prints information about the model to the specified stream.
              *
@@ -100,6 +107,13 @@ namespace storm {
              * @return True iff the model is of the given type.
              */
             bool isOfType(storm::models::ModelType const& modelType) const;
+            
+            /*!
+             * Returns true if the model is a nondeterministic model.
+             *
+             * @return True iff the model is a nondeterministic model.
+             */
+            bool isNondeterministicModel() const;
             
             /*!
              * Checks whether the model supports parameters.

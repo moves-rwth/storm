@@ -19,6 +19,7 @@ namespace storm {
             Min,
             Max,
             Power,
+            Modulo,
             Equal,
             NotEqual,
             Less,

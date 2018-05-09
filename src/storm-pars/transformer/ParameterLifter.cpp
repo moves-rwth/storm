@@ -12,8 +12,9 @@ namespace storm {
     namespace transformer {
 
         template<typename ParametricType, typename ConstantType>
-        ParameterLifter<ParametricType, ConstantType>::ParameterLifter(storm::storage::SparseMatrix<ParametricType> const& pMatrix, std::vector<ParametricType> const& pVector, storm::storage::BitVector const& selectedRows, storm::storage::BitVector const& selectedColumns) {
+        ParameterLifter<ParametricType, ConstantType>::ParameterLifter(storm::storage::SparseMatrix<ParametricType> const& pMatrix, std::vector<ParametricType> const& pVector, storm::storage::BitVector const& selectedRows, storm::storage::BitVector const& selectedColumns, bool generateRowLabels) {
         
+            
             // get a mapping from old column indices to new ones
             std::vector<uint_fast64_t> oldToNewColumnIndexMapping(selectedColumns.size(), selectedColumns.size());
             uint_fast64_t newIndex = 0;
@@ -45,10 +46,16 @@ namespace storm {
                         ++pMatrixEntryCount;
                     }
                 }
+                
                 ParametricType const& pVectorEntry = pVector[rowIndex];
                 std::set<VariableType> vectorEntryVariables;
                 if (!storm::utility::isConstant(pVectorEntry)) {
                     storm::utility::parametric::gatherOccurringVariables(pVectorEntry, vectorEntryVariables);
+                    if (generateRowLabels) {
+                        // If row labels are to be generated, we do not allow unspecified valuations.
+                        // Therefore, we also 'lift' parameters that only occurr on a vector.
+                        occurringVariables.insert(vectorEntryVariables.begin(), vectorEntryVariables.end());
+                    }
                     nonConstVectorEntries.set(pVectorEntryCount, true);
                 }
                 ++pVectorEntryCount;
@@ -57,6 +64,10 @@ namespace storm {
                 auto rowValuations = getVerticesOfAbstractRegion(occurringVariables);
                 
                 for (auto const& val : rowValuations) {
+                    if (generateRowLabels) {
+                        rowLabels.push_back(val);
+                    }
+                    
                     // Insert matrix entries for each valuation. For non-constant entries, a dummy value is inserted and the function and the valuation are collected.
                     // The placeholder for the collected function/valuation are stored in the matrixAssignment. The matrixAssignment is completed after the matrix is finished
                     for (auto const& entry: pMatrix.getRow(rowIndex)) {
@@ -78,7 +89,8 @@ namespace storm {
                         vector.push_back(storm::utility::one<ConstantType>());
                         AbstractValuation vectorVal(val);
                         for(auto const& vectorVar : vectorEntryVariables) {
-                            if(occurringVariables.find(vectorVar) == occurringVariables.end()) {
+                            if (occurringVariables.find(vectorVar) == occurringVariables.end()) {
+                                assert(!generateRowLabels);
                                 vectorVal.addParameterUnspecified(vectorVar);
                             }
                         }
@@ -147,6 +159,11 @@ namespace storm {
         template<typename ParametricType, typename ConstantType>
         std::vector<ConstantType> const& ParameterLifter<ParametricType, ConstantType>::getVector() const {
             return vector;
+        }
+        
+        template<typename ParametricType, typename ConstantType>
+        std::vector<typename ParameterLifter<ParametricType, ConstantType>::AbstractValuation> const& ParameterLifter<ParametricType, ConstantType>::getRowLabels() const {
+            return rowLabels;
         }
     
         template<typename ParametricType, typename ConstantType>
@@ -223,6 +240,21 @@ namespace storm {
             return result;
         }
             
+        template<typename ParametricType, typename ConstantType>
+        std::set<typename ParameterLifter<ParametricType, ConstantType>::VariableType> const& ParameterLifter<ParametricType, ConstantType>::AbstractValuation::getLowerParameters() const {
+            return lowerPars;
+        }
+        
+        template<typename ParametricType, typename ConstantType>
+        std::set<typename ParameterLifter<ParametricType, ConstantType>::VariableType> const& ParameterLifter<ParametricType, ConstantType>::AbstractValuation::getUpperParameters() const {
+            return upperPars;
+        }
+        
+        template<typename ParametricType, typename ConstantType>
+        std::set<typename ParameterLifter<ParametricType, ConstantType>::VariableType> const& ParameterLifter<ParametricType, ConstantType>::AbstractValuation::getUnspecifiedParameters() const {
+            return unspecifiedPars;
+        }
+        
         template<typename ParametricType, typename ConstantType>
         std::vector<storm::utility::parametric::Valuation<ParametricType>> ParameterLifter<ParametricType, ConstantType>::AbstractValuation::getConcreteValuations(storm::storage::ParameterRegion<ParametricType> const& region) const {
             auto result = region.getVerticesOfRegion(unspecifiedPars);

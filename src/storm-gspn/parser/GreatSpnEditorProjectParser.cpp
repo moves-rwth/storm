@@ -212,7 +212,7 @@ namespace storm {
                     STORM_PRINT_AND_LOG("unknown child (node=" + storm::adapters::XMLtoString(node->getNodeName()) + "): " + name + "\n");
                 }
             }
-            builder.addPlace(-1, initialTokens, placeName);
+            builder.addPlace(boost::none, initialTokens, placeName);
         }
 
         bool ignoreTransitionAttribute(std::string const& name) {

@@ -1,5 +1,4 @@
-#ifndef STORM_COUNTEREXAMPLES_MILPMINIMALLABELSETGENERATOR_MDP_H_
-#define STORM_COUNTEREXAMPLES_MILPMINIMALLABELSETGENERATOR_MDP_H_
+#pragma once
 
 #include <chrono>
 #include <boost/container/flat_set.hpp>
@@ -18,7 +17,7 @@
 
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 
-#include "storm/counterexamples/PrismHighLevelCounterexample.h"
+#include "storm/counterexamples/HighLevelCounterexample.h"
 
 #include "storm/utility/graph.h"
 #include "storm/utility/counterexamples.h"
@@ -26,12 +25,16 @@
 #include "storm/solver/LpSolver.h"
 
 #include "storm/storage/sparse/PrismChoiceOrigins.h"
+#include "storm/storage/sparse/JaniChoiceOrigins.h"
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/CounterexampleGeneratorSettings.h"
 
 namespace storm {
+    
+    class Environment;
+    
     namespace counterexamples {
         
         /*!
@@ -338,7 +341,7 @@ namespace storm {
                     std::list<uint_fast64_t> const& relevantChoicesForState = choiceInformation.relevantChoicesForRelevantStates.at(state);
                     for (uint_fast64_t row : relevantChoicesForState) {
                         for (auto const& successorEntry : mdp.getTransitionMatrix().getRow(row)) {
-                            if (stateInformation.relevantStates.get(successorEntry.getColumn())) {
+                            if (stateInformation.relevantStates.get(successorEntry.getColumn()) && resultingMap.find(std::make_pair(state, successorEntry.getColumn())) == resultingMap.end()) {
                                 variableNameBuffer.str("");
                                 variableNameBuffer.clear();
                                 variableNameBuffer << "t" << state << "to" << successorEntry.getColumn();
@@ -924,7 +927,7 @@ namespace storm {
             }
                 
         public:
-            static boost::container::flat_set<uint_fast64_t> getMinimalLabelSet(storm::models::sparse::Mdp<T> const& mdp, std::vector<boost::container::flat_set<uint_fast64_t>> const& labelSets, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, double probabilityThreshold, bool strictBound, bool checkThresholdFeasible = false, bool includeSchedulerCuts = false) {
+            static boost::container::flat_set<uint_fast64_t> getMinimalLabelSet(Environment const& env,storm::models::sparse::Mdp<T> const& mdp, std::vector<boost::container::flat_set<uint_fast64_t>> const& labelSets, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, double probabilityThreshold, bool strictBound, bool checkThresholdFeasible = false, bool includeSchedulerCuts = false) {
                 // (0) Check whether the label sets are valid
                 STORM_LOG_THROW(mdp.getNumberOfChoices() == labelSets.size(), storm::exceptions::InvalidArgumentException, "The given number of labels does not match the number of choices.");
                 
@@ -932,7 +935,7 @@ namespace storm {
                 double maximalReachabilityProbability = 0;
                 if (checkThresholdFeasible) {
                     storm::modelchecker::helper::SparseMdpPrctlHelper<T> modelcheckerHelper;
-                    std::vector<T> result = std::move(modelcheckerHelper.computeUntilProbabilities(false, mdp.getTransitionMatrix(), mdp.getBackwardTransitions(), phiStates, psiStates, false, false, storm::solver::GeneralMinMaxLinearEquationSolverFactory<T>()).values);
+                    std::vector<T> result = std::move(modelcheckerHelper.computeUntilProbabilities(env, false, mdp.getTransitionMatrix(), mdp.getBackwardTransitions(), phiStates, psiStates, false, false).values);
                     for (auto state : mdp.getInitialStates()) {
                         maximalReachabilityProbability = std::max(maximalReachabilityProbability, result[state]);
                     }
@@ -973,12 +976,12 @@ namespace storm {
              * @param formulaPtr A pointer to a safety formula. The outermost operator must be a probabilistic bound operator with a strict upper bound. The nested
              * formula can be either an unbounded until formula or an eventually formula.
              */
-            static std::shared_ptr<PrismHighLevelCounterexample> computeCounterexample(storm::prism::Program const& program, storm::models::sparse::Mdp<T> const& mdp, std::shared_ptr<storm::logic::Formula const> const& formula) {
+            static std::shared_ptr<HighLevelCounterexample> computeCounterexample(Environment const& env, storm::storage::SymbolicModelDescription const& symbolicModel, storm::models::sparse::Mdp<T> const& mdp, std::shared_ptr<storm::logic::Formula const> const& formula) {
                 std::cout << std::endl << "Generating minimal label counterexample for formula " << *formula << std::endl;
                 
                 // Check whether there are choice origins available
                 STORM_LOG_THROW(mdp.hasChoiceOrigins(), storm::exceptions::InvalidArgumentException, "Restriction to minimal command set is impossible for model without choice origns.");
-                STORM_LOG_THROW(mdp.getChoiceOrigins()->isPrismChoiceOrigins(), storm::exceptions::InvalidArgumentException, "Restriction to command set is impossible for model without prism choice origins.");
+                STORM_LOG_THROW(mdp.getChoiceOrigins()->isPrismChoiceOrigins() || mdp.getChoiceOrigins()->isJaniChoiceOrigins(), storm::exceptions::InvalidArgumentException, "Restriction to command set is impossible for model without PRISM or JANI choice origins.");
                 
                 STORM_LOG_THROW(formula->isProbabilityOperatorFormula(), storm::exceptions::InvalidPropertyException, "Counterexample generation does not support this kind of formula. Expecting a probability operator as the outermost formula element.");
                 storm::logic::ProbabilityOperatorFormula const& probabilityOperator = formula->asProbabilityOperatorFormula();
@@ -997,8 +1000,8 @@ namespace storm {
                 if (probabilityOperator.getSubformula().isUntilFormula()) {
                     storm::logic::UntilFormula const& untilFormula = probabilityOperator.getSubformula().asUntilFormula();
                     
-                    std::unique_ptr<storm::modelchecker::CheckResult> leftResult = modelchecker.check(untilFormula.getLeftSubformula());
-                    std::unique_ptr<storm::modelchecker::CheckResult> rightResult = modelchecker.check(untilFormula.getRightSubformula());
+                    std::unique_ptr<storm::modelchecker::CheckResult> leftResult = modelchecker.check(env, untilFormula.getLeftSubformula());
+                    std::unique_ptr<storm::modelchecker::CheckResult> rightResult = modelchecker.check(env, untilFormula.getRightSubformula());
                     
                     storm::modelchecker::ExplicitQualitativeCheckResult const& leftQualitativeResult = leftResult->asExplicitQualitativeCheckResult();
                     storm::modelchecker::ExplicitQualitativeCheckResult const& rightQualitativeResult = rightResult->asExplicitQualitativeCheckResult();
@@ -1008,7 +1011,7 @@ namespace storm {
                 } else if (probabilityOperator.getSubformula().isEventuallyFormula()) {
                     storm::logic::EventuallyFormula const& eventuallyFormula = probabilityOperator.getSubformula().asEventuallyFormula();
                     
-                    std::unique_ptr<storm::modelchecker::CheckResult> subResult = modelchecker.check(eventuallyFormula.getSubformula());
+                    std::unique_ptr<storm::modelchecker::CheckResult> subResult = modelchecker.check(env, eventuallyFormula.getSubformula());
                     
                     storm::modelchecker::ExplicitQualitativeCheckResult const& subQualitativeResult = subResult->asExplicitQualitativeCheckResult();
                     
@@ -1017,21 +1020,34 @@ namespace storm {
                 }
                 
                 // Obtain the label sets for each choice.
-                // The label set of a choice corresponds to the set of prism commands that induce the choice.
-                storm::storage::sparse::PrismChoiceOrigins const& choiceOrigins = mdp.getChoiceOrigins()->asPrismChoiceOrigins();
-                std::vector<boost::container::flat_set<uint_fast64_t>> labelSets;
-                labelSets.reserve(mdp.getNumberOfChoices());
-                for (uint_fast64_t choice = 0; choice < mdp.getNumberOfChoices(); ++choice) {
-                    labelSets.push_back(choiceOrigins.getCommandSet(choice));
+                std::vector<boost::container::flat_set<uint_fast64_t>> labelSets(mdp.getNumberOfChoices());
+                if (mdp.getChoiceOrigins()->isPrismChoiceOrigins()) {
+                    storm::storage::sparse::PrismChoiceOrigins const& choiceOrigins = mdp.getChoiceOrigins()->asPrismChoiceOrigins();
+                    for (uint_fast64_t choice = 0; choice < mdp.getNumberOfChoices(); ++choice) {
+                        labelSets[choice] = choiceOrigins.getCommandSet(choice);
+                    }
+                } else {
+                    storm::storage::sparse::JaniChoiceOrigins const& choiceOrigins = mdp.getChoiceOrigins()->asJaniChoiceOrigins();
+
+                    // The choice origins are known to be JANI ones at this point.
+                    for (uint_fast64_t choice = 0; choice < mdp.getNumberOfChoices(); ++choice) {
+                        labelSets[choice] = choiceOrigins.getEdgeIndexSet(choice);
+                    }
                 }
                 
                 // Delegate the actual computation work to the function of equal name.
                 auto startTime = std::chrono::high_resolution_clock::now();
-                boost::container::flat_set<uint_fast64_t> usedCommandSet = getMinimalLabelSet(mdp, labelSets, phiStates, psiStates, threshold, strictBound, true, storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>().isUseSchedulerCutsSet());
+                boost::container::flat_set<uint_fast64_t> usedLabelSet = getMinimalLabelSet(env, mdp, labelSets, phiStates, psiStates, threshold, strictBound, true, storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>().isUseSchedulerCutsSet());
                 auto endTime = std::chrono::high_resolution_clock::now();
-                std::cout << std::endl << "Computed minimal command set of size " << usedCommandSet.size() << " in " << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << "ms." << std::endl;
+                std::cout << std::endl << "Computed minimal command set of size " << usedLabelSet.size() << " in " << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << "ms." << std::endl;
 
-                return std::make_shared<PrismHighLevelCounterexample>(program.restrictCommands(usedCommandSet));
+                
+                if (symbolicModel.isPrismProgram()) {
+                    return std::make_shared<HighLevelCounterexample>(symbolicModel.asPrismProgram().restrictCommands(usedLabelSet));
+                } else {
+                    STORM_LOG_ASSERT(symbolicModel.isJaniModel(), "Unknown symbolic model description type.");
+                    return std::make_shared<HighLevelCounterexample>(symbolicModel.asJaniModel().restrictEdges(usedLabelSet));
+                }
             }
             
         };
@@ -1039,4 +1055,3 @@ namespace storm {
     } // namespace counterexamples
 } // namespace storm
 
-#endif /* STORM_COUNTEREXAMPLES_MILPMINIMALLABELSETGENERATOR_MDP_H_ */

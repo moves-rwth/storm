@@ -7,7 +7,7 @@
 #include "storm/utility/iota_n.h"
 #include "storm/utility/vector.h"
 
-#include "storm-dft/storage/dft/DFTBuilder.h"
+#include "storm-dft/builder/DFTBuilder.h"
 #include "storm-dft/storage/dft/DFTIsomorphism.h"
 
 
@@ -271,7 +271,7 @@ namespace storm {
             
             std::vector<DFT<ValueType>> res;
             for(auto const& subdft : subdfts) {
-                DFTBuilder<ValueType> builder;
+                storm::builder::DFTBuilder<ValueType> builder;
             
                 for(size_t id : subdft.second) {
                     builder.copyElement(mElements[id]);
@@ -293,22 +293,22 @@ namespace storm {
             }
             return max;
         }
-        
+
         template<typename ValueType>
         DFT<ValueType> DFT<ValueType>::optimize() const {
             std::vector<size_t> modIdea = findModularisationRewrite();
             STORM_LOG_DEBUG("Modularisation idea: " << storm::utility::vector::toString(modIdea));
-            
+
             if (modIdea.empty()) {
                 // No rewrite needed
                 return *this;
             }
-            
+
             std::vector<std::vector<size_t>> rewriteIds;
             rewriteIds.push_back(modIdea);
-            
-            DFTBuilder<ValueType> builder;
-            
+
+            storm::builder::DFTBuilder<ValueType> builder;
+
             // Accumulate elements which must be rewritten
             std::set<size_t> rewriteSet;
             for (std::vector<size_t> rewrites : rewriteIds) {
@@ -320,7 +320,7 @@ namespace storm {
                     builder.copyElement(elem);
                 }
             }
-            
+
             // Add rewritten elements
             for (std::vector<size_t> rewrites : rewriteIds) {
                 STORM_LOG_ASSERT(rewrites.size() > 1, "No rewritten elements.");
@@ -359,7 +359,7 @@ namespace storm {
                         STORM_LOG_ASSERT(false, "Dft type can not be rewritten.");
                         break;
                 }
-                
+
                 // Add parent with the new child newParent and all its remaining children
                 childrenNames.clear();
                 childrenNames.push_back(newParentName);
@@ -371,14 +371,42 @@ namespace storm {
                 }
                 builder.copyGate(originalParent, childrenNames);
             }
-            
+
             builder.setTopLevel(mElements[mTopLevelIndex]->name());
             // TODO use reference?
             DFT<ValueType> newDft = builder.build();
             STORM_LOG_TRACE(newDft.getElementsString());
             return newDft.optimize();
         }
-        
+
+        template<typename ValueType>
+        size_t DFT<ValueType>::nrDynamicElements() const {
+            size_t noDyn = 0;
+            for (auto const& elem : mElements) {
+                switch (elem->type()) {
+                    case DFTElementType::AND:
+                    case DFTElementType::OR:
+                    case DFTElementType::VOT:
+                    case DFTElementType::BE:
+                    case DFTElementType::CONSTF:
+                    case DFTElementType::CONSTS:
+                        break;
+                    case DFTElementType::PAND:
+                    case DFTElementType::SPARE:
+                    case DFTElementType::POR:
+                    case DFTElementType::SEQ:
+                    case DFTElementType::MUTEX:
+                    case DFTElementType::PDEP:
+                        noDyn += 1;
+                        break;
+                    default:
+                        STORM_LOG_ASSERT(false, "DFT element type " << elem->type() << " not known.");
+                        break;
+                }
+            }
+            return noDyn;
+        }
+
         template<typename ValueType>
         std::string DFT<ValueType>::getElementsString() const {
             std::stringstream stream;
@@ -722,11 +750,10 @@ namespace storm {
                    // suitable parent gate! - Lets check the independent submodules of the children
                    auto const& children = std::static_pointer_cast<DFTGate<ValueType>>(e)->children();
                    for(auto const& child : children) {
-                       
-                       
+
                        auto ISD = std::static_pointer_cast<DFTGate<ValueType>>(child)->independentSubDft(true);
                        // In the ISD, check for other children:
-                       
+
                        std::vector<size_t> rewrite = {e->id(), child->id()};
                        for(size_t isdElemId : ISD) {
                            if(isdElemId == child->id()) continue;
@@ -737,13 +764,13 @@ namespace storm {
                        if(rewrite.size() > 2 && rewrite.size() < children.size() - 1) {
                            return rewrite;
                        }
-                       
-                   }    
+
+                   }
                }
-           } 
+           }
            return {};
         }
-    
+
 
         template<typename ValueType>
         std::tuple<std::vector<size_t>, std::vector<size_t>, std::vector<size_t>> DFT<ValueType>::getSortedParentAndDependencyIds(size_t index) const {
@@ -765,6 +792,13 @@ namespace storm {
             }
             std::sort(outgoingDeps.begin(), outgoingDeps.end());
             return std::make_tuple(parents, ingoingDeps, outgoingDeps);
+        }
+
+        template<typename ValueType>
+        void DFT<ValueType>::writeStatsToStream(std::ostream& stream) const {
+            stream << "Number of BEs: " << nrBasicElements() << std::endl;
+            stream << "Number of dynamic elements: " << nrDynamicElements() << std::endl;
+            stream << "Number of elements: " << nrElements() << std::endl;
         }
         
         // Explicitly instantiate the class.

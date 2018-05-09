@@ -57,21 +57,39 @@ namespace storm {
         boost::any FragmentChecker::visit(BoundedUntilFormula const& f, boost::any const& data) const {
             InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
             bool result = inherited.getSpecification().areBoundedUntilFormulasAllowed();
-            if (!inherited.getSpecification().areNestedPathFormulasAllowed()) {
-                result = result && !f.getLeftSubformula().isPathFormula();
-                result = result && !f.getRightSubformula().isPathFormula();
+            if (f.isMultiDimensional()) {
+                result = result &&  inherited.getSpecification().areMultiDimensionalBoundedUntilFormulasAllowed();
             }
-            auto tbr = f.getTimeBoundReference();
-            if (tbr.isStepBound()) {
-                result = result && inherited.getSpecification().areStepBoundedUntilFormulasAllowed();
-            } else if(tbr.isTimeBound()) {
-                result = result && inherited.getSpecification().areTimeBoundedUntilFormulasAllowed();
+
+            for (uint64_t i = 0; i < f.getDimension(); ++i) {
+                auto tbr = f.getTimeBoundReference(i);
+                if (tbr.isStepBound()) {
+                    result = result && inherited.getSpecification().areStepBoundedUntilFormulasAllowed();
+                } else if(tbr.isTimeBound()) {
+                    result = result && inherited.getSpecification().areTimeBoundedUntilFormulasAllowed();
+                } else {
+                    assert(tbr.isRewardBound());
+                    result = result && inherited.getSpecification().areRewardBoundedUntilFormulasAllowed();
+                }
+            }
+            
+            if (f.hasMultiDimensionalSubformulas()) {
+                for (uint64_t i = 0; i < f.getDimension(); ++i) {
+                    if (!inherited.getSpecification().areNestedPathFormulasAllowed()) {
+                        result = result && !f.getLeftSubformula(i).isPathFormula();
+                        result = result && !f.getRightSubformula(i).isPathFormula();
+                    }
+                    result = result && boost::any_cast<bool>(f.getLeftSubformula(i).accept(*this, data));
+                    result = result && boost::any_cast<bool>(f.getRightSubformula(i).accept(*this, data));
+                }
             } else {
-                assert(tbr.isRewardBound());
-                result = result && inherited.getSpecification().areRewardBoundedUntilFormulasAllowed();
+                if (!inherited.getSpecification().areNestedPathFormulasAllowed()) {
+                    result = result && !f.getLeftSubformula().isPathFormula();
+                    result = result && !f.getRightSubformula().isPathFormula();
+                }
+                result = result && boost::any_cast<bool>(f.getLeftSubformula().accept(*this, data));
+                result = result && boost::any_cast<bool>(f.getRightSubformula().accept(*this, data));
             }
-            result = result && boost::any_cast<bool>(f.getLeftSubformula().accept(*this, data));
-            result = result && boost::any_cast<bool>(f.getRightSubformula().accept(*this, data));
             return result;
         }
         
@@ -95,9 +113,23 @@ namespace storm {
             return result;
         }
         
-        boost::any FragmentChecker::visit(CumulativeRewardFormula const&, boost::any const& data) const {
+        boost::any FragmentChecker::visit(CumulativeRewardFormula const& f, boost::any const& data) const {
             InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
-            return inherited.getSpecification().areCumulativeRewardFormulasAllowed();
+            
+            bool result = inherited.getSpecification().areCumulativeRewardFormulasAllowed();
+            result = result && (!f.isMultiDimensional() || inherited.getSpecification().areMultiDimensionalCumulativeRewardFormulasAllowed());
+            for (uint64_t i = 0; i < f.getDimension(); ++i) {
+                auto tbr = f.getTimeBoundReference(i);
+                if (tbr.isStepBound()) {
+                    result = result && inherited.getSpecification().areStepBoundedCumulativeRewardFormulasAllowed();
+                } else if(tbr.isTimeBound()) {
+                    result = result && inherited.getSpecification().areTimeBoundedCumulativeRewardFormulasAllowed();
+                } else {
+                    assert(tbr.isRewardBound());
+                    result = result && inherited.getSpecification().areRewardBoundedCumulativeRewardFormulasAllowed();
+                }
+            }
+            return result;
         }
         
         boost::any FragmentChecker::visit(EventuallyFormula const& f, boost::any const& data) const {
@@ -202,7 +234,7 @@ namespace storm {
             bool result = inherited.getSpecification().areProbabilityOperatorsAllowed();
             result = result && (!f.hasQualitativeResult() || inherited.getSpecification().areQualitativeOperatorResultsAllowed());
             result = result && (!f.hasQuantitativeResult() || inherited.getSpecification().areQuantitativeOperatorResultsAllowed());
-            result = result && (f.getSubformula().isProbabilityPathFormula() || f.getSubformula().isConditionalProbabilityFormula());
+            result = result && (f.getSubformula().isProbabilityPathFormula() || f.getSubformula().isConditionalProbabilityFormula() || f.getSubformula().isMultiObjectiveFormula());
             if (!inherited.getSpecification().areNestedOperatorsAllowed()) {
                 result = result && boost::any_cast<bool>(f.getSubformula().accept(*this, InheritedInformation(inherited.getSpecification().copy().setOperatorsAllowed(false))));
             } else {

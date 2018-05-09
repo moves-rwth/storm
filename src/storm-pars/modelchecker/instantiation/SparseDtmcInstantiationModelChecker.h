@@ -20,14 +20,14 @@ namespace storm {
         public:
             SparseDtmcInstantiationModelChecker(SparseModelType const& parametricModel);
             
-            virtual std::unique_ptr<CheckResult> check(storm::utility::parametric::Valuation<typename SparseModelType::ValueType> const& valuation) override;
+            virtual std::unique_ptr<CheckResult> check(Environment const& env, storm::utility::parametric::Valuation<typename SparseModelType::ValueType> const& valuation) override;
 
         protected:
             
             // Optimizations for the different formula types
-            std::unique_ptr<CheckResult> checkReachabilityProbabilityFormula(storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<ConstantType>>& modelChecker);
-            std::unique_ptr<CheckResult> checkReachabilityRewardFormula(storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<ConstantType>>& modelChecker);
-            std::unique_ptr<CheckResult> checkBoundedUntilFormula(storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<ConstantType>>& modelChecker);
+            std::unique_ptr<CheckResult> checkReachabilityProbabilityFormula(Environment const& env, storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<ConstantType>>& modelChecker);
+            std::unique_ptr<CheckResult> checkReachabilityRewardFormula(Environment const& env, storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<ConstantType>>& modelChecker);
+            std::unique_ptr<CheckResult> checkBoundedUntilFormula(Environment const& env, storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<ConstantType>>& modelChecker);
             
             storm::utility::ModelInstantiator<SparseModelType, storm::models::sparse::Dtmc<ConstantType>> modelInstantiator;
         };

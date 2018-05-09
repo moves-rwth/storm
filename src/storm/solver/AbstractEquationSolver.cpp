@@ -9,15 +9,16 @@
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 #include "storm/exceptions/UnmetRequirementException.h"
+#include "storm/exceptions/InvalidOperationException.h"
 
 namespace storm {
     namespace solver {
         
         template<typename ValueType>
         AbstractEquationSolver<ValueType>::AbstractEquationSolver() {
-            auto const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
-            showProgressFlag = generalSettings.isVerboseSet();
-            showProgressDelay = generalSettings.getShowProgressDelay();
+            if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isVerboseSet()) {
+                this->progressMeasurement = storm::utility::ProgressMeasurement("iterations");
+            }
         }
         
         template<typename ValueType>
@@ -120,9 +121,32 @@ namespace storm {
         }
         
         template<typename ValueType>
+        ValueType AbstractEquationSolver<ValueType>::getLowerBound(bool convertLocalBounds) const {
+            if (lowerBound) {
+                return lowerBound.get();
+            } else if (convertLocalBounds) {
+                return *std::min_element(lowerBounds->begin(), lowerBounds->end());
+            }
+            STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "No lower bound available but some was requested.");
+            return ValueType();
+        }
+        
+        template<typename ValueType>
         ValueType const& AbstractEquationSolver<ValueType>::getUpperBound() const {
             return upperBound.get();
         }
+
+        template<typename ValueType>
+        ValueType AbstractEquationSolver<ValueType>::getUpperBound(bool convertLocalBounds) const {
+            if (upperBound) {
+                return upperBound.get();
+            } else if (convertLocalBounds) {
+                return *std::max_element(upperBounds->begin(), upperBounds->end());
+            }
+            STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "No upper bound available but some was requested.");
+            return ValueType();
+        }
+
         
         template<typename ValueType>
         std::vector<ValueType> const& AbstractEquationSolver<ValueType>::getLowerBounds() const {
@@ -140,6 +164,11 @@ namespace storm {
         }
         
         template<typename ValueType>
+        void AbstractEquationSolver<ValueType>::setLowerBounds(std::vector<ValueType>&& values) {
+            lowerBounds = std::move(values);
+        }
+        
+        template<typename ValueType>
         void AbstractEquationSolver<ValueType>::setUpperBounds(std::vector<ValueType> const& values) {
             upperBounds = values;
         }
@@ -153,6 +182,30 @@ namespace storm {
         void AbstractEquationSolver<ValueType>::setBounds(std::vector<ValueType> const& lower, std::vector<ValueType> const& upper) {
             setLowerBounds(lower);
             setUpperBounds(upper);
+        }
+        
+        template<typename ValueType>
+        void AbstractEquationSolver<ValueType>::setBoundsFromOtherSolver(AbstractEquationSolver<ValueType> const& other) {
+            if (other.hasLowerBound(BoundType::Global)) {
+                this->setLowerBound(other.getLowerBound());
+            }
+            if (other.hasLowerBound(BoundType::Local)) {
+                this->setLowerBounds(other.getLowerBounds());
+            }
+            if (other.hasUpperBound(BoundType::Global)) {
+                this->setUpperBound(other.getUpperBound());
+            }
+            if (other.hasUpperBound(BoundType::Local)) {
+                this->setUpperBounds(other.getUpperBounds());
+            }
+        }
+        
+        template<typename ValueType>
+        void AbstractEquationSolver<ValueType>::clearBounds() {
+            lowerBound = boost::none;
+            upperBound = boost::none;
+            lowerBounds = boost::none;
+            upperBounds = boost::none;
         }
         
         template<typename ValueType>
@@ -194,35 +247,29 @@ namespace storm {
         
         template<typename ValueType>
         bool AbstractEquationSolver<ValueType>::isShowProgressSet() const {
-            return showProgressFlag;
+            return this->progressMeasurement.is_initialized();
         }
         
         template<typename ValueType>
         uint64_t AbstractEquationSolver<ValueType>::getShowProgressDelay() const {
-            return showProgressDelay;
+            STORM_LOG_ASSERT(this->isShowProgressSet(), "Tried to get the progress message delay but progress is not shown.");
+            return this->progressMeasurement->getShowProgressDelay();
         }
         
         template<typename ValueType>
         void AbstractEquationSolver<ValueType>::startMeasureProgress(uint64_t startingIteration) const {
-            timeOfStart = std::chrono::high_resolution_clock::now();
-            timeOfLastMessage = timeOfStart;
-            iterationOfLastMessage = startingIteration;
+            if (this->isShowProgressSet()) {
+                this->progressMeasurement->startNewMeasurement(startingIteration);
+            }
         }
         
         template<typename ValueType>
         void AbstractEquationSolver<ValueType>::showProgressIterative(uint64_t iteration, boost::optional<uint64_t> const& bound) const {
             if (this->isShowProgressSet()) {
-                auto now = std::chrono::high_resolution_clock::now();
-                auto durationSinceLastMessage = static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::seconds>(now - timeOfLastMessage).count());
-                if (durationSinceLastMessage >= this->getShowProgressDelay()) {
-                    uint64_t numberOfIterationsSinceLastMessage = iteration - iterationOfLastMessage;
-                    STORM_LOG_INFO("Completed " << iteration << " iterations "
-                                   << (bound ? "(out of " + std::to_string(bound.get()) + ") " : "")
-                                   << "in " << std::chrono::duration_cast<std::chrono::seconds>(now - timeOfStart).count() << "s (currently " << (static_cast<double>(numberOfIterationsSinceLastMessage) / durationSinceLastMessage) << " per second)."
-                                   );
-                    timeOfLastMessage = std::chrono::high_resolution_clock::now();
-                    iterationOfLastMessage = iteration;
+                if (bound) {
+                    this->progressMeasurement->setMaxCount(bound.get());
                 }
+                this->progressMeasurement->updateProgress(iteration);
             }
         }
         

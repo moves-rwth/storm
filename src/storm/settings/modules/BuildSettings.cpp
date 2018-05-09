@@ -29,6 +29,7 @@ namespace storm {
             const std::string fullModelBuildOptionName = "buildfull";
             const std::string buildChoiceLabelOptionName = "buildchoicelab";
             const std::string buildStateValuationsOptionName = "buildstateval";
+            const std::string buildOutOfBoundsStateOptionName = "buildoutofboundsstate";
             BuildSettings::BuildSettings() : ModuleSettings(moduleName) {
 
                 std::vector<std::string> explorationOrders = {"dfs", "bfs"};
@@ -42,6 +43,7 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, explorationOrderOptionName, false, "Sets which exploration order to use.").setShortName(explorationOrderOptionShortName)
                                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the exploration order to choose.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(explorationOrders)).setDefaultValueString("bfs").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, explorationChecksOptionName, false, "If set, additional checks (if available) are performed during model exploration to debug the model.").setShortName(explorationChecksOptionShortName).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, buildOutOfBoundsStateOptionName, false, "If set, a state for out-of-bounds valuations is added").build());
 
             }
 
@@ -72,6 +74,10 @@ namespace storm {
 
             bool BuildSettings::isBuildStateValuationsSet() const {
                 return this->getOption(buildStateValuationsOptionName).getHasOptionBeenSet();
+            }
+
+            bool BuildSettings::isBuildOutOfBoundsStateSet() const {
+                return this->getOption(buildOutOfBoundsStateOptionName).getHasOptionBeenSet();
             }
 
 

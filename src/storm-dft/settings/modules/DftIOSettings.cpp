@@ -26,6 +26,8 @@ namespace storm {
             const std::string DftIOSettings::maxValueOptionName = "max";
             const std::string DftIOSettings::transformToGspnOptionName = "gspn";
             const std::string DftIOSettings::exportToJsonOptionName = "export-json";
+            const std::string DftIOSettings::displayStatsOptionName = "show-dft-stats";
+
 
             DftIOSettings::DftIOSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, dftFileOptionName, false, "Parses the model given in the Galileo format.").setShortName(dftFileOptionShortName)
@@ -40,6 +42,8 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, maxValueOptionName, false, "Compute maximal value in case of non-determinism.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, transformToGspnOptionName, false, "Transform DFT to GSPN.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportToJsonOptionName, false,  "Export the model to the Cytoscape JSON format.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the JSON file to export to.").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, displayStatsOptionName, false, "Print stats to stdout").build());
+
             }
 
             bool DftIOSettings::isDftFileSet() const {
@@ -109,6 +113,10 @@ namespace storm {
                 return this->getOption(exportToJsonOptionName).getArgumentByName("filename").getValueAsString();
             }
 
+            bool DftIOSettings::isDisplayStatsSet() const {
+                return this->getOption(displayStatsOptionName).getHasOptionBeenSet();
+            }
+
             void DftIOSettings::finalize() {
             }
 
@@ -121,3 +129,4 @@ namespace storm {
         } // namespace modules
     } // namespace settings
 } // namespace storm
+

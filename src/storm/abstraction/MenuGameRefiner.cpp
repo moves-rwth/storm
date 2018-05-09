@@ -59,6 +59,8 @@ namespace storm {
         template<storm::dd::DdType Type, typename ValueType>
         MenuGameRefiner<Type, ValueType>::MenuGameRefiner(MenuGameAbstractor<Type, ValueType>& abstractor, std::unique_ptr<storm::solver::SmtSolver>&& smtSolver) : abstractor(abstractor), useInterpolation(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isUseInterpolationSet()), splitAll(false), splitPredicates(false), addedAllGuardsFlag(false), pivotSelectionHeuristic(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getPivotSelectionHeuristic()), splitter(), equivalenceChecker(std::move(smtSolver)) {
             
+            equivalenceChecker.addConstraints(abstractor.getAbstractionInformation().getConstraints());
+            
             AbstractionSettings::SplitMode splitMode = storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getSplitMode();
             splitAll = splitMode == AbstractionSettings::SplitMode::All;
             splitPredicates = splitMode == AbstractionSettings::SplitMode::NonGuard;
@@ -325,7 +327,7 @@ namespace storm {
                 }
                 for (auto const& otherPredicate : otherRefinementPredicates) {
                     for (uint64_t index = 0; index < possibleRefinementPredicates.size(); ++index) {
-                        if (equivalenceChecker.areEquivalent(otherPredicate, possibleRefinementPredicates[index])) {
+                        if (equivalenceChecker.areEquivalentModuloNegation(otherPredicate, possibleRefinementPredicates[index])) {
                             ++refinementPredicateIndexToCount[index];
                         }
                     }
@@ -390,7 +392,7 @@ namespace storm {
             storm::dd::Bdd<Type> lowerChoice1 = (lowerChoice && minPlayer2Strategy).existsAbstract(variablesToAbstract);
             storm::dd::Bdd<Type> lowerChoice2 = (lowerChoice && maxPlayer2Strategy).existsAbstract(variablesToAbstract);
             
-            bool lowerChoicesDifferent = !lowerChoice1.exclusiveOr(lowerChoice2).isZero();
+            bool lowerChoicesDifferent = !lowerChoice1.exclusiveOr(lowerChoice2).isZero() && !lowerChoice1.isZero() && !lowerChoice2.isZero();
             if (lowerChoicesDifferent) {
                 STORM_LOG_TRACE("Deriving predicate based on lower choice.");
                 predicates = derivePredicatesFromDifferingChoices((pivotState && minPlayer1Strategy).existsAbstract(game.getRowVariables()), lowerChoice1, lowerChoice2);
@@ -405,7 +407,7 @@ namespace storm {
                 storm::dd::Bdd<Type> upperChoice1 = (upperChoice && minPlayer2Strategy).existsAbstract(variablesToAbstract);
                 storm::dd::Bdd<Type> upperChoice2 = (upperChoice && maxPlayer2Strategy).existsAbstract(variablesToAbstract);
                 
-                bool upperChoicesDifferent = !upperChoice1.exclusiveOr(upperChoice2).isZero();
+                bool upperChoicesDifferent = !upperChoice1.exclusiveOr(upperChoice2).isZero() && !upperChoice1.isZero() && !upperChoice2.isZero();
                 if (upperChoicesDifferent) {
                     STORM_LOG_TRACE("Deriving predicate based on upper choice.");
                     additionalPredicates = derivePredicatesFromDifferingChoices((pivotState && maxPlayer1Strategy).existsAbstract(game.getRowVariables()), upperChoice1, upperChoice2);
@@ -476,12 +478,26 @@ namespace storm {
                 
                 // Retrieve the variable updates that the predecessor needs to perform to get to the current state.
                 auto variableUpdates = abstractor.get().getVariableUpdates(std::get<1>(decodedPredecessor), std::get<2>(decodedPredecessor));
-                for (auto const& update : variableUpdates) {
-                    storm::expressions::Variable newVariable = oldToNewVariables.at(update.first);
-                    if (update.second.hasBooleanType()) {
-                        predicates.back().push_back(storm::expressions::iff(lastSubstitution.at(oldToNewVariables.at(update.first)), update.second.changeManager(expressionManager).substitute(substitution)));
+                for (auto const& oldNewVariablePair : oldToNewVariables) {
+                    storm::expressions::Variable const& newVariable = oldNewVariablePair.second;
+
+                    // If the variable was set, use its update expression.
+                    auto updateIt = variableUpdates.find(oldNewVariablePair.first);
+                    if (updateIt != variableUpdates.end()) {
+                        auto const& update = *updateIt;
+
+                        if (update.second.hasBooleanType()) {
+                            predicates.back().push_back(storm::expressions::iff(lastSubstitution.at(newVariable), update.second.changeManager(expressionManager).substitute(substitution)));
+                        } else {
+                            predicates.back().push_back(lastSubstitution.at(newVariable) == update.second.changeManager(expressionManager).substitute(substitution));
+                        }
                     } else {
-                        predicates.back().push_back(lastSubstitution.at(oldToNewVariables.at(update.first)) == update.second.changeManager(expressionManager).substitute(substitution));
+                        // Otherwise, make sure that the new variable maintains the old value.
+                        if (newVariable.hasBooleanType()) {
+                            predicates.back().push_back(storm::expressions::iff(lastSubstitution.at(newVariable), substitution.at(newVariable)));
+                        } else {
+                            predicates.back().push_back(lastSubstitution.at(newVariable) == substitution.at(newVariable));
+                        }
                     }
                 }
                 
@@ -581,6 +597,7 @@ namespace storm {
             
             // Redirect all player 1 choices of the min strategy to that of the max strategy if this leads to a player 2
             // state that is also a prob 0 state.
+            auto oldMinPlayer1Strategy = minPlayer1Strategy;
             minPlayer1Strategy = (maxPlayer1Strategy && qualitativeResult.prob0Min.getPlayer2States()).existsAbstract(game.getPlayer1Variables()).ite(maxPlayer1Strategy, minPlayer1Strategy);
             
             // Compute all reached pivot states.
@@ -597,7 +614,49 @@ namespace storm {
             
             // Now that we have the pivot state candidates, we need to pick one.
             PivotStateResult<Type, ValueType> pivotStateResult = pickPivotState<Type, ValueType>(pivotSelectionHeuristic, game, pivotStateCandidatesResult, qualitativeResult, boost::none);
-            
+
+//            // SANITY CHECK TO MAKE SURE OUR STRATEGIES ARE NOT BROKEN.
+//            // FIXME.
+//            auto min1ChoiceInPivot = pivotStateResult.pivotState && game.getExtendedTransitionMatrix().toBdd() && minPlayer1Strategy;
+//            STORM_LOG_ASSERT(!min1ChoiceInPivot.isZero(), "wth?");
+//            bool min1ChoiceInPivotIsProb0Min = !(min1ChoiceInPivot && qualitativeResult.prob0Min.getPlayer2States()).isZero();
+//            bool min1ChoiceInPivotIsProb0Max = !(min1ChoiceInPivot && qualitativeResult.prob0Max.getPlayer2States()).isZero();
+//            bool min1ChoiceInPivotIsProb1Min = !(min1ChoiceInPivot && qualitativeResult.prob1Min.getPlayer2States()).isZero();
+//            bool min1ChoiceInPivotIsProb1Max = !(min1ChoiceInPivot && qualitativeResult.prob1Max.getPlayer2States()).isZero();
+//            std::cout << "after redirection (min)" << std::endl;
+//            std::cout << "min choice is prob0 in min? " << min1ChoiceInPivotIsProb0Min << ", max? " << min1ChoiceInPivotIsProb0Max << std::endl;
+//            std::cout << "min choice is prob1 in min? " << min1ChoiceInPivotIsProb1Min << ", max? " << min1ChoiceInPivotIsProb1Max << std::endl;
+//            std::cout << "min" << std::endl;
+//            for (auto const& e : (min1ChoiceInPivot && minPlayer2Strategy).template toAdd<ValueType>()) {
+//                std::cout << e.first << " -> " << e.second << std::endl;
+//            }
+//            std::cout << "max" << std::endl;
+//            for (auto const& e : (min1ChoiceInPivot && maxPlayer2Strategy).template toAdd<ValueType>()) {
+//                std::cout << e.first << " -> " << e.second << std::endl;
+//            }
+//            bool different = (min1ChoiceInPivot && minPlayer2Strategy) != (min1ChoiceInPivot && maxPlayer2Strategy);
+//            std::cout << "min/max choice of player 2 is different? " << different << std::endl;
+//            bool min1MinPlayer2Choice = !(min1ChoiceInPivot && minPlayer2Strategy).isZero();
+//            bool min1MaxPlayer2Choice = !(min1ChoiceInPivot && maxPlayer2Strategy).isZero();
+//            std::cout << "max/min choice there? " << min1MinPlayer2Choice << std::endl;
+//            std::cout << "max/max choice there? " << min1MaxPlayer2Choice << std::endl;
+//
+//            auto max1ChoiceInPivot = pivotStateResult.pivotState && game.getExtendedTransitionMatrix().toBdd() && maxPlayer1Strategy;
+//            STORM_LOG_ASSERT(!max1ChoiceInPivot.isZero(), "wth?");
+//            bool max1ChoiceInPivotIsProb0Min = !(max1ChoiceInPivot && qualitativeResult.prob0Min.getPlayer2States()).isZero();
+//            bool max1ChoiceInPivotIsProb0Max = !(max1ChoiceInPivot && qualitativeResult.prob0Max.getPlayer2States()).isZero();
+//            bool max1ChoiceInPivotIsProb1Min = !(max1ChoiceInPivot && qualitativeResult.prob1Min.getPlayer2States()).isZero();
+//            bool max1ChoiceInPivotIsProb1Max = !(max1ChoiceInPivot && qualitativeResult.prob1Max.getPlayer2States()).isZero();
+//            std::cout << "after redirection (max)" << std::endl;
+//            std::cout << "max choice is prob0 in min? " << max1ChoiceInPivotIsProb0Min << ", max? " << max1ChoiceInPivotIsProb0Max << std::endl;
+//            std::cout << "max choice is prob1 in min? " << max1ChoiceInPivotIsProb1Min << ", max? " << max1ChoiceInPivotIsProb1Max << std::endl;
+//            different = (max1ChoiceInPivot && minPlayer2Strategy) != (max1ChoiceInPivot && maxPlayer2Strategy);
+//            std::cout << "min/max choice of player 2 is different? " << different << std::endl;
+//            bool max1MinPlayer2Choice = !(max1ChoiceInPivot && minPlayer2Strategy).isZero();
+//            bool max1MaxPlayer2Choice = !(max1ChoiceInPivot && maxPlayer2Strategy).isZero();
+//            std::cout << "max/min choice there? " << max1MinPlayer2Choice << std::endl;
+//            std::cout << "max/max choice there? " << max1MaxPlayer2Choice << std::endl;
+
             boost::optional<RefinementPredicates> predicates;
             if (useInterpolation) {
                 predicates = derivePredicatesFromInterpolation(game, pivotStateResult, minPlayer1Strategy, minPlayer2Strategy, maxPlayer1Strategy, maxPlayer2Strategy);
@@ -669,13 +728,13 @@ namespace storm {
                         // set or in the set that is to be added.
                         bool addAtom = true;
                         for (auto const& oldPredicate : abstractionInformation.getPredicates()) {
-                            if (equivalenceChecker.areEquivalent(atom, oldPredicate)) {
+                            if (equivalenceChecker.areEquivalent(atom, oldPredicate) || equivalenceChecker.areEquivalent(atom, !oldPredicate)) {
                                 addAtom = false;
                                 break;
                             }
                         }
                         for (auto const& addedAtom : cleanedAtoms) {
-                            if (equivalenceChecker.areEquivalent(addedAtom, atom)) {
+                            if (equivalenceChecker.areEquivalent(addedAtom, atom) || equivalenceChecker.areEquivalent(addedAtom, !atom)) {
                                 addAtom = false;
                                 break;
                             }

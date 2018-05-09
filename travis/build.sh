@@ -1,5 +1,4 @@
 #!/bin/bash -x
-# Inspired by https://github.com/google/fruit
 
 N_JOBS=2
 TIMEOUT_MAC=1600
@@ -27,21 +26,31 @@ linux)
     docker rm -f storm &>/dev/null
     # Run container
     set -e
-    docker run -d -it --name storm --privileged mvolk/storm-basesystem:$LINUX
+    case "$CONFIG" in
+    *DebugTravis)
+        docker run -d -it --name storm --privileged movesrwth/carl:travis-debug
+        ;;
+    *ReleaseTravis)
+        docker run -d -it --name storm --privileged movesrwth/carl:travis
+        ;;
+    *)
+        docker run -d -it --name storm --privileged movesrwth/storm-basesystem:$LINUX
+        ;;
+    esac
     # Copy local content into container
-    docker exec storm mkdir storm
-    docker cp . storm:/storm
+    docker exec storm mkdir /opt/storm
+    docker cp . storm:/opt/storm
     set +e
 
     # Execute main process
-    timeout $TIMEOUT_LINUX docker exec storm bash -c "
+    docker exec storm bash -c "
         export CONFIG=$CONFIG;
         export COMPILER=$COMPILER;
         export N_JOBS=$N_JOBS;
         export STLARG=;
         export OS=$OS;
-        cd storm;
-        travis/build-helper.sh $1"
+        cd /opt/storm;
+        timeout $TIMEOUT_LINUX ./travis/build_helper.sh $1"
     EXITCODE=$?
     ;;
 
@@ -53,7 +62,7 @@ osx)
     export N_JOBS
     export STLARG
     export OS
-    gtimeout $TIMEOUT_MAC travis/build-helper.sh "$1"
+    gtimeout $TIMEOUT_MAC travis/build_helper.sh "$1"
     EXITCODE=$?
     ;;
 

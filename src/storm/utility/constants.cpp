@@ -48,7 +48,11 @@ namespace storm {
         bool isAlmostZero(double const& a) {
             return a < 1e-12 && a > -1e-12;
         }
-
+        
+        bool isAlmostOne(double const& a) {
+            return a < (1.0 + 1e-12) && a > (1.0 - 1e-12);
+        }
+        
         template<typename ValueType>
         bool isConstant(ValueType const&) {
             return true;
@@ -159,13 +163,26 @@ namespace storm {
         
         template<typename ValueType>
         ValueType minimum(std::vector<ValueType> const& values) {
-            return minmax(values).first;
+            assert(!values.empty());
+            ValueType min = values.front();
+            for (auto const& vt : values) {
+                if (vt < min) {
+                    min = vt;
+                }
+            }
+            return min;
         }
-        
         
         template<typename ValueType>
         ValueType maximum(std::vector<ValueType> const& values) {
-            return minmax(values).second;
+            assert(!values.empty());
+            ValueType max = values.front();
+            for (auto const& vt : values) {
+                if (vt > max) {
+                    max = vt;
+                }
+            }
+            return max;
         }
         
         template<typename K, typename ValueType>
@@ -307,7 +324,12 @@ namespace storm {
         uint_fast64_t convertNumber(ClnRationalNumber const& number) {
             return carl::toInt<carl::uint>(number);
         }
-        
+
+        template<>
+        int_fast64_t convertNumber(ClnRationalNumber const& number) {
+            return carl::toInt<carl::sint>(number);
+        }
+
         template<>
         ClnRationalNumber convertNumber(double const& number) {
             return carl::rationalize<ClnRationalNumber>(number);
@@ -336,6 +358,15 @@ namespace storm {
         }
         
         template<>
+        typename NumberTraits<ClnRationalNumber>::IntegerType convertNumber(double const& number){
+            if (number < static_cast<double>(std::numeric_limits<uint64_t>::max())) {
+                return NumberTraits<ClnRationalNumber>::IntegerType(static_cast<uint64_t>(number));
+            } else {
+                return carl::round(carl::rationalize<ClnRationalNumber>(number));
+            }
+        }
+        
+        template<>
         ClnRationalNumber convertNumber(int_fast64_t const& number) {
             STORM_LOG_ASSERT(static_cast<carl::sint>(number) == number, "Rationalizing failed, because the number is too large.");
             return carl::rationalize<ClnRationalNumber>(static_cast<carl::sint>(number));
@@ -351,6 +382,11 @@ namespace storm {
             return carl::parse<ClnRationalNumber>(number);
         }
         
+        template<>
+        std::pair<ClnRationalNumber, ClnRationalNumber> asFraction(ClnRationalNumber const& number) {
+            return std::make_pair(carl::getNum(number), carl::getDenom(number));
+        }
+
         template<>
         ClnRationalNumber sqrt(ClnRationalNumber const& number) {
             return carl::sqrt(number);
@@ -485,7 +521,12 @@ namespace storm {
         uint_fast64_t convertNumber(GmpRationalNumber const& number){
             return carl::toInt<carl::uint>(number);
         }
-        
+
+        template<>
+        int_fast64_t convertNumber(GmpRationalNumber const& number){
+            return carl::toInt<carl::sint>(number);
+        }
+
         template<>
         GmpRationalNumber convertNumber(double const& number){
             return carl::rationalize<GmpRationalNumber>(number);
@@ -514,6 +555,11 @@ namespace storm {
         }
 
         template<>
+        typename NumberTraits<GmpRationalNumber>::IntegerType convertNumber(double const& number){
+            return NumberTraits<GmpRationalNumber>::IntegerType(number);
+        }
+
+        template<>
         GmpRationalNumber convertNumber(int_fast64_t const& number){
             STORM_LOG_ASSERT(static_cast<carl::sint>(number) == number, "Rationalizing failed, because the number is too large.");
             return carl::rationalize<GmpRationalNumber>(static_cast<carl::sint>(number));
@@ -529,6 +575,11 @@ namespace storm {
             return carl::parse<GmpRationalNumber>(number);
         }
         
+        template<>
+        std::pair<GmpRationalNumber, GmpRationalNumber> asFraction(GmpRationalNumber const& number) {
+            return std::make_pair(carl::getNum(number), carl::getDenom(number));
+        }
+
         template<>
         GmpRationalNumber sqrt(GmpRationalNumber const& number) {
             return carl::sqrt(number);
@@ -868,7 +919,7 @@ namespace storm {
         template bool isZero(int const& value);
         template bool isConstant(int const& value);
         template bool isInfinity(int const& value);
-        
+
         // uint32_t
         template uint32_t one();
         template uint32_t zero();
@@ -877,7 +928,7 @@ namespace storm {
         template bool isZero(uint32_t const& value);
         template bool isConstant(uint32_t const& value);
         template bool isInfinity(uint32_t const& value);
-        
+
         // storm::storage::sparse::state_type
         template storm::storage::sparse::state_type one();
         template storm::storage::sparse::state_type zero();
@@ -886,11 +937,11 @@ namespace storm {
         template bool isZero(storm::storage::sparse::state_type const& value);
         template bool isConstant(storm::storage::sparse::state_type const& value);
         template bool isInfinity(storm::storage::sparse::state_type const& value);
-        
+
         // other instantiations
         template unsigned long convertNumber(long const&);
         template double convertNumber(long const&);
-        
+
 #if defined(STORM_HAVE_CLN)
         // Instantiations for (CLN) rational number.
         template storm::ClnRationalNumber one();
@@ -914,7 +965,7 @@ namespace storm {
         template storm::ClnRationalNumber min(storm::ClnRationalNumber const& first, storm::ClnRationalNumber const& second);
         template std::string to_string(storm::ClnRationalNumber const& value);
 #endif
-        
+
 #if defined(STORM_HAVE_GMP)
         // Instantiations for (GMP) rational number.
         template storm::GmpRationalNumber one();
@@ -937,10 +988,10 @@ namespace storm {
         template storm::GmpRationalNumber min(storm::GmpRationalNumber const& first, storm::GmpRationalNumber const& second);
         template std::string to_string(storm::GmpRationalNumber const& value);
 #endif
-        
+
 #if defined(STORM_HAVE_CARL) && defined(STORM_HAVE_GMP) && defined(STORM_HAVE_CLN)
 #endif
-        
+
 #ifdef STORM_HAVE_CARL
         // Instantiations for rational function.
         template RationalFunction one();

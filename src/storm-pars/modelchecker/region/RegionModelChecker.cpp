@@ -11,13 +11,12 @@
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
 
-#include "storm/exceptions/NotSupportedException.h"
-#include "storm/exceptions/InvalidStateException.h"
-#include "storm/exceptions/InvalidArgumentException.h"
-
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/exceptions/NotImplementedException.h"
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/InvalidStateException.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 
 
 namespace storm {
@@ -29,14 +28,14 @@ namespace storm {
             }
         
             template <typename ParametricType>
-            std::unique_ptr<storm::modelchecker::RegionCheckResult<ParametricType>> RegionModelChecker<ParametricType>::analyzeRegions(std::vector<storm::storage::ParameterRegion<ParametricType>> const& regions, std::vector<RegionResultHypothesis> const& hypotheses, bool sampleVerticesOfRegion) {
+            std::unique_ptr<storm::modelchecker::RegionCheckResult<ParametricType>> RegionModelChecker<ParametricType>::analyzeRegions(Environment const& env, std::vector<storm::storage::ParameterRegion<ParametricType>> const& regions, std::vector<RegionResultHypothesis> const& hypotheses, bool sampleVerticesOfRegion) {
                 
                 STORM_LOG_THROW(regions.size() == hypotheses.size(), storm::exceptions::InvalidArgumentException, "The number of regions and the number of hypotheses do not match");
                 std::vector<std::pair<storm::storage::ParameterRegion<ParametricType>, storm::modelchecker::RegionResult>> result;
                 
                 auto hypothesisIt = hypotheses.begin();
                 for (auto const& region : regions) {
-                    storm::modelchecker::RegionResult regionRes = analyzeRegion(region, *hypothesisIt, storm::modelchecker::RegionResult::Unknown, sampleVerticesOfRegion);
+                    storm::modelchecker::RegionResult regionRes = analyzeRegion(env, region, *hypothesisIt, storm::modelchecker::RegionResult::Unknown, sampleVerticesOfRegion);
                     result.emplace_back(region, regionRes);
                     ++hypothesisIt;
                 }
@@ -45,13 +44,13 @@ namespace storm {
             }
 
             template <typename ParametricType>
-            ParametricType RegionModelChecker<ParametricType>::getBoundAtInitState(storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForParameters) {
+            ParametricType RegionModelChecker<ParametricType>::getBoundAtInitState(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForParameters) {
                 STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "The selected region model checker does not support this functionality.");
                 return storm::utility::zero<ParametricType>();
             }
         
             template <typename ParametricType>
-            std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ParametricType>> RegionModelChecker<ParametricType>::performRegionRefinement(storm::storage::ParameterRegion<ParametricType> const& region, boost::optional<ParametricType> const& coverageThreshold, boost::optional<uint64_t> depthThreshold, RegionResultHypothesis const& hypothesis) {
+            std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ParametricType>> RegionModelChecker<ParametricType>::performRegionRefinement(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, boost::optional<ParametricType> const& coverageThreshold, boost::optional<uint64_t> depthThreshold, RegionResultHypothesis const& hypothesis) {
                 STORM_LOG_INFO("Applying refinement on region: " << region.toString(true) << " .");
                 
                 auto thresholdAsCoefficient = coverageThreshold ? storm::utility::convertNumber<CoefficientType>(coverageThreshold.get()) : storm::utility::zero<CoefficientType>();
@@ -91,7 +90,7 @@ namespace storm {
                     STORM_LOG_INFO("Analyzing region #" << numOfAnalyzedRegions << " (Refinement depth " << currentDepth << "; " << storm::utility::convertNumber<double>(fractionOfUndiscoveredArea) * 100 << "% still unknown)");
                     auto& currentRegion = unprocessedRegions.front().first;
                     auto& res = unprocessedRegions.front().second;
-                    res = analyzeRegion(currentRegion, hypothesis, res, false);
+                    res = analyzeRegion(env, currentRegion, hypothesis, res, false);
                     switch (res) {
                         case RegionResult::AllSat:
                             fractionOfUndiscoveredArea -= currentRegion.area() / areaOfParameterSpace;
@@ -152,6 +151,18 @@ namespace storm {
                 auto regionCopyForResult = region;
                 return std::make_unique<storm::modelchecker::RegionRefinementCheckResult<ParametricType>>(std::move(result), std::move(regionCopyForResult));
             }
+
+        template <typename ParametricType>
+        bool RegionModelChecker<ParametricType>::isRegionSplitEstimateSupported() const {
+            return false;
+        }
+        
+        template <typename ParametricType>
+        std::map<typename RegionModelChecker<ParametricType>::VariableType, double> RegionModelChecker<ParametricType>::getRegionSplitEstimate() const {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Region split estimation is not supported by this region model checker.");
+            return std::map<typename RegionModelChecker<ParametricType>::VariableType, double>();
+        }
+
     
 #ifdef STORM_HAVE_CARL
             template class RegionModelChecker<storm::RationalFunction>;

@@ -17,7 +17,8 @@ namespace storm {
         
         template <storm::dd::DdType DdType>
         ExpressionTranslator<DdType>::ExpressionTranslator(AbstractionInformation<DdType>& abstractionInformation, std::unique_ptr<storm::solver::SmtSolver>&& smtSolver) : abstractionInformation(abstractionInformation), equivalenceChecker(std::move(smtSolver)), locationVariables(abstractionInformation.getLocationExpressionVariables()), abstractedVariables(abstractionInformation.getAbstractedVariables()) {
-            // Intentionally left empty.
+            
+            equivalenceChecker.addConstraints(abstractionInformation.getConstraints());
         }
 
         template <storm::dd::DdType DdType>
@@ -51,6 +52,8 @@ namespace storm {
                 for (uint64_t predicateIndex = 0; predicateIndex < abstractionInformation.get().getNumberOfPredicates(); ++predicateIndex) {
                     if (equivalenceChecker.areEquivalent(abstractionInformation.get().getPredicateByIndex(predicateIndex), expression.toExpression())) {
                         return abstractionInformation.get().encodePredicateAsSource(predicateIndex);
+                    } else if (equivalenceChecker.areEquivalent(abstractionInformation.get().getPredicateByIndex(predicateIndex), !expression.toExpression())) {
+                        return !abstractionInformation.get().encodePredicateAsSource(predicateIndex);
                     }
                 }
 
@@ -108,6 +111,8 @@ namespace storm {
                 for (uint64_t predicateIndex = 0; predicateIndex < abstractionInformation.get().getNumberOfPredicates(); ++predicateIndex) {
                     if (equivalenceChecker.areEquivalent(abstractionInformation.get().getPredicateByIndex(predicateIndex), expression.toExpression())) {
                         return abstractionInformation.get().encodePredicateAsSource(predicateIndex);
+                    } else if (equivalenceChecker.areEquivalent(abstractionInformation.get().getPredicateByIndex(predicateIndex), !expression.toExpression())) {
+                        return !abstractionInformation.get().encodePredicateAsSource(predicateIndex);
                     }
                 }
                 
@@ -124,6 +129,8 @@ namespace storm {
                 for (uint64_t predicateIndex = 0; predicateIndex < abstractionInformation.get().getNumberOfPredicates(); ++predicateIndex) {
                     if (equivalenceChecker.areEquivalent(abstractionInformation.get().getPredicateByIndex(predicateIndex), expression.toExpression())) {
                         return abstractionInformation.get().encodePredicateAsSource(predicateIndex);
+                    } else if (equivalenceChecker.areEquivalent(abstractionInformation.get().getPredicateByIndex(predicateIndex), !expression.toExpression())) {
+                        return !abstractionInformation.get().encodePredicateAsSource(predicateIndex);
                     }
                 }
                 
@@ -154,6 +161,8 @@ namespace storm {
                 for (uint64_t predicateIndex = 0; predicateIndex < abstractionInformation.get().getNumberOfPredicates(); ++predicateIndex) {
                     if (equivalenceChecker.areEquivalent(abstractionInformation.get().getPredicateByIndex(predicateIndex), expression.toExpression())) {
                         return abstractionInformation.get().encodePredicateAsSource(predicateIndex);
+                    } else if (equivalenceChecker.areEquivalent(abstractionInformation.get().getPredicateByIndex(predicateIndex), !expression.toExpression())) {
+                        return !abstractionInformation.get().encodePredicateAsSource(predicateIndex);
                     }
                 }
                 

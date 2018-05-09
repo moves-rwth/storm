@@ -109,6 +109,10 @@ namespace storm {
                  */
                 virtual void exportToDot(std::string const& filename, storm::dd::Bdd<DdType> const& highlightStates, storm::dd::Bdd<DdType> const& filter) const override;
 
+                virtual uint64_t getNumberOfPredicates() const override;
+                
+                virtual void addTerminalStates(storm::expressions::Expression const& expression) override;
+                
             protected:
                 using MenuGameAbstractor<DdType, ValueType>::exportToDot;
                 
@@ -154,6 +158,9 @@ namespace storm {
                 
                 // A flag storing whether a refinement was performed.
                 bool refinementPerformed;
+                
+                // A list of terminal state expressions.
+                std::vector<storm::expressions::Expression> terminalStateExpressions;
             };
         }
     }

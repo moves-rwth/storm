@@ -90,7 +90,7 @@ namespace storm {
                  *
                  * @return The number of nondeterministic choices in the model.
                  */
-                uint_fast64_t getNumberOfChoices() const;
+                virtual uint_fast64_t getNumberOfChoices() const override;
                 
                 /*!
                  * Retrieves the meta variables used to encode the nondeterminism in the model.

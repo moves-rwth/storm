@@ -14,7 +14,7 @@ namespace storm {
     namespace modelchecker {
 
         template<typename ValueType>
-        void DFTModelChecker<ValueType>::check(storm::storage::DFT<ValueType> const& origDft, std::vector<std::shared_ptr<const storm::logic::Formula>> const& properties, bool symred, bool allowModularisation, bool enableDC, double approximationError) {
+        typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::check(storm::storage::DFT<ValueType> const& origDft, std::vector<std::shared_ptr<const storm::logic::Formula>> const& properties, bool symred, bool allowModularisation, bool enableDC, double approximationError) {
             // Initialize
             this->approximationError = approximationError;
             totalTimer.start();
@@ -33,11 +33,11 @@ namespace storm {
                 for (ValueType result : resultsValue) {
                     checkResults.push_back(result);
                 }
-
             } else {
                 checkResults = checkHelper(dft, properties, symred, allowModularisation, enableDC, approximationError);
             }
             totalTimer.stop();
+            return checkResults;
         }
 
         template<typename ValueType>
@@ -54,14 +54,14 @@ namespace storm {
                     case storm::storage::DFTElementType::AND:
                         STORM_LOG_TRACE("top modularisation called AND");
                         dfts = dft.topModularisation();
-                        STORM_LOG_TRACE("Modularsation into " << dfts.size() << " submodules.");
+                        STORM_LOG_TRACE("Modularisation into " << dfts.size() << " submodules.");
                         nrK = dfts.size();
                         nrM = dfts.size();
                         break;
                     case storm::storage::DFTElementType::OR:
                         STORM_LOG_TRACE("top modularisation called OR");
                         dfts = dft.topModularisation();
-                        STORM_LOG_TRACE("Modularsation into " << dfts.size() << " submodules.");
+                        STORM_LOG_TRACE("Modularisation into " << dfts.size() << " submodules.");
                         nrK = 0;
                         nrM = dfts.size();
                         invResults = true;
@@ -69,7 +69,7 @@ namespace storm {
                     case storm::storage::DFTElementType::VOT:
                         STORM_LOG_TRACE("top modularisation called VOT");
                         dfts = dft.topModularisation();
-                        STORM_LOG_TRACE("Modularsation into " << dfts.size() << " submodules.");
+                        STORM_LOG_TRACE("Modularisation into " << dfts.size() << " submodules.");
                         nrK = std::static_pointer_cast<storm::storage::DFTVot<ValueType> const>(dft.getTopLevelGate())->threshold();
                         nrM = dfts.size();
                         if(nrK <= nrM/2) {
@@ -176,7 +176,7 @@ namespace storm {
                 bool firstTime = true;
                 std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> composedModel;
                 for (auto const ft : dfts) {
-                    STORM_LOG_INFO("Building Model via parallel composition...");
+                    STORM_LOG_DEBUG("Building Model via parallel composition...");
                     explorationTimer.start();
 
                     // Find symmetries
@@ -185,12 +185,12 @@ namespace storm {
                     if(symred) {
                         auto colouring = ft.colourDFT();
                         symmetries = ft.findSymmetries(colouring);
-                        STORM_LOG_INFO("Found " << symmetries.groups.size() << " symmetries.");
+                        STORM_LOG_DEBUG("Found " << symmetries.groups.size() << " symmetries.");
                         STORM_LOG_TRACE("Symmetries: " << std::endl << symmetries);
                     }
 
                     // Build a single CTMC
-                    STORM_LOG_INFO("Building Model...");
+                    STORM_LOG_DEBUG("Building Model...");
                     storm::builder::ExplicitDFTModelBuilder<ValueType> builder(ft, symmetries, enableDC);
                     typename storm::builder::ExplicitDFTModelBuilder<ValueType>::LabelOptions labeloptions(properties);
                     builder.buildModel(labeloptions, 0, 0.0);
@@ -226,7 +226,7 @@ namespace storm {
                     }
 
                 }
-                composedModel->printModelInformationToStream(std::cout);
+                //composedModel->printModelInformationToStream(std::cout);
                 return composedModel;
             } else {
                 // No composition was possible
@@ -237,17 +237,17 @@ namespace storm {
                 if(symred) {
                     auto colouring = dft.colourDFT();
                     symmetries = dft.findSymmetries(colouring);
-                    STORM_LOG_INFO("Found " << symmetries.groups.size() << " symmetries.");
+                    STORM_LOG_DEBUG("Found " << symmetries.groups.size() << " symmetries.");
                     STORM_LOG_TRACE("Symmetries: " << std::endl << symmetries);
                 }
                 // Build a single CTMC
-                STORM_LOG_INFO("Building Model...");
+                STORM_LOG_DEBUG("Building Model...");
 
                 storm::builder::ExplicitDFTModelBuilder<ValueType> builder(dft, symmetries, enableDC);
                 typename storm::builder::ExplicitDFTModelBuilder<ValueType>::LabelOptions labeloptions(properties);
                 builder.buildModel(labeloptions, 0, 0.0);
                 std::shared_ptr<storm::models::sparse::Model<ValueType>> model = builder.getModel();
-                model->printModelInformationToStream(std::cout);
+                //model->printModelInformationToStream(std::cout);
                 explorationTimer.stop();
                 STORM_LOG_THROW(model->isOfType(storm::models::ModelType::Ctmc), storm::exceptions::NotSupportedException, "Parallel composition only applicable for CTMCs");
                 return model->template as<storm::models::sparse::Ctmc<ValueType>>();
@@ -264,7 +264,7 @@ namespace storm {
             if(symred) {
                 auto colouring = dft.colourDFT();
                 symmetries = dft.findSymmetries(colouring);
-                STORM_LOG_INFO("Found " << symmetries.groups.size() << " symmetries.");
+                STORM_LOG_DEBUG("Found " << symmetries.groups.size() << " symmetries.");
                 STORM_LOG_TRACE("Symmetries: " << std::endl << symmetries);
             }
 
@@ -292,7 +292,7 @@ namespace storm {
                     if (iteration > 0) {
                         explorationTimer.start();
                     }
-                    STORM_LOG_INFO("Building model...");
+                    STORM_LOG_DEBUG("Building model...");
                     // TODO Matthias refine model using existing model and MC results
                     builder.buildModel(labeloptions, iteration, approximationError);
                     explorationTimer.stop();
@@ -301,10 +301,10 @@ namespace storm {
                     // TODO Matthias: possible to do bisimulation on approximated model and not on concrete one?
 
                     // Build model for lower bound
-                    STORM_LOG_INFO("Getting model for lower bound...");
+                    STORM_LOG_DEBUG("Getting model for lower bound...");
                     model = builder.getModelApproximation(true, !probabilityFormula);
                     // We only output the info from the lower bound as the info for the upper bound is the same
-                    model->printModelInformationToStream(std::cout);
+                    //model->printModelInformationToStream(std::cout);
                     buildingTimer.stop();
 
                     // Check lower bounds
@@ -314,7 +314,7 @@ namespace storm {
                     approxResult.first = newResult[0];
 
                     // Build model for upper bound
-                    STORM_LOG_INFO("Getting model for upper bound...");
+                    STORM_LOG_DEBUG("Getting model for upper bound...");
                     buildingTimer.start();
                     model = builder.getModelApproximation(false, !probabilityFormula);
                     buildingTimer.stop();
@@ -326,25 +326,25 @@ namespace storm {
 
                     ++iteration;
                     STORM_LOG_ASSERT(comparator.isLess(approxResult.first, approxResult.second) || comparator.isEqual(approxResult.first, approxResult.second), "Under-approximation " << approxResult.first << " is greater than over-approximation " << approxResult.second);
-                    STORM_LOG_INFO("Result after iteration " << iteration << ": (" << std::setprecision(10) << approxResult.first << ", " << approxResult.second << ")");
+                    //STORM_LOG_INFO("Result after iteration " << iteration << ": (" << std::setprecision(10) << approxResult.first << ", " << approxResult.second << ")");
                     totalTimer.stop();
                     printTimings();
                     totalTimer.start();
                     STORM_LOG_THROW(!storm::utility::isInfinity<ValueType>(approxResult.first) && !storm::utility::isInfinity<ValueType>(approxResult.second), storm::exceptions::NotSupportedException, "Approximation does not work if result might be infinity.");
                 } while (!isApproximationSufficient(approxResult.first, approxResult.second, approximationError, probabilityFormula));
 
-                STORM_LOG_INFO("Finished approximation after " << iteration << " iteration" << (iteration > 1 ? "s." : "."));
+                //STORM_LOG_INFO("Finished approximation after " << iteration << " iteration" << (iteration > 1 ? "s." : "."));
                 dft_results results;
                 results.push_back(approxResult);
                 return results;
             } else {
                 // Build a single Markov Automaton
-                STORM_LOG_INFO("Building Model...");
+                STORM_LOG_DEBUG("Building Model...");
                 storm::builder::ExplicitDFTModelBuilder<ValueType> builder(dft, symmetries, enableDC);
                 typename storm::builder::ExplicitDFTModelBuilder<ValueType>::LabelOptions labeloptions(properties, storm::settings::getModule<storm::settings::modules::IOSettings>().isExportExplicitSet());
                 builder.buildModel(labeloptions, 0, 0.0);
                 std::shared_ptr<storm::models::sparse::Model<ValueType>> model = builder.getModel();
-                model->printModelInformationToStream(std::cout);
+                //model->printModelInformationToStream(std::cout);
                 explorationTimer.stop();
 
                 // Export the model if required
@@ -373,15 +373,15 @@ namespace storm {
             // Bisimulation
             if (model->isOfType(storm::models::ModelType::Ctmc) && storm::settings::getModule<storm::settings::modules::GeneralSettings>().isBisimulationSet()) {
                 bisimulationTimer.start();
-                STORM_LOG_INFO("Bisimulation...");
+                STORM_LOG_DEBUG("Bisimulation...");
                 model =  storm::api::performDeterministicSparseBisimulationMinimization<storm::models::sparse::Ctmc<ValueType>>(model->template as<storm::models::sparse::Ctmc<ValueType>>(), properties, storm::storage::BisimulationType::Weak)->template as<storm::models::sparse::Ctmc<ValueType>>();
-                STORM_LOG_INFO("No. states (Bisimulation): " << model->getNumberOfStates());
-                STORM_LOG_INFO("No. transitions (Bisimulation): " << model->getNumberOfTransitions());
+                STORM_LOG_DEBUG("No. states (Bisimulation): " << model->getNumberOfStates());
+                STORM_LOG_DEBUG("No. transitions (Bisimulation): " << model->getNumberOfTransitions());
                 bisimulationTimer.stop();
             }
 
             // Check the model
-            STORM_LOG_INFO("Model checking...");
+            STORM_LOG_DEBUG("Model checking...");
             modelCheckingTimer.start();
             std::vector<ValueType> results;
 
@@ -390,18 +390,18 @@ namespace storm {
             for (auto property : properties) {
                 singleModelCheckingTimer.reset();
                 singleModelCheckingTimer.start();
-                STORM_PRINT_AND_LOG("Model checking property " << *property << " ..." << std::endl);
+                //STORM_PRINT_AND_LOG("Model checking property " << *property << " ..." << std::endl);
                 std::unique_ptr<storm::modelchecker::CheckResult> result(storm::api::verifyWithSparseEngine<ValueType>(model, storm::api::createTask<ValueType>(property, true)));
                 STORM_LOG_ASSERT(result, "Result does not exist.");
                 result->filter(storm::modelchecker::ExplicitQualitativeCheckResult(model->getInitialStates()));
                 ValueType resultValue = result->asExplicitQuantitativeCheckResult<ValueType>().getValueMap().begin()->second;
-                STORM_PRINT_AND_LOG("Result (initial states): " << resultValue << std::endl);
+                //STORM_PRINT_AND_LOG("Result (initial states): " << resultValue << std::endl);
                 results.push_back(resultValue);
                 singleModelCheckingTimer.stop();
-                STORM_PRINT_AND_LOG("Time for model checking: " << singleModelCheckingTimer << "." << std::endl);
+                //STORM_PRINT_AND_LOG("Time for model checking: " << singleModelCheckingTimer << "." << std::endl);
             }
             modelCheckingTimer.stop();
-            STORM_LOG_INFO("Model checking done.");
+            STORM_LOG_DEBUG("Model checking done.");
             return results;
         }
 

@@ -18,6 +18,8 @@
 #include "storm-pars/storage/ParameterRegion.h"
 #include "storm-pars/utility/parameterlifting.h"
 
+#include "storm/environment/Environment.h"
+
 #include "storm/api/transformation.h"
 #include "storm/utility/file.h"
 #include "storm/models/sparse/Model.h"
@@ -79,7 +81,7 @@ namespace storm {
         }
         
         template <typename ParametricType, typename ConstantType>
-        std::shared_ptr<storm::modelchecker::RegionModelChecker<ParametricType>> initializeParameterLiftingRegionModelChecker(std::shared_ptr<storm::models::sparse::Model<ParametricType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ParametricType> const& task) {
+        std::shared_ptr<storm::modelchecker::RegionModelChecker<ParametricType>> initializeParameterLiftingRegionModelChecker(Environment const& env, std::shared_ptr<storm::models::sparse::Model<ParametricType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ParametricType> const& task, bool generateSplitEstimates = false, bool allowModelSimplification = true) {
             
             STORM_LOG_WARN_COND(storm::utility::parameterlifting::validateParameterLiftingSound(*model, task.getFormula()), "Could not validate whether parameter lifting is applicable. Please validate manually...");
 
@@ -103,13 +105,13 @@ namespace storm {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Unable to perform parameterLifting on the provided model type.");
             }
             
-            checker->specify(consideredModel, task);
+            checker->specify(env, consideredModel, task, generateSplitEstimates, allowModelSimplification);
             
             return checker;
         }
         
         template <typename ParametricType, typename ImpreciseType, typename PreciseType>
-        std::shared_ptr<storm::modelchecker::RegionModelChecker<ParametricType>> initializeValidatingRegionModelChecker(std::shared_ptr<storm::models::sparse::Model<ParametricType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ParametricType> const& task) {
+        std::shared_ptr<storm::modelchecker::RegionModelChecker<ParametricType>> initializeValidatingRegionModelChecker(Environment const& env, std::shared_ptr<storm::models::sparse::Model<ParametricType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ParametricType> const& task, bool generateSplitEstimates = false, bool allowModelSimplification = true) {
             
             STORM_LOG_WARN_COND(storm::utility::parameterlifting::validateParameterLiftingSound(*model, task.getFormula()), "Could not validate whether parameter lifting is applicable. Please validate manually...");
 
@@ -133,20 +135,20 @@ namespace storm {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Unable to perform parameterLifting on the provided model type.");
             }
             
-            checker->specify(consideredModel, task);
+            checker->specify(env, consideredModel, task, generateSplitEstimates, allowModelSimplification);
             
             return checker;
         }
         
         template <typename ValueType>
-        std::shared_ptr<storm::modelchecker::RegionModelChecker<ValueType>> initializeRegionModelChecker(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, storm::modelchecker::RegionCheckEngine engine) {
+        std::shared_ptr<storm::modelchecker::RegionModelChecker<ValueType>> initializeRegionModelChecker(Environment const& env, std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, storm::modelchecker::RegionCheckEngine engine) {
             switch (engine) {
                     case storm::modelchecker::RegionCheckEngine::ParameterLifting:
-                            return initializeParameterLiftingRegionModelChecker<ValueType, double>(model, task);
+                            return initializeParameterLiftingRegionModelChecker<ValueType, double>(env, model, task);
                     case storm::modelchecker::RegionCheckEngine::ExactParameterLifting:
-                            return initializeParameterLiftingRegionModelChecker<ValueType, storm::RationalNumber>(model, task);
+                            return initializeParameterLiftingRegionModelChecker<ValueType, storm::RationalNumber>(env, model, task);
                     case storm::modelchecker::RegionCheckEngine::ValidatingParameterLifting:
-                            return initializeValidatingRegionModelChecker<ValueType, double, storm::RationalNumber>(model, task);
+                            return initializeValidatingRegionModelChecker<ValueType, double, storm::RationalNumber>(env, model, task);
                     default:
                             STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected region model checker type.");
             }
@@ -154,9 +156,16 @@ namespace storm {
         }
         
         template <typename ValueType>
+        std::shared_ptr<storm::modelchecker::RegionModelChecker<ValueType>> initializeRegionModelChecker(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, storm::modelchecker::RegionCheckEngine engine) {
+            Environment env;
+            initializeRegionModelChecker(env, model, task, engine);
+        }
+        
+        template <typename ValueType>
         std::unique_ptr<storm::modelchecker::RegionCheckResult<ValueType>> checkRegionsWithSparseEngine(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, std::vector<storm::storage::ParameterRegion<ValueType>> const& regions, storm::modelchecker::RegionCheckEngine engine, std::vector<storm::modelchecker::RegionResultHypothesis> const& hypotheses, bool sampleVerticesOfRegions) {
-            auto regionChecker = initializeRegionModelChecker(model, task, engine);
-            return regionChecker->analyzeRegions(regions, hypotheses, sampleVerticesOfRegions);
+            Environment env;
+            auto regionChecker = initializeRegionModelChecker(env, model, task, engine);
+            return regionChecker->analyzeRegions(env, regions, hypotheses, sampleVerticesOfRegions);
         }
     
         template <typename ValueType>
@@ -174,11 +183,11 @@ namespace storm {
          */
         template <typename ValueType>
         std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ValueType>> checkAndRefineRegionWithSparseEngine(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, storm::storage::ParameterRegion<ValueType> const& region, storm::modelchecker::RegionCheckEngine engine, boost::optional<ValueType> const& coverageThreshold, boost::optional<uint64_t> const& refinementDepthThreshold = boost::none, storm::modelchecker::RegionResultHypothesis hypothesis = storm::modelchecker::RegionResultHypothesis::Unknown) {
-            auto regionChecker = initializeRegionModelChecker(model, task, engine);
-            return regionChecker->performRegionRefinement(region, coverageThreshold, refinementDepthThreshold, hypothesis);
+            Environment env;
+            auto regionChecker = initializeRegionModelChecker(env, model, task, engine);
+            return regionChecker->performRegionRefinement(env, region, coverageThreshold, refinementDepthThreshold, hypothesis);
         }
         
-
         template <typename ValueType>
         void exportRegionCheckResultToFile(std::unique_ptr<storm::modelchecker::CheckResult> const& checkResult, std::string const& filename, bool onlyConclusiveResults = false) {
 

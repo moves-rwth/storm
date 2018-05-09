@@ -74,9 +74,9 @@ namespace storm {
                     STORM_LOG_THROW(!components.exitRates.is_initialized() || components.exitRates->size() == stateCount, storm::exceptions::IllegalArgumentException, "Size of exit rate vector does not match state count.");
                     STORM_LOG_THROW(this->isOfType(ModelType::Ctmc) || components.markovianStates.is_initialized(), storm::exceptions::IllegalArgumentException, "Can not create Markov Automaton: no Markovian states given.");
                 } else {
-                    STORM_LOG_ERROR_COND(!components.rateTransitions && !components.exitRates.is_initialized(), "Rates specified for discrete-time model. The rates will be ignored.");
+                    STORM_LOG_WARN_COND(!components.rateTransitions && !components.exitRates.is_initialized(), "Rates specified for discrete-time model. The rates will be ignored.");
                 }
-                STORM_LOG_ERROR_COND(this->isOfType(ModelType::MarkovAutomaton) || !components.markovianStates.is_initialized(), "Markovian states given for a model that is not a Markov automaton (will be ignored).");
+                STORM_LOG_WARN_COND(this->isOfType(ModelType::MarkovAutomaton) || !components.markovianStates.is_initialized(), "Markovian states given for a model that is not a Markov automaton (will be ignored).");
             }
             
             template<typename ValueType, typename RewardModelType>
@@ -98,7 +98,12 @@ namespace storm {
             uint_fast64_t Model<ValueType, RewardModelType>::getNumberOfTransitions() const {
                 return this->getTransitionMatrix().getNonzeroEntryCount();
             }
-            
+
+            template<typename ValueType, typename RewardModelType>
+            uint_fast64_t Model<ValueType, RewardModelType>::getNumberOfChoices() const {
+                return this->getTransitionMatrix().getRowCount();
+            }
+
             template<typename ValueType, typename RewardModelType>
             storm::storage::BitVector const& Model<ValueType, RewardModelType>::getInitialStates() const {
                 return this->getStates("init");
@@ -154,7 +159,7 @@ namespace storm {
 
             template<typename ValueType, typename RewardModelType>
             void Model<ValueType, RewardModelType>::addRewardModel(std::string const& rewardModelName, RewardModelType const& newRewardModel) {
-                if(this->hasRewardModel(rewardModelName)) {
+                if (this->hasRewardModel(rewardModelName)) {
                     STORM_LOG_THROW(!(this->hasRewardModel(rewardModelName)), storm::exceptions::IllegalArgumentException, "A reward model with the given name '" << rewardModelName << "' already exists.");
                 }
                 STORM_LOG_ASSERT(newRewardModel.isCompatible(this->getNumberOfStates(), this->getTransitionMatrix().getRowCount()), "New reward model is not compatible.");
@@ -165,10 +170,23 @@ namespace storm {
             bool Model<ValueType, RewardModelType>::removeRewardModel(std::string const& rewardModelName) {
                 auto it = this->rewardModels.find(rewardModelName);
                 bool res = (it != this->rewardModels.end());
-                if(res) {
+                if (res) {
                     this->rewardModels.erase(it->first);
                 }
                 return res;
+            }
+            
+            template<typename ValueType, typename RewardModelType>
+            void Model<ValueType, RewardModelType>::restrictRewardModels(std::set<std::string> const& keptRewardModels) {
+                std::set<std::string> removedRewardModels;
+                for (auto const& rewModel : this->getRewardModels()) {
+                    if (keptRewardModels.find(rewModel.first) == keptRewardModels.end()) {
+                        removedRewardModels.insert(rewModel.first);
+                    }
+                }
+                for (auto const& rewModelName : removedRewardModels) {
+                    this->removeRewardModel(rewModelName);
+                }
             }
             
             template<typename ValueType, typename RewardModelType>

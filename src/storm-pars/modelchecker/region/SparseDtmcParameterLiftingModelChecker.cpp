@@ -10,7 +10,8 @@
 #include "storm/modelchecker/prctl/helper/BaierUpperRewardBoundsComputer.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/solver/StandardMinMaxLinearEquationSolver.h"
+#include "storm/solver/MinMaxLinearEquationSolver.h"
+#include "storm/solver/Multiplier.h"
 #include "storm/utility/vector.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/NumberTraits.h"
@@ -19,6 +20,7 @@
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/UnexpectedException.h"
+#include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/UncheckedRequirementException.h"
 
 
@@ -31,7 +33,7 @@ namespace storm {
         }
         
         template <typename SparseModelType, typename ConstantType>
-        SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::SparseDtmcParameterLiftingModelChecker(std::unique_ptr<storm::solver::MinMaxLinearEquationSolverFactory<ConstantType>>&& solverFactory) : solverFactory(std::move(solverFactory)), solvingRequiresUpperRewardBounds(false) {
+        SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::SparseDtmcParameterLiftingModelChecker(std::unique_ptr<storm::solver::MinMaxLinearEquationSolverFactory<ConstantType>>&& solverFactory) : solverFactory(std::move(solverFactory)), solvingRequiresUpperRewardBounds(false), regionSplitEstimationsEnabled(false) {
             // Intentionally left empty
         }
         
@@ -42,39 +44,40 @@ namespace storm {
             result &= parametricModel->supportsParameters();
             auto dtmc = parametricModel->template as<SparseModelType>();
             result &= static_cast<bool>(dtmc);
-            result &= checkTask.getFormula().isInFragment(storm::logic::reachability().setRewardOperatorsAllowed(true).setReachabilityRewardFormulasAllowed(true).setBoundedUntilFormulasAllowed(true).setCumulativeRewardFormulasAllowed(true).setStepBoundedUntilFormulasAllowed(true).setTimeBoundedUntilFormulasAllowed(true));
+            result &= checkTask.getFormula().isInFragment(storm::logic::reachability().setRewardOperatorsAllowed(true).setReachabilityRewardFormulasAllowed(true).setBoundedUntilFormulasAllowed(true).setCumulativeRewardFormulasAllowed(true).setStepBoundedCumulativeRewardFormulasAllowed(true).setTimeBoundedCumulativeRewardFormulasAllowed(true).setTimeBoundedUntilFormulasAllowed(true).setStepBoundedUntilFormulasAllowed(true).setTimeBoundedUntilFormulasAllowed(true));
             return result;
         }
         
         template <typename SparseModelType, typename ConstantType>
-        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specify(std::shared_ptr<storm::models::ModelBase> parametricModel, CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask) {
+        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specify(Environment const& env, std::shared_ptr<storm::models::ModelBase> parametricModel, CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask, bool generateRegionSplitEstimates, bool allowModelSimplification) {
             auto dtmc = parametricModel->template as<SparseModelType>();
-            specify(dtmc, checkTask, false);
+            specify_internal(env, dtmc, checkTask, generateRegionSplitEstimates, !allowModelSimplification);
         }
         
         template <typename SparseModelType, typename ConstantType>
-        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specify(std::shared_ptr<SparseModelType> parametricModel, CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask, bool skipModelSimplification) {
-
+        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specify_internal(Environment const& env, std::shared_ptr<SparseModelType> parametricModel, CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask, bool generateRegionSplitEstimates, bool skipModelSimplification) {
             STORM_LOG_ASSERT(this->canHandle(parametricModel, checkTask), "specified model and formula can not be handled by this.");
-         
+            
             reset();
+            
+            regionSplitEstimationsEnabled = generateRegionSplitEstimates;
             
             if (skipModelSimplification) {
                 this->parametricModel = parametricModel;
-                this->specifyFormula(checkTask);
+                this->specifyFormula(env, checkTask);
             } else {
                 auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<SparseModelType>(*parametricModel);
                 if (!simplifier.simplify(checkTask.getFormula())) {
                     STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Simplifying the model was not successfull.");
                 }
                 this->parametricModel = simplifier.getSimplifiedModel();
-                this->specifyFormula(checkTask.substituteFormula(*simplifier.getSimplifiedFormula()));
+                this->specifyFormula(env, checkTask.substituteFormula(*simplifier.getSimplifiedFormula()));
             }
         }
         
         
         template <typename SparseModelType, typename ConstantType>
-        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyBoundedUntilFormula(CheckTask<storm::logic::BoundedUntilFormula, ConstantType> const& checkTask) {
+        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyBoundedUntilFormula(Environment const& env, CheckTask<storm::logic::BoundedUntilFormula, ConstantType> const& checkTask) {
             
             // get the step bound
             STORM_LOG_THROW(!checkTask.getFormula().hasLowerBound(), storm::exceptions::NotSupportedException, "Lower step bounds are not supported.");
@@ -118,7 +121,7 @@ namespace storm {
         }
 
         template <typename SparseModelType, typename ConstantType>
-        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyUntilFormula(CheckTask<storm::logic::UntilFormula, ConstantType> const& checkTask) {
+        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyUntilFormula(Environment const& env, CheckTask<storm::logic::UntilFormula, ConstantType> const& checkTask) {
             
             // get the results for the subformulas
             storm::modelchecker::SparsePropositionalModelChecker<SparseModelType> propositionalChecker(*this->parametricModel);
@@ -137,9 +140,9 @@ namespace storm {
             // if there are maybestates, create the parameterLifter
             if (!maybeStates.empty()) {
                 // Create the vector of one-step probabilities to go to target states.
-                std::vector<typename SparseModelType::ValueType> b = this->parametricModel->getTransitionMatrix().getConstrainedRowSumVector(storm::storage::BitVector(this->parametricModel->getTransitionMatrix().getRowCount(), true), psiStates);
+                std::vector<typename SparseModelType::ValueType> b = this->parametricModel->getTransitionMatrix().getConstrainedRowSumVector(storm::storage::BitVector(this->parametricModel->getTransitionMatrix().getRowCount(), true), statesWithProbability01.second);
                 
-                parameterLifter = std::make_unique<storm::transformer::ParameterLifter<typename SparseModelType::ValueType, ConstantType>>(this->parametricModel->getTransitionMatrix(), b, maybeStates, maybeStates);
+                parameterLifter = std::make_unique<storm::transformer::ParameterLifter<typename SparseModelType::ValueType, ConstantType>>(this->parametricModel->getTransitionMatrix(), b, maybeStates, maybeStates, regionSplitEstimationsEnabled);
             }
             
             // We know some bounds for the results so set them
@@ -147,14 +150,14 @@ namespace storm {
             upperResultBound = storm::utility::one<ConstantType>();
             
             // The solution of the min-max equation system will always be unique (assuming graph-preserving instantiations).
-            auto req = solverFactory->getRequirements(true);
+            auto req = solverFactory->getRequirements(env, true, boost::none, true);
             req.clearBounds();
-            STORM_LOG_THROW(req.empty(), storm::exceptions::UncheckedRequirementException, "Unchecked solver requirement.");
+            STORM_LOG_THROW(!req.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + req.getEnabledRequirementsAsString() + " not checked.");
             solverFactory->setRequirementsChecked(true);
         }
 
         template <typename SparseModelType, typename ConstantType>
-        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyReachabilityRewardFormula(CheckTask<storm::logic::EventuallyFormula, ConstantType> const& checkTask) {
+        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyReachabilityRewardFormula(Environment const& env, CheckTask<storm::logic::EventuallyFormula, ConstantType> const& checkTask) {
             
             // get the results for the subformula
             storm::modelchecker::SparsePropositionalModelChecker<SparseModelType> propositionalChecker(*this->parametricModel);
@@ -179,27 +182,27 @@ namespace storm {
 
                 std::vector<typename SparseModelType::ValueType> b = rewardModel.getTotalRewardVector(this->parametricModel->getTransitionMatrix());
                 
-                parameterLifter = std::make_unique<storm::transformer::ParameterLifter<typename SparseModelType::ValueType, ConstantType>>(this->parametricModel->getTransitionMatrix(), b, maybeStates, maybeStates);
+                parameterLifter = std::make_unique<storm::transformer::ParameterLifter<typename SparseModelType::ValueType, ConstantType>>(this->parametricModel->getTransitionMatrix(), b, maybeStates, maybeStates, regionSplitEstimationsEnabled);
             }
             
             // We only know a lower bound for the result
             lowerResultBound = storm::utility::zero<ConstantType>();
         
             // The solution of the min-max equation system will always be unique (assuming graph-preserving instantiations).
-            auto req = solverFactory->getRequirements(true);
+            auto req = solverFactory->getRequirements(env, true, boost::none, true);
             req.clearLowerBounds();
-            if (req.requiresUpperBounds()) {
+            if (req.upperBounds()) {
                 solvingRequiresUpperRewardBounds = true;
                 req.clearUpperBounds();
             }
-            STORM_LOG_THROW(req.empty(), storm::exceptions::UncheckedRequirementException, "Unchecked solver requirement.");
+            STORM_LOG_THROW(!req.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + req.getEnabledRequirementsAsString() + " not checked.");
             solverFactory->setRequirementsChecked(true);
 
 
         }
 
         template <typename SparseModelType, typename ConstantType>
-        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyCumulativeRewardFormula(CheckTask<storm::logic::CumulativeRewardFormula, ConstantType> const& checkTask) {
+        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyCumulativeRewardFormula(Environment const& env, CheckTask<storm::logic::CumulativeRewardFormula, ConstantType> const& checkTask) {
             
             // Obtain the stepBound
             stepBound = checkTask.getFormula().getBound().evaluateAsInt();
@@ -239,68 +242,67 @@ namespace storm {
         }
         
         template <typename SparseModelType, typename ConstantType>
-        std::unique_ptr<CheckResult> SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::computeQuantitativeValues(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters) {
+        std::unique_ptr<CheckResult> SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::computeQuantitativeValues(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters) {
             
-            if(maybeStates.empty()) {
+            if (maybeStates.empty()) {
                 return std::make_unique<storm::modelchecker::ExplicitQuantitativeCheckResult<ConstantType>>(resultsForNonMaybeStates);
             }
             
             parameterLifter->specifyRegion(region, dirForParameters);
             
-            // Set up the solver
-            if (storm::NumberTraits<ConstantType>::IsExact && solverFactory->getMinMaxMethod() == storm::solver::MinMaxMethod::ValueIteration) {
-                STORM_LOG_INFO("Parameter Lifting: Setting solution method for exact MinMaxSolver to policy iteration");
-                solverFactory->setMinMaxMethod(storm::solver::MinMaxMethod::PolicyIteration);
-            }
-            auto solver = solverFactory->create(parameterLifter->getMatrix());
-            solver->setHasUniqueSolution();
-            if (lowerResultBound) solver->setLowerBound(lowerResultBound.get());
-            if (upperResultBound) {
-                solver->setUpperBound(upperResultBound.get());
-            } else if (solvingRequiresUpperRewardBounds) {
-                // For the min-case, we use DS-MPI, for the max-case variant 2 of the Baier et al. paper (CAV'17).
-                std::vector<ConstantType> oneStepProbs;
-                oneStepProbs.reserve(parameterLifter->getMatrix().getRowCount());
-                for (uint64_t row = 0; row < parameterLifter->getMatrix().getRowCount(); ++row) {
-                    oneStepProbs.push_back(storm::utility::one<ConstantType>() - parameterLifter->getMatrix().getRowSum(row));
-                }
-                if (dirForParameters == storm::OptimizationDirection::Minimize) {
-                    storm::modelchecker::helper::DsMpiMdpUpperRewardBoundsComputer<ConstantType> dsmpi(parameterLifter->getMatrix(), parameterLifter->getVector(), oneStepProbs);
-                    solver->setUpperBounds(dsmpi.computeUpperBounds());
-                } else {
-                    storm::modelchecker::helper::BaierUpperRewardBoundsComputer<ConstantType> baier(parameterLifter->getMatrix(), parameterLifter->getVector(), oneStepProbs);
-                    solver->setUpperBound(baier.computeUpperBound());
-                }
-            }
-            if (!stepBound) solver->setTrackScheduler(true);
-            if (storm::solver::minimize(dirForParameters) && minSchedChoices && !stepBound) solver->setInitialScheduler(std::move(minSchedChoices.get()));
-            if (storm::solver::maximize(dirForParameters) && maxSchedChoices && !stepBound) solver->setInitialScheduler(std::move(maxSchedChoices.get()));
-            if (this->currentCheckTask->isBoundSet() && solver->hasInitialScheduler()) {
-                // If we reach this point, we know that after applying the hint, the x-values can only become larger (if we maximize) or smaller (if we minimize).
-                std::unique_ptr<storm::solver::TerminationCondition<ConstantType>> termCond;
-                storm::storage::BitVector relevantStatesInSubsystem = this->currentCheckTask->isOnlyInitialStatesRelevantSet() ? this->parametricModel->getInitialStates() % maybeStates : storm::storage::BitVector(maybeStates.getNumberOfSetBits(), true);
-                if (storm::solver::minimize(dirForParameters)) {
-                    // Terminate if the value for ALL relevant states is already below the threshold
-                    termCond = std::make_unique<storm::solver::TerminateIfFilteredExtremumBelowThreshold<ConstantType>> (relevantStatesInSubsystem, true, this->currentCheckTask->getBoundThreshold(), false);
-                } else {
-                    // Terminate if the value for ALL relevant states is already above the threshold
-                    termCond = std::make_unique<storm::solver::TerminateIfFilteredExtremumExceedsThreshold<ConstantType>> (relevantStatesInSubsystem, true, this->currentCheckTask->getBoundThreshold(), true);
-                }
-                solver->setTerminationCondition(std::move(termCond));
-            }
-            
-            // Invoke the solver
             if (stepBound) {
                 assert(*stepBound > 0);
                 x = std::vector<ConstantType>(maybeStates.getNumberOfSetBits(), storm::utility::zero<ConstantType>());
-                solver->repeatedMultiply(dirForParameters, x, &parameterLifter->getVector(), *stepBound);
+                auto multiplier = storm::solver::MultiplierFactory<ConstantType>().create(env, parameterLifter->getMatrix());
+                multiplier->repeatedMultiplyAndReduce(env, dirForParameters, x, &parameterLifter->getVector(), *stepBound);
             } else {
+                auto solver = solverFactory->create(env, parameterLifter->getMatrix());
+                solver->setHasUniqueSolution();
+                if (lowerResultBound) solver->setLowerBound(lowerResultBound.get());
+                if (upperResultBound) {
+                    solver->setUpperBound(upperResultBound.get());
+                } else if (solvingRequiresUpperRewardBounds) {
+                    // For the min-case, we use DS-MPI, for the max-case variant 2 of the Baier et al. paper (CAV'17).
+                    std::vector<ConstantType> oneStepProbs;
+                    oneStepProbs.reserve(parameterLifter->getMatrix().getRowCount());
+                    for (uint64_t row = 0; row < parameterLifter->getMatrix().getRowCount(); ++row) {
+                        oneStepProbs.push_back(storm::utility::one<ConstantType>() - parameterLifter->getMatrix().getRowSum(row));
+                    }
+                    if (dirForParameters == storm::OptimizationDirection::Minimize) {
+                        storm::modelchecker::helper::DsMpiMdpUpperRewardBoundsComputer<ConstantType> dsmpi(parameterLifter->getMatrix(), parameterLifter->getVector(), oneStepProbs);
+                        solver->setUpperBounds(dsmpi.computeUpperBounds());
+                    } else {
+                        storm::modelchecker::helper::BaierUpperRewardBoundsComputer<ConstantType> baier(parameterLifter->getMatrix(), parameterLifter->getVector(), oneStepProbs);
+                        solver->setUpperBound(baier.computeUpperBound());
+                    }
+                }
+                solver->setTrackScheduler(true);
+                if (storm::solver::minimize(dirForParameters) && minSchedChoices) solver->setInitialScheduler(std::move(minSchedChoices.get()));
+                if (storm::solver::maximize(dirForParameters) && maxSchedChoices) solver->setInitialScheduler(std::move(maxSchedChoices.get()));
+                if (this->currentCheckTask->isBoundSet() && solver->hasInitialScheduler()) {
+                    // If we reach this point, we know that after applying the hint, the x-values can only become larger (if we maximize) or smaller (if we minimize).
+                    std::unique_ptr<storm::solver::TerminationCondition<ConstantType>> termCond;
+                    storm::storage::BitVector relevantStatesInSubsystem = this->currentCheckTask->isOnlyInitialStatesRelevantSet() ? this->parametricModel->getInitialStates() % maybeStates : storm::storage::BitVector(maybeStates.getNumberOfSetBits(), true);
+                    if (storm::solver::minimize(dirForParameters)) {
+                        // Terminate if the value for ALL relevant states is already below the threshold
+                        termCond = std::make_unique<storm::solver::TerminateIfFilteredExtremumBelowThreshold<ConstantType>> (relevantStatesInSubsystem, true, this->currentCheckTask->getBoundThreshold(), false);
+                    } else {
+                        // Terminate if the value for ALL relevant states is already above the threshold
+                        termCond = std::make_unique<storm::solver::TerminateIfFilteredExtremumExceedsThreshold<ConstantType>> (relevantStatesInSubsystem, true, this->currentCheckTask->getBoundThreshold(), true);
+                    }
+                    solver->setTerminationCondition(std::move(termCond));
+                }
+            
+                // Invoke the solver
                 x.resize(maybeStates.getNumberOfSetBits(), storm::utility::zero<ConstantType>());
-                solver->solveEquations(dirForParameters, x, parameterLifter->getVector());
+                solver->solveEquations(env, dirForParameters, x, parameterLifter->getVector());
                 if(storm::solver::minimize(dirForParameters)) {
                     minSchedChoices = solver->getSchedulerChoices();
                 } else {
                     maxSchedChoices = solver->getSchedulerChoices();
+                }
+                if (isRegionSplitEstimateSupported()) {
+                    computeRegionSplitEstimates(x, solver->getSchedulerChoices(), region, dirForParameters);
                 }
             }
             
@@ -314,6 +316,67 @@ namespace storm {
             return std::make_unique<storm::modelchecker::ExplicitQuantitativeCheckResult<ConstantType>>(std::move(result));
         }
         
+        template <typename SparseModelType, typename ConstantType>
+        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::computeRegionSplitEstimates(std::vector<ConstantType> const& quantitativeResult, std::vector<uint_fast64_t> const& schedulerChoices, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters) {
+            std::map<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType, double> deltaLower, deltaUpper;
+            for (auto const& p : region.getVariables()) {
+                deltaLower.insert(std::make_pair(p, 0.0));
+                deltaUpper.insert(std::make_pair(p, 0.0));
+            }
+            auto const& choiceValuations = parameterLifter->getRowLabels();
+            auto const& matrix = parameterLifter->getMatrix();
+            auto const& vector = parameterLifter->getVector();
+            
+            std::vector<ConstantType> stateResults;
+            for (uint64_t state = 0; state < schedulerChoices.size(); ++state) {
+                uint64_t rowOffset = matrix.getRowGroupIndices()[state];
+                uint64_t optimalChoice = schedulerChoices[state];
+                auto const& optimalChoiceVal = choiceValuations[rowOffset + optimalChoice];
+                assert(optimalChoiceVal.getUnspecifiedParameters().empty());
+                stateResults.clear();
+                for (uint64_t row = rowOffset; row < matrix.getRowGroupIndices()[state + 1]; ++row) {
+                    stateResults.push_back(matrix.multiplyRowWithVector(row, quantitativeResult) + vector[row]);
+                }
+                bool checkUpperParameters = false;
+                do {
+                    auto const& consideredParameters = checkUpperParameters ? optimalChoiceVal.getUpperParameters() : optimalChoiceVal.getLowerParameters();
+                    for (auto const& p : consideredParameters) {
+                        // Find the 'best' choice that assigns the parameter to the other bound
+                        ConstantType bestValue;
+                        bool foundBestValue = false;
+                        for (uint64_t choice = 0; choice < stateResults.size(); ++choice) {
+                            if (choice != optimalChoice) {
+                                auto const& otherBoundParsOfChoice = checkUpperParameters ? choiceValuations[rowOffset + choice].getLowerParameters() : choiceValuations[rowOffset + choice].getUpperParameters();
+                                if (otherBoundParsOfChoice.find(p) != otherBoundParsOfChoice.end()) {
+                                    ConstantType const& choiceValue = stateResults[choice];
+                                    if (!foundBestValue || (storm::solver::minimize(dirForParameters) ? choiceValue < bestValue : choiceValue > bestValue)) {
+                                        foundBestValue = true;
+                                        bestValue = choiceValue;
+                                    }
+                                }
+                            }
+                        }
+                        if (checkUpperParameters) {
+                            deltaLower[p] += storm::utility::convertNumber<double>(bestValue);
+                        } else {
+                            deltaUpper[p] += storm::utility::convertNumber<double>(bestValue);
+                        }
+
+                    }
+                    checkUpperParameters = !checkUpperParameters;
+                } while (checkUpperParameters);
+            }
+            
+            regionSplitEstimates.clear();
+            for (auto const& p : region.getVariables()) {
+                if (deltaLower[p] > deltaUpper[p]) {
+                    regionSplitEstimates.insert(std::make_pair(p, deltaUpper[p]));
+                } else {
+                    regionSplitEstimates.insert(std::make_pair(p, deltaLower[p]));
+                }
+            }
+            
+        }
         
         template <typename SparseModelType, typename ConstantType>
         void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::reset() {
@@ -327,6 +390,7 @@ namespace storm {
             x.clear();
             lowerResultBound = boost::none;
             upperResultBound = boost::none;
+            regionSplitEstimationsEnabled = false;
         }
         
         template <typename SparseModelType, typename ConstantType>
@@ -360,6 +424,18 @@ namespace storm {
             
             return result;
         }
+        
+        template <typename SparseModelType, typename ConstantType>
+        bool SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::isRegionSplitEstimateSupported() const {
+            return regionSplitEstimationsEnabled && !stepBound;
+        }
+        
+        template <typename SparseModelType, typename ConstantType>
+        std::map<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType, double> SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::getRegionSplitEstimate() const {
+            STORM_LOG_THROW(isRegionSplitEstimateSupported(), storm::exceptions::InvalidOperationException, "Region split estimation requested but are not enabled (or supported).");
+            return regionSplitEstimates;
+        }
+
         
         template class SparseDtmcParameterLiftingModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>;
         template class SparseDtmcParameterLiftingModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, storm::RationalNumber>;

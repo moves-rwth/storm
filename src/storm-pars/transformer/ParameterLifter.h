@@ -39,7 +39,7 @@ namespace storm {
              * @param selectedRows a Bitvector that specifies which rows of the matrix and the vector are considered.
              * @param selectedColumns a Bitvector that specifies which columns of the matrix are considered.
              */
-            ParameterLifter(storm::storage::SparseMatrix<ParametricType> const& pMatrix, std::vector<ParametricType> const& pVector, storm::storage::BitVector const& selectedRows, storm::storage::BitVector const& selectedColumns);
+            ParameterLifter(storm::storage::SparseMatrix<ParametricType> const& pMatrix, std::vector<ParametricType> const& pVector, storm::storage::BitVector const& selectedRows, storm::storage::BitVector const& selectedColumns,  bool generateRowLabels = false);
             
             void specifyRegion(storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForParameters);
             
@@ -48,13 +48,6 @@ namespace storm {
             
             // Returns the resulting vector. Should only be called AFTER specifying a region
             std::vector<ConstantType> const& getVector() const;
-            
-            
-        private:
-            /*
-             * We minimize the number of function evaluations by only calling evaluate() once for each unique pair of function and valuation.
-             * The result of each evaluation is then written to all positions in the matrix (and the vector) where the corresponding (function,valuation) occurred.
-             */
             
             /*
              * During initialization, the actual regions are not known. Hence, we consider abstract valuations,
@@ -72,6 +65,9 @@ namespace storm {
                 
                 std::size_t getHashValue() const;
                 AbstractValuation getSubValuation(std::set<VariableType> const& pars) const;
+                std::set<VariableType> const& getLowerParameters() const;
+                std::set<VariableType> const& getUpperParameters() const;
+                std::set<VariableType> const& getUnspecifiedParameters() const;
                 
                 /*!
                  * Returns the concrete valuation(s) (w.r.t. the provided region) represented by this abstract valuation.
@@ -82,6 +78,17 @@ namespace storm {
             private:
                 std::set<VariableType> lowerPars, upperPars, unspecifiedPars;
             };
+            
+            // Returns for each row the abstract valuation for this row
+            // Note: the returned vector might be empty if row label generaion was disabled initially
+            std::vector<AbstractValuation> const& getRowLabels() const;
+
+            
+        private:
+            /*
+             * We minimize the number of function evaluations by only calling evaluate() once for each unique pair of function and valuation.
+             * The result of each evaluation is then written to all positions in the matrix (and the vector) where the corresponding (function,valuation) occurred.
+             */
             
             /*!
              * Collects all occurring pairs of functions and (abstract) valuations.
@@ -121,7 +128,8 @@ namespace storm {
             // Returns the 2^(variables.size()) vertices of the region
             std::vector<AbstractValuation> getVerticesOfAbstractRegion(std::set<VariableType> const& variables) const;
             
-            
+            std::vector<AbstractValuation> rowLabels;
+
             storm::storage::SparseMatrix<ConstantType> matrix; //The resulting matrix;
             std::vector<std::pair<typename storm::storage::SparseMatrix<ConstantType>::iterator, ConstantType&>> matrixAssignment; // Connection of matrix entries with placeholders
             

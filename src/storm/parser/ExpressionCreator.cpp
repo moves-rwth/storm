@@ -120,11 +120,12 @@ namespace storm {
             return manager.boolean(false);
         }
         
-        storm::expressions::Expression ExpressionCreator::createPowerExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2, bool& pass) const {
+        storm::expressions::Expression ExpressionCreator::createPowerModuloExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2, bool& pass) const {
             if (this->createExpressions) {
                 try {
                     switch (operatorType) {
                         case storm::expressions::OperatorType::Power: return e1 ^ e2; break;
+                        case storm::expressions::OperatorType::Modulo: return e1 % e2; break;
                         default: STORM_LOG_ASSERT(false, "Invalid operation."); break;
                     }
                 } catch (storm::exceptions::InvalidTypeException const& e) {

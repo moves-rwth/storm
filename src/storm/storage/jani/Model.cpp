@@ -15,6 +15,7 @@
 #include "storm/storage/jani/ParallelComposition.h"
 #include "storm/storage/jani/CompositionInformationVisitor.h"
 #include "storm/storage/jani/Compositions.h"
+#include "storm/storage/jani/JSONExporter.h"
 
 #include "storm/storage/expressions/LinearityCheckVisitor.h"
 
@@ -211,11 +212,14 @@ namespace storm {
                 if (!SynchronizationVector::isNoActionInput(actionName)) {
                     components.push_back(i);
                     uint64_t actionIndex = oldModel.getActionIndex(actionName);
+                    // store that automaton occurs in the sync vector.
                     participatingAutomataAndActions.push_back(std::make_pair(composedAutomata[i], actionIndex));
+                    // Store for later that this action is one of the possible actions that synchronise
                     synchronizingActionIndices[i].insert(actionIndex);
                 }
             }
-            
+
+            // What is the action label that should be attached to the composed actions
             uint64_t resultingActionIndex = Model::SILENT_ACTION_INDEX;
             if (vector.getOutput() != Model::SILENT_ACTION_NAME) {
                 if (newModel.hasAction(vector.getOutput())) {
@@ -688,14 +692,10 @@ namespace storm {
             return false;
         }
         
-        storm::expressions::ExpressionManager& Model::getExpressionManager() {
+        storm::expressions::ExpressionManager& Model::getExpressionManager() const {
             return *expressionManager;
         }
-        
-        storm::expressions::ExpressionManager const& Model::getExpressionManager() const {
-            return *expressionManager;
-        }
-        
+
         uint64_t Model::addAutomaton(Automaton const& automaton) {
             auto it = automatonToIndex.find(automaton.getName());
             STORM_LOG_THROW(it == automatonToIndex.end(), storm::exceptions::WrongFormatException, "Automaton with name '" << automaton.getName() << "' already exists.");
@@ -1154,7 +1154,36 @@ namespace storm {
             }
             return false;
         }
+        
+        uint64_t Model::encodeAutomatonAndEdgeIndices(uint64_t automatonIndex, uint64_t edgeIndex) {
+            return automatonIndex << 32 | edgeIndex;
+        }
+        
+        std::pair<uint64_t, uint64_t> Model::decodeAutomatonAndEdgeIndices(uint64_t index) {
+            return std::make_pair(index >> 32, index & ((1ull << 32) - 1));
+        }
 
+        Model Model::restrictEdges(boost::container::flat_set<uint_fast64_t> const& automataAndEdgeIndices) const {
+            Model result(*this);
+
+            // Restrict all automata.
+            for (uint64_t automatonIndex = 0; automatonIndex < result.automata.size(); ++automatonIndex) {
+                
+                // Compute the set of edges that is to be kept for this automaton.
+                boost::container::flat_set<uint_fast64_t> automatonEdgeIndices;
+                for (auto const& e : automataAndEdgeIndices) {
+                    auto automatonAndEdgeIndex = decodeAutomatonAndEdgeIndices(e);
+                    if (automatonAndEdgeIndex.first == automatonIndex) {
+                        automatonEdgeIndices.insert(automatonAndEdgeIndex.second);
+                    }
+                }
+                
+                result.automata[automatonIndex].restrictToEdges(automatonEdgeIndices);
+            }
+            
+            return result;
+        }
+        
         Model Model::createModelFromAutomaton(Automaton const& automaton) const {
             // Copy the full model
             Model newModel(*this);
@@ -1193,6 +1222,11 @@ namespace storm {
             }
 
             outStream << "}";
+        }
+        
+        std::ostream& operator<<(std::ostream& out, Model const& model) {
+            JsonExporter::toStream(model, std::vector<storm::jani::Property>(), out);
+            return out;
         }
     }
 }

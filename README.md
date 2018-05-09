@@ -30,15 +30,15 @@ Authors
 Storm has been developed at RWTH Aachen University.
 
 ###### Principal developers
-* Christian Dehnert
+* Christian Hensel
 * Sebastian Junges
 * Joost-Pieter Katoen
+* Tim Quatmann
 * Matthias Volk
 
 ###### Developers (lexicographical order)
 * Philipp Berger
 * David Korzeniewski
-* Tim Quatmann
 
 ###### Contributors (lexicographical order)
 * Dimitri Bohlender

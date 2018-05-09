@@ -37,11 +37,13 @@ namespace storm {
         }
         
         storm::prism::Program PrismParser::parseFromString(std::string const& input, std::string const& filename, bool prismCompatibility) {
-            PositionIteratorType first(input.begin());
+            bool hasByteOrderMark = input.size() >= 3 && input[0] == '\xEF' && input[1] == '\xBB' && input[2] == '\xBF';
+            
+            PositionIteratorType first(hasByteOrderMark ? input.begin() + 3 : input.begin());
             PositionIteratorType iter = first;
             PositionIteratorType last(input.end());
             STORM_LOG_ASSERT(first != last, "Illegal input to PRISM parser.");
-            
+
             // Create empty result;
             storm::prism::Program result;
             
@@ -49,7 +51,8 @@ namespace storm {
             storm::parser::PrismParser grammar(filename, first, prismCompatibility);
             try {
                 // Start first run.
-                bool succeeded = qi::phrase_parse(iter, last, grammar, boost::spirit::ascii::space | qi::lit("//") >> *(qi::char_ - (qi::eol | qi::eoi)) >> (qi::eol | qi::eoi), result);
+                storm::spirit_encoding::space_type space;
+                bool succeeded = qi::phrase_parse(iter, last, grammar, space | qi::lit("//") >> *(qi::char_ - (qi::eol | qi::eoi)) >> (qi::eol | qi::eoi), result);
                 STORM_LOG_THROW(succeeded,  storm::exceptions::WrongFormatException, "Parsing failed in first pass.");
                 STORM_LOG_DEBUG("First pass of parsing PRISM input finished.");
                 
@@ -58,7 +61,7 @@ namespace storm {
                 iter = first;
                 last = PositionIteratorType(input.end());
                 grammar.moveToSecondRun();
-                succeeded = qi::phrase_parse(iter, last, grammar, boost::spirit::ascii::space | qi::lit("//") >> *(qi::char_ - (qi::eol | qi::eoi)) >> (qi::eol | qi::eoi), result);
+                succeeded = qi::phrase_parse(iter, last, grammar, space | qi::lit("//") >> *(qi::char_ - (qi::eol | qi::eoi)) >> (qi::eol | qi::eoi), result);
                 STORM_LOG_THROW(succeeded,  storm::exceptions::WrongFormatException, "Parsing failed in second pass.");
             } catch (qi::expectation_failure<PositionIteratorType> const& e) {
                 // If the parser expected content different than the one provided, display information about the location of the error.
@@ -113,7 +116,7 @@ namespace storm {
             booleanVariableDefinition = ((identifier >> qi::lit(":") >> qi::lit("bool")) > -((qi::lit("init") > expression_[qi::_a = qi::_1]) | qi::attr(manager->boolean(false))) > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createBooleanVariable, phoenix::ref(*this), qi::_1, qi::_a)];
             booleanVariableDefinition.name("boolean variable definition");
             
-            integerVariableDefinition = ((identifier >> qi::lit(":") >> qi::lit("[")[phoenix::bind(&PrismParser::allowDoubleLiterals, phoenix::ref(*this), false)]) > expression_ > qi::lit("..") > expression_ > qi::lit("]")[phoenix::bind(&PrismParser::allowDoubleLiterals, phoenix::ref(*this), true)] > -(qi::lit("init") > expression_[qi::_a = qi::_1]) > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createIntegerVariable, phoenix::ref(*this), qi::_1, qi::_2, qi::_3, qi::_a)];
+            integerVariableDefinition = ((identifier >> qi::lit(":") >> qi::lit("[")) > expression_ > qi::lit("..") > expression_ > qi::lit("]") > -(qi::lit("init") > expression_[qi::_a = qi::_1]) > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createIntegerVariable, phoenix::ref(*this), qi::_1, qi::_2, qi::_3, qi::_a)];
             integerVariableDefinition.name("integer variable definition");
             
             variableDefinition = (booleanVariableDefinition[phoenix::push_back(qi::_r1, qi::_1)] | integerVariableDefinition[phoenix::push_back(qi::_r2, qi::_1)]);

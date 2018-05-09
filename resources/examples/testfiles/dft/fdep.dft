@@ -1,0 +1,8 @@
+toplevel "System";
+"System" or "Power" "Machine";
+"Power" fdep "B_Power" "P" "B";
+"Machine" or "P" "B";
+
+"B_Power" lambda=0.5 dorm=0;
+"P" lambda=0.5 dorm=0;
+"B" lambda=0.5 dorm=0.5;

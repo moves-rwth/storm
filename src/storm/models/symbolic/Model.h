@@ -119,6 +119,8 @@ namespace storm {
                 
                 virtual uint_fast64_t getNumberOfTransitions() const override;
                 
+                virtual uint_fast64_t getNumberOfChoices() const override;
+
                 /*!
                  * Retrieves the manager responsible for the DDs that represent this model.
                  *
@@ -325,6 +327,12 @@ namespace storm {
                 
                 std::set<storm::RationalFunctionVariable> const& getParameters() const;
                 
+                template<typename NewValueType>
+                typename std::enable_if<!std::is_same<ValueType, NewValueType>::value, std::shared_ptr<Model<Type, NewValueType>>>::type toValueType() const;
+                
+                template<typename NewValueType>
+                typename std::enable_if<std::is_same<ValueType, NewValueType>::value, std::shared_ptr<Model<Type, NewValueType>>>::type toValueType() const;
+
             protected:
                 /*!
                  * Sets the transition matrix of the model.
@@ -339,6 +347,13 @@ namespace storm {
                  * @returns The mapping of labels to their defining expressions.
                  */
                 std::map<std::string, storm::expressions::Expression> const& getLabelToExpressionMap() const;
+                
+                /*!
+                 * Retrieves the mapping of labels to their defining expressions.
+                 *
+                 * @returns The mapping of labels to their defining expressions.
+                 */
+                std::map<std::string, storm::dd::Bdd<Type>> const& getLabelToBddMap() const;
                 
                 /*!
                  * Prints the information header (number of states and transitions) of the model to the specified stream.
@@ -369,16 +384,26 @@ namespace storm {
                  */
                 virtual void printDdVariableInformationToStream(std::ostream& out) const;
                 
+            protected:
+                /*!
+                 * Retrieves the expression adapter of this model.
+                 *
+                 * @return The expression adapter.
+                 */
+                std::shared_ptr<storm::adapters::AddExpressionAdapter<Type, ValueType>> const& getRowExpressionAdapter() const;
+                
             private:
                 // The manager responsible for the decision diagrams.
                 std::shared_ptr<storm::dd::DdManager<Type>> manager;
                 
                 // A vector representing the reachable states of the model.
                 storm::dd::Bdd<Type> reachableStates;
-                                
+
+            protected:
                 // A matrix representing transition relation.
                 storm::dd::Add<Type, ValueType> transitionMatrix;
                 
+            private:
                 // The meta variables used to encode the rows of the transition matrix.
                 std::set<storm::expressions::Variable> rowVariables;
                 

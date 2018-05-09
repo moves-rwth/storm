@@ -232,6 +232,46 @@ namespace storm {
         }
         
         template<DdType LibraryType, typename ValueType>
+        Add<LibraryType, ValueType> Add<LibraryType, ValueType>::renameVariablesAbstract(std::set<storm::expressions::Variable> const& from, std::set<storm::expressions::Variable> const& to) const {
+            std::vector<InternalBdd<LibraryType>> fromBdds;
+            std::vector<InternalBdd<LibraryType>> toBdds;
+            
+            for (auto const& metaVariable : from) {
+                STORM_LOG_THROW(this->containsMetaVariable(metaVariable), storm::exceptions::InvalidOperationException, "Cannot rename variable '" << metaVariable.getName() << "' that is not present.");
+                DdMetaVariable<LibraryType> const& ddMetaVariable = this->getDdManager().getMetaVariable(metaVariable);
+                for (auto const& ddVariable : ddMetaVariable.getDdVariables()) {
+                    fromBdds.push_back(ddVariable.getInternalBdd());
+                }
+            }
+            std::sort(fromBdds.begin(), fromBdds.end(), [] (InternalBdd<LibraryType> const& a, InternalBdd<LibraryType> const& b) { return a.getLevel() < b.getLevel(); } );
+            for (auto const& metaVariable : to) {
+                STORM_LOG_THROW(!this->containsMetaVariable(metaVariable), storm::exceptions::InvalidOperationException, "Cannot rename to variable '" << metaVariable.getName() << "' that is already present.");
+                DdMetaVariable<LibraryType> const& ddMetaVariable = this->getDdManager().getMetaVariable(metaVariable);
+                for (auto const& ddVariable : ddMetaVariable.getDdVariables()) {
+                    toBdds.push_back(ddVariable.getInternalBdd());
+                }
+            }
+            std::sort(toBdds.begin(), toBdds.end(), [] (InternalBdd<LibraryType> const& a, InternalBdd<LibraryType> const& b) { return a.getLevel() < b.getLevel(); } );
+
+            std::set<storm::expressions::Variable> newContainedMetaVariables = to;
+            std::set_difference(this->getContainedMetaVariables().begin(), this->getContainedMetaVariables().end(), from.begin(), from.end(), std::inserter(newContainedMetaVariables, newContainedMetaVariables.begin()));
+            
+            STORM_LOG_ASSERT(fromBdds.size() >= toBdds.size(), "Unable to perform rename-abstract with mismatching sizes.");
+            
+            if (fromBdds.size() == toBdds.size()) {
+                return Add<LibraryType, ValueType>(this->getDdManager(), internalAdd.permuteVariables(fromBdds, toBdds), newContainedMetaVariables);
+            } else {
+                InternalBdd<LibraryType> cube = this->getDdManager().getBddOne().getInternalBdd();
+                for (uint64_t index = toBdds.size(); index < fromBdds.size(); ++index) {
+                    cube &= fromBdds[index];
+                }
+                fromBdds.resize(toBdds.size());
+                
+                return Add<LibraryType, ValueType>(this->getDdManager(), internalAdd.sumAbstract(cube).permuteVariables(fromBdds, toBdds), newContainedMetaVariables);
+            }
+        }
+        
+        template<DdType LibraryType, typename ValueType>
         Add<LibraryType, ValueType> Add<LibraryType, ValueType>::swapVariables(std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& metaVariablePairs) const {
             std::set<storm::expressions::Variable> newContainedMetaVariables;
             std::set<storm::expressions::Variable> deletedMetaVariables;
@@ -941,7 +981,7 @@ namespace storm {
         
         template<DdType LibraryType, typename ValueType>
         std::ostream& operator<<(std::ostream& out, Add<LibraryType, ValueType> const& add) {
-            out << "ADD with " << add.getNonZeroCount() << " nnz, " << add.getNodeCount() << " nodes, " << add.getLeafCount() << " leaves" << std::endl;
+            out << "ADD [" << add.getInternalAdd().getStringId() << "] with " << add.getNonZeroCount() << " nnz, " << add.getNodeCount() << " nodes, " << add.getLeafCount() << " leaves" << std::endl;
             std::vector<std::string> variableNames;
             for (auto const& variable : add.getContainedMetaVariables()) {
                 variableNames.push_back(variable.getName());
@@ -993,15 +1033,19 @@ namespace storm {
         }
 		
         template class Add<storm::dd::DdType::CUDD, double>;
+        template std::ostream& operator<<(std::ostream& out, Add<storm::dd::DdType::CUDD, double> const& add);
         template class Add<storm::dd::DdType::CUDD, uint_fast64_t>;
 
         template class Add<storm::dd::DdType::Sylvan, double>;
+        template std::ostream& operator<<(std::ostream& out, Add<storm::dd::DdType::Sylvan, double> const& add);
         template class Add<storm::dd::DdType::Sylvan, uint_fast64_t>;
 
 #ifdef STORM_HAVE_CARL
         template class Add<storm::dd::DdType::CUDD, storm::RationalNumber>;
+        template std::ostream& operator<<(std::ostream& out, Add<storm::dd::DdType::CUDD, storm::RationalNumber> const& add);
 
         template class Add<storm::dd::DdType::Sylvan, storm::RationalNumber>;
+        template std::ostream& operator<<(std::ostream& out, Add<storm::dd::DdType::Sylvan, storm::RationalNumber> const& add);
 		template class Add<storm::dd::DdType::Sylvan, storm::RationalFunction>;
 
         template Add<storm::dd::DdType::CUDD, storm::RationalNumber> Add<storm::dd::DdType::CUDD, storm::RationalNumber>::toValueType<storm::RationalNumber>() const;
