@@ -21,7 +21,7 @@ namespace storm {
                                                               bool mergeDCFailed) {
                 this->dontCareElements = dontCareElements;
                 this->smart = smart;
-                this->mergedDCFailed = false;//mergeDCFailed;
+                this->mergedDCFailed = true;//mergeDCFailed;
                 builder.setGspnName("DftToGspnTransformation");
 
                 // Translate all GSPN elements
@@ -475,6 +475,7 @@ namespace storm {
             template<typename ValueType>
             void DftToGspnTransformator<ValueType>::translatePAND(
                     std::shared_ptr<storm::storage::DFTPand<ValueType> const> dftPand, bool inclusive) {
+                //TODO Layouting
                 double xcenter = mDft.getElementLayoutInfo(dftPand->id()).x;
                 double ycenter = mDft.getElementLayoutInfo(dftPand->id()).y;
 
@@ -492,71 +493,111 @@ namespace storm {
                     builder.addOutputArc(tFailed, unavailablePlace);
                 }
 
-                if (inclusive) {
-                    // Inclusive PAND
-                    uint64_t failSafePlace = builder.addPlace(defaultCapacity, 0, dftPand->name() + STR_FAILSAVE);
-                    builder.setPlaceLayoutInfo(failSafePlace, storm::gspn::LayoutInfo(xcenter - 3.0, ycenter - 3.0));
+                uint64_t failSafePlace = builder.addPlace(defaultCapacity, 0, dftPand->name() + STR_FAILSAVE);
+                builder.setPlaceLayoutInfo(failSafePlace, storm::gspn::LayoutInfo(xcenter - 3.0, ycenter - 3.0));
 
-                    builder.addInhibitionArc(failSafePlace, tFailed);
+                builder.addInhibitionArc(failSafePlace, tFailed);
 
-                    // Transitions for failed place
-                    for (auto const &child : dftPand->children()) {
-                        builder.addInputArc(getFailedPlace(child), tFailed);
-                        builder.addOutputArc(tFailed, getFailedPlace(child));
-                    }
-                    // Transitions for fail-safe place
-                    for (uint64_t i = 1; i < dftPand->nrChildren(); ++i) {
-                        auto const &child = dftPand->children().at(i);
-                        uint64_t tFailSafe = builder.addImmediateTransition(getFailPriority(dftPand), 0.0,
-                                                                            dftPand->name() + STR_FAILSAVING +
-                                                                            std::to_string(i));
-                        builder.setTransitionLayoutInfo(tFailSafe, storm::gspn::LayoutInfo(xcenter - 6.0 + i * 3.0,
-                                                                                           ycenter + 3.0));
+                // Transitions for failed place
+                for (auto const &child : dftPand->children()) {
+                    builder.addInputArc(getFailedPlace(child), tFailed);
+                    builder.addOutputArc(tFailed, getFailedPlace(child));
+                }
+                // Transitions for fail-safe place
+                for (uint64_t i = 1; i < dftPand->nrChildren(); ++i) {
+                    auto const &child = dftPand->children().at(i);
+                    uint64_t tFailSafe = builder.addImmediateTransition(getFailPriority(dftPand), 0.0,
+                                                                        dftPand->name() + STR_FAILSAVING +
+                                                                        std::to_string(i));
+                    builder.setTransitionLayoutInfo(tFailSafe, storm::gspn::LayoutInfo(xcenter - 6.0 + i * 3.0,
+                                                                                       ycenter + 3.0));
 
+                    if (inclusive) {
                         builder.addInputArc(getFailedPlace(child), tFailSafe);
                         builder.addOutputArc(tFailSafe, getFailedPlace(child));
                         builder.addInhibitionArc(getFailedPlace(dftPand->children().at(i - 1)), tFailSafe);
                         builder.addOutputArc(tFailSafe, failSafePlace);
                         builder.addInhibitionArc(failSafePlace, tFailSafe);
+                    } else {
+                        // Delay mechanism for exclusive PAND
+                        auto const &previousChild = dftPand->children().at(i - 1);
+                        uint64_t delayPlace = builder.addPlace(1, 0, dftPand->name() + "delay" + previousChild->name());
+                        builder.setPlaceLayoutInfo(delayPlace, storm::gspn::LayoutInfo(xcenter - 5.0 + (i - 1) * 3.0,
+                                                                                       ycenter + 5.0));
+                        uint64_t tDelay = builder.addImmediateTransition(getFailPriority(dftPand) + 1, 0.0,
+                                                                         child->name() + "_" + dftPand->name() +
+                                                                         "delayTransition");
+                        builder.setTransitionLayoutInfo(tFailSafe,
+                                                        storm::gspn::LayoutInfo(xcenter - 5.0 + (i - 1) * 3.0,
+                                                                                ycenter + 3.0));
+                        builder.addInputArc(getFailedPlace(previousChild), tDelay);
+                        builder.addOutputArc(tDelay, getFailedPlace(dftPand->children().at(i - 1)));
+                        builder.addOutputArc(tDelay, delayPlace);
+                        builder.addInhibitionArc(delayPlace, tDelay);
+
+                        builder.addInputArc(getFailedPlace(child), tFailSafe);
+                        builder.addOutputArc(tFailSafe, getFailedPlace(child));
+                        builder.addInhibitionArc(delayPlace, tFailSafe);
+                        builder.addOutputArc(tFailSafe, failSafePlace);
+                        builder.addInhibitionArc(failSafePlace, tFailSafe);
                     }
-                } else {
-                    // Exclusive PAND
-                    uint64_t failSafeXPlace = 0;
-                    uint64_t tFailSafeX = 0;
-                    for (size_t i = 0; i < dftPand->nrChildren(); ++i) {
-                        auto const &child = dftPand->children().at(i);
+                }
+                // Dont Care
+                if (dontCareElements.count(dftPand->id())) {
+                    //Propagation
+                    uint64_t propagationPlace = builder.addPlace(defaultPriority, 0, dftPand->name() + "_prop");
+                    builder.setPlaceLayoutInfo(propagationPlace,
+                                               storm::gspn::LayoutInfo(xcenter + 12.0, ycenter + 8.0));
+                    uint64_t tPropagationFailed = builder.addImmediateTransition(defaultPriority, 0.0,
+                                                                                 dftPand->name() + "_prop_fail");
+                    builder.setTransitionLayoutInfo(tPropagationFailed,
+                                                    storm::gspn::LayoutInfo(xcenter + 10.0, ycenter + 6.0));
+                    uint64_t tPropagationFailsafe = builder.addImmediateTransition(defaultPriority, 0.0,
+                                                                                   dftPand->name() + "_prop_failsafe");
+                    builder.setTransitionLayoutInfo(tPropagationFailsafe,
+                                                    storm::gspn::LayoutInfo(xcenter + 8.0, ycenter + 6.0));
+                    builder.addInhibitionArc(propagationPlace, tPropagationFailed);
+                    builder.addInputArc(failedPlace, tPropagationFailed);
+                    builder.addOutputArc(tPropagationFailed, failedPlace);
+                    builder.addOutputArc(tPropagationFailed, propagationPlace);
 
-                        if (i > 0) {
-                            // Set inhibition arc to previous transition
-                            builder.addInhibitionArc(getFailedPlace(child), tFailSafeX);
+                    builder.addInhibitionArc(propagationPlace, tPropagationFailsafe);
+                    builder.addInputArc(failSafePlace, tPropagationFailsafe);
+                    builder.addOutputArc(tPropagationFailsafe, failSafePlace);
+                    builder.addOutputArc(tPropagationFailsafe, propagationPlace);
+
+                    //Connect children to propagation place
+                    for (auto const &child : dftPand->children()) {
+                        if (dontCareElements.count(child->id())) {
+                            u_int64_t childDontCare = dontcareTransitions.at(child->id());
+                            builder.addInputArc(propagationPlace, childDontCare);
+                            builder.addOutputArc(childDontCare, propagationPlace);
                         }
+                    }
 
-                        if (i < dftPand->nrChildren() - 1) {
-                            // Not last child
-                            tFailSafeX = builder.addImmediateTransition(getFailPriority(dftPand), 0.0,
-                                                                        dftPand->name() + STR_FAILING + "_" +
-                                                                        std::to_string(i));
-                            builder.setTransitionLayoutInfo(tFailSafeX,
-                                                            storm::gspn::LayoutInfo(xcenter - 3.0, ycenter + 3.0));
+                    if (dftPand->id() != mDft.getTopLevelIndex()) {
+                        u_int64_t tDontCare = addDontcareTransition(dftPand,
+                                                                    storm::gspn::LayoutInfo(xcenter + 16.0, ycenter));
+                        if (!mergedDCFailed) {
+                            uint64_t dontCarePlace = builder.addPlace(defaultPriority, 0,
+                                                                      dftPand->name() + STR_DONTCARE);
+                            builder.setPlaceLayoutInfo(dontCarePlace,
+                                                       storm::gspn::LayoutInfo(xcenter + 16.0, ycenter + 4.0));
+                            builder.addInhibitionArc(dontCarePlace, tDontCare);
+                            builder.addOutputArc(tDontCare, dontCarePlace);
+                            uint64_t tPropagationDontCare = builder.addImmediateTransition(defaultPriority, 0.0,
+                                                                                           dftPand->name() +
+                                                                                           "_prop_dontCare");
+                            builder.setTransitionLayoutInfo(tPropagationDontCare,
+                                                            storm::gspn::LayoutInfo(xcenter + 14.0, ycenter + 6.0));
+                            builder.addInhibitionArc(propagationPlace, tPropagationDontCare);
+                            builder.addInputArc(dontCarePlace, tPropagationDontCare);
+                            builder.addOutputArc(tPropagationDontCare, dontCarePlace);
+                            builder.addOutputArc(tPropagationDontCare, propagationPlace);
+
                         } else {
-                            // Last child
-                            tFailSafeX = tFailed;
-                        }
-                        builder.addInputArc(getFailedPlace(child), tFailSafeX);
-                        builder.addOutputArc(tFailSafeX, getFailedPlace(child));
-
-                        if (i > 0) {
-                            builder.addInputArc(failSafeXPlace, tFailSafeX);
-                        }
-
-                        if (i < dftPand->nrChildren() - 1) {
-                            // Add fail-safe X place
-                            failSafeXPlace = builder.addPlace(defaultCapacity, 0,
-                                                              dftPand->name() + "_F_" + std::to_string(i));
-                            builder.setPlaceLayoutInfo(failSafeXPlace,
-                                                       storm::gspn::LayoutInfo(xcenter - 3.0 + i * 3.0, ycenter));
-                            builder.addOutputArc(tFailSafeX, failSafeXPlace);
-                            builder.addInhibitionArc(failSafeXPlace, tFailSafeX);
+                            builder.addInhibitionArc(failedPlace, tDontCare);
+                            builder.addOutputArc(tDontCare, failedPlace);
                         }
                     }
                 }
