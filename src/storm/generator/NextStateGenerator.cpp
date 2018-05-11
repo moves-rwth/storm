@@ -101,7 +101,7 @@ namespace storm {
                 }
             }
 
-            if (stateStorage.stateToId.contains(outOfBoundsState)) {
+            if (this->options.isAddOutOfBoundsStateSet() && stateStorage.stateToId.contains(outOfBoundsState)) {
                 STORM_LOG_THROW(!result.containsLabel("out_of_bounds"),storm::exceptions::WrongFormatException, "Label 'out_of_bounds' is reserved when adding out of bounds states.");
                 result.addLabel("out_of_bounds");
                 result.addLabelToState("out_of_bounds", stateStorage.stateToId.getValue(outOfBoundsState));
