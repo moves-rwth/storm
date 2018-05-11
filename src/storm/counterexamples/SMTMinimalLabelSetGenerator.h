@@ -1887,11 +1887,17 @@ namespace storm {
                         }
                         
                         if (onlyProb0ESuccessors) {
-                            auto const& labelSet = model.getChoiceOrigins()->asPrismChoiceOrigins().getCommandSet(choice);
-                            hasLabeledChoice |= !labelSet.empty();
+                            uint64_t labelSetSize = 0;
+                            if (model.getChoiceOrigins()->isPrismChoiceOrigins()) {
+                                labelSetSize = model.getChoiceOrigins()->asPrismChoiceOrigins().getCommandSet(choice).size();
+                            } else {
+                                assert(model.getChoiceOrigins()->isJaniChoiceOrigins());
+                                labelSetSize = model.getChoiceOrigins()->asJaniChoiceOrigins().getEdgeIndexSet(choice).size();
+                            }
+                            hasLabeledChoice |= (labelSetSize != 0);
                             
-                            if (smallestCommandChoice == 0 || labelSet.size() < smallestCommandSetSize) {
-                                smallestCommandSetSize = labelSet.size();
+                            if (smallestCommandChoice == 0 || labelSetSize < smallestCommandSetSize) {
+                                smallestCommandSetSize = labelSetSize;
                                 smallestCommandChoice = choice;
                             }
                         }
@@ -1899,9 +1905,15 @@ namespace storm {
                     
                     if (hasLabeledChoice) {
                         // Take all labels of the selected choice.
-                        auto const& labelSet = model.getChoiceOrigins()->asPrismChoiceOrigins().getCommandSet(smallestCommandChoice);
-                        commandSet.insert(labelSet.begin(), labelSet.end());
-                        
+                        if (model.getChoiceOrigins()->isPrismChoiceOrigins()) {
+                            auto const& labelSet = model.getChoiceOrigins()->asPrismChoiceOrigins().getCommandSet(smallestCommandChoice);
+                            commandSet.insert(labelSet.begin(), labelSet.end());
+                        } else {
+                            assert(model.getChoiceOrigins()->isJaniChoiceOrigins());
+                            auto const& labelSet = model.getChoiceOrigins()->asJaniChoiceOrigins().getEdgeIndexSet(smallestCommandChoice);
+                            commandSet.insert(labelSet.begin(), labelSet.end());
+                        }
+
                         // Check for which successor states choices need to be added
                         for (auto const& successorEntry : model.getTransitionMatrix().getRow(smallestCommandChoice)) {
                             if (!storm::utility::isZero(successorEntry.getValue())) {
