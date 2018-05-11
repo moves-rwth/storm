@@ -21,7 +21,7 @@ namespace storm {
                                                               bool mergeDCFailed) {
                 this->dontCareElements = dontCareElements;
                 this->smart = smart;
-                this->mergedDCFailed = mergeDCFailed;
+                this->mergedDCFailed = false;//mergeDCFailed;
                 builder.setGspnName("DftToGspnTransformation");
 
                 // Translate all GSPN elements
@@ -407,6 +407,68 @@ namespace storm {
                     builder.addInputArc(childNextPlace, tCollect);
                     builder.addInputArc(getFailedPlace(child), tCollect);
                     builder.addOutputArc(tCollect, getFailedPlace(child));
+                }
+
+                if (dontCareElements.count(dftVot->id())) {
+                    if (dftVot->id() != mDft.getTopLevelIndex()) {
+                        u_int64_t tDontCare = addDontcareTransition(dftVot,
+                                                                    storm::gspn::LayoutInfo(xcenter + 16.0, ycenter));
+                        if (!mergedDCFailed) {
+                            uint64_t dontCarePlace = builder.addPlace(defaultPriority, 0,
+                                                                      dftVot->name() + STR_DONTCARE);
+                            builder.setPlaceLayoutInfo(dontCarePlace,
+                                                       storm::gspn::LayoutInfo(xcenter + 16.0, ycenter + 4.0));
+                            builder.addInhibitionArc(dontCarePlace, tDontCare);
+                            builder.addOutputArc(tDontCare, dontCarePlace);
+                            //Propagation
+                            uint64_t propagationPlace = builder.addPlace(defaultPriority, 0, dftVot->name() + "_prop");
+                            builder.setPlaceLayoutInfo(propagationPlace,
+                                                       storm::gspn::LayoutInfo(xcenter + 12.0, ycenter + 8.0));
+                            uint64_t tPropagationFailed = builder.addImmediateTransition(defaultPriority, 0.0,
+                                                                                         dftVot->name() + "_prop_fail");
+                            builder.setTransitionLayoutInfo(tPropagationFailed,
+                                                            storm::gspn::LayoutInfo(xcenter + 10.0, ycenter + 6.0));
+                            builder.addInhibitionArc(propagationPlace, tPropagationFailed);
+                            builder.addInputArc(failedPlace, tPropagationFailed);
+                            builder.addOutputArc(tPropagationFailed, failedPlace);
+                            builder.addOutputArc(tPropagationFailed, propagationPlace);
+                            uint64_t tPropagationDontCare = builder.addImmediateTransition(defaultPriority, 0.0,
+                                                                                           dftVot->name() +
+                                                                                           "_prop_dontCare");
+                            builder.setTransitionLayoutInfo(tPropagationDontCare,
+                                                            storm::gspn::LayoutInfo(xcenter + 14.0, ycenter + 6.0));
+                            builder.addInhibitionArc(propagationPlace, tPropagationDontCare);
+                            builder.addInputArc(dontCarePlace, tPropagationDontCare);
+                            builder.addOutputArc(tPropagationDontCare, dontCarePlace);
+                            builder.addOutputArc(tPropagationDontCare, propagationPlace);
+                            for (auto const &child : dftVot->children()) {
+                                if (dontCareElements.count(child->id())) {
+                                    u_int64_t childDontCare = dontcareTransitions.at(child->id());
+                                    builder.addInputArc(propagationPlace, childDontCare);
+                                    builder.addOutputArc(childDontCare, propagationPlace);
+                                }
+                            }
+                        } else {
+                            builder.addInhibitionArc(failedPlace, tDontCare);
+                            builder.addOutputArc(tDontCare, failedPlace);
+                            for (auto const &child : dftVot->children()) {
+                                if (dontCareElements.count(child->id())) {
+                                    u_int64_t childDontCare = dontcareTransitions.at(child->id());
+                                    builder.addInputArc(failedPlace, childDontCare);
+                                    builder.addOutputArc(childDontCare, failedPlace);
+                                }
+                            }
+                        }
+                    } else {
+                        // If VOT is TLE, simple failure propagation suffices
+                        for (auto const &child : dftVot->children()) {
+                            if (dontCareElements.count(child->id())) {
+                                u_int64_t childDontCare = dontcareTransitions.at(child->id());
+                                builder.addInputArc(failedPlace, childDontCare);
+                                builder.addOutputArc(childDontCare, failedPlace);
+                            }
+                        }
+                    }
                 }
             }
 
