@@ -212,11 +212,14 @@ namespace storm {
                 if (!SynchronizationVector::isNoActionInput(actionName)) {
                     components.push_back(i);
                     uint64_t actionIndex = oldModel.getActionIndex(actionName);
+                    // store that automaton occurs in the sync vector.
                     participatingAutomataAndActions.push_back(std::make_pair(composedAutomata[i], actionIndex));
+                    // Store for later that this action is one of the possible actions that synchronise
                     synchronizingActionIndices[i].insert(actionIndex);
                 }
             }
-            
+
+            // What is the action label that should be attached to the composed actions
             uint64_t resultingActionIndex = Model::SILENT_ACTION_INDEX;
             if (vector.getOutput() != Model::SILENT_ACTION_NAME) {
                 if (newModel.hasAction(vector.getOutput())) {
@@ -689,14 +692,10 @@ namespace storm {
             return false;
         }
         
-        storm::expressions::ExpressionManager& Model::getExpressionManager() {
+        storm::expressions::ExpressionManager& Model::getExpressionManager() const {
             return *expressionManager;
         }
-        
-        storm::expressions::ExpressionManager const& Model::getExpressionManager() const {
-            return *expressionManager;
-        }
-        
+
         uint64_t Model::addAutomaton(Automaton const& automaton) {
             auto it = automatonToIndex.find(automaton.getName());
             STORM_LOG_THROW(it == automatonToIndex.end(), storm::exceptions::WrongFormatException, "Automaton with name '" << automaton.getName() << "' already exists.");
@@ -1156,11 +1155,11 @@ namespace storm {
             return false;
         }
         
-        uint64_t Model::encodeAutomatonAndEdgeIndices(uint64_t automatonIndex, uint64_t edgeIndex) const {
+        uint64_t Model::encodeAutomatonAndEdgeIndices(uint64_t automatonIndex, uint64_t edgeIndex) {
             return automatonIndex << 32 | edgeIndex;
         }
         
-        std::pair<uint64_t, uint64_t> Model::decodeAutomatonAndEdgeIndices(uint64_t index) const {
+        std::pair<uint64_t, uint64_t> Model::decodeAutomatonAndEdgeIndices(uint64_t index) {
             return std::make_pair(index >> 32, index & ((1ull << 32) - 1));
         }
 

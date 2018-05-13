@@ -10,7 +10,7 @@
 # find include dir by searching for a concrete file, which definitely must be in it
 find_path(Z3_INCLUDE_DIR 
             NAMES z3++.h 
-            PATHS ENV PATH INCLUDE "/usr/include/z3" "/usr/local/include/z3/" "${Z3_ROOT}/include"
+            PATHS ENV PATH INCLUDE "${Z3_ROOT}/include" "/usr/include/z3" "/usr/local/include/z3/"
          )
 
 # find library

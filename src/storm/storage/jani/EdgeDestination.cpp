@@ -58,5 +58,9 @@ namespace storm {
         TemplateEdgeDestination const& EdgeDestination::getTemplateEdgeDestination() const {
             return templateEdgeDestination.get();
         }
+
+        void EdgeDestination::updateTemplateEdgeDestination(TemplateEdgeDestination const& newTed) {
+            templateEdgeDestination = newTed;
+        }
     }
 }

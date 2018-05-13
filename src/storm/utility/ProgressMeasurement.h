@@ -92,7 +92,7 @@ namespace storm {
             // A name for what this is measuring (iterations, states, ...)
             std::string itemName;
             
-            // The maximal count that can be achieved. Zero means unspecified.
+            // The maximal count that can be achieved. numeric_limits<uint64_t>::max() means unspecified.
             uint64_t maxCount;
             
             // The last displayed count

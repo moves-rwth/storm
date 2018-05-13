@@ -10,6 +10,9 @@ Version 1.2.x
 ### Version 1.2.2 (to be released)
 - `storm-dft`: improvements in Galileo parser
 - `storm-dft`: test cases for DFT analysis
+- Sound value iteration (SVI) for DTMCs and MDPs
+- Topological solver for linear equation systems and MinMax equation systems.
+
 
 ### Version 1.2.1 (2018/02)
 - Multi-dimensional reward bounded reachability properties for DTMCs.

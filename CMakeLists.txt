@@ -403,7 +403,7 @@ endif(DOXYGEN_FOUND)
 # try to obtain the current version from git.
 include(GetGitRevisionDescription)
 get_git_head_revision(STORM_VERSION_REFSPEC STORM_VERSION_GIT_HASH)
-git_describe_checkout(STORM_GIT_VERSION_STRING)
+git_describe(STORM_GIT_VERSION_STRING)
 
 # parse the git tag into variables
 # start with major.minor.patch
@@ -419,20 +419,23 @@ set(STORM_VERSION_COMMITS_AHEAD "${CMAKE_MATCH_3}")
 set(STORM_VERSION_TAG_HASH "${CMAKE_MATCH_4}")
 set(STORM_VERSION_APPENDIX "${CMAKE_MATCH_5}") # might be empty
 
-# now check whether the git version lookup failed
-if (STORM_VERSION_MAJOR MATCHES "NOTFOUND")
-	include(version.cmake)
-	set(STORM_VERSION_LABEL "")
-	set(STORM_VERSION_COMMITS_AHEAD 0)
-	set(STORM_VERSION_GIT_HASH "")
-	set(STORM_VERSION_DIRTY boost::none)
-	message(WARNING "Storm - git version information not available, statically assuming version ${STORM_VERSION_MAJOR}.${STORM_VERSION_MINOR}.${STORM_VERSION_PATCH}.")
-else()
+
+set(STORM_VERSION_DIRTY boost::none)
+if (NOT "${STORM_GIT_VERSION_STRING}" STREQUAL "")
 	if ("${STORM_VERSION_APPENDIX}" MATCHES "^.*dirty.*$")
 		set(STORM_VERSION_DIRTY "true")
 	else()
 		set(STORM_VERSION_DIRTY "false")
 	endif()
+endif()
+
+# now check whether the git version lookup failed
+set(STORM_VERSION_SOURCE "VersionSource::Git")
+if (STORM_GIT_VERSION_STRING MATCHES "NOTFOUND")
+	set(STORM_VERSION_SOURCE "VersionSource::Static")
+	set(STORM_VERSION_COMMITS_AHEAD "boost::none")
+	include(version.cmake)
+	message(WARNING "Storm - git version information not available, statically assuming version ${STORM_VERSION_MAJOR}.${STORM_VERSION_MINOR}.${STORM_VERSION_PATCH}.")
 endif()
 
 # check whether there is a label ('alpha', 'pre', etc.)

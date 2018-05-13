@@ -33,6 +33,7 @@ namespace storm {
             friend Expression operator*(Expression const& first, Expression const& second);
             friend Expression operator/(Expression const& first, Expression const& second);
             friend Expression operator^(Expression const& first, Expression const& second);
+            friend Expression operator%(Expression const& first, Expression const& second);
             friend Expression operator&&(Expression const& first, Expression const& second);
             friend Expression operator||(Expression const& first, Expression const& second);
             friend Expression operator!(Expression const& first);

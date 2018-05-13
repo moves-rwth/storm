@@ -24,11 +24,18 @@ namespace storm {
             /// Flag indicating if the version of Storm is a development version.
             const static bool versionDev;
 
+            enum class VersionSource {
+                Git, Static
+            };
+
+            /// The source of the versioning information.
+            const static VersionSource versionSource;
+            
             /// The short hash of the git commit this build is based on
             const static std::string gitRevisionHash;
 
             /// How many commits passed since the tag was last set.
-            const static unsigned commitsAhead;
+            const static boost::optional<unsigned> commitsAhead;
 
             /// 0 iff there no files were modified in the checkout, 1 otherwise. If none, no information about dirtyness is given.
             const static boost::optional<bool> dirty;
@@ -60,8 +67,11 @@ namespace storm {
             static std::string longVersionString() {
                 std::stringstream sstream;
                 sstream << "Version " << shortVersionString();
+                if (versionSource == VersionSource::Static) {
+                    sstream << " (derived statically)";
+                }
                 if (commitsAhead) {
-                    sstream << " (+ " << commitsAhead << " commits)";
+                    sstream << " (+ " << commitsAhead.get() << " commits)";
                 }
                 if (!gitRevisionHash.empty()) {
                     sstream << " build from revision " << gitRevisionHash;

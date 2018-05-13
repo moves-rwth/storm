@@ -533,6 +533,11 @@ namespace storm {
                 stream << space3 << "<initialMarking>" << std::endl;
                 stream << space4 << "<value>Default," << place.getNumberOfInitialTokens() << "</value>" << std::endl;
                 stream << space3 << "</initialMarking>" << std::endl;
+                if(place.hasRestrictedCapacity()) {
+                    stream << space3 << "<capacity>" << std::endl;
+                    stream << space4 << "<value>Default," << place.getCapacity() << "</value>" << std::endl;
+                    stream << space3 << "</capacity>" << std::endl;
+                }
                 stream << space2 << "</place>" << std::endl;
             }
 
@@ -563,6 +568,60 @@ namespace storm {
             uint64_t i = 0;
             // add arcs for immediate transitions
             for (const auto &trans : immediateTransitions) {
+                // add input arcs
+                for (auto const& inEntry : trans.getInputPlaces()) {
+                    stream << space2 << "<arc ";
+                    stream << "id=\"arc" << i++ << "\" ";
+                    stream << "source=\"" << places.at(inEntry.first).getName() << "\" ";
+                    stream << "target=\"" << trans.getName() << "\" ";
+                    stream << ">" << std::endl;
+
+                    stream << space3 << "<inscription>" << std::endl;
+                    stream << space4 << "<value>Default," << inEntry.second << "</value>" << std::endl;
+                    stream << space3 << "</inscription>" << std::endl;
+
+                    stream << space3 << "<type value=\"normal\" />" << std::endl;
+
+                    stream << space2 << "</arc>" << std::endl;
+                }
+
+                // add inhibition arcs
+                for (auto const& inhEntry : trans.getInhibitionPlaces()) {
+                    stream << space2 << "<arc ";
+                    stream << "id=\"arc" << i++ << "\" ";
+                    stream << "source=\"" << places.at(inhEntry.first).getName() << "\" ";
+                    stream << "target=\"" << trans.getName() << "\" ";
+                    stream << ">" << std::endl;
+
+                    stream << space3 << "<inscription>" << std::endl;
+                    stream << space4 << "<value>Default," << inhEntry.second << "</value>" << std::endl;
+                    stream << space3 << "</inscription>" << std::endl;
+
+                    stream << space3 << "<type value=\"inhibition\" />" << std::endl;
+
+                    stream << space2 << "</arc>" << std::endl;
+                }
+
+                // add output arcs
+                for (auto const& outEntry : trans.getOutputPlaces()) {
+                    stream << space2 << "<arc ";
+                    stream << "id=\"arc" << i++ << "\" ";
+                    stream << "source=\"" << trans.getName() << "\" ";
+                    stream << "target=\"" << places.at(outEntry.first).getName() << "\" ";
+                    stream << ">" << std::endl;
+
+                    stream << space3 << "<inscription>" << std::endl;
+                    stream << space4 << "<value>Default," << outEntry.second << "</value>" << std::endl;
+                    stream << space3 << "</inscription>" << std::endl;
+
+                    stream << space3 << "<type value=\"normal\" />" << std::endl;
+
+                    stream << space2 << "</arc>" << std::endl;
+                }
+            }
+
+            // add arcs for immediate transitions
+            for (const auto &trans : timedTransitions) {
                 // add input arcs
                 for (auto const& inEntry : trans.getInputPlaces()) {
                     stream << space2 << "<arc ";

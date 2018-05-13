@@ -52,7 +52,7 @@ namespace storm {
 
             // Now we are ready to initialize the variable information.
             this->checkValid();
-            this->variableInformation = VariableInformation(model, this->parallelAutomata);
+            this->variableInformation = VariableInformation(model, this->parallelAutomata, options.isAddOutOfBoundsStateSet());
             
             // Create a proper evalator.
             this->evaluator = std::make_unique<storm::expressions::ExpressionEvaluator<ValueType>>(model.getManager());
@@ -256,10 +256,15 @@ namespace storm {
                     ++integerIt;
                 }
                 int_fast64_t assignedValue = this->evaluator->asInt(assignmentIt->getAssignedExpression());
-                if (this->options.isExplorationChecksSet()) {
+                if (this->options.isAddOutOfBoundsStateSet()) {
+                    if (assignedValue < integerIt->lowerBound || assignedValue > integerIt->upperBound) {
+                        return this->outOfBoundsState;
+                    }
+                } else if (this->options.isExplorationChecksSet()) {
                     STORM_LOG_THROW(assignedValue >= integerIt->lowerBound, storm::exceptions::WrongFormatException, "The update " << assignmentIt->getExpressionVariable().getName() << " := " << assignmentIt->getAssignedExpression() << " leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << assignmentIt->getExpressionVariable().getName() << "'.");
                     STORM_LOG_THROW(assignedValue <= integerIt->upperBound, storm::exceptions::WrongFormatException, "The update " << assignmentIt->getExpressionVariable().getName() << " := " << assignmentIt->getAssignedExpression() << " leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << assignmentIt->getExpressionVariable().getName() << "'.");
                 }
+
                 newState.setFromInt(integerIt->bitOffset, integerIt->bitWidth, assignedValue - integerIt->lowerBound);
                 STORM_LOG_ASSERT(static_cast<int_fast64_t>(newState.getAsInt(integerIt->bitOffset, integerIt->bitWidth)) + integerIt->lowerBound == assignedValue, "Writing to the bit vector bucket failed (read " << newState.getAsInt(integerIt->bitOffset, integerIt->bitWidth) << " but wrote " << assignedValue << ").");
             }

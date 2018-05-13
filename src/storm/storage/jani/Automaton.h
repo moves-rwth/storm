@@ -7,6 +7,8 @@
 #include <boost/container/flat_set.hpp>
 
 #include "storm/storage/jani/VariableSet.h"
+#include "storm/storage/jani/TemplateEdgeContainer.h"
+#include "storm/storage/jani/EdgeContainer.h"
 
 
 namespace storm {
@@ -16,73 +18,8 @@ namespace storm {
         class Edge;
         class TemplateEdge;
         class Location;
-        
-        namespace detail {
-            class Edges {
-            public:
-                typedef std::vector<Edge>::iterator iterator;
-                typedef std::vector<Edge>::const_iterator const_iterator;
-                
-                Edges(iterator it, iterator ite);
-                
-                /*!
-                 * Retrieves an iterator to the edges.
-                 */
-                iterator begin() const;
-                
-                /*!
-                 * Retrieves an end iterator to the edges.
-                 */
-                iterator end() const;
-                
-                /*!
-                 * Determines whether this set of edges is empty.
-                 */
-                bool empty() const;
-                
-                /*!
-                 * Retrieves the number of edges.
-                 */
-                std::size_t size() const;
-                
-            private:
-                iterator it;
-                iterator ite;
-            };
-            
-            class ConstEdges {
-            public:
-                typedef std::vector<Edge>::iterator iterator;
-                typedef std::vector<Edge>::const_iterator const_iterator;
-                
-                ConstEdges(const_iterator it, const_iterator ite);
-                
-                /*!
-                 * Retrieves an iterator to the edges.
-                 */
-                const_iterator begin() const;
-                
-                /*!
-                 * Retrieves an end iterator to the edges.
-                 */
-                const_iterator end() const;
 
-                /*!
-                 * Determines whether this set of edges is empty.
-                 */
-                bool empty() const;
 
-                /*!
-                 * Retrieves the number of edges.
-                 */
-                std::size_t size() const;
-                
-            private:
-                const_iterator it;
-                const_iterator ite;
-            };
-        }
-        
         class Model;
         
         class Automaton {
@@ -262,6 +199,8 @@ namespace storm {
              * Adds an edge to the automaton.
              */
             void addEdge(Edge const& edge);
+
+            bool validate() const;
             
             /*!
              * Retrieves the edges of the automaton.
@@ -401,10 +340,7 @@ namespace storm {
             std::unordered_map<std::string, uint64_t> locationToIndex;
             
             /// All edges of the automaton
-            std::vector<Edge> edges;
-            
-            /// The templates for the contained edges.
-            std::unordered_set<std::shared_ptr<TemplateEdge>> templateEdges;
+            EdgeContainer edges;
             
             /// A mapping from location indices to the starting indices. If l is mapped to i, it means that the edges
             /// leaving location l start at index i of the edges vector.

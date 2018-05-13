@@ -48,8 +48,8 @@ jobs:
         - travis/build_carl.sh
       after_success:
         - docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD";
-        - docker commit carl mvolk/carl:travis-debug;
-        - docker push mvolk/carl:travis-debug;
+        - docker commit carl movesrwth/carl:travis-debug;
+        - docker push movesrwth/carl:travis-debug;
     # ubuntu-17.10 - DefaultReleaseTravis
     - stage: Build Carl
       os: linux
@@ -61,8 +61,8 @@ jobs:
         - travis/build_carl.sh
       after_success:
         - docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD";
-        - docker commit carl mvolk/carl:travis;
-        - docker push mvolk/carl:travis;
+        - docker commit carl movesrwth/carl:travis;
+        - docker push movesrwth/carl:travis;
 
     ###
     # Stage: Build (1st run)
@@ -115,6 +115,34 @@ jobs:
       os: linux
       compiler: gcc
       env: CONFIG=DefaultReleaseTravis LINUX=ubuntu-17.10 COMPILER=gcc
+      install:
+        - rm -rf build
+        - travis/install_linux.sh
+      script:
+        - travis/build.sh Build1
+      before_cache:
+        - docker cp storm:/opt/storm/. .
+      after_failure:
+        - find build -iname '*err*.log' -type f -print -exec cat {} \;
+    # ubuntu-18.04 - DefaultDebug
+    - stage: Build (1st run)
+      os: linux
+      compiler: gcc
+      env: CONFIG=DefaultDebug LINUX=ubuntu-18.04 COMPILER=gcc
+      install:
+        - rm -rf build
+        - travis/install_linux.sh
+      script:
+        - travis/build.sh Build1
+      before_cache:
+        - docker cp storm:/opt/storm/. .
+      after_failure:
+        - find build -iname '*err*.log' -type f -print -exec cat {} \;
+    # ubuntu-18.04 - DefaultRelease
+    - stage: Build (1st run)
+      os: linux
+      compiler: gcc
+      env: CONFIG=DefaultRelease LINUX=ubuntu-18.04 COMPILER=gcc
       install:
         - rm -rf build
         - travis/install_linux.sh
@@ -181,6 +209,32 @@ jobs:
         - docker cp storm:/opt/storm/. .
       after_failure:
         - find build -iname '*err*.log' -type f -print -exec cat {} \;
+    # ubuntu-18.04 - DefaultDebug
+    - stage: Build (2nd run)
+      os: linux
+      compiler: gcc
+      env: CONFIG=DefaultDebug LINUX=ubuntu-18.04 COMPILER=gcc
+      install:
+        - travis/install_linux.sh
+      script:
+        - travis/build.sh Build2
+      before_cache:
+        - docker cp storm:/opt/storm/. .
+      after_failure:
+        - find build -iname '*err*.log' -type f -print -exec cat {} \;
+    # ubuntu-18.04 - DefaultRelease
+    - stage: Build (2nd run)
+      os: linux
+      compiler: gcc
+      env: CONFIG=DefaultRelease LINUX=ubuntu-18.04 COMPILER=gcc
+      install:
+        - travis/install_linux.sh
+      script:
+        - travis/build.sh Build2
+      before_cache:
+        - docker cp storm:/opt/storm/. .
+      after_failure:
+        - find build -iname '*err*.log' -type f -print -exec cat {} \;
 
     ###
     # Stage: Build (3rd run)
@@ -230,6 +284,32 @@ jobs:
       os: linux
       compiler: gcc
       env: CONFIG=DefaultReleaseTravis LINUX=ubuntu-17.10 COMPILER=gcc
+      install:
+        - travis/install_linux.sh
+      script:
+        - travis/build.sh Build3
+      before_cache:
+        - docker cp storm:/opt/storm/. .
+      after_failure:
+        - find build -iname '*err*.log' -type f -print -exec cat {} \;
+    # ubuntu-18.04 - DefaultDebug
+    - stage: Build (3rd run)
+      os: linux
+      compiler: gcc
+      env: CONFIG=DefaultDebug LINUX=ubuntu-18.04 COMPILER=gcc
+      install:
+        - travis/install_linux.sh
+      script:
+        - travis/build.sh Build3
+      before_cache:
+        - docker cp storm:/opt/storm/. .
+      after_failure:
+        - find build -iname '*err*.log' -type f -print -exec cat {} \;
+    # ubuntu-18.04 - DefaultRelease
+    - stage: Build (3rd run)
+      os: linux
+      compiler: gcc
+      env: CONFIG=DefaultRelease LINUX=ubuntu-18.04 COMPILER=gcc
       install:
         - travis/install_linux.sh
       script:
@@ -295,6 +375,32 @@ jobs:
         - docker cp storm:/opt/storm/. .
       after_failure:
         - find build -iname '*err*.log' -type f -print -exec cat {} \;
+    # ubuntu-18.04 - DefaultDebug
+    - stage: Build (4th run)
+      os: linux
+      compiler: gcc
+      env: CONFIG=DefaultDebug LINUX=ubuntu-18.04 COMPILER=gcc
+      install:
+        - travis/install_linux.sh
+      script:
+        - travis/build.sh BuildLast
+      before_cache:
+        - docker cp storm:/opt/storm/. .
+      after_failure:
+        - find build -iname '*err*.log' -type f -print -exec cat {} \;
+    # ubuntu-18.04 - DefaultRelease
+    - stage: Build (4th run)
+      os: linux
+      compiler: gcc
+      env: CONFIG=DefaultRelease LINUX=ubuntu-18.04 COMPILER=gcc
+      install:
+        - travis/install_linux.sh
+      script:
+        - travis/build.sh BuildLast
+      before_cache:
+        - docker cp storm:/opt/storm/. .
+      after_failure:
+        - find build -iname '*err*.log' -type f -print -exec cat {} \;
 
     ###
     # Stage: Test all
@@ -341,8 +447,8 @@ jobs:
         - find build -iname '*err*.log' -type f -print -exec cat {} \;
       after_success:
         - docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD";
-        - docker commit storm mvolk/storm:travis-debug;
-        - docker push mvolk/storm:travis-debug;
+        - docker commit storm movesrwth/storm:travis-debug;
+        - docker push movesrwth/storm:travis-debug;
     # ubuntu-17.10 - DefaultReleaseTravis
     - stage: Test all
       os: linux
@@ -358,8 +464,34 @@ jobs:
         - find build -iname '*err*.log' -type f -print -exec cat {} \;
       after_success:
         - docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD";
-        - docker commit storm mvolk/storm:travis;
-        - docker push mvolk/storm:travis;
+        - docker commit storm movesrwth/storm:travis;
+        - docker push movesrwth/storm:travis;
+    # ubuntu-18.04 - DefaultDebug
+    - stage: Test all
+      os: linux
+      compiler: gcc
+      env: CONFIG=DefaultDebug LINUX=ubuntu-18.04 COMPILER=gcc
+      install:
+        - travis/install_linux.sh
+      script:
+        - travis/build.sh TestAll
+      before_cache:
+        - docker cp storm:/opt/storm/. .
+      after_failure:
+        - find build -iname '*err*.log' -type f -print -exec cat {} \;
+    # ubuntu-18.04 - DefaultRelease
+    - stage: Test all
+      os: linux
+      compiler: gcc
+      env: CONFIG=DefaultRelease LINUX=ubuntu-18.04 COMPILER=gcc
+      install:
+        - travis/install_linux.sh
+      script:
+        - travis/build.sh TestAll
+      before_cache:
+        - docker cp storm:/opt/storm/. .
+      after_failure:
+        - find build -iname '*err*.log' -type f -print -exec cat {} \;
   allow_failures:
     - stage: Build (1st run)
       os: linux

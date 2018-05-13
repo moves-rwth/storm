@@ -107,6 +107,7 @@ namespace storm {
             bool isBuildAllLabelsSet() const;
             bool isExplorationChecksSet() const;
             bool isShowProgressSet() const;
+            bool isAddOutOfBoundsStateSet() const;
             uint64_t getShowProgressDelay() const;
 
             /**
@@ -155,7 +156,15 @@ namespace storm {
              * @return this
              */
             BuilderOptions& setExplorationChecks(bool newValue = true);
-            
+
+            /**
+             * Should a state for out of bounds be constructed
+             * @param newValue The new value (default true)
+             * @return this
+             */
+            BuilderOptions& setAddOutOfBoundsState(bool newValue = true);
+
+
         private:
             /// A flag that indicates whether all reward models are to be built. In this case, the reward model names are
             /// to be ignored.
@@ -188,10 +197,13 @@ namespace storm {
             
             /// A flag that stores whether exploration checks are to be performed.
             bool explorationChecks;
-            
+
+            /// A flag indicating that the an additional state for out of bounds should be created.
+            bool addOutOfBoundsState;
+
             /// A flag that stores whether the progress of exploration is to be printed.
             bool showProgress;
-            
+
             /// The delay for printing progress information.
             uint64_t showProgressDelay;
         };

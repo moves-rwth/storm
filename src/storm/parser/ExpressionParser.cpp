@@ -36,7 +36,7 @@ namespace boost {
 
 namespace storm {
     namespace parser {
-        ExpressionParser::ExpressionParser(storm::expressions::ExpressionManager const& manager, qi::symbols<char, uint_fast64_t> const& invalidIdentifiers_, bool enableErrorHandling, bool allowBacktracking) : ExpressionParser::base_type(expression), orOperator_(), andOperator_(), equalityOperator_(), relationalOperator_(), plusOperator_(), multiplicationOperator_(), infixPowerOperator_(), unaryOperator_(), floorCeilOperator_(), minMaxOperator_(), prefixPowerOperator_(), invalidIdentifiers_(invalidIdentifiers_) {
+        ExpressionParser::ExpressionParser(storm::expressions::ExpressionManager const& manager, qi::symbols<char, uint_fast64_t> const& invalidIdentifiers_, bool enableErrorHandling, bool allowBacktracking) : ExpressionParser::base_type(expression), orOperator_(), andOperator_(), equalityOperator_(), relationalOperator_(), plusOperator_(), multiplicationOperator_(), infixPowerModuloOperator_(), unaryOperator_(), floorCeilOperator_(), minMaxOperator_(), prefixPowerModuloOperator_(), invalidIdentifiers_(invalidIdentifiers_) {
             
             expressionCreator = new ExpressionCreator(manager);
             
@@ -58,11 +58,13 @@ namespace storm {
             minMaxExpression.name("min/max expression");
             
             if (allowBacktracking) {
-                prefixPowerExpression = ((prefixPowerOperator_ >> qi::lit("(")) >> expression >> qi::lit(",") >> expression >> qi::lit(")"))[qi::_val = phoenix::bind(&ExpressionCreator::createPowerExpression, phoenix::ref(*expressionCreator), qi::_2, qi::_1, qi::_3, qi::_pass)];
+                prefixPowerModuloExpression = ((prefixPowerModuloOperator_ >> qi::lit("(")) >> expression >> qi::lit(",") >> expression >> qi::lit(")"))[qi::_val = phoenix::bind(&ExpressionCreator::createPowerModuloExpression, phoenix::ref(*expressionCreator), qi::_2, qi::_1, qi::_3, qi::_pass)]
+                | (qi::lit("func") >> qi::lit("(") >> prefixPowerModuloOperator_ >> qi::lit(",") >> expression >> qi::lit(",") >> expression >> qi::lit(")"))[qi::_val = phoenix::bind(&ExpressionCreator::createPowerModuloExpression, phoenix::ref(*expressionCreator), qi::_2, qi::_1, qi::_3, qi::_pass)];
             } else {
-                prefixPowerExpression = ((prefixPowerOperator_ >> qi::lit("(")) > expression > qi::lit(",") > expression > qi::lit(")"))[qi::_val = phoenix::bind(&ExpressionCreator::createPowerExpression, phoenix::ref(*expressionCreator), qi::_2, qi::_1, qi::_3, qi::_pass)];
+                prefixPowerModuloExpression = ((prefixPowerModuloOperator_ >> qi::lit("(")) > expression > qi::lit(",") > expression > qi::lit(")"))[qi::_val = phoenix::bind(&ExpressionCreator::createPowerModuloExpression, phoenix::ref(*expressionCreator), qi::_2, qi::_1, qi::_3, qi::_pass)]
+                | ((qi::lit("func") >> qi::lit("(")) > prefixPowerModuloOperator_ > qi::lit(",") > expression > qi::lit(",") > expression > qi::lit(")"))[qi::_val = phoenix::bind(&ExpressionCreator::createPowerModuloExpression, phoenix::ref(*expressionCreator), qi::_2, qi::_1, qi::_3, qi::_pass)];
             }
-            prefixPowerExpression.name("pow expression");
+            prefixPowerModuloExpression.name("power/modulo expression");
             
 			identifierExpression = identifier[qi::_val = phoenix::bind(&ExpressionCreator::getIdentifierExpression, phoenix::ref(*expressionCreator), qi::_1, qi::_pass)];
             identifierExpression.name("identifier expression");
@@ -73,23 +75,23 @@ namespace storm {
                 | qi::int_[qi::_val = phoenix::bind(&ExpressionCreator::createIntegerLiteralExpression, phoenix::ref(*expressionCreator), qi::_1, qi::_pass)];
             literalExpression.name("literal expression");
             
-            atomicExpression = floorCeilExpression | prefixPowerExpression | minMaxExpression | (qi::lit("(") >> expression >> qi::lit(")")) | identifierExpression | literalExpression;
+            atomicExpression = floorCeilExpression | prefixPowerModuloExpression | minMaxExpression | (qi::lit("(") >> expression >> qi::lit(")")) | identifierExpression | literalExpression;
             atomicExpression.name("atomic expression");
             
             unaryExpression = (-unaryOperator_ >> atomicExpression)[qi::_val = phoenix::bind(&ExpressionCreator::createUnaryExpression, phoenix::ref(*expressionCreator), qi::_1, qi::_2, qi::_pass)];
             unaryExpression.name("unary expression");
             
             if (allowBacktracking) {
-                infixPowerExpression = unaryExpression[qi::_val = qi::_1] >> -(infixPowerOperator_ >> expression)[qi::_val = phoenix::bind(&ExpressionCreator::createPowerExpression, phoenix::ref(*expressionCreator), qi::_val, qi::_1, qi::_2, qi::_pass)];
+                infixPowerModuloExpression = unaryExpression[qi::_val = qi::_1] >> -(infixPowerModuloOperator_ >> expression)[qi::_val = phoenix::bind(&ExpressionCreator::createPowerModuloExpression, phoenix::ref(*expressionCreator), qi::_val, qi::_1, qi::_2, qi::_pass)];
             } else {
-                infixPowerExpression = unaryExpression[qi::_val = qi::_1] > -(infixPowerOperator_ >> expression)[qi::_val = phoenix::bind(&ExpressionCreator::createPowerExpression, phoenix::ref(*expressionCreator), qi::_val, qi::_1, qi::_2, qi::_pass)];
+                infixPowerModuloExpression = unaryExpression[qi::_val = qi::_1] > -(infixPowerModuloOperator_ >> expression)[qi::_val = phoenix::bind(&ExpressionCreator::createPowerModuloExpression, phoenix::ref(*expressionCreator), qi::_val, qi::_1, qi::_2, qi::_pass)];
             }
-            infixPowerExpression.name("power expression");
+            infixPowerModuloExpression.name("power/modulo expression");
             
             if (allowBacktracking) {
-                multiplicationExpression = infixPowerExpression[qi::_val = qi::_1] >> *(multiplicationOperator_ >> infixPowerExpression)[qi::_val = phoenix::bind(&ExpressionCreator::createMultExpression, phoenix::ref(*expressionCreator), qi::_val, qi::_1, qi::_2, qi::_pass)];
+                multiplicationExpression = infixPowerModuloExpression[qi::_val = qi::_1] >> *(multiplicationOperator_ >> infixPowerModuloExpression)[qi::_val = phoenix::bind(&ExpressionCreator::createMultExpression, phoenix::ref(*expressionCreator), qi::_val, qi::_1, qi::_2, qi::_pass)];
             } else {
-                multiplicationExpression = infixPowerExpression[qi::_val = qi::_1] > *(multiplicationOperator_ > infixPowerExpression)[qi::_val = phoenix::bind(&ExpressionCreator::createMultExpression, phoenix::ref(*expressionCreator), qi::_val, qi::_1, qi::_2, qi::_pass)];
+                multiplicationExpression = infixPowerModuloExpression[qi::_val = qi::_1] > *(multiplicationOperator_ > infixPowerModuloExpression)[qi::_val = phoenix::bind(&ExpressionCreator::createMultExpression, phoenix::ref(*expressionCreator), qi::_val, qi::_1, qi::_2, qi::_pass)];
             }
             multiplicationExpression.name("multiplication expression");
             

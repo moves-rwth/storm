@@ -1647,6 +1647,7 @@ namespace storm {
                 bool checkThresholdFeasible;
                 bool encodeReachability;
                 bool useDynamicConstraints;
+                bool silent = false;
             };
             
             /*!
@@ -1848,7 +1849,7 @@ namespace storm {
 #endif
             }
             
-            static void extendLabelSetLowerBound(storm::models::sparse::Model<T> const& model, boost::container::flat_set<uint_fast64_t>& commandSet, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
+            static void extendLabelSetLowerBound(storm::models::sparse::Model<T> const& model, boost::container::flat_set<uint_fast64_t>& commandSet, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool silent = false) {
                 auto startTime = std::chrono::high_resolution_clock::now();
                 
                 // Create sub-model that only contains the choices allowed by the given command set.
@@ -1886,11 +1887,17 @@ namespace storm {
                         }
                         
                         if (onlyProb0ESuccessors) {
-                            auto const& labelSet = model.getChoiceOrigins()->asPrismChoiceOrigins().getCommandSet(choice);
-                            hasLabeledChoice |= !labelSet.empty();
+                            uint64_t labelSetSize = 0;
+                            if (model.getChoiceOrigins()->isPrismChoiceOrigins()) {
+                                labelSetSize = model.getChoiceOrigins()->asPrismChoiceOrigins().getCommandSet(choice).size();
+                            } else {
+                                assert(model.getChoiceOrigins()->isJaniChoiceOrigins());
+                                labelSetSize = model.getChoiceOrigins()->asJaniChoiceOrigins().getEdgeIndexSet(choice).size();
+                            }
+                            hasLabeledChoice |= (labelSetSize != 0);
                             
-                            if (smallestCommandChoice == 0 || labelSet.size() < smallestCommandSetSize) {
-                                smallestCommandSetSize = labelSet.size();
+                            if (smallestCommandChoice == 0 || labelSetSize < smallestCommandSetSize) {
+                                smallestCommandSetSize = labelSetSize;
                                 smallestCommandChoice = choice;
                             }
                         }
@@ -1898,9 +1905,15 @@ namespace storm {
                     
                     if (hasLabeledChoice) {
                         // Take all labels of the selected choice.
-                        auto const& labelSet = model.getChoiceOrigins()->asPrismChoiceOrigins().getCommandSet(smallestCommandChoice);
-                        commandSet.insert(labelSet.begin(), labelSet.end());
-                        
+                        if (model.getChoiceOrigins()->isPrismChoiceOrigins()) {
+                            auto const& labelSet = model.getChoiceOrigins()->asPrismChoiceOrigins().getCommandSet(smallestCommandChoice);
+                            commandSet.insert(labelSet.begin(), labelSet.end());
+                        } else {
+                            assert(model.getChoiceOrigins()->isJaniChoiceOrigins());
+                            auto const& labelSet = model.getChoiceOrigins()->asJaniChoiceOrigins().getEdgeIndexSet(smallestCommandChoice);
+                            commandSet.insert(labelSet.begin(), labelSet.end());
+                        }
+
                         // Check for which successor states choices need to be added
                         for (auto const& successorEntry : model.getTransitionMatrix().getRow(smallestCommandChoice)) {
                             if (!storm::utility::isZero(successorEntry.getValue())) {
@@ -1914,12 +1927,17 @@ namespace storm {
                 }
                 
                 auto endTime = std::chrono::high_resolution_clock::now();
-                std::cout << std::endl << "Extended command for lower bounded property to size " << commandSet.size() << " in " << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << "ms." << std::endl;
+                if (!silent) {
+                    std::cout << std::endl << "Extended command for lower bounded property to size " << commandSet.size() << " in " << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << "ms." << std::endl;
+                }
+
             }
 
-            static boost::container::flat_set<uint_fast64_t> computeCounterexampleLabelSet(Environment const& env, storm::storage::SymbolicModelDescription const& symbolicModel, storm::models::sparse::Model<T> const& model, std::shared_ptr<storm::logic::Formula const> const& formula) {
+            static boost::container::flat_set<uint_fast64_t> computeCounterexampleLabelSet(Environment const& env, storm::storage::SymbolicModelDescription const& symbolicModel, storm::models::sparse::Model<T> const& model, std::shared_ptr<storm::logic::Formula const> const& formula, boost::container::flat_set<uint_fast64_t> const& dontCareLabels = boost::container::flat_set<uint_fast64_t>(),  Options const& options = Options(true)) {
                 STORM_LOG_THROW(model.isOfType(storm::models::ModelType::Dtmc) || model.isOfType(storm::models::ModelType::Mdp), storm::exceptions::NotSupportedException, "MaxSAT-based counterexample generation is supported only for discrete-time models.");
-                std::cout << std::endl << "Generating minimal label counterexample for formula " << *formula << std::endl;
+                if (!options.silent) {
+                    std::cout << std::endl << "Generating minimal label counterexample for formula " << *formula << std::endl;
+                }
 
                 STORM_LOG_THROW(formula->isProbabilityOperatorFormula(), storm::exceptions::InvalidPropertyException, "Counterexample generation does not support this kind of formula. Expecting a probability operator as the outermost formula element.");
                 storm::logic::ProbabilityOperatorFormula const& probabilityOperator = formula->asProbabilityOperatorFormula();
@@ -1967,7 +1985,9 @@ namespace storm {
                     // This means that from all states in prob0E(psi) we need to include labels such that \sigma_0
                     // is actually included in the resulting model. This prevents us from guaranteeing the minimality of
                     // the returned counterexample, so we warn about that.
-                    STORM_LOG_WARN("Generating counterexample for lower-bounded property. The resulting command set need not be minimal.");
+                    if (!options.silent) {
+                        STORM_LOG_WARN("Generating counterexample for lower-bounded property. The resulting command set need not be minimal.");
+                    }
 
                     // Modify bound appropriately.
                     comparisonType = storm::logic::invertPreserveStrictness(comparisonType);
@@ -1985,13 +2005,15 @@ namespace storm {
 
                 // Delegate the actual computation work to the function of equal name.
                 auto startTime = std::chrono::high_resolution_clock::now();
-                auto labelSet = getMinimalLabelSet(env, symbolicModel, model, phiStates, psiStates, threshold, strictBound, boost::container::flat_set<uint_fast64_t>(), true);
+                auto labelSet = getMinimalLabelSet(env, symbolicModel, model, phiStates, psiStates, threshold, strictBound, dontCareLabels, options);
                 auto endTime = std::chrono::high_resolution_clock::now();
-                std::cout << std::endl << "Computed minimal label set of size " << labelSet.size() << " in " << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << "ms." << std::endl;
+                if (!options.silent) {
+                    std::cout << std::endl << "Computed minimal label set of size " << labelSet.size() << " in " << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << "ms." << std::endl;
+                }
 
                 // Extend the command set properly.
                 if (lowerBoundedFormula) {
-                    extendLabelSetLowerBound(model, labelSet, phiStates, psiStates);
+                    extendLabelSetLowerBound(model, labelSet, phiStates, psiStates, options.silent);
                 }
                 return labelSet;
             }

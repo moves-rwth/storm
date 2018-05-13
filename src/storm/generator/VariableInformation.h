@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <boost/container/flat_map.hpp>
+#include <boost/optional/optional.hpp>
 
 #include "storm/storage/expressions/Variable.h"
 
@@ -74,8 +75,8 @@ namespace storm {
         
         // A structure storing information about the used variables of the program.
         struct VariableInformation {
-            VariableInformation(storm::prism::Program const& program);
-            VariableInformation(storm::jani::Model const& model, std::vector<std::reference_wrapper<storm::jani::Automaton const>> const& parallelAutomata);
+            VariableInformation(storm::prism::Program const& program, bool outOfBoundsState = false);
+            VariableInformation(storm::jani::Model const& model, std::vector<std::reference_wrapper<storm::jani::Automaton const>> const& parallelAutomata, bool outOfBoundsState = false);
             
             VariableInformation() = default;
             uint_fast64_t getTotalBitOffset(bool roundTo64Bit = false) const;
@@ -91,8 +92,11 @@ namespace storm {
             
             /// The integer variables.
             std::vector<IntegerVariableInformation> integerVariables;
+
             
         private:
+            boost::optional<uint64_t> deadlockBit;
+
             /*!
              * Sorts the variables to establish a known ordering.
              */

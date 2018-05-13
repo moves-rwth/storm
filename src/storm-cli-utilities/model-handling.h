@@ -190,6 +190,7 @@ namespace storm {
             options.setBuildChoiceOrigins(counterexampleGeneratorSettings.isMinimalCommandSetGenerationSet());
             options.setBuildAllLabels(buildSettings.isBuildFullModelSet());
             options.setBuildAllRewardModels(buildSettings.isBuildFullModelSet());
+            options.setAddOutOfBoundsState(buildSettings.isBuildOutOfBoundsStateSet());
             if (buildSettings.isBuildFullModelSet()) {
                 options.clearTerminalStates();
             }

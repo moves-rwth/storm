@@ -1711,16 +1711,16 @@ namespace storm {
             return Command(newCommandIndex, false, actionIndex, actionName, newGuard, newUpdates, this->getFilename(), 0);
         }
         
-        storm::jani::Model Program::toJani(bool allVariablesGlobal) const {
+        storm::jani::Model Program::toJani(bool allVariablesGlobal, std::string suffix) const {
             ToJaniConverter converter;
-            storm::jani::Model resultingModel = converter.convert(*this, allVariablesGlobal);
+            storm::jani::Model resultingModel = converter.convert(*this, allVariablesGlobal, suffix);
             STORM_LOG_WARN_COND(!converter.labelsWereRenamed(), "Labels were renamed in PRISM-to-JANI conversion, but the mapping is not stored.");
             return resultingModel;
         }
 
-        std::pair<storm::jani::Model, std::map<std::string, std::string>> Program::toJaniWithLabelRenaming(bool allVariablesGlobal) const {
+        std::pair<storm::jani::Model, std::map<std::string, std::string>> Program::toJaniWithLabelRenaming(bool allVariablesGlobal, std::string suffix) const {
             ToJaniConverter converter;
-            storm::jani::Model resultingModel = converter.convert(*this, allVariablesGlobal);
+            storm::jani::Model resultingModel = converter.convert(*this, allVariablesGlobal, suffix);
             return std::make_pair(resultingModel, converter.getLabelRenaming());
         }
 

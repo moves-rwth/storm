@@ -116,8 +116,24 @@ namespace storm {
             }
         }
 
+        void Edge::setTemplateEdge(std::shared_ptr<TemplateEdge> const& newTe) {
+            templateEdge = newTe;
+            uint64_t i = 0;
+            std::vector<EdgeDestination> newdestinations;
+
+            assert(destinations.size() == newTe->getNumberOfDestinations());
+            for (auto& destination : destinations) {
+                newdestinations.emplace_back(destination.getLocationIndex(), destination.getProbability(), newTe->getDestination(i));
+                //destination.updateTemplateEdgeDestination(newTe->getDestination(i));
+                ++i;
+            }
+            destinations = newdestinations;
+        }
+
         std::shared_ptr<TemplateEdge> const& Edge::getTemplateEdge() {
             return templateEdge;
         }
+
+
     }
 }

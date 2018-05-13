@@ -5,7 +5,6 @@
 #include "storm/parser/SpiritErrorHandler.h"
 
 #include "storm/storage/prism/Program.h"
-#include "storm/storage/jani/Model.h"
 
 #include "storm/logic/Formulas.h"
 
