@@ -1381,7 +1381,11 @@ namespace storm {
             // Assert the values of the constants.
             for (auto const& constant : this->getConstants()) {
                 if (constant.isDefined()) {
-                    solver->add(constant.getExpressionVariable() == constant.getExpression());
+                    if (constant.getType().isBooleanType()) {
+                        solver->add(storm::expressions::iff(constant.getExpressionVariable(),constant.getExpression()));
+                    } else {
+                        solver->add(constant.getExpressionVariable() == constant.getExpression());
+                    }
                 }
             }
             

@@ -452,9 +452,9 @@ namespace storm {
                 result &= location.isLinear();
             }
             if (result) {
-                return edges.isLinear();
+                result &= edges.isLinear();
             }
-            return false;
+            return result;
         }
 
         void Automaton::restrictToEdges(boost::container::flat_set<uint_fast64_t> const& edgeIndices) {

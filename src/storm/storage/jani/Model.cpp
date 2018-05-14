@@ -462,7 +462,11 @@ namespace storm {
             // Assert the values of the constants.
             for (auto const& constant : this->getConstants()) {
                 if (constant.isDefined()) {
-                    solver->add(constant.getExpressionVariable() == constant.getExpression());
+                    if (constant.isBooleanConstant()) {
+                        solver->add(storm::expressions::iff(constant.getExpressionVariable(), constant.getExpression()));
+                    } else {
+                        solver->add(constant.getExpressionVariable() == constant.getExpression());
+                    }
                 }
             }
             // Assert the bounds of the global variables.

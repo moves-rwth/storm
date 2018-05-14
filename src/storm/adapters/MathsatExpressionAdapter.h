@@ -273,7 +273,9 @@ namespace storm {
 					} else if (msat_is_rational_type(env, msat_term_get_type(term))) {
                         return manager.rational(storm::utility::convertNumber<storm::RationalNumber>(termString));
 					}
-				}
+                } else if (msat_term_is_term_ite(env, term)) {
+                    return storm::expressions::ite(translateExpression(msat_term_get_arg(term, 0)), translateExpression(msat_term_get_arg(term, 1)), translateExpression(msat_term_get_arg(term, 2)));
+                }
                 
                 // If all other cases did not apply, we cannot represent the term in our expression framework.
                 char* termAsCString = msat_term_repr(term);
