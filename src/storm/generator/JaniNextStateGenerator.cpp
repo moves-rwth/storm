@@ -432,6 +432,9 @@ namespace storm {
             // As long as there is one feasible combination of commands, keep on expanding it.
             bool done = false;
             while (!done) {
+                currentDistribution.clear();
+                nextDistribution.clear();
+                
                 std::vector<ValueType> stateActionRewards(rewardVariables.size(), storm::utility::zero<ValueType>());
                 
                 currentDistribution.add(state, storm::utility::one<ValueType>());
@@ -504,7 +507,7 @@ namespace storm {
                 
                 if (this->options.isExplorationChecksSet()) {
                     // Check that the resulting distribution is in fact a distribution.
-                    STORM_LOG_THROW(!this->isDiscreteTimeModel() || !this->comparator.isConstant(probabilitySum) || this->comparator.isOne(probabilitySum), storm::exceptions::WrongFormatException, "Sum of update probabilities do not sum to one for some command (actually sum to " << probabilitySum << ").");
+                    STORM_LOG_THROW(!this->isDiscreteTimeModel() || !this->comparator.isConstant(probabilitySum) || this->comparator.isOne(probabilitySum), storm::exceptions::WrongFormatException, "Sum of update probabilities do not sum to one for some edge (actually sum to " << probabilitySum << ").");
                 }
                 
                 // Now, check whether there is one more command combination to consider.

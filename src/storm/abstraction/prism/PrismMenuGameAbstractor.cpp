@@ -182,23 +182,20 @@ namespace storm {
 
                 relevantStatesWatch.start();
                 if (this->isRestrictToRelevantStatesSet() && this->hasTargetStateExpression()) {
-
                     // Get the target state BDD.
                     storm::dd::Bdd<DdType> targetStates = reachableStates && this->getStates(this->getTargetStateExpression());
 
                     // In the presence of target states, we keep only states that can reach the target states.
                     reachableStates = storm::utility::dd::computeBackwardsReachableStates(targetStates, reachableStates && !initialStates, transitionRelation, abstractionInformation.getSourceVariables(), abstractionInformation.getSuccessorVariables()) || initialStates;
 
+                    // Cut the transition relation source blocks to the backward reachable states.
+                    transitionRelation &= reachableStates;
+                    
                     // Include all successors of reachable states, because the backward search otherwise potentially
                     // cuts probability 0 choices of these states.
                     reachableStates = reachableStates || reachableStates.relationalProduct(transitionRelation, abstractionInformation.getSourceVariables(), abstractionInformation.getSuccessorVariables());
 
-                    // Cut the transition relation to the 'extended backward reachable states', so we have the appropriate self-
-                    // loops of (now) deadlock states.
-                    transitionRelation &= reachableStates;
-
                     relevantStatesWatch.stop();
-
                     STORM_LOG_TRACE("Restricting to relevant states took " << relevantStatesWatch.getTimeInMilliseconds() << "ms.");
                 }
                 
