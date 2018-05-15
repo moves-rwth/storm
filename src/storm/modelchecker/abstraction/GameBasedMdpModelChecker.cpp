@@ -522,13 +522,13 @@ namespace storm {
             STORM_LOG_THROW(checkTask.isOnlyInitialStatesRelevantSet(), storm::exceptions::InvalidPropertyException, "The game-based abstraction refinement model checker can only compute the result for the initial states.");
 
             // Optimization: do not compute both bounds if not necessary (e.g. if bound given and exceeded, etc.)
-            
+
             // Set up initial predicates.
             std::vector<storm::expressions::Expression> initialPredicates = getInitialPredicates(constraintExpression, targetStateExpression);
             
             // Derive the optimization direction for player 1 (assuming menu-game abstraction).
             storm::OptimizationDirection player1Direction = getPlayer1Direction(checkTask);
-            
+
             // Create the abstractor.
             std::shared_ptr<storm::abstraction::MenuGameAbstractor<Type, ValueType>> abstractor;
             if (preprocessedModel.isPrismProgram()) {

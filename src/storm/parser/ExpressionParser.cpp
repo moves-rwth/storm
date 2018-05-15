@@ -95,7 +95,11 @@ namespace storm {
             }
             multiplicationExpression.name("multiplication expression");
             
-            plusExpression = multiplicationExpression[qi::_val = qi::_1] > *(plusOperator_ >> multiplicationExpression)[qi::_val = phoenix::bind(&ExpressionCreator::createPlusExpression, phoenix::ref(*expressionCreator), qi::_val, qi::_1, qi::_2, qi::_pass)];
+            if (allowBacktracking) {
+                plusExpression = multiplicationExpression[qi::_val = qi::_1] >> *(plusOperator_ >> multiplicationExpression)[qi::_val = phoenix::bind(&ExpressionCreator::createPlusExpression, phoenix::ref(*expressionCreator), qi::_val, qi::_1, qi::_2, qi::_pass)];
+            } else {
+                plusExpression = multiplicationExpression[qi::_val = qi::_1] > *(plusOperator_ >> multiplicationExpression)[qi::_val = phoenix::bind(&ExpressionCreator::createPlusExpression, phoenix::ref(*expressionCreator), qi::_val, qi::_1, qi::_2, qi::_pass)];
+            }
             plusExpression.name("plus expression");
             
             if (allowBacktracking) {
@@ -105,7 +109,11 @@ namespace storm {
             }
             relativeExpression.name("relative expression");
                         
-            equalityExpression = relativeExpression[qi::_val = qi::_1] >> *(equalityOperator_ >> relativeExpression)[qi::_val = phoenix::bind(&ExpressionCreator::createEqualsExpression, phoenix::ref(*expressionCreator), qi::_val, qi::_1, qi::_2, qi::_pass)];
+            if (allowBacktracking) {
+                equalityExpression = relativeExpression[qi::_val = qi::_1] >> *(equalityOperator_ >> relativeExpression)[qi::_val = phoenix::bind(&ExpressionCreator::createEqualsExpression, phoenix::ref(*expressionCreator), qi::_val, qi::_1, qi::_2, qi::_pass)];
+            } else {
+                equalityExpression = relativeExpression[qi::_val = qi::_1] >> *(equalityOperator_ >> relativeExpression)[qi::_val = phoenix::bind(&ExpressionCreator::createEqualsExpression, phoenix::ref(*expressionCreator), qi::_val, qi::_1, qi::_2, qi::_pass)];
+            }
             equalityExpression.name("equality expression");
             
             if (allowBacktracking) {
@@ -122,7 +130,11 @@ namespace storm {
             }
             orExpression.name("or expression");
             
-            iteExpression = orExpression[qi::_val = qi::_1] > -(qi::lit("?") > iteExpression > qi::lit(":") > iteExpression)[qi::_val = phoenix::bind(&ExpressionCreator::createIteExpression, phoenix::ref(*expressionCreator), qi::_val, qi::_1, qi::_2, qi::_pass)];
+            if (allowBacktracking) {
+                iteExpression = orExpression[qi::_val = qi::_1] >> -(qi::lit("?") >> iteExpression >> qi::lit(":") >> iteExpression)[qi::_val = phoenix::bind(&ExpressionCreator::createIteExpression, phoenix::ref(*expressionCreator), qi::_val, qi::_1, qi::_2, qi::_pass)];
+            } else {
+                iteExpression = orExpression[qi::_val = qi::_1] > -(qi::lit("?") > iteExpression > qi::lit(":") > iteExpression)[qi::_val = phoenix::bind(&ExpressionCreator::createIteExpression, phoenix::ref(*expressionCreator), qi::_val, qi::_1, qi::_2, qi::_pass)];
+            }
             iteExpression.name("if-then-else expression");
             
             expression %= iteExpression;
@@ -138,12 +150,12 @@ namespace storm {
             debug(relativeExpression);
             debug(plusExpression);
             debug(multiplicationExpression);
-            debug(infixPowerExpression);
+            debug(infixPowerModuloExpression);
             debug(unaryExpression);
             debug(atomicExpression);
             debug(literalExpression);
             debug(identifierExpression);
-             */
+            */
             
             if (enableErrorHandling) {
                 // Enable error reporting.
