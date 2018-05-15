@@ -1785,7 +1785,10 @@ namespace storm {
                         }
                         
                         if (options.useDynamicConstraints) {
-                            if (maximalReachabilityProbability == storm::utility::zero<T>()) {
+                            // Determine which of the two analysis techniques to call by performing a reachability analysis.
+                            storm::storage::BitVector reachableStates = storm::utility::graph::getReachableStates(subModel->getTransitionMatrix(), subModel->getInitialStates(), phiStates, psiStates);
+                            
+                            if (reachableStates.isDisjointFrom(psiStates)) {
                                 // If there was no target state reachable, analyze the solution and guide the solver into the right direction.
                                 analyzeZeroProbabilitySolution(*solver, *subModel, subLabelSets, model, labelSets, phiStates, psiStates, commandSet, variableInformation, relevancyInformation);
                             } else {
