@@ -36,7 +36,7 @@ namespace storm {
             return boost::get<storm::expressions::Expression>(labelOrExpression);
         }
         
-        BuilderOptions::BuilderOptions(bool buildAllRewardModels, bool buildAllLabels) : buildAllRewardModels(buildAllRewardModels), buildAllLabels(buildAllLabels), buildChoiceLabels(false), buildStateValuations(false), buildChoiceOrigins(false), explorationChecks(false), addOutOfBoundsState(false), showProgress(false), showProgressDelay(0) {
+        BuilderOptions::BuilderOptions(bool buildAllRewardModels, bool buildAllLabels) : buildAllRewardModels(buildAllRewardModels), buildAllLabels(buildAllLabels), buildChoiceLabels(false), buildStateValuations(false), buildChoiceOrigins(false), explorationChecks(false), addOverlappingGuardsLabel(false), addOutOfBoundsState(false), showProgress(false), showProgressDelay(0) {
             // Intentionally left empty.
         }
         
@@ -164,6 +164,10 @@ namespace storm {
             return addOutOfBoundsState;
         }
 
+        bool BuilderOptions::isAddOverlappingGuardLabelSet() const {
+            return addOverlappingGuardsLabel;
+        }
+
         BuilderOptions& BuilderOptions::setBuildAllRewardModels(bool newValue) {
             buildAllRewardModels = newValue;
             return *this;
@@ -235,6 +239,11 @@ namespace storm {
 
         BuilderOptions& BuilderOptions::setAddOutOfBoundsState(bool newValue) {
             addOutOfBoundsState = newValue;
+            return *this;
+        }
+
+        BuilderOptions& BuilderOptions::setAddOverlappingGuardsLabel(bool newValue) {
+            addOverlappingGuardsLabel = newValue;
             return *this;
         }
 
