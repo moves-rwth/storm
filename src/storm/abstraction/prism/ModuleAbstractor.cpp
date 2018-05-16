@@ -26,8 +26,10 @@ namespace storm {
             ModuleAbstractor<DdType, ValueType>::ModuleAbstractor(storm::prism::Module const& module, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool useDecomposition) : smtSolverFactory(smtSolverFactory), abstractionInformation(abstractionInformation), commands(), module(module) {
                 
                 // For each concrete command, we create an abstract counterpart.
+                uint64_t counter = 0;
                 for (auto const& command : module.getCommands()) {
                     commands.emplace_back(command, abstractionInformation, smtSolverFactory, useDecomposition);
+                    ++counter;
                 }
             }
             
@@ -83,7 +85,8 @@ namespace storm {
             BottomStateResult<DdType> ModuleAbstractor<DdType, ValueType>::getBottomStateTransitions(storm::dd::Bdd<DdType> const& reachableStates, uint_fast64_t numberOfPlayer2Variables) {
                 BottomStateResult<DdType> result(this->getAbstractionInformation().getDdManager().getBddZero(), this->getAbstractionInformation().getDdManager().getBddZero());
                 
-                for (auto& command : commands) {
+                for (uint64_t index = 0; index < commands.size(); ++index) {
+                    auto& command = commands[index];
                     BottomStateResult<DdType> commandBottomStateResult = command.getBottomStateTransitions(reachableStates, numberOfPlayer2Variables);
                     result.states |= commandBottomStateResult.states;
                     result.transitions |= commandBottomStateResult.transitions;

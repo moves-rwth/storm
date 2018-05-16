@@ -48,6 +48,7 @@ namespace storm {
                 for (auto const& range : this->model.get().getAllRangeExpressions()) {
                     abstractionInformation.addConstraint(range);
                     initialStateAbstractor.constrain(range);
+                    validBlockAbstractor.constrain(range);
                 }
                 
                 uint_fast64_t totalNumberOfCommands = 0;
@@ -181,6 +182,9 @@ namespace storm {
                 // Do a reachability analysis on the raw transition relation.
                 storm::dd::Bdd<DdType> transitionRelation = nonTerminalStates && game.bdd.existsAbstract(variablesToAbstract);
                 storm::dd::Bdd<DdType> initialStates = initialLocationsBdd && initialStateAbstractor.getAbstractStates();
+                if (!model.get().hasTrivialInitialStatesExpression()) {
+                    initialStates &= validBlockAbstractor.getValidBlocks();
+                }
                 initialStates.addMetaVariables(abstractionInformation.getSourcePredicateVariables());
                 storm::dd::Bdd<DdType> reachableStates = storm::utility::dd::computeReachableStates(initialStates, transitionRelation, abstractionInformation.getSourceVariables(), abstractionInformation.getSuccessorVariables());
                 

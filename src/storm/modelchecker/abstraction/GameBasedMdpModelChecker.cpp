@@ -574,9 +574,10 @@ namespace storm {
                 }
                 
                 // #ifdef LOCAL_DEBUG
-                // targetStates.template toAdd<ValueType>().exportToDot("target.dot");
-                // abstractor->exportToDot("game" + std::to_string(iterations) + ".dot", targetStates, game.getManager().getBddOne());
-                // game.getReachableStates().template toAdd<ValueType>().exportToDot("reach.dot");
+//                initialStates.template toAdd<ValueType>().exportToDot("init.dot");
+//                targetStates.template toAdd<ValueType>().exportToDot("target.dot");
+//                abstractor->exportToDot("game" + std::to_string(iterations) + ".dot", targetStates, game.getManager().getBddOne());
+//                game.getReachableStates().template toAdd<ValueType>().exportToDot("reach.dot");
                 // #endif
                 
                 std::unique_ptr<CheckResult> result;

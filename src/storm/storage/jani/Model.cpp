@@ -928,6 +928,21 @@ namespace storm {
             return getInitialStatesExpression(allAutomata);
         }
         
+        bool Model::hasTrivialInitialStatesExpression() const {
+            if (this->hasInitialStatesRestriction()) {
+                return false;
+            }
+            
+            bool result = true;
+            for (auto const& automaton : this->getAutomata()) {
+                result &= automaton.hasTrivialInitialStatesExpression();
+                if (!result) {
+                    break;
+                }
+            }
+            return result;
+        }
+        
         storm::expressions::Expression Model::getInitialStatesExpression(std::vector<std::reference_wrapper<storm::jani::Automaton const>> const& automata) const {
             // Start with the restriction of variables.
             storm::expressions::Expression result = initialStatesRestriction;

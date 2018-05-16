@@ -33,6 +33,8 @@ namespace storm {
             
             void refine(std::vector<uint64_t> const& predicates);
             
+            void constrain(storm::expressions::Expression const& constraint);
+            
         private:
             /*!
              * Checks which parts of the valid blocks need to be recomputed.

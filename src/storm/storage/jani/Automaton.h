@@ -253,6 +253,12 @@ namespace storm {
             storm::expressions::Expression getInitialStatesExpression() const;
             
             /*!
+             * Retrieves whether the initial states expression is trivial in the sense that the automaton has no initial
+             * states restriction and all non-transient variables have initial values.
+             */
+            bool hasTrivialInitialStatesExpression() const;
+            
+            /*!
              * Retrieves whether there is an edge labeled with the action with the given index in this automaton.
              */
             bool hasEdgeLabeledWithActionIndex(uint64_t actionIndex) const;

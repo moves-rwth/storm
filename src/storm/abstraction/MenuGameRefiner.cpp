@@ -1362,18 +1362,21 @@ namespace storm {
                 }
                 
                 // Now clean the classes in the sense that redundant predicates are cleaned.
+                uint64_t checkCounter = 0;
                 for (auto& predicateClass : predicateClasses) {
                     std::vector<storm::expressions::Expression> cleanedAtomsOfClass;
                     
                     for (auto const& predicate : predicateClass.second) {
                         bool addPredicate = true;
                         for (auto const& atom : cleanedAtomsOfClass) {
+                            ++checkCounter;
                             if (predicate.areSame(atom)) {
                                 addPredicate = false;
                                 break;
                             }
                             
-                            if (addPredicate && equivalenceChecker.areEquivalentModuloNegation(predicate, atom)) {
+                            ++checkCounter;
+                            if (equivalenceChecker.areEquivalentModuloNegation(predicate, atom)) {
                                 addPredicate = false;
                                 break;
                             }
@@ -1397,19 +1400,21 @@ namespace storm {
                     auto oldPredicateClassIt = oldPredicateClasses.find(predicateClass.first);
                     if (oldPredicateClassIt != oldPredicateClasses.end()) {
                         for (auto const& newAtom : predicateClass.second) {
+                            bool addAtom = true;
                             for (auto const& oldPredicate : oldPredicateClassIt->second) {
-                                bool addAtom = true;
+                                ++checkCounter;
                                 if (newAtom.areSame(oldPredicate)) {
                                     addAtom = false;
                                     break;
                                 }
+                                ++checkCounter;
                                 if (equivalenceChecker.areEquivalentModuloNegation(newAtom, oldPredicate)) {
                                     addAtom = false;
                                     break;
                                 }
-                                if (addAtom) {
-                                    cleanedAtoms.push_back(newAtom);
-                                }
+                            }
+                            if (addAtom) {
+                                cleanedAtoms.push_back(newAtom);
                             }
                         }
                     } else {
@@ -1417,7 +1422,7 @@ namespace storm {
                     }
                 }
                 auto end = std::chrono::high_resolution_clock::now();
-                STORM_LOG_TRACE("Preprocessing predicates took " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
+                STORM_LOG_TRACE("Preprocessing predicates took " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms (" << checkCounter << " checks).");
                 
                 return cleanedAtoms;
             } else {

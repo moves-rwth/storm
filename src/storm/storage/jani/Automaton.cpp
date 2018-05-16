@@ -351,6 +351,27 @@ namespace storm {
             return result;
         }
         
+        bool Automaton::hasTrivialInitialStatesExpression() const {
+            if (this->hasInitialStatesRestriction()) {
+                return false;
+            }
+            
+            bool result = true;
+            for (auto const& variable : this->getVariables()) {
+                if (variable.isTransient()) {
+                    continue;
+                }
+                
+                result &= variable.hasInitExpression();
+                
+                if (!result) {
+                    break;
+                }
+            }
+            
+            return result;
+        }
+        
         bool Automaton::hasEdgeLabeledWithActionIndex(uint64_t actionIndex) const {
             return actionIndices.find(actionIndex) != actionIndices.end();
         }

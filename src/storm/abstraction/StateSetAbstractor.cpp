@@ -23,8 +23,8 @@ namespace storm {
                 // Extract the variables of the predicate, so we know which variables were used when abstracting.
                 std::set<storm::expressions::Variable> usedVariables = predicate.getVariables();
                 concretePredicateVariables.insert(usedVariables.begin(), usedVariables.end());
-                localExpressionInformation.relate(usedVariables);
             }
+            localExpressionInformation.relate(concretePredicateVariables);
         }
         
         template <storm::dd::DdType DdType, typename ValueType>

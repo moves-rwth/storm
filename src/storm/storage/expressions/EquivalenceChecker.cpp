@@ -39,6 +39,7 @@ namespace storm {
             this->smtSolver->push();
             this->smtSolver->add(!storm::expressions::iff(first, !second));
             equivalent = smtSolver->check() == storm::solver::SmtSolver::CheckResult::Unsat;
+            
             this->smtSolver->pop();
             return equivalent;
         }

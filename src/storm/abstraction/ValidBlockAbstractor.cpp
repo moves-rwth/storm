@@ -35,6 +35,13 @@ namespace storm {
         }
         
         template <storm::dd::DdType DdType>
+        void ValidBlockAbstractor<DdType>::constrain(storm::expressions::Expression const& constraint) {
+            for (uint64_t i = 0; i < smtSolvers.size(); ++i) {
+                smtSolvers[i]->add(constraint);
+            }
+        }
+        
+        template <storm::dd::DdType DdType>
         void ValidBlockAbstractor<DdType>::refine(std::vector<uint64_t> const& predicates) {
             for (auto const& predicate : predicates) {
                 std::map<uint64_t, uint64_t> mergeInformation = localExpressionInformation.addExpression(predicate);
@@ -114,13 +121,10 @@ namespace storm {
         template <storm::dd::DdType DdType>
         storm::dd::Bdd<DdType> ValidBlockAbstractor<DdType>::getSourceStateBdd(storm::solver::SmtSolver::ModelReference const& model, uint64_t blockIndex) const {
             storm::dd::Bdd<DdType> result = this->getAbstractionInformation().getDdManager().getBddOne();
-//            std::cout << "new model ----------------" << std::endl;
             for (auto const& variableIndexPair : relevantVariablesAndPredicates[blockIndex]) {
                 if (model.getBooleanValue(variableIndexPair.first)) {
-//                    std::cout << this->getAbstractionInformation().getPredicateByIndex(variableIndexPair.second) << " is true" << std::endl;
                     result &= this->getAbstractionInformation().encodePredicateAsSource(variableIndexPair.second);
                 } else {
-//                    std::cout << this->getAbstractionInformation().getPredicateByIndex(variableIndexPair.second) << " is false" << std::endl;
                     result &= !this->getAbstractionInformation().encodePredicateAsSource(variableIndexPair.second);
                 }
             }

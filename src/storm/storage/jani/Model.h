@@ -350,6 +350,12 @@ namespace storm {
             storm::expressions::Expression getInitialStatesExpression() const;
 
             /*!
+             * Retrieves whether the initial states expression is trivial in the sense that no automaton has an initial
+             * states restriction and all variables have initial values.
+             */
+            bool hasTrivialInitialStatesExpression() const;
+            
+            /*!
              * Retrieves the expression defining the legal initial values of the variables.
              *
              * @param automata The resulting expression will also characterize the legal initial states for these automata.
