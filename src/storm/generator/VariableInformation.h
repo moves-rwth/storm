@@ -93,9 +93,12 @@ namespace storm {
             /// The integer variables.
             std::vector<IntegerVariableInformation> integerVariables;
 
-            
+            bool hasOutOfBoundsBit() const;
+
+            uint64_t getOutOfBoundsBit() const;
+
         private:
-            boost::optional<uint64_t> deadlockBit;
+            boost::optional<uint64_t> outOfBoundsBit;
 
             /*!
              * Sorts the variables to establish a known ordering.

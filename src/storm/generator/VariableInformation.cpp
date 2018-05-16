@@ -31,11 +31,14 @@ namespace storm {
         
         VariableInformation::VariableInformation(storm::prism::Program const& program, bool outOfBoundsState) : totalBitOffset(0) {
             if(outOfBoundsState) {
-                deadlockBit = 0;
+                outOfBoundsBit = 0;
                 ++totalBitOffset;
             } else {
-                deadlockBit = boost::none;
+                outOfBoundsBit = boost::none;
             }
+
+
+
             for (auto const& booleanVariable : program.getGlobalBooleanVariables()) {
                 booleanVariables.emplace_back(booleanVariable.getExpressionVariable(), totalBitOffset, true);
                 ++totalBitOffset;
@@ -75,11 +78,13 @@ namespace storm {
                 STORM_LOG_THROW(!automaton.getVariables().containsNonTransientRealVariables(), storm::exceptions::InvalidArgumentException, "Cannot build model from JANI model that contains non-transient real variables in automaton '" << automaton.getName() << "'.");
             }
             if(outOfBoundsState) {
-                deadlockBit = 0;
+                outOfBoundsBit = 0;
                 ++totalBitOffset;
             } else {
-                deadlockBit = boost::none;
+                outOfBoundsBit = boost::none;
             }
+
+
             
             for (auto const& variable : model.getGlobalVariables().getBooleanVariables()) {
                 if (!variable.isTransient()) {
@@ -133,6 +138,16 @@ namespace storm {
             }
             return result;
         }
+
+        bool VariableInformation::hasOutOfBoundsBit() const {
+            return outOfBoundsBit != boost::none;
+        }
+
+        uint64_t VariableInformation::getOutOfBoundsBit() const {
+            assert(hasOutOfBoundsBit());
+            return outOfBoundsBit.get();
+        }
+
         
         void VariableInformation::sortVariables() {
             // Sort the variables so we can make some assumptions when iterating over them (in the next-state generators).
