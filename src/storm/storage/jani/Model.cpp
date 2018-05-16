@@ -929,7 +929,7 @@ namespace storm {
         }
         
         bool Model::hasTrivialInitialStatesExpression() const {
-            if (this->hasInitialStatesRestriction()) {
+            if (this->hasInitialStatesRestriction() && !this->getInitialStatesRestriction().isTrue()) {
                 return false;
             }
             

@@ -328,7 +328,7 @@ namespace storm {
             storm::expressions::Expression result;
             
             // Add initial state restriction if there is one.
-            if (this->hasInitialStatesRestriction()) {
+            if (this->hasInitialStatesRestriction() && !this->getInitialStatesRestriction().isTrue()) {
                 result = this->getInitialStatesRestriction();
             }
             
