@@ -181,9 +181,6 @@ namespace storm {
                 initialStates.addMetaVariables(abstractionInformation.getSourcePredicateVariables());
                 storm::dd::Bdd<DdType> reachableStates = storm::utility::dd::computeReachableStates(initialStates, transitionRelation, abstractionInformation.getSourceVariables(), abstractionInformation.getSuccessorVariables());
 
-                // Cut transition relation to the reachable states for backward search.
-                transitionRelation &= reachableStates;
-
                 relevantStatesWatch.start();
                 if (this->isRestrictToRelevantStatesSet() && this->hasTargetStateExpression()) {
                     // Get the target state BDD.
@@ -192,9 +189,6 @@ namespace storm {
                     // In the presence of target states, we keep only states that can reach the target states.
                     reachableStates = storm::utility::dd::computeBackwardsReachableStates(targetStates, reachableStates && !initialStates, transitionRelation, abstractionInformation.getSourceVariables(), abstractionInformation.getSuccessorVariables()) || initialStates;
 
-                    // Cut the transition relation source blocks to the backward reachable states.
-                    transitionRelation &= reachableStates;
-                    
                     // Include all successors of reachable states, because the backward search otherwise potentially
                     // cuts probability 0 choices of these states.
                     reachableStates = reachableStates || reachableStates.relationalProduct(transitionRelation, abstractionInformation.getSourceVariables(), abstractionInformation.getSuccessorVariables());
@@ -220,6 +214,8 @@ namespace storm {
                 bool hasBottomStates = !bottomStateResult.states.isZero();
                 
                 // Construct the transition matrix by cutting away the transitions of unreachable states.
+                // Note that we also restrict the successor states of transitions, because there might be successors
+                // that are not in the relevant we restrict to.
                 storm::dd::Add<DdType, ValueType> transitionMatrix = (game.bdd && reachableStates && reachableStates.swapVariables(abstractionInformation.getSourceSuccessorVariablePairs())).template toAdd<ValueType>();
                 transitionMatrix *= commandUpdateProbabilitiesAdd;
                 transitionMatrix += deadlockTransitions;
