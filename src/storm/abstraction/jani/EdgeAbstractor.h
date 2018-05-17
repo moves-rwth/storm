@@ -121,6 +121,8 @@ namespace storm {
                  */
                 storm::jani::Edge const& getConcreteEdge() const;
                 
+                void notifyGuardIsPredicate();
+                
             private:
                 /*!
                  * Determines the relevant predicates for source as well as successor states wrt. to the given assignments

@@ -71,6 +71,12 @@ namespace storm {
             storm::expressions::Expression const& getTargetStateExpression() const;
             bool hasTargetStateExpression() const;
             
+            /*!
+             * Notifies the abstractor that the guards are predicates, which may be used to improve the bottom state
+             * computation.
+             */
+            virtual void notifyGuardsArePredicates() = 0;
+            
         protected:
             bool isRestrictToRelevantStatesSet() const;
             

@@ -122,6 +122,8 @@ namespace storm {
                  */
                 std::size_t getNumberOfEdges() const;
                 
+                void notifyGuardsArePredicates();
+                
             private:
                 /*!
                  * Retrieves the abstraction information.

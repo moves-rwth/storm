@@ -123,6 +123,8 @@ namespace storm {
                 
                 virtual void addTerminalStates(storm::expressions::Expression const& expression) override;
                 
+                virtual void notifyGuardsArePredicates() override;
+
             protected:
                 using MenuGameAbstractor<DdType, ValueType>::exportToDot;
                 

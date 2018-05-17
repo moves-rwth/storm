@@ -696,6 +696,11 @@ namespace storm {
                 return abstractionInformation.get();
             }
             
+            template <storm::dd::DdType DdType, typename ValueType>
+            void CommandAbstractor<DdType, ValueType>::notifyGuardIsPredicate() {
+                skipBottomStates = true;
+            }
+            
             template class CommandAbstractor<storm::dd::DdType::CUDD, double>;
             template class CommandAbstractor<storm::dd::DdType::Sylvan, double>;
 #ifdef STORM_HAVE_CARL

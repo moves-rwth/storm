@@ -113,6 +113,8 @@ namespace storm {
                  */
                 std::vector<CommandAbstractor<DdType, ValueType>>& getCommands();
 
+                void notifyGuardsArePredicates();
+                
             private:
                 /*!
                  * Retrieves the abstraction information.

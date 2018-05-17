@@ -86,7 +86,8 @@ namespace storm {
                     }
                 }
                 performRefinement(createGlobalRefinement(preprocessPredicates(guards, RefinementPredicates::Source::InitialGuard)));
-
+                
+                this->abstractor.get().notifyGuardsArePredicates();
                 addedAllGuardsFlag = true;
             }
         }

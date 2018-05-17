@@ -262,6 +262,13 @@ namespace storm {
                 terminalStateExpressions.emplace_back(expression);
             }
             
+            template <storm::dd::DdType DdType, typename ValueType>
+            void PrismMenuGameAbstractor<DdType, ValueType>::notifyGuardsArePredicates() {
+                for (auto& module : modules) {
+                    module.notifyGuardsArePredicates();
+                }
+            }
+            
             // Explicitly instantiate the class.
             template class PrismMenuGameAbstractor<storm::dd::DdType::CUDD, double>;
             template class PrismMenuGameAbstractor<storm::dd::DdType::Sylvan, double>;

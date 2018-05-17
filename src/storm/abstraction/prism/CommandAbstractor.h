@@ -117,6 +117,8 @@ namespace storm {
                  */
                 storm::prism::Command const& getConcreteCommand() const;
                 
+                void notifyGuardIsPredicate();
+                
             private:
                 /*!
                  * Determines the relevant predicates for source as well as successor states wrt. to the given assignments

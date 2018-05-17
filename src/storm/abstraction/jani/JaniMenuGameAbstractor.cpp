@@ -268,6 +268,13 @@ namespace storm {
             void JaniMenuGameAbstractor<DdType, ValueType>::addTerminalStates(storm::expressions::Expression const& expression) {
                 terminalStateExpressions.emplace_back(expression);
             }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
+            void JaniMenuGameAbstractor<DdType, ValueType>::notifyGuardsArePredicates() {
+                for (auto& automaton : automata) {
+                    automaton.notifyGuardsArePredicates();
+                }
+            }
                         
             // Explicitly instantiate the class.
             template class JaniMenuGameAbstractor<storm::dd::DdType::CUDD, double>;

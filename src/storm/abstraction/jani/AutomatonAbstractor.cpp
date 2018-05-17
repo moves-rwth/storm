@@ -141,6 +141,13 @@ namespace storm {
                 return abstractionInformation.get();
             }
             
+            template <storm::dd::DdType DdType, typename ValueType>
+            void AutomatonAbstractor<DdType, ValueType>::notifyGuardsArePredicates() {
+                for (auto& edge : edges) {
+                    edge.notifyGuardIsPredicate();
+                }
+            }
+            
             template class AutomatonAbstractor<storm::dd::DdType::CUDD, double>;
             template class AutomatonAbstractor<storm::dd::DdType::Sylvan, double>;
 #ifdef STORM_HAVE_CARL
