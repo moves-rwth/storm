@@ -191,8 +191,11 @@ namespace storm {
 
                     // Include all successors of reachable states, because the backward search otherwise potentially
                     // cuts probability 0 choices of these states.
-                    reachableStates = reachableStates || reachableStates.relationalProduct(transitionRelation, abstractionInformation.getSourceVariables(), abstractionInformation.getSuccessorVariables());
+                    reachableStates |= (reachableStates && !targetStates).relationalProduct(transitionRelation, abstractionInformation.getSourceVariables(), abstractionInformation.getSuccessorVariables());
 
+                    // Restrict transition relation to relevant fragment for computation of deadlock states.
+                    transitionRelation &= reachableStates && reachableStates.swapVariables(abstractionInformation.getExtendedSourceSuccessorVariablePairs());
+                    
                     relevantStatesWatch.stop();
                     STORM_LOG_TRACE("Restricting to relevant states took " << relevantStatesWatch.getTimeInMilliseconds() << "ms.");
                 }

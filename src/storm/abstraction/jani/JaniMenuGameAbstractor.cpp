@@ -192,14 +192,18 @@ namespace storm {
                 if (this->isRestrictToRelevantStatesSet() && this->hasTargetStateExpression()) {
                     // Get the target state BDD.
                     storm::dd::Bdd<DdType> targetStates = reachableStates && this->getStates(this->getTargetStateExpression());
-                    
+
                     // In the presence of target states, we keep only states that can reach the target states.
-                    reachableStates = storm::utility::dd::computeBackwardsReachableStates(targetStates, reachableStates && !initialStates, transitionRelation, abstractionInformation.getSourceVariables(), abstractionInformation.getSuccessorVariables()) || initialStates;
-                    
+                    auto newReachableStates = storm::utility::dd::computeBackwardsReachableStates(targetStates, reachableStates && !initialStates, transitionRelation, abstractionInformation.getSourceVariables(), abstractionInformation.getSuccessorVariables()) || initialStates;
+                    reachableStates = newReachableStates;
+
                     // Include all successors of reachable states, because the backward search otherwise potentially
                     // cuts probability 0 choices of these states.
-                    reachableStates |= reachableStates.relationalProduct(transitionRelation, abstractionInformation.getSourceVariables(), abstractionInformation.getSuccessorVariables());
+                    reachableStates |= (reachableStates && !targetStates).relationalProduct(transitionRelation, abstractionInformation.getSourceVariables(), abstractionInformation.getSuccessorVariables());
                     relevantStatesWatch.stop();
+                    
+                    // Restrict transition relation to relevant fragment for computation of deadlock states.
+                    transitionRelation &= reachableStates && reachableStates.swapVariables(abstractionInformation.getExtendedSourceSuccessorVariablePairs());
                     
                     STORM_LOG_TRACE("Restricting to relevant states took " << relevantStatesWatch.getTimeInMilliseconds() << "ms.");
                 }
@@ -222,7 +226,7 @@ namespace storm {
                 
                 // Construct the transition matrix by cutting away the transitions of unreachable states.
                 // Note that we also restrict the successor states of transitions, because there might be successors
-                // that are not in the relevant we restrict to.
+                // that are not in the set of relevant states we restrict to.
                 storm::dd::Add<DdType, ValueType> transitionMatrix = (game.bdd && reachableStates && reachableStates.swapVariables(abstractionInformation.getExtendedSourceSuccessorVariablePairs())).template toAdd<ValueType>();
 
                 transitionMatrix *= edgeDecoratorAdd;

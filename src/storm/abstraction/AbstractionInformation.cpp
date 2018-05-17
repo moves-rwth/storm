@@ -140,11 +140,12 @@ namespace storm {
         
         template<storm::dd::DdType DdType>
         std::vector<storm::expressions::Expression> AbstractionInformation<DdType>::getPredicatesExcludingBottom(storm::storage::BitVector const& predicateValuation) const {
-            STORM_LOG_ASSERT(predicateValuation.size() == this->getNumberOfPredicates() + 1, "Size of predicate valuation does not match number of predicates.");
+            uint64_t offset = 1 + this->getNumberOfDdSourceLocationVariables();
+            STORM_LOG_ASSERT(predicateValuation.size() == this->getNumberOfPredicates() + offset, "Size of predicate valuation does not match number of predicates.");
             
             std::vector<storm::expressions::Expression> result;
             for (uint64_t index = 0; index < this->getNumberOfPredicates(); ++index) {
-                if (predicateValuation[index + 1]) {
+                if (predicateValuation[index + offset]) {
                     result.push_back(this->getPredicateByIndex(index));
                 } else {
                     result.push_back(!this->getPredicateByIndex(index));
@@ -539,13 +540,22 @@ namespace storm {
         }
         
         template <storm::dd::DdType DdType>
-        storm::expressions::Variable const& AbstractionInformation<DdType>::getDdLocationVariable(storm::expressions::Variable const& locationExpressionVariable, bool source) {
+        storm::expressions::Variable const& AbstractionInformation<DdType>::getDdLocationMetaVariable(storm::expressions::Variable const& locationExpressionVariable, bool source) {
             auto const& metaVariablePair = locationExpressionToDdVariableMap.at(locationExpressionVariable);
             if (source) {
                 return metaVariablePair.first;
             } else {
                 return metaVariablePair.second;
             }
+        }
+        
+        template <storm::dd::DdType DdType>
+        uint64_t AbstractionInformation<DdType>::getNumberOfDdSourceLocationVariables() const {
+            uint64_t result = 0;
+            for (auto const& locationVariableToMetaVariablePair : locationExpressionToDdVariableMap) {
+                result += ddManager->getMetaVariable(locationVariableToMetaVariablePair.second.first).getNumberOfDdVariables();
+            }
+            return result;
         }
         
         template <storm::dd::DdType DdType>

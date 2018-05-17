@@ -594,9 +594,12 @@ namespace storm {
             
             auto pathIt = reversedPath.rbegin();
             
-            // Decode initial state. The state valuation also includes the bottom state, so we need to reserve one more
-            // than the number of predicates here.
-            storm::storage::BitVector extendedPredicateValuation = odd.getEncoding(stateToOffset ? (*stateToOffset)[*pathIt] : *pathIt, abstractionInformation.getNumberOfPredicates() + 1);
+            // Decode initial state. The state valuation also includes
+            // * the bottom state, so we need to reserve one more, and
+            // * the location variables,
+            // so we need to reserve an appropriate size.
+            uint64_t predicateValuationOffset = abstractionInformation.getNumberOfDdSourceLocationVariables() + 1;
+            storm::storage::BitVector extendedPredicateValuation = odd.getEncoding(stateToOffset ? (*stateToOffset)[*pathIt] : *pathIt, abstractionInformation.getNumberOfPredicates() + predicateValuationOffset);
             ++pathIt;
             
             // Add all predicates of initial block.
@@ -651,6 +654,9 @@ namespace storm {
                     
                     allVariableUpdateExpression = allVariableUpdateExpression || variableUpdateExpression;
                 }
+                if (!allVariableUpdateExpression.isInitialized()) {
+                    allVariableUpdateExpression = expressionManager.boolean(true);
+                }
                 predicates.back().emplace_back(allVariableUpdateExpression);
                 
                 // Incorporate the new variables in the current substitution.
@@ -659,7 +665,7 @@ namespace storm {
                 }
                 
                 // Decode current state.
-                extendedPredicateValuation = odd.getEncoding(stateToOffset ? (*stateToOffset)[*pathIt] : *pathIt, abstractionInformation.getNumberOfPredicates() + 1);
+                extendedPredicateValuation = odd.getEncoding(stateToOffset ? (*stateToOffset)[*pathIt] : *pathIt, abstractionInformation.getNumberOfPredicates() + predicateValuationOffset);
                 
                 // Encode the predicates whose value might have changed.
                 // FIXME: could be optimized by precomputation.
@@ -687,7 +693,7 @@ namespace storm {
                     
                     if (containsAssignedVariables) {
                         auto transformedPredicate = predicate.changeManager(expressionManager).substitute(currentSubstitution);
-                        predicates.back().emplace_back(extendedPredicateValuation.get(predicateIndex + 1) ? transformedPredicate : !transformedPredicate);
+                        predicates.back().emplace_back(extendedPredicateValuation.get(predicateIndex + predicateValuationOffset) ? transformedPredicate : !transformedPredicate);
                     }
                 }
                 
@@ -1231,8 +1237,8 @@ namespace storm {
         template<storm::dd::DdType Type, typename ValueType>
         bool MenuGameRefiner<Type, ValueType>::refine(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Odd const& odd, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint64_t> const& player1Grouping, std::vector<uint64_t> const& player1Labeling, std::vector<uint64_t> const& player2Labeling, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, ExplicitQuantitativeResultMinMax<ValueType> const& quantitativeResult, ExplicitGameStrategyPair const& minStrategyPair, ExplicitGameStrategyPair const& maxStrategyPair) const {
             
-            ValueType lower = quantitativeResult.getMin().getRange(initialStates).first;
-            ValueType upper = quantitativeResult.getMax().getRange(initialStates).second;
+//            ValueType lower = quantitativeResult.getMin().getRange(initialStates).first;
+//            ValueType upper = quantitativeResult.getMax().getRange(initialStates).second;
             
 //            boost::optional<RefinementPredicates> kShortestPathPredicates = derivePredicatesFromInterpolationKShortestPaths(odd, transitionMatrix, player1Grouping, player1Labeling, player2Labeling, initialStates, constraintStates, targetStates, lower, upper, maxStrategyPair);
             

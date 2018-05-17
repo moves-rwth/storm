@@ -485,7 +485,12 @@ namespace storm {
             /*!
              * Retrieves the DD variable for the given location expression variable.
              */
-            storm::expressions::Variable const& getDdLocationVariable(storm::expressions::Variable const& locationExpressionVariable, bool source);
+            storm::expressions::Variable const& getDdLocationMetaVariable(storm::expressions::Variable const& locationExpressionVariable, bool source);
+            
+            /*!
+             * Retrieves the number of DD variables associated with the source location variables.
+             */
+            uint64_t getNumberOfDdSourceLocationVariables() const;
             
             /*!
              * Retrieves the source location variables.
