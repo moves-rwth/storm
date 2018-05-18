@@ -1,8 +1,15 @@
 #include "storm/abstraction/AbstractionInformation.h"
 
+#include <boost/algorithm/string.hpp>
+
 #include "storm/storage/BitVector.h"
 
 #include "storm/storage/dd/DdManager.h"
+
+#include "storm/settings/modules/AbstractionSettings.h"
+#include "storm/settings/SettingsManager.h"
+
+#include "storm/parser/ExpressionParser.h"
 
 #include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidOperationException.h"
@@ -15,7 +22,28 @@ namespace storm {
 
         template<storm::dd::DdType DdType>
         AbstractionInformation<DdType>::AbstractionInformation(storm::expressions::ExpressionManager& expressionManager, std::set<storm::expressions::Variable> const& abstractedVariables, std::unique_ptr<storm::solver::SmtSolver>&& smtSolver, std::shared_ptr<storm::dd::DdManager<DdType>> ddManager) : expressionManager(expressionManager), equivalenceChecker(std::move(smtSolver)), abstractedVariables(abstractedVariables), ddManager(ddManager), allPredicateIdentities(ddManager->getBddOne()), allLocationIdentities(ddManager->getBddOne()), expressionToBddMap() {
-            // Intentionally left empty.
+            
+            // Obtain additional constraints from the settings.
+            auto const& settings = storm::settings::getModule<storm::settings::modules::AbstractionSettings>();
+            if (settings.isConstraintsSet()) {
+                std::string constraintsString = settings.getConstraintString();
+                
+                std::vector<std::string> constraintsAsStrings;
+                boost::split(constraintsAsStrings, constraintsString, boost::is_any_of(","));
+                
+                storm::parser::ExpressionParser expressionParser(expressionManager);
+                std::unordered_map<std::string, storm::expressions::Expression> variableMapping;
+                for (auto const& variableTypePair : expressionManager) {
+                    variableMapping[variableTypePair.first.getName()] = variableTypePair.first;
+                }
+                expressionParser.setIdentifierMapping(variableMapping);
+                
+                for (auto const& constraintString : constraintsAsStrings) {
+                    storm::expressions::Expression constraint = expressionParser.parseFromString(constraintString);
+                    STORM_LOG_TRACE("Adding special (user-provided) constraint " << constraint << ".");
+                    constraints.emplace_back(constraint);
+                }
+            }
         }
         
         template<storm::dd::DdType DdType>

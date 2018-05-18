@@ -25,6 +25,7 @@ namespace storm {
             const std::string AbstractionSettings::solveModeOptionName = "solve";
             const std::string AbstractionSettings::maximalAbstractionOptionName = "maxabs";
             const std::string AbstractionSettings::rankRefinementPredicatesOptionName = "rankpred";
+            const std::string AbstractionSettings::constraintsOptionName = "constraints";
             
             AbstractionSettings::AbstractionSettings() : ModuleSettings(moduleName) {
                 std::vector<std::string> methods = {"games", "bisimulation", "bisim"};
@@ -86,6 +87,11 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("value", "The value of the flag.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(onOff))
                                              .setDefaultValueString("off").build())
                                 .build());
+
+                this->addOption(storm::settings::OptionBuilder(moduleName, constraintsOptionName, true, "Specifies additional constraints used by the abstraction.")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("constraints", "The constraints to use.").build())
+                                .build());
+
             }
             
             AbstractionSettings::Method AbstractionSettings::getAbstractionRefinementMethod() const {
@@ -174,6 +180,14 @@ namespace storm {
             
             bool AbstractionSettings::isRankRefinementPredicatesSet() const {
                 return this->getOption(rankRefinementPredicatesOptionName).getArgumentByName("value").getValueAsString() == "on";
+            }
+            
+            bool AbstractionSettings::isConstraintsSet() const {
+                return this->getOption(constraintsOptionName).getHasOptionBeenSet();
+            }
+            
+            std::string AbstractionSettings::getConstraintString() const {
+                return this->getOption(constraintsOptionName).getArgumentByName("constraints").getValueAsString();
             }
             
         }

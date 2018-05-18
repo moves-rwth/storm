@@ -123,6 +123,20 @@ namespace storm {
                  */
                 bool isRankRefinementPredicatesSet() const;
                 
+                /*!
+                 * Retrieves whether the constraints option was set.
+                 *
+                 * @return True if the constraints option was set.
+                 */
+                bool isConstraintsSet() const;
+                
+                /*!
+                 * Retrieves the string that specifies additional constraints.
+                 *
+                 * @return The string that defines the constraints.
+                 */
+                std::string getConstraintString() const;
+                
                 const static std::string moduleName;
                 
             private:
@@ -138,6 +152,7 @@ namespace storm {
                 const static std::string solveModeOptionName;
                 const static std::string maximalAbstractionOptionName;
                 const static std::string rankRefinementPredicatesOptionName;
+                const static std::string constraintsOptionName;
             };
             
         }

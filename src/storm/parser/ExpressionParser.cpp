@@ -38,7 +38,7 @@ namespace storm {
     namespace parser {
         ExpressionParser::ExpressionParser(storm::expressions::ExpressionManager const& manager, qi::symbols<char, uint_fast64_t> const& invalidIdentifiers_, bool enableErrorHandling, bool allowBacktracking) : ExpressionParser::base_type(expression), orOperator_(), andOperator_(), equalityOperator_(), relationalOperator_(), plusOperator_(), multiplicationOperator_(), infixPowerModuloOperator_(), unaryOperator_(), floorCeilOperator_(), minMaxOperator_(), prefixPowerModuloOperator_(), invalidIdentifiers_(invalidIdentifiers_) {
             
-            expressionCreator = new ExpressionCreator(manager);
+            expressionCreator = std::make_unique<ExpressionCreator>(manager);
             
             identifier %= qi::as_string[qi::raw[qi::lexeme[((qi::alpha | qi::char_('_') | qi::char_('.')) >> *(qi::alnum | qi::char_('_')))]]][qi::_pass = phoenix::bind(&ExpressionParser::isValidIdentifier, phoenix::ref(*this), qi::_1)];
             identifier.name("identifier");
@@ -174,6 +174,10 @@ namespace storm {
                 qi::on_error<qi::fail>(minMaxExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
                 qi::on_error<qi::fail>(floorCeilExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
             }
+        }
+        
+        ExpressionParser::~ExpressionParser() {
+            // Needed, because auto-generated destructor requires ExpressionCreator to be a complete type in the header.
         }
         
         void ExpressionParser::setIdentifierMapping(qi::symbols<char, storm::expressions::Expression> const* identifiers_) {

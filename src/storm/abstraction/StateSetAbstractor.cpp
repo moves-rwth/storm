@@ -16,6 +16,10 @@ namespace storm {
         template <storm::dd::DdType DdType, typename ValueType>
         StateSetAbstractor<DdType, ValueType>::StateSetAbstractor(AbstractionInformation<DdType>& abstractionInformation, std::vector<storm::expressions::Expression> const& statePredicates, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory) : smtSolver(smtSolverFactory->create(abstractionInformation.getExpressionManager())), abstractionInformation(abstractionInformation), localExpressionInformation(abstractionInformation), relevantPredicatesAndVariables(), concretePredicateVariables(), forceRecomputation(true), cachedBdd(abstractionInformation.getDdManager().getBddOne()), constraint(abstractionInformation.getDdManager().getBddOne()) {
             
+            for (auto const& constraint : abstractionInformation.getConstraints()) {
+                smtSolver->add(constraint);
+            }
+            
             // Assert all state predicates.
             for (auto const& predicate : statePredicates) {
                 smtSolver->add(predicate);

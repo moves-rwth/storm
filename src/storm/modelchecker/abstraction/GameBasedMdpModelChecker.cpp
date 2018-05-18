@@ -58,7 +58,9 @@ namespace storm {
 
         template<storm::dd::DdType Type, typename ModelType>
         GameBasedMdpModelChecker<Type, ModelType>::GameBasedMdpModelChecker(storm::storage::SymbolicModelDescription const& model, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory) : smtSolverFactory(smtSolverFactory), comparator(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getPrecision()), reuseQualitativeResults(false), reuseQuantitativeResults(false), solveMode(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getSolveMode()) {
-            model.requireNoUndefinedConstants();
+
+            STORM_LOG_WARN_COND(!model.hasUndefinedConstants(), "Model contains undefined constants. Game-based abstraction can treat such models, but you should make sure that you did not simply forget to define these constants. In particular, it may be necessary to constrain the values of the undefined constants.");
+            
             if (model.isPrismProgram()) {
                 storm::prism::Program const& originalProgram = model.asPrismProgram();
                 STORM_LOG_THROW(originalProgram.getModelType() == storm::prism::Program::ModelType::DTMC || originalProgram.getModelType() == storm::prism::Program::ModelType::MDP, storm::exceptions::NotSupportedException, "Currently only DTMCs/MDPs are supported by the game-based model checker.");
@@ -566,7 +568,7 @@ namespace storm {
                 
                 // (2) Prepare initial, constraint and target state BDDs for later use.
                 storm::dd::Bdd<Type> initialStates = game.getInitialStates();
-                STORM_LOG_THROW(initialStates.getNonZeroCount() == 1 || checkTask.isBoundSet(), storm::exceptions::InvalidPropertyException, "Game-based abstraction refinement requires a bound on the formula for model with " << initialStates.getNonZeroCount() << " initial states.");
+//                STORM_LOG_THROW(initialStates.getNonZeroCount() == 1 || checkTask.isBoundSet(), storm::exceptions::InvalidPropertyException, "Game-based abstraction refinement requires a bound on the formula for model with " << initialStates.getNonZeroCount() << " initial states.");
                 storm::dd::Bdd<Type> constraintStates = globalConstraintStates && game.getReachableStates();
                 storm::dd::Bdd<Type> targetStates = globalTargetStates && game.getReachableStates();
                 if (player1Direction == storm::OptimizationDirection::Minimize) {
