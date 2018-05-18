@@ -1,5 +1,8 @@
 #include "storm/abstraction/ExplicitGameStrategy.h"
 
+#include <limits>
+#include <algorithm>
+
 namespace storm {
     namespace abstraction {
         
