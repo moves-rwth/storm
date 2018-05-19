@@ -275,7 +275,7 @@ namespace storm {
                     automaton.notifyGuardsArePredicates();
                 }
             }
-                        
+            
             // Explicitly instantiate the class.
             template class JaniMenuGameAbstractor<storm::dd::DdType::CUDD, double>;
             template class JaniMenuGameAbstractor<storm::dd::DdType::Sylvan, double>;
