@@ -641,10 +641,6 @@ namespace storm {
                 qualitativeRefinement = refiner.refine(game, transitionMatrixBdd, qualitativeResult);
                 auto qualitativeRefinementEnd = std::chrono::high_resolution_clock::now();
                 STORM_LOG_INFO("Qualitative refinement completed in " << std::chrono::duration_cast<std::chrono::milliseconds>(qualitativeRefinementEnd - qualitativeRefinementStart).count() << "ms.");
-            } else if (initialMaybeStates == initialStates && checkTask.isQualitativeSet()) {
-                // If all initial states are 'maybe' states and the property we needed to check is a qualitative one,
-                // we can return the result here.
-                return std::make_unique<ExplicitQuantitativeCheckResult<ValueType>>(storm::storage::sparse::state_type(0), ValueType(0.5));
             }
             
             // (4) if we arrived at this point and no refinement was made, we need to compute the quantitative solution.
