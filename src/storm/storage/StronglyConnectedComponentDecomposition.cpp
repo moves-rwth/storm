@@ -23,30 +23,35 @@ namespace storm {
         template <typename RewardModelType>
         StronglyConnectedComponentDecomposition<ValueType>::StronglyConnectedComponentDecomposition(storm::models::sparse::Model<ValueType, RewardModelType> const& model, StateBlock const& block, bool dropNaiveSccs, bool onlyBottomSccs) {
             storm::storage::BitVector subsystem(model.getNumberOfStates(), block.begin(), block.end());
-            performSccDecomposition(model.getTransitionMatrix(), subsystem, dropNaiveSccs, onlyBottomSccs);
+            performSccDecomposition(model.getTransitionMatrix(), &subsystem, nullptr, dropNaiveSccs, onlyBottomSccs);
         }
         
         template <typename ValueType>
         template <typename RewardModelType>
         StronglyConnectedComponentDecomposition<ValueType>::StronglyConnectedComponentDecomposition(storm::models::sparse::Model<ValueType, RewardModelType> const& model, storm::storage::BitVector const& subsystem, bool dropNaiveSccs, bool onlyBottomSccs) {
-            performSccDecomposition(model.getTransitionMatrix(), subsystem, dropNaiveSccs, onlyBottomSccs);
+            performSccDecomposition(model.getTransitionMatrix(), &subsystem, nullptr, dropNaiveSccs, onlyBottomSccs);
         }
         
         template <typename ValueType>
         StronglyConnectedComponentDecomposition<ValueType>::StronglyConnectedComponentDecomposition(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, StateBlock const& block, bool dropNaiveSccs, bool onlyBottomSccs) {
             storm::storage::BitVector subsystem(transitionMatrix.getRowGroupCount(), block.begin(), block.end());
-            performSccDecomposition(transitionMatrix, subsystem, dropNaiveSccs, onlyBottomSccs);
+            performSccDecomposition(transitionMatrix, &subsystem, nullptr, dropNaiveSccs, onlyBottomSccs);
         }
         
         
         template <typename ValueType>
         StronglyConnectedComponentDecomposition<ValueType>::StronglyConnectedComponentDecomposition(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, bool dropNaiveSccs, bool onlyBottomSccs) {
-            performSccDecomposition(transitionMatrix, storm::storage::BitVector(transitionMatrix.getRowGroupCount(), true), dropNaiveSccs, onlyBottomSccs);
+            performSccDecomposition(transitionMatrix, nullptr, nullptr, dropNaiveSccs, onlyBottomSccs);
         }
 
         template <typename ValueType>
         StronglyConnectedComponentDecomposition<ValueType>::StronglyConnectedComponentDecomposition(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& subsystem, bool dropNaiveSccs, bool onlyBottomSccs) {
-            performSccDecomposition(transitionMatrix, subsystem, dropNaiveSccs, onlyBottomSccs);
+            performSccDecomposition(transitionMatrix, &subsystem, nullptr, dropNaiveSccs, onlyBottomSccs);
+        }
+        
+        template <typename ValueType>
+        StronglyConnectedComponentDecomposition<ValueType>::StronglyConnectedComponentDecomposition(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& subsystem, storm::storage::BitVector const& choices, bool dropNaiveSccs, bool onlyBottomSccs) {
+            performSccDecomposition(transitionMatrix, &subsystem, &choices, dropNaiveSccs, onlyBottomSccs);
         }
         
         template <typename ValueType>
@@ -72,7 +77,10 @@ namespace storm {
         }
 
         template <typename ValueType>
-        void StronglyConnectedComponentDecomposition<ValueType>::performSccDecomposition(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& subsystem, bool dropNaiveSccs, bool onlyBottomSccs) {
+        void StronglyConnectedComponentDecomposition<ValueType>::performSccDecomposition(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const* subsystem, storm::storage::BitVector const* choices, bool dropNaiveSccs, bool onlyBottomSccs) {
+            
+            STORM_LOG_ASSERT(!choices || subsystem, "Expecting subsystem if choices are given.");
+            
             uint_fast64_t numberOfStates = transitionMatrix.getRowGroupCount();
 
             // Set up the environment of the algorithm.
@@ -94,16 +102,30 @@ namespace storm {
             
             // Start the search for SCCs from every state in the block.
             uint_fast64_t currentIndex = 0;
-            for (auto state : subsystem) {
-                if (!hasPreorderNumber.get(state)) {
-                    performSccDecompositionGCM(transitionMatrix, state, statesWithSelfLoop, subsystem, currentIndex, hasPreorderNumber, preorderNumbers, s, p, stateHasScc, stateToSccMapping, sccCount);
+            if (subsystem) {
+                for (auto state : *subsystem) {
+                    if (!hasPreorderNumber.get(state)) {
+                        performSccDecompositionGCM(transitionMatrix, state, statesWithSelfLoop, subsystem, choices, currentIndex, hasPreorderNumber, preorderNumbers, s, p, stateHasScc, stateToSccMapping, sccCount);
+                    }
+                }
+            } else {
+                for (uint64_t state = 0; state < transitionMatrix.getRowGroupCount(); ++state) {
+                    if (!hasPreorderNumber.get(state)) {
+                        performSccDecompositionGCM(transitionMatrix, state, statesWithSelfLoop, subsystem, choices, currentIndex, hasPreorderNumber, preorderNumbers, s, p, stateHasScc, stateToSccMapping, sccCount);
+                    }
                 }
             }
 
             // After we obtained the state-to-SCC mapping, we build the actual blocks.
             this->blocks.resize(sccCount);
-            for (auto state : subsystem) {
-                this->blocks[stateToSccMapping[state]].insert(state);
+            if (subsystem) {
+                for (auto state : *subsystem) {
+                    this->blocks[stateToSccMapping[state]].insert(state);
+                }
+            } else {
+                for (uint64_t state = 0; state < transitionMatrix.getRowGroupCount(); ++state) {
+                    this->blocks[stateToSccMapping[state]].insert(state);
+                }
             }
             
             // Now flag all trivial SCCs as such.
@@ -132,13 +154,34 @@ namespace storm {
                 
                 // If requested, we need to drop all non-bottom SCCs.
                 if (onlyBottomSccs) {
-                    for (uint_fast64_t state = 0; state < numberOfStates; ++state) {
-                        // If the block of the state is already known to be dropped, we don't need to check the transitions.
-                        if (!blocksToDrop.get(stateToSccMapping[state])) {
-                            for (typename storm::storage::SparseMatrix<ValueType>::const_iterator successorIt = transitionMatrix.getRowGroup(state).begin(), successorIte = transitionMatrix.getRowGroup(state).end(); successorIt != successorIte; ++successorIt) {
-                                if (subsystem.get(successorIt->getColumn()) && stateToSccMapping[state] != stateToSccMapping[successorIt->getColumn()]) {
-                                    blocksToDrop.set(stateToSccMapping[state]);
-                                    break;
+                    if (subsystem) {
+                        for (uint64_t state : *subsystem) {
+                            // If the block of the state is already known to be dropped, we don't need to check the transitions.
+                            if (!blocksToDrop.get(stateToSccMapping[state])) {
+                                for (uint64_t row = transitionMatrix.getRowGroupIndices()[state], endRow = transitionMatrix.getRowGroupIndices()[state + 1]; row != endRow; ++row) {
+                                    if (choices && !choices->get(row)) {
+                                        continue;
+                                    }
+                                    for (auto const& entry : transitionMatrix.getRow(row)) {
+                                        if (subsystem->get(entry.getColumn()) && stateToSccMapping[state] != stateToSccMapping[entry.getColumn()]) {
+                                            blocksToDrop.set(stateToSccMapping[state]);
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        for (uint64_t state = 0; state < transitionMatrix.getRowGroupCount(); ++state) {
+                            // If the block of the state is already known to be dropped, we don't need to check the transitions.
+                            if (!blocksToDrop.get(stateToSccMapping[state])) {
+                                for (uint64_t row = transitionMatrix.getRowGroupIndices()[state], endRow = transitionMatrix.getRowGroupIndices()[state + 1]; row != endRow; ++row) {
+                                    for (auto const& entry : transitionMatrix.getRow(row)) {
+                                        if (stateToSccMapping[state] != stateToSccMapping[entry.getColumn()]) {
+                                            blocksToDrop.set(stateToSccMapping[state]);
+                                            break;
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -163,15 +206,11 @@ namespace storm {
         template <typename ValueType>
         template <typename RewardModelType>
         void StronglyConnectedComponentDecomposition<ValueType>::performSccDecomposition(storm::models::sparse::Model<ValueType, RewardModelType> const& model, bool dropNaiveSccs, bool onlyBottomSccs) {
-            // Prepare a block that contains all states for a call to the other overload of this function.
-            storm::storage::BitVector fullSystem(model.getNumberOfStates(), true);
-            
-            // Call the overloaded function.
-            performSccDecomposition(model.getTransitionMatrix(), fullSystem, dropNaiveSccs, onlyBottomSccs);
+            performSccDecomposition(model.getTransitionMatrix(), nullptr, nullptr, dropNaiveSccs, onlyBottomSccs);
         }
         
         template <typename ValueType>
-        void StronglyConnectedComponentDecomposition<ValueType>::performSccDecompositionGCM(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, uint_fast64_t startState, storm::storage::BitVector& statesWithSelfLoop, storm::storage::BitVector const& subsystem, uint_fast64_t& currentIndex, storm::storage::BitVector& hasPreorderNumber, std::vector<uint_fast64_t>& preorderNumbers, std::vector<uint_fast64_t>& s, std::vector<uint_fast64_t>& p, storm::storage::BitVector& stateHasScc, std::vector<uint_fast64_t>& stateToSccMapping, uint_fast64_t& sccCount) {
+        void StronglyConnectedComponentDecomposition<ValueType>::performSccDecompositionGCM(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, uint_fast64_t startState, storm::storage::BitVector& statesWithSelfLoop, storm::storage::BitVector const* subsystem, storm::storage::BitVector const* choices, uint_fast64_t& currentIndex, storm::storage::BitVector& hasPreorderNumber, std::vector<uint_fast64_t>& preorderNumbers, std::vector<uint_fast64_t>& s, std::vector<uint_fast64_t>& p, storm::storage::BitVector& stateHasScc, std::vector<uint_fast64_t>& stateToSccMapping, uint_fast64_t& sccCount) {
             
             // Prepare the stack used for turning the recursive procedure into an iterative one.
             std::vector<uint_fast64_t> recursionStateStack;
@@ -190,20 +229,26 @@ namespace storm {
                     s.push_back(currentState);
                     p.push_back(currentState);
                 
-                    for (auto const& successor : transitionMatrix.getRowGroup(currentState)) {
-                        if (subsystem.get(successor.getColumn()) && successor.getValue() != storm::utility::zero<ValueType>()) {
-                            if (currentState == successor.getColumn()) {
-                                statesWithSelfLoop.set(currentState);
-                            }
-                            
-                            if (!hasPreorderNumber.get(successor.getColumn())) {
-                                // In this case, we must recursively visit the successor. We therefore push the state
-                                // onto the recursion stack.
-                                recursionStateStack.push_back(successor.getColumn());
-                            } else {
-                                if (!stateHasScc.get(successor.getColumn())) {
-                                    while (preorderNumbers[p.back()] > preorderNumbers[successor.getColumn()]) {
-                                        p.pop_back();
+                    for (uint64_t row = transitionMatrix.getRowGroupIndices()[currentState], rowEnd = transitionMatrix.getRowGroupIndices()[currentState + 1]; row != rowEnd; ++row) {
+                        if (choices && !choices->get(row)) {
+                            continue;
+                        }
+                        
+                        for (auto const& successor : transitionMatrix.getRow(row)) {
+                            if ((!subsystem || subsystem->get(successor.getColumn())) && successor.getValue() != storm::utility::zero<ValueType>()) {
+                                if (currentState == successor.getColumn()) {
+                                    statesWithSelfLoop.set(currentState);
+                                }
+                                
+                                if (!hasPreorderNumber.get(successor.getColumn())) {
+                                    // In this case, we must recursively visit the successor. We therefore push the state
+                                    // onto the recursion stack.
+                                    recursionStateStack.push_back(successor.getColumn());
+                                } else {
+                                    if (!stateHasScc.get(successor.getColumn())) {
+                                        while (preorderNumbers[p.back()] > preorderNumbers[successor.getColumn()]) {
+                                            p.pop_back();
+                                        }
                                     }
                                 }
                             }
