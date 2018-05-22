@@ -179,7 +179,7 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
 	set(STORM_COMPILER_APPLECLANG ON)
 	set(CLANG ON)
 	set(STORM_COMPILER_ID "AppleClang")
-	set(CMAKE_MACOSX_RPATH ON)	
+	set(CMAKE_MACOSX_RPATH ON)
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 	set(GCC ON)
 	# using GCC
@@ -223,16 +223,16 @@ if (STORM_COMPILER_CLANG OR STORM_COMPILER_APPLECLANG)
     if(FORCE_COLOR)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fcolor-diagnostics")
     endif()
-    
+
 	if (LINUX)
 		set(CLANG_STDLIB libstdc++)
     else()
 		set(CLANG_STDLIB libc++)
     endif()
-    
+
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -stdlib=${CLANG_STDLIB} -ftemplate-depth=1024")
-    set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -ffast-math -fno-finite-math-only")
-    
+    set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
+
     if(LINUX)
         set (CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -rdynamic")
         set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -rdynamic")
@@ -242,20 +242,20 @@ if (STORM_COMPILER_CLANG OR STORM_COMPILER_APPLECLANG)
     endif()
 elseif (STORM_COMPILER_GCC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fprefetch-loop-arrays -ffast-math -fno-finite-math-only")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fprefetch-loop-arrays")
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -rdynamic")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -rdynamic")
 endif ()
 
 if (STORM_USE_LTO)
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -flto")
-    
+
     # Fix for problems that occurred when using LTO on gcc. This should be removed when it
     # is not needed anymore as it makes the the already long link-step potentially longer.
     if (STORM_COMPILER_GCC)
         set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -flto-partition=none")
     endif()
-    
+
     message(STATUS "Storm - Enabling link-time optimizations.")
 else()
     message(STATUS "Storm - Disabling link-time optimizations.")
