@@ -722,7 +722,7 @@ namespace storm {
                 for (uint_fast64_t row = 0; row < generatorMatrix.getRowCount(); ++row) {
                     for (auto& entry : generatorMatrix.getRow(row)) {
                         if (entry.getColumn() == row) {
-                            entry.setValue(exitRates[row] - entry.getValue());
+                            entry.setValue(-exitRates[row] + entry.getValue());
                         }
                     }
                 }
