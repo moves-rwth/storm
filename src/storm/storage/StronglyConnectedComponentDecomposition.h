@@ -78,7 +78,21 @@ namespace storm {
              * leaving the SCC), are kept.
              */
             StronglyConnectedComponentDecomposition(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, StateBlock const& block, bool dropNaiveSccs = false, bool onlyBottomSccs = false);
-            
+
+            /*
+             * Creates an SCC decomposition of the given subsystem in the given system (whose transition relation is
+             * given by a sparse matrix).
+             *
+             * @param transitionMatrix The transition matrix of the system to decompose.
+             * @param block The block to decompose into SCCs.
+             * @param choices A bit vector indicating which choices of the states are contained in the subsystem.
+             * @param dropNaiveSccs A flag that indicates whether trivial SCCs (i.e. SCCs consisting of just one state
+             * without a self-loop) are to be kept in the decomposition.
+             * @param onlyBottomSccs If set to true, only bottom SCCs, i.e. SCCs in which all states have no way of
+             * leaving the SCC), are kept.
+             */
+            StronglyConnectedComponentDecomposition(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, StateBlock const& block, storm::storage::BitVector const& choices, bool dropNaiveSccs = false, bool onlyBottomSccs = false);
+
             /*
              * Creates an SCC decomposition of the given system (whose transition relation is given by a sparse matrix).
              *

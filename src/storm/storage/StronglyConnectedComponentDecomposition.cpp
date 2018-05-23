@@ -38,6 +38,11 @@ namespace storm {
             performSccDecomposition(transitionMatrix, &subsystem, nullptr, dropNaiveSccs, onlyBottomSccs);
         }
         
+        template <typename ValueType>
+        StronglyConnectedComponentDecomposition<ValueType>::StronglyConnectedComponentDecomposition(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, StateBlock const& block, storm::storage::BitVector const& choices, bool dropNaiveSccs, bool onlyBottomSccs) {
+            storm::storage::BitVector subsystem(transitionMatrix.getRowGroupCount(), block.begin(), block.end());
+            performSccDecomposition(transitionMatrix, &subsystem, &choices, dropNaiveSccs, onlyBottomSccs);
+        }
         
         template <typename ValueType>
         StronglyConnectedComponentDecomposition<ValueType>::StronglyConnectedComponentDecomposition(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, bool dropNaiveSccs, bool onlyBottomSccs) {
