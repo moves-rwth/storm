@@ -72,11 +72,11 @@ namespace storm {
             return std::abs(value1 - value2) < precision;
         }
         
-        ConstantsComparator<double>::ConstantsComparator() : precision(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision()) {
+        ConstantsComparator<double>::ConstantsComparator() : precision(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision()), relative(false) {
             // Intentionally left empty.
         }
         
-        ConstantsComparator<double>::ConstantsComparator(double precision) : precision(precision) {
+        ConstantsComparator<double>::ConstantsComparator(double precision, bool relative) : precision(precision), relative(relative) {
             // Intentionally left empty.
         }
         
@@ -93,7 +93,11 @@ namespace storm {
         }
         
         bool ConstantsComparator<double>::isEqual(double const& value1, double const& value2) const {
-            return std::abs(value1 - value2) <= precision;
+            if (relative) {
+                return value1 == value2 || std::abs(value1 - value2)/std::abs(value1 + value2) <= precision;
+            } else {
+                return std::abs(value1 - value2) <= precision;
+            }
         }
         
         bool ConstantsComparator<double>::isConstant(double const&) const {

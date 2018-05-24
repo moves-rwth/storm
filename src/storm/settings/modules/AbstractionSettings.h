@@ -84,6 +84,11 @@ namespace storm {
                 double getPrecision() const;
                 
                 /*!
+                 * Retrieves whether to use a relative termination criterion for detecting convergence.
+                 */
+                bool getRelativeTerminationCriterion() const;
+                
+                /*!
                  * Retrieves the selected heuristic to select pivot blocks.
                  *
                  * @return The selected heuristic.
@@ -146,6 +151,7 @@ namespace storm {
                 const static std::string addAllGuardsOptionName;
                 const static std::string useInterpolationOptionName;
                 const static std::string precisionOptionName;
+                const static std::string relativeOptionName;
                 const static std::string pivotHeuristicOptionName;
                 const static std::string reuseResultsOptionName;
                 const static std::string restrictToRelevantStatesOptionName;

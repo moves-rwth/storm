@@ -57,7 +57,7 @@ namespace storm {
         using detail::PreviousExplicitResult;
 
         template<storm::dd::DdType Type, typename ModelType>
-        GameBasedMdpModelChecker<Type, ModelType>::GameBasedMdpModelChecker(storm::storage::SymbolicModelDescription const& model, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory) : smtSolverFactory(smtSolverFactory), comparator(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getPrecision() * 2), reuseQualitativeResults(false), reuseQuantitativeResults(false), solveMode(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getSolveMode()) {
+        GameBasedMdpModelChecker<Type, ModelType>::GameBasedMdpModelChecker(storm::storage::SymbolicModelDescription const& model, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory) : smtSolverFactory(smtSolverFactory), comparator(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getPrecision() * 2, storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getRelativeTerminationCriterion()), reuseQualitativeResults(false), reuseQuantitativeResults(false), solveMode(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getSolveMode()) {
 
             STORM_LOG_WARN_COND(!model.hasUndefinedConstants(), "Model contains undefined constants. Game-based abstraction can treat such models, but you should make sure that you did not simply forget to define these constants. In particular, it may be necessary to constrain the values of the undefined constants.");
             

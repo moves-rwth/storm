@@ -56,7 +56,7 @@ namespace storm {
         public:
             ConstantsComparator();
             
-            ConstantsComparator(double precision);
+            ConstantsComparator(double precision, bool relative = false);
             
             bool isOne(double const& value) const;
             
@@ -73,6 +73,9 @@ namespace storm {
         private:
             // The precision used for comparisons.
             double precision;
+            
+            // Whether to use relative comparison for equality.
+            bool relative;
         };
     }
 }

@@ -19,6 +19,7 @@ namespace storm {
             const std::string AbstractionSettings::addAllGuardsOptionName = "all-guards";
             const std::string AbstractionSettings::useInterpolationOptionName = "interpolation";
             const std::string AbstractionSettings::precisionOptionName = "precision";
+            const std::string AbstractionSettings::relativeOptionName = "relative";
             const std::string AbstractionSettings::pivotHeuristicOptionName = "pivot-heuristic";
             const std::string AbstractionSettings::reuseResultsOptionName = "reuse";
             const std::string AbstractionSettings::restrictToRelevantStatesOptionName = "relevant";
@@ -66,6 +67,11 @@ namespace storm {
                                 .build());
                 
                 this->addOption(storm::settings::OptionBuilder(moduleName, precisionOptionName, true, "The precision used for detecting convergence.").addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to achieve.").setDefaultValueDouble(1e-03).addValidatorDouble(ArgumentValidatorFactory::createDoubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
+                                
+                this->addOption(storm::settings::OptionBuilder(moduleName, relativeOptionName, true, "Sets whether to use a relative termination criterion.")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("value", "The value of the flag.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(onOff))
+                                             .setDefaultValueString("off").build())
+                                .build());
                 
                 std::vector<std::string> pivotHeuristic = {"nearest-max-dev", "most-prob-path", "max-weighted-dev"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, pivotHeuristicOptionName, true, "Sets the pivot selection heuristic.")
@@ -146,6 +152,10 @@ namespace storm {
             
             double AbstractionSettings::getPrecision() const {
                 return this->getOption(precisionOptionName).getArgumentByName("value").getValueAsDouble();
+            }
+            
+            bool AbstractionSettings::getRelativeTerminationCriterion() const {
+                return this->getOption(relativeOptionName).getArgumentByName("value").getValueAsString() == "on";
             }
             
             AbstractionSettings::PivotSelectionHeuristic AbstractionSettings::getPivotSelectionHeuristic() const {
