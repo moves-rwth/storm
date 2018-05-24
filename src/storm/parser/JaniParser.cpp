@@ -905,7 +905,7 @@ namespace storm {
                         ensureNumericalType(arguments[0], opstring, 0, scopeDescription);
                         ensureNumericalType(arguments[1], opstring, 1, scopeDescription);
                         return arguments[0] + arguments[1];
-                    } else if (opstring == "-") {
+                    } else if (opstring == "-" && expressionStructure.count("left") > 0) {
                         arguments = parseBinaryExpressionArguments(expressionStructure, opstring, scopeDescription, globalVars, constants, localVars, returnNoneInitializedOnUnknownOperator);
                         assert(arguments.size() == 2);
                         ensureNumericalType(arguments[0], opstring, 0, scopeDescription);
