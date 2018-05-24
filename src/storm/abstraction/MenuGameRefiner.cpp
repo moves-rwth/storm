@@ -1449,9 +1449,9 @@ namespace storm {
         template<storm::dd::DdType Type, typename ValueType>
         void MenuGameRefiner<Type, ValueType>::performRefinement(std::vector<RefinementCommand> const& refinementCommands) const {
             for (auto const& command : refinementCommands) {
-                STORM_LOG_TRACE("Refining with " << command.getPredicates().size() << " predicates.");
+                STORM_LOG_INFO("Refining with " << command.getPredicates().size() << " predicates.");
                 for (auto const& predicate : command.getPredicates()) {
-                    STORM_LOG_TRACE(predicate);
+                    STORM_LOG_INFO(predicate);
                 }
                 if (!command.getPredicates().empty()) {
                     abstractor.get().refine(command);
