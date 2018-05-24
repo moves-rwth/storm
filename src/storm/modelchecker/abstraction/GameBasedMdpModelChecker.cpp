@@ -564,7 +564,7 @@ namespace storm {
                 auto abstractionStart = std::chrono::high_resolution_clock::now();
                 storm::abstraction::MenuGame<Type, ValueType> game = abstractor->abstract();
                 auto abstractionEnd = std::chrono::high_resolution_clock::now();
-                STORM_LOG_INFO("Abstraction in iteration " << iterations << " has " << game.getNumberOfStates() << " player 1 states, " << game.getNumberOfPlayer2States() << " player 2 states, " << game.getNumberOfTransitions() << " transitions, " << game.getBottomStates().getNonZeroCount() << " bottom states, " << abstractor->getNumberOfPredicates() << " predicate(s), " << game.getTransitionMatrix().getNodeCount() << " nodes (transition matrix) (computed in " << std::chrono::duration_cast<std::chrono::milliseconds>(abstractionEnd - abstractionStart).count() << "ms).");
+                STORM_LOG_INFO("Abstraction in iteration " << iterations << " has " << game.getNumberOfStates() << " player 1 states (" << game.getInitialStates().getNonZeroCount() << " initial), " << game.getNumberOfPlayer2States() << " player 2 states, " << game.getNumberOfTransitions() << " transitions, " << game.getBottomStates().getNonZeroCount() << " bottom states, " << abstractor->getNumberOfPredicates() << " predicate(s), " << game.getTransitionMatrix().getNodeCount() << " nodes (transition matrix) (computed in " << std::chrono::duration_cast<std::chrono::milliseconds>(abstractionEnd - abstractionStart).count() << "ms).");
                 
                 // (2) Prepare initial, constraint and target state BDDs for later use.
                 storm::dd::Bdd<Type> initialStates = game.getInitialStates();
@@ -576,10 +576,10 @@ namespace storm {
                 }
                 
                 // #ifdef LOCAL_DEBUG
-//                initialStates.template toAdd<ValueType>().exportToDot("init.dot");
-//                targetStates.template toAdd<ValueType>().exportToDot("target.dot");
+//                initialStates.template toAdd<ValueType>().exportToDot("init" + std::to_string(iterations) + ".dot");
+//                targetStates.template toAdd<ValueType>().exportToDot("target" + std::to_string(iterations) + ".dot");
 //                abstractor->exportToDot("game" + std::to_string(iterations) + ".dot", targetStates, game.getManager().getBddOne());
-//                game.getReachableStates().template toAdd<ValueType>().exportToDot("reach.dot");
+//                game.getReachableStates().template toAdd<ValueType>().exportToDot("reach" + std::to_string(iterations) + ".dot");
                 // #endif
                 
                 std::unique_ptr<CheckResult> result;

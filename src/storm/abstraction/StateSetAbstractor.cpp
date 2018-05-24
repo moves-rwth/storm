@@ -52,6 +52,7 @@ namespace storm {
             }
             
             std::set<uint_fast64_t> newRelevantPredicateIndices = localExpressionInformation.getRelatedExpressions(concretePredicateVariables);
+            
             // Since the number of relevant predicates is monotonic, we can simply check for the size here.
             STORM_LOG_ASSERT(newRelevantPredicateIndices.size() >= relevantPredicatesAndVariables.size(), "Illegal size of relevant predicates.");
             if (newRelevantPredicateIndices.size() > relevantPredicatesAndVariables.size()) {
