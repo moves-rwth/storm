@@ -595,7 +595,7 @@ namespace storm {
             
             auto pathIt = reversedPath.rbegin();
             
-            // Decode initial state. The state valuation also includes
+            // Decode pivot state. The state valuation also includes
             // * the bottom state, so we need to reserve one more, and
             // * the location variables,
             // so we need to reserve an appropriate size.
@@ -609,7 +609,7 @@ namespace storm {
                 predicate = predicate.changeManager(expressionManager);
             }
             
-            // Add ranges of further constraints.
+            // Add further constraints (like ranges).
             for (auto const& pred : abstractionInformation.getConstraints()) {
                 predicates.back().push_back(pred.changeManager(expressionManager));
             }
@@ -706,8 +706,6 @@ namespace storm {
                 ++actionIt;
             }
             
-            std::reverse(predicates.begin(), predicates.end());
-
             return std::make_pair(predicates, stepVariableToCopiedVariableMap);
         }
         
