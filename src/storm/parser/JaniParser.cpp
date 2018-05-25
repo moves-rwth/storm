@@ -684,12 +684,15 @@ namespace storm {
                 std::string kind = getString(variableStructure.at("type").at("kind"), "kind for complex type as in variable " + name  + "(scope: " + scopeDescription + ") ");
                 if(kind == "bounded") {
                     // First do the bounds, that makes the code a bit more streamlined
-                    STORM_LOG_THROW(variableStructure.at("type").count("lower-bound") == 1, storm::exceptions::InvalidJaniException, "For bounded type as in variable " << name << "(scope: " << scopeDescription << ") lower-bound must be given");
-                    storm::expressions::Expression lowerboundExpr = parseExpression(variableStructure.at("type").at("lower-bound"), "Lower bound for variable " + name + " (scope: " + scopeDescription + ")", globalVars, constants, localVars);
-                    assert(lowerboundExpr.isInitialized());
-                    STORM_LOG_THROW(variableStructure.at("type").count("upper-bound") == 1, storm::exceptions::InvalidJaniException, "For bounded type as in variable " << name << "(scope: " << scopeDescription << ") upper-bound must be given");
-                    storm::expressions::Expression upperboundExpr = parseExpression(variableStructure.at("type").at("upper-bound"), "Upper bound for variable "+ name + " (scope: " + scopeDescription + ")", globalVars, constants, localVars);
-                    assert(upperboundExpr.isInitialized());
+                    STORM_LOG_THROW(variableStructure.at("type").count("lower-bound") + variableStructure.at("type").count("upper-bound") > 0, storm::exceptions::InvalidJaniException, "For bounded type as in variable " << name << "(scope: " << scopeDescription << ") lower-bound or upper-bound must be given");
+                    storm::expressions::Expression lowerboundExpr;
+                    if (variableStructure.at("type").count("lower-bound") > 0) {
+                        lowerboundExpr = parseExpression(variableStructure.at("type").at("lower-bound"), "Lower bound for variable " + name + " (scope: " + scopeDescription + ")", globalVars, constants, localVars);
+                    }
+                    storm::expressions::Expression upperboundExpr;
+                    if (variableStructure.at("type").count("upper-bound") > 0) {
+                        upperboundExpr = parseExpression(variableStructure.at("type").at("upper-bound"), "Upper bound for variable "+ name + " (scope: " + scopeDescription + ")", globalVars, constants, localVars);
+                    }
                     STORM_LOG_THROW(variableStructure.at("type").count("base") == 1, storm::exceptions::InvalidJaniException, "For bounded type as in variable " << name << "(scope: " << scopeDescription << ") base must be given");
                     if(initvalcount == 1) {
                         if(variableStructure.at("initial-value").is_null()) {
@@ -704,9 +707,9 @@ namespace storm {
                         if(initVal) {
                             STORM_LOG_THROW(initVal.get().hasIntegerType(), storm::exceptions::InvalidJaniException, "Initial value for integer variable " + name + "(scope " + scopeDescription + ") should be an integer");
                         }
-                        STORM_LOG_THROW(lowerboundExpr.hasIntegerType(), storm::exceptions::InvalidJaniException, "Lower bound for bounded integer variable " << name << "(scope: " << scopeDescription << ") must be integer-typed");
-                        STORM_LOG_THROW(upperboundExpr.hasIntegerType(), storm::exceptions::InvalidJaniException, "Upper bound for bounded integer variable " << name << "(scope: " << scopeDescription << ") must be integer-typed");
-                        if(!lowerboundExpr.containsVariables() && !upperboundExpr.containsVariables()) {
+                        STORM_LOG_THROW(!lowerboundExpr.isInitialized() || lowerboundExpr.hasIntegerType(), storm::exceptions::InvalidJaniException, "Lower bound for bounded integer variable " << name << "(scope: " << scopeDescription << ") must be integer-typed");
+                        STORM_LOG_THROW(!upperboundExpr.isInitialized() || upperboundExpr.hasIntegerType(), storm::exceptions::InvalidJaniException, "Upper bound for bounded integer variable " << name << "(scope: " << scopeDescription << ") must be integer-typed");
+                        if (lowerboundExpr.isInitialized() && upperboundExpr.isInitialized() && !lowerboundExpr.containsVariables() && !upperboundExpr.containsVariables()) {
                             STORM_LOG_THROW(lowerboundExpr.evaluateAsInt() <= upperboundExpr.evaluateAsInt(), storm::exceptions::InvalidJaniException, "Lower bound must not be larger than upper bound for bounded integer variable "  << name << "(scope: " << scopeDescription << ")");
                         }
                         return storm::jani::makeBoundedIntegerVariable(name, expressionManager->declareIntegerVariable(exprManagerName), initVal, transientVar, lowerboundExpr, upperboundExpr);

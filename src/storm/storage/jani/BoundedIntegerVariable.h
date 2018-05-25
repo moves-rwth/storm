@@ -34,6 +34,11 @@ namespace storm {
             void setLowerBound(storm::expressions::Expression const& expression);
             
             /*!
+             * Retrieves whether the variable has a lower bound.
+             */
+            bool hasLowerBound() const;
+            
+            /*!
              * Retrieves the expression defining the upper bound of the variable.
              */
             storm::expressions::Expression const& getUpperBound() const;
@@ -43,6 +48,11 @@ namespace storm {
              */
             void setUpperBound(storm::expressions::Expression const& expression);
 
+            /*!
+             * Retrieves whether the variable has an upper bound.
+             */
+            bool hasUpperBound() const;
+            
             /*!
              * Retrieves an expression characterizing the legal range of the bounded integer variable.
              */

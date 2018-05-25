@@ -619,6 +619,7 @@ namespace storm {
 
             // Traverse the path and construct necessary formula parts.
             auto actionIt = reversedLabels.rbegin();
+            uint64_t step = 0;
             for (; pathIt != reversedPath.rend(); ++pathIt) {
                 
                 // Add new predicate frame.
@@ -698,12 +699,36 @@ namespace storm {
                     }
                 }
                 
-                // Enforce ranges of all assigned variables.
-//                for (auto const& variablePair : newVariableMaps) {
-//                    for (auto const& )
-//                }
+                // Enforce constraints of all assigned variables.
+                for (auto const& constraint : abstractionInformation.getConstraints()) {
+                    std::set<storm::expressions::Variable> usedVariables = constraint.getVariables();
+
+                    bool containsAssignedVariables = false;
+                    for (auto usedIt = usedVariables.begin(), assignedIt = assignedVariables.begin();;) {
+                        if (usedIt == usedVariables.end() || assignedIt == assignedVariables.end()) {
+                            break;
+                        }
+                        
+                        if (*usedIt == *assignedIt) {
+                            containsAssignedVariables = true;
+                            break;
+                        }
+                        
+                        if (*usedIt < *assignedIt) {
+                            ++usedIt;
+                        } else {
+                            ++assignedIt;
+                        }
+                    }
+                    
+                    if (containsAssignedVariables) {
+                        auto transformedConstraint = constraint.changeManager(expressionManager).substitute(currentSubstitution);
+                        predicates.back().emplace_back(transformedConstraint);
+                    }
+                }
                 
                 ++actionIt;
+                ++step;
             }
             
             return std::make_pair(predicates, stepVariableToCopiedVariableMap);

@@ -89,6 +89,7 @@ namespace storm {
             }
             for (auto const& variable : model.getGlobalVariables().getBoundedIntegerVariables()) {
                 if (!variable.isTransient()) {
+                    STORM_LOG_THROW(variable.hasLowerBound() && variable.hasUpperBound(), storm::exceptions::WrongFormatException, "Bounded integer variables with infinite range are not supported.");
                     int_fast64_t lowerBound = variable.getLowerBound().evaluateAsInt();
                     int_fast64_t upperBound = variable.getUpperBound().evaluateAsInt();
                     uint_fast64_t bitwidth = static_cast<uint_fast64_t>(std::ceil(std::log2(upperBound - lowerBound + 1)));
