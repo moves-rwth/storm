@@ -457,6 +457,13 @@ namespace storm {
             std::map<uint_fast64_t, std::pair<storm::storage::BitVector, ValueType>> decodeChoiceToUpdateSuccessorMapping(storm::dd::Bdd<DdType> const& choice) const;
             
             /*!
+             * Decodes the choices in the form of BDD over the destination variables where the choices are distinguished
+             * by player 2 variables.
+             */
+            template<typename ValueType>
+            std::vector<std::map<uint_fast64_t, std::pair<storm::storage::BitVector, ValueType>>> decodeChoicesToUpdateSuccessorMapping(std::set<storm::expressions::Variable> const& player2Variables, storm::dd::Bdd<DdType> const& choices) const;
+            
+            /*!
              * Decodes the given BDD (over source, player 1 and aux variables) into a bit vector indicating the truth
              * values of the predicates in the state and the choice/update indices.
              */

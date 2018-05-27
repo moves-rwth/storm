@@ -530,9 +530,8 @@ namespace storm {
             
             // Derive the optimization direction for player 1 (assuming menu-game abstraction).
             storm::OptimizationDirection player1Direction = getPlayer1Direction(checkTask);
-
+            
             // Create the abstractor.
-            std::shared_ptr<storm::abstraction::MenuGameAbstractor<Type, ValueType>> abstractor;
             if (preprocessedModel.isPrismProgram()) {
                 abstractor = std::make_shared<storm::abstraction::prism::PrismMenuGameAbstractor<Type, ValueType>>(preprocessedModel.asPrismProgram(), smtSolverFactory);
             } else {
@@ -543,7 +542,6 @@ namespace storm {
             }
             abstractor->addTerminalStates(targetStateExpression);
             abstractor->setTargetStates(targetStateExpression);
-
             
             // Create a refiner that can be used to refine the abstraction when needed.
             storm::abstraction::MenuGameRefiner<Type, ValueType> refiner(*abstractor, smtSolverFactory->create(preprocessedModel.getManager()));
@@ -556,15 +554,15 @@ namespace storm {
             boost::optional<SymbolicQualitativeGameResultMinMax<Type>> previousSymbolicQualitativeResult = boost::none;
             boost::optional<SymbolicQuantitativeGameResult<Type, ValueType>> previousSymbolicMinQuantitativeResult = boost::none;
             boost::optional<PreviousExplicitResult<ValueType>> previousExplicitResult = boost::none;
-            for (uint_fast64_t iterations = 0; iterations < maximalNumberOfAbstractions; ++iterations) {
+            for (iteration = 0; iteration < maximalNumberOfAbstractions; ++iteration) {
                 auto iterationStart = std::chrono::high_resolution_clock::now();
-                STORM_LOG_TRACE("Starting iteration " << iterations << ".");
+                STORM_LOG_TRACE("Starting iteration " << iteration << ".");
 
                 // (1) build the abstraction.
                 auto abstractionStart = std::chrono::high_resolution_clock::now();
                 storm::abstraction::MenuGame<Type, ValueType> game = abstractor->abstract();
                 auto abstractionEnd = std::chrono::high_resolution_clock::now();
-                STORM_LOG_INFO("Abstraction in iteration " << iterations << " has " << game.getNumberOfStates() << " player 1 states (" << game.getInitialStates().getNonZeroCount() << " initial), " << game.getNumberOfPlayer2States() << " player 2 states, " << game.getNumberOfTransitions() << " transitions, " << game.getBottomStates().getNonZeroCount() << " bottom states, " << abstractor->getNumberOfPredicates() << " predicate(s), " << game.getTransitionMatrix().getNodeCount() << " nodes (transition matrix) (computed in " << std::chrono::duration_cast<std::chrono::milliseconds>(abstractionEnd - abstractionStart).count() << "ms).");
+                STORM_LOG_INFO("Abstraction in iteration " << iteration << " has " << game.getNumberOfStates() << " player 1 states (" << game.getInitialStates().getNonZeroCount() << " initial), " << game.getNumberOfPlayer2States() << " player 2 states, " << game.getNumberOfTransitions() << " transitions, " << game.getBottomStates().getNonZeroCount() << " bottom states, " << abstractor->getNumberOfPredicates() << " predicate(s), " << game.getTransitionMatrix().getNodeCount() << " nodes (transition matrix) (computed in " << std::chrono::duration_cast<std::chrono::milliseconds>(abstractionEnd - abstractionStart).count() << "ms).");
                 
                 // (2) Prepare initial, constraint and target state BDDs for later use.
                 storm::dd::Bdd<Type> initialStates = game.getInitialStates();
@@ -575,11 +573,13 @@ namespace storm {
                     targetStates |= game.getBottomStates();
                 }
                 
+                exit(-1);
+                
                 // #ifdef LOCAL_DEBUG
-//                initialStates.template toAdd<ValueType>().exportToDot("init" + std::to_string(iterations) + ".dot");
-//                targetStates.template toAdd<ValueType>().exportToDot("target" + std::to_string(iterations) + ".dot");
-//                abstractor->exportToDot("game" + std::to_string(iterations) + ".dot", targetStates, game.getManager().getBddOne());
-//                game.getReachableStates().template toAdd<ValueType>().exportToDot("reach" + std::to_string(iterations) + ".dot");
+//                initialStates.template toAdd<ValueType>().exportToDot("init" + std::to_string(iteration) + ".dot");
+//                targetStates.template toAdd<ValueType>().exportToDot("target" + std::to_string(iteration) + ".dot");
+//                abstractor->exportToDot("game" + std::to_string(iteration) + ".dot", targetStates, game.getManager().getBddOne());
+//                game.getReachableStates().template toAdd<ValueType>().exportToDot("reach" + std::to_string(iteration) + ".dot");
                 // #endif
                 
                 std::unique_ptr<CheckResult> result;
@@ -595,7 +595,7 @@ namespace storm {
                 }
                 
                 auto iterationEnd = std::chrono::high_resolution_clock::now();
-                STORM_LOG_INFO("Iteration " << iterations << " took " << std::chrono::duration_cast<std::chrono::milliseconds>(iterationEnd - iterationStart).count() << "ms.");
+                STORM_LOG_INFO("Iteration " << iteration << " took " << std::chrono::duration_cast<std::chrono::milliseconds>(iterationEnd - iterationStart).count() << "ms.");
             }
             
             // If this point is reached, we have given up on abstraction.
@@ -790,10 +790,6 @@ namespace storm {
                 qualitativeRefinement = refiner.refine(game, odd, transitionMatrix, player1Groups, player1Labeling, player2Labeling, initialStates, constraintStates, targetStates, qualitativeResult, minStrategyPair, maxStrategyPair);
                 auto qualitativeRefinementEnd = std::chrono::high_resolution_clock::now();
                 STORM_LOG_INFO("Qualitative refinement completed in " << std::chrono::duration_cast<std::chrono::milliseconds>(qualitativeRefinementEnd - qualitativeRefinementStart).count() << "ms.");
-            } else if (initialStates.isSubsetOf(initialMaybeStates) && checkTask.isQualitativeSet()) {
-                // If all initial states are 'maybe' states and the property we needed to check is a qualitative one,
-                // we can return the result here.
-                return std::make_unique<ExplicitQuantitativeCheckResult<ValueType>>(storm::storage::sparse::state_type(0), ValueType(0.5));
             }
             
             ExplicitQuantitativeResultMinMax<ValueType> quantitativeResult;
@@ -1000,6 +996,12 @@ namespace storm {
             
             STORM_LOG_INFO("[" << player1Direction << ", " << storm::OptimizationDirection::Minimize << "]: " << result.prob0Min.player1States.getNonZeroCount() << " 'no', " << result.prob1Min.player1States.getNonZeroCount() << " 'yes'.");
             STORM_LOG_INFO("[" << player1Direction << ", " << storm::OptimizationDirection::Maximize << "]: " << result.prob0Max.player1States.getNonZeroCount() << " 'no', " << result.prob1Max.player1States.getNonZeroCount() << " 'yes'.");
+            
+//            this->abstractor->exportToDot("lower_game" + std::to_string(iteration) + ".dot", result.prob1Max.getStates(), (result.prob0Min.getPlayer1Strategy() && result.prob0Min.getPlayer2Strategy()) || (result.prob1Min.getPlayer1Strategy() && result.prob1Min.getPlayer2Strategy()));
+//            this->abstractor->exportToDot("upper_game" + std::to_string(iteration) + ".dot", targetStates, (result.prob0Max.getPlayer1Strategy() && result.prob0Max.getPlayer2Strategy()) || (result.prob1Max.getPlayer1Strategy() && result.prob1Max.getPlayer2Strategy()));
+//            this->abstractor->exportToDot("lower_game" + std::to_string(iteration) + ".dot", targetStates, game.getManager().getBddOne());
+//            this->abstractor->exportToDot("upper_game" + std::to_string(iteration) + ".dot", targetStates, game.getManager().getBddOne());
+//            exit(-1);
             
             STORM_LOG_ASSERT(checkQualitativeStrategies(result, targetStates), "Qualitative strategies appear to be broken.");
             return result;

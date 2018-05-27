@@ -142,6 +142,12 @@ namespace storm {
             
             /// The mode selected for solving the abstraction.
             storm::settings::modules::AbstractionSettings::SolveMode solveMode;
+            
+            /// The currently used abstractor.
+            std::shared_ptr<storm::abstraction::MenuGameAbstractor<Type, ValueType>> abstractor;
+            
+            /// The performed number of refinement iterations.
+            uint64_t iteration;
         };
     }
 }

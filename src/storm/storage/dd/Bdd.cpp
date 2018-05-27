@@ -411,6 +411,29 @@ namespace storm {
         }
         
         template<DdType LibraryType>
+        std::vector<Bdd<LibraryType>> Bdd<LibraryType>::split(std::set<storm::expressions::Variable> const& variables) const {
+            std::set<storm::expressions::Variable> remainingMetaVariables;
+            std::set_difference(this->getContainedMetaVariables().begin(), this->getContainedMetaVariables().end(), variables.begin(), variables.end(), std::inserter(remainingMetaVariables, remainingMetaVariables.begin()));
+            
+            std::vector<uint_fast64_t> ddGroupVariableIndices;
+            for (auto const& variable : variables) {
+                DdMetaVariable<LibraryType> const& metaVariable = this->getDdManager().getMetaVariable(variable);
+                for (auto const& ddVariable : metaVariable.getDdVariables()) {
+                    ddGroupVariableIndices.push_back(ddVariable.getIndex());
+                }
+            }
+            std::sort(ddGroupVariableIndices.begin(), ddGroupVariableIndices.end());
+            
+            std::vector<InternalBdd<LibraryType>> internalBddGroups = this->internalBdd.splitIntoGroups(ddGroupVariableIndices);
+            std::vector<Bdd<LibraryType>> groups;
+            for (auto const& internalBdd : internalBddGroups) {
+                groups.emplace_back(Bdd<LibraryType>(this->getDdManager(), internalBdd, remainingMetaVariables));
+            }
+
+            return groups;
+        }
+        
+        template<DdType LibraryType>
         storm::storage::BitVector Bdd<LibraryType>::toVector(storm::dd::Odd const& rowOdd) const {
             return internalBdd.toVector(rowOdd, this->getSortedVariableIndices());
         }

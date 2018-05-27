@@ -73,6 +73,7 @@ namespace storm {
             splitAll = splitMode == AbstractionSettings::SplitMode::All;
             splitPredicates = splitMode == AbstractionSettings::SplitMode::NonGuard;
             rankPredicates = abstractionSettings.isRankRefinementPredicatesSet();
+            addPredicatesEagerly = abstractionSettings.isUseEagerRefinementSet();
             
             equivalenceChecker.addConstraints(abstractor.getAbstractionInformation().getConstraints());
             if (storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isAddAllGuardsSet()) {
@@ -253,7 +254,7 @@ namespace storm {
             storm::expressions::Expression newPredicate;
             bool fromGuard = false;
             
-            // Get abstraction informatin for easier access.
+            // Get abstraction information for easier access.
             AbstractionInformation<Type> const& abstractionInformation = abstractor.get().getAbstractionInformation();
             
             // Decode the index of the command chosen by player 1.
@@ -308,12 +309,16 @@ namespace storm {
                                 }
                             }
                         }
-                        ++orderedUpdateIndex;
                         break;
                     }
                 }
                 
                 STORM_LOG_ASSERT(!possibleRefinementPredicates.empty(), "Expected refinement predicates.");
+                
+                STORM_LOG_TRACE("Possible refinement predicates:");
+                for (auto const& pred : possibleRefinementPredicates) {
+                    STORM_LOG_TRACE(pred);
+                }
                 
                 if (rankPredicates) {
                     // Since we can choose any of the deviation predicates to perform the split, we go through the remaining
@@ -368,6 +373,88 @@ namespace storm {
             return RefinementPredicates(fromGuard ? RefinementPredicates::Source::Guard : RefinementPredicates::Source::WeakestPrecondition, {newPredicate});
         }
         
+        template <storm::dd::DdType Type, typename ValueType>
+        RefinementPredicates MenuGameRefiner<Type, ValueType>::derivePredicatesFromChoice(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& pivotState, storm::dd::Bdd<Type> const& player1Choice, storm::dd::Bdd<Type> const& choice, storm::dd::Bdd<Type> const& choiceSuccessors) const {
+            // Prepare result.
+            storm::expressions::Expression newPredicate;
+            bool fromGuard = false;
+            
+            // Get abstraction information for easier access.
+            AbstractionInformation<Type> const& abstractionInformation = abstractor.get().getAbstractionInformation();
+            
+            // Decode the index of the command chosen by player 1.
+            storm::dd::Add<Type, ValueType> player1ChoiceAsAdd = player1Choice.template toAdd<ValueType>();
+            auto pl1It = player1ChoiceAsAdd.begin();
+            uint_fast64_t player1Index = abstractionInformation.decodePlayer1Choice((*pl1It).first, abstractionInformation.getPlayer1VariableCount());
+            
+            // Check whether there are bottom states in the game and whether the choice actually picks the bottom state
+            // as the successor.
+            bool buttomStateSuccessor = !((abstractionInformation.getBottomStateBdd(false, false) && choiceSuccessors)).isZero();
+            
+            std::vector<storm::expressions::Expression> possibleRefinementPredicates;
+            
+            // If the choice picks the bottom state, the new predicate is based on the guard of the appropriate  command
+            // (that is the player 1 choice).
+            if (buttomStateSuccessor) {
+                STORM_LOG_TRACE("One of the successors is a bottom state, taking a guard as a new predicate.");
+                possibleRefinementPredicates.emplace_back(abstractor.get().getGuard(player1Index));
+                fromGuard = true;
+                STORM_LOG_DEBUG("Derived new predicate (based on guard): " << possibleRefinementPredicates.back());
+            } else {
+                STORM_LOG_TRACE("No bottom state successor. Deriving a new predicate using weakest precondition.");
+
+                // Decode the choice successors.
+                std::map<uint64_t, std::pair<storm::storage::BitVector, ValueType>> choiceUpdateToSuccessorMapping = abstractionInformation.template decodeChoiceToUpdateSuccessorMapping<ValueType>(choiceSuccessors);
+                std::vector<std::pair<uint64_t, ValueType>> sortedChoiceUpdateIndicesAndMasses;
+                for (auto const& e : choiceUpdateToSuccessorMapping) {
+                    sortedChoiceUpdateIndicesAndMasses.emplace_back(e.first, e.second.second);
+                }
+                std::sort(sortedChoiceUpdateIndicesAndMasses.begin(), sortedChoiceUpdateIndicesAndMasses.end(), [] (std::pair<uint64_t, ValueType> const& a, std::pair<uint64_t, ValueType> const& b) { return a.second > b.second; });
+                
+                // Compute all other (not taken) choices.
+                std::set<storm::expressions::Variable> variablesToAbstract = game.getRowVariables();
+                variablesToAbstract.insert(game.getPlayer1Variables().begin(), game.getPlayer1Variables().end());
+                
+                storm::dd::Bdd<Type> otherChoices = (pivotState && !choice && player1Choice && game.getExtendedTransitionMatrix().toBdd()).existsAbstract(variablesToAbstract);
+                STORM_LOG_ASSERT(!otherChoices.isZero(), "Expected other choices.");
+                
+                // Decode the other choices.
+                std::vector<std::map<uint64_t, std::pair<storm::storage::BitVector, ValueType>>> otherChoicesUpdateToSuccessorMappings = abstractionInformation.template decodeChoicesToUpdateSuccessorMapping<ValueType>(game.getPlayer2Variables(), otherChoices);
+                
+                for (auto const& otherChoice : otherChoicesUpdateToSuccessorMappings) {
+                    for (uint64_t updateIndex = 0; updateIndex < sortedChoiceUpdateIndicesAndMasses.size(); ++updateIndex) {
+                        storm::storage::BitVector const& choiceSuccessor = choiceUpdateToSuccessorMapping.at(sortedChoiceUpdateIndicesAndMasses[updateIndex].first).first;
+                        storm::storage::BitVector const& otherChoiceSuccessor = otherChoice.at(sortedChoiceUpdateIndicesAndMasses[updateIndex].first).first;
+
+                        bool deviates = choiceSuccessor != otherChoiceSuccessor;
+                        if (deviates) {
+                            std::map<storm::expressions::Variable, storm::expressions::Expression> variableUpdates = abstractor.get().getVariableUpdates(player1Index, sortedChoiceUpdateIndicesAndMasses[updateIndex].first);
+                            
+                            for (uint64_t predicateIndex = 0; predicateIndex < choiceSuccessor.size(); ++predicateIndex) {
+                                if (choiceSuccessor[predicateIndex] != otherChoiceSuccessor[predicateIndex]) {
+                                    possibleRefinementPredicates.push_back(abstractionInformation.getPredicateByIndex(predicateIndex).substitute(variableUpdates).simplify());
+                                    if (!rankPredicates) {
+                                        break;
+                                    }
+                                }
+                            }
+                            
+                            break;
+                        }
+                    }
+                }
+                
+                STORM_LOG_ASSERT(!possibleRefinementPredicates.empty(), "Expected refinement predicates.");
+                
+                STORM_LOG_TRACE("Possible refinement predicates:");
+                for (auto const& pred : possibleRefinementPredicates) {
+                    STORM_LOG_TRACE(pred);
+                }
+            }
+            
+            return RefinementPredicates(fromGuard ? RefinementPredicates::Source::Guard : RefinementPredicates::Source::WeakestPrecondition, {possibleRefinementPredicates});
+        }
+        
         template<storm::dd::DdType Type, typename ValueType>
         PivotStateCandidatesResult<Type> computePivotStates(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& transitionMatrixBdd, storm::dd::Bdd<Type> const& minPlayer1Strategy, storm::dd::Bdd<Type> const& minPlayer2Strategy, storm::dd::Bdd<Type> const& maxPlayer1Strategy, storm::dd::Bdd<Type> const& maxPlayer2Strategy) {
             
@@ -413,31 +500,39 @@ namespace storm {
 
             bool lowerChoicesDifferent = !lowerChoice1.exclusiveOr(lowerChoice2).isZero() && !lowerChoice1.isZero() && !lowerChoice2.isZero();
             if (lowerChoicesDifferent) {
-                STORM_LOG_TRACE("Deriving predicate based on lower choice.");
-                predicates = derivePredicatesFromDifferingChoices((pivotState && minPlayer1Strategy).existsAbstract(game.getRowVariables()), lowerChoice1, lowerChoice2);
+                STORM_LOG_TRACE("Deriving predicates based on lower choice.");
+                if (this->addPredicatesEagerly) {
+                    predicates = derivePredicatesFromChoice(game, pivotState, (pivotState && minPlayer1Strategy).existsAbstract(game.getRowVariables()), lowerChoice && minPlayer2Strategy, lowerChoice1);
+                } else {
+                    predicates = derivePredicatesFromDifferingChoices((pivotState && minPlayer1Strategy).existsAbstract(game.getRowVariables()), lowerChoice1, lowerChoice2);
+                }
             }
             
-            if (predicates && (!player1ChoicesDifferent || predicates.get().getSource() == RefinementPredicates::Source::Guard)) {
+            if (predicates && !player1ChoicesDifferent) {
                 return predicates.get();
-            } else {
-                boost::optional<RefinementPredicates> additionalPredicates;
-                
-                storm::dd::Bdd<Type> upperChoice = pivotState && game.getExtendedTransitionMatrix().toBdd() && maxPlayer1Strategy;
-                storm::dd::Bdd<Type> upperChoice1 = (upperChoice && minPlayer2Strategy).existsAbstract(variablesToAbstract);
-                storm::dd::Bdd<Type> upperChoice2 = (upperChoice && maxPlayer2Strategy).existsAbstract(variablesToAbstract);
-                
-                bool upperChoicesDifferent = !upperChoice1.exclusiveOr(upperChoice2).isZero() && !upperChoice1.isZero() && !upperChoice2.isZero();
-                if (upperChoicesDifferent) {
-                    STORM_LOG_TRACE("Deriving predicate based on upper choice.");
+            }
+            
+            boost::optional<RefinementPredicates> additionalPredicates;
+            
+            storm::dd::Bdd<Type> upperChoice = pivotState && game.getExtendedTransitionMatrix().toBdd() && maxPlayer1Strategy;
+            storm::dd::Bdd<Type> upperChoice1 = (upperChoice && minPlayer2Strategy).existsAbstract(variablesToAbstract);
+            storm::dd::Bdd<Type> upperChoice2 = (upperChoice && maxPlayer2Strategy).existsAbstract(variablesToAbstract);
+            
+            bool upperChoicesDifferent = !upperChoice1.exclusiveOr(upperChoice2).isZero() && !upperChoice1.isZero() && !upperChoice2.isZero();
+            if (upperChoicesDifferent) {
+                STORM_LOG_TRACE("Deriving predicates based on upper choice.");
+                if (this->addPredicatesEagerly) {
+                    additionalPredicates = derivePredicatesFromChoice(game, pivotState, (pivotState && maxPlayer1Strategy).existsAbstract(game.getRowVariables()), upperChoice && maxPlayer2Strategy, upperChoice1);
+                } else {
                     additionalPredicates = derivePredicatesFromDifferingChoices((pivotState && maxPlayer1Strategy).existsAbstract(game.getRowVariables()), upperChoice1, upperChoice2);
                 }
-                
-                if (additionalPredicates) {
-                    if (additionalPredicates.get().getSource() == RefinementPredicates::Source::Guard) {
-                        return additionalPredicates.get();
-                    } else {
-                        predicates.get().addPredicates(additionalPredicates.get().getPredicates());
-                    }
+            }
+            
+            if (additionalPredicates) {
+                if (additionalPredicates.get().getSource() == RefinementPredicates::Source::Guard) {
+                    return additionalPredicates.get();
+                } else {
+                    predicates.get().addPredicates(additionalPredicates.get().getPredicates());
                 }
             }
             

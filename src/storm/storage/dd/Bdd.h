@@ -344,6 +344,11 @@ namespace storm {
             Add<LibraryType, ValueType> toAdd() const;
             
             /*!
+             * Splits the BDD along the given variables (must be at the top).
+             */
+            std::vector<Bdd<LibraryType>> split(std::set<storm::expressions::Variable> const& variables) const;
+            
+            /*!
              * Converts the BDD to a bit vector. The given offset-labeled DD is used to determine the correct row of
              * each entry.
              *

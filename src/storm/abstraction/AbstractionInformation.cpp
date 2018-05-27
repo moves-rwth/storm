@@ -511,6 +511,19 @@ namespace storm {
         }
         
         template <storm::dd::DdType DdType>
+        template<typename ValueType>
+        std::vector<std::map<uint_fast64_t, std::pair<storm::storage::BitVector, ValueType>>> AbstractionInformation<DdType>::decodeChoicesToUpdateSuccessorMapping(std::set<storm::expressions::Variable> const& player2Variables, storm::dd::Bdd<DdType> const& choices) const {
+            std::vector<storm::dd::Bdd<DdType>> splitChoices = choices.split(player2Variables);
+        
+            std::vector<std::map<uint_fast64_t, std::pair<storm::storage::BitVector, ValueType>>> result;
+            for (auto const& choice : splitChoices) {
+                result.emplace_back(this->decodeChoiceToUpdateSuccessorMapping<ValueType>(choice));
+            }
+
+            return result;
+        }
+        
+        template <storm::dd::DdType DdType>
         std::tuple<storm::storage::BitVector, uint64_t, uint64_t> AbstractionInformation<DdType>::decodeStatePlayer1ChoiceAndUpdate(storm::dd::Bdd<DdType> const& stateChoiceAndUpdate) const {
             STORM_LOG_ASSERT(stateChoiceAndUpdate.getNonZeroCount() == 1, "Wrong number of non-zero entries.");
             
@@ -601,5 +614,8 @@ namespace storm {
         
         template std::map<uint_fast64_t, std::pair<storm::storage::BitVector, double>> AbstractionInformation<storm::dd::DdType::CUDD>::decodeChoiceToUpdateSuccessorMapping(storm::dd::Bdd<storm::dd::DdType::CUDD> const& choice) const;
         template std::map<uint_fast64_t, std::pair<storm::storage::BitVector, double>> AbstractionInformation<storm::dd::DdType::Sylvan>::decodeChoiceToUpdateSuccessorMapping(storm::dd::Bdd<storm::dd::DdType::Sylvan > const& choice) const;
+        
+        template std::vector<std::map<uint_fast64_t, std::pair<storm::storage::BitVector, double>>> AbstractionInformation<storm::dd::DdType::CUDD>::decodeChoicesToUpdateSuccessorMapping(std::set<storm::expressions::Variable> const& player2Variables, storm::dd::Bdd<storm::dd::DdType::CUDD> const& choices) const;
+        template std::vector<std::map<uint_fast64_t, std::pair<storm::storage::BitVector, double>>> AbstractionInformation<storm::dd::DdType::Sylvan>::decodeChoicesToUpdateSuccessorMapping(std::set<storm::expressions::Variable> const& player2Variables, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& choices) const;
     }
 }

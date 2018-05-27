@@ -142,6 +142,11 @@ namespace storm {
                  */
                 std::string getConstraintString() const;
                 
+                /*!
+                 * Retrieves whether to refine eagerly.
+                 */
+                bool isUseEagerRefinementSet() const;
+                
                 const static std::string moduleName;
                 
             private:
@@ -159,6 +164,7 @@ namespace storm {
                 const static std::string maximalAbstractionOptionName;
                 const static std::string rankRefinementPredicatesOptionName;
                 const static std::string constraintsOptionName;
+                const static std::string useEagerRefinementOptionName;
             };
             
         }

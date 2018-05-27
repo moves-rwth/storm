@@ -145,6 +145,7 @@ namespace storm {
             
         private:
             RefinementPredicates derivePredicatesFromDifferingChoices(storm::dd::Bdd<Type> const& player1Choice, storm::dd::Bdd<Type> const& lowerChoice, storm::dd::Bdd<Type> const& upperChoice) const;
+            RefinementPredicates derivePredicatesFromChoice(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& pivotState, storm::dd::Bdd<Type> const& player1Choice, storm::dd::Bdd<Type> const& choice, storm::dd::Bdd<Type> const& choiceSuccessors) const;
             RefinementPredicates derivePredicatesFromPivotState(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& pivotState, storm::dd::Bdd<Type> const& minPlayer1Strategy, storm::dd::Bdd<Type> const& minPlayer2Strategy, storm::dd::Bdd<Type> const& maxPlayer1Strategy, storm::dd::Bdd<Type> const& maxPlayer2Strategy) const;
             
             /*!
@@ -185,6 +186,9 @@ namespace storm {
             
             /// A flag indicating whether predicates are to be ranked.
             bool rankPredicates;
+            
+            /// A flag indicating whether predicates are to be generated eagerly.
+            bool addPredicatesEagerly;
             
             /// A flag indicating whether all guards have been used to refine the abstraction.
             bool addedAllGuardsFlag;

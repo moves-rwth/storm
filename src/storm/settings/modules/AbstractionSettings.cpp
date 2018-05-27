@@ -27,6 +27,7 @@ namespace storm {
             const std::string AbstractionSettings::maximalAbstractionOptionName = "maxabs";
             const std::string AbstractionSettings::rankRefinementPredicatesOptionName = "rankpred";
             const std::string AbstractionSettings::constraintsOptionName = "constraints";
+            const std::string AbstractionSettings::useEagerRefinementOptionName = "eagerref";
             
             AbstractionSettings::AbstractionSettings() : ModuleSettings(moduleName) {
                 std::vector<std::string> methods = {"games", "bisimulation", "bisim"};
@@ -94,6 +95,11 @@ namespace storm {
                                              .setDefaultValueString("off").build())
                                 .build());
 
+                this->addOption(storm::settings::OptionBuilder(moduleName, useEagerRefinementOptionName, true, "Sets whether to refine eagerly.")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("value", "The value of the flag.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(onOff))
+                                             .setDefaultValueString("off").build())
+                                .build());
+
                 this->addOption(storm::settings::OptionBuilder(moduleName, constraintsOptionName, true, "Specifies additional constraints used by the abstraction.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("constraints", "The constraints to use.").build())
                                 .build());
@@ -111,7 +117,7 @@ namespace storm {
             }
             
             bool AbstractionSettings::isUseDecompositionSet() const {
-                return this->getOption(useDecompositionOptionName).getHasOptionBeenSet();
+                return this->getOption(useDecompositionOptionName).getArgumentByName("value").getValueAsString() == "on";
             }
             
             AbstractionSettings::SplitMode AbstractionSettings::getSplitMode() const {
@@ -198,6 +204,10 @@ namespace storm {
             
             std::string AbstractionSettings::getConstraintString() const {
                 return this->getOption(constraintsOptionName).getArgumentByName("constraints").getValueAsString();
+            }
+            
+            bool AbstractionSettings::isUseEagerRefinementSet() const {
+                return this->getOption(useEagerRefinementOptionName).getArgumentByName("value").getValueAsString() == "on";
             }
             
         }
