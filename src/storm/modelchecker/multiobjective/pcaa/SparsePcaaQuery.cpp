@@ -5,8 +5,7 @@
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/modelchecker/multiobjective/Objective.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/MultiObjectiveSettings.h"
+#include "storm/environment/modelchecker/MultiObjectiveModelCheckerEnvironment.h"
 #include "storm/storage/geometry/Hyperrectangle.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/vector.h"
@@ -126,9 +125,9 @@ namespace storm {
             }
             
             template <class SparseModelType, typename GeometryValueType>
-            bool SparsePcaaQuery<SparseModelType, GeometryValueType>::maxStepsPerformed() const {
-                return storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>().isMaxStepsSet() &&
-                this->refinementSteps.size() >= storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>().getMaxSteps();
+            bool SparsePcaaQuery<SparseModelType, GeometryValueType>::maxStepsPerformed(Environment const& env) const {
+                return env.modelchecker().multi().isMaxStepsSet() &&
+                this->refinementSteps.size() >= env.modelchecker().multi().getMaxSteps();
             }
             
             
@@ -191,7 +190,7 @@ namespace storm {
             }
             
             template<typename SparseModelType, typename GeometryValueType>
-            void SparsePcaaQuery<SparseModelType, GeometryValueType>::exportPlotOfCurrentApproximation(std::string const& destinationDir) const {
+            void SparsePcaaQuery<SparseModelType, GeometryValueType>::exportPlotOfCurrentApproximation(Environment const& env) const {
                
                 STORM_LOG_ERROR_COND(objectives.size()==2, "Exporting plot requested but this is only implemented for the two-dimensional case.");
                 
@@ -223,35 +222,33 @@ namespace storm {
                 std::vector<std::string> columnHeaders = {"x", "y"};
                 
                 std::vector<std::vector<double>> pointsForPlotting;
-                underApproxVertices = transformedUnderApprox->intersection(boundariesAsPolytope)->getVerticesInClockwiseOrder();
-                pointsForPlotting.reserve(underApproxVertices.size());
-                for(auto const& v : underApproxVertices) {
-                    pointsForPlotting.push_back(storm::utility::vector::convertNumericVector<double>(v));
+                if (env.modelchecker().multi().getPlotPathUnderApproximation()) {
+                    underApproxVertices = transformedUnderApprox->intersection(boundariesAsPolytope)->getVerticesInClockwiseOrder();
+                    pointsForPlotting.reserve(underApproxVertices.size());
+                    for(auto const& v : underApproxVertices) {
+                        pointsForPlotting.push_back(storm::utility::vector::convertNumericVector<double>(v));
+                    }
+                    storm::utility::exportDataToCSVFile<double, std::string>(env.modelchecker().multi().getPlotPathUnderApproximation().get(), pointsForPlotting, columnHeaders);
                 }
-                storm::utility::exportDataToCSVFile<double, std::string>(destinationDir + "underapproximation.csv", pointsForPlotting, columnHeaders);
                 
-                pointsForPlotting.clear();
-                overApproxVertices = transformedOverApprox->intersection(boundariesAsPolytope)->getVerticesInClockwiseOrder();
-                pointsForPlotting.reserve(overApproxVertices.size());
-                for(auto const& v : overApproxVertices) {
-                    pointsForPlotting.push_back(storm::utility::vector::convertNumericVector<double>(v));
+                if (env.modelchecker().multi().getPlotPathOverApproximation()) {
+                    pointsForPlotting.clear();
+                    overApproxVertices = transformedOverApprox->intersection(boundariesAsPolytope)->getVerticesInClockwiseOrder();
+                    pointsForPlotting.reserve(overApproxVertices.size());
+                    for(auto const& v : overApproxVertices) {
+                        pointsForPlotting.push_back(storm::utility::vector::convertNumericVector<double>(v));
+                    }
+                    storm::utility::exportDataToCSVFile<double, std::string>(env.modelchecker().multi().getPlotPathOverApproximation().get(), pointsForPlotting, columnHeaders);
                 }
-                storm::utility::exportDataToCSVFile<double, std::string>(destinationDir + "overapproximation.csv", pointsForPlotting, columnHeaders);
                 
-                pointsForPlotting.clear();
-                pointsForPlotting.reserve(paretoPoints.size());
-                for(auto const& v : paretoPoints) {
-                    pointsForPlotting.push_back(storm::utility::vector::convertNumericVector<double>(v));
+                if (env.modelchecker().multi().getPlotPathParetoPoints()) {
+                    pointsForPlotting.clear();
+                    pointsForPlotting.reserve(paretoPoints.size());
+                    for(auto const& v : paretoPoints) {
+                        pointsForPlotting.push_back(storm::utility::vector::convertNumericVector<double>(v));
+                    }
+                    storm::utility::exportDataToCSVFile<double, std::string>(env.modelchecker().multi().getPlotPathParetoPoints().get(), pointsForPlotting, columnHeaders);
                 }
-                storm::utility::exportDataToCSVFile<double, std::string>(destinationDir + "paretopoints.csv", pointsForPlotting, columnHeaders);
-                
-                pointsForPlotting.clear();
-                auto boundVertices = boundariesAsPolytope->getVerticesInClockwiseOrder();
-                pointsForPlotting.reserve(4);
-                for(auto const& v : boundVertices) {
-                    pointsForPlotting.push_back(storm::utility::vector::convertNumericVector<double>(v));
-                }
-                storm::utility::exportDataToCSVFile<double, std::string>(destinationDir + "boundaries.csv", pointsForPlotting, columnHeaders);
             }
             
 #ifdef STORM_HAVE_CARL

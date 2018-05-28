@@ -8,9 +8,7 @@
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/vector.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/MultiObjectiveSettings.h"
-#include "storm/settings/modules/GeneralSettings.h"
+#include "storm/environment/modelchecker/MultiObjectiveModelCheckerEnvironment.h"
 
 #include "storm/exceptions/InvalidOperationException.h"
 
@@ -99,7 +97,7 @@ namespace storm {
                     // We don't care for the optimizing objective at this point
                     this->diracWeightVectorsToBeChecked.set(indexOfOptimizingObjective, false);
                 
-                    while(!this->maxStepsPerformed()){
+                    while(!this->maxStepsPerformed(env)){
                         WeightVector separatingVector = this->findSeparatingVector(thresholds);
                         this->updateWeightedPrecisionInAchievabilityPhase(separatingVector);
                         this->performRefinementStep(env, std::move(separatingVector));
@@ -150,10 +148,10 @@ namespace storm {
                 // the supremum over all strategies. Hence, one could combine a scheduler inducing the optimum value (but possibly violating strict
                 // thresholds) and (with very low probability) a scheduler that satisfies all (possibly strict) thresholds.
                 GeometryValueType result = storm::utility::zero<GeometryValueType>();
-                while(!this->maxStepsPerformed()) {
+                while(!this->maxStepsPerformed(env)) {
                     if (this->refinementSteps.empty()) {
                         // We did not make any refinement steps during the checkAchievability phase (e.g., because there is only one objective).
-                        this->weightVectorChecker->setWeightedPrecision(storm::utility::convertNumber<typename SparseModelType::ValueType>(storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>().getPrecision()));
+                        this->weightVectorChecker->setWeightedPrecision(storm::utility::convertNumber<typename SparseModelType::ValueType>(env.modelchecker().multi().getPrecision()));
                         WeightVector separatingVector = directionOfOptimizingObjective;
                         this->performRefinementStep(env, std::move(separatingVector));
                     }
@@ -165,7 +163,7 @@ namespace storm {
                     optimizationRes = this->overApproximation->intersection(thresholdsAsPolytope)->optimize(directionOfOptimizingObjective);
                     if (optimizationRes.second) {
                         GeometryValueType precisionOfResult = optimizationRes.first[indexOfOptimizingObjective] - result;
-                        if (precisionOfResult < storm::utility::convertNumber<GeometryValueType>(storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>().getPrecision())) {
+                        if (precisionOfResult < storm::utility::convertNumber<GeometryValueType>(env.modelchecker().multi().getPrecision())) {
                             // Goal precision reached!
                             return result;
                         } else {
@@ -176,7 +174,7 @@ namespace storm {
                         thresholds[indexOfOptimizingObjective] = result + storm::utility::one<GeometryValueType>();
                     }
                     WeightVector separatingVector = this->findSeparatingVector(thresholds);
-                    this->updateWeightedPrecisionInImprovingPhase(separatingVector);
+                    this->updateWeightedPrecisionInImprovingPhase(env, separatingVector);
                     this->performRefinementStep(env, std::move(separatingVector));
                 }
                STORM_LOG_ERROR("Could not reach the desired precision: Exceeded maximum number of refinement steps");
@@ -185,11 +183,11 @@ namespace storm {
             
             
             template <class SparseModelType, typename GeometryValueType>
-            void SparsePcaaQuantitativeQuery<SparseModelType, GeometryValueType>::updateWeightedPrecisionInImprovingPhase(WeightVector const& weights) {
+            void SparsePcaaQuantitativeQuery<SparseModelType, GeometryValueType>::updateWeightedPrecisionInImprovingPhase(Environment const& env, WeightVector const& weights) {
                 STORM_LOG_THROW(!storm::utility::isZero(weights[this->indexOfOptimizingObjective]), exceptions::UnexpectedException, "The chosen weight-vector gives zero weight for the objective that is to be optimized.");
                 // If weighs[indexOfOptimizingObjective] is low, the computation of the weightVectorChecker needs to be more precise.
                 // Our heuristic ensures that if p is the new vertex of the under-approximation, then max{ eps | p' = p + (0..0 eps 0..0) is in the over-approximation } <= multiobjective_precision/0.9
-                    GeometryValueType weightedPrecision = weights[this->indexOfOptimizingObjective] * storm::utility::convertNumber<GeometryValueType>(storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>().getPrecision());
+                    GeometryValueType weightedPrecision = weights[this->indexOfOptimizingObjective] * storm::utility::convertNumber<GeometryValueType>(env.modelchecker().multi().getPrecision());
                     // Normalize by division with the Euclidean Norm of the weight-vector
                     weightedPrecision /= storm::utility::sqrt(storm::utility::vector::dotProduct(weights, weights));
                     weightedPrecision *= storm::utility::convertNumber<GeometryValueType>(0.9);

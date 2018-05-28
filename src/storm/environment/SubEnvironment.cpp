@@ -1,4 +1,9 @@
-#include<memory>
+#include <memory>
+
+#include "storm/environment/Environment.h"
+#include "storm/environment/modelchecker/MultiObjectiveModelCheckerEnvironment.h"
+#include "storm/environment/modelchecker/ModelCheckerEnvironment.h"
+
 #include "storm/environment/solver/SolverEnvironment.h"
 #include "storm/environment/solver/EigenSolverEnvironment.h"
 #include "storm/environment/solver/GmmxxSolverEnvironment.h"
@@ -35,6 +40,11 @@ namespace storm {
     EnvironmentType& SubEnvironment<EnvironmentType>::get() {
         return *subEnv;
     }
+    
+    template class SubEnvironment<InternalEnvironment>;
+    
+    template class SubEnvironment<MultiObjectiveModelCheckerEnvironment>;
+    template class SubEnvironment<ModelCheckerEnvironment>;
     
     template class SubEnvironment<SolverEnvironment>;
     template class SubEnvironment<EigenSolverEnvironment>;
