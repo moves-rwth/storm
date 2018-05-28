@@ -36,5 +36,5 @@ add_custom_target(copy_storm_dft_headers DEPENDS ${STORM_DFT_OUTPUT_HEADERS} ${S
 add_dependencies(storm-dft copy_storm_dft_headers)
 
 # installation
-install(TARGETS storm-dft RUNTIME DESTINATION bin LIBRARY DESTINATION lib OPTIONAL)
+install(TARGETS storm-dft EXPORT storm_Targets RUNTIME DESTINATION bin LIBRARY DESTINATION lib OPTIONAL)
 

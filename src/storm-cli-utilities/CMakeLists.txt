@@ -36,5 +36,5 @@ add_custom_target(copy_storm_cli_util_headers DEPENDS ${STORM_CLI_UTIL_OUTPUT_HE
 add_dependencies(storm-cli-utilities copy_storm_pars_headers)
 
 # installation
-install(TARGETS storm-cli-utilities RUNTIME DESTINATION bin LIBRARY DESTINATION lib OPTIONAL)
+install(TARGETS storm-cli-utilities EXPORT storm_Targets RUNTIME DESTINATION bin LIBRARY DESTINATION lib OPTIONAL)
 

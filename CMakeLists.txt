@@ -500,4 +500,6 @@ add_subdirectory(src)
 
 include(export)
 
+install(EXPORT storm_Targets FILE stormTargets.cmake DESTINATION ${CMAKE_INSTALL_DIR})
+
 include(StormCPackConfig.cmake)
