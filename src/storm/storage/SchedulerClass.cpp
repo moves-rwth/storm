@@ -1,5 +1,7 @@
 #include "storm/storage/SchedulerClass.h"
 
+#include "storm/utility/macros.h"
+
 namespace storm {
     namespace storage {
         SchedulerClass::SchedulerClass() : deterministic(false), memorystates(0) {
@@ -15,7 +17,8 @@ namespace storm {
         }
         
         uint64_t SchedulerClass::getMemoryStates() const {
-            assert(isMemoryBounded());
+            STORM_LOG_ASSERT(isMemoryBounded(), "Tried to retrieve the number of memory states although it is not bounded.");
+            return memorystates;
         }
         
         
@@ -25,7 +28,7 @@ namespace storm {
         }
         
         SchedulerClass& SchedulerClass::setMemoryStates(uint64_t value) {
-            assert(value > 0);
+            STORM_LOG_ASSERT(value > 0, "Can not set the number of memory states to zero.");
             memorystates = value;
             return *this;
         }

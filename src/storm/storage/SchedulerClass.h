@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 namespace storm {
     namespace storage {
         class SchedulerClass {
