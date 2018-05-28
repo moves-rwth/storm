@@ -7,10 +7,7 @@
 #include "storm/modelchecker/results/ExplicitParetoCurveCheckResult.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/vector.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/MultiObjectiveSettings.h"
-#include "storm/settings/modules/GeneralSettings.h"
-
+#include "storm/environment/modelchecker/MultiObjectiveModelCheckerEnvironment.h"
 
 namespace storm {
     namespace modelchecker {
@@ -19,20 +16,19 @@ namespace storm {
             template <class SparseModelType, typename GeometryValueType>
             SparsePcaaParetoQuery<SparseModelType, GeometryValueType>::SparsePcaaParetoQuery(SparseMultiObjectivePreprocessorResult<SparseModelType>& preprocessorResult) : SparsePcaaQuery<SparseModelType, GeometryValueType>(preprocessorResult) {
                 STORM_LOG_ASSERT(preprocessorResult.queryType==SparseMultiObjectivePreprocessorResult<SparseModelType>::QueryType::Pareto, "Invalid query Type");
-                
-                // Set the precision of the weight vector checker
-                typename SparseModelType::ValueType weightedPrecision = storm::utility::convertNumber<typename SparseModelType::ValueType>(storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>().getPrecision());
-                weightedPrecision /= storm::utility::sqrt(storm::utility::convertNumber<typename SparseModelType::ValueType, uint_fast64_t>(this->objectives.size()));
-                // multiobjPrecision / sqrt(numObjectives) is the largest possible value for which termination is guaranteed.
-                // Lets be a little bit more precise to reduce the number of required iterations.
-                weightedPrecision *= storm::utility::convertNumber<typename SparseModelType::ValueType>(0.9);
-                this->weightVectorChecker->setWeightedPrecision(weightedPrecision);
-                
             }
             
             template <class SparseModelType, typename GeometryValueType>
             std::unique_ptr<CheckResult> SparsePcaaParetoQuery<SparseModelType, GeometryValueType>::check(Environment const& env) {
                 
+                // Set the precision of the weight vector checker
+                typename SparseModelType::ValueType weightedPrecision = storm::utility::convertNumber<typename SparseModelType::ValueType>(env.modelchecker().multi().getPrecision());
+                weightedPrecision /= storm::utility::sqrt(storm::utility::convertNumber<typename SparseModelType::ValueType, uint_fast64_t>(this->objectives.size()));
+                // multiobjPrecision / sqrt(numObjectives) is the largest possible value for which termination is guaranteed.
+                // Lets be a little bit more precise to reduce the number of required iterations.
+                weightedPrecision *= storm::utility::convertNumber<typename SparseModelType::ValueType>(0.9);
+                this->weightVectorChecker->setWeightedPrecision(weightedPrecision);
+
                 // refine the approximation
                 exploreSetOfAchievablePoints(env);
                 
@@ -55,13 +51,13 @@ namespace storm {
             void SparsePcaaParetoQuery<SparseModelType, GeometryValueType>::exploreSetOfAchievablePoints(Environment const& env) {
             
                 //First consider the objectives individually
-                for(uint_fast64_t objIndex = 0; objIndex<this->objectives.size() && !this->maxStepsPerformed(); ++objIndex) {
+                for(uint_fast64_t objIndex = 0; objIndex<this->objectives.size() && !this->maxStepsPerformed(env); ++objIndex) {
                     WeightVector direction(this->objectives.size(), storm::utility::zero<GeometryValueType>());
                     direction[objIndex] = storm::utility::one<GeometryValueType>();
                     this->performRefinementStep(env, std::move(direction));
                 }
                 
-                while(!this->maxStepsPerformed()) {
+                while(!this->maxStepsPerformed(env)) {
                     // Get the halfspace of the underApproximation with maximal distance to a vertex of the overApproximation
                     std::vector<storm::storage::geometry::Halfspace<GeometryValueType>> underApproxHalfspaces = this->underApproximation->getHalfspaces();
                     std::vector<Point> overApproxVertices = this->overApproximation->getVertices();
@@ -76,7 +72,7 @@ namespace storm {
                             }
                         }
                     }
-                    if(farestDistance < storm::utility::convertNumber<GeometryValueType>(storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>().getPrecision())) {
+                    if(farestDistance < storm::utility::convertNumber<GeometryValueType>(env.modelchecker().multi().getPrecision())) {
                         // Goal precision reached!
                         return;
                     }

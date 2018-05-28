@@ -45,7 +45,7 @@ namespace storm {
                  * Updates the precision of the weightVectorChecker w.r.t. the provided weights
                  */
                 void updateWeightedPrecisionInAchievabilityPhase(WeightVector const& weights);
-                void updateWeightedPrecisionInImprovingPhase(WeightVector const& weights);
+                void updateWeightedPrecisionInImprovingPhase(Environment const& env, WeightVector const& weights);
                 
                 /*
                  * Given that the thresholds are achievable, this function further refines the approximations and returns the optimized value

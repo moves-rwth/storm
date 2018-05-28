@@ -7,9 +7,8 @@
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/vector.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/GeneralSettings.h"
-#include "storm/settings/modules/MultiObjectiveSettings.h"
+#include "storm/environment/modelchecker/MultiObjectiveModelCheckerEnvironment.h"
+
 
 #include "storm/exceptions/InvalidOperationException.h"
 
@@ -57,7 +56,7 @@ namespace storm {
             template <class SparseModelType, typename GeometryValueType>
             bool SparsePcaaAchievabilityQuery<SparseModelType, GeometryValueType>::checkAchievability(Environment const& env) {
                 // repeatedly refine the over/ under approximation until the threshold point is either in the under approx. or not in the over approx.
-                while(!this->maxStepsPerformed()){
+                while(!this->maxStepsPerformed(env)){
                     WeightVector separatingVector = this->findSeparatingVector(thresholds);
                     this->updateWeightedPrecision(separatingVector);
                     this->performRefinementStep(env, std::move(separatingVector));
