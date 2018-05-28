@@ -97,4 +97,20 @@ namespace storm {
     void MultiObjectiveModelCheckerEnvironment::unsetMaxSteps() {
         maxSteps = boost::none;
     }
+    
+    bool MultiObjectiveModelCheckerEnvironment::isSchedulerRestrictionSet() const {
+        return schedulerRestriction.is_initialized();
+    }
+    
+    storm::storage::SchedulerClass const& MultiObjectiveModelCheckerEnvironment::getSchedulerRestriction() const {
+        return schedulerRestriction.get();
+    }
+    
+    void MultiObjectiveModelCheckerEnvironment::setSchedulerRestriction(storm::storage::SchedulerClass const& value) {
+        schedulerRestriction = value;
+    }
+    
+    void MultiObjectiveModelCheckerEnvironment::unsetSchedulerRestriction() {
+        schedulerRestriction = boost::none;
+    }
 }
