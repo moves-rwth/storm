@@ -225,6 +225,7 @@ namespace storm {
                 std::map<uint64_t, uint64_t> unavailablePlaces;
                 std::map<uint64_t, uint64_t> activePlaces;
                 std::map<uint64_t, uint64_t> disabledPlaces;
+                std::map<uint64_t, uint64_t> dependencyPropagationPlaces;
                 std::map<uint64_t, uint64_t> dontcareTransitions;
 
                 static constexpr const char *STR_FAILING = "_failing";          // Name standard for transitions that point towards a place, which in turn indicates the failure of a gate.
