@@ -180,6 +180,12 @@ namespace storm {
                 }
                 initialStates.addMetaVariables(abstractionInformation.getSourcePredicateVariables());
                 storm::dd::Bdd<DdType> reachableStates = storm::utility::dd::computeReachableStates(initialStates, transitionRelation, abstractionInformation.getSourceVariables(), abstractionInformation.getSuccessorVariables());
+                
+                transitionRelation.template toAdd<ValueType>().exportToDot("transrel.dot");
+                (initialStates && transitionRelation).template toAdd<ValueType>().exportToDot("transrelinit.dot");
+                (transitionRelation && abstractionInformation.encodePlayer1Choice(6, this->getAbstractionInformation().getPlayer1VariableCount())).template toAdd<ValueType>().exportToDot("trans6.dot");
+                
+                initialStates.template toAdd<ValueType>().exportToDot("initial.dot");
 
                 relevantStatesWatch.start();
                 if (this->isRestrictToRelevantStatesSet() && this->hasTargetStateExpression()) {

@@ -561,9 +561,9 @@ namespace storm {
                         } else {
                             updateBdd &= !this->getAbstractionInformation().encodePredicateAsSuccessor(variableIndexPair.second);
                         }
-                        updateBdd &= this->getAbstractionInformation().encodeAux(destinationIndex, 0, this->getAbstractionInformation().getAuxVariableCount());
                     }
                     
+                    updateBdd &= this->getAbstractionInformation().encodeAux(destinationIndex, 0, this->getAbstractionInformation().getAuxVariableCount());
                     result |= updateBdd;
                 }
                 

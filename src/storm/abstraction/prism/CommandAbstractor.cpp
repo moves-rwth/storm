@@ -240,6 +240,8 @@ namespace storm {
                 uint64_t numberOfSolutions = 0;
                 uint64_t numberOfTotalSolutions = 0;
                 
+                std::cout << localExpressionInformation << std::endl;
+                
                 // If we need to enumerate the guard, do it only once now.
                 if (enumerateAbstractGuard) {
                     std::set<uint64_t> relatedGuardPredicates = localExpressionInformation.getRelatedExpressions(variablesContainedInGuard);
@@ -258,8 +260,10 @@ namespace storm {
                         return true;
                     });
                     STORM_LOG_TRACE("Enumerated " << numberOfSolutions << " solutions for abstract guard.");
+                    abstractGuard.template toAdd<ValueType>().exportToDot("abstractguard" + std::to_string(command.get().getGlobalIndex()) + ".dot");
                     
-                    // now that we have the abstract guard, we can add it as an assertion to the solver before enumerating
+                    
+                    // Now that we have the abstract guard, we can add it as an assertion to the solver before enumerating
                     // the other solutions.
                     
                     // Create a new backtracking point before adding the guard.
@@ -288,7 +292,7 @@ namespace storm {
                     for (auto const& innerBlock : block) {
                         relevantPredicates.insert(localExpressionInformation.getExpressionBlock(innerBlock).begin(), localExpressionInformation.getExpressionBlock(innerBlock).end());
                     }
-                    
+
                     if (relevantPredicates.empty()) {
                         STORM_LOG_TRACE("Block does not contain relevant predicates, skipping it.");
                         continue;
@@ -297,7 +301,9 @@ namespace storm {
                     std::vector<storm::expressions::Variable> transitionDecisionVariables;
                     std::vector<std::pair<storm::expressions::Variable, uint_fast64_t>> sourceVariablesAndPredicates;
                     for (auto const& element : relevantPredicatesAndVariables.first) {
+                        std::cout << "1-querying " << abstractionInformation.get().getPredicateByIndex(element.second) << std::endl;
                         if (relevantPredicates.find(element.second) != relevantPredicates.end()) {
+                            std::cout << "1-is relevant!" << std::endl;
                             transitionDecisionVariables.push_back(element.first);
                             sourceVariablesAndPredicates.push_back(element);
                         }
@@ -308,10 +314,14 @@ namespace storm {
                         destinationVariablesAndPredicates.emplace_back();
                         for (auto const& assignment : command.get().getUpdate(updateIndex).getAssignments()) {
                             uint64_t assignmentVariableBlockIndex = localExpressionInformation.getBlockIndexOfVariable(assignment.getVariable());
-                            std::set<uint64_t> const& assignmentVariableBlock = localExpressionInformation.getExpressionBlock(assignmentVariableBlockIndex);
+                            std::cout << "assignment variable " << assignment.getVariable().getName() << " block index: " << assignmentVariableBlockIndex << std::endl;
+                            
                             if (block.find(assignmentVariableBlockIndex) != block.end()) {
+                                std::set<uint64_t> const& assignmentVariableBlock = localExpressionInformation.getExpressionBlock(assignmentVariableBlockIndex);
                                 for (auto const& element : relevantPredicatesAndVariables.second[updateIndex]) {
+                                    std::cout << "2-querying " << abstractionInformation.get().getPredicateByIndex(element.second) << std::endl;
                                     if (assignmentVariableBlock.find(element.second) != assignmentVariableBlock.end()) {
+                                        std::cout << "2-is relevant!" << std::endl;
                                         destinationVariablesAndPredicates.back().push_back(element);
                                         transitionDecisionVariables.push_back(element.first);
                                     }
@@ -355,6 +365,7 @@ namespace storm {
                         storm::dd::Bdd<DdType> allDistributions = this->getAbstractionInformation().getDdManager().getBddZero();
                         for (auto const& distribution : sourceDistributionsPair.second) {
                             allDistributions |= distribution && this->getAbstractionInformation().encodePlayer2Choice(distributionIndex, usedNondeterminismVariables, usedNondeterminismVariables + numberOfVariablesNeeded);
+                            distribution.template toAdd<ValueType>().exportToDot("dist" + std::to_string(distributionIndex) + ".dot");
                             ++distributionIndex;
                             STORM_LOG_ASSERT(!allDistributions.isZero(), "The BDD must not be empty.");
                         }
@@ -363,6 +374,9 @@ namespace storm {
                         STORM_LOG_ASSERT(!resultBdd.isZero(), "The BDD must not be empty.");
                     }
                     usedNondeterminismVariables += numberOfVariablesNeeded;
+                    
+//                    resultBdd.template toAdd<ValueType>().exportToDot("result.dot");
+//                    exit(-1);
                     
                     blockBdds.push_back(resultBdd);
                     ++blockCounter;
@@ -405,6 +419,8 @@ namespace storm {
                 
                 // multiply with missing identities
                 resultBdd &= computeMissingIdentities();
+                
+                resultBdd.template toAdd<ValueType>().exportToDot("decomp_idents" + std::to_string(command.get().getGlobalIndex()) + ".dot");
                 
                 // cache and return result
                 resultBdd &= this->getAbstractionInformation().encodePlayer1Choice(command.get().getGlobalIndex(), this->getAbstractionInformation().getPlayer1VariableCount());
@@ -595,9 +611,10 @@ namespace storm {
                         } else {
                             updateBdd &= !this->getAbstractionInformation().encodePredicateAsSuccessor(variableIndexPair.second);
                         }
-                        updateBdd &= this->getAbstractionInformation().encodeAux(updateIndex, 0, this->getAbstractionInformation().getAuxVariableCount());
                     }
-                    
+
+                    updateBdd &= this->getAbstractionInformation().encodeAux(updateIndex, 0, this->getAbstractionInformation().getAuxVariableCount());
+
                     result |= updateBdd;
                 }
                 
