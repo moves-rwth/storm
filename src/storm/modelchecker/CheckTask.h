@@ -10,6 +10,7 @@
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/logic/ComparisonType.h"
 #include "storm/modelchecker/hints/ModelCheckerHint.h"
+#include "storm/storage/SchedulerClass.h"
 
 #include "storm/exceptions/InvalidOperationException.h"
 
@@ -222,6 +223,18 @@ namespace storm {
                 return produceSchedulers;
             }
             
+            void setSchedulerRestriction(storm::storage::SchedulerClass const& schedulerClass) {
+                this->schedulerRestriction = schedulerClass;
+            }
+            
+            storm::storage::SchedulerClass const& getSchedulerRestriction() const {
+                return *this->schedulerRestriction;
+            }
+            
+            bool hasSchedulerRestriction() const {
+                return this->schedulerRestriction.is_initialized();
+            }
+            
             /*!
              * sets a hint that might contain information that speeds up the modelchecking process (if supported by the model checker)
              */
@@ -287,6 +300,9 @@ namespace storm {
             // If supported by the model checker and the model formalism, schedulers to achieve a value will be produced
             // if this flag is set.
             bool produceSchedulers;
+            
+            // Restricts the class of schedulers that are to be considered during analysis
+            boost::optional<storm::storage::SchedulerClass> schedulerRestriction;
             
             // A hint that might contain information that speeds up the modelchecking process (if supported by the model checker)
             std::shared_ptr<ModelCheckerHint> hint;
