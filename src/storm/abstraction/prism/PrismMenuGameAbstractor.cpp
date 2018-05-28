@@ -172,20 +172,17 @@ namespace storm {
                 }
                 relevantStatesWatch.stop();
                 
+                storm::dd::Bdd<DdType> validBlocks = validBlockAbstractor.getValidBlocks();
+                
                 // Do a reachability analysis on the raw transition relation.
                 storm::dd::Bdd<DdType> transitionRelation = nonTerminalStates && game.bdd.existsAbstract(variablesToAbstract);
                 storm::dd::Bdd<DdType> initialStates = initialStateAbstractor.getAbstractStates();
                 if (program.get().hasInitialConstruct()) {
-                    initialStates &= validBlockAbstractor.getValidBlocks();
+                    initialStates &= validBlocks;
                 }
                 initialStates.addMetaVariables(abstractionInformation.getSourcePredicateVariables());
                 storm::dd::Bdd<DdType> reachableStates = storm::utility::dd::computeReachableStates(initialStates, transitionRelation, abstractionInformation.getSourceVariables(), abstractionInformation.getSuccessorVariables());
-                
-                transitionRelation.template toAdd<ValueType>().exportToDot("transrel.dot");
-                (initialStates && transitionRelation).template toAdd<ValueType>().exportToDot("transrelinit.dot");
-                (transitionRelation && abstractionInformation.encodePlayer1Choice(6, this->getAbstractionInformation().getPlayer1VariableCount())).template toAdd<ValueType>().exportToDot("trans6.dot");
-                
-                initialStates.template toAdd<ValueType>().exportToDot("initial.dot");
+                reachableStates &= validBlocks;
 
                 relevantStatesWatch.start();
                 if (this->isRestrictToRelevantStatesSet() && this->hasTargetStateExpression()) {

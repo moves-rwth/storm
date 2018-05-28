@@ -573,8 +573,6 @@ namespace storm {
                     targetStates |= game.getBottomStates();
                 }
                 
-                exit(-1);
-                
                 // #ifdef LOCAL_DEBUG
 //                initialStates.template toAdd<ValueType>().exportToDot("init" + std::to_string(iteration) + ".dot");
 //                targetStates.template toAdd<ValueType>().exportToDot("target" + std::to_string(iteration) + ".dot");

@@ -279,6 +279,10 @@ namespace storm {
                 // Decode both choices to explicit mappings.
                 std::map<uint64_t, std::pair<storm::storage::BitVector, ValueType>> lowerChoiceUpdateToSuccessorMapping = abstractionInformation.template decodeChoiceToUpdateSuccessorMapping<ValueType>(lowerChoice);
                 std::map<uint64_t, std::pair<storm::storage::BitVector, ValueType>> upperChoiceUpdateToSuccessorMapping = abstractionInformation.template decodeChoiceToUpdateSuccessorMapping<ValueType>(upperChoice);
+                
+                lowerChoice.template toAdd<ValueType>().exportToDot("lower.dot");
+                upperChoice.template toAdd<ValueType>().exportToDot("upper.dot");
+
                 STORM_LOG_ASSERT(lowerChoiceUpdateToSuccessorMapping.size() == upperChoiceUpdateToSuccessorMapping.size(), "Mismatching sizes after decode (" << lowerChoiceUpdateToSuccessorMapping.size() << " vs. " << upperChoiceUpdateToSuccessorMapping.size() << ").");
                 
                 // First, sort updates according to probability mass.
