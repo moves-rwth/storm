@@ -16,8 +16,8 @@ namespace storm {
         EnvironmentType& get();
     
     private:
-        std::unique_ptr<EnvironmentType> subEnv;
+        void assertInitialized() const;
+        mutable std::unique_ptr<EnvironmentType> subEnv;
         
     };
 }
-
