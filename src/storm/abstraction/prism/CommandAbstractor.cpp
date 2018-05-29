@@ -23,7 +23,7 @@ namespace storm {
     namespace abstraction {
         namespace prism {
             template <storm::dd::DdType DdType, typename ValueType>
-            CommandAbstractor<DdType, ValueType>::CommandAbstractor(storm::prism::Command const& command, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool useDecomposition) : smtSolver(smtSolverFactory->create(abstractionInformation.getExpressionManager())), abstractionInformation(abstractionInformation), command(command), localExpressionInformation(abstractionInformation), evaluator(abstractionInformation.getExpressionManager()), relevantPredicatesAndVariables(), cachedDd(abstractionInformation.getDdManager().getBddZero(), 0), decisionVariables(), useDecomposition(useDecomposition), skipBottomStates(false), forceRecomputation(true), abstractGuard(abstractionInformation.getDdManager().getBddZero()), bottomStateAbstractor(abstractionInformation, {!command.getGuardExpression()}, smtSolverFactory) {
+            CommandAbstractor<DdType, ValueType>::CommandAbstractor(storm::prism::Command const& command, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool useDecomposition, bool debug) : smtSolver(smtSolverFactory->create(abstractionInformation.getExpressionManager())), abstractionInformation(abstractionInformation), command(command), localExpressionInformation(abstractionInformation), evaluator(abstractionInformation.getExpressionManager()), relevantPredicatesAndVariables(), cachedDd(abstractionInformation.getDdManager().getBddZero(), 0), decisionVariables(), useDecomposition(useDecomposition), skipBottomStates(false), forceRecomputation(true), abstractGuard(abstractionInformation.getDdManager().getBddZero()), bottomStateAbstractor(abstractionInformation, {!command.getGuardExpression()}, smtSolverFactory), debug(debug) {
                 
                 // Make the second component of relevant predicates have the right size.
                 relevantPredicatesAndVariables.second.resize(command.getNumberOfUpdates());
@@ -205,16 +205,22 @@ namespace storm {
                 relevantBlockPartition = std::move(cleanedRelevantBlockPartition);
                 
                 STORM_LOG_TRACE("Decomposition into " << relevantBlockPartition.size() << " blocks.");
-//                for (auto const& block : relevantBlockPartition) {
-//                    std::set<uint64_t> blockPredicateIndices;
-//                    for (auto const& innerBlock : block) {
-//                        blockPredicateIndices.insert(localExpressionInformation.getExpressionBlock(innerBlock).begin(), localExpressionInformation.getExpressionBlock(innerBlock).end());
-//                    }
-//                    
-//                    for (auto const& predicateIndex : blockPredicateIndices) {
-//                        STORM_LOG_TRACE(abstractionInformation.get().getPredicateByIndex(predicateIndex));
-//                    }
-//                }
+                if (this->debug) {
+                    uint64_t blockIndex = 0;
+                    for (auto const& block : relevantBlockPartition) {
+                        STORM_LOG_TRACE("Predicates of block " << blockIndex << ":");
+                        std::set<uint64_t> blockPredicateIndices;
+                        for (auto const& innerBlock : block) {
+                            blockPredicateIndices.insert(localExpressionInformation.getExpressionBlock(innerBlock).begin(), localExpressionInformation.getExpressionBlock(innerBlock).end());
+                        }
+                        
+                        for (auto const& predicateIndex : blockPredicateIndices) {
+                            STORM_LOG_TRACE(abstractionInformation.get().getPredicateByIndex(predicateIndex));
+                        }
+                        
+                        ++blockIndex;
+                    }
+                }
                 
                 std::set<storm::expressions::Variable> variablesContainedInGuard = command.get().getGuardExpression().getVariables();
                 

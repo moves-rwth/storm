@@ -147,6 +147,21 @@ namespace storm {
                  */
                 bool isUseEagerRefinementSet() const;
                 
+                /*!
+                 * Retrieves whether the debug option was set.
+                 */
+                bool isDebugSet() const;
+                
+                /*!
+                 * Retrieves whether the option to inject the refinement predicates is set.
+                 */
+                bool isInjectRefinementPredicatesSet() const;
+                
+                /*!
+                 * Retrieves a string containing refinement predicates to inject (if there are any).
+                 */
+                std::string getInjectedRefinementPredicates() const;
+                
                 const static std::string moduleName;
                 
             private:
@@ -165,6 +180,8 @@ namespace storm {
                 const static std::string rankRefinementPredicatesOptionName;
                 const static std::string constraintsOptionName;
                 const static std::string useEagerRefinementOptionName;
+                const static std::string debugOptionName;
+                const static std::string injectRefinementPredicatesOption;
             };
             
         }

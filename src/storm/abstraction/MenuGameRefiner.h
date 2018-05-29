@@ -107,8 +107,10 @@ namespace storm {
              * Refines the abstractor with the given predicates.
              *
              * @param predicates The predicates to use for refinement.
+             * @param allowInjection If true, the refiner is free to inject manually-specified refinement predicates
+             * instead of the provided ones.
              */
-            void refine(std::vector<storm::expressions::Expression> const& predicates) const;
+            void refine(std::vector<storm::expressions::Expression> const& predicates, bool allowInjection = true) const;
             
             /*!
              * Refines the abstractor based on the qualitative result by trying to derive suitable predicates.
@@ -170,7 +172,7 @@ namespace storm {
             boost::optional<RefinementPredicates> derivePredicatesFromInterpolationKShortestPaths(storm::dd::Odd const& odd, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint64_t> const& player1Grouping, std::vector<uint64_t> const& player1Labeling, std::vector<uint64_t> const& player2Labeling, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, ValueType minProbability, ValueType maxProbability, ExplicitGameStrategyPair const& maxStrategyPair) const;
             boost::optional<RefinementPredicates> derivePredicatesFromInterpolationReversedPath(storm::dd::Odd const& odd, storm::expressions::ExpressionManager& interpolationManager, std::vector<uint64_t> const& reversedPath, std::vector<uint64_t> const& stateToOffset, std::vector<uint64_t> const& player1Labels) const;
 
-            void performRefinement(std::vector<RefinementCommand> const& refinementCommands) const;
+            void performRefinement(std::vector<RefinementCommand> const& refinementCommands, bool allowInjection = true) const;
             
             /// The underlying abstractor to refine.
             std::reference_wrapper<MenuGameAbstractor<Type, ValueType>> abstractor;
@@ -193,6 +195,10 @@ namespace storm {
             /// A flag indicating whether all guards have been used to refine the abstraction.
             bool addedAllGuardsFlag;
 
+            /// A vector of refinement predicates that are injected (starting with the *last* one in this list). If
+            // empty, the predicates are derived as usual.
+            mutable std::vector<storm::expressions::Expression> refinementPredicatesToInject;
+            
             /// The heuristic to use for pivot block selection.
             storm::settings::modules::AbstractionSettings::PivotSelectionHeuristic pivotSelectionHeuristic;
             

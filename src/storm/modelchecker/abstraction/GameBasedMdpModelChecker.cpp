@@ -372,7 +372,7 @@ namespace storm {
                 // Extend the values of the maybe states by the qualitative values.
                 result.values += min ? qualitativeResult.prob1Min.getPlayer1States().template toAdd<ValueType>() : qualitativeResult.prob1Max.getPlayer1States().template toAdd<ValueType>();
             } else {
-                STORM_LOG_TRACE("No maybe states.");
+                STORM_LOG_TRACE("No " << (player2Direction == storm::OptimizationDirection::Minimize ? "min" : "max") << " maybe states.");
 
                 // Extend the values of the maybe states by the qualitative values.
                 result.values += min ? qualitativeResult.prob1Min.getPlayer1States().template toAdd<ValueType>() : qualitativeResult.prob1Max.getPlayer1States().template toAdd<ValueType>();
@@ -545,7 +545,7 @@ namespace storm {
             
             // Create a refiner that can be used to refine the abstraction when needed.
             storm::abstraction::MenuGameRefiner<Type, ValueType> refiner(*abstractor, smtSolverFactory->create(preprocessedModel.getManager()));
-            refiner.refine(initialPredicates);
+            refiner.refine(initialPredicates, false);
 
             storm::dd::Bdd<Type> globalConstraintStates = abstractor->getStates(constraintExpression);
             storm::dd::Bdd<Type> globalTargetStates = abstractor->getStates(targetStateExpression);

@@ -28,6 +28,8 @@ namespace storm {
             const std::string AbstractionSettings::rankRefinementPredicatesOptionName = "rankpred";
             const std::string AbstractionSettings::constraintsOptionName = "constraints";
             const std::string AbstractionSettings::useEagerRefinementOptionName = "eagerref";
+            const std::string AbstractionSettings::debugOptionName = "debug";
+            const std::string AbstractionSettings::injectRefinementPredicatesOption = "injectref";
             
             AbstractionSettings::AbstractionSettings() : ModuleSettings(moduleName) {
                 std::vector<std::string> methods = {"games", "bisimulation", "bisim"};
@@ -104,6 +106,14 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("constraints", "The constraints to use.").build())
                                 .build());
 
+                this->addOption(storm::settings::OptionBuilder(moduleName, injectRefinementPredicatesOption, true, "Specifies predicates used by the refinement instead of the derived predicates.")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("predicates", "The (semicolon-separated) refinement predicates to use.").build())
+                                .build());
+                
+                this->addOption(storm::settings::OptionBuilder(moduleName, debugOptionName, true, "Sets whether to enable debug mode.")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("value", "The value of the flag.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(onOff))
+                                             .setDefaultValueString("off").build())
+                                .build());
             }
             
             AbstractionSettings::Method AbstractionSettings::getAbstractionRefinementMethod() const {
@@ -208,6 +218,18 @@ namespace storm {
             
             bool AbstractionSettings::isUseEagerRefinementSet() const {
                 return this->getOption(useEagerRefinementOptionName).getArgumentByName("value").getValueAsString() == "on";
+            }
+            
+            bool AbstractionSettings::isDebugSet() const {
+                return this->getOption(debugOptionName).getArgumentByName("value").getValueAsString() == "on";
+            }
+            
+            bool AbstractionSettings::isInjectRefinementPredicatesSet() const {
+                return this->getOption(injectRefinementPredicatesOption).getHasOptionBeenSet();
+            }
+            
+            std::string AbstractionSettings::getInjectedRefinementPredicates() const {
+                return this->getOption(injectRefinementPredicatesOption).getArgumentByName("predicates").getValueAsString();
             }
             
         }

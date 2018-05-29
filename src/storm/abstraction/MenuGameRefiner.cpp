@@ -14,6 +14,8 @@
 #include "storm/utility/solver.h"
 #include "storm/utility/shortestPaths.h"
 
+#include "storm/parser/ExpressionParser.h"
+
 #include "storm/solver/MathsatSmtSolver.h"
 
 #include "storm/models/symbolic/StandardRewardModel.h"
@@ -76,7 +78,7 @@ namespace storm {
             addPredicatesEagerly = abstractionSettings.isUseEagerRefinementSet();
             
             equivalenceChecker.addConstraints(abstractor.getAbstractionInformation().getConstraints());
-            if (storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isAddAllGuardsSet()) {
+            if (abstractionSettings.isAddAllGuardsSet()) {
                 std::vector<storm::expressions::Expression> guards;
                 
                 std::pair<uint64_t, uint64_t> player1Choices = this->abstractor.get().getPlayer1ChoiceRange();
@@ -91,11 +93,34 @@ namespace storm {
                 this->abstractor.get().notifyGuardsArePredicates();
                 addedAllGuardsFlag = true;
             }
+            
+            if (abstractionSettings.isInjectRefinementPredicatesSet()) {
+                std::string predicatesString = abstractionSettings.getInjectedRefinementPredicates();
+                std::vector<std::string> predicatesAsStrings;
+                boost::split(predicatesAsStrings, predicatesString, boost::is_any_of(";"));
+                
+                auto const& expressionManager = abstractor.getAbstractionInformation().getExpressionManager();
+                storm::parser::ExpressionParser expressionParser(expressionManager);
+                std::unordered_map<std::string, storm::expressions::Expression> variableMapping;
+                for (auto const& variableTypePair : expressionManager) {
+                    variableMapping[variableTypePair.first.getName()] = variableTypePair.first;
+                }
+                expressionParser.setIdentifierMapping(variableMapping);
+                
+                for (auto const& predicateString : predicatesAsStrings) {
+                    storm::expressions::Expression predicate = expressionParser.parseFromString(predicateString);
+                    STORM_LOG_TRACE("Adding special (user-provided) refinement predicate " << predicateString << ".");
+                    refinementPredicatesToInject.emplace_back(predicate);
+                }
+
+                // Finally reverse the list, because we take the predicates from the back.
+                std::reverse(refinementPredicatesToInject.begin(), refinementPredicatesToInject.end());
+            }
         }
         
         template<storm::dd::DdType Type, typename ValueType>
-        void MenuGameRefiner<Type, ValueType>::refine(std::vector<storm::expressions::Expression> const& predicates) const {
-            performRefinement(createGlobalRefinement(preprocessPredicates(predicates, RefinementPredicates::Source::Manual)));
+        void MenuGameRefiner<Type, ValueType>::refine(std::vector<storm::expressions::Expression> const& predicates, bool allowInjection) const {
+            performRefinement(createGlobalRefinement(preprocessPredicates(predicates, RefinementPredicates::Source::Manual)), allowInjection);
         }
         
         template<storm::dd::DdType Type, typename ValueType>
@@ -279,10 +304,6 @@ namespace storm {
                 // Decode both choices to explicit mappings.
                 std::map<uint64_t, std::pair<storm::storage::BitVector, ValueType>> lowerChoiceUpdateToSuccessorMapping = abstractionInformation.template decodeChoiceToUpdateSuccessorMapping<ValueType>(lowerChoice);
                 std::map<uint64_t, std::pair<storm::storage::BitVector, ValueType>> upperChoiceUpdateToSuccessorMapping = abstractionInformation.template decodeChoiceToUpdateSuccessorMapping<ValueType>(upperChoice);
-                
-                lowerChoice.template toAdd<ValueType>().exportToDot("lower.dot");
-                upperChoice.template toAdd<ValueType>().exportToDot("upper.dot");
-
                 STORM_LOG_ASSERT(lowerChoiceUpdateToSuccessorMapping.size() == upperChoiceUpdateToSuccessorMapping.size(), "Mismatching sizes after decode (" << lowerChoiceUpdateToSuccessorMapping.size() << " vs. " << upperChoiceUpdateToSuccessorMapping.size() << ").");
                 
                 // First, sort updates according to probability mass.
@@ -536,7 +557,11 @@ namespace storm {
                 if (additionalPredicates.get().getSource() == RefinementPredicates::Source::Guard) {
                     return additionalPredicates.get();
                 } else {
-                    predicates.get().addPredicates(additionalPredicates.get().getPredicates());
+                    if (!predicates) {
+                        predicates = additionalPredicates;
+                    } else {
+                        predicates.get().addPredicates(additionalPredicates.get().getPredicates());
+                    }
                 }
             }
             
@@ -1569,14 +1594,20 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type, typename ValueType>
-        void MenuGameRefiner<Type, ValueType>::performRefinement(std::vector<RefinementCommand> const& refinementCommands) const {
-            for (auto const& command : refinementCommands) {
-                STORM_LOG_INFO("Refining with " << command.getPredicates().size() << " predicates.");
-                for (auto const& predicate : command.getPredicates()) {
-                    STORM_LOG_INFO(predicate);
-                }
-                if (!command.getPredicates().empty()) {
-                    abstractor.get().refine(command);
+        void MenuGameRefiner<Type, ValueType>::performRefinement(std::vector<RefinementCommand> const& refinementCommands, bool allowInjection) const {
+            if (!refinementPredicatesToInject.empty() && allowInjection) {
+                STORM_LOG_INFO("Refining with (injected) predicate " << refinementPredicatesToInject.back() << ".");
+                abstractor.get().refine(RefinementCommand({refinementPredicatesToInject.back()}));
+                refinementPredicatesToInject.pop_back();
+            } else {
+                for (auto const& command : refinementCommands) {
+                    STORM_LOG_INFO("Refining with " << command.getPredicates().size() << " predicates.");
+                    for (auto const& predicate : command.getPredicates()) {
+                        STORM_LOG_INFO(predicate);
+                    }
+                    if (!command.getPredicates().empty()) {
+                        abstractor.get().refine(command);
+                    }
                 }
             }
             

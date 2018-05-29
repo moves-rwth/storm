@@ -56,7 +56,7 @@ namespace storm {
                  * @param smtSolverFactory A factory that is to be used for creating new SMT solvers.
                  * @param useDecomposition A flag indicating whether to use the decomposition during abstraction.
                  */
-                CommandAbstractor(storm::prism::Command const& command, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool useDecomposition);
+                CommandAbstractor(storm::prism::Command const& command, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool useDecomposition, bool debug);
                                
                 /*!
                  * Refines the abstract command with the given predicates.
@@ -268,6 +268,9 @@ namespace storm {
                 
                 // A state-set abstractor used to determine the bottom states if not all guards were added.
                 StateSetAbstractor<DdType, ValueType> bottomStateAbstractor;
+                
+                // A flag that indicates whether or not debug mode is enabled.
+                bool debug;
             };
         }
     }
