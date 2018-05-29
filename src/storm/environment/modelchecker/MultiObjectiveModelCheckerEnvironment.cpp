@@ -20,6 +20,9 @@ namespace storm {
         if (multiobjectiveSettings.isMaxStepsSet()) {
             maxSteps = multiobjectiveSettings.getMaxSteps();
         }
+        if (multiobjectiveSettings.hasSchedulerRestriction()) {
+            schedulerRestriction = multiobjectiveSettings.getSchedulerRestriction();
+        }
     }
     
     MultiObjectiveModelCheckerEnvironment::~MultiObjectiveModelCheckerEnvironment() {

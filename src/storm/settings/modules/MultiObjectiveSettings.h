@@ -3,6 +3,7 @@
 
 #include "storm/settings/modules/ModuleSettings.h"
 #include "storm/modelchecker/multiobjective/MultiObjectiveModelCheckingMethod.h"
+#include "storm/storage/SchedulerClass.h"
 
 namespace storm {
     namespace settings {
@@ -57,6 +58,16 @@ namespace storm {
                  */
                 uint_fast64_t getMaxSteps() const;
                 
+				/*!
+				 * Retrieves whether a scheduler restriction has been set.
+				 */
+				bool hasSchedulerRestriction() const;
+				
+				/*!
+				 * Retrieves the scheduler restriction if it has been set.
+				 */
+				storm::storage::SchedulerClass getSchedulerRestriction() const;
+				
                 
                 /*!
                  * Checks whether the settings are consistent. If they are inconsistent, an exception is thrown.
@@ -73,6 +84,7 @@ namespace storm {
 				const static std::string exportPlotOptionName;
 				const static std::string precisionOptionName;
 				const static std::string maxStepsOptionName;
+				const static std::string schedulerRestrictionOptionName;
             };
             
         } // namespace modules

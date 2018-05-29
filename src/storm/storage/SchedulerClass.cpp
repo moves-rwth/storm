@@ -4,7 +4,7 @@
 
 namespace storm {
     namespace storage {
-        SchedulerClass::SchedulerClass() : deterministic(false), memorystates(0) {
+        SchedulerClass::SchedulerClass() : deterministic(false), memorystates(0), memoryPattern(MemoryPattern::Arbitrary) {
             // Intentionally left empty
         }
         
@@ -21,6 +21,13 @@ namespace storm {
             return memorystates;
         }
         
+        SchedulerClass::MemoryPattern SchedulerClass::getMemoryPattern() const {
+            return memoryPattern;
+        }
+
+        bool SchedulerClass::isPositional() const {
+            return getMemoryStates() == 1 && getMemoryPattern() == MemoryPattern::Arbitrary;
+        }
         
         SchedulerClass& SchedulerClass::setIsDeterministic(bool value) {
             deterministic = value;
@@ -38,6 +45,14 @@ namespace storm {
             return *this;
         }
         
+        void SchedulerClass::setMemoryPattern(MemoryPattern const& pattern) {
+            memoryPattern = pattern;
+        }
         
+        void SchedulerClass::setPositional() {
+            setMemoryPattern(MemoryPattern::Arbitrary);
+            setMemoryStates(1);
+        }
+       
     }
 }
