@@ -925,6 +925,9 @@ namespace storm {
             
             ExplicitQualitativeGameResultMinMax result;
 
+            ExplicitQualitativeGameResult problematicStates = storm::utility::graph::performProb0(transitionMatrix, player1Groups, player1BackwardTransitions, player2BackwardTransitions, constraintStates, targetStates, storm::OptimizationDirection::Minimize, storm::OptimizationDirection::Minimize);
+            std::cout << "Found " << problematicStates.getStates().getNumberOfSetBits() << " problematic states" << std::endl;
+            
             result.prob0Min = storm::utility::graph::performProb0(transitionMatrix, player1Groups, player1BackwardTransitions, player2BackwardTransitions, constraintStates, targetStates, player1Direction, storm::OptimizationDirection::Minimize, &minStrategyPair);
             result.prob1Min = storm::utility::graph::performProb1(transitionMatrix, player1Groups, player1BackwardTransitions, player2BackwardTransitions, constraintStates, targetStates, player1Direction, storm::OptimizationDirection::Minimize, &minStrategyPair);
             result.prob0Max = storm::utility::graph::performProb0(transitionMatrix, player1Groups, player1BackwardTransitions, player2BackwardTransitions, constraintStates, targetStates, player1Direction, storm::OptimizationDirection::Maximize, &maxStrategyPair);
