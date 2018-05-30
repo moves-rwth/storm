@@ -544,8 +544,18 @@ namespace storm {
                         break;
                     }
                     case storm::storage::DFTElementType::SEQ:
-                        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "SMT encoding of SEQs is not implemented yet.");
+                    {
+                        // Constraint for SEQ gate (constraint 4)
+                        // As the restriction is not a gate we have to enumerate its children here
+                        auto seq = std::static_pointer_cast<storm::storage::DFTRestriction<double> const>(element);
+                        for (auto const& child : seq->children()) {
+                            childVarIndices.push_back(timePointVariables.at(child->id()));
+                        }
+
+                        constraints.push_back(std::make_shared<Sorted>(childVarIndices));
+                        constraints.back()->setDescription("SEQ gate " + element->name());
                         break;
+                    }
                     case storm::storage::DFTElementType::SPARE:
                     {
                         auto spare = std::static_pointer_cast<storm::storage::DFTSpare<double> const>(element);
