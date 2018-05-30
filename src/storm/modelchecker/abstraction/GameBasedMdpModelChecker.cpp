@@ -2,6 +2,7 @@
 
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
+#include "storm/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
 
 #include "storm/models/symbolic/StandardRewardModel.h"
 #include "storm/models/symbolic/Dtmc.h"
@@ -33,6 +34,7 @@
 
 #include "storm/solver/SymbolicGameSolver.h"
 #include "storm/solver/StandardGameSolver.h"
+#include "storm/environment/Environment.h"
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/CoreSettings.h"
@@ -414,8 +416,10 @@ namespace storm {
 
             // If there is a previous result, unpack the previous values with respect to the new ODD.
             if (previousResult) {
-                previousResult.get().odd.oldToNewIndex(odd, [&previousResult,&result,player2Min] (uint64_t oldOffset, uint64_t newOffset) {
-                    result.getValues()[newOffset] = player2Min ? previousResult.get().values.getMin().getValues()[oldOffset] : previousResult.get().values.getMax().getValues()[oldOffset];
+                previousResult.get().odd.oldToNewIndex(odd, [&previousResult,&result,player2Min,player1Prob1States] (uint64_t oldOffset, uint64_t newOffset) {
+                    if (!player2Min && !player1Prob1States.get(newOffset)) {
+                        result.getValues()[newOffset] = player2Min ? previousResult.get().values.getMin().getValues()[oldOffset] : previousResult.get().values.getMax().getValues()[oldOffset];
+                    }
                 });
             }
             
@@ -494,7 +498,7 @@ namespace storm {
             
             // Set values according to quantitative result (qualitative result has already been taken care of).
             storm::utility::vector::setVectorValues(result.getValues(), maybeStates, values);
-                        
+
             // Obtain strategies from solver and fuse them with the pre-existing strategy pair for the qualitative result.
             uint64_t previousPlayer1MaybeStates = 0;
             uint64_t previousPlayer2MaybeStates = 0;
@@ -804,7 +808,7 @@ namespace storm {
                 if (result) {
                     return result;
                 }
-
+                
                 // (8) Solve the max values and check whether we can give the answer already.
                 quantitativeResult.setMax(computeQuantitativeResult(env, player1Direction, storm::OptimizationDirection::Maximize, transitionMatrix, player1Groups, qualitativeResult, maybeMax, maxStrategyPair, odd, &quantitativeResult.getMin(), &minStrategyPair));
                 result = checkForResultAfterQuantitativeCheck<ValueType>(checkTask, storm::OptimizationDirection::Maximize, quantitativeResult.getMax().getRange(initialStates));
@@ -818,6 +822,100 @@ namespace storm {
                 result = checkForResultAfterQuantitativeCheck<ValueType>(quantitativeResult.getMin().getRange(initialStates).first, quantitativeResult.getMax().getRange(initialStates).second, comparator);
                 if (result) {
                     return result;
+                }
+
+//                std::cout << "target states " << targetStates << std::endl;
+                
+                for (uint64_t state = 0; state < player1Groups.size() - 1; ++state) {
+                    std::cout << "state " << state << " has values [" << quantitativeResult.getMin().getValues()[state] << ", " << quantitativeResult.getMax().getValues()[state] << "]" << std::endl;
+                    
+                    STORM_LOG_ASSERT(targetStates.get(state) || minStrategyPair.getPlayer1Strategy().hasDefinedChoice(state), "Expected lower player 1 choice in state " << state << ".");
+                    STORM_LOG_ASSERT(targetStates.get(state) || maxStrategyPair.getPlayer1Strategy().hasDefinedChoice(state), "Expected upper player 1 choice in state " << state << ".");
+
+                    if (minStrategyPair.getPlayer1Strategy().hasDefinedChoice(state)) {
+                        uint64_t lowerPlayer1Choice = minStrategyPair.getPlayer1Strategy().getChoice(state);
+                        
+                        STORM_LOG_ASSERT(minStrategyPair.getPlayer2Strategy().hasDefinedChoice(lowerPlayer1Choice), "Expected lower player 2 choice for state " << state << " (upper player 1 choice " << lowerPlayer1Choice << ").");
+                        uint64_t lowerPlayer2Choice = minStrategyPair.getPlayer2Strategy().getChoice(lowerPlayer1Choice);
+
+                        if (maxStrategyPair.getPlayer2Strategy().hasDefinedChoice(lowerPlayer1Choice)) {
+                            uint64_t upperPlayer2Choice = maxStrategyPair.getPlayer2Strategy().getChoice(lowerPlayer1Choice);
+                        
+                            if (lowerPlayer2Choice != upperPlayer2Choice) {
+                                ValueType lowerValueUnderLowerChoice = transitionMatrix.multiplyRowWithVector(lowerPlayer2Choice, quantitativeResult.getMin().getValues());
+                                ValueType lowerValueUnderUpperChoice = transitionMatrix.multiplyRowWithVector(upperPlayer2Choice, quantitativeResult.getMin().getValues());
+                                
+                                if (lowerValueUnderUpperChoice <= lowerValueUnderLowerChoice) {
+                                    minStrategyPair.getPlayer2Strategy().setChoice(lowerPlayer1Choice, upperPlayer2Choice);
+                                    std::cout << "[min] redirecting choice of state " << state << ": " << lowerValueUnderLowerChoice << " vs. " << lowerValueUnderUpperChoice << std::endl;
+                                }
+                            }
+                        }
+                    }
+                    
+                    if (maxStrategyPair.getPlayer1Strategy().hasDefinedChoice(state)) {
+                        uint64_t upperPlayer1Choice = maxStrategyPair.getPlayer1Strategy().getChoice(state);
+                        
+                        STORM_LOG_ASSERT(maxStrategyPair.getPlayer2Strategy().hasDefinedChoice(upperPlayer1Choice), "Expected upper player 2 choice for state " << state << " (upper player 1 choice " << upperPlayer1Choice << ").");
+                        uint64_t upperPlayer2Choice = minStrategyPair.getPlayer2Strategy().getChoice(upperPlayer1Choice);
+                        
+                        if (minStrategyPair.getPlayer2Strategy().hasDefinedChoice(upperPlayer1Choice)) {
+                            uint64_t lowerPlayer2Choice = minStrategyPair.getPlayer2Strategy().getChoice(upperPlayer1Choice);
+                            
+                            if (lowerPlayer2Choice != upperPlayer2Choice) {
+                                ValueType lowerValueUnderLowerChoice = transitionMatrix.multiplyRowWithVector(lowerPlayer2Choice, quantitativeResult.getMin().getValues());
+                                ValueType lowerValueUnderUpperChoice = transitionMatrix.multiplyRowWithVector(upperPlayer2Choice, quantitativeResult.getMin().getValues());
+
+                                if (lowerValueUnderUpperChoice <= lowerValueUnderLowerChoice) {
+                                    minStrategyPair.getPlayer2Strategy().setChoice(upperPlayer1Choice, upperPlayer2Choice);
+                                    std::cout << "[max] redirecting choice of state " << state << ": " << lowerValueUnderLowerChoice << " vs. " << lowerValueUnderUpperChoice << std::endl;
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                ///////// SANITY CHECK: apply lower strategy, obtain DTMC matrix and model check it. the values should
+                ///////// still be the lower ones.
+                storm::storage::SparseMatrixBuilder<ValueType> dtmcMatrixBuilder(player1Groups.size() - 1, player1Groups.size() - 1);
+                for (uint64_t state = 0; state < player1Groups.size() - 1; ++state) {
+                    if (targetStates.get(state)) {
+                        dtmcMatrixBuilder.addNextValue(state, state, storm::utility::one<ValueType>());
+                    } else {
+                        uint64_t player2Choice = minStrategyPair.getPlayer2Strategy().getChoice(minStrategyPair.getPlayer1Strategy().getChoice(state));
+                        for (auto const& entry : transitionMatrix.getRow(player2Choice)) {
+                            dtmcMatrixBuilder.addNextValue(state, entry.getColumn(), entry.getValue());
+                        }
+                    }
+                }
+                auto dtmcMatrix = dtmcMatrixBuilder.build();
+                std::vector<ValueType> sanityValues = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeUntilProbabilities(Environment(), storm::solver::SolveGoal<ValueType>(), dtmcMatrix, dtmcMatrix.transpose(), constraintStates, targetStates, false);
+                
+                for (uint64_t state = 0; state < player1Groups.size() - 1; ++state) {
+                    std::cout << "state " << state << ": " << sanityValues[state] << " vs " << quantitativeResult.getMin().getValues()[state] << std::endl;
+                    std::cout << "[min] state is prob0? " << qualitativeResult.getProb0Min().getStates().get(state) << ", prob1? " << qualitativeResult.getProb1Min().getStates().get(state) << std::endl;
+                    STORM_LOG_ASSERT(std::abs(sanityValues[state] - quantitativeResult.getMin().getValues()[state]) < 1e-6, "Got weird min divergences!");
+                }
+                ///////// SANITY CHECK: apply upper strategy, obtain DTMC matrix and model check it. the values should
+                ///////// still be the upper ones.
+                dtmcMatrixBuilder = storm::storage::SparseMatrixBuilder<ValueType>(player1Groups.size() - 1, player1Groups.size() - 1);
+                for (uint64_t state = 0; state < player1Groups.size() - 1; ++state) {
+                    if (targetStates.get(state)) {
+                        dtmcMatrixBuilder.addNextValue(state, state, storm::utility::one<ValueType>());
+                    } else {
+                        uint64_t player2Choice = maxStrategyPair.getPlayer2Strategy().getChoice(maxStrategyPair.getPlayer1Strategy().getChoice(state));
+                        for (auto const& entry : transitionMatrix.getRow(player2Choice)) {
+                            dtmcMatrixBuilder.addNextValue(state, entry.getColumn(), entry.getValue());
+                        }
+                    }
+                }
+                dtmcMatrix = dtmcMatrixBuilder.build();
+                sanityValues = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeUntilProbabilities(Environment(), storm::solver::SolveGoal<ValueType>(), dtmcMatrix, dtmcMatrix.transpose(), constraintStates, targetStates, false);
+                
+                for (uint64_t state = 0; state < player1Groups.size() - 1; ++state) {
+                    std::cout << "state " << state << ": " << sanityValues[state] << " vs " << quantitativeResult.getMax().getValues()[state] << std::endl;
+                    std::cout << "[max] state is prob0? " << qualitativeResult.getProb0Max().getStates().get(state) << ", prob1? " << qualitativeResult.getProb1Max().getStates().get(state) << std::endl;
+                    STORM_LOG_ASSERT(std::abs(sanityValues[state] - quantitativeResult.getMax().getValues()[state]) < 1e-6, "Got weird max divergences!");
                 }
 
                 // Make sure that all strategies are still valid strategies.
@@ -926,7 +1024,6 @@ namespace storm {
             ExplicitQualitativeGameResultMinMax result;
 
             ExplicitQualitativeGameResult problematicStates = storm::utility::graph::performProb0(transitionMatrix, player1Groups, player1BackwardTransitions, player2BackwardTransitions, constraintStates, targetStates, storm::OptimizationDirection::Minimize, storm::OptimizationDirection::Minimize);
-            std::cout << "Found " << problematicStates.getStates().getNumberOfSetBits() << " problematic states" << std::endl;
             
             result.prob0Min = storm::utility::graph::performProb0(transitionMatrix, player1Groups, player1BackwardTransitions, player2BackwardTransitions, constraintStates, targetStates, player1Direction, storm::OptimizationDirection::Minimize, &minStrategyPair);
             result.prob1Min = storm::utility::graph::performProb1(transitionMatrix, player1Groups, player1BackwardTransitions, player2BackwardTransitions, constraintStates, targetStates, player1Direction, storm::OptimizationDirection::Minimize, &minStrategyPair);

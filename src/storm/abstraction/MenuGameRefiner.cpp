@@ -1097,9 +1097,14 @@ namespace storm {
             ValueType pivotStateDeviation = storm::utility::zero<ValueType>();
             auto const& player2Grouping = transitionMatrix.getRowGroupIndices();
             
+            storm::storage::BitVector visitedStates(initialStates.size());
             while (!dijkstraQueue.empty()) {
                 auto distanceStatePair = *dijkstraQueue.begin();
                 uint64_t currentState = distanceStatePair.second;
+                visitedStates.set(currentState);
+                std::cout << "current: " << currentState << std::endl;
+                std::cout << "visited: " << visitedStates << std::endl;
+
                 ValueType currentDistance = distanceStatePair.first;
                 dijkstraQueue.erase(dijkstraQueue.begin());
                 
@@ -1128,10 +1133,10 @@ namespace storm {
                     if (minStrategyPair.getPlayer2Strategy().hasDefinedChoice(player2Successor) && maxStrategyPair.getPlayer2Strategy().hasDefinedChoice(player2Successor) && minStrategyPair.getPlayer2Strategy().getChoice(player2Successor) != maxStrategyPair.getPlayer2Strategy().getChoice(player2Successor)) {
                         isPivotState = true;
                     }
-                }                
+                }
+                
                 // If it is indeed a pivot state, we can abort the search here.
                 if (isPivotState) {
-                    
                     if (considerDeviation && foundPivotState) {
                         ValueType deviationOfCurrentState = (*upperValues)[currentState] - (*lowerValues)[currentState];
                         if (deviationOfCurrentState > pivotStateDeviation) {
@@ -1154,10 +1159,13 @@ namespace storm {
                     }
                 }
                 
+                // TODO: remember the strategy from which we came and only go on to explore that further?
+                
                 // Otherwise, we explore all its relevant successors.
                 if (minStrategyPair.getPlayer1Strategy().hasDefinedChoice(currentState)) {
                     uint64_t minPlayer2Successor = minStrategyPair.getPlayer1Strategy().getChoice(currentState);
                     uint64_t minPlayer2Choice = minStrategyPair.getPlayer2Strategy().getChoice(minPlayer2Successor);
+                    STORM_LOG_ASSERT(!maxStrategyPair.getPlayer2Strategy().hasDefinedChoice(minPlayer2Successor) || minStrategyPair.getPlayer2Strategy().getChoice(minPlayer2Successor) == minPlayer2Choice, "Did not expect deviation in player 2 strategy.");
                     STORM_LOG_ASSERT(player2Grouping[minPlayer2Successor] <= minPlayer2Choice && minPlayer2Choice < player2Grouping[minPlayer2Successor + 1], "Illegal choice for player 2.");
 
                     for (auto const& entry : transitionMatrix.getRow(minPlayer2Choice)) {
@@ -1175,10 +1183,13 @@ namespace storm {
                             dijkstraQueue.emplace(alternateDistance, player1Successor);
                         }
                     }
+                } else {
+                    STORM_LOG_ASSERT(targetStates.get(currentState), "Expecting min strategy for non-target states.");
                 }
                 if (maxStrategyPair.getPlayer1Strategy().hasDefinedChoice(currentState)) {
                     uint64_t maxPlayer2Successor = maxStrategyPair.getPlayer1Strategy().getChoice(currentState);
                     uint64_t maxPlayer2Choice = maxStrategyPair.getPlayer2Strategy().getChoice(maxPlayer2Successor);
+                    STORM_LOG_ASSERT(!minStrategyPair.getPlayer2Strategy().hasDefinedChoice(maxPlayer2Successor) || minStrategyPair.getPlayer2Strategy().getChoice(maxPlayer2Successor) == maxPlayer2Choice, "Did not expect deviation in player 2 strategy.");
                     STORM_LOG_ASSERT(player2Grouping[maxPlayer2Successor] <= maxPlayer2Choice && maxPlayer2Choice < player2Grouping[maxPlayer2Successor + 1], "Illegal choice for player 2.");
 
                     for (auto const& entry : transitionMatrix.getRow(maxPlayer2Choice)) {
@@ -1188,7 +1199,7 @@ namespace storm {
                         }
                         
                         ValueType alternateDistance = probabilityDistances ? currentDistance * entry.getValue() : currentDistance + storm::utility::one<ValueType>();
-                        if (probabilityDistances ? alternateDistance > distances[player1Successor] : !probabilityDistances && alternateDistance < distances[player1Successor]) {
+                        if (probabilityDistances ? alternateDistance > distances[player1Successor] : alternateDistance < distances[player1Successor]) {
                             distances[player1Successor] = alternateDistance;
                             if (generatePredecessors) {
                                 result.predecessors[player1Successor] = std::make_pair(currentState, player1Labeling[maxPlayer2Successor]);
@@ -1196,6 +1207,8 @@ namespace storm {
                             dijkstraQueue.emplace(alternateDistance, player1Successor);
                         }
                     }
+                } else {
+                    STORM_LOG_ASSERT(targetStates.get(currentState), "Expecting max strategy for non-target states.");
                 }
             }
             
@@ -1205,6 +1218,7 @@ namespace storm {
 
             // If we arrived at this point, we have explored all relevant states, but none of them was a pivot state,
             // which can happen when trying to refine using the qualitative result only.
+            STORM_LOG_TRACE("Did not find pivot state in explicit Dijkstra search.");
             return boost::none;
         }
         
