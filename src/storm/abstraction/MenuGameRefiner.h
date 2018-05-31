@@ -40,7 +40,7 @@ namespace storm {
         class RefinementPredicates {
         public:
             enum class Source {
-                WeakestPrecondition, InitialGuard, Guard, Interpolation, Manual
+                WeakestPrecondition, InitialGuard, InitialExpression, Guard, Interpolation, Manual
             };
             
             RefinementPredicates() = default;

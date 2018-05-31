@@ -17,6 +17,7 @@ namespace storm {
             const std::string AbstractionSettings::useDecompositionOptionName = "decomposition";
             const std::string AbstractionSettings::splitModeOptionName = "split";
             const std::string AbstractionSettings::addAllGuardsOptionName = "all-guards";
+            const std::string AbstractionSettings::addInitialExpressionsOptionName = "all-inits";
             const std::string AbstractionSettings::useInterpolationOptionName = "interpolation";
             const std::string AbstractionSettings::precisionOptionName = "precision";
             const std::string AbstractionSettings::relativeOptionName = "relative";
@@ -65,7 +66,12 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("value", "The value of the flag.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(onOff))
                                              .setDefaultValueString("on").build())
                                 .build());
-                
+
+                this->addOption(storm::settings::OptionBuilder(moduleName, addInitialExpressionsOptionName, true, "Sets whether all initial expressions are added as initial predicates.")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("value", "The value of the flag.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(onOff))
+                                             .setDefaultValueString("on").build())
+                                .build());
+
                 this->addOption(storm::settings::OptionBuilder(moduleName, useInterpolationOptionName, true, "Sets whether interpolation is to be used to eliminate spurious pivot blocks.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("value", "The value of the flag.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(onOff))
                                              .setDefaultValueString("on").build())
@@ -164,6 +170,10 @@ namespace storm {
             
             bool AbstractionSettings::isAddAllGuardsSet() const {
                 return this->getOption(addAllGuardsOptionName).getArgumentByName("value").getValueAsString() == "on";
+            }
+            
+            bool AbstractionSettings::isAddAllInitialExpressionsSet() const {
+                return this->getOption(addInitialExpressionsOptionName).getArgumentByName("value").getValueAsString() == "on";
             }
             
             void AbstractionSettings::setAddAllGuards(bool value) {

@@ -63,6 +63,13 @@ namespace storm {
                 bool isAddAllGuardsSet() const;
                 
                 /*!
+                 * Retrieves whether the option to add all initial expressions was set.
+                 *
+                 * @return True iff the option was set.
+                 */
+                bool isAddAllInitialExpressionsSet() const;
+                
+                /*!
                  * Sets the option to add all guards to the specified value.
                  *
                  * @param value The new value.
@@ -179,6 +186,7 @@ namespace storm {
                 const static std::string useDecompositionOptionName;
                 const static std::string splitModeOptionName;
                 const static std::string addAllGuardsOptionName;
+                const static std::string addInitialExpressionsOptionName;
                 const static std::string useInterpolationOptionName;
                 const static std::string precisionOptionName;
                 const static std::string relativeOptionName;

@@ -76,7 +76,7 @@ namespace storm {
              * computation.
              */
             virtual void notifyGuardsArePredicates() = 0;
-            
+                        
         protected:
             bool isRestrictToRelevantStatesSet() const;
             

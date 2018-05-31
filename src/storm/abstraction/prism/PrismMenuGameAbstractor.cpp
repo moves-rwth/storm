@@ -276,7 +276,7 @@ namespace storm {
                     module.notifyGuardsArePredicates();
                 }
             }
-            
+                        
             // Explicitly instantiate the class.
             template class PrismMenuGameAbstractor<storm::dd::DdType::CUDD, double>;
             template class PrismMenuGameAbstractor<storm::dd::DdType::Sylvan, double>;

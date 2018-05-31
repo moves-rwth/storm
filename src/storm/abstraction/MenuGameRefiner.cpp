@@ -93,6 +93,10 @@ namespace storm {
                 this->abstractor.get().notifyGuardsArePredicates();
                 addedAllGuardsFlag = true;
             }
+            if (abstractionSettings.isAddAllInitialExpressionsSet()) {
+                storm::expressions::Expression initialExpression = this->abstractor.get().getInitialExpression();
+                performRefinement(createGlobalRefinement(preprocessPredicates({initialExpression}, RefinementPredicates::Source::InitialExpression)));
+            }
             
             if (abstractionSettings.isInjectRefinementPredicatesSet()) {
                 std::string predicatesString = abstractionSettings.getInjectedRefinementPredicates();
