@@ -76,6 +76,9 @@ namespace storm {
         template<typename ValueType>
         struct ExplicitPivotStateResult {
             ExplicitPivotStateResult() = default;
+            ExplicitPivotStateResult(uint64_t pivotState, ValueType distance, std::vector<std::pair<uint64_t, uint64_t>>&& predecessors) : pivotState(pivotState), distance(distance), predecessors(std::move(predecessors)) {
+                // Intentionally left empty.
+            }
             
             uint64_t pivotState;
                         

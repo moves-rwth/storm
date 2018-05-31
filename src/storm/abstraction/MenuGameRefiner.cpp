@@ -1060,64 +1060,135 @@ namespace storm {
         }
         
         template<typename ValueType>
+        struct ExplicitDijkstraQueueElement {
+            ExplicitDijkstraQueueElement(ValueType const& distance, uint64_t state, bool lower) : distance(distance), state(state), lower(lower) {
+                // Intentionally left empty.
+            }
+            
+            ValueType distance;
+            uint64_t state;
+            bool lower;
+        };
+        
+        template<typename ValueType>
+        struct ExplicitDijkstraQueueElementLess {
+            bool operator()(ExplicitDijkstraQueueElement<ValueType> const& a, ExplicitDijkstraQueueElement<ValueType> const& b) const {
+                if (a.distance < b.distance) {
+                    return true;
+                } else if (a.distance > b.distance) {
+                    return false;
+                } else {
+                    if (a.state < b.state) {
+                        return true;
+                    } else if (a.state > b.state) {
+                        return false;
+                    } else {
+                        if (a.lower < b.lower) {
+                            return true;
+                        } else {
+                            return false;
+                        }
+                    }
+                }
+            }
+        };
+        
+        template<typename ValueType>
+        void performDijkstraStep(std::set<ExplicitDijkstraQueueElement<ValueType>, ExplicitDijkstraQueueElementLess<ValueType>>& dijkstraQueue, bool probabilityDistances, std::vector<ValueType>& distances, std::vector<std::pair<uint64_t, uint64_t>>& predecessors, bool generatePredecessors, bool lower, uint64_t currentState, ValueType const& currentDistance, bool isPivotState, ExplicitGameStrategyPair const& strategyPair, ExplicitGameStrategyPair const& otherStrategyPair, std::vector<uint64_t> const& player1Labeling, std::vector<uint64_t> const& player2Grouping, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& targetStates, storm::storage::BitVector const& relevantStates) {
+            if (strategyPair.getPlayer1Strategy().hasDefinedChoice(currentState)) {
+                uint64_t player2Successor = strategyPair.getPlayer1Strategy().getChoice(currentState);
+                uint64_t player2Choice = strategyPair.getPlayer2Strategy().getChoice(player2Successor);
+                STORM_LOG_ASSERT(isPivotState || !otherStrategyPair.getPlayer2Strategy().hasDefinedChoice(player2Successor) || strategyPair.getPlayer2Strategy().getChoice(player2Successor) == player2Choice, "Did not expect deviation in player 2 strategy.");
+                STORM_LOG_ASSERT(player2Grouping[player2Successor] <= player2Choice && player2Choice < player2Grouping[player2Successor + 1], "Illegal choice for player 2.");
+                
+                for (auto const& entry : transitionMatrix.getRow(player2Choice)) {
+                    uint64_t player1Successor = entry.getColumn();
+                    if (!relevantStates.get(player1Successor)) {
+                        continue;
+                    }
+                    
+                    ValueType alternateDistance = probabilityDistances ? currentDistance * entry.getValue() : currentDistance + storm::utility::one<ValueType>();
+                    if (probabilityDistances ? alternateDistance > distances[player1Successor] : alternateDistance < distances[player1Successor]) {
+                        distances[player1Successor] = alternateDistance;
+                        if (generatePredecessors) {
+                            predecessors[player1Successor] = std::make_pair(currentState, player1Labeling[player2Successor]);
+                        }
+                        dijkstraQueue.emplace(alternateDistance, player1Successor, lower);
+                    }
+                }
+            } else {
+                STORM_LOG_ASSERT(targetStates.get(currentState), "Expecting min strategy for non-target states.");
+            }
+        }
+        
+        template<typename ValueType>
         boost::optional<ExplicitPivotStateResult<ValueType>> pickPivotState(bool generatePredecessors, AbstractionSettings::PivotSelectionHeuristic pivotSelectionHeuristic, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint64_t> const& player1Grouping, std::vector<uint64_t> const& player1Labeling, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& relevantStates, storm::storage::BitVector const& targetStates, ExplicitGameStrategyPair const& minStrategyPair, ExplicitGameStrategyPair const& maxStrategyPair, std::vector<ValueType> const* lowerValues = nullptr, std::vector<ValueType> const* upperValues = nullptr) {
             
             STORM_LOG_ASSERT(!lowerValues || upperValues, "Expected none or both value results.");
             STORM_LOG_ASSERT(!upperValues || lowerValues, "Expected none or both value results.");
 
-            // Perform Dijkstra search that stays within the relevant states and searches for a state in which the
-            // strategies for the (commonly chosen) player 1 action leads to a player 2 state in which the choices differ.
-            ExplicitPivotStateResult<ValueType> result;
+            // Perform Dijkstra search that stays within the relevant states and searches for a (pivot) state in which
+            // the strategies the lower or upper player 1 action leads to a player 2 state in which the choices differ.
+            // To guarantee that the pivot state is reachable by either of the strategies, we do a parallel Dijkstra
+            // search in both the lower and upper strategy.
             
             bool probabilityDistances = pivotSelectionHeuristic == storm::settings::modules::AbstractionSettings::PivotSelectionHeuristic::MostProbablePath;
             uint64_t numberOfStates = initialStates.size();
             ValueType inftyDistance = probabilityDistances ? storm::utility::zero<ValueType>() : storm::utility::infinity<ValueType>();
             ValueType zeroDistance = probabilityDistances ? storm::utility::one<ValueType>() : storm::utility::zero<ValueType>();
-            std::vector<ValueType> distances(numberOfStates, inftyDistance);
+
+            // Create storages for the lower and upper Dijkstra search.
+            std::vector<ValueType> lowerDistances(numberOfStates, inftyDistance);
+            std::vector<std::pair<uint64_t, uint64_t>> lowerPredecessors;
+            std::vector<ValueType> upperDistances(numberOfStates, inftyDistance);
+            std::vector<std::pair<uint64_t, uint64_t>> upperPredecessors;
+            
             if (generatePredecessors) {
-                result.predecessors.resize(numberOfStates, std::make_pair(ExplicitPivotStateResult<ValueType>::NO_PREDECESSOR, ExplicitPivotStateResult<ValueType>::NO_PREDECESSOR));
+                lowerPredecessors.resize(numberOfStates, std::make_pair(ExplicitPivotStateResult<ValueType>::NO_PREDECESSOR, ExplicitPivotStateResult<ValueType>::NO_PREDECESSOR));
+                upperPredecessors.resize(numberOfStates, std::make_pair(ExplicitPivotStateResult<ValueType>::NO_PREDECESSOR, ExplicitPivotStateResult<ValueType>::NO_PREDECESSOR));
             }
 
-            // Use set as priority queue with unique membership; default comparison on pair works fine if distance is
-            // the first entry.
-            std::set<std::pair<ValueType, uint64_t>, std::greater<std::pair<ValueType, uint64_t>>> dijkstraQueue;
+            // Use set as priority queue with unique membership.
+            std::set<ExplicitDijkstraQueueElement<ValueType>, ExplicitDijkstraQueueElementLess<ValueType>> dijkstraQueue;
             
             for (auto initialState : initialStates) {
                 if (!relevantStates.get(initialState)) {
                     continue;
                 }
                 
-                distances[initialState] = zeroDistance;
-                dijkstraQueue.emplace(zeroDistance, initialState);
+                lowerDistances[initialState] = zeroDistance;
+                upperDistances[initialState] = zeroDistance;
+                dijkstraQueue.emplace(zeroDistance, initialState, true);
+                dijkstraQueue.emplace(zeroDistance, initialState, false);
             }
 
             // For some heuristics, we need to potentially find more than just one pivot.
             bool considerDeviation = (pivotSelectionHeuristic == storm::settings::modules::AbstractionSettings::PivotSelectionHeuristic::NearestMaximalDeviation || pivotSelectionHeuristic == storm::settings::modules::AbstractionSettings::PivotSelectionHeuristic::MaxWeightedDeviation) && lowerValues && upperValues;
             bool foundPivotState = false;
+            
+            ExplicitDijkstraQueueElement<ValueType> pivotState(inftyDistance, 0, true);
             ValueType pivotStateDeviation = storm::utility::zero<ValueType>();
             auto const& player2Grouping = transitionMatrix.getRowGroupIndices();
             
-            storm::storage::BitVector visitedStates(initialStates.size());
             while (!dijkstraQueue.empty()) {
-                auto distanceStatePair = *dijkstraQueue.begin();
-                uint64_t currentState = distanceStatePair.second;
-                visitedStates.set(currentState);
-                std::cout << "current: " << currentState << std::endl;
-                std::cout << "visited: " << visitedStates << std::endl;
-
-                ValueType currentDistance = distanceStatePair.first;
+                // Take out currently best state.
+                auto currentDijkstraElement = *dijkstraQueue.begin();
+                ValueType currentDistance = currentDijkstraElement.distance;
+                uint64_t currentState = currentDijkstraElement.state;
+                bool currentLower = currentDijkstraElement.lower;
                 dijkstraQueue.erase(dijkstraQueue.begin());
                 
-                if (foundPivotState && (probabilityDistances ? currentDistance < result.distance : currentDistance > result.distance)) {
+                if (foundPivotState && (probabilityDistances ? currentDistance < pivotState.distance : currentDistance > pivotState.distance)) {
                     if (pivotSelectionHeuristic != storm::settings::modules::AbstractionSettings::PivotSelectionHeuristic::MaxWeightedDeviation) {
                         // For the nearest maximal deviation and most probable path heuristics, future pivot states are
                         // not important any more, because their distance will be strictly larger, so we can return the
                         // current pivot state.
-                        return result;
+                        
+                        return ExplicitPivotStateResult<ValueType>(pivotState.state, pivotState.distance, pivotState.lower ? std::move(lowerPredecessors) : std::move(upperPredecessors));
                     } else if (pivotStateDeviation >= currentDistance) {
                         // If the heuristic is maximal weighted deviation and the weighted deviation for any future pivot
                         // state is necessarily at most as high as the current one, we can abort the search.
-                        return result;
+                        return ExplicitPivotStateResult<ValueType>(pivotState.state, pivotState.distance, pivotState.lower ? std::move(lowerPredecessors) : std::move(upperPredecessors));
                     }
                 }
                 
@@ -1128,19 +1199,21 @@ namespace storm {
                     if (minStrategyPair.getPlayer2Strategy().hasDefinedChoice(player2Successor) && maxStrategyPair.getPlayer2Strategy().hasDefinedChoice(player2Successor) && minStrategyPair.getPlayer2Strategy().getChoice(player2Successor) != maxStrategyPair.getPlayer2Strategy().getChoice(player2Successor)) {
                         isPivotState = true;
                     }
-                } else if (maxStrategyPair.getPlayer1Strategy().hasDefinedChoice(currentState)) {
+                }
+                if (!isPivotState && maxStrategyPair.getPlayer1Strategy().hasDefinedChoice(currentState)) {
                     uint64_t player2Successor = maxStrategyPair.getPlayer1Strategy().getChoice(currentState);
                     if (minStrategyPair.getPlayer2Strategy().hasDefinedChoice(player2Successor) && maxStrategyPair.getPlayer2Strategy().hasDefinedChoice(player2Successor) && minStrategyPair.getPlayer2Strategy().getChoice(player2Successor) != maxStrategyPair.getPlayer2Strategy().getChoice(player2Successor)) {
                         isPivotState = true;
                     }
                 }
                 
-                // If it is indeed a pivot state, we can abort the search here.
+                // If it is indeed a pivot state, we can potentially abort the search here.
                 if (isPivotState) {
                     if (considerDeviation && foundPivotState) {
                         ValueType deviationOfCurrentState = (*upperValues)[currentState] - (*lowerValues)[currentState];
+                        
                         if (deviationOfCurrentState > pivotStateDeviation) {
-                            result.pivotState = currentState;
+                            pivotState = currentDijkstraElement;
                             pivotStateDeviation = deviationOfCurrentState;
                             if (pivotSelectionHeuristic == storm::settings::modules::AbstractionSettings::PivotSelectionHeuristic::MaxWeightedDeviation) {
                                 // Scale the deviation with the distance (probability) for this heuristic.
@@ -1148,71 +1221,25 @@ namespace storm {
                             }
                         }
                     } else if (!foundPivotState) {
-                        result.pivotState = currentState;
-                        result.distance = distances[currentState];
+                        pivotState = currentDijkstraElement;
                         foundPivotState = true;
                     }
                     
                     // If there is no need to look at other deviations, stop here.
                     if (!considerDeviation) {
-                        return result;
+                        return ExplicitPivotStateResult<ValueType>(pivotState.state, pivotState.distance, pivotState.lower ? std::move(lowerPredecessors) : std::move(upperPredecessors));
                     }
                 }
                 
-                // TODO: remember the strategy from which we came and only go on to explore that further?
-                
-                // Otherwise, we explore all its relevant successors.
-                if (minStrategyPair.getPlayer1Strategy().hasDefinedChoice(currentState)) {
-                    uint64_t minPlayer2Successor = minStrategyPair.getPlayer1Strategy().getChoice(currentState);
-                    uint64_t minPlayer2Choice = minStrategyPair.getPlayer2Strategy().getChoice(minPlayer2Successor);
-                    STORM_LOG_ASSERT(!maxStrategyPair.getPlayer2Strategy().hasDefinedChoice(minPlayer2Successor) || minStrategyPair.getPlayer2Strategy().getChoice(minPlayer2Successor) == minPlayer2Choice, "Did not expect deviation in player 2 strategy.");
-                    STORM_LOG_ASSERT(player2Grouping[minPlayer2Successor] <= minPlayer2Choice && minPlayer2Choice < player2Grouping[minPlayer2Successor + 1], "Illegal choice for player 2.");
-
-                    for (auto const& entry : transitionMatrix.getRow(minPlayer2Choice)) {
-                        uint64_t player1Successor = entry.getColumn();
-                        if (!relevantStates.get(player1Successor)) {
-                            continue;
-                        }
-                        
-                        ValueType alternateDistance = probabilityDistances ? currentDistance * entry.getValue() : currentDistance + storm::utility::one<ValueType>();
-                        if (probabilityDistances ? alternateDistance > distances[player1Successor] : alternateDistance < distances[player1Successor]) {
-                            distances[player1Successor] = alternateDistance;
-                            if (generatePredecessors) {
-                                result.predecessors[player1Successor] = std::make_pair(currentState, player1Labeling[minPlayer2Successor]);
-                            }
-                            dijkstraQueue.emplace(alternateDistance, player1Successor);
-                        }
-                    }
+                if (currentLower) {
+                    performDijkstraStep(dijkstraQueue, probabilityDistances, lowerDistances, lowerPredecessors, generatePredecessors, true, currentState, currentDistance, isPivotState, minStrategyPair, maxStrategyPair, player1Labeling, player2Grouping, transitionMatrix, targetStates, relevantStates);
                 } else {
-                    STORM_LOG_ASSERT(targetStates.get(currentState), "Expecting min strategy for non-target states.");
-                }
-                if (maxStrategyPair.getPlayer1Strategy().hasDefinedChoice(currentState)) {
-                    uint64_t maxPlayer2Successor = maxStrategyPair.getPlayer1Strategy().getChoice(currentState);
-                    uint64_t maxPlayer2Choice = maxStrategyPair.getPlayer2Strategy().getChoice(maxPlayer2Successor);
-                    STORM_LOG_ASSERT(!minStrategyPair.getPlayer2Strategy().hasDefinedChoice(maxPlayer2Successor) || minStrategyPair.getPlayer2Strategy().getChoice(maxPlayer2Successor) == maxPlayer2Choice, "Did not expect deviation in player 2 strategy.");
-                    STORM_LOG_ASSERT(player2Grouping[maxPlayer2Successor] <= maxPlayer2Choice && maxPlayer2Choice < player2Grouping[maxPlayer2Successor + 1], "Illegal choice for player 2.");
-
-                    for (auto const& entry : transitionMatrix.getRow(maxPlayer2Choice)) {
-                        uint64_t player1Successor = entry.getColumn();
-                        if (!relevantStates.get(player1Successor)) {
-                            continue;
-                        }
-                        
-                        ValueType alternateDistance = probabilityDistances ? currentDistance * entry.getValue() : currentDistance + storm::utility::one<ValueType>();
-                        if (probabilityDistances ? alternateDistance > distances[player1Successor] : alternateDistance < distances[player1Successor]) {
-                            distances[player1Successor] = alternateDistance;
-                            if (generatePredecessors) {
-                                result.predecessors[player1Successor] = std::make_pair(currentState, player1Labeling[maxPlayer2Successor]);
-                            }
-                            dijkstraQueue.emplace(alternateDistance, player1Successor);
-                        }
-                    }
-                } else {
-                    STORM_LOG_ASSERT(targetStates.get(currentState), "Expecting max strategy for non-target states.");
+                    performDijkstraStep(dijkstraQueue, probabilityDistances, upperDistances, upperPredecessors, generatePredecessors, true, currentState, currentDistance, isPivotState, maxStrategyPair, minStrategyPair, player1Labeling, player2Grouping, transitionMatrix, targetStates, relevantStates);
                 }
             }
             
             if (foundPivotState) {
+                ExplicitPivotStateResult<ValueType> result;
                 return result;
             }
 

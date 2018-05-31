@@ -59,7 +59,7 @@ namespace storm {
         using detail::PreviousExplicitResult;
 
         template<storm::dd::DdType Type, typename ModelType>
-        GameBasedMdpModelChecker<Type, ModelType>::GameBasedMdpModelChecker(storm::storage::SymbolicModelDescription const& model, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory) : smtSolverFactory(smtSolverFactory), comparator(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getPrecision() * 2, storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getRelativeTerminationCriterion()), reuseQualitativeResults(false), reuseQuantitativeResults(false), solveMode(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getSolveMode()) {
+        GameBasedMdpModelChecker<Type, ModelType>::GameBasedMdpModelChecker(storm::storage::SymbolicModelDescription const& model, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory) : smtSolverFactory(smtSolverFactory), comparator(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getPrecision() * 2, storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getRelativeTerminationCriterion()), reuseQualitativeResults(false), reuseQuantitativeResults(false), solveMode(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getSolveMode()), debug(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isDebugSet()) {
 
             STORM_LOG_WARN_COND(!model.hasUndefinedConstants(), "Model contains undefined constants. Game-based abstraction can treat such models, but you should make sure that you did not simply forget to define these constants. In particular, it may be necessary to constrain the values of the undefined constants.");
             
@@ -529,6 +529,8 @@ namespace storm {
 
             // Optimization: do not compute both bounds if not necessary (e.g. if bound given and exceeded, etc.)
 
+            totalWatch.start();
+            
             // Set up initial predicates.
             std::vector<storm::expressions::Expression> initialPredicates = getInitialPredicates(constraintExpression, targetStateExpression);
             
@@ -563,10 +565,11 @@ namespace storm {
                 STORM_LOG_TRACE("Starting iteration " << iteration << ".");
 
                 // (1) build the abstraction.
-                auto abstractionStart = std::chrono::high_resolution_clock::now();
+                storm::utility::Stopwatch abstractionWatch(true);
                 storm::abstraction::MenuGame<Type, ValueType> game = abstractor->abstract();
-                auto abstractionEnd = std::chrono::high_resolution_clock::now();
-                STORM_LOG_INFO("Abstraction in iteration " << iteration << " has " << game.getNumberOfStates() << " player 1 states (" << game.getInitialStates().getNonZeroCount() << " initial), " << game.getNumberOfPlayer2States() << " player 2 states, " << game.getNumberOfTransitions() << " transitions, " << game.getBottomStates().getNonZeroCount() << " bottom states, " << abstractor->getNumberOfPredicates() << " predicate(s), " << game.getTransitionMatrix().getNodeCount() << " nodes (transition matrix) (computed in " << std::chrono::duration_cast<std::chrono::milliseconds>(abstractionEnd - abstractionStart).count() << "ms).");
+                abstractionWatch.stop();
+                totalAbstractionWatch.add(abstractionWatch);
+                STORM_LOG_INFO("Abstraction in iteration " << iteration << " has " << game.getNumberOfStates() << " player 1 states (" << game.getInitialStates().getNonZeroCount() << " initial), " << game.getNumberOfPlayer2States() << " player 2 states, " << game.getNumberOfTransitions() << " transitions, " << game.getBottomStates().getNonZeroCount() << " bottom states, " << abstractor->getNumberOfPredicates() << " predicate(s), " << game.getTransitionMatrix().getNodeCount() << " nodes (transition matrix) (computed in " << abstractionWatch.getTimeInMilliseconds() << "ms).");
                 
                 // (2) Prepare initial, constraint and target state BDDs for later use.
                 storm::dd::Bdd<Type> initialStates = game.getInitialStates();
@@ -592,13 +595,16 @@ namespace storm {
                 }
 
                 if (result) {
-                    printStatistics(*abstractor, game);
+                    totalWatch.stop();
+                    printStatistics(*abstractor, game, iteration);
                     return result;
                 }
                 
                 auto iterationEnd = std::chrono::high_resolution_clock::now();
                 STORM_LOG_INFO("Iteration " << iteration << " took " << std::chrono::duration_cast<std::chrono::milliseconds>(iterationEnd - iterationStart).count() << "ms.");
             }
+            
+            totalWatch.stop();
             
             // If this point is reached, we have given up on abstraction.
             STORM_LOG_WARN("Could not derive result, maximal number of abstractions exceeded.");
@@ -614,15 +620,16 @@ namespace storm {
             storm::dd::Bdd<Type> transitionMatrixBdd = game.getTransitionMatrix().toBdd();
             
             // (1) compute all states with probability 0/1 wrt. to the two different player 2 goals (min/max).
-            auto qualitativeStart = std::chrono::high_resolution_clock::now();
+            storm::utility::Stopwatch qualitativeWatch(true);
             SymbolicQualitativeGameResultMinMax<Type> qualitativeResult = computeProb01States(previousQualitativeResult, game, player1Direction, transitionMatrixBdd, constraintStates, targetStates);
             std::unique_ptr<CheckResult> result = checkForResultAfterQualitativeCheck<Type, ValueType>(checkTask, initialStates, qualitativeResult);
             if (result) {
                 return result;
             }
             previousQualitativeResult = qualitativeResult;
-            auto qualitativeEnd = std::chrono::high_resolution_clock::now();
-            STORM_LOG_INFO("Qualitative computation completed in " << std::chrono::duration_cast<std::chrono::milliseconds>(qualitativeEnd - qualitativeStart).count() << "ms.");
+            qualitativeWatch.stop();
+            totalSolutionWatch.add(qualitativeWatch);
+            STORM_LOG_INFO("Qualitative computation completed in " << qualitativeWatch.getTimeInMilliseconds() << "ms.");
             
             // (2) compute the states for which we have to determine quantitative information.
             storm::dd::Bdd<Type> maybeMin = !(qualitativeResult.prob0Min.getPlayer1States() || qualitativeResult.prob1Min.getPlayer1States()) && game.getReachableStates();
@@ -639,10 +646,11 @@ namespace storm {
                 
                 // If we get here, the initial states were all identified as prob0/1 states, but the value (0 or 1)
                 // depends on whether player 2 is minimizing or maximizing. Therefore, we need to find a place to refine.
-                auto qualitativeRefinementStart = std::chrono::high_resolution_clock::now();
+                storm::utility::Stopwatch refinementWatch(true);
                 qualitativeRefinement = refiner.refine(game, transitionMatrixBdd, qualitativeResult);
-                auto qualitativeRefinementEnd = std::chrono::high_resolution_clock::now();
-                STORM_LOG_INFO("Qualitative refinement completed in " << std::chrono::duration_cast<std::chrono::milliseconds>(qualitativeRefinementEnd - qualitativeRefinementStart).count() << "ms.");
+                refinementWatch.stop();
+                totalRefinementWatch.add(refinementWatch);
+                STORM_LOG_INFO("Qualitative refinement completed in " << refinementWatch.getTimeInMilliseconds() << "ms.");
             }
             
             // (4) if we arrived at this point and no refinement was made, we need to compute the quantitative solution.
@@ -652,27 +660,31 @@ namespace storm {
                 
                 storm::dd::Add<Type, ValueType> initialStatesAdd = initialStates.template toAdd<ValueType>();
                 
-                auto quantitativeStart = std::chrono::high_resolution_clock::now();
-                
                 SymbolicQuantitativeGameResultMinMax<Type, ValueType> quantitativeResult;
                 
                 // (7) Solve the min values and check whether we can give the answer already.
+                storm::utility::Stopwatch quantitativeWatch(true);
                 quantitativeResult.min = computeQuantitativeResult(env, player1Direction, storm::OptimizationDirection::Minimize, game, qualitativeResult, initialStatesAdd, maybeMin, reuseQuantitativeResults ? previousMinQuantitativeResult : boost::none);
+                quantitativeWatch.stop();
                 previousMinQuantitativeResult = quantitativeResult.min;
                 result = checkForResultAfterQuantitativeCheck<ValueType>(checkTask, storm::OptimizationDirection::Minimize, quantitativeResult.min.getInitialStatesRange());
                 if (result) {
+                    totalSolutionWatch.add(quantitativeWatch);
                     return result;
                 }
                 
                 // (8) Solve the max values and check whether we can give the answer already.
+                quantitativeWatch.start();
                 quantitativeResult.max = computeQuantitativeResult(env, player1Direction, storm::OptimizationDirection::Maximize, game, qualitativeResult, initialStatesAdd, maybeMax, boost::make_optional(quantitativeResult.min));
+                quantitativeWatch.stop();
                 result = checkForResultAfterQuantitativeCheck<ValueType>(checkTask, storm::OptimizationDirection::Maximize, quantitativeResult.max.getInitialStatesRange());
                 if (result) {
+                    totalSolutionWatch.add(quantitativeWatch);
                     return result;
                 }
                 
-                auto quantitativeEnd = std::chrono::high_resolution_clock::now();
-                STORM_LOG_INFO("Obtained quantitative bounds [" << quantitativeResult.min.getInitialStatesRange().first << ", " << quantitativeResult.max.getInitialStatesRange().second << "] on the actual value for the initial states in " << std::chrono::duration_cast<std::chrono::milliseconds>(quantitativeEnd - quantitativeStart).count() << "ms.");
+                totalSolutionWatch.add(quantitativeWatch);
+                STORM_LOG_INFO("Obtained quantitative bounds [" << quantitativeResult.min.getInitialStatesRange().first << ", " << quantitativeResult.max.getInitialStatesRange().second << "] on the actual value for the initial states in " << quantitativeWatch.getTimeInMilliseconds() << "ms.");
                 
                 // (9) Check whether the lower and upper bounds are close enough to terminate with an answer.
                 result = checkForResultAfterQuantitativeCheck<ValueType>(quantitativeResult.min.getInitialStatesRange().first, quantitativeResult.max.getInitialStatesRange().second, comparator);
@@ -686,17 +698,110 @@ namespace storm {
                 STORM_LOG_ASSERT(quantitativeResult.min.getPlayer2Strategy().isZero() || quantitativeResult.min.getPlayer2Strategy().template toAdd<ValueType>().sumAbstract(game.getPlayer2Variables()).getMax() <= 1, "Player 2 strategy for min is illegal.");
                 STORM_LOG_ASSERT(quantitativeResult.max.getPlayer2Strategy().isZero() || quantitativeResult.max.getPlayer2Strategy().template toAdd<ValueType>().sumAbstract(game.getPlayer2Variables()).getMax() <= 1, "Player 2 strategy for max is illegal.");
                 
-                auto quantitativeRefinementStart = std::chrono::high_resolution_clock::now();
-                
                 // (10) If we arrived at this point, it means that we have all qualitative and quantitative
                 // information about the game, but we could not yet answer the query. In this case, we need to refine.
+                storm::utility::Stopwatch refinementWatch(true);
                 refiner.refine(game, transitionMatrixBdd, quantitativeResult);
-                auto quantitativeRefinementEnd = std::chrono::high_resolution_clock::now();
-                STORM_LOG_INFO("Quantitative refinement completed in " << std::chrono::duration_cast<std::chrono::milliseconds>(quantitativeRefinementEnd - quantitativeRefinementStart).count() << "ms.");
+                refinementWatch.stop();
+                totalRefinementWatch.add(refinementWatch);
+                STORM_LOG_INFO("Quantitative refinement completed in " << refinementWatch.getTimeInMilliseconds() << "ms.");
             }
             
             // Return null to indicate no result has been found yet.
             return nullptr;
+        }
+        
+        template <typename ValueType>
+        void postProcessStrategies(abstraction::ExplicitGameStrategyPair& minStrategyPair, abstraction::ExplicitGameStrategyPair& maxStrategyPair, std::vector<uint64_t> const& player1Groups, std::vector<uint64_t> const& player2Groups, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, ExplicitQuantitativeResultMinMax<ValueType> const& quantitativeResult, bool sanityCheck) {
+            for (uint64_t state = 0; state < player1Groups.size() - 1; ++state) {
+                STORM_LOG_ASSERT(targetStates.get(state) || minStrategyPair.getPlayer1Strategy().hasDefinedChoice(state), "Expected lower player 1 choice in state " << state << ".");
+                STORM_LOG_ASSERT(targetStates.get(state) || maxStrategyPair.getPlayer1Strategy().hasDefinedChoice(state), "Expected upper player 1 choice in state " << state << ".");
+                
+                if (minStrategyPair.getPlayer1Strategy().hasDefinedChoice(state)) {
+                    uint64_t lowerPlayer1Choice = minStrategyPair.getPlayer1Strategy().getChoice(state);
+                    
+                    STORM_LOG_ASSERT(minStrategyPair.getPlayer2Strategy().hasDefinedChoice(lowerPlayer1Choice), "Expected lower player 2 choice for state " << state << " (upper player 1 choice " << lowerPlayer1Choice << ").");
+                    uint64_t lowerPlayer2Choice = minStrategyPair.getPlayer2Strategy().getChoice(lowerPlayer1Choice);
+                    
+                    if (maxStrategyPair.getPlayer2Strategy().hasDefinedChoice(lowerPlayer1Choice)) {
+                        uint64_t upperPlayer2Choice = maxStrategyPair.getPlayer2Strategy().getChoice(lowerPlayer1Choice);
+                        
+                        if (lowerPlayer2Choice != upperPlayer2Choice) {
+                            ValueType lowerValueUnderLowerChoice = transitionMatrix.multiplyRowWithVector(lowerPlayer2Choice, quantitativeResult.getMin().getValues());
+                            ValueType lowerValueUnderUpperChoice = transitionMatrix.multiplyRowWithVector(upperPlayer2Choice, quantitativeResult.getMin().getValues());
+                            
+                            if (lowerValueUnderUpperChoice <= lowerValueUnderLowerChoice) {
+                                minStrategyPair.getPlayer2Strategy().setChoice(lowerPlayer1Choice, upperPlayer2Choice);
+                                if (sanityCheck) {
+                                    STORM_LOG_TRACE("[min] redirecting choice of state " << state << ": " << lowerValueUnderLowerChoice << " vs. " << lowerValueUnderUpperChoice);
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                if (maxStrategyPair.getPlayer1Strategy().hasDefinedChoice(state)) {
+                    uint64_t upperPlayer1Choice = maxStrategyPair.getPlayer1Strategy().getChoice(state);
+                    
+                    STORM_LOG_ASSERT(maxStrategyPair.getPlayer2Strategy().hasDefinedChoice(upperPlayer1Choice), "Expected upper player 2 choice for state " << state << " (upper player 1 choice " << upperPlayer1Choice << ").");
+                    uint64_t upperPlayer2Choice = minStrategyPair.getPlayer2Strategy().getChoice(upperPlayer1Choice);
+                    
+                    if (minStrategyPair.getPlayer2Strategy().hasDefinedChoice(upperPlayer1Choice)) {
+                        uint64_t lowerPlayer2Choice = minStrategyPair.getPlayer2Strategy().getChoice(upperPlayer1Choice);
+                        
+                        if (lowerPlayer2Choice != upperPlayer2Choice) {
+                            ValueType lowerValueUnderLowerChoice = transitionMatrix.multiplyRowWithVector(lowerPlayer2Choice, quantitativeResult.getMin().getValues());
+                            ValueType lowerValueUnderUpperChoice = transitionMatrix.multiplyRowWithVector(upperPlayer2Choice, quantitativeResult.getMin().getValues());
+                            
+                            if (lowerValueUnderUpperChoice <= lowerValueUnderLowerChoice) {
+                                minStrategyPair.getPlayer2Strategy().setChoice(upperPlayer1Choice, upperPlayer2Choice);
+                                STORM_LOG_TRACE("[max] redirecting choice of state " << state << ": " << lowerValueUnderLowerChoice << " vs. " << lowerValueUnderUpperChoice);
+                            }
+                        }
+                    }
+                }
+            }
+            
+            if (sanityCheck) {
+                ///////// SANITY CHECK: apply lower strategy, obtain DTMC matrix and model check it. the values should
+                ///////// still be the lower ones.
+                storm::storage::SparseMatrixBuilder<ValueType> dtmcMatrixBuilder(player1Groups.size() - 1, player1Groups.size() - 1);
+                for (uint64_t state = 0; state < player1Groups.size() - 1; ++state) {
+                    if (targetStates.get(state)) {
+                        dtmcMatrixBuilder.addNextValue(state, state, storm::utility::one<ValueType>());
+                    } else {
+                        uint64_t player2Choice = minStrategyPair.getPlayer2Strategy().getChoice(minStrategyPair.getPlayer1Strategy().getChoice(state));
+                        for (auto const& entry : transitionMatrix.getRow(player2Choice)) {
+                            dtmcMatrixBuilder.addNextValue(state, entry.getColumn(), entry.getValue());
+                        }
+                    }
+                }
+                auto dtmcMatrix = dtmcMatrixBuilder.build();
+                std::vector<ValueType> sanityValues = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeUntilProbabilities(Environment(), storm::solver::SolveGoal<ValueType>(), dtmcMatrix, dtmcMatrix.transpose(), constraintStates, targetStates, false);
+                
+                for (uint64_t state = 0; state < player1Groups.size() - 1; ++state) {
+                    STORM_LOG_ASSERT(std::abs(sanityValues[state] - quantitativeResult.getMin().getValues()[state]) < 1e-4, "Got weird min divergences!");
+                }
+                ///////// SANITY CHECK: apply upper strategy, obtain DTMC matrix and model check it. the values should
+                ///////// still be the upper ones.
+                dtmcMatrixBuilder = storm::storage::SparseMatrixBuilder<ValueType>(player1Groups.size() - 1, player1Groups.size() - 1);
+                for (uint64_t state = 0; state < player1Groups.size() - 1; ++state) {
+                    if (targetStates.get(state)) {
+                        dtmcMatrixBuilder.addNextValue(state, state, storm::utility::one<ValueType>());
+                    } else {
+                        uint64_t player2Choice = maxStrategyPair.getPlayer2Strategy().getChoice(maxStrategyPair.getPlayer1Strategy().getChoice(state));
+                        for (auto const& entry : transitionMatrix.getRow(player2Choice)) {
+                            dtmcMatrixBuilder.addNextValue(state, entry.getColumn(), entry.getValue());
+                        }
+                    }
+                }
+                dtmcMatrix = dtmcMatrixBuilder.build();
+                sanityValues = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeUntilProbabilities(Environment(), storm::solver::SolveGoal<ValueType>(), dtmcMatrix, dtmcMatrix.transpose(), constraintStates, targetStates, false);
+                
+                for (uint64_t state = 0; state < player1Groups.size() - 1; ++state) {
+                    STORM_LOG_ASSERT(std::abs(sanityValues[state] - quantitativeResult.getMax().getValues()[state]) < 1e-4, "Got weird max divergences!");
+                }
+            }
         }
         
         template<storm::dd::DdType Type, typename ModelType>
@@ -704,7 +809,7 @@ namespace storm {
             STORM_LOG_TRACE("Using sparse solving.");
 
             // (0) Start by transforming the necessary symbolic elements to explicit ones.
-            auto translationStart = std::chrono::high_resolution_clock::now();
+            storm::utility::Stopwatch translationWatch(true);
             storm::dd::Odd odd = game.getReachableStates().createOdd();
             
             std::vector<std::set<storm::expressions::Variable>> labelingVariableSets = {game.getPlayer1Variables(), game.getPlayer2Variables()};
@@ -756,22 +861,25 @@ namespace storm {
             storm::storage::BitVector initialStates = initialStatesBdd.toVector(odd);
             storm::storage::BitVector constraintStates = constraintStatesBdd.toVector(odd);
             storm::storage::BitVector targetStates = targetStatesBdd.toVector(odd);
-            auto translationEnd = std::chrono::high_resolution_clock::now();
-            STORM_LOG_INFO("Translation to explicit representation completed in " << std::chrono::duration_cast<std::chrono::milliseconds>(translationEnd - translationStart).count() << "ms.");
+            translationWatch.stop();
+            totalTranslationWatch.add(translationWatch);
+            STORM_LOG_INFO("Translation to explicit representation completed in " << translationWatch.getTimeInMilliseconds() << "ms.");
 
             // Prepare the two strategies.
             abstraction::ExplicitGameStrategyPair minStrategyPair(initialStates.size(), transitionMatrix.getRowGroupCount());
             abstraction::ExplicitGameStrategyPair maxStrategyPair(initialStates.size(), transitionMatrix.getRowGroupCount());
             
             // (1) compute all states with probability 0/1 wrt. to the two different player 2 goals (min/max).
-            auto qualitativeStart = std::chrono::high_resolution_clock::now();
+            storm::utility::Stopwatch qualitativeWatch(true);
             ExplicitQualitativeGameResultMinMax qualitativeResult = computeProb01States(previousResult, odd, player1Direction, transitionMatrix, player1Groups, player1BackwardTransitions, player2BackwardTransitions, constraintStates, targetStates, minStrategyPair, maxStrategyPair);
+            qualitativeWatch.stop();
+            totalSolutionWatch.add(qualitativeWatch);
+            STORM_LOG_INFO("Qualitative computation completed in " << qualitativeWatch.getTimeInMilliseconds() << "ms.");
+
             std::unique_ptr<CheckResult> result = checkForResultAfterQualitativeCheck<ValueType>(checkTask, initialStates, qualitativeResult);
             if (result) {
                 return result;
             }
-            auto qualitativeEnd = std::chrono::high_resolution_clock::now();
-            STORM_LOG_INFO("Qualitative computation completed in " << std::chrono::duration_cast<std::chrono::milliseconds>(qualitativeEnd - qualitativeStart).count() << "ms.");
             
             // (2) compute the states for which we have to determine quantitative information.
             storm::storage::BitVector maybeMin = ~(qualitativeResult.getProb0Min().getStates() | qualitativeResult.getProb1Min().getStates());
@@ -788,10 +896,11 @@ namespace storm {
                 
                 // If we get here, the initial states were all identified as prob0/1 states, but the value (0 or 1)
                 // depends on whether player 2 is minimizing or maximizing. Therefore, we need to find a place to refine.
-                auto qualitativeRefinementStart = std::chrono::high_resolution_clock::now();
+                storm::utility::Stopwatch refinementWatch(true);
                 qualitativeRefinement = refiner.refine(game, odd, transitionMatrix, player1Groups, player1Labeling, player2Labeling, initialStates, constraintStates, targetStates, qualitativeResult, minStrategyPair, maxStrategyPair);
-                auto qualitativeRefinementEnd = std::chrono::high_resolution_clock::now();
-                STORM_LOG_INFO("Qualitative refinement completed in " << std::chrono::duration_cast<std::chrono::milliseconds>(qualitativeRefinementEnd - qualitativeRefinementStart).count() << "ms.");
+                refinementWatch.stop();
+                totalRefinementWatch.add(refinementWatch);
+                STORM_LOG_INFO("Qualitative refinement completed in " << refinementWatch.getTimeInMilliseconds() << "ms.");
             }
             
             ExplicitQuantitativeResultMinMax<ValueType> quantitativeResult;
@@ -802,132 +911,45 @@ namespace storm {
                 STORM_LOG_TRACE("Starting numerical solution step.");
                 
                 // (7) Solve the min values and check whether we can give the answer already.
-                auto quantitativeStart = std::chrono::high_resolution_clock::now();
+                storm::utility::Stopwatch quantitativeWatch(true);
                 quantitativeResult.setMin(computeQuantitativeResult<ValueType>(env, player1Direction, storm::OptimizationDirection::Minimize, transitionMatrix, player1Groups, qualitativeResult, maybeMin, minStrategyPair, odd, nullptr, nullptr, this->reuseQuantitativeResults ? previousResult : boost::none));
+                quantitativeWatch.stop();
                 result = checkForResultAfterQuantitativeCheck<ValueType>(checkTask, storm::OptimizationDirection::Minimize, quantitativeResult.getMin().getRange(initialStates));
                 if (result) {
+                    totalSolutionWatch.add(quantitativeWatch);
                     return result;
                 }
                 
                 // (8) Solve the max values and check whether we can give the answer already.
+                quantitativeWatch.start();
                 quantitativeResult.setMax(computeQuantitativeResult(env, player1Direction, storm::OptimizationDirection::Maximize, transitionMatrix, player1Groups, qualitativeResult, maybeMax, maxStrategyPair, odd, &quantitativeResult.getMin(), &minStrategyPair));
+                quantitativeWatch.stop();
                 result = checkForResultAfterQuantitativeCheck<ValueType>(checkTask, storm::OptimizationDirection::Maximize, quantitativeResult.getMax().getRange(initialStates));
                 if (result) {
+                    totalSolutionWatch.add(quantitativeWatch);
                     return result;
                 }
-                auto quantitativeEnd = std::chrono::high_resolution_clock::now();
-                STORM_LOG_INFO("Obtained quantitative bounds [" << quantitativeResult.getMin().getRange(initialStates).first << ", " << quantitativeResult.getMax().getRange(initialStates).second << "] on the actual value for the initial states in " << std::chrono::duration_cast<std::chrono::milliseconds>(quantitativeEnd - quantitativeStart).count() << "ms.");
+                STORM_LOG_INFO("Obtained quantitative bounds [" << quantitativeResult.getMin().getRange(initialStates).first << ", " << quantitativeResult.getMax().getRange(initialStates).second << "] on the actual value for the initial states in " << quantitativeWatch.getTimeInMilliseconds() << "ms.");
                 
                 // (9) Check whether the lower and upper bounds are close enough to terminate with an answer.
                 result = checkForResultAfterQuantitativeCheck<ValueType>(quantitativeResult.getMin().getRange(initialStates).first, quantitativeResult.getMax().getRange(initialStates).second, comparator);
                 if (result) {
                     return result;
                 }
-
-//                std::cout << "target states " << targetStates << std::endl;
                 
-                for (uint64_t state = 0; state < player1Groups.size() - 1; ++state) {
-                    std::cout << "state " << state << " has values [" << quantitativeResult.getMin().getValues()[state] << ", " << quantitativeResult.getMax().getValues()[state] << "]" << std::endl;
-                    
-                    STORM_LOG_ASSERT(targetStates.get(state) || minStrategyPair.getPlayer1Strategy().hasDefinedChoice(state), "Expected lower player 1 choice in state " << state << ".");
-                    STORM_LOG_ASSERT(targetStates.get(state) || maxStrategyPair.getPlayer1Strategy().hasDefinedChoice(state), "Expected upper player 1 choice in state " << state << ".");
-
-                    if (minStrategyPair.getPlayer1Strategy().hasDefinedChoice(state)) {
-                        uint64_t lowerPlayer1Choice = minStrategyPair.getPlayer1Strategy().getChoice(state);
-                        
-                        STORM_LOG_ASSERT(minStrategyPair.getPlayer2Strategy().hasDefinedChoice(lowerPlayer1Choice), "Expected lower player 2 choice for state " << state << " (upper player 1 choice " << lowerPlayer1Choice << ").");
-                        uint64_t lowerPlayer2Choice = minStrategyPair.getPlayer2Strategy().getChoice(lowerPlayer1Choice);
-
-                        if (maxStrategyPair.getPlayer2Strategy().hasDefinedChoice(lowerPlayer1Choice)) {
-                            uint64_t upperPlayer2Choice = maxStrategyPair.getPlayer2Strategy().getChoice(lowerPlayer1Choice);
-                        
-                            if (lowerPlayer2Choice != upperPlayer2Choice) {
-                                ValueType lowerValueUnderLowerChoice = transitionMatrix.multiplyRowWithVector(lowerPlayer2Choice, quantitativeResult.getMin().getValues());
-                                ValueType lowerValueUnderUpperChoice = transitionMatrix.multiplyRowWithVector(upperPlayer2Choice, quantitativeResult.getMin().getValues());
-                                
-                                if (lowerValueUnderUpperChoice <= lowerValueUnderLowerChoice) {
-                                    minStrategyPair.getPlayer2Strategy().setChoice(lowerPlayer1Choice, upperPlayer2Choice);
-                                    std::cout << "[min] redirecting choice of state " << state << ": " << lowerValueUnderLowerChoice << " vs. " << lowerValueUnderUpperChoice << std::endl;
-                                }
-                            }
-                        }
-                    }
-                    
-                    if (maxStrategyPair.getPlayer1Strategy().hasDefinedChoice(state)) {
-                        uint64_t upperPlayer1Choice = maxStrategyPair.getPlayer1Strategy().getChoice(state);
-                        
-                        STORM_LOG_ASSERT(maxStrategyPair.getPlayer2Strategy().hasDefinedChoice(upperPlayer1Choice), "Expected upper player 2 choice for state " << state << " (upper player 1 choice " << upperPlayer1Choice << ").");
-                        uint64_t upperPlayer2Choice = minStrategyPair.getPlayer2Strategy().getChoice(upperPlayer1Choice);
-                        
-                        if (minStrategyPair.getPlayer2Strategy().hasDefinedChoice(upperPlayer1Choice)) {
-                            uint64_t lowerPlayer2Choice = minStrategyPair.getPlayer2Strategy().getChoice(upperPlayer1Choice);
-                            
-                            if (lowerPlayer2Choice != upperPlayer2Choice) {
-                                ValueType lowerValueUnderLowerChoice = transitionMatrix.multiplyRowWithVector(lowerPlayer2Choice, quantitativeResult.getMin().getValues());
-                                ValueType lowerValueUnderUpperChoice = transitionMatrix.multiplyRowWithVector(upperPlayer2Choice, quantitativeResult.getMin().getValues());
-
-                                if (lowerValueUnderUpperChoice <= lowerValueUnderLowerChoice) {
-                                    minStrategyPair.getPlayer2Strategy().setChoice(upperPlayer1Choice, upperPlayer2Choice);
-                                    std::cout << "[max] redirecting choice of state " << state << ": " << lowerValueUnderLowerChoice << " vs. " << lowerValueUnderUpperChoice << std::endl;
-                                }
-                            }
-                        }
-                    }
-                }
-                
-                ///////// SANITY CHECK: apply lower strategy, obtain DTMC matrix and model check it. the values should
-                ///////// still be the lower ones.
-                storm::storage::SparseMatrixBuilder<ValueType> dtmcMatrixBuilder(player1Groups.size() - 1, player1Groups.size() - 1);
-                for (uint64_t state = 0; state < player1Groups.size() - 1; ++state) {
-                    if (targetStates.get(state)) {
-                        dtmcMatrixBuilder.addNextValue(state, state, storm::utility::one<ValueType>());
-                    } else {
-                        uint64_t player2Choice = minStrategyPair.getPlayer2Strategy().getChoice(minStrategyPair.getPlayer1Strategy().getChoice(state));
-                        for (auto const& entry : transitionMatrix.getRow(player2Choice)) {
-                            dtmcMatrixBuilder.addNextValue(state, entry.getColumn(), entry.getValue());
-                        }
-                    }
-                }
-                auto dtmcMatrix = dtmcMatrixBuilder.build();
-                std::vector<ValueType> sanityValues = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeUntilProbabilities(Environment(), storm::solver::SolveGoal<ValueType>(), dtmcMatrix, dtmcMatrix.transpose(), constraintStates, targetStates, false);
-                
-                for (uint64_t state = 0; state < player1Groups.size() - 1; ++state) {
-                    std::cout << "state " << state << ": " << sanityValues[state] << " vs " << quantitativeResult.getMin().getValues()[state] << std::endl;
-                    std::cout << "[min] state is prob0? " << qualitativeResult.getProb0Min().getStates().get(state) << ", prob1? " << qualitativeResult.getProb1Min().getStates().get(state) << std::endl;
-                    STORM_LOG_ASSERT(std::abs(sanityValues[state] - quantitativeResult.getMin().getValues()[state]) < 1e-6, "Got weird min divergences!");
-                }
-                ///////// SANITY CHECK: apply upper strategy, obtain DTMC matrix and model check it. the values should
-                ///////// still be the upper ones.
-                dtmcMatrixBuilder = storm::storage::SparseMatrixBuilder<ValueType>(player1Groups.size() - 1, player1Groups.size() - 1);
-                for (uint64_t state = 0; state < player1Groups.size() - 1; ++state) {
-                    if (targetStates.get(state)) {
-                        dtmcMatrixBuilder.addNextValue(state, state, storm::utility::one<ValueType>());
-                    } else {
-                        uint64_t player2Choice = maxStrategyPair.getPlayer2Strategy().getChoice(maxStrategyPair.getPlayer1Strategy().getChoice(state));
-                        for (auto const& entry : transitionMatrix.getRow(player2Choice)) {
-                            dtmcMatrixBuilder.addNextValue(state, entry.getColumn(), entry.getValue());
-                        }
-                    }
-                }
-                dtmcMatrix = dtmcMatrixBuilder.build();
-                sanityValues = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeUntilProbabilities(Environment(), storm::solver::SolveGoal<ValueType>(), dtmcMatrix, dtmcMatrix.transpose(), constraintStates, targetStates, false);
-                
-                for (uint64_t state = 0; state < player1Groups.size() - 1; ++state) {
-                    std::cout << "state " << state << ": " << sanityValues[state] << " vs " << quantitativeResult.getMax().getValues()[state] << std::endl;
-                    std::cout << "[max] state is prob0? " << qualitativeResult.getProb0Max().getStates().get(state) << ", prob1? " << qualitativeResult.getProb1Max().getStates().get(state) << std::endl;
-                    STORM_LOG_ASSERT(std::abs(sanityValues[state] - quantitativeResult.getMax().getValues()[state]) < 1e-6, "Got weird max divergences!");
-                }
+                postProcessStrategies(minStrategyPair, maxStrategyPair, player1Groups, player2RowGrouping, transitionMatrix, constraintStates, targetStates, quantitativeResult, this->debug);
 
                 // Make sure that all strategies are still valid strategies.
                 STORM_LOG_ASSERT(minStrategyPair.getNumberOfUndefinedPlayer1States() <= targetStates.getNumberOfSetBits(), "Expected at most " << targetStates.getNumberOfSetBits() << " (number of target states) player 1 states with undefined choice but got " << minStrategyPair.getNumberOfUndefinedPlayer1States() << ".");
                 STORM_LOG_ASSERT(maxStrategyPair.getNumberOfUndefinedPlayer1States() <= targetStates.getNumberOfSetBits(), "Expected at most " << targetStates.getNumberOfSetBits() << " (number of target states) player 1 states with undefined choice but got " << maxStrategyPair.getNumberOfUndefinedPlayer1States() << ".");
 
-                auto quantitativeRefinementStart = std::chrono::high_resolution_clock::now();
                 // (10) If we arrived at this point, it means that we have all qualitative and quantitative
                 // information about the game, but we could not yet answer the query. In this case, we need to refine.
+                storm::utility::Stopwatch refinementWatch(true);
                 refiner.refine(game, odd, transitionMatrix, player1Groups, player1Labeling, player2Labeling, initialStates, constraintStates, targetStates, quantitativeResult, minStrategyPair, maxStrategyPair);
-                auto quantitativeRefinementEnd = std::chrono::high_resolution_clock::now();
-                STORM_LOG_INFO("Quantitative refinement completed in " << std::chrono::duration_cast<std::chrono::milliseconds>(quantitativeRefinementEnd - quantitativeRefinementStart).count() << "ms.");
+                refinementWatch.stop();
+                totalRefinementWatch.add(refinementWatch);
+                STORM_LOG_INFO("Quantitative refinement completed in " << refinementWatch.getTimeInMilliseconds() << "ms.");
 
                 if (this->reuseQuantitativeResults) {
                     PreviousExplicitResult<ValueType> nextPreviousResult;
@@ -1106,15 +1128,37 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type, typename ModelType>
-        void GameBasedMdpModelChecker<Type, ModelType>::printStatistics(storm::abstraction::MenuGameAbstractor<Type, ValueType> const& abstractor, storm::abstraction::MenuGame<Type, ValueType> const& game) const {
+        void GameBasedMdpModelChecker<Type, ModelType>::printStatistics(storm::abstraction::MenuGameAbstractor<Type, ValueType> const& abstractor, storm::abstraction::MenuGame<Type, ValueType> const& game, uint64_t refinements) const {
             if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
                 storm::abstraction::AbstractionInformation<Type> const& abstractionInformation = abstractor.getAbstractionInformation();
 
+                std::streamsize originalPrecision = std::cout.precision();
+                std::cout << std::fixed << std::setprecision(2);
+                
                 std::cout << std::endl;
                 std::cout << "Statistics:" << std::endl;
-                std::cout << "    * player 1 states (final game): " << game.getReachableStates().getNonZeroCount() << std::endl;
+                std::cout << "    * size of final game: " << game.getReachableStates().getNonZeroCount() << " player 1 states" << std::endl;
                 std::cout << "    * transitions (final game): " << game.getTransitionMatrix().getNonZeroCount() << std::endl;
-                std::cout << "    * predicates used in abstraction: " << abstractionInformation.getNumberOfPredicates() << std::endl;
+                std::cout << "    * refinements: " << refinements << std::endl;
+                std::cout << "    * predicates used in abstraction: " << abstractionInformation.getNumberOfPredicates() << std::endl << std::endl;
+                
+                uint64_t totalAbstractionTimeMillis = totalAbstractionWatch.getTimeInMilliseconds();
+                uint64_t totalTranslationTimeMillis = totalTranslationWatch.getTimeInMilliseconds();
+                uint64_t totalSolutionTimeMillis = totalSolutionWatch.getTimeInMilliseconds();
+                uint64_t totalRefinementTimeMillis = totalRefinementWatch.getTimeInMilliseconds();
+                uint64_t totalTimeMillis = totalWatch.getTimeInMilliseconds();
+
+                std::cout << "Time breakdown:" << std::endl;
+                std::cout << "    * abstraction: " << totalAbstractionTimeMillis << "ms (" << 100 * static_cast<double>(totalAbstractionTimeMillis)/totalTimeMillis << "%)" << std::endl;
+                if (this->solveMode == storm::settings::modules::AbstractionSettings::SolveMode::Sparse) {
+                    std::cout << "    * translation: " << totalTranslationTimeMillis << "ms (" << 100 * static_cast<double>(totalTranslationTimeMillis)/totalTimeMillis << "%)" << std::endl;
+                }
+                std::cout << "    * solution: " << totalSolutionTimeMillis << "ms (" << 100 * static_cast<double>(totalSolutionTimeMillis)/totalTimeMillis << "%)" << std::endl;
+                std::cout << "    * refinement: " << totalRefinementTimeMillis << "ms (" << 100 * static_cast<double>(totalRefinementTimeMillis)/totalTimeMillis << "%)" << std::endl;
+                std::cout << "    ---------------------------------------------" << std::endl;
+                std::cout << "    * total: " << totalTimeMillis << "ms" << std::endl << std::endl;
+                
+                std::cout << std::defaultfloat << std::setprecision(originalPrecision);
             }
         }
         

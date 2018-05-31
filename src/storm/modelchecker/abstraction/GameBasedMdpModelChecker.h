@@ -21,6 +21,7 @@
 #include "storm/utility/ConstantsComparator.h"
 #include "storm/utility/solver.h"
 #include "storm/utility/graph.h"
+#include "storm/utility/Stopwatch.h"
 
 namespace storm {
     namespace abstraction {
@@ -114,7 +115,7 @@ namespace storm {
             
             ExplicitQualitativeGameResultMinMax computeProb01States(boost::optional<detail::PreviousExplicitResult<ValueType>> const& previousResult, storm::dd::Odd const& odd, storm::OptimizationDirection player1Direction, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint64_t> const& player1RowGrouping, storm::storage::SparseMatrix<ValueType> const& player1BackwardTransitions, std::vector<uint64_t> const& player2BackwardTransitions, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, abstraction::ExplicitGameStrategyPair& minStrategyPair, abstraction::ExplicitGameStrategyPair& maxStrategyPair);
             
-            void printStatistics(storm::abstraction::MenuGameAbstractor<Type, ValueType> const& abstractor, storm::abstraction::MenuGame<Type, ValueType> const& game) const;
+            void printStatistics(storm::abstraction::MenuGameAbstractor<Type, ValueType> const& abstractor, storm::abstraction::MenuGame<Type, ValueType> const& game, uint64_t refinements) const;
             
             /*
              * Retrieves the expression characterized by the formula. The formula needs to be propositional.
@@ -148,6 +149,16 @@ namespace storm {
             
             /// The performed number of refinement iterations.
             uint64_t iteration;
+            
+            /// A flag that indicates whether debug mode is enabled.
+            bool debug;
+            
+            /// Data stored for statistics.
+            storm::utility::Stopwatch totalAbstractionWatch;
+            storm::utility::Stopwatch totalSolutionWatch;
+            storm::utility::Stopwatch totalRefinementWatch;
+            storm::utility::Stopwatch totalTranslationWatch;
+            storm::utility::Stopwatch totalWatch;
         };
     }
 }
