@@ -283,7 +283,7 @@ namespace storm {
                     }
                 }
                 
-                // then enumerate the solutions for each of the blocks of the decomposition
+                // Then enumerate the solutions for each of the blocks of the decomposition
                 uint64_t usedNondeterminismVariables = 0;
                 uint64_t blockCounter = 0;
                 std::vector<storm::dd::Bdd<DdType>> blockBdds;
@@ -349,7 +349,6 @@ namespace storm {
                     // Finally, build overall result.
                     storm::dd::Bdd<DdType> resultBdd = this->getAbstractionInformation().getDdManager().getBddZero();
                     
-                    uint_fast64_t sourceStateIndex = 0;
                     for (auto const& sourceDistributionsPair : sourceToDistributionsMap) {
                         STORM_LOG_ASSERT(!sourceDistributionsPair.first.isZero(), "The source BDD must not be empty.");
                         STORM_LOG_ASSERT(!sourceDistributionsPair.second.empty(), "The distributions must not be empty.");
@@ -363,7 +362,6 @@ namespace storm {
                             STORM_LOG_ASSERT(!allDistributions.isZero(), "The BDD must not be empty.");
                         }
                         resultBdd |= sourceDistributionsPair.first && allDistributions;
-                        ++sourceStateIndex;
                         STORM_LOG_ASSERT(!resultBdd.isZero(), "The BDD must not be empty.");
                     }
                     usedNondeterminismVariables += numberOfVariablesNeeded;
@@ -402,7 +400,7 @@ namespace storm {
                 }
                 
                 // multiply with missing identities
-                resultBdd &= computeMissingIdentities();
+                resultBdd &= computeMissingUpdateIdentities();
                 
                 // cache and return result
                 resultBdd &= this->getAbstractionInformation().encodePlayer1Choice(command.get().getGlobalIndex(), this->getAbstractionInformation().getPlayer1VariableCount());
@@ -465,7 +463,7 @@ namespace storm {
                     STORM_LOG_ASSERT(!resultBdd.isZero(), "The BDD must not be empty.");
                 }
                 
-                resultBdd &= computeMissingIdentities();
+                resultBdd &= computeMissingUpdateIdentities();
                 resultBdd &= this->getAbstractionInformation().encodePlayer1Choice(command.get().getGlobalIndex(), this->getAbstractionInformation().getPlayer1VariableCount());
                 STORM_LOG_ASSERT(sourceToDistributionsMap.empty() || !resultBdd.isZero(), "The BDD must not be empty, if there were distributions.");
                 
@@ -491,13 +489,7 @@ namespace storm {
                     storm::expressions::Variable const& assignedVariable = assignment.getVariable();
                     auto const& leftHandSidePredicates = localExpressionInformation.getExpressionsUsingVariable(assignedVariable);
                     result.second.insert(leftHandSidePredicates.begin(), leftHandSidePredicates.end());
-                    
-//                    // Keep track of all assigned variables, so we can find the related predicates later.
-//                    assignedVariables.insert(assignedVariable);
                 }
-                
-//                auto const& predicatesRelatedToAssignedVariable = localExpressionInformation.getRelatedExpressions(assignedVariables);
-//                result.first.insert(predicatesRelatedToAssignedVariable.begin(), predicatesRelatedToAssignedVariable.end());
                 
                 return result;
             }
@@ -507,7 +499,7 @@ namespace storm {
                 std::pair<std::set<uint_fast64_t>, std::vector<std::set<uint_fast64_t>>> result;
                 
                 // To start with, all predicates related to the guard are relevant source predicates.
-                result.first = localExpressionInformation.getRelatedExpressions(command.get().getGuardExpression().getVariables());
+                result.first = localExpressionInformation.getExpressionsUsingVariables(command.get().getGuardExpression().getVariables());
                 
                 // Then, we add the predicates that become relevant, because of some update.
                 for (auto const& update : command.get().getUpdates()) {
@@ -596,17 +588,11 @@ namespace storm {
                     }
 
                     updateBdd &= this->getAbstractionInformation().encodeAux(updateIndex, 0, this->getAbstractionInformation().getAuxVariableCount());
-
                     result |= updateBdd;
                 }
                 
                 STORM_LOG_ASSERT(!result.isZero(), "Distribution must not be empty.");
                 return result;
-            }
-            
-            template <storm::dd::DdType DdType, typename ValueType>
-            storm::dd::Bdd<DdType> CommandAbstractor<DdType, ValueType>::computeMissingIdentities() const {
-                return computeMissingUpdateIdentities();
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
@@ -619,7 +605,6 @@ namespace storm {
                     auto updateRelevantIte = relevantPredicatesAndVariables.second[updateIndex].rend();
                     
                     storm::dd::Bdd<DdType> updateIdentity = this->getAbstractionInformation().getDdManager().getBddOne();
-                    
                     for (uint_fast64_t predicateIndex = this->getAbstractionInformation().getNumberOfPredicates() - 1;; --predicateIndex) {
                         if (updateRelevantIt == updateRelevantIte || updateRelevantIt->second != predicateIndex) {
                             updateIdentity &= this->getAbstractionInformation().getPredicateIdentity(predicateIndex);

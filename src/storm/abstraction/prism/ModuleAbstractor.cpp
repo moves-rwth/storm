@@ -1,7 +1,7 @@
 #include "storm/abstraction/prism/ModuleAbstractor.h"
 
-#include "storm/abstraction/AbstractionInformation.h"
 #include "storm/abstraction/BottomStateResult.h"
+#include "storm/abstraction/AbstractionInformation.h"
 #include "storm/abstraction/GameBddResult.h"
 
 #include "storm/storage/dd/DdManager.h"
@@ -26,10 +26,8 @@ namespace storm {
             ModuleAbstractor<DdType, ValueType>::ModuleAbstractor(storm::prism::Module const& module, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool useDecomposition, bool debug) : smtSolverFactory(smtSolverFactory), abstractionInformation(abstractionInformation), commands(), module(module) {
                 
                 // For each concrete command, we create an abstract counterpart.
-                uint64_t counter = 0;
                 for (auto const& command : module.getCommands()) {
                     commands.emplace_back(command, abstractionInformation, smtSolverFactory, useDecomposition, debug);
-                    ++counter;
                 }
             }
             
@@ -37,8 +35,7 @@ namespace storm {
             void ModuleAbstractor<DdType, ValueType>::refine(std::vector<uint_fast64_t> const& predicates) {
                 for (uint_fast64_t index = 0; index < commands.size(); ++index) {
                     STORM_LOG_TRACE("Refining command with index " << index << ".");
-                    CommandAbstractor<DdType, ValueType>& command = commands[index];
-                    command.refine(predicates);
+                    commands[index].refine(predicates);
                 }
             }
             
@@ -85,8 +82,7 @@ namespace storm {
             BottomStateResult<DdType> ModuleAbstractor<DdType, ValueType>::getBottomStateTransitions(storm::dd::Bdd<DdType> const& reachableStates, uint_fast64_t numberOfPlayer2Variables) {
                 BottomStateResult<DdType> result(this->getAbstractionInformation().getDdManager().getBddZero(), this->getAbstractionInformation().getDdManager().getBddZero());
                 
-                for (uint64_t index = 0; index < commands.size(); ++index) {
-                    auto& command = commands[index];
+                for (auto& command : commands) {
                     BottomStateResult<DdType> commandBottomStateResult = command.getBottomStateTransitions(reachableStates, numberOfPlayer2Variables);
                     result.states |= commandBottomStateResult.states;
                     result.transitions |= commandBottomStateResult.transitions;

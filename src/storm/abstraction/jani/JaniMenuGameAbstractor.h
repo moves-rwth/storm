@@ -117,7 +117,7 @@ namespace storm {
                  * @param highlightStates A BDD characterizing states that will be highlighted.
                  * @param filter A filter that is applied to select which part of the game to export.
                  */
-                void exportToDot(std::string const& filename, storm::dd::Bdd<DdType> const& highlightStates, storm::dd::Bdd<DdType> const& filter) const override;
+                virtual void exportToDot(std::string const& filename, storm::dd::Bdd<DdType> const& highlightStates, storm::dd::Bdd<DdType> const& filter) const override;
                 
                 virtual uint64_t getNumberOfPredicates() const override;
                 

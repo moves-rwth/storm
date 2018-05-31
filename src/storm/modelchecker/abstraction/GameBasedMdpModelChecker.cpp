@@ -418,9 +418,10 @@ namespace storm {
 
             // If there is a previous result, unpack the previous values with respect to the new ODD.
             if (previousResult) {
+                STORM_LOG_ASSERT(player2Min, "Can only reuse previous values when minimizing.");
                 previousResult.get().odd.oldToNewIndex(odd, [&previousResult,&result,player2Min,player1Prob1States] (uint64_t oldOffset, uint64_t newOffset) {
-                    if (!player2Min && !player1Prob1States.get(newOffset)) {
-                        result.getValues()[newOffset] = player2Min ? previousResult.get().values.getMin().getValues()[oldOffset] : previousResult.get().values.getMax().getValues()[oldOffset];
+                    if (!player1Prob1States.get(newOffset)) {
+                        result.getValues()[newOffset] = player2Min ? previousResult.get().values.getValues()[oldOffset] : previousResult.get().values.getValues()[oldOffset];
                     }
                 });
             }
@@ -1019,7 +1020,11 @@ namespace storm {
                 STORM_LOG_INFO("Obtained qualitative bounds [0, 1] on the actual value for the initial states. Refining abstraction based on qualitative check.");
                 
                 // Post-process strategies for better refinements.
+                storm::utility::Stopwatch strategyProcessingWatch(true);
                 postProcessStrategies(player1Direction, minStrategyPair, maxStrategyPair, player1Groups, player2RowGrouping, transitionMatrix, constraintStates, targetStates, qualitativeResult, this->fixPlayer1Strategy, this->fixPlayer2Strategy, this->debug);
+                strategyProcessingWatch.stop();
+                totalStrategyProcessingWatch.add(strategyProcessingWatch);
+                STORM_LOG_DEBUG("Postprocessed strategies in " << strategyProcessingWatch.getTimeInMilliseconds() << "ms.");
 
                 // If we get here, the initial states were all identified as prob0/1 states, but the value (0 or 1)
                 // depends on whether player 2 is minimizing or maximizing. Therefore, we need to find a place to refine.
@@ -1040,6 +1045,11 @@ namespace storm {
                 // (7) Solve the min values and check whether we can give the answer already.
                 storm::utility::Stopwatch quantitativeWatch(true);
                 quantitativeResult.setMin(computeQuantitativeResult<ValueType>(env, player1Direction, storm::OptimizationDirection::Minimize, transitionMatrix, player1Groups, qualitativeResult, maybeMin, minStrategyPair, odd, nullptr, nullptr, this->reuseQuantitativeResults ? previousResult : boost::none));
+                
+                // Dispose of previous result as we now reused it.
+                if (previousResult) {
+                    previousResult.get().clear();
+                }
                 quantitativeWatch.stop();
                 result = checkForResultAfterQuantitativeCheck<ValueType>(checkTask, storm::OptimizationDirection::Minimize, quantitativeResult.getMin().getRange(initialStates));
                 if (result) {
@@ -1065,7 +1075,12 @@ namespace storm {
                 }
                 
                 // Post-process strategies for better refinements.
+                storm::utility::Stopwatch strategyProcessingWatch(true);
                 postProcessStrategies(player1Direction, minStrategyPair, maxStrategyPair, player1Groups, player2RowGrouping, transitionMatrix, constraintStates, targetStates, quantitativeResult, this->fixPlayer1Strategy, this->fixPlayer2Strategy, this->debug);
+                strategyProcessingWatch.stop();
+                totalStrategyProcessingWatch.add(strategyProcessingWatch);
+                STORM_LOG_DEBUG("Postprocessed strategies in " << strategyProcessingWatch.getTimeInMilliseconds() << "ms.");
+
 
                 // Make sure that all strategies are still valid strategies.
                 STORM_LOG_ASSERT(minStrategyPair.getNumberOfUndefinedPlayer1States() <= targetStates.getNumberOfSetBits(), "Expected at most " << targetStates.getNumberOfSetBits() << " (number of target states) player 1 states with undefined choice but got " << minStrategyPair.getNumberOfUndefinedPlayer1States() << ".");
@@ -1081,28 +1096,9 @@ namespace storm {
 
                 if (this->reuseQuantitativeResults) {
                     PreviousExplicitResult<ValueType> nextPreviousResult;
-                    nextPreviousResult.values = std::move(quantitativeResult);
+                    nextPreviousResult.values = std::move(quantitativeResult.getMin());
                     nextPreviousResult.odd = odd;
-                    
-                    // We transform the offset choices for the states to their labels, so we can more easily identify
-                    // them in the next iteration.
-                    nextPreviousResult.minPlayer1Labels.resize(odd.getTotalOffset());
-                    nextPreviousResult.maxPlayer1Labels.resize(odd.getTotalOffset());
-                    for (uint64_t player1State = 0; player1State < odd.getTotalOffset(); ++player1State) {
-                        if (minStrategyPair.getPlayer1Strategy().hasDefinedChoice(player1State)) {
-                            nextPreviousResult.minPlayer1Labels[player1State] = player1Labeling[minStrategyPair.getPlayer1Strategy().getChoice(player1State)];
-                        } else {
-                            nextPreviousResult.minPlayer1Labels[player1State] = std::numeric_limits<uint64_t>::max();
-                        }
-                        if (maxStrategyPair.getPlayer1Strategy().hasDefinedChoice(player1State)) {
-                            nextPreviousResult.maxPlayer1Labels[player1State] = player1Labeling[maxStrategyPair.getPlayer1Strategy().getChoice(player1State)];
-                        } else {
-                            nextPreviousResult.minPlayer1Labels[player1State] = std::numeric_limits<uint64_t>::max();
-                        }
-                    }
-                    
                     previousResult = std::move(nextPreviousResult);
-                    
                     STORM_LOG_TRACE("Prepared next previous result to reuse values.");
                 }
             }
@@ -1273,6 +1269,7 @@ namespace storm {
                 
                 uint64_t totalAbstractionTimeMillis = totalAbstractionWatch.getTimeInMilliseconds();
                 uint64_t totalTranslationTimeMillis = totalTranslationWatch.getTimeInMilliseconds();
+                uint64_t totalStrategyProcessingTimeMillis = totalStrategyProcessingWatch.getTimeInMilliseconds();
                 uint64_t totalSolutionTimeMillis = totalSolutionWatch.getTimeInMilliseconds();
                 uint64_t totalRefinementTimeMillis = totalRefinementWatch.getTimeInMilliseconds();
                 uint64_t totalTimeMillis = totalWatch.getTimeInMilliseconds();
@@ -1281,6 +1278,9 @@ namespace storm {
                 std::cout << "    * abstraction: " << totalAbstractionTimeMillis << "ms (" << 100 * static_cast<double>(totalAbstractionTimeMillis)/totalTimeMillis << "%)" << std::endl;
                 if (this->solveMode == storm::settings::modules::AbstractionSettings::SolveMode::Sparse) {
                     std::cout << "    * translation: " << totalTranslationTimeMillis << "ms (" << 100 * static_cast<double>(totalTranslationTimeMillis)/totalTimeMillis << "%)" << std::endl;
+                    if (fixPlayer1Strategy || fixPlayer2Strategy) {
+                        std::cout << "    * strategy processing: " << totalStrategyProcessingTimeMillis << "ms (" << 100 * static_cast<double>(totalStrategyProcessingTimeMillis)/totalTimeMillis << "%)" << std::endl;
+                    }
                 }
                 std::cout << "    * solution: " << totalSolutionTimeMillis << "ms (" << 100 * static_cast<double>(totalSolutionTimeMillis)/totalTimeMillis << "%)" << std::endl;
                 std::cout << "    * refinement: " << totalRefinementTimeMillis << "ms (" << 100 * static_cast<double>(totalRefinementTimeMillis)/totalTimeMillis << "%)" << std::endl;

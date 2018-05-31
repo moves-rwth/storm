@@ -62,10 +62,13 @@ namespace storm {
         namespace detail {
             template<typename ValueType>
             struct PreviousExplicitResult {
-                ExplicitQuantitativeResultMinMax<ValueType> values;
-                std::vector<uint64_t> minPlayer1Labels;
-                std::vector<uint64_t> maxPlayer1Labels;
+                ExplicitQuantitativeResult<ValueType> values;
                 storm::dd::Odd odd;
+                
+                void clear() {
+                    odd = storm::dd::Odd();
+                    values = ExplicitQuantitativeResult<ValueType>();
+                }
             };
         }
         
@@ -164,6 +167,7 @@ namespace storm {
             storm::utility::Stopwatch totalSolutionWatch;
             storm::utility::Stopwatch totalRefinementWatch;
             storm::utility::Stopwatch totalTranslationWatch;
+            storm::utility::Stopwatch totalStrategyProcessingWatch;
             storm::utility::Stopwatch totalWatch;
         };
     }

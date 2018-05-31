@@ -14,6 +14,11 @@ namespace storm {
         }
         
         template<typename ValueType>
+        ExplicitQuantitativeResult<ValueType>::ExplicitQuantitativeResult(std::vector<ValueType>&& values) : values(std::move(values)) {
+            // Intentionally left empty.
+        }
+        
+        template<typename ValueType>
         std::vector<ValueType> const& ExplicitQuantitativeResult<ValueType>::getValues() const {
             return values;
         }

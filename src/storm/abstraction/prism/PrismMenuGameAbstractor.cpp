@@ -33,8 +33,7 @@ namespace storm {
             using storm::settings::modules::AbstractionSettings;
             
             template <storm::dd::DdType DdType, typename ValueType>
-            PrismMenuGameAbstractor<DdType, ValueType>::PrismMenuGameAbstractor(storm::prism::Program const& program,
-                                                                std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory)
+            PrismMenuGameAbstractor<DdType, ValueType>::PrismMenuGameAbstractor(storm::prism::Program const& program, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory)
             : program(program), smtSolverFactory(smtSolverFactory), abstractionInformation(program.getManager(), program.getAllExpressionVariables(), smtSolverFactory->create(program.getManager())), modules(), initialStateAbstractor(abstractionInformation, {program.getInitialStatesExpression()}, this->smtSolverFactory), validBlockAbstractor(abstractionInformation, smtSolverFactory), currentGame(nullptr), refinementPerformed(false) {
                 
                 // For now, we assume that there is a single module. If the program has more than one module, it needs
@@ -179,7 +178,6 @@ namespace storm {
                 storm::dd::Bdd<DdType> validBlocks = validBlockAbstractor.getValidBlocks();
 
                 // Compute the choices with only valid successors so we can restrict the game to these.
-                
                 auto choicesWithOnlyValidSuccessors = !game.bdd.andExists(!validBlocks.swapVariables(abstractionInformation.getSourceSuccessorVariablePairs()), successorAndAuxVariables) && game.bdd.existsAbstract(successorAndAuxVariables);
                 
                 // Do a reachability analysis on the raw transition relation.
@@ -226,7 +224,7 @@ namespace storm {
                 
                 // Construct the transition matrix by cutting away the transitions of unreachable states.
                 // Note that we also restrict the successor states of transitions, because there might be successors
-                // that are not in the relevant we restrict to.
+                // that are not in the set of relevant states we restrict to.
                 storm::dd::Add<DdType, ValueType> transitionMatrix = (extendedTransitionRelation && reachableStates && reachableStates.swapVariables(abstractionInformation.getSourceSuccessorVariablePairs())).template toAdd<ValueType>();
                 transitionMatrix *= commandUpdateProbabilitiesAdd;
                 transitionMatrix += deadlockTransitions;
@@ -242,9 +240,7 @@ namespace storm {
                     reachableStates |= bottomStateResult.states;
                 }
                 
-                std::set<storm::expressions::Variable> usedPlayer2Variables(abstractionInformation.getPlayer2Variables().begin(), abstractionInformation.getPlayer2Variables().begin() + game.numberOfPlayer2Variables);
-                
-                std::set<storm::expressions::Variable> allNondeterminismVariables = usedPlayer2Variables;
+                std::set<storm::expressions::Variable> allNondeterminismVariables = player2Variables;
                 allNondeterminismVariables.insert(abstractionInformation.getPlayer1Variables().begin(), abstractionInformation.getPlayer1Variables().end());
                 
                 std::set<storm::expressions::Variable> allSourceVariables(abstractionInformation.getSourceVariables());
@@ -252,7 +248,7 @@ namespace storm {
                 std::set<storm::expressions::Variable> allSuccessorVariables(abstractionInformation.getSuccessorVariables());
                 allSuccessorVariables.insert(abstractionInformation.getBottomStateVariable(false));
                 
-                return std::make_unique<MenuGame<DdType, ValueType>>(abstractionInformation.getDdManagerAsSharedPointer(), reachableStates, initialStates, abstractionInformation.getDdManager().getBddZero(), transitionMatrix, bottomStateResult.states, allSourceVariables, allSuccessorVariables, abstractionInformation.getExtendedSourceSuccessorVariablePairs(), std::set<storm::expressions::Variable>(abstractionInformation.getPlayer1Variables().begin(), abstractionInformation.getPlayer1Variables().end()), usedPlayer2Variables, allNondeterminismVariables, auxVariables, abstractionInformation.getPredicateToBddMap());
+                return std::make_unique<MenuGame<DdType, ValueType>>(abstractionInformation.getDdManagerAsSharedPointer(), reachableStates, initialStates, abstractionInformation.getDdManager().getBddZero(), transitionMatrix, bottomStateResult.states, allSourceVariables, allSuccessorVariables, abstractionInformation.getExtendedSourceSuccessorVariablePairs(), std::set<storm::expressions::Variable>(abstractionInformation.getPlayer1Variables().begin(), abstractionInformation.getPlayer1Variables().end()), player2Variables, allNondeterminismVariables, auxVariables, abstractionInformation.getPredicateToBddMap());
             }
             
             template <storm::dd::DdType DdType, typename ValueType>

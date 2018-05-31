@@ -15,7 +15,8 @@ namespace storm {
         public:
             ExplicitQuantitativeResult() = default;
             ExplicitQuantitativeResult(uint64_t numberOfStates);
-            
+            ExplicitQuantitativeResult(std::vector<ValueType>&& values);
+
             std::vector<ValueType> const& getValues() const;
             std::vector<ValueType>& getValues();
             void setValue(uint64_t state, ValueType const& value);

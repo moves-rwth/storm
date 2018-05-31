@@ -58,7 +58,7 @@ namespace storm {
                  * @param smtSolverFactory A factory that is to be used for creating new SMT solvers.
                  * @param useDecomposition A flag indicating whether to use an edge decomposition during abstraction.
                  */
-                EdgeAbstractor(uint64_t edgeId, storm::jani::Edge const& edge, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool useDecomposition);
+                EdgeAbstractor(uint64_t edgeId, storm::jani::Edge const& edge, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool useDecomposition, bool debug);
                                
                 /*!
                  * Refines the abstract edge with the given predicates.
@@ -187,21 +187,14 @@ namespace storm {
                  * Recomputes the cached BDD using the decomposition.
                  */
                 void recomputeCachedBddWithDecomposition();
-
-                /*!
-                 * Computes the missing state identities.
-                 *
-                 * @return A BDD that represents the all missing state identities.
-                 */
-                storm::dd::Bdd<DdType> computeMissingIdentities() const;
                 
                 /*!
-                 * Computes the missing state identities for the updates.
+                 * Computes the missing state identities for the destinations.
                  *
                  * @return A BDD that represents the state identities for predicates that are irrelevant for the
                  * successor states.
                  */
-                storm::dd::Bdd<DdType> computeMissingUpdateIdentities() const;
+                storm::dd::Bdd<DdType> computeMissingDestinationIdentities() const;
                 
                 /*!
                  * Retrieves the abstraction information object.
@@ -216,15 +209,7 @@ namespace storm {
                  * @return The abstraction information object.
                  */
                 AbstractionInformation<DdType>& getAbstractionInformation();
-                
-                /*!
-                 * Computes the globally missing state identities.
-                 *
-                 * @return A BDD that represents the global state identities for predicates that are irrelevant for the
-                 * source and successor states.
-                 */
-                storm::dd::Bdd<DdType> computeMissingGlobalIdentities() const;
-                
+                                
                 // An SMT responsible for this abstract command.
                 std::unique_ptr<storm::solver::SmtSolver> smtSolver;
 
@@ -275,6 +260,9 @@ namespace storm {
                 
                 // A state-set abstractor used to determine the bottom states if not all guards were added.
                 StateSetAbstractor<DdType, ValueType> bottomStateAbstractor;
+                
+                // A flag that indicates whether or not debug mode is enabled.
+                bool debug;
             };
         }
     }
