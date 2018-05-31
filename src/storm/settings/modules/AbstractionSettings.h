@@ -161,7 +161,17 @@ namespace storm {
                  * Retrieves a string containing refinement predicates to inject (if there are any).
                  */
                 std::string getInjectedRefinementPredicates() const;
-                
+
+                /*!
+                 * Retrieves whether player 1 strategies are to be fixed.
+                 */
+                bool isFixPlayer1StrategySet() const;
+
+                /*!
+                 * Retrieves whether player 2 strategies are to be fixed.
+                 */
+                bool isFixPlayer2StrategySet() const;
+
                 const static std::string moduleName;
                 
             private:
@@ -181,7 +191,9 @@ namespace storm {
                 const static std::string constraintsOptionName;
                 const static std::string useEagerRefinementOptionName;
                 const static std::string debugOptionName;
-                const static std::string injectRefinementPredicatesOption;
+                const static std::string injectRefinementPredicatesOptionName;
+                const static std::string fixPlayer1StrategyOptionName;
+                const static std::string fixPlayer2StrategyOptionName;
             };
             
         }

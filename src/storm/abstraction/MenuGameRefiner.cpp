@@ -870,14 +870,11 @@ namespace storm {
             auto assertionStart = std::chrono::high_resolution_clock::now();
             storm::solver::MathsatSmtSolver interpolatingSolver(interpolationManager, storm::solver::MathsatSmtSolver::Options(true, false, true));
             uint64_t stepCounter = 0;
-            auto traceIt = trace.rbegin();
-            auto traceIte = trace.rend();
-            for (; traceIt != traceIte; ++traceIt) {
-                auto const& step = *traceIt;
-                interpolatingSolver.push();
+            for (auto const& traceElement : trace) {
+                // interpolatingSolver.push();
                 
                 interpolatingSolver.setInterpolationGroup(stepCounter);
-                for (auto const& predicate : step) {
+                for (auto const& predicate : traceElement) {
                     interpolatingSolver.add(predicate);
                 }
 
@@ -898,6 +895,7 @@ namespace storm {
                     storm::expressions::Expression interpolant = interpolatingSolver.getInterpolant(prefix).substitute(variableSubstitution).changeManager(abstractionInformation.getExpressionManager());
                     if (interpolant.isFalse()) {
                         // If the interpolant is false, it means that the prefix has become unsatisfiable.
+                        STORM_LOG_TRACE("Trace formula became unsatisfiable at position " << step << " of " << stepCounter << ".");
                         break;
                     }
                     if (!interpolant.isTrue()) {
@@ -1231,16 +1229,18 @@ namespace storm {
                     }
                 }
                 
-                if (currentLower) {
-                    performDijkstraStep(dijkstraQueue, probabilityDistances, lowerDistances, lowerPredecessors, generatePredecessors, true, currentState, currentDistance, isPivotState, minStrategyPair, maxStrategyPair, player1Labeling, player2Grouping, transitionMatrix, targetStates, relevantStates);
-                } else {
-                    performDijkstraStep(dijkstraQueue, probabilityDistances, upperDistances, upperPredecessors, generatePredecessors, true, currentState, currentDistance, isPivotState, maxStrategyPair, minStrategyPair, player1Labeling, player2Grouping, transitionMatrix, targetStates, relevantStates);
+                // We only need to search further if the state has some value deviation.
+                if (!lowerValues || !upperValues || (*lowerValues)[currentState] < (*upperValues)[currentState]) {
+                    if (currentLower) {
+                        performDijkstraStep(dijkstraQueue, probabilityDistances, lowerDistances, lowerPredecessors, generatePredecessors, true, currentState, currentDistance, isPivotState, minStrategyPair, maxStrategyPair, player1Labeling, player2Grouping, transitionMatrix, targetStates, relevantStates);
+                    } else {
+                        performDijkstraStep(dijkstraQueue, probabilityDistances, upperDistances, upperPredecessors, generatePredecessors, false, currentState, currentDistance, isPivotState, maxStrategyPair, minStrategyPair, player1Labeling, player2Grouping, transitionMatrix, targetStates, relevantStates);
+                    }
                 }
             }
             
             if (foundPivotState) {
-                ExplicitPivotStateResult<ValueType> result;
-                return result;
+                return ExplicitPivotStateResult<ValueType>(pivotState.state, pivotState.distance, pivotState.lower ? std::move(lowerPredecessors) : std::move(upperPredecessors));
             }
 
             // If we arrived at this point, we have explored all relevant states, but none of them was a pivot state,

@@ -91,6 +91,8 @@ namespace storm {
             reuseQualitativeResults = reuseMode == storm::settings::modules::AbstractionSettings::ReuseMode::All || reuseMode == storm::settings::modules::AbstractionSettings::ReuseMode::Qualitative;
             reuseQuantitativeResults = reuseMode == storm::settings::modules::AbstractionSettings::ReuseMode::All || reuseMode == storm::settings::modules::AbstractionSettings::ReuseMode::Quantitative;
             maximalNumberOfAbstractions = abstractionSettings.getMaximalAbstractionCount();
+            fixPlayer1Strategy = abstractionSettings.isFixPlayer1StrategySet();
+            fixPlayer2Strategy = abstractionSettings.isFixPlayer2StrategySet();
         }
 
         template<storm::dd::DdType Type, typename ModelType>
@@ -560,6 +562,8 @@ namespace storm {
             boost::optional<SymbolicQualitativeGameResultMinMax<Type>> previousSymbolicQualitativeResult = boost::none;
             boost::optional<SymbolicQuantitativeGameResult<Type, ValueType>> previousSymbolicMinQuantitativeResult = boost::none;
             boost::optional<PreviousExplicitResult<ValueType>> previousExplicitResult = boost::none;
+            uint64_t peakPlayer1States = 0;
+            uint64_t peakTransitions = 0;
             for (iteration = 0; iteration < maximalNumberOfAbstractions; ++iteration) {
                 auto iterationStart = std::chrono::high_resolution_clock::now();
                 STORM_LOG_TRACE("Starting iteration " << iteration << ".");
@@ -569,7 +573,12 @@ namespace storm {
                 storm::abstraction::MenuGame<Type, ValueType> game = abstractor->abstract();
                 abstractionWatch.stop();
                 totalAbstractionWatch.add(abstractionWatch);
-                STORM_LOG_INFO("Abstraction in iteration " << iteration << " has " << game.getNumberOfStates() << " player 1 states (" << game.getInitialStates().getNonZeroCount() << " initial), " << game.getNumberOfPlayer2States() << " player 2 states, " << game.getNumberOfTransitions() << " transitions, " << game.getBottomStates().getNonZeroCount() << " bottom states, " << abstractor->getNumberOfPredicates() << " predicate(s), " << game.getTransitionMatrix().getNodeCount() << " nodes (transition matrix) (computed in " << abstractionWatch.getTimeInMilliseconds() << "ms).");
+                
+                uint64_t numberOfPlayer1States = game.getNumberOfStates();
+                peakPlayer1States = std::max(peakPlayer1States, numberOfPlayer1States);
+                uint64_t numberOfTransitions = game.getNumberOfTransitions();
+                peakTransitions = std::max(peakTransitions, numberOfTransitions);
+                STORM_LOG_INFO("Abstraction in iteration " << iteration << " has " << numberOfPlayer1States << " player 1 states (" << game.getInitialStates().getNonZeroCount() << " initial), " << game.getNumberOfPlayer2States() << " player 2 states, " << numberOfTransitions << " transitions, " << game.getBottomStates().getNonZeroCount() << " bottom states, " << abstractor->getNumberOfPredicates() << " predicate(s), " << game.getTransitionMatrix().getNodeCount() << " nodes (transition matrix) (computed in " << abstractionWatch.getTimeInMilliseconds() << "ms).");
                 
                 // (2) Prepare initial, constraint and target state BDDs for later use.
                 storm::dd::Bdd<Type> initialStates = game.getInitialStates();
@@ -596,7 +605,7 @@ namespace storm {
 
                 if (result) {
                     totalWatch.stop();
-                    printStatistics(*abstractor, game, iteration);
+                    printStatistics(*abstractor, game, iteration, peakPlayer1States, peakTransitions);
                     return result;
                 }
                 
@@ -712,51 +721,166 @@ namespace storm {
         }
         
         template <typename ValueType>
-        void postProcessStrategies(abstraction::ExplicitGameStrategyPair& minStrategyPair, abstraction::ExplicitGameStrategyPair& maxStrategyPair, std::vector<uint64_t> const& player1Groups, std::vector<uint64_t> const& player2Groups, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, ExplicitQuantitativeResultMinMax<ValueType> const& quantitativeResult, bool sanityCheck) {
+        void postProcessStrategies(storm::OptimizationDirection const& player1Direction, abstraction::ExplicitGameStrategyPair& minStrategyPair, abstraction::ExplicitGameStrategyPair& maxStrategyPair, std::vector<uint64_t> const& player1Groups, std::vector<uint64_t> const& player2Groups, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, ExplicitQualitativeGameResultMinMax const& qualitativeResult, bool redirectPlayer1, bool redirectPlayer2, bool sanityCheck) {
+            
+            if (!redirectPlayer1 && !redirectPlayer2) {
+                return;
+            }
+            
+            for (uint64_t state = 0; state < player1Groups.size() - 1; ++state) {
+                bool isProb0Min = qualitativeResult.getProb0Min().getStates().get(state);
+                
+                bool hasMinPlayer1Choice = false;
+                uint64_t lowerPlayer1Choice = 0;
+                bool hasMaxPlayer1Choice = false;
+                uint64_t upperPlayer1Choice = 0;
+
+                if (minStrategyPair.getPlayer1Strategy().hasDefinedChoice(state)) {
+                    hasMinPlayer1Choice = true;
+                    lowerPlayer1Choice = minStrategyPair.getPlayer1Strategy().getChoice(state);
+
+                    if (maxStrategyPair.getPlayer2Strategy().hasDefinedChoice(lowerPlayer1Choice)) {
+                        uint64_t lowerPlayer2Choice = minStrategyPair.getPlayer2Strategy().getChoice(lowerPlayer1Choice);
+                        uint64_t upperPlayer2Choice = maxStrategyPair.getPlayer2Strategy().getChoice(lowerPlayer1Choice);
+
+                        if (lowerPlayer2Choice == upperPlayer2Choice) {
+                            continue;
+                        }
+                        
+                        bool redirect = true;
+                        if (isProb0Min) {
+                            for (auto const& entry : transitionMatrix.getRow(upperPlayer2Choice)) {
+                                if (!qualitativeResult.getProb0Min().getStates().get(entry.getColumn())) {
+                                    redirect = false;
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        if (redirectPlayer2 && redirect) {
+                            minStrategyPair.getPlayer2Strategy().setChoice(lowerPlayer1Choice, upperPlayer2Choice);
+                        }
+                    }
+                }
+                
+                bool lowerChoiceUnderUpperIsProb0 = false;
+                if (maxStrategyPair.getPlayer1Strategy().hasDefinedChoice(state)) {
+                    upperPlayer1Choice = maxStrategyPair.getPlayer1Strategy().getChoice(state);
+
+                    if (lowerPlayer1Choice != upperPlayer1Choice && minStrategyPair.getPlayer2Strategy().hasDefinedChoice(upperPlayer1Choice)) {
+                        hasMaxPlayer1Choice = true;
+
+                        uint64_t lowerPlayer2Choice = minStrategyPair.getPlayer2Strategy().getChoice(upperPlayer1Choice);
+                        uint64_t upperPlayer2Choice = maxStrategyPair.getPlayer2Strategy().getChoice(upperPlayer1Choice);
+
+                        if (lowerPlayer2Choice == upperPlayer2Choice) {
+                            continue;
+                        }
+                        
+                        lowerChoiceUnderUpperIsProb0 = true;
+                        for (auto const& entry : transitionMatrix.getRow(lowerPlayer2Choice)) {
+                            if (!qualitativeResult.getProb0Min().getStates().get(entry.getColumn())) {
+                                lowerChoiceUnderUpperIsProb0 = false;
+                                break;
+                            }
+                        }
+
+                        bool redirect = true;
+                        if (lowerChoiceUnderUpperIsProb0) {
+                            for (auto const& entry : transitionMatrix.getRow(upperPlayer2Choice)) {
+                                if (!qualitativeResult.getProb0Min().getStates().get(entry.getColumn())) {
+                                    redirect = false;
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        if (redirectPlayer2 && redirect) {
+                            minStrategyPair.getPlayer2Strategy().setChoice(lowerPlayer1Choice, upperPlayer2Choice);
+                        }
+                    }
+                }
+                
+                if (redirectPlayer1 && player1Direction == storm::OptimizationDirection::Minimize) {
+                    if (hasMinPlayer1Choice && hasMaxPlayer1Choice && lowerPlayer1Choice != upperPlayer1Choice) {
+                        if (!isProb0Min || lowerChoiceUnderUpperIsProb0) {
+                            minStrategyPair.getPlayer1Strategy().setChoice(state, upperPlayer1Choice);
+                        }
+                    }
+                }
+            }
+        }
+        
+        template <typename ValueType>
+        void postProcessStrategies(storm::OptimizationDirection const& player1Direction, abstraction::ExplicitGameStrategyPair& minStrategyPair, abstraction::ExplicitGameStrategyPair& maxStrategyPair, std::vector<uint64_t> const& player1Groups, std::vector<uint64_t> const& player2Groups, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, ExplicitQuantitativeResultMinMax<ValueType> const& quantitativeResult, bool redirectPlayer1, bool redirectPlayer2, bool sanityCheck) {
+            
+            if (!redirectPlayer1 && !redirectPlayer2) {
+                return;
+            }
+            
             for (uint64_t state = 0; state < player1Groups.size() - 1; ++state) {
                 STORM_LOG_ASSERT(targetStates.get(state) || minStrategyPair.getPlayer1Strategy().hasDefinedChoice(state), "Expected lower player 1 choice in state " << state << ".");
                 STORM_LOG_ASSERT(targetStates.get(state) || maxStrategyPair.getPlayer1Strategy().hasDefinedChoice(state), "Expected upper player 1 choice in state " << state << ".");
                 
+                bool hasMinPlayer1Choice = false;
+                uint64_t lowerPlayer1Choice = 0;
+                ValueType lowerValueUnderMinChoicePlayer1 = storm::utility::zero<ValueType>();
+                bool hasMaxPlayer1Choice = false;
+                uint64_t upperPlayer1Choice = 0;
+                ValueType lowerValueUnderMaxChoicePlayer1 = storm::utility::zero<ValueType>();
+                
                 if (minStrategyPair.getPlayer1Strategy().hasDefinedChoice(state)) {
-                    uint64_t lowerPlayer1Choice = minStrategyPair.getPlayer1Strategy().getChoice(state);
+                    hasMinPlayer1Choice = true;
+                    lowerPlayer1Choice = minStrategyPair.getPlayer1Strategy().getChoice(state);
                     
-                    STORM_LOG_ASSERT(minStrategyPair.getPlayer2Strategy().hasDefinedChoice(lowerPlayer1Choice), "Expected lower player 2 choice for state " << state << " (upper player 1 choice " << lowerPlayer1Choice << ").");
+                    STORM_LOG_ASSERT(minStrategyPair.getPlayer2Strategy().hasDefinedChoice(lowerPlayer1Choice), "Expected lower player 2 choice for state " << state << " (lower player 1 choice " << lowerPlayer1Choice << ").");
                     uint64_t lowerPlayer2Choice = minStrategyPair.getPlayer2Strategy().getChoice(lowerPlayer1Choice);
+                    
+                    ValueType lowerValueUnderLowerChoicePlayer2 = transitionMatrix.multiplyRowWithVector(lowerPlayer2Choice, quantitativeResult.getMin().getValues());
+                    lowerValueUnderMinChoicePlayer1 = lowerValueUnderLowerChoicePlayer2;
                     
                     if (maxStrategyPair.getPlayer2Strategy().hasDefinedChoice(lowerPlayer1Choice)) {
                         uint64_t upperPlayer2Choice = maxStrategyPair.getPlayer2Strategy().getChoice(lowerPlayer1Choice);
                         
                         if (lowerPlayer2Choice != upperPlayer2Choice) {
-                            ValueType lowerValueUnderLowerChoice = transitionMatrix.multiplyRowWithVector(lowerPlayer2Choice, quantitativeResult.getMin().getValues());
-                            ValueType lowerValueUnderUpperChoice = transitionMatrix.multiplyRowWithVector(upperPlayer2Choice, quantitativeResult.getMin().getValues());
+                            ValueType lowerValueUnderUpperChoicePlayer2 = transitionMatrix.multiplyRowWithVector(upperPlayer2Choice, quantitativeResult.getMin().getValues());
                             
-                            if (lowerValueUnderUpperChoice <= lowerValueUnderLowerChoice) {
+                            if (redirectPlayer2 && lowerValueUnderUpperChoicePlayer2 <= lowerValueUnderLowerChoicePlayer2) {
+                                lowerValueUnderMinChoicePlayer1 = lowerValueUnderUpperChoicePlayer2;
                                 minStrategyPair.getPlayer2Strategy().setChoice(lowerPlayer1Choice, upperPlayer2Choice);
-                                if (sanityCheck) {
-                                    STORM_LOG_TRACE("[min] redirecting choice of state " << state << ": " << lowerValueUnderLowerChoice << " vs. " << lowerValueUnderUpperChoice);
-                                }
                             }
                         }
                     }
                 }
                 
                 if (maxStrategyPair.getPlayer1Strategy().hasDefinedChoice(state)) {
-                    uint64_t upperPlayer1Choice = maxStrategyPair.getPlayer1Strategy().getChoice(state);
+                    upperPlayer1Choice = maxStrategyPair.getPlayer1Strategy().getChoice(state);
                     
-                    STORM_LOG_ASSERT(maxStrategyPair.getPlayer2Strategy().hasDefinedChoice(upperPlayer1Choice), "Expected upper player 2 choice for state " << state << " (upper player 1 choice " << upperPlayer1Choice << ").");
-                    uint64_t upperPlayer2Choice = minStrategyPair.getPlayer2Strategy().getChoice(upperPlayer1Choice);
-                    
-                    if (minStrategyPair.getPlayer2Strategy().hasDefinedChoice(upperPlayer1Choice)) {
+                    if (upperPlayer1Choice != lowerPlayer1Choice && minStrategyPair.getPlayer2Strategy().hasDefinedChoice(upperPlayer1Choice)) {
+                        hasMaxPlayer1Choice = true;
+
                         uint64_t lowerPlayer2Choice = minStrategyPair.getPlayer2Strategy().getChoice(upperPlayer1Choice);
                         
+                        ValueType lowerValueUnderLowerChoicePlayer2 = transitionMatrix.multiplyRowWithVector(lowerPlayer2Choice, quantitativeResult.getMin().getValues());
+                        lowerValueUnderMaxChoicePlayer1 = lowerValueUnderLowerChoicePlayer2;
+                        
+                        STORM_LOG_ASSERT(maxStrategyPair.getPlayer2Strategy().hasDefinedChoice(upperPlayer1Choice), "Expected upper player 2 choice for state " << state << " (upper player 1 choice " << upperPlayer1Choice << ").");
+                        uint64_t upperPlayer2Choice = maxStrategyPair.getPlayer2Strategy().getChoice(upperPlayer1Choice);
+                        
                         if (lowerPlayer2Choice != upperPlayer2Choice) {
-                            ValueType lowerValueUnderLowerChoice = transitionMatrix.multiplyRowWithVector(lowerPlayer2Choice, quantitativeResult.getMin().getValues());
-                            ValueType lowerValueUnderUpperChoice = transitionMatrix.multiplyRowWithVector(upperPlayer2Choice, quantitativeResult.getMin().getValues());
+                            ValueType lowerValueUnderUpperChoicePlayer2 = transitionMatrix.multiplyRowWithVector(upperPlayer2Choice, quantitativeResult.getMin().getValues());
                             
-                            if (lowerValueUnderUpperChoice <= lowerValueUnderLowerChoice) {
+                            if (redirectPlayer2 && lowerValueUnderUpperChoicePlayer2 <= lowerValueUnderLowerChoicePlayer2) {
                                 minStrategyPair.getPlayer2Strategy().setChoice(upperPlayer1Choice, upperPlayer2Choice);
-                                STORM_LOG_TRACE("[max] redirecting choice of state " << state << ": " << lowerValueUnderLowerChoice << " vs. " << lowerValueUnderUpperChoice);
                             }
+                        }
+                    }
+                }
+                
+                if (redirectPlayer1 && player1Direction == storm::OptimizationDirection::Minimize) {
+                    if (hasMinPlayer1Choice && hasMaxPlayer1Choice && lowerPlayer1Choice != upperPlayer1Choice) {
+                        if (lowerValueUnderMaxChoicePlayer1 <= lowerValueUnderMinChoicePlayer1) {
+                            minStrategyPair.getPlayer1Strategy().setChoice(state, upperPlayer1Choice);
                         }
                     }
                 }
@@ -894,6 +1018,9 @@ namespace storm {
                 
                 STORM_LOG_INFO("Obtained qualitative bounds [0, 1] on the actual value for the initial states. Refining abstraction based on qualitative check.");
                 
+                // Post-process strategies for better refinements.
+                postProcessStrategies(player1Direction, minStrategyPair, maxStrategyPair, player1Groups, player2RowGrouping, transitionMatrix, constraintStates, targetStates, qualitativeResult, this->fixPlayer1Strategy, this->fixPlayer2Strategy, this->debug);
+
                 // If we get here, the initial states were all identified as prob0/1 states, but the value (0 or 1)
                 // depends on whether player 2 is minimizing or maximizing. Therefore, we need to find a place to refine.
                 storm::utility::Stopwatch refinementWatch(true);
@@ -937,7 +1064,8 @@ namespace storm {
                     return result;
                 }
                 
-                postProcessStrategies(minStrategyPair, maxStrategyPair, player1Groups, player2RowGrouping, transitionMatrix, constraintStates, targetStates, quantitativeResult, this->debug);
+                // Post-process strategies for better refinements.
+                postProcessStrategies(player1Direction, minStrategyPair, maxStrategyPair, player1Groups, player2RowGrouping, transitionMatrix, constraintStates, targetStates, quantitativeResult, this->fixPlayer1Strategy, this->fixPlayer2Strategy, this->debug);
 
                 // Make sure that all strategies are still valid strategies.
                 STORM_LOG_ASSERT(minStrategyPair.getNumberOfUndefinedPlayer1States() <= targetStates.getNumberOfSetBits(), "Expected at most " << targetStates.getNumberOfSetBits() << " (number of target states) player 1 states with undefined choice but got " << minStrategyPair.getNumberOfUndefinedPlayer1States() << ".");
@@ -1128,7 +1256,7 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type, typename ModelType>
-        void GameBasedMdpModelChecker<Type, ModelType>::printStatistics(storm::abstraction::MenuGameAbstractor<Type, ValueType> const& abstractor, storm::abstraction::MenuGame<Type, ValueType> const& game, uint64_t refinements) const {
+        void GameBasedMdpModelChecker<Type, ModelType>::printStatistics(storm::abstraction::MenuGameAbstractor<Type, ValueType> const& abstractor, storm::abstraction::MenuGame<Type, ValueType> const& game, uint64_t refinements, uint64_t peakPlayer1States, uint64_t peakTransitions) const {
             if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
                 storm::abstraction::AbstractionInformation<Type> const& abstractionInformation = abstractor.getAbstractionInformation();
 
@@ -1137,10 +1265,11 @@ namespace storm {
                 
                 std::cout << std::endl;
                 std::cout << "Statistics:" << std::endl;
-                std::cout << "    * size of final game: " << game.getReachableStates().getNonZeroCount() << " player 1 states" << std::endl;
+                std::cout << "    * size of final game: " << game.getReachableStates().getNonZeroCount() << " player 1 states, " << game.getTransitionMatrix().getNonZeroCount() << " transitions" << std::endl;
+                std::cout << "    * peak size of game: " << peakPlayer1States << " player 1 states, " << peakTransitions << " transitions" << std::endl;
                 std::cout << "    * transitions (final game): " << game.getTransitionMatrix().getNonZeroCount() << std::endl;
                 std::cout << "    * refinements: " << refinements << std::endl;
-                std::cout << "    * predicates used in abstraction: " << abstractionInformation.getNumberOfPredicates() << std::endl << std::endl;
+                std::cout << "    * predicates: " << abstractionInformation.getNumberOfPredicates() << std::endl << std::endl;
                 
                 uint64_t totalAbstractionTimeMillis = totalAbstractionWatch.getTimeInMilliseconds();
                 uint64_t totalTranslationTimeMillis = totalTranslationWatch.getTimeInMilliseconds();

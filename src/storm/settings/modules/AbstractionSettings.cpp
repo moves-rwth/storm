@@ -29,7 +29,9 @@ namespace storm {
             const std::string AbstractionSettings::constraintsOptionName = "constraints";
             const std::string AbstractionSettings::useEagerRefinementOptionName = "eagerref";
             const std::string AbstractionSettings::debugOptionName = "debug";
-            const std::string AbstractionSettings::injectRefinementPredicatesOption = "injectref";
+            const std::string AbstractionSettings::injectRefinementPredicatesOptionName = "injectref";
+            const std::string AbstractionSettings::fixPlayer1StrategyOptionName = "fixpl1strat";
+            const std::string AbstractionSettings::fixPlayer2StrategyOptionName = "fixpl2strat";
             
             AbstractionSettings::AbstractionSettings() : ModuleSettings(moduleName) {
                 std::vector<std::string> methods = {"games", "bisimulation", "bisim"};
@@ -106,10 +108,20 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("constraints", "The constraints to use.").build())
                                 .build());
 
-                this->addOption(storm::settings::OptionBuilder(moduleName, injectRefinementPredicatesOption, true, "Specifies predicates used by the refinement instead of the derived predicates.")
+                this->addOption(storm::settings::OptionBuilder(moduleName, injectRefinementPredicatesOptionName, true, "Specifies predicates used by the refinement instead of the derived predicates.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("predicates", "The (semicolon-separated) refinement predicates to use.").build())
                                 .build());
                 
+                this->addOption(storm::settings::OptionBuilder(moduleName, fixPlayer1StrategyOptionName, true, "Sets whether to fix player 1 strategies.")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("value", "The value of the flag.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(onOff))
+                                             .setDefaultValueString("on").build())
+                                .build());
+
+                this->addOption(storm::settings::OptionBuilder(moduleName, fixPlayer2StrategyOptionName, true, "Sets whether to fix player 2 strategies.")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("value", "The value of the flag.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(onOff))
+                                             .setDefaultValueString("on").build())
+                                .build());
+
                 this->addOption(storm::settings::OptionBuilder(moduleName, debugOptionName, true, "Sets whether to enable debug mode.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("value", "The value of the flag.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(onOff))
                                              .setDefaultValueString("off").build())
@@ -225,11 +237,19 @@ namespace storm {
             }
             
             bool AbstractionSettings::isInjectRefinementPredicatesSet() const {
-                return this->getOption(injectRefinementPredicatesOption).getHasOptionBeenSet();
+                return this->getOption(injectRefinementPredicatesOptionName).getHasOptionBeenSet();
             }
             
             std::string AbstractionSettings::getInjectedRefinementPredicates() const {
-                return this->getOption(injectRefinementPredicatesOption).getArgumentByName("predicates").getValueAsString();
+                return this->getOption(injectRefinementPredicatesOptionName).getArgumentByName("predicates").getValueAsString();
+            }
+            
+            bool AbstractionSettings::isFixPlayer1StrategySet() const {
+                return this->getOption(fixPlayer1StrategyOptionName).getArgumentByName("value").getValueAsString() == "on";
+            }
+            
+            bool AbstractionSettings::isFixPlayer2StrategySet() const {
+                return this->getOption(fixPlayer2StrategyOptionName).getArgumentByName("value").getValueAsString() == "on";
             }
             
         }

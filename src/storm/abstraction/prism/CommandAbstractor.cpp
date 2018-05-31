@@ -565,7 +565,8 @@ namespace storm {
             template <storm::dd::DdType DdType, typename ValueType>
             storm::dd::Bdd<DdType> CommandAbstractor<DdType, ValueType>::getSourceStateBdd(storm::solver::SmtSolver::ModelReference const& model, std::vector<std::pair<storm::expressions::Variable, uint_fast64_t>> const& variablePredicates) const {
                 storm::dd::Bdd<DdType> result = this->getAbstractionInformation().getDdManager().getBddOne();
-                for (auto const& variableIndexPair : variablePredicates) {
+                for (auto variableIndexPairIt = variablePredicates.rbegin(), variableIndexPairIte = variablePredicates.rend(); variableIndexPairIt != variableIndexPairIte; ++variableIndexPairIt) {
+                    auto const& variableIndexPair = *variableIndexPairIt;
                     if (model.getBooleanValue(variableIndexPair.first)) {
                         result &= this->getAbstractionInformation().encodePredicateAsSource(variableIndexPair.second);
                     } else {
@@ -585,7 +586,8 @@ namespace storm {
                     storm::dd::Bdd<DdType> updateBdd = this->getAbstractionInformation().getDdManager().getBddOne();
                     
                     // Translate block variables for this update into a successor block.
-                    for (auto const& variableIndexPair : variablePredicates[updateIndex]) {
+                    for (auto variableIndexPairIt = variablePredicates[updateIndex].rbegin(), variableIndexPairIte = variablePredicates[updateIndex].rend(); variableIndexPairIt != variableIndexPairIte; ++variableIndexPairIt) {
+                        auto const& variableIndexPair = *variableIndexPairIt;
                         if (model.getBooleanValue(variableIndexPair.first)) {
                             updateBdd &= this->getAbstractionInformation().encodePredicateAsSuccessor(variableIndexPair.second);
                         } else {
@@ -613,16 +615,20 @@ namespace storm {
                 
                 for (uint_fast64_t updateIndex = 0; updateIndex < command.get().getNumberOfUpdates(); ++updateIndex) {
                     // Compute the identities that are missing for this update.
-                    auto updateRelevantIt = relevantPredicatesAndVariables.second[updateIndex].begin();
-                    auto updateRelevantIte = relevantPredicatesAndVariables.second[updateIndex].end();
+                    auto updateRelevantIt = relevantPredicatesAndVariables.second[updateIndex].rbegin();
+                    auto updateRelevantIte = relevantPredicatesAndVariables.second[updateIndex].rend();
                     
                     storm::dd::Bdd<DdType> updateIdentity = this->getAbstractionInformation().getDdManager().getBddOne();
                     
-                    for (uint_fast64_t predicateIndex = 0; predicateIndex < this->getAbstractionInformation().getNumberOfPredicates(); ++predicateIndex) {
+                    for (uint_fast64_t predicateIndex = this->getAbstractionInformation().getNumberOfPredicates() - 1;; --predicateIndex) {
                         if (updateRelevantIt == updateRelevantIte || updateRelevantIt->second != predicateIndex) {
                             updateIdentity &= this->getAbstractionInformation().getPredicateIdentity(predicateIndex);
                         } else {
                             ++updateRelevantIt;
+                        }
+                        
+                        if (predicateIndex == 0) {
+                            break;
                         }
                     }
 
@@ -630,25 +636,6 @@ namespace storm {
                 }
                 return result;
             }
-            
-//            template <storm::dd::DdType DdType, typename ValueType>
-//            storm::dd::Bdd<DdType> CommandAbstractor<DdType, ValueType>::computeMissingGlobalIdentities() const {
-//                storm::dd::Bdd<DdType> result = this->getAbstractionInformation().getDdManager().getBddOne();
-//                
-//                auto relevantIt = relevantPredicatesAndVariables.first.begin();
-//                auto relevantIte = relevantPredicatesAndVariables.first.end();
-//                
-//                for (uint_fast64_t predicateIndex = 0; predicateIndex < this->getAbstractionInformation().getNumberOfPredicates(); ++predicateIndex) {
-//                    if (relevantIt == relevantIte || relevantIt->second != predicateIndex) {
-//                        std::cout << "adding global identity of predicate " << this->getAbstractionInformation().getPredicateByIndex(predicateIndex) << std::endl;
-//                        result &= this->getAbstractionInformation().getPredicateIdentity(predicateIndex);
-//                    } else {
-//                        ++relevantIt;
-//                    }
-//                }
-//                
-//                return result;
-//            }
             
             template <storm::dd::DdType DdType, typename ValueType>
             GameBddResult<DdType> CommandAbstractor<DdType, ValueType>::abstract() {
