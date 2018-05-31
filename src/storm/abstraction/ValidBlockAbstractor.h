@@ -44,7 +44,7 @@ namespace storm {
             /*!
              * Recomputed the valid blocks for the given predicate block.
              */
-            void recomputeValidBlockForPredicateBlock(uint64_t blockIndex);
+            void recomputeValidBlocksForPredicateBlock(uint64_t blockIndex);
             
             /*!
              * Retrieves the abstraction information object.

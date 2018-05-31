@@ -5,6 +5,7 @@
 #include "storm/storage/dd/DdManager.h"
 
 #include "storm/utility/solver.h"
+#include "storm/utility/Stopwatch.h"
 
 namespace storm {
     namespace abstraction {
@@ -68,25 +69,39 @@ namespace storm {
         template <storm::dd::DdType DdType>
         void ValidBlockAbstractor<DdType>::recomputeValidBlocks() {
             storm::dd::Bdd<DdType> newValidBlocks = abstractionInformation.get().getDdManager().getBddOne();
-            
+
             for (uint64_t blockIndex = 0; blockIndex < localExpressionInformation.getNumberOfBlocks(); ++blockIndex) {
                 std::set<uint64_t> const& predicateBlock = localExpressionInformation.getExpressionBlock(blockIndex);
                 
                 // If the size of the block changed, we need to add the appropriate variables and recompute the solution.
                 if (relevantVariablesAndPredicates[blockIndex].size() < predicateBlock.size()) {
-                    recomputeValidBlockForPredicateBlock(blockIndex);
+                    recomputeValidBlocksForPredicateBlock(blockIndex);
                 }
-                
-                newValidBlocks &= validBlocksForPredicateBlocks[blockIndex];
             }
             
-            validBlocks = newValidBlocks;
+            // Now compute the conjunction of all blocks.
+            std::vector<storm::dd::Bdd<DdType>> blocks = validBlocksForPredicateBlocks;
+            std::vector<storm::dd::Bdd<DdType>> newBlocks;
+            while (blocks.size() > 1) {
+                storm::utility::Stopwatch conj(true);
+                for (uint64_t blockIndex = 0; blockIndex < blocks.size(); ++blockIndex) {
+                    if (blockIndex < localExpressionInformation.getNumberOfBlocks() - 1) {
+                        newBlocks.emplace_back(blocks[blockIndex] && blocks[blockIndex + 1]);
+                    } else {
+                        newBlocks.emplace_back(blocks[blockIndex]);
+                    }
+                }
+                conj.stop();
+
+                std::swap(blocks, newBlocks);
+            }
+            
+            validBlocks = blocks.front();
         }
         
         template <storm::dd::DdType DdType>
-        void ValidBlockAbstractor<DdType>::recomputeValidBlockForPredicateBlock(uint64_t blockIndex) {
+        void ValidBlockAbstractor<DdType>::recomputeValidBlocksForPredicateBlock(uint64_t blockIndex) {
             std::set<uint64_t> const& predicateBlock = localExpressionInformation.getExpressionBlock(blockIndex);
-            
             std::vector<std::pair<storm::expressions::Variable, uint_fast64_t>> newVariables = this->getAbstractionInformation().declareNewVariables(relevantVariablesAndPredicates[blockIndex], predicateBlock);
             for (auto const& element : newVariables) {
                 smtSolvers[blockIndex]->add(storm::expressions::iff(element.first, this->getAbstractionInformation().getPredicateByIndex(element.second)));
@@ -121,7 +136,8 @@ namespace storm {
         template <storm::dd::DdType DdType>
         storm::dd::Bdd<DdType> ValidBlockAbstractor<DdType>::getSourceStateBdd(storm::solver::SmtSolver::ModelReference const& model, uint64_t blockIndex) const {
             storm::dd::Bdd<DdType> result = this->getAbstractionInformation().getDdManager().getBddOne();
-            for (auto const& variableIndexPair : relevantVariablesAndPredicates[blockIndex]) {
+            for (auto variableIndexPairIt = relevantVariablesAndPredicates[blockIndex].rbegin(), variableIndexPairIte = relevantVariablesAndPredicates[blockIndex].rend(); variableIndexPairIt != variableIndexPairIte; ++variableIndexPairIt) {
+                auto const& variableIndexPair = *variableIndexPairIt;
                 if (model.getBooleanValue(variableIndexPair.first)) {
                     result &= this->getAbstractionInformation().encodePredicateAsSource(variableIndexPair.second);
                 } else {
