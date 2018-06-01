@@ -344,7 +344,7 @@ namespace storm {
                     
                     // We now compute how many variables we need to encode the choices. We add one to the maximal number of
                     // choices to account for a possible transition to a bottom state.
-                    uint_fast64_t numberOfVariablesNeeded = maximalNumberOfChoices > 1 ? static_cast<uint_fast64_t>(std::ceil(std::log2(maximalNumberOfChoices + (blockCounter == 0 ? 1 : 0)))) : 0;
+                    uint_fast64_t numberOfVariablesNeeded = (maximalNumberOfChoices > 1) ? (static_cast<uint_fast64_t>(std::ceil(std::log2(maximalNumberOfChoices + (blockCounter == 0 ? 1 : 0))))) : (blockCounter == 0 ? 1 : 0);
                     
                     // Finally, build overall result.
                     storm::dd::Bdd<DdType> resultBdd = this->getAbstractionInformation().getDdManager().getBddZero();
