@@ -99,10 +99,6 @@ namespace storm {
             }
             
             if (abstractionSettings.isInjectRefinementPredicatesSet()) {
-                std::string predicatesString = abstractionSettings.getInjectedRefinementPredicates();
-                std::vector<std::string> predicatesAsStrings;
-                boost::split(predicatesAsStrings, predicatesString, boost::is_any_of(";"));
-                
                 auto const& expressionManager = abstractor.getAbstractionInformation().getExpressionManager();
                 storm::parser::ExpressionParser expressionParser(expressionManager);
                 std::unordered_map<std::string, storm::expressions::Expression> variableMapping;
@@ -110,11 +106,25 @@ namespace storm {
                     variableMapping[variableTypePair.first.getName()] = variableTypePair.first;
                 }
                 expressionParser.setIdentifierMapping(variableMapping);
-                
-                for (auto const& predicateString : predicatesAsStrings) {
-                    storm::expressions::Expression predicate = expressionParser.parseFromString(predicateString);
-                    STORM_LOG_TRACE("Adding special (user-provided) refinement predicate " << predicateString << ".");
-                    refinementPredicatesToInject.emplace_back(predicate);
+
+                std::string predicatesString = abstractionSettings.getInjectedRefinementPredicates();
+                std::vector<std::string> predicateGroupsAsStrings;
+                boost::split(predicateGroupsAsStrings, predicatesString, boost::is_any_of(";"));
+
+                for (auto const& predicateGroupString : predicateGroupsAsStrings) {
+                    std::vector<std::string> predicatesAsStrings;
+                    boost::split(predicatesAsStrings, predicateGroupString, boost::is_any_of(":"));
+                    
+                    refinementPredicatesToInject.emplace_back();
+                    for (auto const& predicateString : predicatesAsStrings) {
+                        storm::expressions::Expression predicate = expressionParser.parseFromString(predicateString);
+                        STORM_LOG_TRACE("Adding special (user-provided) refinement predicate " << predicateString << ".");
+                        refinementPredicatesToInject.back().emplace_back(predicate);
+                    }
+                    STORM_LOG_THROW(!refinementPredicatesToInject.back().empty(), storm::exceptions::InvalidArgumentException, "Expecting non-empty list of predicates to inject for each (mentioned) refinement step.");
+
+                    // Finally reverse the list, because we take the predicates from the back.
+                    std::reverse(refinementPredicatesToInject.back().begin(), refinementPredicatesToInject.back().end());
                 }
 
                 // Finally reverse the list, because we take the predicates from the back.
@@ -1639,8 +1649,13 @@ namespace storm {
         template<storm::dd::DdType Type, typename ValueType>
         void MenuGameRefiner<Type, ValueType>::performRefinement(std::vector<RefinementCommand> const& refinementCommands, bool allowInjection) const {
             if (!refinementPredicatesToInject.empty() && allowInjection) {
-                STORM_LOG_INFO("Refining with (injected) predicate " << refinementPredicatesToInject.back() << ".");
-                abstractor.get().refine(RefinementCommand({refinementPredicatesToInject.back()}));
+                STORM_LOG_INFO("Refining with (injected) predicates.");
+
+                for (auto const& predicate : refinementPredicatesToInject.back()) {
+                    STORM_LOG_INFO(predicate);
+                }
+
+                abstractor.get().refine(RefinementCommand(refinementPredicatesToInject.back()));
                 refinementPredicatesToInject.pop_back();
             } else {
                 for (auto const& command : refinementCommands) {

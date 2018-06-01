@@ -198,9 +198,9 @@ namespace storm {
             /// A flag indicating whether all guards have been used to refine the abstraction.
             bool addedAllGuardsFlag;
 
-            /// A vector of refinement predicates that are injected (starting with the *last* one in this list). If
-            // empty, the predicates are derived as usual.
-            mutable std::vector<storm::expressions::Expression> refinementPredicatesToInject;
+            /// A vector of vectors of refinement predicates that are injected (starting with the *last* one in this
+            /// list). If empty, the predicates are derived as usual.
+            mutable std::vector<std::vector<storm::expressions::Expression>> refinementPredicatesToInject;
             
             /// The heuristic to use for pivot block selection.
             storm::settings::modules::AbstractionSettings::PivotSelectionHeuristic pivotSelectionHeuristic;
