@@ -77,26 +77,11 @@ namespace storm {
                 if (relevantVariablesAndPredicates[blockIndex].size() < predicateBlock.size()) {
                     recomputeValidBlocksForPredicateBlock(blockIndex);
                 }
+                
+                newValidBlocks &= validBlocksForPredicateBlocks[blockIndex];
             }
             
-            // Now compute the conjunction of all blocks.
-            std::vector<storm::dd::Bdd<DdType>> blocks = validBlocksForPredicateBlocks;
-            std::vector<storm::dd::Bdd<DdType>> newBlocks;
-            while (blocks.size() > 1) {
-                storm::utility::Stopwatch conj(true);
-                for (uint64_t blockIndex = 0; blockIndex < blocks.size(); ++blockIndex) {
-                    if (blockIndex < localExpressionInformation.getNumberOfBlocks() - 1) {
-                        newBlocks.emplace_back(blocks[blockIndex] && blocks[blockIndex + 1]);
-                    } else {
-                        newBlocks.emplace_back(blocks[blockIndex]);
-                    }
-                }
-                conj.stop();
-
-                std::swap(blocks, newBlocks);
-            }
-            
-            validBlocks = blocks.front();
+            validBlocks = newValidBlocks;
         }
         
         template <storm::dd::DdType DdType>
