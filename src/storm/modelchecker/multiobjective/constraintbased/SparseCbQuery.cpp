@@ -1,5 +1,6 @@
 #include "storm/modelchecker/multiobjective/constraintbased/SparseCbQuery.h"
 
+#include "storm/modelchecker/multiobjective/preprocessing/SparseMultiObjectiveRewardAnalysis.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
@@ -20,26 +21,28 @@ namespace storm {
             
             
             template <class SparseModelType>
-            SparseCbQuery<SparseModelType>::SparseCbQuery(SparseMultiObjectivePreprocessorResult<SparseModelType> const& preprocessorResult) :
+            SparseCbQuery<SparseModelType>::SparseCbQuery(preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType> const& preprocessorResult) :
                 originalModel(preprocessorResult.originalModel), originalFormula(preprocessorResult.originalFormula), objectives(std::move(preprocessorResult.objectives)) {
              
-                STORM_LOG_THROW(preprocessorResult.rewardFinitenessType != SparseMultiObjectivePreprocessorResult<SparseModelType>::RewardFinitenessType::Infinite, storm::exceptions::NotSupportedException, "There is no Pareto optimal scheduler that yields finite reward for all objectives. This is not supported.");
-                STORM_LOG_THROW(preprocessorResult.rewardLessInfinityEStates, storm::exceptions::UnexpectedException, "The set of states with reward < infinity for some scheduler has not been computed during preprocessing.");
+                auto rewardAnalysis = preprocessing::SparseMultiObjectiveRewardAnalysis<SparseModelType>::analyze(preprocessorResult);
+                STORM_LOG_THROW(rewardAnalysis.rewardFinitenessType != preprocessing::RewardFinitenessType::Infinite, storm::exceptions::NotSupportedException, "TThere is no Pareto optimal scheduler that yields finite reward for all objectives. This is not supported.");
+                
+                STORM_LOG_THROW(rewardAnalysis.rewardLessInfinityEStates, storm::exceptions::UnexpectedException, "The set of states with reward < infinity for some scheduler has not been computed during preprocessing.");
                 STORM_LOG_THROW(preprocessorResult.containsOnlyTrivialObjectives(), storm::exceptions::NotSupportedException, "At least one objective was not reduced to an expected (total or cumulative) reward objective during preprocessing. This is not supported by the considered weight vector checker.");
                 STORM_LOG_THROW(preprocessorResult.preprocessedModel->getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::NotSupportedException, "The model has multiple initial states.");
                 
                 // Build a subsystem of the preprocessor result model that discards states that yield infinite reward for all schedulers.
                 // We can also merge the states that will have reward zero anyway.
-                storm::storage::BitVector maybeStates = preprocessorResult.rewardLessInfinityEStates.get() & ~preprocessorResult.reward0AStates;
+                storm::storage::BitVector maybeStates = rewardAnalysis.rewardLessInfinityEStates.get() & ~rewardAnalysis.reward0AStates;
                 std::set<std::string> relevantRewardModels;
                 for (auto const& obj : this->objectives) {
                     obj.formula->gatherReferencedRewardModels(relevantRewardModels);
                 }
                 storm::transformer::GoalStateMerger<SparseModelType> merger(*preprocessorResult.preprocessedModel);
-                auto mergerResult = merger.mergeTargetAndSinkStates(maybeStates, preprocessorResult.reward0AStates, storm::storage::BitVector(maybeStates.size(), false), std::vector<std::string>(relevantRewardModels.begin(), relevantRewardModels.end()));
+                auto mergerResult = merger.mergeTargetAndSinkStates(maybeStates, rewardAnalysis.reward0AStates, storm::storage::BitVector(maybeStates.size(), false), std::vector<std::string>(relevantRewardModels.begin(), relevantRewardModels.end()));
                 
                 preprocessedModel = mergerResult.model;
-                reward0EStates = preprocessorResult.reward0EStates % maybeStates;
+                reward0EStates = rewardAnalysis.reward0EStates % maybeStates;
                 if (mergerResult.targetState) {
                     // There is an additional state in the result
                     reward0EStates.resize(reward0EStates.size() + 1, true);

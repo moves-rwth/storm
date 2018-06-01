@@ -19,7 +19,7 @@ namespace storm {
                 
                 typedef typename SparseModelType::ValueType ValueType;
                 
-                SparseCbAchievabilityQuery(SparseMultiObjectivePreprocessorResult<SparseModelType> const& preprocessorResult);
+                SparseCbAchievabilityQuery(preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType> const& preprocessorResult);
                 
                 virtual ~SparseCbAchievabilityQuery() = default;
 

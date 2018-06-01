@@ -23,7 +23,7 @@ namespace storm {
             
             
             template <class SparseMaModelType>
-            StandardMaPcaaWeightVectorChecker<SparseMaModelType>::StandardMaPcaaWeightVectorChecker(SparseMultiObjectivePreprocessorResult<SparseMaModelType> const& preprocessorResult) :
+            StandardMaPcaaWeightVectorChecker<SparseMaModelType>::StandardMaPcaaWeightVectorChecker(preprocessing::SparseMultiObjectivePreprocessorResult<SparseMaModelType> const& preprocessorResult) :
             StandardPcaaWeightVectorChecker<SparseMaModelType>(preprocessorResult) {
                 this->initialize(preprocessorResult);
             }

@@ -19,7 +19,7 @@ namespace storm {
             
             
             template <class SparseModelType, typename GeometryValueType>
-            SparsePcaaQuery<SparseModelType, GeometryValueType>::SparsePcaaQuery(SparseMultiObjectivePreprocessorResult<SparseModelType>& preprocessorResult) :
+            SparsePcaaQuery<SparseModelType, GeometryValueType>::SparsePcaaQuery(preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType>& preprocessorResult) :
                 originalModel(preprocessorResult.originalModel), originalFormula(preprocessorResult.originalFormula), objectives(preprocessorResult.objectives) {
 
                 this->weightVectorChecker = WeightVectorCheckerFactory<SparseModelType>::create(preprocessorResult);

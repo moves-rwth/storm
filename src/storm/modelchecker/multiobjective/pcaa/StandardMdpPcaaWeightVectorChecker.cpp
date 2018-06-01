@@ -21,7 +21,7 @@ namespace storm {
         namespace multiobjective {
             
             template <class SparseMdpModelType>
-            StandardMdpPcaaWeightVectorChecker<SparseMdpModelType>::StandardMdpPcaaWeightVectorChecker(SparseMultiObjectivePreprocessorResult<SparseMdpModelType> const& preprocessorResult) :
+            StandardMdpPcaaWeightVectorChecker<SparseMdpModelType>::StandardMdpPcaaWeightVectorChecker(preprocessing::SparseMultiObjectivePreprocessorResult<SparseMdpModelType> const& preprocessorResult) :
                 StandardPcaaWeightVectorChecker<SparseMdpModelType>(preprocessorResult) {
                 this->initialize(preprocessorResult);
             }

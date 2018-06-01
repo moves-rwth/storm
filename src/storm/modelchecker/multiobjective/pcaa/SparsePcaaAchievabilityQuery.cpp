@@ -18,8 +18,8 @@ namespace storm {
             
             
             template <class SparseModelType, typename GeometryValueType>
-            SparsePcaaAchievabilityQuery<SparseModelType, GeometryValueType>::SparsePcaaAchievabilityQuery(SparseMultiObjectivePreprocessorResult<SparseModelType>& preprocessorResult) : SparsePcaaQuery<SparseModelType, GeometryValueType>(preprocessorResult) {
-                STORM_LOG_ASSERT(preprocessorResult.queryType==SparseMultiObjectivePreprocessorResult<SparseModelType>::QueryType::Achievability, "Invalid query Type");
+            SparsePcaaAchievabilityQuery<SparseModelType, GeometryValueType>::SparsePcaaAchievabilityQuery(preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType>& preprocessorResult) : SparsePcaaQuery<SparseModelType, GeometryValueType>(preprocessorResult) {
+                STORM_LOG_ASSERT(preprocessorResult.queryType==preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType>::QueryType::Achievability, "Invalid query Type");
                 initializeThresholdData();
                 
                 // Set the precision of the weight vector checker. Will be refined during the computation

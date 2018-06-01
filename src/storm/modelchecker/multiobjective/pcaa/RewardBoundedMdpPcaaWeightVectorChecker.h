@@ -25,7 +25,7 @@ namespace storm {
                 typedef typename SparseMdpModelType::ValueType ValueType;
                 typedef typename SparseMdpModelType::RewardModelType RewardModelType;
             
-                RewardBoundedMdpPcaaWeightVectorChecker(SparseMultiObjectivePreprocessorResult<SparseMdpModelType> const& preprocessorResult);
+                RewardBoundedMdpPcaaWeightVectorChecker(preprocessing::SparseMultiObjectivePreprocessorResult<SparseMdpModelType> const& preprocessorResult);
 
                 virtual ~RewardBoundedMdpPcaaWeightVectorChecker();
 
