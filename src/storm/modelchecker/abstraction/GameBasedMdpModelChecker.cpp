@@ -1265,7 +1265,6 @@ namespace storm {
                 std::cout << "Statistics:" << std::endl;
                 std::cout << "    * size of final game: " << game.getReachableStates().getNonZeroCount() << " player 1 states, " << game.getTransitionMatrix().getNonZeroCount() << " transitions" << std::endl;
                 std::cout << "    * peak size of game: " << peakPlayer1States << " player 1 states, " << peakTransitions << " transitions" << std::endl;
-                std::cout << "    * transitions (final game): " << game.getTransitionMatrix().getNonZeroCount() << std::endl;
                 std::cout << "    * refinements: " << refinements << std::endl;
                 std::cout << "    * predicates: " << abstractionInformation.getNumberOfPredicates() << std::endl << std::endl;
                 
@@ -1278,7 +1277,7 @@ namespace storm {
                 uint64_t totalTimeMillis = totalWatch.getTimeInMilliseconds();
 
                 std::cout << "Time breakdown:" << std::endl;
-                std::cout << "    * setup: " << setupTime << "ms (" << 100 * static_cast<double>(totalSetupTime)/totalTimeMillis << "%)" << std::endl;
+                std::cout << "    * setup: " << setupTime << "ms (" << 100 * static_cast<double>(setupTime)/totalTimeMillis << "%)" << std::endl;
                 std::cout << "    * abstraction: " << totalAbstractionTimeMillis << "ms (" << 100 * static_cast<double>(totalAbstractionTimeMillis)/totalTimeMillis << "%)" << std::endl;
                 if (this->solveMode == storm::settings::modules::AbstractionSettings::SolveMode::Sparse) {
                     std::cout << "    * translation: " << totalTranslationTimeMillis << "ms (" << 100 * static_cast<double>(totalTranslationTimeMillis)/totalTimeMillis << "%)" << std::endl;
