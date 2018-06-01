@@ -168,6 +168,7 @@ namespace storm {
             storm::utility::Stopwatch totalRefinementWatch;
             storm::utility::Stopwatch totalTranslationWatch;
             storm::utility::Stopwatch totalStrategyProcessingWatch;
+            storm::utility::Stopwatch setupWatch;
             storm::utility::Stopwatch totalWatch;
         };
     }

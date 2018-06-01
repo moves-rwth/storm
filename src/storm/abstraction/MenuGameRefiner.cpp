@@ -1568,7 +1568,6 @@ namespace storm {
                     for (auto const& predicate : predicateClass.second) {
                         bool addPredicate = true;
                         for (auto const& atom : cleanedAtomsOfClass) {
-                            ++checkCounter;
                             if (predicate.areSame(atom)) {
                                 addPredicate = false;
                                 break;
@@ -1601,7 +1600,6 @@ namespace storm {
                         for (auto const& newAtom : predicateClass.second) {
                             bool addAtom = true;
                             for (auto const& oldPredicate : oldPredicateClassIt->second) {
-                                ++checkCounter;
                                 if (newAtom.areSame(oldPredicate)) {
                                     addAtom = false;
                                     break;

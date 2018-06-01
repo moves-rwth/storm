@@ -535,6 +535,7 @@ namespace storm {
             totalWatch.start();
             
             // Set up initial predicates.
+            setupWatch.start();
             std::vector<storm::expressions::Expression> initialPredicates = getInitialPredicates(constraintExpression, targetStateExpression);
             
             // Derive the optimization direction for player 1 (assuming menu-game abstraction).
@@ -558,6 +559,7 @@ namespace storm {
 
             storm::dd::Bdd<Type> globalConstraintStates = abstractor->getStates(constraintExpression);
             storm::dd::Bdd<Type> globalTargetStates = abstractor->getStates(targetStateExpression);
+            setupWatch.stop();
             
             // Enter the main-loop of abstraction refinement.
             boost::optional<SymbolicQualitativeGameResultMinMax<Type>> previousSymbolicQualitativeResult = boost::none;
@@ -1272,9 +1274,11 @@ namespace storm {
                 uint64_t totalStrategyProcessingTimeMillis = totalStrategyProcessingWatch.getTimeInMilliseconds();
                 uint64_t totalSolutionTimeMillis = totalSolutionWatch.getTimeInMilliseconds();
                 uint64_t totalRefinementTimeMillis = totalRefinementWatch.getTimeInMilliseconds();
+                uint64_t setupTime = setupWatch.getTimeInMilliseconds();
                 uint64_t totalTimeMillis = totalWatch.getTimeInMilliseconds();
 
                 std::cout << "Time breakdown:" << std::endl;
+                std::cout << "    * setup: " << setupTime << "ms (" << 100 * static_cast<double>(totalSetupTime)/totalTimeMillis << "%)" << std::endl;
                 std::cout << "    * abstraction: " << totalAbstractionTimeMillis << "ms (" << 100 * static_cast<double>(totalAbstractionTimeMillis)/totalTimeMillis << "%)" << std::endl;
                 if (this->solveMode == storm::settings::modules::AbstractionSettings::SolveMode::Sparse) {
                     std::cout << "    * translation: " << totalTranslationTimeMillis << "ms (" << 100 * static_cast<double>(totalTranslationTimeMillis)/totalTimeMillis << "%)" << std::endl;
