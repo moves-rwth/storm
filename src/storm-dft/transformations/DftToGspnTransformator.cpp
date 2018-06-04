@@ -145,13 +145,12 @@ namespace storm {
                             uint64_t dependencyPropagationPlace = builder.addPlace(defaultPriority, 0,
                                                                                    dftBE->name() + "_dependency_prop");
                             dependencyPropagationPlaces.emplace(dftBE->id(), dependencyPropagationPlace);
-
                             builder.setPlaceLayoutInfo(dependencyPropagationPlace,
-                                                       storm::gspn::LayoutInfo(xcenter + 12.0, ycenter + 8.0));
+                                                       storm::gspn::LayoutInfo(xcenter + 10.0, ycenter - 5.0));
                             uint64_t tPropagationFailed = builder.addImmediateTransition(defaultPriority, 0.0,
                                                                                          dftBE->name() + "_prop_fail");
                             builder.setTransitionLayoutInfo(tPropagationFailed,
-                                                            storm::gspn::LayoutInfo(xcenter + 10.0, ycenter + 6.0));
+                                                            storm::gspn::LayoutInfo(xcenter + 8.0, ycenter));
                             builder.addInhibitionArc(dependencyPropagationPlace, tPropagationFailed);
                             builder.addInputArc(failedPlace, tPropagationFailed);
                             builder.addOutputArc(tPropagationFailed, failedPlace);
@@ -160,7 +159,7 @@ namespace storm {
                                                                                            dftBE->name() +
                                                                                            "_prop_dontCare");
                             builder.setTransitionLayoutInfo(tPropagationDontCare,
-                                                            storm::gspn::LayoutInfo(xcenter + 14.0, ycenter + 6.0));
+                                                            storm::gspn::LayoutInfo(xcenter + 10.0, ycenter));
                             builder.addInhibitionArc(dependencyPropagationPlace, tPropagationDontCare);
                             builder.addInputArc(dependencyPropagationPlace, tPropagationDontCare);
                             builder.addOutputArc(tPropagationDontCare, dontCarePlace);
@@ -864,6 +863,71 @@ namespace storm {
                 builder.addOutputArc(tNextConsiders.back(), failedPlace);
                 builder.addOutputArc(tNextClaims.back(), failedPlace);
 
+                // Don't Care Mechanism
+                if (dontCareElements.count(dftSpare->id())) {
+                    if (dftSpare->id() != mDft.getTopLevelIndex()) {
+                        u_int64_t tDontCare = addDontcareTransition(dftSpare,
+                                                                    storm::gspn::LayoutInfo(xcenter + 16.0, ycenter));
+                        if (!mergedDCFailed) {
+                            uint64_t dontCarePlace = builder.addPlace(defaultPriority, 0,
+                                                                      dftSpare->name() + STR_DONTCARE);
+                            builder.setPlaceLayoutInfo(dontCarePlace,
+                                                       storm::gspn::LayoutInfo(xcenter + 16.0, ycenter + 4.0));
+                            builder.addInhibitionArc(dontCarePlace, tDontCare);
+                            builder.addOutputArc(tDontCare, dontCarePlace);
+                            //Propagation
+                            uint64_t propagationPlace = builder.addPlace(defaultPriority, 0,
+                                                                         dftSpare->name() + "_prop");
+                            builder.setPlaceLayoutInfo(propagationPlace,
+                                                       storm::gspn::LayoutInfo(xcenter + 12.0, ycenter + 8.0));
+                            uint64_t tPropagationFailed = builder.addImmediateTransition(defaultPriority, 0.0,
+                                                                                         dftSpare->name() +
+                                                                                         "_prop_fail");
+                            builder.setTransitionLayoutInfo(tPropagationFailed,
+                                                            storm::gspn::LayoutInfo(xcenter + 10.0, ycenter + 6.0));
+                            builder.addInhibitionArc(propagationPlace, tPropagationFailed);
+                            builder.addInputArc(failedPlace, tPropagationFailed);
+                            builder.addOutputArc(tPropagationFailed, failedPlace);
+                            builder.addOutputArc(tPropagationFailed, propagationPlace);
+                            uint64_t tPropagationDontCare = builder.addImmediateTransition(defaultPriority, 0.0,
+                                                                                           dftSpare->name() +
+                                                                                           "_prop_dontCare");
+                            builder.setTransitionLayoutInfo(tPropagationDontCare,
+                                                            storm::gspn::LayoutInfo(xcenter + 14.0, ycenter + 6.0));
+                            builder.addInhibitionArc(propagationPlace, tPropagationDontCare);
+                            builder.addInputArc(dontCarePlace, tPropagationDontCare);
+                            builder.addOutputArc(tPropagationDontCare, dontCarePlace);
+                            builder.addOutputArc(tPropagationDontCare, propagationPlace);
+                            for (auto const &child : dftSpare->children()) {
+                                if (dontCareElements.count(child->id())) {
+                                    u_int64_t childDontCare = dontcareTransitions.at(child->id());
+                                    builder.addInputArc(propagationPlace, childDontCare);
+                                    builder.addOutputArc(childDontCare, propagationPlace);
+                                }
+                            }
+                        } else {
+                            builder.addInhibitionArc(failedPlace, tDontCare);
+                            builder.addOutputArc(tDontCare, failedPlace);
+                            for (auto const &child : dftSpare->children()) {
+                                if (dontCareElements.count(child->id())) {
+                                    u_int64_t childDontCare = dontcareTransitions.at(child->id());
+                                    builder.addInputArc(failedPlace, childDontCare);
+                                    builder.addOutputArc(childDontCare, failedPlace);
+                                }
+                            }
+                        }
+                    } else {
+                        // If SPARE is TLE, simple failure propagation suffices
+                        for (auto const &child : dftSpare->children()) {
+                            if (dontCareElements.count(child->id())) {
+                                u_int64_t childDontCare = dontcareTransitions.at(child->id());
+                                builder.addInputArc(failedPlace, childDontCare);
+                                builder.addOutputArc(childDontCare, failedPlace);
+                            }
+                        }
+                    }
+                }
+
                 if (!smart || isRepresentative) {
                     builder.addOutputArc(tNextConsiders.back(), unavailablePlace);
                     builder.addOutputArc(tNextClaims.back(), unavailablePlace);
@@ -931,15 +995,14 @@ namespace storm {
                     }
                 }
 
-                // Don't Care TODO LAYOUTING
+                // Don't Care
                 if (dontCareElements.count(dftDependency->id())) {
                     u_int64_t tDontCare = addDontcareTransition(dftDependency,
-                                                                storm::gspn::LayoutInfo(xcenter + 12.0, ycenter));
+                                                                storm::gspn::LayoutInfo(xcenter + 3.0, ycenter));
                     if (!mergedDCFailed) {
                         u_int64_t dontCarePlace = builder.addPlace(defaultPriority, 0,
                                                                    dftDependency->name() + STR_DONTCARE);
-                        builder.setPlaceLayoutInfo(dontCarePlace,
-                                                   storm::gspn::LayoutInfo(xcenter + 12.0, ycenter + 5.0));
+                        builder.setPlaceLayoutInfo(dontCarePlace, storm::gspn::LayoutInfo(xcenter + 4.0, ycenter));
                         builder.addInhibitionArc(dontCarePlace, tDontCare);
                         builder.addOutputArc(tDontCare, dontCarePlace);
                         // Add the arcs for the dependent events
@@ -958,7 +1021,7 @@ namespace storm {
                     } else {
                         if (failedPlace == 0) {
                             failedPlace = addFailedPlace(dftDependency,
-                                                         storm::gspn::LayoutInfo(xcenter + 10.0, ycenter - 8.0));
+                                                         storm::gspn::LayoutInfo(xcenter + 4.0, ycenter));
                         }
                         builder.addInhibitionArc(failedPlace, tDontCare);
                         builder.addOutputArc(tDontCare, failedPlace);
