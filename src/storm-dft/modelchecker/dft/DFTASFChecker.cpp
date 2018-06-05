@@ -489,7 +489,7 @@ namespace storm {
                         // VOTs are implemented via OR over ANDs with all possible combinations
                         auto vot = std::static_pointer_cast<storm::storage::DFTVot<double> const>(element);
                         std::vector<uint64_t> tmpVars;
-                        size_t i = 0;
+                        size_t k = 0;
                         // Generate all permutations of k out of n
                         size_t combination = smallestIntWithNBitsSet(static_cast<size_t>(vot->threshold()));
                         do {
@@ -501,15 +501,16 @@ namespace storm {
                                 }
                             }
                             // Introduce temporary variable for this AND
-                            varNames.push_back("v_" + vot->name() + "_" + std::to_string(i));
-                            tmpVars.push_back(varNames.size() - 1);
-                            tmpTimePointVariables.push_back(varNames.size() - 1);
+                            varNames.push_back("v_" + vot->name() + "_" + std::to_string(k));
+                            size_t index = varNames.size() - 1;
+                            tmpVars.push_back(index);
+                            tmpTimePointVariables.push_back(index);
                             // AND over the selected children
-                            constraints.push_back(std::make_shared<IsMaximum>(timePointVariables.at(i), combinationChildren));
-                            constraints.back()->setDescription("VOT gate " + element->name() + ": AND no. " + std::to_string(i));
+                            constraints.push_back(std::make_shared<IsMaximum>(index, combinationChildren));
+                            constraints.back()->setDescription("VOT gate " + element->name() + ": AND no. " + std::to_string(k));
                             // Generate next permutation
                             combination = nextBitPermutation(combination);
-                            ++i;
+                            ++k;
                         } while(combination < (1 << vot->nrChildren()) && combination != 0);
 
                         // Constraint is OR over all possible combinations
