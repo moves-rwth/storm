@@ -427,7 +427,7 @@ namespace storm {
             }
             
             // Otherwise, we need to solve a (sub)game.
-            STORM_LOG_TRACE("Solving " << maybeStates.getNumberOfSetBits()<< " maybe states.");
+            STORM_LOG_TRACE("[" << player1Direction << ", " << player2Direction << "]: Solving " << maybeStates.getNumberOfSetBits()<< " maybe states.");
 
             // Create the game by selecting all maybe player 2 states (non-prob0/1) of all maybe player 1 states.
             std::vector<uint64_t> subPlayer1Groups(maybeStates.getNumberOfSetBits() + 1);
@@ -485,7 +485,12 @@ namespace storm {
                             }
 
                             // Copy over the player 2 action (modulo making it local) as all rows for the state are taken.
-                            player2Scheduler[previousPlayer2States] = startingStrategyPair->getPlayer2Strategy().getChoice(player2State) - transitionMatrix.getRowGroupIndices()[player2State];
+                            if (startingStrategyPair->getPlayer2Strategy().hasDefinedChoice(player2State)) {
+                                player2Scheduler[previousPlayer2States] = startingStrategyPair->getPlayer2Strategy().getChoice(player2State) - transitionMatrix.getRowGroupIndices()
+                                [player2State];
+                            } else {
+                                player2Scheduler[previousPlayer2States] = 0;
+                            }
                             
                             ++previousPlayer2StatesForState;
                             ++previousPlayer2States;
@@ -897,6 +902,8 @@ namespace storm {
                     if (targetStates.get(state)) {
                         dtmcMatrixBuilder.addNextValue(state, state, storm::utility::one<ValueType>());
                     } else {
+                        STORM_LOG_ASSERT(minStrategyPair.getPlayer1Strategy().hasDefinedChoice(state), "Expected min player 1 choice in state " << state << ".");
+                        STORM_LOG_ASSERT(minStrategyPair.getPlayer2Strategy().hasDefinedChoice(minStrategyPair.getPlayer1Strategy().getChoice(state)), "Expected max player 2 choice in state " << state << " with player 2 choice " << maxStrategyPair.getPlayer1Strategy().getChoice(state) << ".");
                         uint64_t player2Choice = minStrategyPair.getPlayer2Strategy().getChoice(minStrategyPair.getPlayer1Strategy().getChoice(state));
                         for (auto const& entry : transitionMatrix.getRow(player2Choice)) {
                             dtmcMatrixBuilder.addNextValue(state, entry.getColumn(), entry.getValue());
@@ -916,6 +923,8 @@ namespace storm {
                     if (targetStates.get(state)) {
                         dtmcMatrixBuilder.addNextValue(state, state, storm::utility::one<ValueType>());
                     } else {
+                        STORM_LOG_ASSERT(maxStrategyPair.getPlayer1Strategy().hasDefinedChoice(state), "Expected max player 1 choice in state " << state << ".");
+                        STORM_LOG_ASSERT(maxStrategyPair.getPlayer2Strategy().hasDefinedChoice(maxStrategyPair.getPlayer1Strategy().getChoice(state)), "Expected max player 2 choice in state " << state << " with player 2 choice " << maxStrategyPair.getPlayer1Strategy().getChoice(state) << ".");
                         uint64_t player2Choice = maxStrategyPair.getPlayer2Strategy().getChoice(maxStrategyPair.getPlayer1Strategy().getChoice(state));
                         for (auto const& entry : transitionMatrix.getRow(player2Choice)) {
                             dtmcMatrixBuilder.addNextValue(state, entry.getColumn(), entry.getValue());
