@@ -6,4 +6,4 @@ set_target_properties(storm-pars-cli PROPERTIES OUTPUT_NAME "storm-pars")
 add_dependencies(binaries storm-pars-cli)
 
 # installation
-install(TARGETS storm-pars-cli RUNTIME DESTINATION bin LIBRARY DESTINATION lib OPTIONAL)
+install(TARGETS storm-pars-cli EXPORT storm_Targets RUNTIME DESTINATION bin LIBRARY DESTINATION lib OPTIONAL)

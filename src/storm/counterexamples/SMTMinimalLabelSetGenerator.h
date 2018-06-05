@@ -458,6 +458,12 @@ namespace storm {
                     
                     // Now check for possible backward cuts.
                     for (auto const& labelSetAndPrecedingLabelSetsPair : precedingLabels) {
+                        bool backwardImplicationAdded = false;
+//                        std::cout << "labelSetAndPrecedingLabelSetsPair.first ";
+//                        for (auto const& e : labelSetAndPrecedingLabelSetsPair.first) {
+//                            std::cout << e << ", ";
+//                        }
+//                        std::cout << std::endl;
                         // Find out the commands for the currently considered label set.
                         storm::expressions::Expression guardConjunction;
                         
@@ -510,15 +516,18 @@ namespace storm {
                         // If the solver reports unsat, then we know that the current selection is not enabled in the initial state.
                         if (checkResult == storm::solver::SmtSolver::CheckResult::Unsat) {
                             STORM_LOG_DEBUG("Selection not enabled in initial state.");
-                            
+
+                            //std::cout << "not gc: " << !guardConjunction << std::endl;
                             localSolver->add(!guardConjunction);
                             STORM_LOG_DEBUG("Asserted disjunction of negated guards.");
                             
                             
                             // Now check the possible preceding label sets for the essential ones.
                             for (auto const& precedingLabelSet : labelSetAndPrecedingLabelSetsPair.second) {
+
                                 if (labelSetAndPrecedingLabelSetsPair.first == precedingLabelSet) continue;
-                                
+
+                                //std::cout << "push" << std::endl;
                                 // Create a restore point so we can easily pop-off all weakest precondition expressions.
                                 localSolver->push();
                                 
@@ -576,7 +585,9 @@ namespace storm {
                                         }
                                     }
                                 }
-                                
+
+                                //std::cout << "pgc: " << preceedingGuardConjunction << std::endl;
+
                                 // Assert all the guards of the preceding command set.
                                 localSolver->add(preceedingGuardConjunction);
                                 
@@ -624,11 +635,15 @@ namespace storm {
                                 assertDisjunction(*localSolver, formulae, symbolicModel.isPrismProgram() ? symbolicModel.asPrismProgram().getManager() : symbolicModel.asJaniModel().getManager());
                                 
                                 STORM_LOG_DEBUG("Asserted disjunction of all weakest preconditions.");
-                                
-                                if (localSolver->check() == storm::solver::SmtSolver::CheckResult::Sat) {
+                                storm::solver::SmtSolver::CheckResult result = localSolver->check();
+
+                                if (result == storm::solver::SmtSolver::CheckResult::Sat) {
                                     backwardImplications[labelSetAndPrecedingLabelSetsPair.first].insert(precedingLabelSet);
+                                    backwardImplicationAdded = true;
+                                } else if (result == storm::solver::SmtSolver::CheckResult::Unknown) {
+                                    STORM_LOG_ERROR("The SMT solver does not come to a conclusive answer. Does your model contain integer division?");
                                 }
-                                
+
                                 localSolver->pop();
                             }
                             
@@ -637,6 +652,7 @@ namespace storm {
                         } else {
                             STORM_LOG_DEBUG("Selection is enabled in initial state.");
                         }
+                        STORM_LOG_ERROR_COND(backwardImplicationAdded, "Error in adding cuts for counterexample generation (backward implication misses a label set).");
                     }
                 } else if (symbolicModel.isJaniModel()) {
                     STORM_LOG_WARN("Model uses assignment levels, did not assert backward implications.");
@@ -1697,6 +1713,7 @@ namespace storm {
                         labelSets[choice] = choiceOrigins.getEdgeIndexSet(choice);
                     }
                 }
+                assert(labelSets.size() == model.getNumberOfChoices());
                 
                 // (1) Check whether its possible to exceed the threshold if checkThresholdFeasible is set.
                 double maximalReachabilityProbability = 0;
@@ -1764,7 +1781,7 @@ namespace storm {
                     solverClock = std::chrono::high_resolution_clock::now();
                     commandSet = findSmallestCommandSet(*solver, variableInformation, currentBound);
                     totalSolverTime += std::chrono::high_resolution_clock::now() - solverClock;
-                    STORM_LOG_DEBUG("Computed minimal command set of size " << (commandSet.size() + relevancyInformation.knownLabels.size()) << ".");
+                    STORM_LOG_DEBUG("Computed minimal command set of size " <<  commandSet.size() + relevancyInformation.knownLabels.size() << " (" << commandSet.size() << " + " << relevancyInformation.knownLabels.size() << ") ");
                     
                     // Restrict the given model to the current set of labels and compute the reachability probability.
                     modelCheckingClock = std::chrono::high_resolution_clock::now();

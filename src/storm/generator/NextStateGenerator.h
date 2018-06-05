@@ -66,6 +66,13 @@ namespace storm {
             NextStateGeneratorOptions const& getOptions() const;
             
             virtual std::shared_ptr<storm::storage::sparse::ChoiceOrigins> generateChoiceOrigins(std::vector<boost::any>& dataForChoiceOrigins) const;
+
+            /*!
+             * Performs a remapping of all values stored by applying the given remapping.
+             *
+             * @param remapping The remapping to apply.
+             */
+            void remapStateIds(std::function<StateType(StateType const&)> const& remapping);
             
         protected:
             /*!
@@ -98,6 +105,9 @@ namespace storm {
 
             /// A state that encodes the outOfBoundsState
             CompressedState outOfBoundsState;
+
+            /// A map that stores the indices of states with overlapping guards.
+            boost::optional<std::vector<uint64_t>> overlappingGuardStates;
         };
     }
 }

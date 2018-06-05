@@ -423,11 +423,7 @@ namespace storm {
             
             template<typename ValueType, typename RewardModelType>
             bool Model<ValueType, RewardModelType>::supportsParameters() const {
-#ifdef STORM_HAVE_CARL
                 return std::is_same<ValueType, storm::RationalFunction>::value;
-#else
-		return false;
-#endif
             }
             
             template<typename ValueType, typename RewardModelType>

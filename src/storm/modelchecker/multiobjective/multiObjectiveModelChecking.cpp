@@ -1,7 +1,7 @@
 #include "storm/modelchecker/multiobjective/multiObjectiveModelChecking.h"
 
 #include "storm/utility/macros.h"
-
+#include "storm/environment/modelchecker/MultiObjectiveModelCheckerEnvironment.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/StandardRewardModel.h"
@@ -74,8 +74,8 @@ namespace storm {
         
                         result = query->check(env);
                                         
-                        if(storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>().isExportPlotSet()) {
-                            query->exportPlotOfCurrentApproximation(storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>().getExportPlotDirectory());
+                        if (env.modelchecker().multi().isExportPlotSet()) {
+                            query->exportPlotOfCurrentApproximation(env);
                         }
                         break;
                     }
