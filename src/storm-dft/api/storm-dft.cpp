@@ -45,7 +45,8 @@ namespace storm {
 
             // Transform to GSPN
             storm::transformations::dft::DftToGspnTransformator<double> gspnTransformator(dft);
-            gspnTransformator.transform(dontCareElements, smart, mergeDCFailed);
+            auto priorities = gspnTransformator.computePriorities();
+            gspnTransformator.transform(priorities, dontCareElements, smart, mergeDCFailed);
             storm::gspn::GSPN* gspn = gspnTransformator.obtainGSPN();
             uint64_t toplevelFailedPlace = gspnTransformator.toplevelFailedPlaceId();
 

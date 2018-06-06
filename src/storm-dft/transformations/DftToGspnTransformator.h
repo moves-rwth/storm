@@ -25,13 +25,19 @@ namespace storm {
                 /*!
                  * Transform the DFT to a GSPN.
                  *
+                 * @param priorities GSPN transition priorities to use for each DFT element.
                  * @param dontCareElements Set of DFT elements which should have Don't Care propagation.
                  * @param smart Flag indicating if smart semantics should be used.
                  *              Smart semantics will only generate necessary parts of the GSPNs.
                  * @param mergeDCFailed Flag indicating if Don't Care places and Failed places should be merged.
                  */
-                void
-                transform(std::set<uint64_t> const &dontCareElements, bool smart = true, bool mergeDCFailed = true);
+                void transform(std::map<uint64_t, uint64_t> const &priorities, std::set<uint64_t> const &dontCareElements, bool smart = true, bool mergeDCFailed = true);
+
+                /*!
+                 * Compute priorities used for GSPN transformation.
+                 * @return Priority mapping.
+                 */
+                std::map<uint64_t, uint64_t> computePriorities();
 
                 /*!
                  * Extract Gspn by building
@@ -219,6 +225,8 @@ namespace storm {
                 bool mergedDCFailed;
                 // Set of DFT elements which should have Don't Care propagation.
                 std::set<uint64_t> dontCareElements;
+                // Map from DFT elements to their GSPN priorities
+                std::map<uint64_t, uint64_t> priorities;
 
                 // Interface places for DFT elements
                 std::vector<uint64_t> failedPlaces;

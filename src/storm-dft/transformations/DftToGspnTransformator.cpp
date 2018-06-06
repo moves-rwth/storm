@@ -17,8 +17,9 @@ namespace storm {
             }
 
             template<typename ValueType>
-            void DftToGspnTransformator<ValueType>::transform(std::set<uint64_t> const &dontCareElements, bool smart,
+            void DftToGspnTransformator<ValueType>::transform(std::map<uint64_t, uint64_t> const &priorities, std::set<uint64_t> const &dontCareElements, bool smart,
                                                               bool mergeDCFailed) {
+                this->priorities = priorities;
                 this->dontCareElements = dontCareElements;
                 this->smart = smart;
                 this->mergedDCFailed = false;//mergeDCFailed;
@@ -32,9 +33,19 @@ namespace storm {
             }
 
             template<typename ValueType>
+            std::map<uint64_t, uint64_t> DftToGspnTransformator<ValueType>::computePriorities() {
+                std::map<uint64_t, uint64_t> priorities;
+                for (std::size_t i = 0; i < mDft.nrElements(); i++) {
+                    // Give all elements the same priority
+                    priorities[i] = 1;
+                }
+                return priorities;
+            }
+
+
+            template<typename ValueType>
             uint64_t DftToGspnTransformator<ValueType>::toplevelFailedPlaceId() {
-                STORM_LOG_ASSERT(failedPlaces.size() > mDft.getTopLevelIndex(),
-                                 "Failed place for top level element does not exist.");
+                STORM_LOG_ASSERT(failedPlaces.size() > mDft.getTopLevelIndex(), "Failed place for top level element does not exist.");
                 return failedPlaces.at(mDft.getTopLevelIndex());
             }
 
