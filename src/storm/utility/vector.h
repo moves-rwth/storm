@@ -727,7 +727,7 @@ namespace storm {
                         if (choices && f(*targetIt, oldSelectedChoiceValue)) {
                             uint64_t distance = std::distance(target.begin(), targetIt);
                             if (distance == 1693 || distance == 4715 || distance == 4713) {
-                                std::cout << "improving value at " << distance << ": moving from " << *choiceIt << " to " << selectedChoice << " because " << *targetIt << " is better than " << oldSelectedChoiceValue << std::endl;
+                                std::cout << std::setprecision(50) << "improving value at " << distance << ": moving from " << *choiceIt << " to " << selectedChoice << " because " << *targetIt << " is better than " << oldSelectedChoiceValue << std::endl;
                             }
                             *choiceIt = selectedChoice;
                         }
@@ -744,7 +744,7 @@ namespace storm {
                 tbb::parallel_for(tbb::blocked_range<uint64_t>(0, target.size()), TbbReduceVectorFunctor<T, Filter>(source, target, rowGrouping, choices, Filter()));
             }
 #endif
-            
+                        
             /*!
              * Reduces the given source vector by selecting the smallest element out of each row group.
              *
@@ -755,13 +755,13 @@ namespace storm {
              */
             template<class T>
             void reduceVectorMin(std::vector<T> const& source, std::vector<T>& target, std::vector<uint_fast64_t> const& rowGrouping, std::vector<uint_fast64_t>* choices = nullptr) {
-                reduceVector<T, std::less<T>>(source, target, rowGrouping, choices);
+                reduceVector<T, storm::utility::ElementLess<T>>(source, target, rowGrouping, choices);
             }
             
 #ifdef STORM_HAVE_INTELTBB
             template<class T>
             void reduceVectorMinParallel(std::vector<T> const& source, std::vector<T>& target, std::vector<uint_fast64_t> const& rowGrouping, std::vector<uint_fast64_t>* choices = nullptr) {
-                reduceVector<T, std::less<T>>(source, target, rowGrouping, choices);
+                reduceVector<T, storm::utility::ElementLess<T>>(source, target, rowGrouping, choices);
             }
 #endif
             
@@ -775,13 +775,13 @@ namespace storm {
              */
             template<class T>
             void reduceVectorMax(std::vector<T> const& source, std::vector<T>& target, std::vector<uint_fast64_t> const& rowGrouping, std::vector<uint_fast64_t>* choices = nullptr) {
-                reduceVector<T, std::greater<T>>(source, target, rowGrouping, choices);
+                reduceVector<T, storm::utility::ElementGreater<T>>(source, target, rowGrouping, choices);
             }
             
 #ifdef STORM_HAVE_INTELTBB
             template<class T>
             void reduceVectorMaxParallel(std::vector<T> const& source, std::vector<T>& target, std::vector<uint_fast64_t> const& rowGrouping, std::vector<uint_fast64_t>* choices = nullptr) {
-                reduceVector<T, std::greater<T>>(source, target, rowGrouping, choices);
+                reduceVector<T, storm::utility::ElementGreater<T>>(source, target, rowGrouping, choices);
             }
 #endif
             

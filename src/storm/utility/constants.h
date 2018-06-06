@@ -30,6 +30,46 @@ namespace storm {
 
     namespace utility {
 
+        namespace detail {
+            template<typename ValueType>
+            struct ElementLess {
+                typedef std::less<ValueType> type;
+            };
+            
+            struct DoubleLess {
+                bool operator()(double a, double b) const {
+                    return b - a > 1e-17;
+                }
+            };
+            
+            template<>
+            struct ElementLess<double> {
+                typedef DoubleLess type;
+            };
+
+            template<typename ValueType>
+            struct ElementGreater {
+                typedef std::greater<ValueType> type;
+            };
+            
+            struct DoubleGreater {
+                bool operator()(double a, double b) const {
+                    return a - b > 1e-17;
+                }
+            };
+            
+            template<>
+            struct ElementGreater<double> {
+                typedef DoubleGreater type;
+            };
+        }
+        
+        template<typename ValueType>
+        using ElementLess = typename detail::ElementLess<ValueType>::type;
+
+        template<typename ValueType>
+        using ElementGreater = typename detail::ElementGreater<ValueType>::type;
+
         template<typename ValueType>
         ValueType one();
 

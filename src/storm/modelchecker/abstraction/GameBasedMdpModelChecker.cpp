@@ -843,7 +843,181 @@ namespace storm {
         }
         
         template <typename ValueType>
-        void postProcessStrategies(storm::OptimizationDirection const& player1Direction, abstraction::ExplicitGameStrategyPair& minStrategyPair, abstraction::ExplicitGameStrategyPair& maxStrategyPair, std::vector<uint64_t> const& player1Groups, std::vector<uint64_t> const& player2Groups, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, ExplicitQuantitativeResultMinMax<ValueType> const& quantitativeResult, bool redirectPlayer1, bool redirectPlayer2, bool sanityCheck) {
+        class ExplicitGameExporter {
+        public:
+            void exportToJson(std::string const& filename, std::vector<uint64_t> const& player1Groups, std::vector<uint64_t> const& player2Groups, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, ExplicitQuantitativeResultMinMax<ValueType> const& quantitativeResult, ExplicitGameStrategyPair const* minStrategyPair, ExplicitGameStrategyPair const* maxStrategyPair) {
+                
+                // Export game as json.
+                std::ofstream outfile(filename);
+                
+                // Export nodes.
+                outfile << "{\n\t\"nodes\": [" << std::endl;
+                exportNodes(outfile, player1Groups, player2Groups, transitionMatrix, initialStates, constraintStates, targetStates, quantitativeResult, minStrategyPair, maxStrategyPair);
+                outfile << "\n\t]," << std::endl;
+                
+                // Export edges.
+                outfile << "\t\"edges\": [" << std::endl;
+                exportEdges(outfile, player1Groups, player2Groups, transitionMatrix, initialStates, constraintStates, targetStates, quantitativeResult, minStrategyPair, maxStrategyPair);
+                outfile << "\n\t]\n}" << std::endl;
+            }
+            
+        private:
+            void exportEdge(std::ofstream& out, uint64_t id, uint64_t source, uint64_t target, std::string const& name, bool& first) {
+                if (!first) {
+                    out << "," << std::endl;
+                } else {
+                    first = false;
+                }
+                out << "\t\t{" << std::endl;
+                out << "\t\t\t\"data\": {" << std::endl;
+                out << "\t\t\t\t\"id\": \"" << id << "\"," << std::endl;
+                out << "\t\t\t\t\"name\": \"" << name << "\"," << std::endl;
+                out << "\t\t\t\t\"source\": \"" << source << "\"," << std::endl;
+                out << "\t\t\t\t\"target\": \"" << target << "\"" << std::endl;
+                out << "\t\t\t}" << std::endl;
+                out << "\t\t}";
+            }
+            
+            void exportEdges(std::ofstream& out, std::vector<uint64_t> const& player1Groups, std::vector<uint64_t> const& player2Groups, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, ExplicitQuantitativeResultMinMax<ValueType> const& quantitativeResult, ExplicitGameStrategyPair const* minStrategyPair, ExplicitGameStrategyPair const* maxStrategyPair) {
+                std::vector<uint64_t> stack;
+                for (auto state : initialStates) {
+                    stack.push_back(state);
+                }
+                storm::storage::BitVector reachablePlayer1(player1Groups.size() - 1);
+                
+                bool first = true;
+                uint64_t edgeId = 0;
+                while (!stack.empty()) {
+                    uint64_t currentState = stack.back();
+                    stack.pop_back();
+                    
+                    // Follow lower.
+                    if (minStrategyPair) {
+                        if (minStrategyPair->getPlayer1Strategy().hasDefinedChoice(currentState)) {
+                            uint64_t player2State = minStrategyPair->getPlayer1Strategy().getChoice(currentState);
+                            exportEdge(out, edgeId++, currentState, player2State, "lo", first);
+                            
+                            uint64_t playerPState = minStrategyPair->getPlayer2Strategy().getChoice(player2State);
+                            exportEdge(out, edgeId++, player2State, playerPState, "lo", first);
+                            
+                            for (auto const& entry : transitionMatrix.getRow(playerPState)) {
+                                auto player1Successor = entry.getColumn();
+                                
+                                exportEdge(out, edgeId++, playerPState, player1Successor, std::to_string(entry.getValue()), first);
+                                
+                                if (!reachablePlayer1.get(player1Successor)) {
+                                    reachablePlayer1.set(player1Successor);
+                                    stack.push_back(player1Successor);
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Follow upper.
+                    if (maxStrategyPair) {
+                        if (maxStrategyPair->getPlayer1Strategy().hasDefinedChoice(currentState)) {
+                            uint64_t player2State = maxStrategyPair->getPlayer1Strategy().getChoice(currentState);
+                            exportEdge(out, edgeId++, currentState, player2State, "hi", first);
+                            
+                            uint64_t playerPState = maxStrategyPair->getPlayer2Strategy().getChoice(player2State);
+                            exportEdge(out, edgeId++, player2State, playerPState, "hi", first);
+                            
+                            for (auto const& entry : transitionMatrix.getRow(playerPState)) {
+                                auto player1Successor = entry.getColumn();
+                                
+                                exportEdge(out, edgeId++, playerPState, player1Successor, std::to_string(entry.getValue()), first);
+                                
+                                if (!reachablePlayer1.get(player1Successor)) {
+                                    reachablePlayer1.set(player1Successor);
+                                    stack.push_back(player1Successor);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            void exportNode(std::ofstream& out, uint64_t state, ExplicitQuantitativeResultMinMax<ValueType> const* quantitativeResult, bool& first, bool target = false) {
+                if (!first) {
+                    out << "," << std::endl;
+                } else {
+                    first = false;
+                }
+                out << "\t\t{" << std::endl;
+                out << "\t\t\t\"data\": {" << std::endl;
+                out << "\t\t\t\t\"id\": \"" << state << "\"," << std::endl;
+                out << "\t\t\t\t\"name\": \"" << state;
+                if (quantitativeResult) {
+                    out << " [" << quantitativeResult->getMin().getValues()[state] << ", " << quantitativeResult->getMax().getValues()[state] << "]";
+                    if (target) {
+                        out << ", T";
+                    }
+                }
+                out << "\"" << std::endl;
+                out << "\t\t\t}," << std::endl;
+                out << "\t\t\t\"group\": \"nodes\"," << std::endl;
+                out << "\t\t\t\"classes\": \"node\"" << std::endl;
+                out << "\t\t}";
+            }
+            
+            void exportNodes(std::ofstream& out, std::vector<uint64_t> const& player1Groups, std::vector<uint64_t> const& player2Groups, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, ExplicitQuantitativeResultMinMax<ValueType> const& quantitativeResult, ExplicitGameStrategyPair const* minStrategyPair, ExplicitGameStrategyPair const* maxStrategyPair) {
+                
+                std::vector<uint64_t> stack;
+                for (auto state : initialStates) {
+                    stack.push_back(state);
+                }
+                storm::storage::BitVector reachablePlayer1(player1Groups.size() - 1);
+
+                bool first = true;
+                while (!stack.empty()) {
+                    uint64_t currentState = stack.back();
+                    stack.pop_back();
+                    
+                    exportNode(out, currentState, &quantitativeResult, first, targetStates.get(currentState));
+                    
+                    // Follow lower.
+                    if (minStrategyPair) {
+                        if (minStrategyPair->getPlayer1Strategy().hasDefinedChoice(currentState)) {
+                            uint64_t player2State = minStrategyPair->getPlayer1Strategy().getChoice(currentState);
+                            exportNode(out, player2State, nullptr, first);
+                            
+                            uint64_t playerPState = minStrategyPair->getPlayer2Strategy().getChoice(player2State);
+                            exportNode(out, playerPState, nullptr, first);
+                            
+                            for (auto const& entry : transitionMatrix.getRow(playerPState)) {
+                                auto player1Successor = entry.getColumn();
+                                if (!reachablePlayer1.get(player1Successor)) {
+                                    reachablePlayer1.set(player1Successor);
+                                    stack.push_back(player1Successor);
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Follow upper.
+                    if (maxStrategyPair) {
+                        if (maxStrategyPair->getPlayer1Strategy().hasDefinedChoice(currentState)) {
+                            uint64_t player2State = maxStrategyPair->getPlayer1Strategy().getChoice(currentState);
+                            exportNode(out, player2State, nullptr, first);
+                            
+                            uint64_t playerPState = maxStrategyPair->getPlayer2Strategy().getChoice(player2State);
+                            exportNode(out, playerPState, nullptr, first);
+                            
+                            for (auto const& entry : transitionMatrix.getRow(playerPState)) {
+                                auto player1Successor = entry.getColumn();
+                                if (!reachablePlayer1.get(player1Successor)) {
+                                    reachablePlayer1.set(player1Successor);
+                                    stack.push_back(player1Successor);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        };
+        
+        template <typename ValueType>
+        void postProcessStrategies(uint64_t iteration, storm::OptimizationDirection const& player1Direction, abstraction::ExplicitGameStrategyPair& minStrategyPair, abstraction::ExplicitGameStrategyPair& maxStrategyPair, std::vector<uint64_t> const& player1Groups, std::vector<uint64_t> const& player2Groups, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, ExplicitQuantitativeResultMinMax<ValueType> const& quantitativeResult, bool redirectPlayer1, bool redirectPlayer2, bool sanityCheck) {
             
             if (!redirectPlayer1 && !redirectPlayer2) {
                 return;
@@ -948,7 +1122,7 @@ namespace storm {
                     }
                 }
                 STORM_LOG_TRACE("Got maximal deviation of " << maxDiff << ".");
-                STORM_LOG_WARN_COND(sanityComparator.isZero(maxDiff), "Deviation " << maxDiff << " between computed value (" << quantitativeResult.getMin().getValues()[maxState] << ") and sanity check value (" << sanityValues[maxState] << ") in state " << maxState << " appears to be too high. (Obtained bounds were [" << quantitativeResult.getMin().getValues()[maxState] << ", " << quantitativeResult.getMax().getValues()[maxState] << "]");
+                STORM_LOG_WARN_COND(sanityComparator.isZero(maxDiff), "Deviation " << maxDiff << " between computed value (" << quantitativeResult.getMin().getValues()[maxState] << ") and sanity check value (" << sanityValues[maxState] << ") in state " << maxState << " appears to be too high. (Obtained bounds were [" << quantitativeResult.getMin().getValues()[maxState] << ", " << quantitativeResult.getMax().getValues()[maxState] << "].)");
                 if (!sanityComparator.isZero(maxDiff)) {
                     exit(-1);
                 }
@@ -996,8 +1170,16 @@ namespace storm {
                     }
                 }
                 STORM_LOG_TRACE("Got maximal deviation of " << maxDiff << ".");
-                STORM_LOG_WARN_COND(sanityComparator.isZero(maxDiff), "Deviation " << maxDiff << " between computed value (" << quantitativeResult.getMax().getValues()[maxState] << ") and sanity check value (" << sanityValues[maxState] << ") in state " << maxState << " appears to be too high. (Obtained bounds were [" << quantitativeResult.getMin().getValues()[maxState] << ", " << quantitativeResult.getMax().getValues()[maxState] << "]");
+                STORM_LOG_WARN_COND(sanityComparator.isZero(maxDiff), "Deviation " << maxDiff << " between computed value (" << quantitativeResult.getMax().getValues()[maxState] << ") and sanity check value (" << sanityValues[maxState] << ") in state " << maxState << " appears to be too high. (Obtained bounds were [" << quantitativeResult.getMin().getValues()[maxState] << ", " << quantitativeResult.getMax().getValues()[maxState] << "].)");
                 if (!sanityComparator.isZero(maxDiff)) {
+                    
+                    ExplicitGameExporter<ValueType> exporter;
+                    storm::storage::BitVector newInitialStates(player1Groups.size() - 1);
+                    newInitialStates.set(maxState);
+                    exporter.exportToJson("game" + std::to_string(iteration) + "_min.json", player1Groups, player2Groups, transitionMatrix, newInitialStates, constraintStates, targetStates, quantitativeResult, &minStrategyPair, static_cast<ExplicitGameStrategyPair const*>(nullptr));
+                    exporter.exportToJson("game" + std::to_string(iteration) + "_max.json", player1Groups, player2Groups, transitionMatrix, newInitialStates, constraintStates, targetStates, quantitativeResult, static_cast<ExplicitGameStrategyPair const*>(nullptr), &maxStrategyPair);
+
+                    
                     // Perform DFS from max diff state in upper system.
                     std::vector<uint64_t> stack;
                     stack.push_back(maxState);
@@ -1006,7 +1188,7 @@ namespace storm {
                     while (!stack.empty()) {
                         uint64_t currentState = stack.back();
                         stack.pop_back();
-
+                        
                         std::cout << "exploring player 1 state " << currentState << std::endl;
                         uint64_t player2State = maxStrategyPair.getPlayer1Strategy().getChoice(currentState);
                         std::cout << "going to player 2 state " << player2State << std::endl;
@@ -1019,6 +1201,8 @@ namespace storm {
                                 if (!targetStates.get(successor)) {
                                     reachable.set(successor);
                                     stack.push_back(successor);
+                                } else {
+                                    std::cout << "found target state " << std::endl;
                                 }
                             }
                         }
@@ -1176,7 +1360,7 @@ namespace storm {
                 
                 // Post-process strategies for better refinements.
                 storm::utility::Stopwatch strategyProcessingWatch(true);
-                postProcessStrategies(player1Direction, minStrategyPair, maxStrategyPair, player1Groups, player2RowGrouping, transitionMatrix, constraintStates, targetStates, quantitativeResult, this->fixPlayer1Strategy, this->fixPlayer2Strategy, this->debug);
+                postProcessStrategies(this->iteration, player1Direction, minStrategyPair, maxStrategyPair, player1Groups, player2RowGrouping, transitionMatrix, initialStates, constraintStates, targetStates, quantitativeResult, this->fixPlayer1Strategy, this->fixPlayer2Strategy, this->debug);
                 strategyProcessingWatch.stop();
                 totalStrategyProcessingWatch.add(strategyProcessingWatch);
                 STORM_LOG_DEBUG("Postprocessed strategies in " << strategyProcessingWatch.getTimeInMilliseconds() << "ms.");
