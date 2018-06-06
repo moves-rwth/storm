@@ -61,7 +61,7 @@ if __name__ == "__main__":
     s += "    on_failure: always\n"
     s += "    on_success: change\n"
     s += "    recipients:\n"
-    s += '    secure: "Q9CW/PtyWkZwExDrfFFb9n1STGYsRfI6awv1bZHcGwfrDvhpXoMCuF8CwviIfilm7fFJJEoKizTtdRpY0HrOnY/8KY111xrtcFYosxdndv7xbESodIxQOUoIEFCO0mCNHwWYisoi3dAA7H3Yn661EsxluwHjzX5vY0xSbw0n229hlsFz092HwGLSU33zHl7eXpQk+BOFmBTRGlOq9obtDZ17zbHz1oXFZntHK/JDUIYP0b0uq8NvE2jM6CIVdcuSwmIkOhZJoO2L3Py3rBbPci+L2PSK4Smv2UjCPF8KusnOaFIyDB3LcNM9Jqq5ssJMrK/KaO6BiuYrOZXYWZ7KEg3Y/naC8HjOH1dzty+P7oW46sb9F03pTsufqD4R7wcK+9wROTztO6aJPDG/IPH7EWgrBTxqlOkVRwi2eYuQouZpZUW6EMClKbMHMIxCH2S8aOk/r1w2cNwmPEcunnP0nl413x/ByHr4fTPFykPj8pQxIsllYjpdWBRQfDOauKWGzk6LcrFW0qpWP+/aJ2vYu/IoZQMG5lMHbp6Y1Lg09pYm7Q983v3b7D+JvXhOXMyGq91HyPahA2wwKoG1GA4uoZ2I95/IFYNiKkelDd3WTBoFLNF9YFoEJNdCywm1fO2WY4WkyEFBuQcgDA+YpFMJJMxjTbivYk9jvHk2gji//2w="\n'
+    s += '    secure: "BoMQTBWnkh4ZLIHEaKu0tAKDohhVmOQ2pz/fjc+ScKG8mtvXqtpx0TiyePOUV1MuYNZiAP7x4mwABcoid55SwZ4+LPjd8uxXNfOji9B9GW5YqbqRvAeh7Es7dx48MyLYPIezjoryHH9R3Q2zZ9gmxgtw5eirjURcLNTXpKAwq/oOsKvh+vhOx4Qierw98wEXjMV7ipBzE4cfkgUbbX7oxGh1nsAsCew+rRmNLijfmE9tctYdH5W0wE+zC9ik+12Xyk3FwsDIABirPHfeCcEl+b9I0h1a2vZSZIA+sCDkIGKTiv9pCnsthn5LJc9pMLX7B/Wf6xLGMzpSiw3P1ZzjXpOE026WuyhTMVXqZYvbl7cJoNZiLCfTYg3MQVq5NHkq0h0jInIH7QlZYd0hZPOGONwdy17O1QmnX2Weq6G+Ps9siLVKFba37+y5PfRYkiUatJvDf2f7Jdxye6TWrUmlxQkAvs65ioyr8doad7IT1/yaGr/rBpXeQqZp6zNoMYr/cCRAYX6nOrnSszgiIWEc8QMMx+G31v77Uvd++9VG4MG9gbdpexpfYRNzKAxDarSaYEOuaWm2Z6R87bpNcjA+tW0hnBHBzRx0NFYYqXyW0tpVO9+035A9CHrLDLz77r4jJttcRvrP2rTbTBiwuhpmiufRyk3BuWlgzU3yaSuQV3M="\n'
     s += "\n"
     s += "#\n"
     s += "# Configurations\n"
