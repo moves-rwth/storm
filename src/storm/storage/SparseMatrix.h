@@ -693,7 +693,7 @@ namespace storm {
              *
              * @param useGroups If set to true, the constraint for the rows is interpreted as selecting whole row groups.
              * If it is not set, the row constraint is interpreted over the actual rows. Note that empty row groups will
-             * be dropped altogether. That is, if no row of a row group is selected *or* the row group is alread empty,
+             * be dropped altogether. That is, if no row of a row group is selected *or* the row group is already empty,
              * the submatrix will not have this row group.
              * @param constraint A bit vector indicating which rows to keep.
              * @param columnConstraint A bit vector indicating which columns to keep.

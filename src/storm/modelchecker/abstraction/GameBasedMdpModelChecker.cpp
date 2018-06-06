@@ -38,6 +38,7 @@
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/CoreSettings.h"
+#include "storm/settings/modules/GeneralSettings.h"
 
 #include "storm/utility/prism.h"
 #include "storm/utility/macros.h"
@@ -475,24 +476,40 @@ namespace storm {
                 uint64_t maybeStatePosition = 0;
                 previousPlayer2States = 0;
                 for (auto state : maybeStates) {
+                    if (state == 25305 || state == 67442 || state == 67440) {
+                        std::cout << "dealing with problematic state " << state << " whose local offset is " << maybeStatePosition << std::endl;
+                    }
                     uint64_t chosenPlayer2State = startingStrategyPair->getPlayer1Strategy().getChoice(state);
                     
-                    uint64_t previousPlayer2StatesForState = 0;
+                    uint64_t previousPlayer2MaybeStatesForState = 0;
                     for (uint64_t player2State = player1Groups[state]; player2State < player1Groups[state + 1]; ++player2State) {
                         if (player2MaybeStates.get(player2State)) {
+                            if (state == 25305 || state == 67442 || state == 67440) {
+                                std::cout << "player 2 state " << player2State << " is a player 2 maybe state with local index " << previousPlayer2States << std::endl;
+                            }
+                            
                             if (player2State == chosenPlayer2State) {
-                                player1Scheduler[maybeStatePosition] = previousPlayer2StatesForState;
+                                player1Scheduler[maybeStatePosition] = previousPlayer2MaybeStatesForState;
+                                if (state == 25305 || state == 67442 || state == 67440) {
+                                    std::cout << "player 1 scheduler chooses " << previousPlayer2MaybeStatesForState << " which globally is " << player2State << std::endl;
+                                }
                             }
 
-                            // Copy over the player 2 action (modulo making it local) as all rows for the state are taken.
+                            // Copy over the player 2 action (modulo making it local) as all rows for the player 2 state are taken.
                             if (startingStrategyPair->getPlayer2Strategy().hasDefinedChoice(player2State)) {
                                 player2Scheduler[previousPlayer2States] = startingStrategyPair->getPlayer2Strategy().getChoice(player2State) - transitionMatrix.getRowGroupIndices()
                                 [player2State];
+                                if (state == 25305 || state == 67442 || state == 67440) {
+                                    std::cout << "copied over choice " << player2Scheduler[previousPlayer2States] << " for player 2 (global index " << startingStrategyPair->getPlayer2Strategy().getChoice(player2State) << ")" << std::endl;
+                                }
                             } else {
                                 player2Scheduler[previousPlayer2States] = 0;
+                                if (state == 25305 || state == 67442 || state == 67440) {
+                                    std::cout << "did not copy (undefined) choice for player 2 (global index " << startingStrategyPair->getPlayer2Strategy().getChoice(player2State) << ")" << std::endl;
+                                }
                             }
                             
-                            ++previousPlayer2StatesForState;
+                            ++previousPlayer2MaybeStatesForState;
                             ++previousPlayer2States;
                         }
                     }
@@ -502,8 +519,14 @@ namespace storm {
             }
             
             // Solve actual game and track schedulers.
+            if (player1Scheduler.size() > 4713) {
+                std::cout << "before: player1Scheduler[4713] = " << player1Scheduler[4713] << std::endl;
+            }
             gameSolver->solveGame(env, player1Direction, player2Direction, values, b, &player1Scheduler, &player2Scheduler);
-            
+            if (player1Scheduler.size() > 67440) {
+                std::cout << "after: player1Scheduler[4713] = " << player1Scheduler[4713] << std::endl;
+            }
+
             // Set values according to quantitative result (qualitative result has already been taken care of).
             storm::utility::vector::setVectorValues(result.getValues(), maybeStates, values);
 
@@ -511,16 +534,16 @@ namespace storm {
             uint64_t previousPlayer1MaybeStates = 0;
             uint64_t previousPlayer2MaybeStates = 0;
             for (auto state : maybeStates) {
-                uint64_t previousPlayer2StatesForState = 0;
+                uint64_t previousPlayer2MaybeStatesForState = 0;
                 for (uint64_t player2State = player1Groups[state]; player2State < player1Groups[state + 1]; ++player2State) {
-                    if (player1Scheduler[previousPlayer1MaybeStates] == previousPlayer2StatesForState) {
+                    if (player1Scheduler[previousPlayer1MaybeStates] == previousPlayer2MaybeStatesForState) {
                         strategyPair.getPlayer1Strategy().setChoice(state, player2State);
                     }
                     
                     if (player2MaybeStates.get(player2State)) {
                         strategyPair.getPlayer2Strategy().setChoice(player2State, transitionMatrix.getRowGroupIndices()[player2State] + player2Scheduler[previousPlayer2MaybeStates]);
 
-                        ++previousPlayer2StatesForState;
+                        ++previousPlayer2MaybeStatesForState;
                         ++previousPlayer2MaybeStates;
                     }
                 }
@@ -895,6 +918,8 @@ namespace storm {
             }
             
             if (sanityCheck) {
+                storm::utility::ConstantsComparator<ValueType> sanityComparator(1e-6, true);
+                
                 ///////// SANITY CHECK: apply lower strategy, obtain DTMC matrix and model check it. the values should
                 ///////// still be the lower ones.
                 storm::storage::SparseMatrixBuilder<ValueType> dtmcMatrixBuilder(player1Groups.size() - 1, player1Groups.size() - 1);
@@ -913,9 +938,21 @@ namespace storm {
                 auto dtmcMatrix = dtmcMatrixBuilder.build();
                 std::vector<ValueType> sanityValues = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeUntilProbabilities(Environment(), storm::solver::SolveGoal<ValueType>(), dtmcMatrix, dtmcMatrix.transpose(), constraintStates, targetStates, false);
                 
+                ValueType maxDiff = storm::utility::zero<ValueType>();
+                uint64_t maxState = 0;
                 for (uint64_t state = 0; state < player1Groups.size() - 1; ++state) {
-                    STORM_LOG_ASSERT(std::abs(sanityValues[state] - quantitativeResult.getMin().getValues()[state]) < 1e-4, "Got weird min divergences!");
+                    ValueType const& diff = std::abs(sanityValues[state] - quantitativeResult.getMin().getValues()[state]);
+                    if (diff > maxDiff) {
+                        maxState = state;
+                        maxDiff = diff;
+                    }
                 }
+                STORM_LOG_TRACE("Got maximal deviation of " << maxDiff << ".");
+                STORM_LOG_WARN_COND(sanityComparator.isZero(maxDiff), "Deviation " << maxDiff << " between computed value (" << quantitativeResult.getMin().getValues()[maxState] << ") and sanity check value (" << sanityValues[maxState] << ") in state " << maxState << " appears to be too high. (Obtained bounds were [" << quantitativeResult.getMin().getValues()[maxState] << ", " << quantitativeResult.getMax().getValues()[maxState] << "]");
+                if (!sanityComparator.isZero(maxDiff)) {
+                    exit(-1);
+                }
+
                 ///////// SANITY CHECK: apply upper strategy, obtain DTMC matrix and model check it. the values should
                 ///////// still be the upper ones.
                 dtmcMatrixBuilder = storm::storage::SparseMatrixBuilder<ValueType>(player1Groups.size() - 1, player1Groups.size() - 1);
@@ -926,16 +963,68 @@ namespace storm {
                         STORM_LOG_ASSERT(maxStrategyPair.getPlayer1Strategy().hasDefinedChoice(state), "Expected max player 1 choice in state " << state << ".");
                         STORM_LOG_ASSERT(maxStrategyPair.getPlayer2Strategy().hasDefinedChoice(maxStrategyPair.getPlayer1Strategy().getChoice(state)), "Expected max player 2 choice in state " << state << " with player 2 choice " << maxStrategyPair.getPlayer1Strategy().getChoice(state) << ".");
                         uint64_t player2Choice = maxStrategyPair.getPlayer2Strategy().getChoice(maxStrategyPair.getPlayer1Strategy().getChoice(state));
+                        
                         for (auto const& entry : transitionMatrix.getRow(player2Choice)) {
                             dtmcMatrixBuilder.addNextValue(state, entry.getColumn(), entry.getValue());
+                            if (state == 25305) {
+                                std::cout << "entry " << entry.getColumn() << " -> " << entry.getValue() << std::endl;
+                                std::cout << "values [" << quantitativeResult.getMin().getValues()[entry.getColumn()] << ", " << quantitativeResult.getMax().getValues()[entry.getColumn()] << "]" << std::endl;
+                            }
                         }
                     }
                 }
                 dtmcMatrix = dtmcMatrixBuilder.build();
                 sanityValues = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeUntilProbabilities(Environment(), storm::solver::SolveGoal<ValueType>(), dtmcMatrix, dtmcMatrix.transpose(), constraintStates, targetStates, false);
                 
+                maxDiff = storm::utility::zero<ValueType>();
+                maxState = 0;
                 for (uint64_t state = 0; state < player1Groups.size() - 1; ++state) {
-                    STORM_LOG_ASSERT(std::abs(sanityValues[state] - quantitativeResult.getMax().getValues()[state]) < 1e-4, "Got weird max divergences!");
+                    ValueType const& diff = std::abs(sanityValues[state] - quantitativeResult.getMax().getValues()[state]);
+                    if (diff > maxDiff) {
+                        maxState = state;
+                        maxDiff = diff;
+                    }
+
+                    if (dtmcMatrix.getRowCount() > 25305 && !targetStates.get(state)) {
+                        uint64_t player2Choice = maxStrategyPair.getPlayer2Strategy().getChoice(maxStrategyPair.getPlayer1Strategy().getChoice(state));
+                        for (auto const& entry : transitionMatrix.getRow(player2Choice)) {
+                            if (state == 25305) {
+                                std::cout << "entry " << entry.getColumn() << " -> " << entry.getValue() << std::endl;
+                                std::cout << "sanity value " << sanityValues[entry.getColumn()] << std::endl;
+                            }
+                        }
+                    }
+                }
+                STORM_LOG_TRACE("Got maximal deviation of " << maxDiff << ".");
+                STORM_LOG_WARN_COND(sanityComparator.isZero(maxDiff), "Deviation " << maxDiff << " between computed value (" << quantitativeResult.getMax().getValues()[maxState] << ") and sanity check value (" << sanityValues[maxState] << ") in state " << maxState << " appears to be too high. (Obtained bounds were [" << quantitativeResult.getMin().getValues()[maxState] << ", " << quantitativeResult.getMax().getValues()[maxState] << "]");
+                if (!sanityComparator.isZero(maxDiff)) {
+                    // Perform DFS from max diff state in upper system.
+                    std::vector<uint64_t> stack;
+                    stack.push_back(maxState);
+                    storm::storage::BitVector reachable(dtmcMatrix.getRowCount());
+                    
+                    while (!stack.empty()) {
+                        uint64_t currentState = stack.back();
+                        stack.pop_back();
+
+                        std::cout << "exploring player 1 state " << currentState << std::endl;
+                        uint64_t player2State = maxStrategyPair.getPlayer1Strategy().getChoice(currentState);
+                        std::cout << "going to player 2 state " << player2State << std::endl;
+                        uint64_t player2Choice = maxStrategyPair.getPlayer2Strategy().getChoice(player2State);
+                        std::cout << "which takes choice " << player2Choice << " which locally is " << (player2Choice - transitionMatrix.getRowGroupIndices()[player2State]) << std::endl;
+                        for (auto const& entry : transitionMatrix.getRow(player2Choice)) {
+                            std::cout << entry.getColumn() << " -> " << entry.getValue() << std::endl;
+                            auto successor = entry.getColumn();
+                            if (!reachable.get(successor)) {
+                                if (!targetStates.get(successor)) {
+                                    reachable.set(successor);
+                                    stack.push_back(successor);
+                                }
+                            }
+                        }
+                    }
+                    
+                    exit(-1);
                 }
             }
         }
