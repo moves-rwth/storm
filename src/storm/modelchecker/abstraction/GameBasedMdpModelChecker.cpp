@@ -713,13 +713,19 @@ namespace storm {
                 quantitativeResult.max = computeQuantitativeResult(env, player1Direction, storm::OptimizationDirection::Maximize, game, qualitativeResult, initialStatesAdd, maybeMax, boost::make_optional(quantitativeResult.min));
                 quantitativeWatch.stop();
                 result = checkForResultAfterQuantitativeCheck<ValueType>(checkTask, storm::OptimizationDirection::Maximize, quantitativeResult.max.getInitialStatesRange());
+                totalSolutionWatch.add(quantitativeWatch);
                 if (result) {
-                    totalSolutionWatch.add(quantitativeWatch);
                     return result;
                 }
-                
-                totalSolutionWatch.add(quantitativeWatch);
-                STORM_LOG_INFO("Obtained quantitative bounds [" << quantitativeResult.min.getInitialStatesRange().first << ", " << quantitativeResult.max.getInitialStatesRange().second << "] on the actual value for the initial states in " << quantitativeWatch.getTimeInMilliseconds() << "ms.");
+                                
+                ValueType minVal = quantitativeResult.min.getInitialStatesRange().first;
+                ValueType maxVal = quantitativeResult.max.getInitialStatesRange().second;
+                if (std::is_same<ValueType, double>::value) {
+                    STORM_LOG_INFO("Obtained quantitative bounds [" << minVal << ", " << maxVal << "] on the actual value for the initial states in " << quantitativeWatch.getTimeInMilliseconds() << "ms.");
+                } else {
+                    STORM_LOG_INFO("Obtained quantitative bounds [" << minVal << ", " << maxVal << "] (approx. [" << storm::utility::convertNumber<double>(minVal) << ", " << storm::utility::convertNumber<double>(maxVal) << "]) on the actual value for the initial states in " << quantitativeWatch.getTimeInMilliseconds() << "ms.");
+                }
+
                 
                 // (9) Check whether the lower and upper bounds are close enough to terminate with an answer.
                 result = checkForResultAfterQuantitativeCheck<ValueType>(quantitativeResult.min.getInitialStatesRange().first, quantitativeResult.max.getInitialStatesRange().second, comparator);
@@ -1142,7 +1148,7 @@ namespace storm {
                 ValueType maxDiff = storm::utility::zero<ValueType>();
                 uint64_t maxState = 0;
                 for (uint64_t state = 0; state < player1Groups.size() - 1; ++state) {
-                    ValueType const& diff = storm::utility::abs(sanityValues[state] - quantitativeResult.getMin().getValues()[state]);
+                    ValueType diff = storm::utility::abs(ValueType(sanityValues[state] - quantitativeResult.getMin().getValues()[state]));
                     if (diff > maxDiff) {
                         maxState = state;
                         maxDiff = diff;
@@ -1180,7 +1186,7 @@ namespace storm {
                 maxDiff = storm::utility::zero<ValueType>();
                 maxState = 0;
                 for (uint64_t state = 0; state < player1Groups.size() - 1; ++state) {
-                    ValueType const& diff = storm::utility::abs(sanityValues[state] - quantitativeResult.getMax().getValues()[state]);
+                    ValueType diff = storm::utility::abs(ValueType(sanityValues[state] - quantitativeResult.getMax().getValues()[state]));
                     if (diff > maxDiff) {
                         maxState = state;
                         maxDiff = diff;
@@ -1373,11 +1379,18 @@ namespace storm {
                 quantitativeResult.setMax(computeQuantitativeResult(env, player1Direction, storm::OptimizationDirection::Maximize, transitionMatrix, player1Groups, qualitativeResult, maybeMax, maxStrategyPair, odd, &quantitativeResult.getMin(), &minStrategyPair));
                 quantitativeWatch.stop();
                 result = checkForResultAfterQuantitativeCheck<ValueType>(checkTask, storm::OptimizationDirection::Maximize, quantitativeResult.getMax().getRange(initialStates));
+                totalSolutionWatch.add(quantitativeWatch);
                 if (result) {
-                    totalSolutionWatch.add(quantitativeWatch);
                     return result;
                 }
-                STORM_LOG_INFO("Obtained quantitative bounds [" << quantitativeResult.getMin().getRange(initialStates).first << ", " << quantitativeResult.getMax().getRange(initialStates).second << "] on the actual value for the initial states in " << quantitativeWatch.getTimeInMilliseconds() << "ms.");
+                
+                ValueType minVal = quantitativeResult.getMin().getRange(initialStates).first;
+                ValueType maxVal = quantitativeResult.getMax().getRange(initialStates).second;
+                if (std::is_same<ValueType, double>::value) {
+                    STORM_LOG_INFO("Obtained quantitative bounds [" << minVal << ", " << maxVal << "] on the actual value for the initial states in " << quantitativeWatch.getTimeInMilliseconds() << "ms.");
+                } else {
+                    STORM_LOG_INFO("Obtained quantitative bounds [" << minVal << ", " << maxVal << "] (approx. [" << storm::utility::convertNumber<double>(minVal) << ", " << storm::utility::convertNumber<double>(maxVal) << "]) on the actual value for the initial states in " << quantitativeWatch.getTimeInMilliseconds() << "ms.");
+                }
                 
                 // (9) Check whether the lower and upper bounds are close enough to terminate with an answer.
                 result = checkForResultAfterQuantitativeCheck<ValueType>(quantitativeResult.getMin().getRange(initialStates).first, quantitativeResult.getMax().getRange(initialStates).second, comparator);

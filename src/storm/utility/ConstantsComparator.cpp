@@ -112,7 +112,7 @@ namespace storm {
             // Intentionally left empty.
         }
         
-        ConstantsComparator<storm::RationalNumber>::ConstantsComparator(storm::RationalNumber precision, bool relative) : precision(precision), relative(false) {
+        ConstantsComparator<storm::RationalNumber>::ConstantsComparator(storm::RationalNumber precision, bool relative) : precision(precision), relative(relative) {
             // Intentionally left empty.
         }
         
@@ -120,7 +120,7 @@ namespace storm {
             if (storm::utility::isZero(precision)) {
                 return storm::utility::isOne(value);
             }
-            return storm::utility::abs(value - one<double>()) <= precision;
+            return storm::utility::abs(storm::RationalNumber(value - one<storm::RationalNumber>())) <= precision;
         }
         
         bool ConstantsComparator<storm::RationalNumber>::isZero(storm::RationalNumber const& value) const {
@@ -136,9 +136,9 @@ namespace storm {
             }
             
             if (relative) {
-                return value1 == value2 || storm::utility::abs(value1 - value2)/storm::utility::abs(value1 + value2) <= precision;
+                return value1 == value2 || storm::utility::abs(storm::RationalNumber(value1 - value2))/storm::utility::abs(storm::RationalNumber(value1 + value2)) <= precision;
             } else {
-                return storm::utility::abs(value1 - value2) <= precision;
+                return storm::utility::abs(storm::RationalNumber(value1 - value2)) <= precision;
             }
         }
         

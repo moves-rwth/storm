@@ -38,7 +38,7 @@ namespace storm {
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        typename std::enable_if<std::is_same<ValueType, double>::value, std::unique_ptr<storm::modelchecker::CheckResult>>::type verifyWithAbstractionRefinementEngine(storm::storage::SymbolicModelDescription const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
+        typename std::enable_if<std::is_same<ValueType, double>::value || std::is_same<ValueType, storm::RationalNumber>::value, std::unique_ptr<storm::modelchecker::CheckResult>>::type verifyWithAbstractionRefinementEngine(storm::storage::SymbolicModelDescription const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
             STORM_LOG_THROW(model.getModelType() == storm::storage::SymbolicModelDescription::ModelType::DTMC || model.getModelType() == storm::storage::SymbolicModelDescription::ModelType::MDP, storm::exceptions::NotSupportedException, "Can only treat DTMCs/MDPs using the abstraction refinement engine.");
             
             std::unique_ptr<storm::modelchecker::CheckResult> result;
@@ -60,7 +60,7 @@ namespace storm {
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        typename std::enable_if<!std::is_same<ValueType, double>::value, std::unique_ptr<storm::modelchecker::CheckResult>>::type verifyWithAbstractionRefinementEngine(storm::storage::SymbolicModelDescription const&, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const&) {
+        typename std::enable_if<!std::is_same<ValueType, double>::value && !std::is_same<ValueType, storm::RationalNumber>::value, std::unique_ptr<storm::modelchecker::CheckResult>>::type verifyWithAbstractionRefinementEngine(storm::storage::SymbolicModelDescription const&, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const&) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Abstraction-refinement engine does not support data type.");
         }
         

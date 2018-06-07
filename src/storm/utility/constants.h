@@ -38,7 +38,7 @@ namespace storm {
             
             struct DoubleLess {
                 bool operator()(double a, double b) const {
-                    return b - a > 1e-17;
+                    return b - a > 1e-18;
                 }
             };
             
@@ -54,7 +54,7 @@ namespace storm {
             
             struct DoubleGreater {
                 bool operator()(double a, double b) const {
-                    return a - b > 1e-17;
+                    return a - b > 1e-18;
                 }
             };
             
