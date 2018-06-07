@@ -7,6 +7,6 @@ namespace storm {
         SymbolicQuantitativeGameResultMinMax<Type, ValueType>::SymbolicQuantitativeGameResultMinMax(SymbolicQuantitativeGameResult<Type, ValueType> const& min, SymbolicQuantitativeGameResult<Type, ValueType> const& max) : min(min), max(max) {
             // Intentionally left empty.
         }
-            
+        
     }
 }

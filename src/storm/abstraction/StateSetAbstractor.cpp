@@ -159,7 +159,7 @@ namespace storm {
         template class StateSetAbstractor<storm::dd::DdType::CUDD, double>;
         template class StateSetAbstractor<storm::dd::DdType::Sylvan, double>;
 #ifdef STORM_HAVE_CARL
-		template class StateSetAbstractor<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+		template class StateSetAbstractor<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 #endif
     }
 }

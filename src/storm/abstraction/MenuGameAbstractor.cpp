@@ -176,7 +176,7 @@ namespace storm {
         template class MenuGameAbstractor<storm::dd::DdType::Sylvan, double>;
         
 #ifdef STORM_HAVE_CARL
-        template class MenuGameAbstractor<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+        template class MenuGameAbstractor<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 #endif
     }
 }

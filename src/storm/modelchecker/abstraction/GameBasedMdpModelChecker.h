@@ -87,18 +87,18 @@ namespace storm {
             explicit GameBasedMdpModelChecker(storm::storage::SymbolicModelDescription const& model, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>());
             
             /// Overridden methods from super class.
-            virtual bool canHandle(CheckTask<storm::logic::Formula> const& checkTask) const override;
-            virtual std::unique_ptr<CheckResult> computeUntilProbabilities(Environment const& env, CheckTask<storm::logic::UntilFormula> const& checkTask) override;
-            virtual std::unique_ptr<CheckResult> computeReachabilityProbabilities(Environment const& env, CheckTask<storm::logic::EventuallyFormula> const& checkTask) override;
+            virtual bool canHandle(CheckTask<storm::logic::Formula, ValueType> const& checkTask) const override;
+            virtual std::unique_ptr<CheckResult> computeUntilProbabilities(Environment const& env, CheckTask<storm::logic::UntilFormula, ValueType> const& checkTask) override;
+            virtual std::unique_ptr<CheckResult> computeReachabilityProbabilities(Environment const& env, CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) override;
     
         private:
             /*!
              * Performs the core part of the abstraction-refinement loop.
              */
-            std::unique_ptr<CheckResult> performGameBasedAbstractionRefinement(Environment const& env, CheckTask<storm::logic::Formula> const& checkTask, storm::expressions::Expression const& constraintExpression, storm::expressions::Expression const& targetStateExpression);
+            std::unique_ptr<CheckResult> performGameBasedAbstractionRefinement(Environment const& env, CheckTask<storm::logic::Formula, ValueType> const& checkTask, storm::expressions::Expression const& constraintExpression, storm::expressions::Expression const& targetStateExpression);
             
-            std::unique_ptr<CheckResult> performSymbolicAbstractionSolutionStep(Environment const& env, CheckTask<storm::logic::Formula> const& checkTask, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::OptimizationDirection player1Direction, storm::dd::Bdd<Type> const& initialStates, storm::dd::Bdd<Type> const& constraintStates, storm::dd::Bdd<Type> const& targetStates, storm::abstraction::MenuGameRefiner<Type, ValueType> const& refiner, boost::optional<SymbolicQualitativeGameResultMinMax<Type>>& previousQualitativeResult, boost::optional<abstraction::SymbolicQuantitativeGameResult<Type, ValueType>>& previousMinQuantitativeResult);
-            std::unique_ptr<CheckResult> performExplicitAbstractionSolutionStep(Environment const& env, CheckTask<storm::logic::Formula> const& checkTask, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::OptimizationDirection player1Direction, storm::dd::Bdd<Type> const& initialStates, storm::dd::Bdd<Type> const& constraintStates, storm::dd::Bdd<Type> const& targetStates, storm::abstraction::MenuGameRefiner<Type, ValueType> const& refiner, boost::optional<detail::PreviousExplicitResult<ValueType>>& previousResult);
+            std::unique_ptr<CheckResult> performSymbolicAbstractionSolutionStep(Environment const& env, CheckTask<storm::logic::Formula, ValueType> const& checkTask, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::OptimizationDirection player1Direction, storm::dd::Bdd<Type> const& initialStates, storm::dd::Bdd<Type> const& constraintStates, storm::dd::Bdd<Type> const& targetStates, storm::abstraction::MenuGameRefiner<Type, ValueType> const& refiner, boost::optional<SymbolicQualitativeGameResultMinMax<Type>>& previousQualitativeResult, boost::optional<abstraction::SymbolicQuantitativeGameResult<Type, ValueType>>& previousMinQuantitativeResult);
+            std::unique_ptr<CheckResult> performExplicitAbstractionSolutionStep(Environment const& env, CheckTask<storm::logic::Formula, ValueType> const& checkTask, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::OptimizationDirection player1Direction, storm::dd::Bdd<Type> const& initialStates, storm::dd::Bdd<Type> const& constraintStates, storm::dd::Bdd<Type> const& targetStates, storm::abstraction::MenuGameRefiner<Type, ValueType> const& refiner, boost::optional<detail::PreviousExplicitResult<ValueType>>& previousResult);
 
             /*!
              * Retrieves the initial predicates for the abstraction.
@@ -108,7 +108,7 @@ namespace storm {
             /*!
              * Derives the optimization direction of player 1.
              */
-            storm::OptimizationDirection getPlayer1Direction(CheckTask<storm::logic::Formula> const& checkTask);
+            storm::OptimizationDirection getPlayer1Direction(CheckTask<storm::logic::Formula, ValueType> const& checkTask);
             
             /*!
              * Performs a qualitative check on the the given game to compute the (player 1) states that have probability

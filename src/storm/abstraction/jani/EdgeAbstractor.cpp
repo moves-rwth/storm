@@ -727,7 +727,7 @@ namespace storm {
             template class EdgeAbstractor<storm::dd::DdType::CUDD, double>;
             template class EdgeAbstractor<storm::dd::DdType::Sylvan, double>;
 #ifdef STORM_HAVE_CARL
-            template class EdgeAbstractor<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+            template class EdgeAbstractor<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 #endif
         }
     }

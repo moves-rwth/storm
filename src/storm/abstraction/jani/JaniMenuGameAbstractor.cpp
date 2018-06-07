@@ -285,7 +285,7 @@ namespace storm {
             template class JaniMenuGameAbstractor<storm::dd::DdType::CUDD, double>;
             template class JaniMenuGameAbstractor<storm::dd::DdType::Sylvan, double>;
 #ifdef STORM_HAVE_CARL
-            template class JaniMenuGameAbstractor<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+            template class JaniMenuGameAbstractor<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 #endif
         }
     }

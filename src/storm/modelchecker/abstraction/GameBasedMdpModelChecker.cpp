@@ -97,14 +97,14 @@ namespace storm {
         }
 
         template<storm::dd::DdType Type, typename ModelType>
-        bool GameBasedMdpModelChecker<Type, ModelType>::canHandle(CheckTask<storm::logic::Formula> const& checkTask) const {
+        bool GameBasedMdpModelChecker<Type, ModelType>::canHandle(CheckTask<storm::logic::Formula, ValueType> const& checkTask) const {
             storm::logic::Formula const& formula = checkTask.getFormula();
             storm::logic::FragmentSpecification fragment = storm::logic::reachability();
             return formula.isInFragment(fragment) && checkTask.isOnlyInitialStatesRelevantSet();
         }
                 
         template<storm::dd::DdType Type, typename ModelType>
-        std::unique_ptr<CheckResult> GameBasedMdpModelChecker<Type, ModelType>::computeUntilProbabilities(Environment const& env, CheckTask<storm::logic::UntilFormula> const& checkTask) {
+        std::unique_ptr<CheckResult> GameBasedMdpModelChecker<Type, ModelType>::computeUntilProbabilities(Environment const& env, CheckTask<storm::logic::UntilFormula, ValueType> const& checkTask) {
             storm::logic::UntilFormula const& pathFormula = checkTask.getFormula();
             std::map<std::string, storm::expressions::Expression> labelToExpressionMapping;
             if (preprocessedModel.isPrismProgram()) {
@@ -121,11 +121,11 @@ namespace storm {
             storm::expressions::Expression constraintExpression = pathFormula.getLeftSubformula().toExpression(preprocessedModel.getManager(), labelToExpressionMapping);
             storm::expressions::Expression targetStateExpression = pathFormula.getRightSubformula().toExpression(preprocessedModel.getManager(), labelToExpressionMapping);
             
-            return performGameBasedAbstractionRefinement(env, checkTask.substituteFormula<storm::logic::Formula>(pathFormula), constraintExpression, targetStateExpression);
+            return performGameBasedAbstractionRefinement(env, checkTask.template substituteFormula<storm::logic::Formula>(pathFormula), constraintExpression, targetStateExpression);
         }
         
         template<storm::dd::DdType Type, typename ModelType>
-        std::unique_ptr<CheckResult> GameBasedMdpModelChecker<Type, ModelType>::computeReachabilityProbabilities(Environment const& env, CheckTask<storm::logic::EventuallyFormula> const& checkTask) {
+        std::unique_ptr<CheckResult> GameBasedMdpModelChecker<Type, ModelType>::computeReachabilityProbabilities(Environment const& env, CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) {
             storm::logic::EventuallyFormula const& pathFormula = checkTask.getFormula();
             std::map<std::string, storm::expressions::Expression> labelToExpressionMapping;
             if (preprocessedModel.isPrismProgram()) {
@@ -142,11 +142,11 @@ namespace storm {
             storm::expressions::Expression constraintExpression = preprocessedModel.getManager().boolean(true);
             storm::expressions::Expression targetStateExpression = pathFormula.getSubformula().toExpression(preprocessedModel.getManager(), labelToExpressionMapping);
             
-            return performGameBasedAbstractionRefinement(env, checkTask.substituteFormula<storm::logic::Formula>(pathFormula), constraintExpression, targetStateExpression);
+            return performGameBasedAbstractionRefinement(env, checkTask.template substituteFormula<storm::logic::Formula>(pathFormula), constraintExpression, targetStateExpression);
         }
         
         template<storm::dd::DdType Type, typename ValueType>
-        std::unique_ptr<CheckResult> checkForResultAfterQualitativeCheck(CheckTask<storm::logic::Formula> const& checkTask, storm::OptimizationDirection player2Direction, storm::dd::Bdd<Type> const& initialStates, storm::dd::Bdd<Type> const& prob0, storm::dd::Bdd<Type> const& prob1) {
+        std::unique_ptr<CheckResult> checkForResultAfterQualitativeCheck(CheckTask<storm::logic::Formula, ValueType> const& checkTask, storm::OptimizationDirection player2Direction, storm::dd::Bdd<Type> const& initialStates, storm::dd::Bdd<Type> const& prob0, storm::dd::Bdd<Type> const& prob1) {
             std::unique_ptr<CheckResult> result;
             
             if (checkTask.isBoundSet()) {
@@ -185,7 +185,7 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type, typename ValueType>
-        std::unique_ptr<CheckResult> checkForResultAfterQualitativeCheck(CheckTask<storm::logic::Formula> const& checkTask, storm::dd::Bdd<Type> const& initialStates, SymbolicQualitativeGameResultMinMax<Type> const& qualitativeResult) {
+        std::unique_ptr<CheckResult> checkForResultAfterQualitativeCheck(CheckTask<storm::logic::Formula, ValueType> const& checkTask, storm::dd::Bdd<Type> const& initialStates, SymbolicQualitativeGameResultMinMax<Type> const& qualitativeResult) {
             // Check whether we can already give the answer based on the current information.
             std::unique_ptr<CheckResult> result = checkForResultAfterQualitativeCheck<Type, ValueType>(checkTask, storm::OptimizationDirection::Minimize, initialStates, qualitativeResult.prob0Min.getPlayer1States(), qualitativeResult.prob1Min.getPlayer1States());
             if (result) {
@@ -199,7 +199,7 @@ namespace storm {
         }
         
         template <typename ValueType>
-        std::unique_ptr<CheckResult> checkForResultAfterQualitativeCheck(CheckTask<storm::logic::Formula> const& checkTask, storm::OptimizationDirection player2Direction, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& prob0, storm::storage::BitVector const& prob1) {
+        std::unique_ptr<CheckResult> checkForResultAfterQualitativeCheck(CheckTask<storm::logic::Formula, ValueType> const& checkTask, storm::OptimizationDirection player2Direction, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& prob0, storm::storage::BitVector const& prob1) {
             std::unique_ptr<CheckResult> result;
             
             if (checkTask.isBoundSet()) {
@@ -238,7 +238,7 @@ namespace storm {
         }
         
         template <typename ValueType>
-        std::unique_ptr<CheckResult> checkForResultAfterQualitativeCheck(CheckTask<storm::logic::Formula> const& checkTask, storm::storage::BitVector const& initialStates, ExplicitQualitativeGameResultMinMax const& qualitativeResult) {
+        std::unique_ptr<CheckResult> checkForResultAfterQualitativeCheck(CheckTask<storm::logic::Formula, ValueType> const& checkTask, storm::storage::BitVector const& initialStates, ExplicitQualitativeGameResultMinMax const& qualitativeResult) {
             // Check whether we can already give the answer based on the current information.
             std::unique_ptr<CheckResult> result = checkForResultAfterQualitativeCheck<ValueType>(checkTask, storm::OptimizationDirection::Minimize, initialStates, qualitativeResult.prob0Min.getPlayer1States(), qualitativeResult.prob1Min.getPlayer1States());
             if (result) {
@@ -252,7 +252,7 @@ namespace storm {
         }
 
         template<typename ValueType>
-        std::unique_ptr<CheckResult> checkForResultAfterQuantitativeCheck(CheckTask<storm::logic::Formula> const& checkTask, storm::OptimizationDirection const& player2Direction, std::pair<ValueType, ValueType> const& initialValueRange) {
+        std::unique_ptr<CheckResult> checkForResultAfterQuantitativeCheck(CheckTask<storm::logic::Formula, ValueType> const& checkTask, storm::OptimizationDirection const& player2Direction, std::pair<ValueType, ValueType> const& initialValueRange) {
             std::unique_ptr<CheckResult> result;
             
             // If the minimum value exceeds an upper threshold or the maximum value is below a lower threshold, we can
@@ -476,7 +476,7 @@ namespace storm {
                 uint64_t maybeStatePosition = 0;
                 previousPlayer2States = 0;
                 for (auto state : maybeStates) {
-                    if (state == 25305 || state == 67442 || state == 67440) {
+                    if (state == 1976 || state == 46452 || state == 114590 || state == 84730 || state == 84575 || state == 84562 || state == 31895 || state == 84574 || state == 84561 || state == 32933 || state == 86740 || state == 86734 || state == 31789 || state == 86740 || state == 84360 || state == 84358) {
                         std::cout << "dealing with problematic state " << state << " whose local offset is " << maybeStatePosition << std::endl;
                     }
                     uint64_t chosenPlayer2State = startingStrategyPair->getPlayer1Strategy().getChoice(state);
@@ -484,13 +484,13 @@ namespace storm {
                     uint64_t previousPlayer2MaybeStatesForState = 0;
                     for (uint64_t player2State = player1Groups[state]; player2State < player1Groups[state + 1]; ++player2State) {
                         if (player2MaybeStates.get(player2State)) {
-                            if (state == 25305 || state == 67442 || state == 67440) {
-                                std::cout << "player 2 state " << player2State << " is a player 2 maybe state with local index " << previousPlayer2States << std::endl;
+                            if (state == 1976 || state == 46452 || state == 114590 || state == 84730 || state == 84575 || state == 84562 || state == 31895 || state == 84574 || state == 84561 || state == 32933 || state == 86740 || state == 86734 || state == 31789 || state == 86740 || state == 84360 || state == 84358) {
+                                std::cout << "player 2 state " << player2State << " is a player 2 maybe state with local index " << previousPlayer2States << " ranging from row " << submatrix.getRowGroupIndices()[previousPlayer2States] << " to " << submatrix.getRowGroupIndices()[previousPlayer2States + 1] << std::endl;
                             }
                             
                             if (player2State == chosenPlayer2State) {
                                 player1Scheduler[maybeStatePosition] = previousPlayer2MaybeStatesForState;
-                                if (state == 25305 || state == 67442 || state == 67440) {
+                                if (state == 1976 || state == 46452 || state == 114590 || state == 84730 || state == 84575 || state == 84562 || state == 31895 || state == 84574 || state == 84561 || state == 32933 || state == 86740 || state == 86734 || state == 31789 || state == 86740 || state == 84360 || state == 84358) {
                                     std::cout << "player 1 scheduler chooses " << previousPlayer2MaybeStatesForState << " which globally is " << player2State << std::endl;
                                 }
                             }
@@ -499,12 +499,12 @@ namespace storm {
                             if (startingStrategyPair->getPlayer2Strategy().hasDefinedChoice(player2State)) {
                                 player2Scheduler[previousPlayer2States] = startingStrategyPair->getPlayer2Strategy().getChoice(player2State) - transitionMatrix.getRowGroupIndices()
                                 [player2State];
-                                if (state == 25305 || state == 67442 || state == 67440) {
+                                if (state == 1976 || state == 46452 || state == 114590 || state == 84730 || state == 84575 || state == 84562 || state == 31895 || state == 84574 || state == 84561 || state == 32933 || state == 86740 || state == 86734 || state == 31789 || state == 86740 || state == 84360 || state == 84358) {
                                     std::cout << "copied over choice " << player2Scheduler[previousPlayer2States] << " for player 2 (global index " << startingStrategyPair->getPlayer2Strategy().getChoice(player2State) << ")" << std::endl;
                                 }
                             } else {
                                 player2Scheduler[previousPlayer2States] = 0;
-                                if (state == 25305 || state == 67442 || state == 67440) {
+                                if (state == 1976 || state == 46452 || state == 114590 || state == 84730 || state == 84575 || state == 84562 || state == 31895 || state == 84574 || state == 84561 || state == 32933 || state == 86740 || state == 86734 || state == 31789 || state == 86740 || state == 84360 || state == 84358) {
                                     std::cout << "did not copy (undefined) choice for player 2 (global index " << startingStrategyPair->getPlayer2Strategy().getChoice(player2State) << ")" << std::endl;
                                 }
                             }
@@ -516,16 +516,11 @@ namespace storm {
                     
                     ++maybeStatePosition;
                 }
+                STORM_LOG_ASSERT(previousPlayer2States == submatrix.getRowGroupCount(), "Expected correct number of player 2 states.");
             }
             
             // Solve actual game and track schedulers.
-            if (player1Scheduler.size() > 4713) {
-                std::cout << "before: player1Scheduler[4713] = " << player1Scheduler[4713] << std::endl;
-            }
             gameSolver->solveGame(env, player1Direction, player2Direction, values, b, &player1Scheduler, &player2Scheduler);
-            if (player1Scheduler.size() > 67440) {
-                std::cout << "after: player1Scheduler[4713] = " << player1Scheduler[4713] << std::endl;
-            }
 
             // Set values according to quantitative result (qualitative result has already been taken care of).
             storm::utility::vector::setVectorValues(result.getValues(), maybeStates, values);
@@ -555,7 +550,7 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type, typename ModelType>
-        std::unique_ptr<CheckResult> GameBasedMdpModelChecker<Type, ModelType>::performGameBasedAbstractionRefinement(Environment const& env, CheckTask<storm::logic::Formula> const& checkTask, storm::expressions::Expression const& constraintExpression, storm::expressions::Expression const& targetStateExpression) {
+        std::unique_ptr<CheckResult> GameBasedMdpModelChecker<Type, ModelType>::performGameBasedAbstractionRefinement(Environment const& env, CheckTask<storm::logic::Formula, ValueType> const& checkTask, storm::expressions::Expression const& constraintExpression, storm::expressions::Expression const& targetStateExpression) {
             STORM_LOG_THROW(checkTask.isOnlyInitialStatesRelevantSet(), storm::exceptions::InvalidPropertyException, "The game-based abstraction refinement model checker can only compute the result for the initial states.");
 
             // Optimization: do not compute both bounds if not necessary (e.g. if bound given and exceeded, etc.)
@@ -652,7 +647,7 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type, typename ModelType>
-        std::unique_ptr<CheckResult> GameBasedMdpModelChecker<Type, ModelType>::performSymbolicAbstractionSolutionStep(Environment const& env, CheckTask<storm::logic::Formula> const& checkTask, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::OptimizationDirection player1Direction, storm::dd::Bdd<Type> const& initialStates, storm::dd::Bdd<Type> const& constraintStates, storm::dd::Bdd<Type> const& targetStates, storm::abstraction::MenuGameRefiner<Type, ValueType> const& refiner, boost::optional<SymbolicQualitativeGameResultMinMax<Type>>& previousQualitativeResult, boost::optional<SymbolicQuantitativeGameResult<Type, ValueType>>& previousMinQuantitativeResult) {
+        std::unique_ptr<CheckResult> GameBasedMdpModelChecker<Type, ModelType>::performSymbolicAbstractionSolutionStep(Environment const& env, CheckTask<storm::logic::Formula, ValueType> const& checkTask, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::OptimizationDirection player1Direction, storm::dd::Bdd<Type> const& initialStates, storm::dd::Bdd<Type> const& constraintStates, storm::dd::Bdd<Type> const& targetStates, storm::abstraction::MenuGameRefiner<Type, ValueType> const& refiner, boost::optional<SymbolicQualitativeGameResultMinMax<Type>>& previousQualitativeResult, boost::optional<SymbolicQuantitativeGameResult<Type, ValueType>>& previousMinQuantitativeResult) {
 
             STORM_LOG_TRACE("Using dd-based solving.");
 
@@ -845,24 +840,49 @@ namespace storm {
         template <typename ValueType>
         class ExplicitGameExporter {
         public:
+            ExplicitGameExporter() : showNonStrategyAlternatives(false) {
+                // Intentionally left empty.
+            }
+            
             void exportToJson(std::string const& filename, std::vector<uint64_t> const& player1Groups, std::vector<uint64_t> const& player2Groups, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, ExplicitQuantitativeResultMinMax<ValueType> const& quantitativeResult, ExplicitGameStrategyPair const* minStrategyPair, ExplicitGameStrategyPair const* maxStrategyPair) {
                 
                 // Export game as json.
                 std::ofstream outfile(filename);
-                
-                // Export nodes.
-                outfile << "{\n\t\"nodes\": [" << std::endl;
-                exportNodes(outfile, player1Groups, player2Groups, transitionMatrix, initialStates, constraintStates, targetStates, quantitativeResult, minStrategyPair, maxStrategyPair);
-                outfile << "\n\t]," << std::endl;
-                
-                // Export edges.
-                outfile << "\t\"edges\": [" << std::endl;
-                exportEdges(outfile, player1Groups, player2Groups, transitionMatrix, initialStates, constraintStates, targetStates, quantitativeResult, minStrategyPair, maxStrategyPair);
-                outfile << "\n\t]\n}" << std::endl;
+                exportGame(outfile, player1Groups, player2Groups, transitionMatrix, initialStates, constraintStates, targetStates, quantitativeResult, minStrategyPair, maxStrategyPair);
+            }
+            
+            void setShowNonStrategyAlternatives(bool value) {
+                showNonStrategyAlternatives = value;
             }
             
         private:
-            void exportEdge(std::ofstream& out, uint64_t id, uint64_t source, uint64_t target, std::string const& name, bool& first) {
+            
+            struct NodeData {
+                NodeData(uint64_t id, uint64_t player, bool initial, bool target) : id(id), player(player), initial(initial), target(target) {
+                    // Intentionally left empty.
+                }
+                
+                uint64_t id;
+                uint64_t player; // 0 = probabilistic player, 1 = player 1, 2 = player 2
+                bool initial;
+                bool target;
+            };
+            
+            struct EdgeData {
+                EdgeData(uint64_t id, uint64_t source, uint64_t target, ValueType probability, uint64_t label, bool min, bool max) : id(id), source(source), target(target), probability(probability), label(label), min(min), max(max) {
+                    // Intentionally left empty.
+                }
+                
+                uint64_t id;
+                uint64_t source;
+                uint64_t target;
+                ValueType probability;
+                uint64_t label;
+                bool min;
+                bool max;
+            };
+            
+            void exportEdge(std::ofstream& out, EdgeData const& data, bool& first) {
                 if (!first) {
                     out << "," << std::endl;
                 } else {
@@ -870,74 +890,30 @@ namespace storm {
                 }
                 out << "\t\t{" << std::endl;
                 out << "\t\t\t\"data\": {" << std::endl;
-                out << "\t\t\t\t\"id\": \"" << id << "\"," << std::endl;
-                out << "\t\t\t\t\"name\": \"" << name << "\"," << std::endl;
-                out << "\t\t\t\t\"source\": \"" << source << "\"," << std::endl;
-                out << "\t\t\t\t\"target\": \"" << target << "\"" << std::endl;
-                out << "\t\t\t}" << std::endl;
+                out << "\t\t\t\t\"id\": \"" << data.id << "\"," << std::endl;
+                if (data.probability != storm::utility::zero<ValueType>()) {
+                    out << "\t\t\t\t\"name\": \"" << data.probability << "\"," << std::endl;
+                } else {
+                    out << "\t\t\t\t\"name\": \"" << data.label << "\"," << std::endl;
+                }
+                out << "\t\t\t\t\"source\": \"" << data.source << "\"," << std::endl;
+                out << "\t\t\t\t\"target\": \"" << data.target << "\"" << std::endl;
+                out << "\t\t\t}," << std::endl;
+                out << "\t\t\t\"classes\": \"";
+                if (data.min && data.max) {
+                    out << "minMaxEdge";
+                } else if (data.min) {
+                    out << "minEdge";
+                } else if (data.max) {
+                    out << "maxEdge";
+                } else {
+                    out << "edge";
+                }
+                out << "\"" << std::endl;
                 out << "\t\t}";
             }
             
-            void exportEdges(std::ofstream& out, std::vector<uint64_t> const& player1Groups, std::vector<uint64_t> const& player2Groups, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, ExplicitQuantitativeResultMinMax<ValueType> const& quantitativeResult, ExplicitGameStrategyPair const* minStrategyPair, ExplicitGameStrategyPair const* maxStrategyPair) {
-                std::vector<uint64_t> stack;
-                for (auto state : initialStates) {
-                    stack.push_back(state);
-                }
-                storm::storage::BitVector reachablePlayer1(player1Groups.size() - 1);
-                
-                bool first = true;
-                uint64_t edgeId = 0;
-                while (!stack.empty()) {
-                    uint64_t currentState = stack.back();
-                    stack.pop_back();
-                    
-                    // Follow lower.
-                    if (minStrategyPair) {
-                        if (minStrategyPair->getPlayer1Strategy().hasDefinedChoice(currentState)) {
-                            uint64_t player2State = minStrategyPair->getPlayer1Strategy().getChoice(currentState);
-                            exportEdge(out, edgeId++, currentState, player2State, "lo", first);
-                            
-                            uint64_t playerPState = minStrategyPair->getPlayer2Strategy().getChoice(player2State);
-                            exportEdge(out, edgeId++, player2State, playerPState, "lo", first);
-                            
-                            for (auto const& entry : transitionMatrix.getRow(playerPState)) {
-                                auto player1Successor = entry.getColumn();
-                                
-                                exportEdge(out, edgeId++, playerPState, player1Successor, std::to_string(entry.getValue()), first);
-                                
-                                if (!reachablePlayer1.get(player1Successor)) {
-                                    reachablePlayer1.set(player1Successor);
-                                    stack.push_back(player1Successor);
-                                }
-                            }
-                        }
-                    }
-                    
-                    // Follow upper.
-                    if (maxStrategyPair) {
-                        if (maxStrategyPair->getPlayer1Strategy().hasDefinedChoice(currentState)) {
-                            uint64_t player2State = maxStrategyPair->getPlayer1Strategy().getChoice(currentState);
-                            exportEdge(out, edgeId++, currentState, player2State, "hi", first);
-                            
-                            uint64_t playerPState = maxStrategyPair->getPlayer2Strategy().getChoice(player2State);
-                            exportEdge(out, edgeId++, player2State, playerPState, "hi", first);
-                            
-                            for (auto const& entry : transitionMatrix.getRow(playerPState)) {
-                                auto player1Successor = entry.getColumn();
-                                
-                                exportEdge(out, edgeId++, playerPState, player1Successor, std::to_string(entry.getValue()), first);
-                                
-                                if (!reachablePlayer1.get(player1Successor)) {
-                                    reachablePlayer1.set(player1Successor);
-                                    stack.push_back(player1Successor);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            
-            void exportNode(std::ofstream& out, uint64_t state, ExplicitQuantitativeResultMinMax<ValueType> const* quantitativeResult, bool& first, bool target = false) {
+            void exportNode(std::ofstream& out, NodeData const& data, ExplicitQuantitativeResultMinMax<ValueType> const* quantitativeResult, bool& first) {
                 if (!first) {
                     out << "," << std::endl;
                 } else {
@@ -945,75 +921,122 @@ namespace storm {
                 }
                 out << "\t\t{" << std::endl;
                 out << "\t\t\t\"data\": {" << std::endl;
-                out << "\t\t\t\t\"id\": \"" << state << "\"," << std::endl;
-                out << "\t\t\t\t\"name\": \"" << state;
-                if (quantitativeResult) {
-                    out << " [" << quantitativeResult->getMin().getValues()[state] << ", " << quantitativeResult->getMax().getValues()[state] << "]";
-                    if (target) {
-                        out << ", T";
-                    }
+                out << "\t\t\t\t\"id\": \"" << data.id << "\"," << std::endl;
+                out << "\t\t\t\t\"name\": \"" << data.id;
+                if (quantitativeResult && data.player == 1) {
+                    out << " [" << quantitativeResult->getMin().getValues()[data.id] << ", " << quantitativeResult->getMax().getValues()[data.id] << "]";
                 }
                 out << "\"" << std::endl;
                 out << "\t\t\t}," << std::endl;
                 out << "\t\t\t\"group\": \"nodes\"," << std::endl;
-                out << "\t\t\t\"classes\": \"node\"" << std::endl;
+                out << "\t\t\t\"classes\": \"";
+                if (data.player == 1) {
+                    if (data.initial) {
+                        out << "initialNode";
+                    } else if (data.target) {
+                        out << "targetNode";
+                    } else {
+                        out << "node";
+                    }
+                } else if (data.player == 2) {
+                    out << "pl2node";
+                } else if (data.player == 0) {
+                    out << "plpnode";
+                }
+                out << "\"" << std::endl;
                 out << "\t\t}";
             }
             
-            void exportNodes(std::ofstream& out, std::vector<uint64_t> const& player1Groups, std::vector<uint64_t> const& player2Groups, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, ExplicitQuantitativeResultMinMax<ValueType> const& quantitativeResult, ExplicitGameStrategyPair const* minStrategyPair, ExplicitGameStrategyPair const* maxStrategyPair) {
+            void exportGame(std::ofstream& out, std::vector<uint64_t> const& player1Groups, std::vector<uint64_t> const& player2Groups, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, ExplicitQuantitativeResultMinMax<ValueType> const& quantitativeResult, ExplicitGameStrategyPair const* minStrategyPair, ExplicitGameStrategyPair const* maxStrategyPair) {
                 
+                // To export the game as JSON, we build some data structures through a traversal and then emit them.
+                std::vector<NodeData> nodes;
+                std::vector<EdgeData> edges;
+
                 std::vector<uint64_t> stack;
                 for (auto state : initialStates) {
                     stack.push_back(state);
                 }
                 storm::storage::BitVector reachablePlayer1(player1Groups.size() - 1);
-
-                bool first = true;
+                
+                uint64_t edgeId = 0;
                 while (!stack.empty()) {
                     uint64_t currentState = stack.back();
                     stack.pop_back();
+
+                    nodes.emplace_back(currentState, 1, initialStates.get(currentState), targetStates.get(currentState));
                     
-                    exportNode(out, currentState, &quantitativeResult, first, targetStates.get(currentState));
-                    
-                    // Follow lower.
-                    if (minStrategyPair) {
-                        if (minStrategyPair->getPlayer1Strategy().hasDefinedChoice(currentState)) {
-                            uint64_t player2State = minStrategyPair->getPlayer1Strategy().getChoice(currentState);
-                            exportNode(out, player2State, nullptr, first);
-                            
-                            uint64_t playerPState = minStrategyPair->getPlayer2Strategy().getChoice(player2State);
-                            exportNode(out, playerPState, nullptr, first);
-                            
-                            for (auto const& entry : transitionMatrix.getRow(playerPState)) {
-                                auto player1Successor = entry.getColumn();
-                                if (!reachablePlayer1.get(player1Successor)) {
-                                    reachablePlayer1.set(player1Successor);
-                                    stack.push_back(player1Successor);
-                                }
-                            }
+                    for (uint64_t player2State = player1Groups[currentState]; player2State < player1Groups[currentState + 1]; ++player2State) {
+                        bool emit = (minStrategyPair || maxStrategyPair) ? this->showNonStrategyAlternatives : true;
+                        bool min = false;
+                        bool max = false;
+                        
+                        if (minStrategyPair && minStrategyPair->getPlayer1Strategy().hasDefinedChoice(currentState) && minStrategyPair->getPlayer1Strategy().getChoice(currentState) == player2State) {
+                            emit = true;
+                            min = true;
                         }
-                    }
-                    
-                    // Follow upper.
-                    if (maxStrategyPair) {
-                        if (maxStrategyPair->getPlayer1Strategy().hasDefinedChoice(currentState)) {
-                            uint64_t player2State = maxStrategyPair->getPlayer1Strategy().getChoice(currentState);
-                            exportNode(out, player2State, nullptr, first);
-                            
-                            uint64_t playerPState = maxStrategyPair->getPlayer2Strategy().getChoice(player2State);
-                            exportNode(out, playerPState, nullptr, first);
-                            
-                            for (auto const& entry : transitionMatrix.getRow(playerPState)) {
-                                auto player1Successor = entry.getColumn();
-                                if (!reachablePlayer1.get(player1Successor)) {
-                                    reachablePlayer1.set(player1Successor);
-                                    stack.push_back(player1Successor);
+                        if (maxStrategyPair && maxStrategyPair->getPlayer1Strategy().hasDefinedChoice(currentState) && maxStrategyPair->getPlayer1Strategy().getChoice(currentState) == player2State) {
+                            emit = true;
+                            max = true;
+                        }
+                        
+                        if (emit) {
+                            nodes.emplace_back(player2State, 2, false, false);
+                            edges.emplace_back(edgeId++, currentState, player2State, storm::utility::zero<ValueType>(), player2State - player1Groups[currentState], min, max);
+
+                            for (uint64_t playerPState = player2Groups[player2State]; playerPState < player2Groups[player2State + 1]; ++playerPState) {
+                                emit = (minStrategyPair || maxStrategyPair) ? this->showNonStrategyAlternatives : true;
+                                min = false;
+                                max = false;
+                                
+                                if (minStrategyPair && minStrategyPair->getPlayer2Strategy().hasDefinedChoice(player2State) && minStrategyPair->getPlayer2Strategy().getChoice(player2State) == playerPState) {
+                                    emit = true;
+                                    min = true;
+                                }
+                                if (maxStrategyPair && maxStrategyPair->getPlayer2Strategy().hasDefinedChoice(player2State) && maxStrategyPair->getPlayer2Strategy().getChoice(player2State) == playerPState) {
+                                    emit = true;
+                                    max = true;
+                                }
+
+                                if (emit) {
+                                    nodes.emplace_back(playerPState, 0, false, false);
+                                    edges.emplace_back(edgeId++, player2State, playerPState, storm::utility::zero<ValueType>(), playerPState - player2Groups[player2State], min, max);
+                                    
+                                    for (auto const& entry : transitionMatrix.getRow(playerPState)) {
+                                        auto player1Successor = entry.getColumn();
+                                        if (!reachablePlayer1.get(player1Successor)) {
+                                            reachablePlayer1.set(player1Successor);
+                                            stack.push_back(player1Successor);
+                                        }
+                                        
+                                        edges.emplace_back(edgeId++, playerPState, player1Successor, entry.getValue(), 0, false, false);
+                                    }
                                 }
                             }
                         }
                     }
                 }
+
+                // Finally, export the data structures we built.
+                
+                // Export nodes.
+                out << "{\n\t\"nodes\": [" << std::endl;
+                bool first = true;
+                for (auto const& node : nodes) {
+                    exportNode(out, node, &quantitativeResult, first);
+                }
+                out << "\n\t]," << std::endl;
+                
+                // Export edges.
+                first = true;
+                out << "\t\"edges\": [" << std::endl;
+                for (auto const& edge : edges) {
+                    exportEdge(out, edge, first);
+                }
+                out << "\n\t]\n}" << std::endl;
             }
+            
+            bool showNonStrategyAlternatives;
         };
         
         template <typename ValueType>
@@ -1091,8 +1114,12 @@ namespace storm {
                 }
             }
             
+//            ExplicitGameExporter<ValueType> exporter;
+//            exporter.exportToJson("game" + std::to_string(iteration) + ".json", player1Groups, player2Groups, transitionMatrix, initialStates, constraintStates, targetStates, quantitativeResult, &minStrategyPair, &maxStrategyPair);
+//            exit(-1);
+            
             if (sanityCheck) {
-                storm::utility::ConstantsComparator<ValueType> sanityComparator(1e-6, true);
+                storm::utility::ConstantsComparator<ValueType> sanityComparator( 1e-6, true);
                 
                 ///////// SANITY CHECK: apply lower strategy, obtain DTMC matrix and model check it. the values should
                 ///////// still be the lower ones.
@@ -1115,7 +1142,7 @@ namespace storm {
                 ValueType maxDiff = storm::utility::zero<ValueType>();
                 uint64_t maxState = 0;
                 for (uint64_t state = 0; state < player1Groups.size() - 1; ++state) {
-                    ValueType const& diff = std::abs(sanityValues[state] - quantitativeResult.getMin().getValues()[state]);
+                    ValueType const& diff = storm::utility::abs(sanityValues[state] - quantitativeResult.getMin().getValues()[state]);
                     if (diff > maxDiff) {
                         maxState = state;
                         maxDiff = diff;
@@ -1153,7 +1180,7 @@ namespace storm {
                 maxDiff = storm::utility::zero<ValueType>();
                 maxState = 0;
                 for (uint64_t state = 0; state < player1Groups.size() - 1; ++state) {
-                    ValueType const& diff = std::abs(sanityValues[state] - quantitativeResult.getMax().getValues()[state]);
+                    ValueType const& diff = storm::utility::abs(sanityValues[state] - quantitativeResult.getMax().getValues()[state]);
                     if (diff > maxDiff) {
                         maxState = state;
                         maxDiff = diff;
@@ -1189,9 +1216,9 @@ namespace storm {
                         uint64_t currentState = stack.back();
                         stack.pop_back();
                         
-                        std::cout << "exploring player 1 state " << currentState << std::endl;
+                        std::cout << "exploring player 1 state " << currentState << " with " << (player1Groups[currentState + 1] - player1Groups[currentState]) << " player 2 successors from" << player1Groups[currentState] << " to " << player1Groups[currentState + 1] << std::endl;
                         uint64_t player2State = maxStrategyPair.getPlayer1Strategy().getChoice(currentState);
-                        std::cout << "going to player 2 state " << player2State << std::endl;
+                        std::cout << "going to player 2 state " << player2State << " with " << (player2Groups[player2State + 1] - player2Groups[player2State]) << " player 2 choices from " << player2Groups[player2State] << " to " << player2Groups[player2State + 1] << std::endl;
                         uint64_t player2Choice = maxStrategyPair.getPlayer2Strategy().getChoice(player2State);
                         std::cout << "which takes choice " << player2Choice << " which locally is " << (player2Choice - transitionMatrix.getRowGroupIndices()[player2State]) << std::endl;
                         for (auto const& entry : transitionMatrix.getRow(player2Choice)) {
@@ -1214,7 +1241,7 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type, typename ModelType>
-        std::unique_ptr<CheckResult> GameBasedMdpModelChecker<Type, ModelType>::performExplicitAbstractionSolutionStep(Environment const& env, CheckTask<storm::logic::Formula> const& checkTask, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::OptimizationDirection player1Direction, storm::dd::Bdd<Type> const& initialStatesBdd, storm::dd::Bdd<Type> const& constraintStatesBdd, storm::dd::Bdd<Type> const& targetStatesBdd, storm::abstraction::MenuGameRefiner<Type, ValueType> const& refiner, boost::optional<PreviousExplicitResult<ValueType>>& previousResult) {
+        std::unique_ptr<CheckResult> GameBasedMdpModelChecker<Type, ModelType>::performExplicitAbstractionSolutionStep(Environment const& env, CheckTask<storm::logic::Formula, ValueType> const& checkTask, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::OptimizationDirection player1Direction, storm::dd::Bdd<Type> const& initialStatesBdd, storm::dd::Bdd<Type> const& constraintStatesBdd, storm::dd::Bdd<Type> const& targetStatesBdd, storm::abstraction::MenuGameRefiner<Type, ValueType> const& refiner, boost::optional<PreviousExplicitResult<ValueType>>& previousResult) {
             STORM_LOG_TRACE("Using sparse solving.");
 
             // (0) Start by transforming the necessary symbolic elements to explicit ones.
@@ -1413,7 +1440,7 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type, typename ModelType>
-        storm::OptimizationDirection GameBasedMdpModelChecker<Type, ModelType>::getPlayer1Direction(CheckTask<storm::logic::Formula> const& checkTask) {
+        storm::OptimizationDirection GameBasedMdpModelChecker<Type, ModelType>::getPlayer1Direction(CheckTask<storm::logic::Formula, ValueType> const& checkTask) {
             if (preprocessedModel.getModelType() == storm::storage::SymbolicModelDescription::ModelType::DTMC) {
                 return storm::OptimizationDirection::Maximize;
             } else if (checkTask.isOptimizationDirectionSet()) {
@@ -1594,5 +1621,8 @@ namespace storm {
         template class GameBasedMdpModelChecker<storm::dd::DdType::CUDD, storm::models::symbolic::Mdp<storm::dd::DdType::CUDD, double>>;
         template class GameBasedMdpModelChecker<storm::dd::DdType::Sylvan, storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, double>>;
         template class GameBasedMdpModelChecker<storm::dd::DdType::Sylvan, storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan, double>>;
+
+        template class GameBasedMdpModelChecker<storm::dd::DdType::Sylvan, storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, storm::RationalNumber>>;
+        template class GameBasedMdpModelChecker<storm::dd::DdType::Sylvan, storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan, storm::RationalNumber>>;
     }
 }

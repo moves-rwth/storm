@@ -2,6 +2,8 @@
 
 #include "storm/storage/BitVector.h"
 
+#include "storm/adapters/RationalNumberAdapter.h"
+
 #include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 
@@ -55,5 +57,6 @@ namespace storm {
         }
         
         template class ExplicitQuantitativeResult<double>;
+        template class ExplicitQuantitativeResult<storm::RationalNumber>;
     }
 }

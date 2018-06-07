@@ -1,5 +1,7 @@
 #include "storm/abstraction/ExplicitQuantitativeResultMinMax.h"
 
+#include "storm/adapters/RationalNumberAdapter.h"
+
 namespace storm {
     namespace abstraction {
         
@@ -57,5 +59,6 @@ namespace storm {
         }
 
         template class ExplicitQuantitativeResultMinMax<double>;
+        template class ExplicitQuantitativeResultMinMax<storm::RationalNumber>;
     }
 }

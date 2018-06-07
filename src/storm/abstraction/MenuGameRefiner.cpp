@@ -1119,7 +1119,12 @@ namespace storm {
                         continue;
                     }
                     
-                    ValueType alternateDistance = probabilityDistances ? currentDistance * entry.getValue() : currentDistance + storm::utility::one<ValueType>();
+                    ValueType alternateDistance;
+                    if (probabilityDistances) {
+                        alternateDistance = currentDistance * entry.getValue();
+                    } else {
+                        alternateDistance = currentDistance + storm::utility::one<ValueType>();
+                    }
                     if (probabilityDistances ? alternateDistance > distances[player1Successor] : alternateDistance < distances[player1Successor]) {
                         distances[player1Successor] = alternateDistance;
                         if (generatePredecessors) {
@@ -1682,6 +1687,7 @@ namespace storm {
         
         template class MenuGameRefiner<storm::dd::DdType::CUDD, double>;
         template class MenuGameRefiner<storm::dd::DdType::Sylvan, double>;
+        template class MenuGameRefiner<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 
 #ifdef STORM_HAVE_CARL
         // Currently, this instantiation does not work.

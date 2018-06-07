@@ -55,6 +55,7 @@ namespace storm {
         
         template class SymbolicQuantitativeGameResult<storm::dd::DdType::CUDD, double>;
         template class SymbolicQuantitativeGameResult<storm::dd::DdType::Sylvan, double>;
+        template class SymbolicQuantitativeGameResult<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 
     }
 }

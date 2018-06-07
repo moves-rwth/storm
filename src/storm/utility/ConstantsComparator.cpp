@@ -108,6 +108,52 @@ namespace storm {
             return value1 < value2 - precision;
         }
         
+        ConstantsComparator<storm::RationalNumber>::ConstantsComparator() : precision(storm::utility::zero<storm::RationalNumber>()), relative(false) {
+            // Intentionally left empty.
+        }
+        
+        ConstantsComparator<storm::RationalNumber>::ConstantsComparator(storm::RationalNumber precision, bool relative) : precision(precision), relative(false) {
+            // Intentionally left empty.
+        }
+        
+        bool ConstantsComparator<storm::RationalNumber>::isOne(storm::RationalNumber const& value) const {
+            if (storm::utility::isZero(precision)) {
+                return storm::utility::isOne(value);
+            }
+            return storm::utility::abs(value - one<double>()) <= precision;
+        }
+        
+        bool ConstantsComparator<storm::RationalNumber>::isZero(storm::RationalNumber const& value) const {
+            if (storm::utility::isZero(precision)) {
+                return storm::utility::isOne(value);
+            }
+            return storm::utility::abs(value) <= precision;
+        }
+        
+        bool ConstantsComparator<storm::RationalNumber>::isEqual(storm::RationalNumber const& value1, storm::RationalNumber const& value2) const {
+            if (storm::utility::isZero(precision)) {
+                return value1 == value2;
+            }
+            
+            if (relative) {
+                return value1 == value2 || storm::utility::abs(value1 - value2)/storm::utility::abs(value1 + value2) <= precision;
+            } else {
+                return storm::utility::abs(value1 - value2) <= precision;
+            }
+        }
+        
+        bool ConstantsComparator<storm::RationalNumber>::isConstant(storm::RationalNumber const& value) const {
+            return true;
+        }
+        
+        bool ConstantsComparator<storm::RationalNumber>::isInfinity(storm::RationalNumber const& value) const {
+            return false;
+        }
+        
+        bool ConstantsComparator<storm::RationalNumber>::isLess(storm::RationalNumber const& value1, storm::RationalNumber const& value2) const {
+            return value1 < value2 - precision;
+        }
+        
         // Explicit instantiations.
         template class ConstantsComparator<int>;
         template class ConstantsComparator<storm::storage::sparse::state_type>;

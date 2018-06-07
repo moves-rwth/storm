@@ -7,7 +7,6 @@ namespace storm {
             // Intentionally left empty.
         }
         
-        
         storm::storage::BitVector const& ExplicitQualitativeGameResult::getStates() const {
             return this->getPlayer1States();
         }

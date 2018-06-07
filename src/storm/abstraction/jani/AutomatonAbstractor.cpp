@@ -151,7 +151,7 @@ namespace storm {
             template class AutomatonAbstractor<storm::dd::DdType::CUDD, double>;
             template class AutomatonAbstractor<storm::dd::DdType::Sylvan, double>;
 #ifdef STORM_HAVE_CARL
-			template class AutomatonAbstractor<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+			template class AutomatonAbstractor<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 #endif
         }
     }
