@@ -227,6 +227,8 @@ namespace storm {
                 std::set<uint64_t> dontCareElements;
                 // Map from DFT elements to their GSPN priorities
                 std::map<uint64_t, uint64_t> priorities;
+                // Priority for Don't Care Transitions
+                uint64_t dontCarePriority;
 
                 // Interface places for DFT elements
                 std::vector<uint64_t> failedPlaces;
