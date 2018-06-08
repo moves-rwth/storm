@@ -27,6 +27,7 @@ namespace storm {
             // If the given property is a file, we parse it as a file, otherwise we assume it's a property.
             std::vector<storm::jani::Property> properties;
             if (std::ifstream(inputString).good()) {
+                STORM_LOG_INFO("Loading properties from file: " << inputString << std::endl);
                 properties = formulaParser.parseFromFile(inputString);
             } else {
                 properties = formulaParser.parseFromString(inputString);
