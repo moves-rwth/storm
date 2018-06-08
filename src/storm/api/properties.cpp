@@ -78,6 +78,11 @@ namespace storm {
                 std::set<std::string> const& propertyNameSet = propertyFilter.get();
                 std::vector<storm::jani::Property> result;
                 std::set<std::string> reducedPropertyNames;
+
+                if (propertyNameSet.empty()) {
+                    STORM_LOG_WARN("Filtering all properties.");
+                }
+
                 for (auto const& property : properties) {
                     if (propertyNameSet.find(property.getName()) != propertyNameSet.end()) {
                         result.push_back(property);
