@@ -24,10 +24,9 @@ namespace storm {
         }
 
         std::vector<storm::jani::Property> parseProperties(storm::parser::FormulaParser& formulaParser, std::string const& inputString, boost::optional<std::set<std::string>> const& propertyFilter) {
-            // If the given property looks like a file (containing a dot and there exists a file with that name),
-            // we try to parse it as a file, otherwise we assume it's a property.
+            // If the given property is a file, we parse it as a file, otherwise we assume it's a property.
             std::vector<storm::jani::Property> properties;
-            if (inputString.find(".") != std::string::npos && std::ifstream(inputString).good()) {
+            if (std::ifstream(inputString).good()) {
                 properties = formulaParser.parseFromFile(inputString);
             } else {
                 properties = formulaParser.parseFromString(inputString);
