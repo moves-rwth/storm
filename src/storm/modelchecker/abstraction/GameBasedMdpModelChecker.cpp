@@ -476,7 +476,7 @@ namespace storm {
                 uint64_t maybeStatePosition = 0;
                 previousPlayer2States = 0;
                 for (auto state : maybeStates) {
-                    if (state == 1976 || state == 46452 || state == 114590 || state == 84730 || state == 84575 || state == 84562 || state == 31895 || state == 84574 || state == 84561 || state == 32933 || state == 86740 || state == 86734 || state == 31789 || state == 86740 || state == 84360 || state == 84358) {
+                    if (state == 2324 || state == 50377 || state == 50209) {
                         std::cout << "dealing with problematic state " << state << " whose local offset is " << maybeStatePosition << std::endl;
                     }
                     uint64_t chosenPlayer2State = startingStrategyPair->getPlayer1Strategy().getChoice(state);
@@ -484,13 +484,13 @@ namespace storm {
                     uint64_t previousPlayer2MaybeStatesForState = 0;
                     for (uint64_t player2State = player1Groups[state]; player2State < player1Groups[state + 1]; ++player2State) {
                         if (player2MaybeStates.get(player2State)) {
-                            if (state == 1976 || state == 46452 || state == 114590 || state == 84730 || state == 84575 || state == 84562 || state == 31895 || state == 84574 || state == 84561 || state == 32933 || state == 86740 || state == 86734 || state == 31789 || state == 86740 || state == 84360 || state == 84358) {
+                            if (state == 2324 || state == 50377 || state == 50209) {
                                 std::cout << "player 2 state " << player2State << " is a player 2 maybe state with local index " << previousPlayer2States << " ranging from row " << submatrix.getRowGroupIndices()[previousPlayer2States] << " to " << submatrix.getRowGroupIndices()[previousPlayer2States + 1] << std::endl;
                             }
                             
                             if (player2State == chosenPlayer2State) {
                                 player1Scheduler[maybeStatePosition] = previousPlayer2MaybeStatesForState;
-                                if (state == 1976 || state == 46452 || state == 114590 || state == 84730 || state == 84575 || state == 84562 || state == 31895 || state == 84574 || state == 84561 || state == 32933 || state == 86740 || state == 86734 || state == 31789 || state == 86740 || state == 84360 || state == 84358) {
+                                if (state == 2324 || state == 50377 || state == 50209) {
                                     std::cout << "player 1 scheduler chooses " << previousPlayer2MaybeStatesForState << " which globally is " << player2State << std::endl;
                                 }
                             }
@@ -499,16 +499,47 @@ namespace storm {
                             if (startingStrategyPair->getPlayer2Strategy().hasDefinedChoice(player2State)) {
                                 player2Scheduler[previousPlayer2States] = startingStrategyPair->getPlayer2Strategy().getChoice(player2State) - transitionMatrix.getRowGroupIndices()
                                 [player2State];
-                                if (state == 1976 || state == 46452 || state == 114590 || state == 84730 || state == 84575 || state == 84562 || state == 31895 || state == 84574 || state == 84561 || state == 32933 || state == 86740 || state == 86734 || state == 31789 || state == 86740 || state == 84360 || state == 84358) {
+                                if (state == 2324 || state == 50377 || state == 50209) {
                                     std::cout << "copied over choice " << player2Scheduler[previousPlayer2States] << " for player 2 (global index " << startingStrategyPair->getPlayer2Strategy().getChoice(player2State) << ")" << std::endl;
                                 }
                             } else {
                                 player2Scheduler[previousPlayer2States] = 0;
-                                if (state == 1976 || state == 46452 || state == 114590 || state == 84730 || state == 84575 || state == 84562 || state == 31895 || state == 84574 || state == 84561 || state == 32933 || state == 86740 || state == 86734 || state == 31789 || state == 86740 || state == 84360 || state == 84358) {
+                                if (state == 2324 || state == 50377 || state == 50209) {
                                     std::cout << "did not copy (undefined) choice for player 2 (global index " << startingStrategyPair->getPlayer2Strategy().getChoice(player2State) << ")" << std::endl;
                                 }
                             }
                             
+                            ++previousPlayer2MaybeStatesForState;
+                            ++previousPlayer2States;
+                        }
+                    }
+                    
+                    ++maybeStatePosition;
+                }
+                STORM_LOG_ASSERT(previousPlayer2States == submatrix.getRowGroupCount(), "Expected correct number of player 2 states.");
+            } else {
+                // If the starting strategy pair was provided, we need to extract the choices of the maybe states here.
+                uint64_t maybeStatePosition = 0;
+                previousPlayer2States = 0;
+                for (auto state : maybeStates) {
+                    if (state == 2324 || state == 50377 || state == 50209) {
+                        std::cout << "dealing with problematic state " << state << " whose local offset is " << maybeStatePosition << std::endl;
+                    }
+
+                    if (state == 2324 || state == 50377 || state == 50209) {
+                        std::cout << "player 1 scheduler chooses " << player1Scheduler[maybeStatePosition] << " which globally is " << (player1Groups[state] + player1Scheduler[maybeStatePosition]) << std::endl;
+                    }
+                    
+                    uint64_t previousPlayer2MaybeStatesForState = 0;
+                    for (uint64_t player2State = player1Groups[state]; player2State < player1Groups[state + 1]; ++player2State) {
+                        if (player2MaybeStates.get(player2State)) {
+                            if (state == 2324 || state == 50377 || state == 50209) {
+                                std::cout << "player 2 state " << player2State << " is a player 2 maybe state with local index " << previousPlayer2States << " ranging from row " << submatrix.getRowGroupIndices()[previousPlayer2States] << " to " << submatrix.getRowGroupIndices()[previousPlayer2States + 1] << std::endl;
+                            }
+
+                            if (state == 2324 || state == 50377 || state == 50209) {
+                                std::cout << "player 2 scheduler chooses " << player2Scheduler[previousPlayer2States] << " for player 2 (global index " << (transitionMatrix.getRowGroupIndices()[player2State] + player2Scheduler[previousPlayer2States]) << ")" << std::endl;
+                            }
                             ++previousPlayer2MaybeStatesForState;
                             ++previousPlayer2States;
                         }
@@ -530,18 +561,27 @@ namespace storm {
             uint64_t previousPlayer2MaybeStates = 0;
             for (auto state : maybeStates) {
                 uint64_t previousPlayer2MaybeStatesForState = 0;
+                bool madePlayer1Choice = false;
                 for (uint64_t player2State = player1Groups[state]; player2State < player1Groups[state + 1]; ++player2State) {
                     if (player1Scheduler[previousPlayer1MaybeStates] == previousPlayer2MaybeStatesForState) {
+                        if (state == 2324 || state == 50377 || state == 50209) {
+                            std::cout << "player 1 choosing " << player2State << " in " << state << std::endl;
+                        }
                         strategyPair.getPlayer1Strategy().setChoice(state, player2State);
+                        madePlayer1Choice = true;
                     }
                     
                     if (player2MaybeStates.get(player2State)) {
+                        if (state == 2324 || state == 50377 || state == 50209) {
+                            std::cout << "player 2 choosing " << (transitionMatrix.getRowGroupIndices()[player2State] + player2Scheduler[previousPlayer2MaybeStates]) << " in " << player2State << " for player 1 state " << state << std::endl;
+                        }
                         strategyPair.getPlayer2Strategy().setChoice(player2State, transitionMatrix.getRowGroupIndices()[player2State] + player2Scheduler[previousPlayer2MaybeStates]);
 
                         ++previousPlayer2MaybeStatesForState;
                         ++previousPlayer2MaybeStates;
                     }
                 }
+                STORM_LOG_ASSERT(madePlayer1Choice, "Player 1 state " << state << " did not make a choice, scheduler: " << player1Scheduler[previousPlayer1MaybeStates] << ".");
                 
                 ++previousPlayer1MaybeStates;
             }
@@ -1157,6 +1197,41 @@ namespace storm {
                 STORM_LOG_TRACE("Got maximal deviation of " << maxDiff << ".");
                 STORM_LOG_WARN_COND(sanityComparator.isZero(maxDiff), "Deviation " << maxDiff << " between computed value (" << quantitativeResult.getMin().getValues()[maxState] << ") and sanity check value (" << sanityValues[maxState] << ") in state " << maxState << " appears to be too high. (Obtained bounds were [" << quantitativeResult.getMin().getValues()[maxState] << ", " << quantitativeResult.getMax().getValues()[maxState] << "].)");
                 if (!sanityComparator.isZero(maxDiff)) {
+                    ExplicitGameExporter<ValueType> exporter;
+                    storm::storage::BitVector newInitialStates(player1Groups.size() - 1);
+                    newInitialStates.set(maxState);
+                    exporter.exportToJson("game" + std::to_string(iteration) + "_min.json", player1Groups, player2Groups, transitionMatrix, newInitialStates, constraintStates, targetStates, quantitativeResult, &minStrategyPair, static_cast<ExplicitGameStrategyPair const*>(nullptr));
+                    exporter.exportToJson("game" + std::to_string(iteration) + "_max.json", player1Groups, player2Groups, transitionMatrix, newInitialStates, constraintStates, targetStates, quantitativeResult, static_cast<ExplicitGameStrategyPair const*>(nullptr), &maxStrategyPair);
+                    
+                    
+                    // Perform DFS from max diff state in upper system.
+                    std::vector<uint64_t> stack;
+                    stack.push_back(maxState);
+                    storm::storage::BitVector reachable(dtmcMatrix.getRowCount());
+                    
+                    while (!stack.empty()) {
+                        uint64_t currentState = stack.back();
+                        stack.pop_back();
+                        
+                        std::cout << "exploring player 1 state " << currentState << " with " << (player1Groups[currentState + 1] - player1Groups[currentState]) << " player 2 successors from" << player1Groups[currentState] << " to " << player1Groups[currentState + 1] << std::endl;
+                        uint64_t player2State = minStrategyPair.getPlayer1Strategy().getChoice(currentState);
+                        std::cout << "going to player 2 state " << player2State << " with " << (player2Groups[player2State + 1] - player2Groups[player2State]) << " player 2 choices from " << player2Groups[player2State] << " to " << player2Groups[player2State + 1] << std::endl;
+                        uint64_t player2Choice = minStrategyPair.getPlayer2Strategy().getChoice(player2State);
+                        std::cout << "which takes choice " << player2Choice << " which locally is " << (player2Choice - transitionMatrix.getRowGroupIndices()[player2State]) << std::endl;
+                        for (auto const& entry : transitionMatrix.getRow(player2Choice)) {
+                            std::cout << entry.getColumn() << " -> " << entry.getValue() << std::endl;
+                            auto successor = entry.getColumn();
+                            if (!reachable.get(successor)) {
+                                if (!targetStates.get(successor)) {
+                                    reachable.set(successor);
+                                    stack.push_back(successor);
+                                } else {
+                                    std::cout << "found target state " << std::endl;
+                                }
+                            }
+                        }
+                    }
+                    
                     exit(-1);
                 }
 
@@ -1493,7 +1568,7 @@ namespace storm {
             
             ExplicitQualitativeGameResultMinMax result;
 
-            ExplicitQualitativeGameResult problematicStates = storm::utility::graph::performProb0(transitionMatrix, player1Groups, player1BackwardTransitions, player2BackwardTransitions, constraintStates, targetStates, storm::OptimizationDirection::Minimize, storm::OptimizationDirection::Minimize);
+//            ExplicitQualitativeGameResult problematicStates = storm::utility::graph::performProb0(transitionMatrix, player1Groups, player1BackwardTransitions, player2BackwardTransitions, constraintStates, targetStates, storm::OptimizationDirection::Minimize, storm::OptimizationDirection::Minimize);
             
             result.prob0Min = storm::utility::graph::performProb0(transitionMatrix, player1Groups, player1BackwardTransitions, player2BackwardTransitions, constraintStates, targetStates, player1Direction, storm::OptimizationDirection::Minimize, &minStrategyPair);
             result.prob1Min = storm::utility::graph::performProb1(transitionMatrix, player1Groups, player1BackwardTransitions, player2BackwardTransitions, constraintStates, targetStates, player1Direction, storm::OptimizationDirection::Minimize, &minStrategyPair);

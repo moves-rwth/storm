@@ -1630,6 +1630,11 @@ namespace storm {
                         currentValue += elementIt->getValue() * vector[elementIt->getColumn()];
                     }
                     
+                    if (std::distance(result.begin(), resultIt) == 2240 || std::distance(result.begin(), resultIt) == 2241 || std::distance(result.begin(), resultIt) == 8262 || std::distance(result.begin(), resultIt) == 8263 || std::distance(result.begin(), resultIt) == 8266 || std::distance(result.begin(), resultIt) == 8267) {
+                        std::cout << "got initial value " << currentValue << " for state " << std::distance(result.begin(), resultIt) << " in row " << currentRow << std::endl;
+                    }
+
+                    
                     if (choices) {
                         selectedChoice = 0;
                         if (*choiceIt == 0) {
@@ -1644,6 +1649,10 @@ namespace storm {
                         ValueType newValue = summand ? *summandIt : storm::utility::zero<ValueType>();
                         for (auto elementIte = this->begin() + *(rowIt + 1); elementIt != elementIte; ++elementIt) {
                             newValue += elementIt->getValue() * vector[elementIt->getColumn()];
+                        }
+
+                        if (std::distance(result.begin(), resultIt) == 2240 || std::distance(result.begin(), resultIt) == 2241 || std::distance(result.begin(), resultIt) == 8262 || std::distance(result.begin(), resultIt) == 8263 || std::distance(result.begin(), resultIt) == 8266 || std::distance(result.begin(), resultIt) == 8267) {
+                            std::cout << "got value " << currentValue << " for state " << std::distance(result.begin(), resultIt) << " in row " << currentRow << std::endl;
                         }
                         
                         if (choices && currentRow == *choiceIt + *rowGroupIt) {
@@ -1664,6 +1673,9 @@ namespace storm {
                     // Finally write value to target vector.
                     *resultIt = currentValue;
                     if (choices && compare(currentValue, oldSelectedChoiceValue)) {
+                        if (std::distance(result.begin(), resultIt) == 2240 || std::distance(result.begin(), resultIt) == 2241 || std::distance(result.begin(), resultIt) == 8262 || std::distance(result.begin(), resultIt) == 8263 || std::distance(result.begin(), resultIt) == 8266 || std::distance(result.begin(), resultIt) == 8267) {
+                            std::cout << "changing choice in " << std::distance(result.begin(), resultIt) << " from " << *choiceIt << " to " << selectedChoice << " because " << currentValue << " is better than " << oldSelectedChoiceValue << std::endl;
+                        }
                         *choiceIt = selectedChoice;
                     }
                 }
