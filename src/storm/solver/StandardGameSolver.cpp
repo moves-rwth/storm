@@ -7,11 +7,13 @@
 
 #include "storm/environment/solver/GameSolverEnvironment.h"
 
+#include "storm/utility/graph.h"
 #include "storm/utility/vector.h"
 #include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidEnvironmentException.h"
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/NotImplementedException.h"
+
 namespace storm {
     namespace solver {
         
@@ -87,7 +89,7 @@ namespace storm {
                 localPlayer2Choices = std::make_unique<std::vector<uint64_t>>();
                 player2Choices = localPlayer2Choices.get();
             }
-            
+
             if (this->hasSchedulerHints()) {
                 *player1Choices = this->player1ChoicesHint.get();
             } else if (this->player1RepresentedByMatrix()) {
@@ -95,7 +97,6 @@ namespace storm {
                 *player1Choices = std::vector<storm::storage::sparse::state_type>(this->getPlayer1Matrix().getRowGroupCount(), 0);
             } else {
                 // Player 1 represented by grouping of player 2 states.
-                *player1Choices = this->getPlayer1Grouping();
                 player1Choices->resize(player1Choices->size() - 1);
             }
             if (this->hasSchedulerHints()) {
@@ -103,12 +104,12 @@ namespace storm {
             } else if (!(providedPlayer1Choices && providedPlayer2Choices)) {
                 player2Choices->resize(this->player2Matrix.getRowGroupCount());
             }
-            
+
             if (!auxiliaryP2RowGroupVector) {
                 auxiliaryP2RowGroupVector = std::make_unique<std::vector<ValueType>>(this->player2Matrix.getRowGroupCount());
             }
             if (!auxiliaryP1RowGroupVector) {
-                auxiliaryP1RowGroupVector = std::make_unique<std::vector<ValueType>>(this->player1Matrix->getRowGroupCount());
+                auxiliaryP1RowGroupVector = std::make_unique<std::vector<ValueType>>(this->player1RepresentedByMatrix() ? this->player1Matrix->getRowGroupCount() : this->player1Grouping->size() - 1);
             }
             std::vector<ValueType>& subB = *auxiliaryP1RowGroupVector;
 
@@ -138,8 +139,28 @@ namespace storm {
             // Solve the equation system induced by the two schedulers.
             storm::storage::SparseMatrix<ValueType> submatrix;
             getInducedMatrixVector(x, b, *player1Choices, *player2Choices, submatrix, subB);
+            
+            storm::storage::BitVector targetStates;
+            storm::storage::BitVector zeroStates;
+            if (!this->hasUniqueSolution()) {
+                // If there is no unique solution, we need to compute the states with probability 0 and set their values explicitly.
+                targetStates = storm::utility::vector::filterGreaterZero(subB);
+                zeroStates = ~storm::utility::graph::performProbGreater0(submatrix.transpose(), storm::storage::BitVector(targetStates.size(), true), targetStates);
+            }
             if (this->linearEquationSolverFactory->getEquationProblemFormat(environmentOfSolver) == LinearEquationSolverProblemFormat::EquationSystem) {
                 submatrix.convertToEquationSystem();
+            }
+            if (!this->hasUniqueSolution()) {
+                for (auto state : zeroStates) {
+                    for (auto& element : submatrix.getRow(state)) {
+                        if (element.getColumn() == state) {
+                            element.setValue(storm::utility::one<ValueType>());
+                        } else {
+                            element.setValue(storm::utility::zero<ValueType>());
+                        }
+                    }
+                    subB[state] = storm::utility::zero<ValueType>();
+                }
             }
             auto submatrixSolver = linearEquationSolverFactory->create(environmentOfSolver, std::move(submatrix));
             if (this->lowerBound) {
@@ -154,10 +175,8 @@ namespace storm {
             Status status = Status::InProgress;
             uint64_t iterations = 0;
             do {
-                // Solve the equation system for the 'DTMC'.
-                // FIXME: we need to remove the 0- and 1- states to make the solution unique.
                 submatrixSolver->solveEquations(environmentOfSolver, x, subB);
-                
+
                 bool schedulerImproved = extractChoices(player1Dir, player2Dir, x, b, *auxiliaryP2RowGroupVector, *player1Choices, *player2Choices);
                 
                 // If the scheduler did not improve, we are done.
@@ -166,7 +185,27 @@ namespace storm {
                 } else {
                     // Update the solver.
                     getInducedMatrixVector(x, b, *player1Choices, *player2Choices, submatrix, subB);
-                    submatrix.convertToEquationSystem();
+
+                    if (!this->hasUniqueSolution()) {
+                        // If there is no unique solution, we need to compute the states with probability 0 and set their values explicitly.
+                        targetStates = storm::utility::vector::filterGreaterZero(subB);
+                        zeroStates = ~storm::utility::graph::performProbGreater0(submatrix.transpose(), storm::storage::BitVector(targetStates.size(), true), targetStates);
+                    }
+                    if (this->linearEquationSolverFactory->getEquationProblemFormat(environmentOfSolver) == LinearEquationSolverProblemFormat::EquationSystem) {
+                        submatrix.convertToEquationSystem();
+                    }
+                    if (!this->hasUniqueSolution()) {
+                        for (auto state : zeroStates) {
+                            for (auto& element : submatrix.getRow(state)) {
+                                if (element.getColumn() == state) {
+                                    element.setValue(storm::utility::one<ValueType>());
+                                } else {
+                                    element.setValue(storm::utility::zero<ValueType>());
+                                }
+                            }
+                            subB[state] = storm::utility::zero<ValueType>();
+                        }
+                    }
                     submatrixSolver->setMatrix(std::move(submatrix));
                 }
                 
@@ -360,6 +399,29 @@ namespace storm {
 
         template<typename ValueType>
         bool StandardGameSolver<ValueType>::extractChoices(OptimizationDirection player1Dir, OptimizationDirection player2Dir, std::vector<ValueType> const& x, std::vector<ValueType> const& b, std::vector<ValueType>& player2ChoiceValues, std::vector<uint_fast64_t>& player1Choices, std::vector<uint_fast64_t>& player2Choices) const {
+            if (player1Dir == storm::OptimizationDirection::Minimize) {
+                if (player2Dir == storm::OptimizationDirection::Minimize) {
+                    return extractChoices<storm::utility::ElementLess<ValueType>, storm::utility::ElementLess<ValueType>>(x, b, player2ChoiceValues, player1Choices, player2Choices);
+                } else {
+                    return extractChoices<storm::utility::ElementLess<ValueType>, storm::utility::ElementGreater<ValueType>>(x, b, player2ChoiceValues, player1Choices, player2Choices);
+                }
+            } else {
+                if (player2Dir == storm::OptimizationDirection::Minimize) {
+                    return extractChoices<storm::utility::ElementGreater<ValueType>, storm::utility::ElementLess<ValueType>>(x, b, player2ChoiceValues, player1Choices, player2Choices);
+                } else {
+                    return extractChoices<storm::utility::ElementGreater<ValueType>, storm::utility::ElementGreater<ValueType>>(x, b, player2ChoiceValues, player1Choices, player2Choices);
+                }
+            }
+            
+            return false;
+        }
+        
+        template<typename ValueType>
+        template<typename ComparePlayer1, typename ComparePlayer2>
+        bool StandardGameSolver<ValueType>::extractChoices(std::vector<ValueType> const& x, std::vector<ValueType> const& b, std::vector<ValueType>& player2ChoiceValues, std::vector<uint_fast64_t>& player1Choices, std::vector<uint_fast64_t>& player2Choices) const {
+            
+            ComparePlayer1 comparePlayer1;
+            ComparePlayer2 comparePlayer2;
             
             // get the choices of player 2 and the corresponding values.
             bool schedulerImproved = false;
@@ -387,7 +449,7 @@ namespace storm {
                     }
                     choiceValue += b[firstRowInGroup + p2Choice];
                         
-                    if (valueImproved(player2Dir, *currentValueIt, choiceValue)) {
+                    if (comparePlayer2(choiceValue, *currentValueIt)) {
                         schedulerImproved = true;
                         player2Choices[p2Group] = p2Choice;
                         *currentValueIt = std::move(choiceValue);
@@ -409,7 +471,7 @@ namespace storm {
                             continue;
                         }
                         ValueType const& choiceValue = player2ChoiceValues[this->getPlayer1Matrix().getRow(firstRowInGroup + p1Choice).begin()->getColumn()];
-                        if (valueImproved(player1Dir, currentValue, choiceValue)) {
+                        if (comparePlayer1(choiceValue, currentValue)) {
                             schedulerImproved = true;
                             player1Choices[p1Group] = p1Choice;
                             currentValue = choiceValue;
@@ -429,7 +491,7 @@ namespace storm {
                         }
                         
                         ValueType const& choiceValue = player2ChoiceValues[this->getPlayer1Grouping()[player1State] + player2State];
-                        if (valueImproved(player1Dir, currentValue, choiceValue)) {
+                        if (comparePlayer1(choiceValue, currentValue)) {
                             schedulerImproved = true;
                             player1Choices[player1State] = player2State;
                             currentValue = choiceValue;
@@ -461,7 +523,7 @@ namespace storm {
                 // Player 1 is represented by the grouping of player 2 states (vector).
                 selectedRows.reserve(this->player2Matrix.getRowGroupCount());
                 for (uint64_t player1State = 0; player1State < this->getPlayer1Grouping().size() - 1; ++player1State) {
-                    uint64_t player2State = player1Choices[player1State];
+                    uint64_t player2State = this->getPlayer1Grouping()[player1State] + player1Choices[player1State];
                     selectedRows.emplace_back(player2Matrix.getRowGroupIndices()[player2State] + player2Choices[player2State]);
                 }
             }

@@ -45,6 +45,16 @@ namespace storm {
             return a == zero<ValueType>();
         }
         
+        template<typename ValueType>
+        bool isNan(ValueType const& value) {
+            return false;
+        }
+        
+        template<>
+        bool isNan(double const& value) {
+            return isnan(value);
+        }
+        
         bool isAlmostZero(double const& a) {
             return a < 1e-12 && a > -1e-12;
         }
@@ -950,6 +960,7 @@ namespace storm {
         template bool isZero(NumberTraits<storm::ClnRationalNumber>::IntegerType const& value);
         template bool isConstant(storm::ClnRationalNumber const& value);
         template bool isInfinity(storm::ClnRationalNumber const& value);
+        template bool isNan(storm::ClnRationalNumber const& value);
         template storm::NumberTraits<ClnRationalNumber>::IntegerType convertNumber(storm::NumberTraits<ClnRationalNumber>::IntegerType const& number);
         template storm::ClnRationalNumber convertNumber(storm::ClnRationalNumber const& number);
         template storm::ClnRationalNumber simplify(storm::ClnRationalNumber value);
@@ -974,6 +985,7 @@ namespace storm {
         template bool isZero(NumberTraits<storm::GmpRationalNumber>::IntegerType const& value);
         template bool isConstant(storm::GmpRationalNumber const& value);
         template bool isInfinity(storm::GmpRationalNumber const& value);
+        template bool isNan(storm::GmpRationalNumber const& value);
         template storm::NumberTraits<GmpRationalNumber>::IntegerType convertNumber(storm::NumberTraits<GmpRationalNumber>::IntegerType const& number);
         template storm::GmpRationalNumber convertNumber(storm::GmpRationalNumber const& number);
         template storm::GmpRationalNumber simplify(storm::GmpRationalNumber value);

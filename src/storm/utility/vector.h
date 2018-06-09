@@ -725,10 +725,6 @@ namespace storm {
                         }
                         
                         if (choices && f(*targetIt, oldSelectedChoiceValue)) {
-                            uint64_t distance = std::distance(target.begin(), targetIt);
-                            if (distance == 1693 || distance == 4715 || distance == 4713) {
-                                std::cout << std::setprecision(50) << "improving value at " << distance << ": moving from " << *choiceIt << " to " << selectedChoice << " because " << *targetIt << " is better than " << oldSelectedChoiceValue << std::endl;
-                            }
                             *choiceIt = selectedChoice;
                         }
                     } else {
@@ -796,7 +792,6 @@ namespace storm {
              */
             template<class T>
             void reduceVectorMinOrMax(storm::solver::OptimizationDirection dir, std::vector<T> const& source, std::vector<T>& target, std::vector<uint_fast64_t> const& rowGrouping, std::vector<uint_fast64_t>* choices = nullptr) {
-                std::cout << "[" << dir << "]: reducing vector " << std::endl;
                 if (dir == storm::solver::OptimizationDirection::Minimize) {
                     reduceVectorMin(source, target, rowGrouping, choices);
                 } else {

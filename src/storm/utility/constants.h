@@ -38,7 +38,7 @@ namespace storm {
             
             struct DoubleLess {
                 bool operator()(double a, double b) const {
-                    return b - a > 1e-17;
+                    return (a == 0.0 && b > 0.0) || (b - a > 1e-17);
                 }
             };
             
@@ -54,7 +54,7 @@ namespace storm {
             
             struct DoubleGreater {
                 bool operator()(double a, double b) const {
-                    return a - b > 1e-17;
+                    return (b == 0.0 && a > 0.0) || (a - b > 1e-17);
                 }
             };
             
@@ -84,6 +84,9 @@ namespace storm {
 
         template<typename ValueType>
         bool isZero(ValueType const& a);
+        
+        template<typename ValueType>
+        bool isNan(ValueType const& a);
 
         bool isAlmostZero(double const& a);
 
