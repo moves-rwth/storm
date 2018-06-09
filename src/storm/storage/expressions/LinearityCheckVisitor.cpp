@@ -77,6 +77,7 @@ namespace storm {
                 case BinaryNumericalFunctionExpression::OperatorType::Min: return LinearityStatus::NonLinear; break;
                 case BinaryNumericalFunctionExpression::OperatorType::Max: return LinearityStatus::NonLinear; break;
                 case BinaryNumericalFunctionExpression::OperatorType::Power: return LinearityStatus::NonLinear; break;
+                case BinaryNumericalFunctionExpression::OperatorType::Modulo: return LinearityStatus::NonLinear; break;
             }
             STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Illegal binary numerical expression operator.");
         }

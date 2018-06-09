@@ -56,6 +56,13 @@ namespace storm {
                  */
                 bool isUseSchedulerCutsSet() const;
                 
+                /*!
+                 * Retrieves whether to use the dynamic constraints in the MAXSAT-based technique.
+                 *
+                 * @return True iff dynamic constraints are to be used.
+                 */
+                bool isUseDynamicConstraintsSet() const;
+                
                 bool check() const override;
                 
                 // The name of the module.
@@ -66,6 +73,7 @@ namespace storm {
                 static const std::string minimalCommandSetOptionName;
                 static const std::string encodeReachabilityOptionName;
                 static const std::string schedulerCutsOptionName;
+                static const std::string noDynamicConstraintsOptionName;
             };
             
         } // namespace modules

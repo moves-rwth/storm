@@ -11,6 +11,13 @@ namespace storm {
          */
         int64_t process(const int argc, const char** argv);
 
+        /*!
+         * For a command-line argument, returns a quoted version
+         * with single quotes if it contains unsafe characters.
+         * Otherwise, just returns the unquoted argument.
+         */
+        std::string shellQuoteSingleIfNecessary(const std::string& arg);
+
         void printHeader(std::string const& name, const int argc, const char** argv);
         
         void printVersion(std::string const& name);

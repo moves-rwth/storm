@@ -65,7 +65,7 @@ namespace storm {
             virtual ValueType average() const override;
             virtual ValueType sum() const override;
             
-            bool hasScheduler() const;
+            virtual bool hasScheduler() const override;
             void setScheduler(std::unique_ptr<storm::storage::Scheduler<ValueType>>&& scheduler);
             storm::storage::Scheduler<ValueType> const& getScheduler() const;
             storm::storage::Scheduler<ValueType>& getScheduler();

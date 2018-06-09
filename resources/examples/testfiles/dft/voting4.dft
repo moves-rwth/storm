@@ -1,0 +1,6 @@
+toplevel "A";
+"A" 2of3 "B" "C" "D";
+"D" or "E";
+"B" lambda=1 dorm=0.0;
+"C" lambda=1 dorm=0.0;
+"E" lambda=1 dorm=0.0;

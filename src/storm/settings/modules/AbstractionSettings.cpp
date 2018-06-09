@@ -21,11 +21,12 @@ namespace storm {
             const std::string AbstractionSettings::precisionOptionName = "precision";
             const std::string AbstractionSettings::pivotHeuristicOptionName = "pivot-heuristic";
             const std::string AbstractionSettings::reuseResultsOptionName = "reuse";
+            const std::string AbstractionSettings::restrictToRelevantStatesOptionName = "relevant";
             
             AbstractionSettings::AbstractionSettings() : ModuleSettings(moduleName) {
                 std::vector<std::string> methods = {"games", "bisimulation", "bisim"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, methodOptionName, true, "Sets which abstraction-refinement method to use.")
-                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of themethod to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(methods))
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the method to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(methods))
                                              .setDefaultValueString("bisim").build())
                                 .build());
                 
@@ -63,6 +64,11 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, reuseResultsOptionName, true, "Sets whether to reuse all results.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("mode", "The mode to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(reuseModes))
                                              .setDefaultValueString("all").build())
+                                .build());
+                
+                this->addOption(storm::settings::OptionBuilder(moduleName, restrictToRelevantStatesOptionName, true, "Sets whether to restrict to relevant states during the abstraction.")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("value", "The value of the flag.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(onOff))
+                                             .setDefaultValueString("off").build())
                                 .build());
             }
             
@@ -102,6 +108,10 @@ namespace storm {
             
             bool AbstractionSettings::isUseInterpolationSet() const {
                 return this->getOption(useInterpolationOptionName).getArgumentByName("value").getValueAsString() == "on";
+            }
+            
+            bool AbstractionSettings::isRestrictToRelevantStatesSet() const {
+                return this->getOption(restrictToRelevantStatesOptionName).getArgumentByName("value").getValueAsString() == "on";
             }
             
             double AbstractionSettings::getPrecision() const {

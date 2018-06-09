@@ -20,7 +20,10 @@ namespace storm {
              */
             EquivalenceChecker(std::unique_ptr<storm::solver::SmtSolver>&& smtSolver, boost::optional<storm::expressions::Expression> const& constraint = boost::none);
             
+            void addConstraints(std::vector<storm::expressions::Expression> const& constraints);
+            
             bool areEquivalent(storm::expressions::Expression const& first, storm::expressions::Expression const& second);
+            bool areEquivalentModuloNegation(storm::expressions::Expression const& first, storm::expressions::Expression const& second);
             
         private:
             std::unique_ptr<storm::solver::SmtSolver> smtSolver;

@@ -18,6 +18,10 @@ namespace storm {
             return this->getType() == modelType;
         }
         
+        bool ModelBase::isNondeterministicModel() const {
+            return this->isOfType(storm::models::ModelType::Mdp) || this->isOfType(storm::models::ModelType::MarkovAutomaton);
+        }
+        
         bool ModelBase::supportsParameters() const {
             return false;
         }

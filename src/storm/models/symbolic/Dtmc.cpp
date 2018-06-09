@@ -43,11 +43,29 @@ namespace storm {
                 // Intentionally left empty.
             }
             
+            template<storm::dd::DdType Type, typename ValueType>
+            template<typename NewValueType>
+            std::shared_ptr<Dtmc<Type, NewValueType>> Dtmc<Type, ValueType>::toValueType() const {
+                typedef typename DeterministicModel<Type, NewValueType>::RewardModelType NewRewardModelType;
+                std::unordered_map<std::string, NewRewardModelType> newRewardModels;
+                
+                for (auto const& e : this->getRewardModels()) {
+                    newRewardModels.emplace(e.first, e.second.template toValueType<NewValueType>());
+                }
+                
+                auto newLabelToBddMap = this->getLabelToBddMap();
+                newLabelToBddMap.erase("init");
+                newLabelToBddMap.erase("deadlock");
+
+                return std::make_shared<Dtmc<Type, NewValueType>>(this->getManagerAsSharedPointer(), this->getReachableStates(), this->getInitialStates(), this->getDeadlockStates(), this->getTransitionMatrix().template toValueType<NewValueType>(), this->getRowVariables(), this->getColumnVariables(), this->getRowColumnMetaVariablePairs(), newLabelToBddMap, newRewardModels);
+            }
+            
             // Explicitly instantiate the template class.
             template class Dtmc<storm::dd::DdType::CUDD, double>;
             template class Dtmc<storm::dd::DdType::Sylvan, double>;
 
             template class Dtmc<storm::dd::DdType::Sylvan, storm::RationalNumber>;
+            template std::shared_ptr<Dtmc<storm::dd::DdType::Sylvan, double>> Dtmc<storm::dd::DdType::Sylvan, storm::RationalNumber>::toValueType() const;
             template class Dtmc<storm::dd::DdType::Sylvan, storm::RationalFunction>;
 
         } // namespace symbolic

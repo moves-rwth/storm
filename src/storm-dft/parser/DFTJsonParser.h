@@ -7,7 +7,7 @@
 #include "storm/storage/expressions/ExpressionEvaluator.h"
 
 #include "storm-dft/storage/dft/DFT.h"
-#include "storm-dft/storage/dft/DFTBuilder.h"
+#include "storm-dft/builder/DFTBuilder.h"
 
 // JSON parser
 #include "json.hpp"
@@ -19,7 +19,7 @@ namespace storm {
 
         template<typename ValueType>
         class DFTJsonParser {
-            storm::storage::DFTBuilder<ValueType> builder;
+            storm::builder::DFTBuilder<ValueType> builder;
 
             std::shared_ptr<storm::expressions::ExpressionManager> manager;
 

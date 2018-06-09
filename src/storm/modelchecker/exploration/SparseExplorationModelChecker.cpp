@@ -341,7 +341,7 @@ namespace storm {
                                });
                 } else if (explorationInformation.useProbabilityHeuristic()) {
                     std::transform(row.begin(), row.end(), probabilities.begin(),
-                                   [&bounds, &explorationInformation] (storm::storage::MatrixEntry<StateType, ValueType> const& entry) {
+                                   [] (storm::storage::MatrixEntry<StateType, ValueType> const& entry) {
                                        return entry.getValue();
                                    });
                 }

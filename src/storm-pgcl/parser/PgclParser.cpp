@@ -40,7 +40,7 @@ namespace storm {
             storm::parser::PgclParser grammar(filename, first);
             try {
                 // Start the parsing run.
-                bool succeeded = qi::phrase_parse(iter, last, grammar, boost::spirit::ascii::space | qi::lit("//") >> *(qi::char_ - (qi::eol | qi::eoi)) >> (qi::eol | qi::eoi), result);
+                bool succeeded = qi::phrase_parse(iter, last, grammar, storm::spirit_encoding::space_type() | qi::lit("//") >> *(qi::char_ - (qi::eol | qi::eoi)) >> (qi::eol | qi::eoi), result);
                 STORM_LOG_THROW(succeeded,  storm::exceptions::WrongFormatException, "Parsing of PGCL program failed.");
                 STORM_LOG_DEBUG("Parse of PGCL program finished.");
             } catch(qi::expectation_failure<PositionIteratorType> const& e) {

@@ -1,5 +1,9 @@
 #pragma once
 
+#include <string>
+
+#include "storm/solver/SolverRequirement.h"
+
 namespace storm {
     namespace solver {
         
@@ -14,22 +18,29 @@ namespace storm {
             
             LinearEquationSolverRequirements();
             
-            LinearEquationSolverRequirements& requireLowerBounds();
-            LinearEquationSolverRequirements& requireUpperBounds();
-            LinearEquationSolverRequirements& requireBounds();
+            LinearEquationSolverRequirements& requireLowerBounds(bool critical = true);
+            LinearEquationSolverRequirements& requireUpperBounds(bool critical = true);
+            LinearEquationSolverRequirements& requireBounds(bool critical = true);
             
-            bool requiresLowerBounds() const;
-            bool requiresUpperBounds() const;
-            bool requires(Element const& element) const;
+            SolverRequirement const& lowerBounds() const;
+            SolverRequirement const& upperBounds() const;
+            SolverRequirement const& get(Element const& element) const;
             
             void clearLowerBounds();
             void clearUpperBounds();
             
-            bool empty() const;
+            bool hasEnabledRequirement() const;
+            bool hasEnabledCriticalRequirement() const;
+            
+            /*!
+             * Checks whether there are no critical requirements left.
+             * In case there is a critical requirement left an exception is thrown.
+             */
+            std::string getEnabledRequirementsAsString() const;
             
         private:
-            bool lowerBounds;
-            bool upperBounds;
+            SolverRequirement lowerBoundsRequirement;
+            SolverRequirement upperBoundsRequirement;
         };
         
     }

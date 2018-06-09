@@ -104,7 +104,7 @@ namespace storm {
             std::string placeName;
             // the first entry is false if the corresponding information was not found in the pnml file
             std::pair<bool, uint_fast64_t> numberOfInitialTokens(false, defaultNumberOfInitialTokens);
-            std::pair<bool, int_fast64_t> capacity(false, defaultCapacity);
+            std::pair<bool, boost::optional<uint64_t>> capacity(false, boost::none);
 
             // traverse attributes
             for (uint_fast64_t i = 0; i < node->getAttributes()->getLength(); ++i) {
@@ -150,10 +150,9 @@ namespace storm {
             }
             if (!capacity.first) {
                 // no information about the capacity is found
-                // use default capacity
                 STORM_PRINT_AND_LOG("unknown capacity (place=" + placeName + ")\n");
             }
-            builder.addPlace(capacity.first ? capacity.second : -1, numberOfInitialTokens.first ? numberOfInitialTokens.second : 0, placeName);
+            builder.addPlace(capacity.second, numberOfInitialTokens.first ? numberOfInitialTokens.second : 0, placeName);
         }
 
         void PnmlParser::traverseTransition(xercesc::DOMNode const* const node) {

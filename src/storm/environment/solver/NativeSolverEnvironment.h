@@ -27,6 +27,8 @@ namespace storm {
         void setPowerMethodMultiplicationStyle(storm::solver::MultiplicationStyle value);
         storm::RationalNumber const& getSorOmega() const;
         void setSorOmega(storm::RationalNumber const& value);
+        bool isSymmetricUpdatesSet() const;
+        void setSymmetricUpdates(bool value);
         
     private:
         storm::solver::NativeLinearEquationSolverMethod method;
@@ -36,6 +38,7 @@ namespace storm {
         bool considerRelativeTerminationCriterion;
         storm::solver::MultiplicationStyle powerMethodMultiplicationStyle;
         storm::RationalNumber sorOmega;
+        bool symmetricUpdates;
     };
 }
 

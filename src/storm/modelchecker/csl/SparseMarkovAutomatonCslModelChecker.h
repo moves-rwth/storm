@@ -17,7 +17,6 @@ namespace storm {
             typedef typename SparseMarkovAutomatonModelType::ValueType ValueType;
             typedef typename SparseMarkovAutomatonModelType::RewardModelType RewardModelType;
             
-            explicit SparseMarkovAutomatonCslModelChecker(SparseMarkovAutomatonModelType const& model, std::unique_ptr<storm::solver::MinMaxLinearEquationSolverFactory<ValueType>>&& minMaxLinearEquationSolver);
             explicit SparseMarkovAutomatonCslModelChecker(SparseMarkovAutomatonModelType const& model);
             
             // The implemented methods of the AbstractModelChecker interface.
@@ -30,9 +29,6 @@ namespace storm {
             virtual std::unique_ptr<CheckResult> computeReachabilityTimes(Environment const& env, storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) override;
             virtual std::unique_ptr<CheckResult> checkMultiObjectiveFormula(Environment const& env, CheckTask<storm::logic::MultiObjectiveFormula, ValueType> const& checkTask) override;
             
-        private:
-            // An object that is used for retrieving solvers for systems of linear equations that are the result of nondeterministic choices.
-            std::unique_ptr<storm::solver::MinMaxLinearEquationSolverFactory<ValueType>> minMaxLinearEquationSolverFactory;
         };
     }
 }

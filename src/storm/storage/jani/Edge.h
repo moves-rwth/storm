@@ -110,8 +110,12 @@ namespace storm {
              * @param localVars
              */
             void simplifyIndexedAssignments(VariableSet const& localVars);
-
+            
             std::shared_ptr<TemplateEdge> const& getTemplateEdge();
+
+            void setTemplateEdge(std::shared_ptr<TemplateEdge> const& newTe);
+
+            void assertValid() const;
             
         private:
             /// The index of the source location.

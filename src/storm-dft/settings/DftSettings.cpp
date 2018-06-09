@@ -9,10 +9,14 @@
 #include "storm/settings/modules/IOSettings.h"
 #include "storm/settings/modules/DebugSettings.h"
 #include "storm/settings/modules/EigenEquationSolverSettings.h"
+#include "storm/settings/modules/ModelCheckerSettings.h"
 #include "storm/settings/modules/GmmxxEquationSolverSettings.h"
 #include "storm/settings/modules/NativeEquationSolverSettings.h"
+#include "storm/settings/modules/MultiplierSettings.h"
+#include "storm/settings/modules/TopologicalEquationSolverSettings.h"
 #include "storm/settings/modules/EliminationSettings.h"
 #include "storm/settings/modules/MinMaxEquationSolverSettings.h"
+#include "storm/settings/modules/GameSolverSettings.h"
 #include "storm/settings/modules/BisimulationSettings.h"
 #include "storm/settings/modules/ResourceSettings.h"
 #include "storm/settings/modules/JaniExportSettings.h"
@@ -33,11 +37,15 @@ namespace storm {
             storm::settings::addModule<storm::settings::modules::CoreSettings>();
 
             storm::settings::addModule<storm::settings::modules::DebugSettings>();
-            storm::settings::addModule<storm::settings::modules::NativeEquationSolverSettings>();
+            storm::settings::addModule<storm::settings::modules::ModelCheckerSettings>();
             storm::settings::addModule<storm::settings::modules::GmmxxEquationSolverSettings>();
             storm::settings::addModule<storm::settings::modules::EigenEquationSolverSettings>();
+            storm::settings::addModule<storm::settings::modules::NativeEquationSolverSettings>();
+            storm::settings::addModule<storm::settings::modules::TopologicalEquationSolverSettings>();
             storm::settings::addModule<storm::settings::modules::EliminationSettings>();
             storm::settings::addModule<storm::settings::modules::MinMaxEquationSolverSettings>();
+            storm::settings::addModule<storm::settings::modules::MultiplierSettings>();
+            storm::settings::addModule<storm::settings::modules::GameSolverSettings>(false);
             // storm::settings::addModule<storm::settings::modules::BisimulationSettings>();
             storm::settings::addModule<storm::settings::modules::ResourceSettings>();
 

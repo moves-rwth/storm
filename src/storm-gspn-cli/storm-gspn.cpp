@@ -3,7 +3,7 @@
 #include "storm-gspn/storage/gspn/GSPN.h"
 #include "storm-gspn/storage/gspn/GspnBuilder.h"
 #include "storm-gspn/builder/JaniGSPNBuilder.h"
-#include "storm-gspn/storm-gspn.h"
+#include "storm-gspn/api/storm-gspn.h"
 
 #include "storm/exceptions/BaseException.h"
 #include "storm/exceptions/WrongFormatException.h"
@@ -44,6 +44,7 @@ void initializeSettings() {
     
     // Register all known settings modules.
     storm::settings::addModule<storm::settings::modules::GeneralSettings>();
+    storm::settings::addModule<storm::settings::modules::IOSettings>();
     storm::settings::addModule<storm::settings::modules::GSPNSettings>();
     storm::settings::addModule<storm::settings::modules::GSPNExportSettings>();
     storm::settings::addModule<storm::settings::modules::CoreSettings>();
@@ -92,7 +93,7 @@ int main(const int argc, const char **argv) {
         auto gspn = parser.parse(storm::settings::getModule<storm::settings::modules::GSPNSettings>().getGspnFilename());
 
         std::string formulaString = "";
-        if (!storm::settings::getModule<storm::settings::modules::IOSettings>().isPropertySet()) {
+        if (storm::settings::getModule<storm::settings::modules::IOSettings>().isPropertySet()) {
             formulaString = storm::settings::getModule<storm::settings::modules::IOSettings>().getProperty();
         }
         boost::optional<std::set<std::string>> propertyFilter;
@@ -108,10 +109,10 @@ int main(const int argc, const char **argv) {
             gspn->setCapacities(capacities);
         }
 
-        storm::handleGSPNExportSettings(*gspn);
+        storm::api::handleGSPNExportSettings(*gspn);
         
         if(storm::settings::getModule<storm::settings::modules::JaniExportSettings>().isJaniFileSet()) {
-            storm::jani::Model* model = storm::buildJani(*gspn);
+            storm::jani::Model* model = storm::api::buildJani(*gspn);
             storm::api::exportJaniModel(*model, properties, storm::settings::getModule<storm::settings::modules::JaniExportSettings>().getJaniFilename());
             delete model;
         }
@@ -124,25 +125,6 @@ int main(const int argc, const char **argv) {
 //        auto builder = storm::builder::ExplicitGspnModelBuilder<>();
 //        auto ma = builder.translateGspn(gspn, formula);
 //
-//        // write gspn into output file
-//        if (!outputFile.empty()) {
-//            std::ofstream file;
-//            file.open(outputFile);
-//            if (outputType == "pnml") {
-//                gspn.toPnml(file);
-//            }
-//            if (outputType == "pnpro") {
-//                gspn.toPnpro(file);
-//            }
-//            if (outputType == "dot") {
-//                gspn.writeDotToStream(file);
-//            }
-//            if (outputType == "ma") {
-//                ma.writeDotToStream(file);
-//            }
-//            file.close();
-//        }
-
         // All operations have now been performed, so we clean up everything and terminate.
         storm::utility::cleanUp();
         return 0;

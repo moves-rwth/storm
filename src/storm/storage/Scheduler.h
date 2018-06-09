@@ -44,10 +44,10 @@ namespace storm {
             void clearChoice(uint_fast64_t modelState, uint_fast64_t memoryState = 0);
             
             /*!
-             * Sets the choice defined by the scheduler for the given model and memory state.
+             * Gets the choice defined by the scheduler for the given model and memory state.
              *
-             * @param state The state for which to set the choice.
-             * @param choice The choice to set for the given state.
+             * @param state The state for which to get the choice.
+             * @param memoryState the memory state which we consider.
              */
             SchedulerChoice<ValueType> const& getChoice(uint_fast64_t modelState, uint_fast64_t memoryState = 0) const;
             

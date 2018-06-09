@@ -15,4 +15,4 @@ set(STORM_TARGETS ${STORM_TARGETS} PARENT_SCOPE)
 target_link_libraries(storm-gspn storm ${STORM_GSPN_LINK_LIBRARIES})
 
 # installation
-install(TARGETS storm-gspn RUNTIME DESTINATION bin LIBRARY DESTINATION lib OPTIONAL)
+install(TARGETS storm-gspn EXPORT storm_Targets RUNTIME DESTINATION bin LIBRARY DESTINATION lib OPTIONAL)

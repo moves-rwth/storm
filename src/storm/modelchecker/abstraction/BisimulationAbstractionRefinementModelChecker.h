@@ -11,7 +11,7 @@ namespace storm {
     }
     
     namespace dd {
-        template<storm::dd::DdType DdType, typename ValueType>
+        template<storm::dd::DdType DdType, typename ValueType, typename ExportValueType>
         class BisimulationDecomposition;
     }
     
@@ -47,7 +47,7 @@ namespace storm {
             ModelType const& model;
 
             /// The bisimulation object that maintains and refines the model.
-            std::unique_ptr<storm::dd::BisimulationDecomposition<DdType, ValueType>> bisimulation;
+            std::unique_ptr<storm::dd::BisimulationDecomposition<DdType, ValueType, ValueType>> bisimulation;
 
             /// Maintains the last abstract model that was returned.
             std::shared_ptr<storm::models::Model<ValueType>> lastAbstractModel;

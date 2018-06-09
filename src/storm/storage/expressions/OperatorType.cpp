@@ -16,6 +16,7 @@ namespace storm {
                 case OperatorType::Min: stream << "min"; break;
                 case OperatorType::Max: stream << "max"; break;
                 case OperatorType::Power: stream << "^"; break;
+                case OperatorType::Modulo: stream << "%"; break;
                 case OperatorType::Equal: stream << "="; break;
                 case OperatorType::NotEqual: stream << "!="; break;
                 case OperatorType::Less: stream << "<"; break;

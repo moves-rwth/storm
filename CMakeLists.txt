@@ -78,6 +78,14 @@ set(BIN_INSTALL_DIR lib/ CACHE PATH "Installation directory for executables")
 set(DEF_INSTALL_CMAKE_DIR "lib/CMake/storm")
 set(CMAKE_INSTALL_DIR ${DEF_INSTALL_CMAKE_DIR} CACHE PATH  "Installation directory for CMake files")
 
+# Add CMake install prefix
+foreach(p LIB BIN INCLUDE CMAKE)
+  set(var ${p}_INSTALL_DIR)
+  if(NOT IS_ABSOLUTE "${${var}}")
+    set(${var} "${CMAKE_INSTALL_PREFIX}/${${var}}")
+  endif()
+endforeach()
+
 message("CMAKE_INSTALL_DIR: ${CMAKE_INSTALL_DIR}")
 
 # If the STORM_DEVELOPER option was turned on, by default we target a debug version, otherwise a release version.
@@ -179,8 +187,9 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
 	set(STORM_COMPILER_APPLECLANG ON)
 	set(CLANG ON)
 	set(STORM_COMPILER_ID "AppleClang")
-	set(CMAKE_MACOSX_RPATH ON)	
+	set(CMAKE_MACOSX_RPATH ON)
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+	set(GCC ON)
 	# using GCC
 	if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.0)
 		message(FATAL_ERROR "gcc version must be at least 5.0.")
@@ -222,16 +231,16 @@ if (STORM_COMPILER_CLANG OR STORM_COMPILER_APPLECLANG)
     if(FORCE_COLOR)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fcolor-diagnostics")
     endif()
-    
+
 	if (LINUX)
 		set(CLANG_STDLIB libstdc++)
     else()
 		set(CLANG_STDLIB libc++)
     endif()
-    
+
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -stdlib=${CLANG_STDLIB} -ftemplate-depth=1024")
-    set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -ffast-math -fno-finite-math-only")
-    
+    set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
+
     if(LINUX)
         set (CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -rdynamic")
         set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -rdynamic")
@@ -241,20 +250,20 @@ if (STORM_COMPILER_CLANG OR STORM_COMPILER_APPLECLANG)
     endif()
 elseif (STORM_COMPILER_GCC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fprefetch-loop-arrays -ffast-math -fno-finite-math-only")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fprefetch-loop-arrays")
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -rdynamic")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -rdynamic")
 endif ()
 
 if (STORM_USE_LTO)
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -flto")
-    
+
     # Fix for problems that occurred when using LTO on gcc. This should be removed when it
     # is not needed anymore as it makes the the already long link-step potentially longer.
     if (STORM_COMPILER_GCC)
         set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -flto-partition=none")
     endif()
-    
+
     message(STATUS "Storm - Enabling link-time optimizations.")
 else()
     message(STATUS "Storm - Disabling link-time optimizations.")
@@ -402,25 +411,25 @@ endif(DOXYGEN_FOUND)
 # try to obtain the current version from git.
 include(GetGitRevisionDescription)
 get_git_head_revision(STORM_VERSION_REFSPEC STORM_VERSION_GIT_HASH)
-git_describe_checkout(STORM_GIT_VERSION_STRING)
+git_describe(STORM_GIT_VERSION_STRING)
 
 # parse the git tag into variables
-string(REGEX REPLACE "^([0-9]+)\\..*" "\\1" STORM_VERSION_MAJOR "${STORM_GIT_VERSION_STRING}")
-string(REGEX REPLACE "^[0-9]+\\.([0-9]+).*" "\\1" STORM_VERSION_MINOR "${STORM_GIT_VERSION_STRING}")
-string(REGEX REPLACE "^[0-9]+\\.[0-9]+\\.([0-9]+).*" "\\1" STORM_VERSION_PATCH "${STORM_GIT_VERSION_STRING}")
-string(REGEX REPLACE "^[0-9]+\\.[0-9]+\\.[0-9]+\\-([0-9]+)\\-.*" "\\1" STORM_VERSION_COMMITS_AHEAD "${STORM_GIT_VERSION_STRING}")
-string(REGEX REPLACE "^[0-9]+\\.[0-9]+\\.[0-9]+\\-[0-9]+\\-([a-z0-9]+).*" "\\1" STORM_VERSION_TAG_HASH "${STORM_GIT_VERSION_STRING}")
-string(REGEX REPLACE "^[0-9]+\\.[0-9]+\\.[0-9]+\\-[0-9]+\\-[a-z0-9]+\\-(.*)" "\\1" STORM_VERSION_APPENDIX "${STORM_GIT_VERSION_STRING}")
-	
-# now check whether the git version lookup failed
-if (STORM_VERSION_MAJOR MATCHES "NOTFOUND")
-	include(version.cmake)
-	set(STORM_VERSION_GIT_HASH "")
-	set(STORM_VERSION_COMMITS_AHEAD 0)
-	set(STORM_VERSION_DIRTY boost::none)
+# start with major.minor.patch
+string(REGEX MATCH "^([0-9]+)\\.([0-9]+)\\.([0-9]+)(.*)$" STORM_VERSION_MATCH "${STORM_GIT_VERSION_STRING}")
+set(STORM_VERSION_MAJOR "${CMAKE_MATCH_1}")
+set(STORM_VERSION_MINOR "${CMAKE_MATCH_2}")
+set(STORM_VERSION_PATCH "${CMAKE_MATCH_3}")
+set(STORM_GIT_VERSION_REST "${CMAKE_MATCH_4}")
+# parse rest of the form (-label)-commitsahead-hash-appendix
+string(REGEX MATCH "^(\\-([a-z][a-z0-9\\.]+))?\\-([0-9]+)\\-([a-z0-9]+)(\\-.*)?$" STORM_VERSION_REST_MATCH "${STORM_GIT_VERSION_REST}")
+set(STORM_VERSION_LABEL "${CMAKE_MATCH_2}") # might be empty
+set(STORM_VERSION_COMMITS_AHEAD "${CMAKE_MATCH_3}")
+set(STORM_VERSION_TAG_HASH "${CMAKE_MATCH_4}")
+set(STORM_VERSION_APPENDIX "${CMAKE_MATCH_5}") # might be empty
 
-	message(WARNING "Storm - git version information not available, statically assuming version ${STORM_VERSION_MAJOR}.${STORM_VERSION_MINOR}.${STORM_VERSION_PATCH}.")
-else()
+
+set(STORM_VERSION_DIRTY boost::none)
+if (NOT "${STORM_GIT_VERSION_STRING}" STREQUAL "")
 	if ("${STORM_VERSION_APPENDIX}" MATCHES "^.*dirty.*$")
 		set(STORM_VERSION_DIRTY "true")
 	else()
@@ -428,20 +437,43 @@ else()
 	endif()
 endif()
 
+# now check whether the git version lookup failed
+set(STORM_VERSION_SOURCE "VersionSource::Git")
+if (STORM_GIT_VERSION_STRING MATCHES "NOTFOUND")
+	set(STORM_VERSION_SOURCE "VersionSource::Static")
+	set(STORM_VERSION_COMMITS_AHEAD "boost::none")
+	include(version.cmake)
+	message(WARNING "Storm - git version information not available, statically assuming version ${STORM_VERSION_MAJOR}.${STORM_VERSION_MINOR}.${STORM_VERSION_PATCH}.")
+endif()
+
+# check whether there is a label ('alpha', 'pre', etc.)
+if ("${STORM_VERSION_LABEL}" STREQUAL "")
+	set(STORM_VERSION_LABEL_STRING "")
+else()
+	set(STORM_VERSION_LABEL_STRING "-${STORM_VERSION_LABEL}")
+endif()
+
+# check for development version with commits ahead of latest tag
 set(STORM_VERSION_DEV "false")
 set(STORM_VERSION_DEV_STRING "")
 if(STORM_VERSION_COMMITS_AHEAD)
-	MATH(EXPR STORM_VERSION_DEV_PATCH "${STORM_VERSION_PATCH}+1")
+	if ("${STORM_VERSION_LABEL}" STREQUAL "")
+		# increase patch number to indicate newer version
+		MATH(EXPR STORM_VERSION_DEV_PATCH "${STORM_VERSION_PATCH}+1")
+	else()
+		set(STORM_VERSION_DEV_PATCH "${STORM_VERSION_PATCH}")
+	endif()
 	set(STORM_VERSION_DEV "true")
 	set(STORM_VERSION_DEV_STRING " (dev)")
 else()
 	set(STORM_VERSION_DEV_PATCH ${STORM_VERSION_PATCH})
 endif()
 
+# set final Storm version
 set(STORM_VERSION "${STORM_VERSION_MAJOR}.${STORM_VERSION_MINOR}.${STORM_VERSION_DEV_PATCH}")
-set(STORM_VERSION_STRING "${STORM_VERSION}${STORM_VERSION_DEV_STRING}")
+set(STORM_VERSION_STRING "${STORM_VERSION}${STORM_VERSION_LABEL_STRING}${STORM_VERSION_DEV_STRING}")
 
-message(STATUS "Storm - version is ${STORM_VERSION_STRING} (version ${STORM_VERSION_MAJOR}.${STORM_VERSION_MINOR}.${STORM_VERSION_PATCH} + ${STORM_VERSION_COMMITS_AHEAD} commits), building from git: ${STORM_VERSION_GIT_HASH} (dirty: ${STORM_VERSION_DIRTY}).")
+message(STATUS "Storm - version is ${STORM_VERSION_STRING} (version ${STORM_VERSION_MAJOR}.${STORM_VERSION_MINOR}.${STORM_VERSION_PATCH}${STORM_VERSION_LABEL_STRING} + ${STORM_VERSION_COMMITS_AHEAD} commits), building from git: ${STORM_VERSION_GIT_HASH} (dirty: ${STORM_VERSION_DIRTY}).")
 
 
 # Configure a header file to pass some of the CMake settings to the source code
@@ -475,5 +507,9 @@ set(STORM_TARGETS "")
 add_subdirectory(src)
 
 include(export)
+
+install(FILES ${CMAKE_BINARY_DIR}/stormConfig.install.cmake DESTINATION ${CMAKE_INSTALL_DIR} RENAME stormConfig.cmake)
+install(FILES ${CMAKE_BINARY_DIR}/stormConfigVersion.cmake DESTINATION ${CMAKE_INSTALL_DIR})
+install(EXPORT storm_Targets FILE stormTargets.cmake DESTINATION ${CMAKE_INSTALL_DIR})
 
 include(StormCPackConfig.cmake)

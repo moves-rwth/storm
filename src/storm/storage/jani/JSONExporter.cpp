@@ -455,6 +455,8 @@ namespace storm {
                     return "max";
                 case OpType::Power:
                     return "pow";
+                case OpType::Modulo:
+                    return "mod";
                 case OpType::Equal:
                     return "=";
                 case OpType::NotEqual:

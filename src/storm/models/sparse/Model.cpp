@@ -74,9 +74,9 @@ namespace storm {
                     STORM_LOG_THROW(!components.exitRates.is_initialized() || components.exitRates->size() == stateCount, storm::exceptions::IllegalArgumentException, "Size of exit rate vector does not match state count.");
                     STORM_LOG_THROW(this->isOfType(ModelType::Ctmc) || components.markovianStates.is_initialized(), storm::exceptions::IllegalArgumentException, "Can not create Markov Automaton: no Markovian states given.");
                 } else {
-                    STORM_LOG_ERROR_COND(!components.rateTransitions && !components.exitRates.is_initialized(), "Rates specified for discrete-time model. The rates will be ignored.");
+                    STORM_LOG_WARN_COND(!components.rateTransitions && !components.exitRates.is_initialized(), "Rates specified for discrete-time model. The rates will be ignored.");
                 }
-                STORM_LOG_ERROR_COND(this->isOfType(ModelType::MarkovAutomaton) || !components.markovianStates.is_initialized(), "Markovian states given for a model that is not a Markov automaton (will be ignored).");
+                STORM_LOG_WARN_COND(this->isOfType(ModelType::MarkovAutomaton) || !components.markovianStates.is_initialized(), "Markovian states given for a model that is not a Markov automaton (will be ignored).");
             }
             
             template<typename ValueType, typename RewardModelType>
@@ -423,11 +423,7 @@ namespace storm {
             
             template<typename ValueType, typename RewardModelType>
             bool Model<ValueType, RewardModelType>::supportsParameters() const {
-#ifdef STORM_HAVE_CARL
                 return std::is_same<ValueType, storm::RationalFunction>::value;
-#else
-		return false;
-#endif
             }
             
             template<typename ValueType, typename RewardModelType>

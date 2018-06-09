@@ -132,7 +132,6 @@ namespace storm {
             
             bool less(Distribution<ValueType, StateType> const& other, storm::utility::ConstantsComparator<ValueType> const& comparator) const;
             
-            
             /*!
              * Returns the probability of the given state
              * @param state The state for which the probability is returned.

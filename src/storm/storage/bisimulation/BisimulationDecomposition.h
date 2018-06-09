@@ -250,11 +250,16 @@ namespace storm {
              * @return The states with probability 0 and 1.
              */
             virtual std::pair<storm::storage::BitVector, storm::storage::BitVector> getStatesWithProbability01() = 0;
-            
+
             /*!
-             * Splits the initial partition based on the (unique) state reward vector of the model.
+             * Splits the initial partition based on the (unique) reward model of the current model.
              */
-            virtual void splitInitialPartitionBasedOnStateRewards();
+            virtual void splitInitialPartitionBasedOnRewards();
+
+            /*!
+             * Splits the initial partition based on the given reward vector.
+             */
+            virtual void splitInitialPartitionBasedOnRewards(std::vector<ValueType> const& rewardVector);
             
             /*!
              * Constructs the blocks of the decomposition object based on the current partition.

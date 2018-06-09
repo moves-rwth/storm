@@ -3,6 +3,8 @@
 @type: MDP
 @parameters
 
+@reward_models
+coinflips 
 @nr_states
 169
 @model

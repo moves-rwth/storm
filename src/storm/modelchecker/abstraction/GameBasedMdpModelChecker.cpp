@@ -131,7 +131,7 @@ namespace storm {
             std::unique_ptr<CheckResult> result;
             
             if (checkTask.isBoundSet()) {
-                // Despite having a bound, we create a quanitative result so that the next layer can perform the comparison.
+                // Despite having a bound, we create a quantitative result so that the next layer can perform the comparison.
                 
                 if (player2Direction == storm::OptimizationDirection::Minimize) {
                     if (storm::logic::isLowerBound(checkTask.getBoundComparisonType())) {
@@ -342,6 +342,11 @@ namespace storm {
             } else {
                 abstractor = std::make_shared<storm::abstraction::jani::JaniMenuGameAbstractor<Type, ValueType>>(preprocessedModel.asJaniModel(), smtSolverFactory);
             }
+            if (!constraintExpression.isTrue()) {
+                abstractor->addTerminalStates(!constraintExpression);
+            }
+            abstractor->addTerminalStates(targetStateExpression);
+            abstractor->setTargetStates(targetStateExpression);
             
             // Create a refiner that can be used to refine the abstraction when needed.
             storm::abstraction::MenuGameRefiner<Type, ValueType> refiner(*abstractor, smtSolverFactory->create(preprocessedModel.getManager()));
@@ -361,7 +366,7 @@ namespace storm {
                 auto abstractionStart = std::chrono::high_resolution_clock::now();
                 storm::abstraction::MenuGame<Type, ValueType> game = abstractor->abstract();
                 auto abstractionEnd = std::chrono::high_resolution_clock::now();
-                STORM_LOG_DEBUG("Abstraction in iteration " << iterations << " has " << game.getNumberOfStates() << " (player 1) states and " << game.getNumberOfTransitions() << " transitions (computed in " << std::chrono::duration_cast<std::chrono::milliseconds>(abstractionEnd - abstractionStart).count() << "ms).");
+                STORM_LOG_DEBUG("Abstraction in iteration " << iterations << " has " << game.getNumberOfStates() << " (player 1) states, " << game.getNumberOfTransitions() << " transitions, " << game.getBottomStates().getNonZeroCount() << " bottom states (computed in " << std::chrono::duration_cast<std::chrono::milliseconds>(abstractionEnd - abstractionStart).count() << "ms).");
                 
                 // (2) Prepare transition matrix BDD and target state BDD for later use.
                 storm::dd::Bdd<Type> transitionMatrixBdd = game.getTransitionMatrix().toBdd();

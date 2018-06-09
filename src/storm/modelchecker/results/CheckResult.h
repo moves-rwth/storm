@@ -111,7 +111,9 @@ namespace storm {
 
             template <storm::dd::DdType Type, typename ValueType>
             SymbolicParetoCurveCheckResult<Type, ValueType> const& asSymbolicParetoCurveCheckResult() const;
-            
+
+            virtual bool hasScheduler() const;
+
             virtual std::ostream& writeToStream(std::ostream& out) const = 0;
         };
         

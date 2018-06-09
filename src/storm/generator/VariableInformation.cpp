@@ -29,7 +29,16 @@ namespace storm {
             // Intentionally left empty.
         }
         
-        VariableInformation::VariableInformation(storm::prism::Program const& program) : totalBitOffset(0) {
+        VariableInformation::VariableInformation(storm::prism::Program const& program, bool outOfBoundsState) : totalBitOffset(0) {
+            if(outOfBoundsState) {
+                outOfBoundsBit = 0;
+                ++totalBitOffset;
+            } else {
+                outOfBoundsBit = boost::none;
+            }
+
+
+
             for (auto const& booleanVariable : program.getGlobalBooleanVariables()) {
                 booleanVariables.emplace_back(booleanVariable.getExpressionVariable(), totalBitOffset, true);
                 ++totalBitOffset;
@@ -37,6 +46,7 @@ namespace storm {
             for (auto const& integerVariable : program.getGlobalIntegerVariables()) {
                 int_fast64_t lowerBound = integerVariable.getLowerBoundExpression().evaluateAsInt();
                 int_fast64_t upperBound = integerVariable.getUpperBoundExpression().evaluateAsInt();
+                STORM_LOG_THROW(lowerBound <= upperBound, storm::exceptions::WrongFormatException, "Lower bound must not be above upper bound");
                 uint_fast64_t bitwidth = static_cast<uint_fast64_t>(std::ceil(std::log2(upperBound - lowerBound + 1)));
                 integerVariables.emplace_back(integerVariable.getExpressionVariable(), lowerBound, upperBound, totalBitOffset, bitwidth, true);
                 totalBitOffset += bitwidth;
@@ -49,6 +59,7 @@ namespace storm {
                 for (auto const& integerVariable : module.getIntegerVariables()) {
                     int_fast64_t lowerBound = integerVariable.getLowerBoundExpression().evaluateAsInt();
                     int_fast64_t upperBound = integerVariable.getUpperBoundExpression().evaluateAsInt();
+                    STORM_LOG_THROW(lowerBound <= upperBound, storm::exceptions::WrongFormatException, "Lower bound must not be above upper bound");
                     uint_fast64_t bitwidth = static_cast<uint_fast64_t>(std::ceil(std::log2(upperBound - lowerBound + 1)));
                     integerVariables.emplace_back(integerVariable.getExpressionVariable(), lowerBound, upperBound, totalBitOffset, bitwidth);
                     totalBitOffset += bitwidth;
@@ -58,7 +69,7 @@ namespace storm {
             sortVariables();
         }
         
-        VariableInformation::VariableInformation(storm::jani::Model const& model, std::vector<std::reference_wrapper<storm::jani::Automaton const>> const& parallelAutomata) : totalBitOffset(0) {
+        VariableInformation::VariableInformation(storm::jani::Model const& model, std::vector<std::reference_wrapper<storm::jani::Automaton const>> const& parallelAutomata, bool outOfBoundsState) : totalBitOffset(0) {
             // Check that the model does not contain non-transient unbounded integer or non-transient real variables.
             STORM_LOG_THROW(!model.getGlobalVariables().containsNonTransientRealVariables(), storm::exceptions::InvalidArgumentException, "Cannot build model from JANI model that contains global non-transient real variables.");
             STORM_LOG_THROW(!model.getGlobalVariables().containsNonTransientUnboundedIntegerVariables(), storm::exceptions::InvalidArgumentException, "Cannot build model from JANI model that contains non-transient unbounded integer variables.");
@@ -66,6 +77,14 @@ namespace storm {
                 STORM_LOG_THROW(!automaton.getVariables().containsNonTransientUnboundedIntegerVariables(), storm::exceptions::InvalidArgumentException, "Cannot build model from JANI model that contains non-transient unbounded integer variables in automaton '" << automaton.getName() << "'.");
                 STORM_LOG_THROW(!automaton.getVariables().containsNonTransientRealVariables(), storm::exceptions::InvalidArgumentException, "Cannot build model from JANI model that contains non-transient real variables in automaton '" << automaton.getName() << "'.");
             }
+            if(outOfBoundsState) {
+                outOfBoundsBit = 0;
+                ++totalBitOffset;
+            } else {
+                outOfBoundsBit = boost::none;
+            }
+
+
             
             for (auto const& variable : model.getGlobalVariables().getBooleanVariables()) {
                 if (!variable.isTransient()) {
@@ -114,11 +133,21 @@ namespace storm {
         
         uint_fast64_t VariableInformation::getTotalBitOffset(bool roundTo64Bit) const {
             uint_fast64_t result = totalBitOffset;
-            if (roundTo64Bit) {
+            if (roundTo64Bit & ((result & ((1ull << 6) - 1)) != 0)) {
                 result = ((result >> 6) + 1) << 6;
             }
             return result;
         }
+
+        bool VariableInformation::hasOutOfBoundsBit() const {
+            return outOfBoundsBit != boost::none;
+        }
+
+        uint64_t VariableInformation::getOutOfBoundsBit() const {
+            assert(hasOutOfBoundsBit());
+            return outOfBoundsBit.get();
+        }
+
         
         void VariableInformation::sortVariables() {
             // Sort the variables so we can make some assumptions when iterating over them (in the next-state generators).

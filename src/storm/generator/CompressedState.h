@@ -36,6 +36,8 @@ namespace storm {
          * @return A valuation that corresponds to the compressed state.
          */
         storm::expressions::SimpleValuation unpackStateIntoValuation(CompressedState const& state, VariableInformation const& variableInformation, storm::expressions::ExpressionManager const& manager);
+
+        CompressedState createOutOfBoundsState(VariableInformation const& varInfo, bool roundTo64Bit = true);
     }
 }
 

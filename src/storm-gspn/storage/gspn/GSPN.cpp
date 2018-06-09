@@ -6,8 +6,7 @@
 
 #include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidArgumentException.h"
-
-
+#include "storm-gspn/storage/gspn/GspnJsonExporter.h"
 
 namespace storm {
     namespace gspn {
@@ -396,6 +395,15 @@ namespace storm {
             this->transitionLayout = transitionLayout;
         }
 
+        std::map<uint64_t, LayoutInfo> const& GSPN::getPlaceLayoutInfos() const {
+            return this->placeLayout;
+        }
+
+        std::map<uint64_t, LayoutInfo> const& GSPN::getTransitionLayoutInfos() const {
+            return this->transitionLayout;
+        }
+
+
         void GSPN::toPnpro(std::ostream &stream) const {
             auto space = "  ";
             auto space2 = "    ";
@@ -525,6 +533,11 @@ namespace storm {
                 stream << space3 << "<initialMarking>" << std::endl;
                 stream << space4 << "<value>Default," << place.getNumberOfInitialTokens() << "</value>" << std::endl;
                 stream << space3 << "</initialMarking>" << std::endl;
+                if(place.hasRestrictedCapacity()) {
+                    stream << space3 << "<capacity>" << std::endl;
+                    stream << space4 << "<value>Default," << place.getCapacity() << "</value>" << std::endl;
+                    stream << space3 << "</capacity>" << std::endl;
+                }
                 stream << space2 << "</place>" << std::endl;
             }
 
@@ -607,9 +620,68 @@ namespace storm {
                 }
             }
 
+            // add arcs for immediate transitions
+            for (const auto &trans : timedTransitions) {
+                // add input arcs
+                for (auto const& inEntry : trans.getInputPlaces()) {
+                    stream << space2 << "<arc ";
+                    stream << "id=\"arc" << i++ << "\" ";
+                    stream << "source=\"" << places.at(inEntry.first).getName() << "\" ";
+                    stream << "target=\"" << trans.getName() << "\" ";
+                    stream << ">" << std::endl;
+
+                    stream << space3 << "<inscription>" << std::endl;
+                    stream << space4 << "<value>Default," << inEntry.second << "</value>" << std::endl;
+                    stream << space3 << "</inscription>" << std::endl;
+
+                    stream << space3 << "<type value=\"normal\" />" << std::endl;
+
+                    stream << space2 << "</arc>" << std::endl;
+                }
+
+                // add inhibition arcs
+                for (auto const& inhEntry : trans.getInhibitionPlaces()) {
+                    stream << space2 << "<arc ";
+                    stream << "id=\"arc" << i++ << "\" ";
+                    stream << "source=\"" << places.at(inhEntry.first).getName() << "\" ";
+                    stream << "target=\"" << trans.getName() << "\" ";
+                    stream << ">" << std::endl;
+
+                    stream << space3 << "<inscription>" << std::endl;
+                    stream << space4 << "<value>Default," << inhEntry.second << "</value>" << std::endl;
+                    stream << space3 << "</inscription>" << std::endl;
+
+                    stream << space3 << "<type value=\"inhibition\" />" << std::endl;
+
+                    stream << space2 << "</arc>" << std::endl;
+                }
+
+                // add output arcs
+                for (auto const& outEntry : trans.getOutputPlaces()) {
+                    stream << space2 << "<arc ";
+                    stream << "id=\"arc" << i++ << "\" ";
+                    stream << "source=\"" << trans.getName() << "\" ";
+                    stream << "target=\"" << places.at(outEntry.first).getName() << "\" ";
+                    stream << ">" << std::endl;
+
+                    stream << space3 << "<inscription>" << std::endl;
+                    stream << space4 << "<value>Default," << outEntry.second << "</value>" << std::endl;
+                    stream << space3 << "</inscription>" << std::endl;
+
+                    stream << space3 << "<type value=\"normal\" />" << std::endl;
+
+                    stream << space2 << "</arc>" << std::endl;
+                }
+            }
+
             stream << space << "</net>" << std::endl;
             stream << "</pnml>" << std::endl;
         }
+
+        void GSPN::toJson(std::ostream &stream) const {
+            return storm::gspn::GspnJsonExporter::toStream(*this, stream);
+        }
+
         
         void GSPN::writeStatsToStream(std::ostream& stream) const {
             stream << "Number of places: " << getNumberOfPlaces() << std::endl;

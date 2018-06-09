@@ -100,6 +100,13 @@ namespace storm {
                     expression.getSecondOperand()->accept(*this, data);
                     stream << ")";
                     break;
+                case BinaryNumericalFunctionExpression::OperatorType::Modulo:
+                    stream << "(";
+                    expression.getFirstOperand()->accept(*this, data);
+                    stream << "%";
+                    expression.getSecondOperand()->accept(*this, data);
+                    stream << ")";
+                    break;
                 case BinaryNumericalFunctionExpression::OperatorType::Max:
                     stream << "max(";
                     expression.getFirstOperand()->accept(*this, data);
@@ -213,7 +220,7 @@ namespace storm {
         }
         
         boost::any ToExprtkStringVisitor::visit(RationalLiteralExpression const& expression, boost::any const&) {
-            stream << "(" << expression.getValue() << ")";
+            stream << std::scientific << std::setprecision(std::numeric_limits<double>::max_digits10) << "(" << expression.getValueAsDouble() << ")";
             return boost::any();
         }
     }

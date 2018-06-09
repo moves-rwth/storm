@@ -211,7 +211,7 @@ namespace storm {
             /*!
              * Sets whether to produce schedulers (if supported).
              */
-            void setProduceSchedulers(bool produceSchedulers) {
+            void setProduceSchedulers(bool produceSchedulers = true) {
                 this->produceSchedulers = produceSchedulers;
             }
             

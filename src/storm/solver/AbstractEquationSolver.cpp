@@ -9,6 +9,7 @@
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 #include "storm/exceptions/UnmetRequirementException.h"
+#include "storm/exceptions/InvalidOperationException.h"
 
 namespace storm {
     namespace solver {
@@ -120,9 +121,32 @@ namespace storm {
         }
         
         template<typename ValueType>
+        ValueType AbstractEquationSolver<ValueType>::getLowerBound(bool convertLocalBounds) const {
+            if (lowerBound) {
+                return lowerBound.get();
+            } else if (convertLocalBounds) {
+                return *std::min_element(lowerBounds->begin(), lowerBounds->end());
+            }
+            STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "No lower bound available but some was requested.");
+            return ValueType();
+        }
+        
+        template<typename ValueType>
         ValueType const& AbstractEquationSolver<ValueType>::getUpperBound() const {
             return upperBound.get();
         }
+
+        template<typename ValueType>
+        ValueType AbstractEquationSolver<ValueType>::getUpperBound(bool convertLocalBounds) const {
+            if (upperBound) {
+                return upperBound.get();
+            } else if (convertLocalBounds) {
+                return *std::max_element(upperBounds->begin(), upperBounds->end());
+            }
+            STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "No upper bound available but some was requested.");
+            return ValueType();
+        }
+
         
         template<typename ValueType>
         std::vector<ValueType> const& AbstractEquationSolver<ValueType>::getLowerBounds() const {
@@ -249,11 +273,6 @@ namespace storm {
             }
         }
         
-        template<typename ValueType>
-        void AbstractEquationSolver<ValueType>::setPrecision(ValueType const& precision) {
-            STORM_LOG_DEBUG("Setting solver precision for a solver that does not support precisions.");
-        }
-
         template class AbstractEquationSolver<double>;
         template class AbstractEquationSolver<float>;
 
