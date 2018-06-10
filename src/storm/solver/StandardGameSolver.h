@@ -38,11 +38,9 @@ namespace storm {
             
             // Extracts the choices of the different players for the given solution x.
             // Returns true iff the newly extracted choices yield "better" values then the given choices for one of the players.
-            bool extractChoices(OptimizationDirection player1Dir, OptimizationDirection player2Dir, std::vector<ValueType> const& x, std::vector<ValueType> const& b, std::vector<ValueType>& player2ChoiceValues, std::vector<uint_fast64_t>& player1Choices, std::vector<uint_fast64_t>& player2Choices) const;
-            template<typename ComparePlayer1, typename ComparePlayer2>
-            bool extractChoices(std::vector<ValueType> const& x, std::vector<ValueType> const& b, std::vector<ValueType>& player2ChoiceValues, std::vector<uint_fast64_t>& player1Choices, std::vector<uint_fast64_t>& player2Choices) const;
+            bool extractChoices(Environment const& env, OptimizationDirection player1Dir, OptimizationDirection player2Dir, std::vector<ValueType> const& x, std::vector<ValueType> const& b, std::vector<ValueType>& player2ChoiceValues, std::vector<uint_fast64_t>& player1Choices, std::vector<uint_fast64_t>& player2Choices) const;
 
-            bool valueImproved(OptimizationDirection dir, ValueType const& value1, ValueType const& value2) const;
+            bool valueImproved(OptimizationDirection dir, ValueType const& precision, ValueType const& value1, ValueType const& value2) const;
             
             bool player1RepresentedByMatrix() const;
             storm::storage::SparseMatrix<storm::storage::sparse::state_type> const& getPlayer1Matrix() const;

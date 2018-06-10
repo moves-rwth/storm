@@ -177,7 +177,7 @@ namespace storm {
             do {
                 submatrixSolver->solveEquations(environmentOfSolver, x, subB);
 
-                bool schedulerImproved = extractChoices(player1Dir, player2Dir, x, b, *auxiliaryP2RowGroupVector, *player1Choices, *player2Choices);
+                bool schedulerImproved = extractChoices(environmentOfSolver, player1Dir, player2Dir, x, b, *auxiliaryP2RowGroupVector, *player1Choices, *player2Choices);
                 
                 // If the scheduler did not improve, we are done.
                 if (!schedulerImproved) {
@@ -230,11 +230,11 @@ namespace storm {
         }
         
         template<typename ValueType>
-        bool StandardGameSolver<ValueType>::valueImproved(OptimizationDirection dir, ValueType const& value1, ValueType const& value2) const {
+        bool StandardGameSolver<ValueType>::valueImproved(OptimizationDirection dir, ValueType const& precision, ValueType const& value1, ValueType const& value2) const {
             if (dir == OptimizationDirection::Minimize) {
-                return value2 < value1;
+                return value2 < value1 - precision;
             } else {
-                return value2 > value1;
+                return value2 > value1 + precision;
             }
         }
 
@@ -325,11 +325,11 @@ namespace storm {
             // If requested, we store the scheduler for retrieval.
             if (trackSchedulers && this->hasUniqueSolution()) {
                 if (trackingSchedulersInProvidedStorage) {
-                    extractChoices(player1Dir, player2Dir, x, b, *auxiliaryP2RowGroupVector, *player1Choices, *player2Choices);
+                    extractChoices(env, player1Dir, player2Dir, x, b, *auxiliaryP2RowGroupVector, *player1Choices, *player2Choices);
                 } else {
                     this->player1SchedulerChoices = std::vector<uint_fast64_t>(this->getNumberOfPlayer1States(), 0);
                     this->player2SchedulerChoices = std::vector<uint_fast64_t>(this->getNumberOfPlayer2States(), 0);
-                    extractChoices(player1Dir, player2Dir, x, b, *auxiliaryP2RowGroupVector, this->player1SchedulerChoices.get(), this->player2SchedulerChoices.get());
+                    extractChoices(env, player1Dir, player2Dir, x, b, *auxiliaryP2RowGroupVector, this->player1SchedulerChoices.get(), this->player2SchedulerChoices.get());
                 }
             }
             
@@ -398,31 +398,11 @@ namespace storm {
         }
 
         template<typename ValueType>
-        bool StandardGameSolver<ValueType>::extractChoices(OptimizationDirection player1Dir, OptimizationDirection player2Dir, std::vector<ValueType> const& x, std::vector<ValueType> const& b, std::vector<ValueType>& player2ChoiceValues, std::vector<uint_fast64_t>& player1Choices, std::vector<uint_fast64_t>& player2Choices) const {
-            if (player1Dir == storm::OptimizationDirection::Minimize) {
-                if (player2Dir == storm::OptimizationDirection::Minimize) {
-                    return extractChoices<storm::utility::ElementLess<ValueType>, storm::utility::ElementLess<ValueType>>(x, b, player2ChoiceValues, player1Choices, player2Choices);
-                } else {
-                    return extractChoices<storm::utility::ElementLess<ValueType>, storm::utility::ElementGreater<ValueType>>(x, b, player2ChoiceValues, player1Choices, player2Choices);
-                }
-            } else {
-                if (player2Dir == storm::OptimizationDirection::Minimize) {
-                    return extractChoices<storm::utility::ElementGreater<ValueType>, storm::utility::ElementLess<ValueType>>(x, b, player2ChoiceValues, player1Choices, player2Choices);
-                } else {
-                    return extractChoices<storm::utility::ElementGreater<ValueType>, storm::utility::ElementGreater<ValueType>>(x, b, player2ChoiceValues, player1Choices, player2Choices);
-                }
-            }
-            
-            return false;
-        }
-        
-        template<typename ValueType>
-        template<typename ComparePlayer1, typename ComparePlayer2>
-        bool StandardGameSolver<ValueType>::extractChoices(std::vector<ValueType> const& x, std::vector<ValueType> const& b, std::vector<ValueType>& player2ChoiceValues, std::vector<uint_fast64_t>& player1Choices, std::vector<uint_fast64_t>& player2Choices) const {
-            
-            ComparePlayer1 comparePlayer1;
-            ComparePlayer2 comparePlayer2;
-            
+        bool StandardGameSolver<ValueType>::extractChoices(Environment const& env, OptimizationDirection player1Dir, OptimizationDirection player2Dir, std::vector<ValueType> const& x, std::vector<ValueType> const& b, std::vector<ValueType>& player2ChoiceValues, std::vector<uint_fast64_t>& player1Choices, std::vector<uint_fast64_t>& player2Choices) const {
+
+            std::pair<boost::optional<storm::RationalNumber>, boost::optional<bool>> precisionInfo = env.solver().getPrecisionOfLinearEquationSolver(env.solver().getLinearEquationSolverType());
+            ValueType precision = storm::utility::convertNumber<ValueType>(precisionInfo.first.get());
+
             // get the choices of player 2 and the corresponding values.
             bool schedulerImproved = false;
             auto currentValueIt = player2ChoiceValues.begin();
@@ -448,8 +428,9 @@ namespace storm {
                         choiceValue += entry.getValue() * x[entry.getColumn()];
                     }
                     choiceValue += b[firstRowInGroup + p2Choice];
-                        
-                    if (comparePlayer2(choiceValue, *currentValueIt)) {
+                    
+                    if (valueImproved(player2Dir, precision, *currentValueIt, choiceValue)) {
+//                        std::cout << std::setprecision(30) << "improving player 2 choice at " << p2Group << " from " << player2Choices[p2Group] << " to " << p2Choice << " because " << choiceValue << " is better than " << *currentValueIt << std::endl;
                         schedulerImproved = true;
                         player2Choices[p2Group] = p2Choice;
                         *currentValueIt = std::move(choiceValue);
@@ -471,7 +452,7 @@ namespace storm {
                             continue;
                         }
                         ValueType const& choiceValue = player2ChoiceValues[this->getPlayer1Matrix().getRow(firstRowInGroup + p1Choice).begin()->getColumn()];
-                        if (comparePlayer1(choiceValue, currentValue)) {
+                        if (valueImproved(player1Dir, precision, currentValue, choiceValue)) {
                             schedulerImproved = true;
                             player1Choices[p1Group] = p1Choice;
                             currentValue = choiceValue;
@@ -486,12 +467,13 @@ namespace storm {
                     uint64_t numberOfPlayer2Successors = this->getPlayer1Grouping()[player1State + 1] - this->getPlayer1Grouping()[player1State];
                     for (uint64_t player2State = 0; player2State < numberOfPlayer2Successors; ++player2State) {
                         // If the choice is the currently selected one, we can skip it.
-                        if (currentChoice == player2State + this->getPlayer1Grouping()[player1State]) {
+                        if (currentChoice == player2State) {
                             continue;
                         }
                         
                         ValueType const& choiceValue = player2ChoiceValues[this->getPlayer1Grouping()[player1State] + player2State];
-                        if (comparePlayer1(choiceValue, currentValue)) {
+                        if (valueImproved(player1Dir, precision, currentValue, choiceValue)) {
+//                            std::cout << std::setprecision(30) << "improving player 2 choice at " << player1State << " from " << player1Choices[player1State] << " to " << player2State << " because " << choiceValue << " is better than " << currentValue << std::endl;
                             schedulerImproved = true;
                             player1Choices[player1State] = player2State;
                             currentValue = choiceValue;
