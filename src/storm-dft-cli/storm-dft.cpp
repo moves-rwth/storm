@@ -5,6 +5,7 @@
 #include "storm-dft/settings/modules/FaultTreeSettings.h"
 #include "storm/settings/modules/IOSettings.h"
 #include "storm/settings/modules/ResourceSettings.h"
+#include "storm/settings/modules/GeneralSettings.h"
 
 #include "storm/utility/initialize.h"
 #include "storm-cli-utilities/cli.h"
