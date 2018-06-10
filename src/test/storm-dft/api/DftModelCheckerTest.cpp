@@ -2,6 +2,7 @@
 #include "storm-config.h"
 
 #include "storm-dft/api/storm-dft.h"
+#include "storm-parsers/api/storm-parsers.h"
 
 namespace {
 
