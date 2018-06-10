@@ -62,7 +62,15 @@ namespace storm {
         template<storm::dd::DdType Type, typename ModelType>
         GameBasedMdpModelChecker<Type, ModelType>::GameBasedMdpModelChecker(storm::storage::SymbolicModelDescription const& model, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory) : smtSolverFactory(smtSolverFactory), comparator(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getPrecision() * 2, storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getRelativeTerminationCriterion()), reuseQualitativeResults(false), reuseQuantitativeResults(false), solveMode(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getSolveMode()), debug(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isDebugSet()) {
 
-            STORM_LOG_WARN_COND(!model.hasUndefinedConstants(), "Model contains undefined constants. Game-based abstraction can treat such models, but you should make sure that you did not simply forget to define these constants. In particular, it may be necessary to constrain the values of the undefined constants.");
+            if (model.hasUndefinedConstants()) {
+                auto undefinedConstants = model.getUndefinedConstants();
+                std::vector<std::string> undefinedConstantNames;
+                for (auto undefinedConstant : undefinedConstants) {
+                    undefinedConstantNames.emplace_back(undefinedConstant.getName());
+                }
+                
+                STORM_LOG_WARN_COND(!model.hasUndefinedConstants(), "Model contains undefined constants (" << boost::algorithm::join(undefinedConstantNames, ",") << "). Game-based abstraction can treat such models, but you should make sure that you did not simply forget to define these constants. In particular, it may be necessary to constrain the values of the undefined constants.");
+            }
             
             if (model.isPrismProgram()) {
                 storm::prism::Program const& originalProgram = model.asPrismProgram();
@@ -664,7 +672,7 @@ namespace storm {
                 // In this case, we know the result for the initial states for both player 2 minimizing and maximizing.
                 STORM_LOG_TRACE("No initial state is a 'maybe' state.");
                 
-                STORM_LOG_INFO("Obtained qualitative bounds [0, 1] on the actual value for the initial states. Refining abstraction based on qualitative check.");
+                STORM_LOG_INFO("Obtained qualitative bounds [0, 1] on the actual value for the initial states (after " << totalWatch.getTimeInMilliseconds() << "ms in iteration " << this->iteration << "). Refining abstraction based on qualitative check.");
                 
                 // If we get here, the initial states were all identified as prob0/1 states, but the value (0 or 1)
                 // depends on whether player 2 is minimizing or maximizing. Therefore, we need to find a place to refine.
@@ -708,9 +716,9 @@ namespace storm {
                 ValueType minVal = quantitativeResult.min.getInitialStatesRange().first;
                 ValueType maxVal = quantitativeResult.max.getInitialStatesRange().second;
                 if (std::is_same<ValueType, double>::value) {
-                    STORM_LOG_INFO("Obtained quantitative bounds [" << minVal << ", " << maxVal << "] on the actual value for the initial states in " << quantitativeWatch.getTimeInMilliseconds() << "ms.");
+                    STORM_LOG_INFO("Obtained quantitative bounds [" << minVal << ", " << maxVal << "] on the actual value for the initial states in " << quantitativeWatch.getTimeInMilliseconds() << "ms (after " << totalWatch.getTimeInMilliseconds() << "ms in iteration " << this->iteration << ").");
                 } else {
-                    STORM_LOG_INFO("Obtained quantitative bounds [" << minVal << ", " << maxVal << "] (approx. [" << storm::utility::convertNumber<double>(minVal) << ", " << storm::utility::convertNumber<double>(maxVal) << "]) on the actual value for the initial states in " << quantitativeWatch.getTimeInMilliseconds() << "ms.");
+                    STORM_LOG_INFO("Obtained quantitative bounds [" << minVal << ", " << maxVal << "] (approx. [" << storm::utility::convertNumber<double>(minVal) << ", " << storm::utility::convertNumber<double>(maxVal) << "]) on the actual value for the initial states in " << quantitativeWatch.getTimeInMilliseconds() << "ms (after " << totalWatch.getTimeInMilliseconds() << "ms in iteration " << this->iteration << ").");
                 }
 
                 
@@ -1259,7 +1267,7 @@ namespace storm {
                 // In this case, we know the result for the initial states for both player 2 minimizing and maximizing.
                 STORM_LOG_TRACE("No initial state is a 'maybe' state.");
                 
-                STORM_LOG_INFO("Obtained qualitative bounds [0, 1] on the actual value for the initial states. Refining abstraction based on qualitative check.");
+                STORM_LOG_INFO("Obtained qualitative bounds [0, 1] on the actual value for the initial states (after " << totalWatch.getTimeInMilliseconds() << "ms in iteration " << this->iteration << "). Refining abstraction based on qualitative check.");
                 
                 // Post-process strategies for better refinements.
                 storm::utility::Stopwatch strategyProcessingWatch(true);
@@ -1312,9 +1320,9 @@ namespace storm {
                 ValueType minVal = quantitativeResult.getMin().getRange(initialStates).first;
                 ValueType maxVal = quantitativeResult.getMax().getRange(initialStates).second;
                 if (std::is_same<ValueType, double>::value) {
-                    STORM_LOG_INFO("Obtained quantitative bounds [" << minVal << ", " << maxVal << "] on the actual value for the initial states in " << quantitativeWatch.getTimeInMilliseconds() << "ms.");
+                    STORM_LOG_INFO("Obtained quantitative bounds [" << minVal << ", " << maxVal << "] on the actual value for the initial states in " << quantitativeWatch.getTimeInMilliseconds() << "ms (after " << totalWatch.getTimeInMilliseconds() << "ms in iteration " << this->iteration << ").");
                 } else {
-                    STORM_LOG_INFO("Obtained quantitative bounds [" << minVal << ", " << maxVal << "] (approx. [" << storm::utility::convertNumber<double>(minVal) << ", " << storm::utility::convertNumber<double>(maxVal) << "]) on the actual value for the initial states in " << quantitativeWatch.getTimeInMilliseconds() << "ms.");
+                    STORM_LOG_INFO("Obtained quantitative bounds [" << minVal << ", " << maxVal << "] (approx. [" << storm::utility::convertNumber<double>(minVal) << ", " << storm::utility::convertNumber<double>(maxVal) << "]) on the actual value for the initial states in " << quantitativeWatch.getTimeInMilliseconds() << "ms (after " << totalWatch.getTimeInMilliseconds() << "ms in iteration " << this->iteration << ").");
                 }
                 
                 // (9) Check whether the lower and upper bounds are close enough to terminate with an answer.

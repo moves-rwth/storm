@@ -10,11 +10,19 @@ namespace storm {
         }
         
         Stopwatch::SecondType Stopwatch::getTimeInSeconds() const {
-            return std::chrono::duration_cast<std::chrono::seconds>(accumulatedTime).count();
+            auto time = accumulatedTime;
+            if (!this->stopped()) {
+                time += std::chrono::high_resolution_clock::now() - startOfCurrentMeasurement;
+            }
+            return std::chrono::duration_cast<std::chrono::seconds>(time).count();
         }
         
         Stopwatch::MilisecondType Stopwatch::getTimeInMilliseconds() const {
-            return std::chrono::duration_cast<std::chrono::milliseconds>(accumulatedTime).count();
+            auto time = accumulatedTime;
+            if (!this->stopped()) {
+                time += std::chrono::high_resolution_clock::now() - startOfCurrentMeasurement;
+            }
+            return std::chrono::duration_cast<std::chrono::milliseconds>(time).count();
         }
         
         Stopwatch::NanosecondType Stopwatch::getTimeInNanoseconds() const {

@@ -106,7 +106,7 @@ namespace storm {
                     STORM_LOG_INFO("Iterative solver converged after " << iter.get_iteration() << " iterations.");
                     return true;
                 } else {
-                    STORM_LOG_WARN("Iterative solver did not converge.");
+                    STORM_LOG_WARN("Iterative solver did not converge after " << iter.get_iteration() << " iterations.");
                     return false;
                 }
             }
