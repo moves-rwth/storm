@@ -1387,7 +1387,10 @@ namespace storm {
                 std::vector<storm::expressions::Expression> formulae;
                 boost::container::flat_set<uint_fast64_t> unknownReachableLabels;
                 std::set_difference(reachableLabels.begin(), reachableLabels.end(), relevancyInformation.knownLabels.begin(), relevancyInformation.knownLabels.end(), std::inserter(unknownReachableLabels, unknownReachableLabels.end()));
-                for (auto label : unknownReachableLabels) {
+                boost::container::flat_set<uint64_t> unknownReachableMinimalityLabels;
+                std::set_intersection(unknownReachableLabels.begin(), unknownReachableLabels.end(), relevancyInformation.minimalityLabels.begin(), relevancyInformation.minimalityLabels.end(), std::inserter(unknownReachableMinimalityLabels, unknownReachableMinimalityLabels.end()));
+
+                for (auto label : unknownReachableMinimalityLabels) {
                     formulae.push_back(!variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(label)));
                 }
                 for (auto const& cutLabelSet : cutLabels) {
@@ -1488,7 +1491,10 @@ namespace storm {
                 std::vector<storm::expressions::Expression> formulae;
                 boost::container::flat_set<uint_fast64_t> unknownReachableLabels;
                 std::set_difference(reachableLabels.begin(), reachableLabels.end(), relevancyInformation.knownLabels.begin(), relevancyInformation.knownLabels.end(), std::inserter(unknownReachableLabels, unknownReachableLabels.end()));
-                for (auto label : unknownReachableLabels) {
+                boost::container::flat_set<uint64_t> unknownReachableMinimalityLabels;
+                std::set_intersection(unknownReachableLabels.begin(), unknownReachableLabels.end(), relevancyInformation.minimalityLabels.begin(), relevancyInformation.minimalityLabels.end(), std::inserter(unknownReachableMinimalityLabels, unknownReachableMinimalityLabels.end()));
+
+                for (auto label : unknownReachableMinimalityLabels) {
                     formulae.push_back(!variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(label)));
                 }
                 for (auto const& cutLabelSet : cutLabels) {
