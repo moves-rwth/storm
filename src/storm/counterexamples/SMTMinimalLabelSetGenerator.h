@@ -49,14 +49,20 @@ namespace storm {
                 
                 // The set of labels that matter in terms of minimality.
                 boost::container::flat_set<uint_fast64_t> minimalityLabels;
-                
+
                 // A set of labels that is definitely known to be taken in the final solution.
                 boost::container::flat_set<uint_fast64_t> knownLabels;
+
+                boost::container::flat_set<uint64_t> dontCareLabels;
                 
                 // A list of relevant choices for each relevant state.
                 std::map<uint_fast64_t, std::list<uint_fast64_t>> relevantChoicesForRelevantStates;
             };
-            
+
+            struct GeneratorStats {
+
+            };
+
             struct VariableInformation {
                 // The manager responsible for the constraints we are building.
                 std::shared_ptr<storm::expressions::ExpressionManager> manager;
@@ -154,10 +160,12 @@ namespace storm {
                     std::set_difference(relevancyInformation.relevantLabels.begin(), relevancyInformation.relevantLabels.end(), relevancyInformation.knownLabels.begin(), relevancyInformation.knownLabels.end(), std::inserter(remainingLabels, remainingLabels.end()));
                     relevancyInformation.relevantLabels = remainingLabels;
                 }
-                
+
+                relevancyInformation.dontCareLabels = dontCareLabels;
                 std::set_difference(relevancyInformation.relevantLabels.begin(), relevancyInformation.relevantLabels.end(), dontCareLabels.begin(), dontCareLabels.end(), std::inserter(relevancyInformation.minimalityLabels, relevancyInformation.minimalityLabels.begin()));
                 
                 STORM_LOG_DEBUG("Found " << relevancyInformation.relevantLabels.size() << " relevant and " << relevancyInformation.knownLabels.size() << " known labels.");
+                STORM_LOG_DEBUG("Found " << relevancyInformation.minimalityLabels.size() << " labels to minize over.");
                 return relevancyInformation;
             }
             
@@ -649,10 +657,11 @@ namespace storm {
                             
                             // Popping the disjunction of negated guards from the solver stack.
                             localSolver->pop();
+                            STORM_LOG_ERROR_COND(backwardImplicationAdded, "Error in adding cuts for counterexample generation (backward implication misses a label set).");
                         } else {
                             STORM_LOG_DEBUG("Selection is enabled in initial state.");
                         }
-                        STORM_LOG_ERROR_COND(backwardImplicationAdded, "Error in adding cuts for counterexample generation (backward implication misses a label set).");
+
                     }
                 } else if (symbolicModel.isJaniModel()) {
                     STORM_LOG_WARN("Model uses assignment levels, did not assert backward implications.");
@@ -1316,7 +1325,7 @@ namespace storm {
              * in order to satisfy the constraint system.
              * @return The smallest set of labels such that the constraint system of the solver is satisfiable.
              */
-            static boost::container::flat_set<uint_fast64_t> findSmallestCommandSet(storm::solver::SmtSolver& solver, VariableInformation& variableInformation, uint_fast64_t& currentBound) {
+            static boost::optional<boost::container::flat_set<uint_fast64_t>> findSmallestCommandSet(storm::solver::SmtSolver& solver, VariableInformation& variableInformation, uint_fast64_t& currentBound) {
                 // Check if we can find a solution with the current bound.
                 storm::expressions::Expression assumption = !variableInformation.auxiliaryVariables.back();
 
@@ -1331,6 +1340,10 @@ namespace storm {
                     solver.add(variableInformation.auxiliaryVariables.back());
                     variableInformation.auxiliaryVariables.push_back(assertLessOrEqualKRelaxed(solver, variableInformation, ++currentBound));
                     assumption = !variableInformation.auxiliaryVariables.back();
+                    if (currentBound > (1 << variableInformation.minimalityLabelVariables.size())) {
+                        STORM_LOG_DEBUG("Constraint system fully explored: Bound exceeds maximum of " << (1 << variableInformation.minimalityLabelVariables.size()));
+                        return boost::none;
+                    }
                 }
                 
                 // At this point we know that the constraint system was satisfiable, so compute the induced label
@@ -1342,17 +1355,38 @@ namespace storm {
                 std::vector<storm::expressions::Expression> formulae;
                 
                 boost::container::flat_set<uint_fast64_t> unknownLabels;
-                std::set_difference(labelSet.begin(), labelSet.end(), relevancyInformation.knownLabels.begin(), relevancyInformation.knownLabels.end(), std::inserter(unknownLabels, unknownLabels.end()));
+                std::set_intersection(labelSet.begin(), labelSet.end(), relevancyInformation.minimalityLabels.begin(), relevancyInformation.minimalityLabels.end(), std::inserter(unknownLabels, unknownLabels.end()));
+
+                //std::set_difference(labelSet.begin(), labelSet.end(), relevancyInformation.knownLabels.begin(), relevancyInformation.knownLabels.end(), std::inserter(unknownLabels, unknownLabels.end()));
                 for (auto const& label : unknownLabels) {
                     formulae.emplace_back(!variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(label)));
                 }
+
                 boost::container::flat_set<uint_fast64_t> remainingLabels;
-                std::set_difference(relevancyInformation.relevantLabels.begin(), relevancyInformation.relevantLabels.end(), labelSet.begin(), labelSet.end(), std::inserter(remainingLabels, remainingLabels.end()));
+                //std::set_difference(relevancyInformation.relevantLabels.begin(), relevancyInformation.relevantLabels.end(), labelSet.begin(), labelSet.end(), std::inserter(remainingLabels, remainingLabels.end()));
+                std::set_difference(relevancyInformation.minimalityLabels.begin(), relevancyInformation.minimalityLabels.end(), labelSet.begin(), labelSet.end(), std::inserter(remainingLabels, remainingLabels.end()));
+
                 for (auto const& label : remainingLabels) {
                     formulae.emplace_back(variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(label)));
                 }
                 
                 STORM_LOG_DEBUG("Ruling out single solution.");
+                assertDisjunction(solver, formulae, *variableInformation.manager);
+            }
+
+            static void ruleOutBiggerSolutions(storm::solver::SmtSolver& solver, boost::container::flat_set<uint_fast64_t> const& labelSet, VariableInformation& variableInformation, RelevancyInformation const& relevancyInformation) {
+                std::vector<storm::expressions::Expression> formulae;
+
+                boost::container::flat_set<uint_fast64_t> unknownLabels;
+                std::set_intersection(labelSet.begin(), labelSet.end(), relevancyInformation.minimalityLabels.begin(), relevancyInformation.minimalityLabels.end(), std::inserter(unknownLabels, unknownLabels.end()));
+
+                //std::set_difference(labelSet.begin(), labelSet.end(), relevancyInformation.knownLabels.begin(), relevancyInformation.knownLabels.end(), std::inserter(unknownLabels, unknownLabels.end()));
+                for (auto const& label : unknownLabels) {
+                    formulae.emplace_back(!variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(label)));
+                }
+
+
+                STORM_LOG_DEBUG("Ruling out set of solutions.");
                 assertDisjunction(solver, formulae, *variableInformation.manager);
             }
             
@@ -1664,6 +1698,9 @@ namespace storm {
                 bool encodeReachability;
                 bool useDynamicConstraints;
                 bool silent = false;
+                uint64_t continueAfterFirstCounterexampleUntil = 0;
+                uint64_t maximumCounterexamples = 1;
+                uint64_t multipleCounterexampleSizeCap = 100000000;
             };
             
             /*!
@@ -1677,8 +1714,9 @@ namespace storm {
              * @param strictBound Indicates whether the threshold needs to be achieved (true) or exceeded (false).
              * @param options A set of options for customization.
              */
-            static boost::container::flat_set<uint_fast64_t> getMinimalLabelSet(Environment const& env, storm::storage::SymbolicModelDescription const& symbolicModel, storm::models::sparse::Model<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, double probabilityThreshold, bool strictBound, boost::container::flat_set<uint_fast64_t> const& dontCareLabels = boost::container::flat_set<uint_fast64_t>(), Options const& options = Options()) {
+            static std::vector<boost::container::flat_set<uint_fast64_t>> getMinimalLabelSet(Environment const& env, storm::storage::SymbolicModelDescription const& symbolicModel, storm::models::sparse::Model<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, double probabilityThreshold, bool strictBound, boost::container::flat_set<uint_fast64_t> const& dontCareLabels = boost::container::flat_set<uint_fast64_t>(), Options const& options = Options()) {
 #ifdef STORM_HAVE_Z3
+                std::vector<boost::container::flat_set<uint_fast64_t>> result;
                 // Set up all clocks used for time measurement.
                 auto totalClock = std::chrono::high_resolution_clock::now();
                 auto timeOfLastMessage = std::chrono::high_resolution_clock::now();
@@ -1762,10 +1800,10 @@ namespace storm {
                 
                 // If there are no relevant labels, return directly.
                 if (relevancyInformation.relevantLabels.empty()) {
-                    return commandSet;
+                    return {commandSet};
                 } else if (relevancyInformation.minimalityLabels.empty()) {
                     commandSet.insert(relevancyInformation.relevantLabels.begin(), relevancyInformation.relevantLabels.end());
-                    return commandSet;
+                    return {commandSet};
                 }
                 
                 // Set up some variables for the iterations.
@@ -1775,17 +1813,31 @@ namespace storm {
                 uint_fast64_t currentBound = 0;
                 maximalReachabilityProbability = 0;
                 uint_fast64_t zeroProbabilityCount = 0;
+                uint64_t smallestCounterexampleSize = model.getNumberOfChoices(); // Definitive u
                 uint64_t progressDelay = storm::settings::getModule<storm::settings::modules::GeneralSettings>().getShowProgressDelay();
                 do {
                     STORM_LOG_DEBUG("Computing minimal command set.");
                     solverClock = std::chrono::high_resolution_clock::now();
-                    commandSet = findSmallestCommandSet(*solver, variableInformation, currentBound);
+                    boost::optional<boost::container::flat_set<uint_fast64_t>> smallest = findSmallestCommandSet(*solver, variableInformation, currentBound);
                     totalSolverTime += std::chrono::high_resolution_clock::now() - solverClock;
-                    STORM_LOG_DEBUG("Computed minimal command set of size " <<  commandSet.size() + relevancyInformation.knownLabels.size() << " (" << commandSet.size() << " + " << relevancyInformation.knownLabels.size() << ") ");
+                    if(smallest == boost::none) {
+                        STORM_LOG_DEBUG("No further counterexamples.");
+                        break;
+                    } else {
+                        commandSet = smallest.get();
+                    }
+                    STORM_LOG_DEBUG("Computed minimal command with bound " << currentBound <<  " and set of size " <<  commandSet.size() + relevancyInformation.knownLabels.size() << " (" << commandSet.size() << " + " << relevancyInformation.knownLabels.size() << ") ");
                     
                     // Restrict the given model to the current set of labels and compute the reachability probability.
                     modelCheckingClock = std::chrono::high_resolution_clock::now();
                     commandSet.insert(relevancyInformation.knownLabels.begin(), relevancyInformation.knownLabels.end());
+                    commandSet.insert(relevancyInformation.dontCareLabels.begin(), relevancyInformation.dontCareLabels.end());
+                    if (commandSet.size() > smallestCounterexampleSize + options.continueAfterFirstCounterexampleUntil || (result.size() > 1 && commandSet.size() > options.multipleCounterexampleSizeCap)  ) {
+                        STORM_LOG_DEBUG("No further counterexamples of similar size.");
+                        break;
+                    }
+
+
                     auto subChoiceOrigins = restrictModelToLabelSet(model, commandSet);
                     std::shared_ptr<storm::models::sparse::Model<T>> const& subModel = subChoiceOrigins.first;
                     std::vector<boost::container::flat_set<uint_fast64_t>> const& subLabelSets = subChoiceOrigins.second;
@@ -1818,7 +1870,17 @@ namespace storm {
                             ruleOutSingleSolution(*solver, commandSet, variableInformation, relevancyInformation);
                         }
                     } else {
-                        done = true;
+                        STORM_LOG_DEBUG("Found a counterexample.");
+                        result.push_back(commandSet);
+                        if (options.maximumCounterexamples > result.size()) {
+                            STORM_LOG_DEBUG("Exclude counterexample for future.");
+                            ruleOutBiggerSolutions(*solver, commandSet, variableInformation, relevancyInformation);
+
+                        } else {
+                            STORM_LOG_DEBUG("Stop searching for further counterexamples.");
+                            done = true;
+                        }
+
                     }
                     totalAnalysisTime += (std::chrono::high_resolution_clock::now() - analysisClock);
                     ++iterations;
@@ -1828,10 +1890,10 @@ namespace storm {
                     if (static_cast<uint64_t>(durationSinceLastMessage) >= progressDelay || lastSize < commandSet.size()) {
                         auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(now - totalClock).count();
                         if (lastSize < commandSet.size()) {
-                            std::cout << "Improved lower bound to " << commandSet.size() << " after " << milliseconds << "ms." << std::endl;
+                            std::cout << "Improved lower bound to " << currentBound << " after " << milliseconds << "ms." << std::endl;
                             lastSize = commandSet.size();
                         } else {
-                            std::cout << "Lower bound on label set size is " << commandSet.size() << " after " << milliseconds << "ms (checked " << iterations << " models, " << zeroProbabilityCount << " could not reach the target set)." << std::endl;
+                            std::cout << "Lower bound on label set size is " << currentBound << " after " << milliseconds << "ms (checked " << iterations << " models, " << zeroProbabilityCount << " could not reach the target set)." << std::endl;
                             timeOfLastMessage = std::chrono::high_resolution_clock::now();
                         }
                     }
@@ -1863,7 +1925,7 @@ namespace storm {
                     std::cout << "    * number of models that could not reach a target state: " << zeroProbabilityCount << " (" << 100 * static_cast<double>(zeroProbabilityCount)/iterations << "%)" << std::endl << std::endl;
                 }
 
-                return commandSet;
+                return result;
 #else
                 throw storm::exceptions::NotImplementedException() << "This functionality is unavailable since storm has been compiled without support for Z3.";
 #endif
@@ -1953,7 +2015,7 @@ namespace storm {
 
             }
 
-            static boost::container::flat_set<uint_fast64_t> computeCounterexampleLabelSet(Environment const& env, storm::storage::SymbolicModelDescription const& symbolicModel, storm::models::sparse::Model<T> const& model, std::shared_ptr<storm::logic::Formula const> const& formula, boost::container::flat_set<uint_fast64_t> const& dontCareLabels = boost::container::flat_set<uint_fast64_t>(),  Options const& options = Options(true)) {
+            static std::vector<boost::container::flat_set<uint_fast64_t>> computeCounterexampleLabelSet(Environment const& env, storm::storage::SymbolicModelDescription const& symbolicModel, storm::models::sparse::Model<T> const& model, std::shared_ptr<storm::logic::Formula const> const& formula, boost::container::flat_set<uint_fast64_t> const& dontCareLabels = boost::container::flat_set<uint_fast64_t>(),  Options const& options = Options(true)) {
                 STORM_LOG_THROW(model.isOfType(storm::models::ModelType::Dtmc) || model.isOfType(storm::models::ModelType::Mdp), storm::exceptions::NotSupportedException, "MaxSAT-based counterexample generation is supported only for discrete-time models.");
                 if (!options.silent) {
                     std::cout << std::endl << "Generating minimal label counterexample for formula " << *formula << std::endl;
@@ -2025,28 +2087,36 @@ namespace storm {
 
                 // Delegate the actual computation work to the function of equal name.
                 auto startTime = std::chrono::high_resolution_clock::now();
-                auto labelSet = getMinimalLabelSet(env, symbolicModel, model, phiStates, psiStates, threshold, strictBound, dontCareLabels, options);
+                auto labelSets = getMinimalLabelSet(env, symbolicModel, model, phiStates, psiStates, threshold, strictBound, dontCareLabels, options);
                 auto endTime = std::chrono::high_resolution_clock::now();
                 if (!options.silent) {
-                    std::cout << std::endl << "Computed minimal label set of size " << labelSet.size() << " in " << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << "ms." << std::endl;
+                    for (auto const& labelSet : labelSets) {
+                         std::cout << std::endl << "Computed minimal label set of size " << labelSet.size();
+
+                    }
+                    std::cout << std::endl << " in " << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << "ms." << std::endl;
+
                 }
 
                 // Extend the command set properly.
-                if (lowerBoundedFormula) {
-                    extendLabelSetLowerBound(model, labelSet, phiStates, psiStates, options.silent);
+                for (auto& labelSet : labelSets) {
+                    if (lowerBoundedFormula) {
+                        extendLabelSetLowerBound(model, labelSet, phiStates, psiStates, options.silent);
+                    }
                 }
-                return labelSet;
+                return labelSets;
             }
 
             static std::shared_ptr<HighLevelCounterexample> computeCounterexample(Environment const& env, storm::storage::SymbolicModelDescription const& symbolicModel, storm::models::sparse::Model<T> const& model, std::shared_ptr<storm::logic::Formula const> const& formula) {
 #ifdef STORM_HAVE_Z3
-                auto labelSet = computeCounterexampleLabelSet(env, symbolicModel, model, formula);
-                
+                auto labelSets = computeCounterexampleLabelSet(env, symbolicModel, model, formula);
+
+
                 if (symbolicModel.isPrismProgram()) {
-                    return std::make_shared<HighLevelCounterexample>(symbolicModel.asPrismProgram().restrictCommands(labelSet));
+                    return std::make_shared<HighLevelCounterexample>(symbolicModel.asPrismProgram().restrictCommands(labelSets[0]));
                 } else {
                     STORM_LOG_ASSERT(symbolicModel.isJaniModel(), "Unknown symbolic model description type.");
-                    return std::make_shared<HighLevelCounterexample>(symbolicModel.asJaniModel().restrictEdges(labelSet));
+                    return std::make_shared<HighLevelCounterexample>(symbolicModel.asJaniModel().restrictEdges(labelSets[0]));
                 }
 #else
                 throw storm::exceptions::NotImplementedException() << "This functionality is unavailable since storm has been compiled without support for Z3.";
