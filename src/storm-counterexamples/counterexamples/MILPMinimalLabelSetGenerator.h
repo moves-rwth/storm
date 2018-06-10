@@ -17,7 +17,7 @@
 
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 
-#include "storm/counterexamples/HighLevelCounterexample.h"
+#include "storm-counterexamples/counterexamples/HighLevelCounterexample.h"
 
 #include "storm/utility/graph.h"
 #include "storm/utility/counterexamples.h"
@@ -29,7 +29,7 @@
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GeneralSettings.h"
-#include "storm/settings/modules/CounterexampleGeneratorSettings.h"
+#include "storm-counterexamples/settings/modules/CounterexampleGeneratorSettings.h"
 
 namespace storm {
     

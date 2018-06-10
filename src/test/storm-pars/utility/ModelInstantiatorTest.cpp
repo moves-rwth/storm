@@ -16,6 +16,7 @@
 #include "storm/models/sparse/Model.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
+#include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 
 TEST(ModelInstantiatorTest, BrpProb) {
     carl::VariablePool::getInstance().clear();

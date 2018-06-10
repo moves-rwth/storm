@@ -1,4 +1,3 @@
-#include <storm/settings/modules/CounterexampleGeneratorSettings.h>
 #include "storm-pars/settings/ParsSettings.h"
 
 #include "storm-pars/settings/modules/ParametricSettings.h"
@@ -38,7 +37,6 @@ namespace storm {
             storm::settings::addModule<storm::settings::modules::ParametricSettings>();
             storm::settings::addModule<storm::settings::modules::RegionSettings>();
             storm::settings::addModule<storm::settings::modules::BuildSettings>();
-            storm::settings::addModule<storm::settings::modules::CounterexampleGeneratorSettings>();
             storm::settings::addModule<storm::settings::modules::ModelCheckerSettings>();
             storm::settings::addModule<storm::settings::modules::DebugSettings>();
             storm::settings::addModule<storm::settings::modules::SylvanSettings>();

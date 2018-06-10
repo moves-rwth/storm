@@ -1,4 +1,4 @@
-#include "storm/settings/modules/CounterexampleGeneratorSettings.h"
+#include "CounterexampleGeneratorSettings.h"
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/exceptions/InvalidSettingsException.h"

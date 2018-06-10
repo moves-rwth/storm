@@ -2,6 +2,8 @@
 
 #include "storm/api/storm.h"
 
+#include "storm-counterexamples/api/counterexamples.h"
+
 #include "storm/utility/resources.h"
 #include "storm/utility/file.h"
 #include "storm/utility/storm-version.h"

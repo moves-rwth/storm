@@ -49,6 +49,8 @@ namespace storm {
             storm::cli::printHeader("Storm", argc, argv);
             storm::settings::initializeAll("Storm", "storm");
 
+            storm::settings::addModule<storm::settings::modules::CounterexampleGeneratorSettings>();
+
             storm::utility::Stopwatch totalTimer(true);
             if (!storm::cli::parseOptions(argc, argv)) {
                 return -1;

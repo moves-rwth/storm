@@ -1,4 +1,4 @@
-#include "storm/api/counterexamples.h"
+#include "storm-counterexamples/api/counterexamples.h"
 
 #include "storm/environment/Environment.h"
 
