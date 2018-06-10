@@ -20,7 +20,7 @@ set(STORM_TARGETS ${STORM_TARGETS} PARENT_SCOPE)
 target_link_libraries(storm-counterexamples PUBLIC storm)
 
 # Install storm headers to include directory.
-foreach(HEADER ${STORM_DFT_HEADERS})
+foreach(HEADER ${STORM_CEX_HEADERS})
 	string(REGEX REPLACE "${PROJECT_SOURCE_DIR}/src/?" "" RELATIVE_HEADER_PATH ${HEADER})
 	string(REGEX MATCH "(.*)[/\\]" RELATIVE_DIRECTORY ${RELATIVE_HEADER_PATH})
 	string(REGEX REPLACE "${RELATIVE_DIRECTORY}/?" "" HEADER_FILENAME ${RELATIVE_HEADER_PATH})
