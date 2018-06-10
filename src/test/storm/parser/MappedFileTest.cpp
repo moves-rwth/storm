@@ -9,7 +9,7 @@
 #include "storm-config.h"
 
 #include <string>
-#include "storm/parser/MappedFile.h"
+#include "storm-parsers/parser/MappedFile.h"
 #include "storm/utility/cstring.h"
 #include "storm/utility/file.h"
 #include "storm/exceptions/FileIoException.h"

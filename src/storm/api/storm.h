@@ -1,6 +1,5 @@
 #pragma once
 
-#include "storm/api/model_descriptions.h"
 #include "storm/api/properties.h"
 #include "storm/api/builder.h"
 #include "storm/api/bisimulation.h"

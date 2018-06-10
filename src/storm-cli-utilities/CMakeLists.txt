@@ -17,7 +17,7 @@ set_target_properties(storm-cli-utilities PROPERTIES DEFINE_SYMBOL "")
 list(APPEND STORM_TARGETS storm-cli-utilities)
 set(STORM_TARGETS ${STORM_TARGETS} PARENT_SCOPE)
 
-target_link_libraries(storm-cli-utilities PUBLIC storm storm-counterexamples)
+target_link_libraries(storm-cli-utilities PUBLIC storm storm-counterexamples storm-parsers)
 
 # Install storm headers to include directory.
 foreach(HEADER ${STORM_CLI_UTIL_HEADERS})

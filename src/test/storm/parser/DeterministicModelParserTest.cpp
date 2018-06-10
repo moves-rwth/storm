@@ -2,7 +2,7 @@
 #include "storm-config.h"
 
 #include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/parser/DeterministicModelParser.h"
+#include "storm-parsers/parser/DeterministicModelParser.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/exceptions/FileIoException.h"

@@ -14,6 +14,7 @@
 #include "storm/settings/modules/MultiObjectiveSettings.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/api/storm.h"
+#include "storm-parsers/api/storm-parsers.h"
 
 #include "storm/environment/Environment.h"
 

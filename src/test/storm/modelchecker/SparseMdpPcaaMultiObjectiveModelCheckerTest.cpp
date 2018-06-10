@@ -10,6 +10,7 @@
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/api/storm.h"
+#include "storm-parsers/api/storm-parsers.h"
 #include "storm/environment/Environment.h"
 
 TEST(SparseMdpPcaaMultiObjectiveModelCheckerTest, consensus) {

@@ -3,6 +3,7 @@
 #include "storm/api/storm.h"
 
 #include "storm-counterexamples/api/counterexamples.h"
+#include "storm-parsers/api/storm-parsers.h"
 
 #include "storm/utility/resources.h"
 #include "storm/utility/file.h"

@@ -3,7 +3,7 @@
 
 #include "storm/builder/ExplicitModelBuilder.h"
 #include "storm/models/sparse/Dtmc.h"
-#include "storm/parser/PrismParser.h"
+#include "storm-parsers/parser/PrismParser.h"
 #include "storm/storage/SymbolicModelDescription.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/shortestPaths.h"

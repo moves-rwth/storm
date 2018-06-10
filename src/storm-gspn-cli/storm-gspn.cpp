@@ -14,7 +14,7 @@
 #include "api/storm.h"
 #include "storm-cli-utilities/cli.h"
 
-#include "storm/parser/FormulaParser.h"
+#include "storm-parsers/parser/FormulaParser.h"
 
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/jani/Model.h"

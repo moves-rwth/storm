@@ -7,6 +7,8 @@
 #include "storm/settings/modules/ResourceSettings.h"
 #include "storm/settings/modules/GeneralSettings.h"
 
+
+#include "storm-parsers/api/storm-parsers.h"
 #include "storm/utility/initialize.h"
 #include "storm-cli-utilities/cli.h"
 
