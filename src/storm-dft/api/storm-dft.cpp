@@ -1,6 +1,7 @@
 #include "storm-dft/api/storm-dft.h"
 
 #include "storm-dft/settings/modules/FaultTreeSettings.h"
+#include "storm-dft/settings/modules/DftGspnSettings.h"
 
 namespace storm {
     namespace api {
@@ -29,13 +30,11 @@ namespace storm {
 
         template<>
         void transformToGSPN(storm::storage::DFT<double> const& dft) {
-            // TODO make choosable
-            bool smart = true;
-            bool mergeDCFailed = true;
+            storm::settings::modules::FaultTreeSettings const& ftSettings = storm::settings::getModule<storm::settings::modules::FaultTreeSettings>();
+            storm::settings::modules::DftGspnSettings const& dftGspnSettings = storm::settings::getModule<storm::settings::modules::DftGspnSettings>();
 
             // Set Don't Care elements
             std::set<uint64_t> dontCareElements;
-            storm::settings::modules::FaultTreeSettings const& ftSettings = storm::settings::getModule<storm::settings::modules::FaultTreeSettings>();
             if (!ftSettings.isDisableDC()) {
                 // Insert all elements as Don't Care elements
                 for (std::size_t i = 0; i < dft.nrElements(); i++) {
@@ -46,7 +45,7 @@ namespace storm {
             // Transform to GSPN
             storm::transformations::dft::DftToGspnTransformator<double> gspnTransformator(dft);
             auto priorities = gspnTransformator.computePriorities();
-            gspnTransformator.transform(priorities, dontCareElements, smart, mergeDCFailed);
+            gspnTransformator.transform(priorities, dontCareElements, !dftGspnSettings.isDisableSmartTransformation(), dftGspnSettings.isMergeDCFailed());
             storm::gspn::GSPN* gspn = gspnTransformator.obtainGSPN();
             uint64_t toplevelFailedPlace = gspnTransformator.toplevelFailedPlaceId();
 
@@ -55,7 +54,7 @@ namespace storm {
 
             std::shared_ptr<storm::expressions::ExpressionManager> const& exprManager = gspn->getExpressionManager();
             storm::builder::JaniGSPNBuilder builder(*gspn);
-            storm::jani::Model* model =  builder.build();
+            storm::jani::Model* model = builder.build();
             storm::jani::Variable const& topfailedVar = builder.getPlaceVariable(toplevelFailedPlace);
 
             storm::expressions::Expression targetExpression = exprManager->integer(1) == topfailedVar.getExpressionVariable().getExpression();
