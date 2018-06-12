@@ -23,7 +23,7 @@ namespace storm {
                 this->priorities = priorities;
                 this->dontCareElements = dontCareElements;
                 this->smart = smart;
-                this->mergedDCFailed = false;//mergeDCFailed;
+                this->mergedDCFailed = mergeDCFailed;
                 this->dontCarePriority = 1;
                 builder.setGspnName("DftToGspnTransformation");
 
