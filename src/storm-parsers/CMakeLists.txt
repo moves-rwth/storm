@@ -10,7 +10,7 @@ file(GLOB_RECURSE STORM_PARSER_HEADERS ${PROJECT_SOURCE_DIR}/src/storm-parsers/*
 
 # Disable Debug compiler flags for PrismParser to lessen memory consumption during compilation
 SET_SOURCE_FILES_PROPERTIES(${PROJECT_SOURCE_DIR}/src/storm-parsers/parser/PrismParser.cpp PROPERTIES COMPILE_FLAGS -g0)
-# Create storm-dft.
+# Create storm-parsers.
 add_library(storm-parsers SHARED ${STORM_PARSER_SOURCES} ${STORM_PARSER_HEADERS})
 
 # Remove define symbol for shared libstorm.
