@@ -40,7 +40,7 @@ namespace storm {
             // Returns true iff the newly extracted choices yield "better" values then the given choices for one of the players.
             bool extractChoices(Environment const& env, OptimizationDirection player1Dir, OptimizationDirection player2Dir, std::vector<ValueType> const& x, std::vector<ValueType> const& b, std::vector<ValueType>& player2ChoiceValues, std::vector<uint_fast64_t>& player1Choices, std::vector<uint_fast64_t>& player2Choices) const;
 
-            bool valueImproved(OptimizationDirection dir, ValueType const& precision, ValueType const& value1, ValueType const& value2) const;
+            bool valueImproved(OptimizationDirection dir, storm::utility::ConstantsComparator<ValueType> const& comparator, ValueType const& value1, ValueType const& value2) const;
             
             bool player1RepresentedByMatrix() const;
             storm::storage::SparseMatrix<storm::storage::sparse::state_type> const& getPlayer1Matrix() const;
@@ -75,6 +75,10 @@ namespace storm {
             std::vector<uint64_t> const* player1Grouping;
             storm::storage::SparseMatrix<storm::storage::sparse::state_type> const* player1Matrix;
             storm::storage::SparseMatrix<ValueType> const& player2Matrix;
+            
+            /// A flag indicating whether the linear equation solver is exact. This influences how choices are updated
+            /// in policy iteration.
+            bool linearEquationSolverIsExact;
         };
     }
 }

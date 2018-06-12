@@ -7,6 +7,10 @@
 
 #include "storm/environment/solver/GameSolverEnvironment.h"
 
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/GeneralSettings.h"
+
+#include "storm/utility/ConstantsComparator.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/vector.h"
 #include "storm/utility/macros.h"
@@ -18,23 +22,31 @@ namespace storm {
     namespace solver {
         
         template<typename ValueType>
-        StandardGameSolver<ValueType>::StandardGameSolver(storm::storage::SparseMatrix<storm::storage::sparse::state_type> const& player1Matrix, storm::storage::SparseMatrix<ValueType> const& player2Matrix, std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory) : linearEquationSolverFactory(std::move(linearEquationSolverFactory)), localPlayer1Grouping(nullptr), localPlayer1Matrix(nullptr), localPlayer2Matrix(nullptr), player1Grouping(nullptr), player1Matrix(&player1Matrix), player2Matrix(player2Matrix) {
-            // Intentionally left empty.
+        StandardGameSolver<ValueType>::StandardGameSolver(storm::storage::SparseMatrix<storm::storage::sparse::state_type> const& player1Matrix, storm::storage::SparseMatrix<ValueType> const& player2Matrix, std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory) : linearEquationSolverFactory(std::move(linearEquationSolverFactory)), localPlayer1Grouping(nullptr), localPlayer1Matrix(nullptr), localPlayer2Matrix(nullptr), player1Grouping(nullptr), player1Matrix(&player1Matrix), player2Matrix(player2Matrix), linearEquationSolverIsExact(false) {
+
+            // Determine whether the linear equation solver is assumed to produce exact results.
+            linearEquationSolverIsExact = storm::settings::getModule<storm::settings::modules::GeneralSettings>().isExactSet();
         }
         
         template<typename ValueType>
-        StandardGameSolver<ValueType>::StandardGameSolver(storm::storage::SparseMatrix<storm::storage::sparse::state_type>&& player1Matrix, storm::storage::SparseMatrix<ValueType>&& player2Matrix, std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory) : linearEquationSolverFactory(std::move(linearEquationSolverFactory)), localPlayer1Grouping(nullptr), localPlayer1Matrix(std::make_unique<storm::storage::SparseMatrix<storm::storage::sparse::state_type>>(std::move(player1Matrix))), localPlayer2Matrix(std::make_unique<storm::storage::SparseMatrix<ValueType>>(std::move(player2Matrix))), player1Grouping(nullptr), player1Matrix(localPlayer1Matrix.get()), player2Matrix(*localPlayer2Matrix) {
-            // Intentionally left empty.
+        StandardGameSolver<ValueType>::StandardGameSolver(storm::storage::SparseMatrix<storm::storage::sparse::state_type>&& player1Matrix, storm::storage::SparseMatrix<ValueType>&& player2Matrix, std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory) : linearEquationSolverFactory(std::move(linearEquationSolverFactory)), localPlayer1Grouping(nullptr), localPlayer1Matrix(std::make_unique<storm::storage::SparseMatrix<storm::storage::sparse::state_type>>(std::move(player1Matrix))), localPlayer2Matrix(std::make_unique<storm::storage::SparseMatrix<ValueType>>(std::move(player2Matrix))), player1Grouping(nullptr), player1Matrix(localPlayer1Matrix.get()), player2Matrix(*localPlayer2Matrix), linearEquationSolverIsExact(false) {
+
+            // Determine whether the linear equation solver is assumed to produce exact results.
+            linearEquationSolverIsExact = storm::settings::getModule<storm::settings::modules::GeneralSettings>().isExactSet();
         }
         
         template<typename ValueType>
-        StandardGameSolver<ValueType>::StandardGameSolver(std::vector<uint64_t> const& player1Grouping, storm::storage::SparseMatrix<ValueType> const& player2Matrix, std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory) : linearEquationSolverFactory(std::move(linearEquationSolverFactory)), localPlayer1Grouping(nullptr), localPlayer1Matrix(nullptr), localPlayer2Matrix(nullptr), player1Grouping(&player1Grouping), player1Matrix(nullptr), player2Matrix(player2Matrix) {
-            
+        StandardGameSolver<ValueType>::StandardGameSolver(std::vector<uint64_t> const& player1Grouping, storm::storage::SparseMatrix<ValueType> const& player2Matrix, std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory) : linearEquationSolverFactory(std::move(linearEquationSolverFactory)), localPlayer1Grouping(nullptr), localPlayer1Matrix(nullptr), localPlayer2Matrix(nullptr), player1Grouping(&player1Grouping), player1Matrix(nullptr), player2Matrix(player2Matrix), linearEquationSolverIsExact(false) {
+
+            // Determine whether the linear equation solver is assumed to produce exact results.
+            linearEquationSolverIsExact = storm::settings::getModule<storm::settings::modules::GeneralSettings>().isExactSet();
         }
         
         template<typename ValueType>
-        StandardGameSolver<ValueType>::StandardGameSolver(std::vector<uint64_t>&& player1Grouping, storm::storage::SparseMatrix<ValueType>&& player2Matrix, std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory) : linearEquationSolverFactory(std::move(linearEquationSolverFactory)), localPlayer1Grouping(std::make_unique<std::vector<uint64_t>>(std::move(player1Grouping))), localPlayer1Matrix(nullptr), localPlayer2Matrix(std::make_unique<storm::storage::SparseMatrix<ValueType>>(std::move(player2Matrix))), player1Grouping(localPlayer1Grouping.get()), player1Matrix(nullptr), player2Matrix(*localPlayer2Matrix) {
-            // Intentionally left empty.
+        StandardGameSolver<ValueType>::StandardGameSolver(std::vector<uint64_t>&& player1Grouping, storm::storage::SparseMatrix<ValueType>&& player2Matrix, std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory) : linearEquationSolverFactory(std::move(linearEquationSolverFactory)), localPlayer1Grouping(std::make_unique<std::vector<uint64_t>>(std::move(player1Grouping))), localPlayer1Matrix(nullptr), localPlayer2Matrix(std::make_unique<storm::storage::SparseMatrix<ValueType>>(std::move(player2Matrix))), player1Grouping(localPlayer1Grouping.get()), player1Matrix(nullptr), player2Matrix(*localPlayer2Matrix), linearEquationSolverIsExact(false) {
+
+            // Determine whether the linear equation solver is assumed to produce exact results.
+            linearEquationSolverIsExact = storm::settings::getModule<storm::settings::modules::GeneralSettings>().isExactSet();
         }
         
         template<typename ValueType>
@@ -177,6 +189,7 @@ namespace storm {
             do {
                 submatrixSolver->solveEquations(environmentOfSolver, x, subB);
 
+                // Check whether we can improve local choices.
                 bool schedulerImproved = extractChoices(environmentOfSolver, player1Dir, player2Dir, x, b, *auxiliaryP2RowGroupVector, *player1Choices, *player2Choices);
                 
                 // If the scheduler did not improve, we are done.
@@ -230,11 +243,11 @@ namespace storm {
         }
         
         template<typename ValueType>
-        bool StandardGameSolver<ValueType>::valueImproved(OptimizationDirection dir, ValueType const& precision, ValueType const& value1, ValueType const& value2) const {
+        bool StandardGameSolver<ValueType>::valueImproved(OptimizationDirection dir, storm::utility::ConstantsComparator<ValueType> const& comparator, ValueType const& value1, ValueType const& value2) const {
             if (dir == OptimizationDirection::Minimize) {
-                return value2 < value1 - precision;
+                return comparator.isLess(value2, value1);
             } else {
-                return value2 > value1 + precision;
+                return comparator.isLess(value1, value2);
             }
         }
 
@@ -399,18 +412,17 @@ namespace storm {
 
         template<typename ValueType>
         bool StandardGameSolver<ValueType>::extractChoices(Environment const& env, OptimizationDirection player1Dir, OptimizationDirection player2Dir, std::vector<ValueType> const& x, std::vector<ValueType> const& b, std::vector<ValueType>& player2ChoiceValues, std::vector<uint_fast64_t>& player1Choices, std::vector<uint_fast64_t>& player2Choices) const {
-
-            std::pair<boost::optional<storm::RationalNumber>, boost::optional<bool>> precisionInfo = env.solver().getPrecisionOfLinearEquationSolver(env.solver().getLinearEquationSolverType());
-            ValueType precision = storm::utility::convertNumber<ValueType>(precisionInfo.first.get());
-
+            
+            storm::utility::ConstantsComparator<ValueType> comparator(linearEquationSolverIsExact ? storm::utility::zero<ValueType>() : storm::utility::convertNumber<ValueType>(env.solver().getPrecisionOfLinearEquationSolver(env.solver().getLinearEquationSolverType()).first.get()), false);
+            
             // get the choices of player 2 and the corresponding values.
             bool schedulerImproved = false;
             auto currentValueIt = player2ChoiceValues.begin();
-            for (uint_fast64_t p2Group = 0; p2Group < this->player2Matrix.getRowGroupCount(); ++p2Group) {
+            for (uint_fast64_t p2Group = 0; p2Group < this->player2Matrix.getRowGroupCount(); ++p2Group, ++currentValueIt) {
                 uint_fast64_t firstRowInGroup = this->player2Matrix.getRowGroupIndices()[p2Group];
                 uint_fast64_t rowGroupSize = this->player2Matrix.getRowGroupIndices()[p2Group + 1] - firstRowInGroup;
                 
-                // We need to check whether the scheduler improved. Therefore, we first have to evaluate the current choice
+                // We need to check whether the scheduler improved. Therefore, we first have to evaluate the current choice.
                 uint_fast64_t currentP2Choice = player2Choices[p2Group];
                 *currentValueIt = storm::utility::zero<ValueType>();
                 for (auto const& entry : this->player2Matrix.getRow(firstRowInGroup + currentP2Choice)) {
@@ -418,7 +430,7 @@ namespace storm {
                 }
                 *currentValueIt += b[firstRowInGroup + currentP2Choice];
                 
-                // now check the other choices
+                // Now check other choices improve the value.
                 for (uint_fast64_t p2Choice = 0; p2Choice < rowGroupSize; ++p2Choice) {
                     if (p2Choice == currentP2Choice) {
                         continue;
@@ -428,9 +440,8 @@ namespace storm {
                         choiceValue += entry.getValue() * x[entry.getColumn()];
                     }
                     choiceValue += b[firstRowInGroup + p2Choice];
-                    
-                    if (valueImproved(player2Dir, precision, *currentValueIt, choiceValue)) {
-//                        std::cout << std::setprecision(30) << "improving player 2 choice at " << p2Group << " from " << player2Choices[p2Group] << " to " << p2Choice << " because " << choiceValue << " is better than " << *currentValueIt << std::endl;
+
+                    if (valueImproved(player2Dir, comparator, *currentValueIt, choiceValue)) {
                         schedulerImproved = true;
                         player2Choices[p2Group] = p2Choice;
                         *currentValueIt = std::move(choiceValue);
@@ -452,7 +463,7 @@ namespace storm {
                             continue;
                         }
                         ValueType const& choiceValue = player2ChoiceValues[this->getPlayer1Matrix().getRow(firstRowInGroup + p1Choice).begin()->getColumn()];
-                        if (valueImproved(player1Dir, precision, currentValue, choiceValue)) {
+                        if (valueImproved(player1Dir, comparator, currentValue, choiceValue)) {
                             schedulerImproved = true;
                             player1Choices[p1Group] = p1Choice;
                             currentValue = choiceValue;
@@ -463,7 +474,7 @@ namespace storm {
                 // Player 1 represented by grouping of player 2 states (vector).
                 for (uint64_t player1State = 0; player1State < this->getPlayer1Grouping().size() - 1; ++player1State) {
                     uint64_t currentChoice = player1Choices[player1State];
-                    ValueType currentValue = player2ChoiceValues[currentChoice];
+                    ValueType currentValue = player2ChoiceValues[this->getPlayer1Grouping()[player1State] + currentChoice];
                     uint64_t numberOfPlayer2Successors = this->getPlayer1Grouping()[player1State + 1] - this->getPlayer1Grouping()[player1State];
                     for (uint64_t player2State = 0; player2State < numberOfPlayer2Successors; ++player2State) {
                         // If the choice is the currently selected one, we can skip it.
@@ -472,8 +483,7 @@ namespace storm {
                         }
                         
                         ValueType const& choiceValue = player2ChoiceValues[this->getPlayer1Grouping()[player1State] + player2State];
-                        if (valueImproved(player1Dir, precision, currentValue, choiceValue)) {
-//                            std::cout << std::setprecision(30) << "improving player 2 choice at " << player1State << " from " << player1Choices[player1State] << " to " << player2State << " because " << choiceValue << " is better than " << currentValue << std::endl;
+                        if (valueImproved(player1Dir, comparator, currentValue, choiceValue)) {
                             schedulerImproved = true;
                             player1Choices[player1State] = player2State;
                             currentValue = choiceValue;

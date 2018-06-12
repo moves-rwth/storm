@@ -549,7 +549,6 @@ namespace storm {
             STORM_LOG_THROW(checkTask.isOnlyInitialStatesRelevantSet(), storm::exceptions::InvalidPropertyException, "The game-based abstraction refinement model checker can only compute the result for the initial states.");
 
             // Optimization: do not compute both bounds if not necessary (e.g. if bound given and exceeded, etc.)
-
             totalWatch.start();
             
             // Set up initial predicates.
