@@ -39,7 +39,8 @@ namespace storm {
                 std::map<uint64_t, uint64_t> priorities;
                 for (std::size_t i = 0; i < mDft.nrElements(); i++) {
                     // Give all elements the same priority
-                    priorities[i] = 2;
+                    priorities[i] = (-(mDft.getElement(i)->rank()) + mDft.maxRank()) * 2 + 2;
+
                 }
                 return priorities;
             }
@@ -525,7 +526,7 @@ namespace storm {
 
                 // Set priority lower if the PAND is exclusive
                 uint64_t tFailed = builder.addImmediateTransition(
-                        inclusive ? getFailPriority(dftPand) : getFailPriority(dftPand) - 1, 0.0,
+                        /*inclusive ? getFailPriority(dftPand) : */getFailPriority(dftPand) - 1, 0.0,
                         dftPand->name() + STR_FAILING);
                 builder.setTransitionLayoutInfo(tFailed, storm::gspn::LayoutInfo(xcenter + 3.0, ycenter + 3.0));
                 builder.addInhibitionArc(failedPlace, tFailed);
@@ -662,7 +663,7 @@ namespace storm {
 
                 // Set priority lower if the POR is exclusive
                 uint64_t tFailed = builder.addImmediateTransition(
-                        inclusive ? getFailPriority(dftPor) : getFailPriority(dftPor) - 1, 0.0,
+                        /*inclusive ? getFailPriority(dftPor) : */getFailPriority(dftPor) - 1, 0.0,
                         dftPor->name() + STR_FAILING);
                 builder.setTransitionLayoutInfo(tFailed, storm::gspn::LayoutInfo(xcenter + 3.0, ycenter + 3.0));
                 builder.addOutputArc(tFailed, failedPlace);
