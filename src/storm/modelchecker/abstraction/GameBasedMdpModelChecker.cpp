@@ -711,15 +711,19 @@ namespace storm {
                 if (result) {
                     return result;
                 }
-                                
+                
                 ValueType minVal = quantitativeResult.min.getInitialStatesRange().first;
                 ValueType maxVal = quantitativeResult.max.getInitialStatesRange().second;
+                ValueType difference = maxVal - minVal;
                 if (std::is_same<ValueType, double>::value) {
-                    STORM_LOG_INFO("Obtained quantitative bounds [" << minVal << ", " << maxVal << "] on the actual value for the initial states in " << quantitativeWatch.getTimeInMilliseconds() << "ms (after " << totalWatch.getTimeInMilliseconds() << "ms in iteration " << this->iteration << ").");
+                    std::stringstream differenceStream;
+                    differenceStream.setf(std::ios::fixed, std::ios::floatfield);
+                    differenceStream.precision(15);
+                    differenceStream << difference;
+                    STORM_LOG_INFO("Obtained quantitative bounds [" << minVal << ", " << maxVal << "] (difference " << differenceStream.str() << ") on the actual value for the initial states in " << quantitativeWatch.getTimeInMilliseconds() << "ms (after " << totalWatch.getTimeInMilliseconds() << "ms in iteration " << this->iteration << ").");
                 } else {
-                    STORM_LOG_INFO("Obtained quantitative bounds [" << minVal << ", " << maxVal << "] (approx. [" << storm::utility::convertNumber<double>(minVal) << ", " << storm::utility::convertNumber<double>(maxVal) << "]) on the actual value for the initial states in " << quantitativeWatch.getTimeInMilliseconds() << "ms (after " << totalWatch.getTimeInMilliseconds() << "ms in iteration " << this->iteration << ").");
+                    STORM_LOG_INFO("Obtained quantitative bounds [" << minVal << ", " << maxVal << "] (approx. [" << storm::utility::convertNumber<double>(minVal) << ", " << storm::utility::convertNumber<double>(maxVal) << "], difference " << difference << ") on the actual value for the initial states in " << quantitativeWatch.getTimeInMilliseconds() << "ms (after " << totalWatch.getTimeInMilliseconds() << "ms in iteration " << this->iteration << ").");
                 }
-
                 
                 // (9) Check whether the lower and upper bounds are close enough to terminate with an answer.
                 result = checkForResultAfterQuantitativeCheck<ValueType>(quantitativeResult.min.getInitialStatesRange().first, quantitativeResult.max.getInitialStatesRange().second, comparator);
@@ -1318,10 +1322,15 @@ namespace storm {
                 
                 ValueType minVal = quantitativeResult.getMin().getRange(initialStates).first;
                 ValueType maxVal = quantitativeResult.getMax().getRange(initialStates).second;
+                ValueType difference = maxVal - minVal;
                 if (std::is_same<ValueType, double>::value) {
-                    STORM_LOG_INFO("Obtained quantitative bounds [" << minVal << ", " << maxVal << "] on the actual value for the initial states in " << quantitativeWatch.getTimeInMilliseconds() << "ms (after " << totalWatch.getTimeInMilliseconds() << "ms in iteration " << this->iteration << ").");
+                    std::stringstream differenceStream;
+                    differenceStream.setf(std::ios::fixed, std::ios::floatfield);
+                    differenceStream.precision(15);
+                    differenceStream << difference;
+                    STORM_LOG_INFO("Obtained quantitative bounds [" << minVal << ", " << maxVal << "] (difference " << differenceStream.str() << ") on the actual value for the initial states in " << quantitativeWatch.getTimeInMilliseconds() << "ms (after " << totalWatch.getTimeInMilliseconds() << "ms in iteration " << this->iteration << ").");
                 } else {
-                    STORM_LOG_INFO("Obtained quantitative bounds [" << minVal << ", " << maxVal << "] (approx. [" << storm::utility::convertNumber<double>(minVal) << ", " << storm::utility::convertNumber<double>(maxVal) << "]) on the actual value for the initial states in " << quantitativeWatch.getTimeInMilliseconds() << "ms (after " << totalWatch.getTimeInMilliseconds() << "ms in iteration " << this->iteration << ").");
+                    STORM_LOG_INFO("Obtained quantitative bounds [" << minVal << ", " << maxVal << "] (approx. [" << storm::utility::convertNumber<double>(minVal) << ", " << storm::utility::convertNumber<double>(maxVal) << "], difference " << difference << ") on the actual value for the initial states in " << quantitativeWatch.getTimeInMilliseconds() << "ms (after " << totalWatch.getTimeInMilliseconds() << "ms in iteration " << this->iteration << ").");
                 }
                 
                 // (9) Check whether the lower and upper bounds are close enough to terminate with an answer.
