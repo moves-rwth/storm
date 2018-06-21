@@ -10,11 +10,13 @@
 #include "storm/modelchecker/multiobjective/pcaa/SparsePcaaQuantitativeQuery.h"
 #include "storm/modelchecker/multiobjective/pcaa/SparsePcaaParetoQuery.h"
 #include "storm/modelchecker/multiobjective/constraintbased/SparseCbAchievabilityQuery.h"
+#include "storm/modelchecker/multiobjective/deterministicScheds/DeterministicParetoExplorer.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/utility/Stopwatch.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/InvalidEnvironmentException.h"
 
 
 namespace storm {
@@ -28,7 +30,7 @@ namespace storm {
                 STORM_LOG_ASSERT(model.getInitialStates().getNumberOfSetBits() == 1, "Multi-objective Model checking on model with multiple initial states is not supported.");
                 
                 // If we consider an MA, ensure that it is closed
-                if(model.isOfType(storm::models::ModelType::MarkovAutomaton)) {
+                if (model.isOfType(storm::models::ModelType::MarkovAutomaton)) {
                     STORM_LOG_THROW(dynamic_cast<storm::models::sparse::MarkovAutomaton<typename SparseModelType::ValueType> const *>(&model)->isClosed(), storm::exceptions::InvalidArgumentException, "Unable to check multi-objective formula on non-closed Markov automaton.");
                 }
                 
@@ -49,31 +51,41 @@ namespace storm {
                 switch (method) {
                     case MultiObjectiveMethod::Pcaa:
                     {
-                        std::unique_ptr<SparsePcaaQuery<SparseModelType, storm::RationalNumber>> query;
-                        switch (preprocessorResult.queryType) {
-                            case preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType>::QueryType::Achievability:
-                                query = std::unique_ptr<SparsePcaaQuery<SparseModelType, storm::RationalNumber>> (new SparsePcaaAchievabilityQuery<SparseModelType, storm::RationalNumber>(preprocessorResult));
-                                break;
-                            case preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType>::QueryType::Quantitative:
-                                query = std::unique_ptr<SparsePcaaQuery<SparseModelType, storm::RationalNumber>> (new SparsePcaaQuantitativeQuery<SparseModelType, storm::RationalNumber>(preprocessorResult));
-                                break;
-                            case preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType>::QueryType::Pareto:
-                                query = std::unique_ptr<SparsePcaaQuery<SparseModelType, storm::RationalNumber>> (new SparsePcaaParetoQuery<SparseModelType, storm::RationalNumber>(preprocessorResult));
-                                break;
-                            default:
-                                STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The multi-objective query type is not supported for the selected solution method '" << toString(method) << "'.");
-                                break;
-                        }
-        
-                        result = query->check(env);
-                                        
-                        if (env.modelchecker().multi().isExportPlotSet()) {
-                            query->exportPlotOfCurrentApproximation(env);
+                        if (env.modelchecker().multi().isSchedulerRestrictionSet()) {
+                            STORM_LOG_THROW(preprocessorResult.queryType == preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType>::QueryType::Pareto, storm::exceptions::NotImplementedException, "Currently, only Pareto queries with scheduler restrictions are implemented.");
+                            auto explorer = DeterministicParetoExplorer<SparseModelType, storm::RationalNumber>(preprocessorResult);
+                            result = explorer.check(env);
+                            if (env.modelchecker().multi().isExportPlotSet()) {
+                                explorer.exportPlotOfCurrentApproximation(env);
+                            }
+                        } else {
+                            std::unique_ptr<SparsePcaaQuery<SparseModelType, storm::RationalNumber>> query;
+                            switch (preprocessorResult.queryType) {
+                                case preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType>::QueryType::Achievability:
+                                    query = std::unique_ptr<SparsePcaaQuery<SparseModelType, storm::RationalNumber>> (new SparsePcaaAchievabilityQuery<SparseModelType, storm::RationalNumber>(preprocessorResult));
+                                    break;
+                                case preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType>::QueryType::Quantitative:
+                                    query = std::unique_ptr<SparsePcaaQuery<SparseModelType, storm::RationalNumber>> (new SparsePcaaQuantitativeQuery<SparseModelType, storm::RationalNumber>(preprocessorResult));
+                                    break;
+                                case preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType>::QueryType::Pareto:
+                                    query = std::unique_ptr<SparsePcaaQuery<SparseModelType, storm::RationalNumber>> (new SparsePcaaParetoQuery<SparseModelType, storm::RationalNumber>(preprocessorResult));
+                                    break;
+                                default:
+                                    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The multi-objective query type is not supported for the selected solution method '" << toString(method) << "'.");
+                                    break;
+                            }
+            
+                            result = query->check(env);
+                            
+                            if (env.modelchecker().multi().isExportPlotSet()) {
+                                query->exportPlotOfCurrentApproximation(env);
+                            }
                         }
                         break;
                     }
                     case MultiObjectiveMethod::ConstraintBased:
                     {
+                        STORM_LOG_THROW(!env.modelchecker().multi().isSchedulerRestrictionSet(), storm::exceptions::InvalidEnvironmentException, "The selected multi-objective model checking method does not support scheduler restrictions.");
                         std::unique_ptr<SparseCbQuery<SparseModelType>> query;
                         switch (preprocessorResult.queryType) {
                             case preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType>::QueryType::Achievability:
