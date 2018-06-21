@@ -56,18 +56,21 @@ namespace storm {
 
             std::shared_ptr<storm::expressions::ExpressionManager> const& exprManager = gspn.getExpressionManager();
             storm::jani::Variable const& topfailedVar = builder.getPlaceVariable(toplevelFailedPlace);
-
             storm::expressions::Expression targetExpression = exprManager->integer(1) == topfailedVar.getExpressionVariable().getExpression();
+            STORM_LOG_TRACE("Target expression: " << targetExpression);
+
             auto evtlFormula = std::make_shared<storm::logic::AtomicExpressionFormula>(targetExpression);
             auto tbFormula = std::make_shared<storm::logic::BoundedUntilFormula>(std::make_shared<storm::logic::BooleanLiteralFormula>(true), evtlFormula, storm::logic::TimeBound(false, exprManager->integer(0)), storm::logic::TimeBound(false, exprManager->integer(10)), storm::logic::TimeBoundReference(storm::logic::TimeBoundType::Time));
             auto tbUntil = std::make_shared<storm::logic::ProbabilityOperatorFormula>(tbFormula);
-
             auto evFormula = std::make_shared<storm::logic::EventuallyFormula>(evtlFormula, storm::logic::FormulaContext::Time);
             auto rewFormula = std::make_shared<storm::logic::TimeOperatorFormula>(evFormula, storm::logic::OperatorInformation(), storm::logic::RewardMeasureType::Expectation);
 
+            auto timeBoundedProperty = storm::jani::Property("time-bounded", tbUntil);
+            auto mttfProperty = storm::jani::Property("mttf", rewFormula);
             storm::settings::modules::JaniExportSettings const& janiSettings = storm::settings::getModule<storm::settings::modules::JaniExportSettings>();
             if (janiSettings.isJaniFileSet()) {
-                storm::api::exportJaniModel(*model, {storm::jani::Property("time-bounded", tbUntil), storm::jani::Property("mttf", rewFormula)}, janiSettings.getJaniFilename());
+                // Currently no properties are set
+                storm::api::exportJaniModel(*model, {}, janiSettings.getJaniFilename());
             }
 
             return model;
