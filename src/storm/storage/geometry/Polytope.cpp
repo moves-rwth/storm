@@ -47,35 +47,47 @@ namespace storm {
             
             template <typename ValueType>
             std::shared_ptr<Polytope<ValueType>> Polytope<ValueType>::createDownwardClosure(std::vector<Point> const& points) {
-                if(points.empty()) {
+                if (points.empty()) {
                     // In this case, the downwardclosure is empty
                     return createEmptyPolytope();
                 }
-                uint_fast64_t const dimensions = points.front().size();
+                // Reduce this call to a more general method
+                storm::storage::BitVector dimensions(points.front().size(), true);
+                return createSelectiveDownwardClosure(points, dimensions);
+            }
+            
+            template <typename ValueType>
+            std::shared_ptr<Polytope<ValueType>> Polytope<ValueType>::createSelectiveDownwardClosure(std::vector<Point> const& points, storm::storage::BitVector const& selectedDimensions) {
+                if (points.empty()) {
+                    // In this case, the downwardclosure is empty
+                    return createEmptyPolytope();
+                }
+                if (selectedDimensions.empty()) {
+                    return create(points);
+                }
+                assert(points.front().size() == selectedDimensions.size());
+                uint64_t dimensions = selectedDimensions.size();
+                
                 std::vector<Halfspace<ValueType>> halfspaces;
                 // We build the convex hull of the given points.
-                // However, auxiliary points (that will always be in the downward closure) are added.
+                // However, auxiliary points (that will always be in the selective downward closure) are added.
                 // Then, the halfspaces of the resulting polytope are a superset of the halfspaces of the downward closure.
                 std::vector<Point> auxiliaryPoints = points;
-                auxiliaryPoints.reserve(auxiliaryPoints.size()*(1+dimensions));
-                for(auto const& point : points) {
-                    for(uint_fast64_t dim=0; dim<dimensions; ++dim) {
+                auxiliaryPoints.reserve(auxiliaryPoints.size() * (1 + selectedDimensions.getNumberOfSetBits()));
+                for (auto const& point : points) {
+                    for (auto const& dim : selectedDimensions) {
                         auxiliaryPoints.push_back(point);
                         auxiliaryPoints.back()[dim] -= storm::utility::one<ValueType>();
                     }
                 }
                 std::vector<Halfspace<ValueType>> auxiliaryHalfspaces = create(auxiliaryPoints)->getHalfspaces();
-                // The downward closure is obtained by selecting the halfspaces for which the normal vector is non-negative (coordinate wise).
-                // Note that due to the auxiliary points, the polytope is never degenerated and thus there is always one unique halfspace-representation which is necessary:
-                // Consider, e.g., the convex hull of two points (1,0,0) and (0,1,1).
-                // There are multiple halfspace-representations for this set. In particular, there is one where all but one normalVectors have negative entries.
-                // However, the downward closure of this set can only be represented with 5 halfspaces.
-                for(auto& h : auxiliaryHalfspaces){
-                    bool allGreaterZero = true;
-                    for(auto const& value : h.normalVector()) {
-                        allGreaterZero &= (value >= storm::utility::zero<ValueType>());
+                // The downward closure is obtained by erasing the halfspaces for which the normal vector is negative for one of the selected dimensions.
+                for (auto& h : auxiliaryHalfspaces) {
+                    bool allGreaterEqZero = true;
+                    for (auto const& dim : selectedDimensions) {
+                        allGreaterEqZero &= (h.normalVector()[dim] >= storm::utility::zero<ValueType>());
                     }
-                    if(allGreaterZero){
+                    if (allGreaterEqZero){
                         halfspaces.push_back(std::move(h));
                     }
                 }

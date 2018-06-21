@@ -6,6 +6,7 @@
 #include <boost/optional.hpp>
 
 #include "storm/storage/geometry/Halfspace.h"
+#include "storm/storage/BitVector.h"
 
 namespace storm {
     namespace storage {
@@ -43,9 +44,16 @@ namespace storm {
                 
                 /*!
                  * Creates the downward closure of the given points (i.e., the set { x | ex. y \in conv(points) : x<=y }
-                 * If the vector of points is empty, the resulting polytope be empty.
+                 * If the vector of points is empty, the resulting polytope is empty.
                  */
                 static std::shared_ptr<Polytope<ValueType>> createDownwardClosure(std::vector<Point> const& points);
+                
+                /*!
+                 * Creates the downward closure of the given points but only with respect to the selected dimensions,
+                 * (i.e., the set { x | ex. y \in conv(points) : (x_i<=y_i if i in selectedDim) and (x_i==y_i if i not in selectedDim }
+                 * If the vector of points is empty, the resulting polytope is empty.
+                 */
+                static std::shared_ptr<Polytope<ValueType>> createSelectiveDownwardClosure(std::vector<Point> const& points, storm::storage::BitVector const& selectedDimensions);
                 
                 /*!
                  * Returns the vertices of this polytope.
