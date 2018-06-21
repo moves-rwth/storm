@@ -1,0 +1,174 @@
+#pragma once
+
+#include <memory>
+
+#include "storm/modelchecker/multiobjective/preprocessing/SparseMultiObjectivePreprocessorResult.h"
+#include "storm/storage/geometry/Polytope.h"
+#include "storm/storage/geometry/Halfspace.h"
+#include "storm/modelchecker/results/CheckResult.h"
+
+namespace storm {
+    
+    class Environment;
+    
+    namespace modelchecker {
+        namespace multiobjective {
+            
+            template <class SparseModelType, typename GeometryValueType>
+            class DeterministicParetoExplorer {
+            public:
+                typedef uint64_t PointId;
+                typedef typename std::shared_ptr<storm::storage::geometry::Polytope<GeometryValueType>> Polytope;
+                
+                class Point {
+                public:
+                    Point(std::vector<GeometryValueType> const& coordinates);
+                    Point(std::vector<GeometryValueType>&& coordinates);
+                    
+                    std::vector<GeometryValueType> const& get() const;
+                    std::vector<GeometryValueType>& get();
+                    
+                    uint64_t dimension() const;
+                    
+                    enum class DominanceResult {
+                        Incomparable,
+                        Dominates,
+                        Dominated,
+                        Equal
+                    };
+                    DominanceResult getDominance(Point const& other) const;
+                    
+                    void setParetoOptimal(bool value = true);
+                    bool isParetoOptimal() const;
+                    
+                    std::string toString(bool convertToDouble = false) const;
+
+                private:
+                    std::vector<GeometryValueType> coordinates;
+                    bool paretoOptimal;
+                };
+                
+                
+                class Pointset {
+                public:
+                    Pointset();
+                    
+                    /*!
+                     * If the given point is not dominated by another point in the set, it is added
+                     * to the set and its ID is returned.
+                     * If the point is dominated by another point, boost::none is returned.
+                     * Erases all points in the set, that are dominated by the given point.
+                     * If the same point is already contained in the set, its id is returned
+                     */
+                    boost::optional<PointId> addPoint(Point const& point);
+                    
+                    /*!
+                     * Returns the point with the given ID
+                     */
+                    Point const& getPoint(PointId const& id) const;
+                    
+                    /*!
+                     * Returns the number of points currently contained in the set
+                     */
+                    uint64_t size() const;
+                    
+                    void collectPointsInPolytope(std::set<PointId>& collectedPoints, Polytope const& polytope);
+                    
+                    void printToStream(std::ostream& out, bool includeIDs = true, bool convertToDouble = false);
+                    
+                private:
+                    std::map<PointId, Point> points;
+                    PointId currId;
+                };
+                
+                class Facet {
+                public:
+                    Facet(storm::storage::geometry::Halfspace<GeometryValueType> const& halfspace);
+                    Facet(storm::storage::geometry::Halfspace<GeometryValueType>&& halfspace);
+                    void addPoint(PointId const& pointId);
+                    std::vector<PointId> const& getPoints() const;
+                    uint64_t getNumberOfPoints() const;
+                    
+                    /*!
+                     * Creates a polytope that captures all points that lie 'under' the facet
+                     * More precisely, the vertices of the polytope are the points on the facet
+                     * and point p with p_i = min {x_i | x lies on facet}
+                     */
+                    Polytope getInducedSimplex(Pointset const& pointset) const;
+                    
+                    
+
+                private:
+                    storm::storage::geometry::Halfspace<GeometryValueType> halfspace;
+                    std::vector<PointId> paretoPointsOnFacet;
+                };
+                
+                
+                DeterministicParetoExplorer(preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType>& preprocessorResult);
+
+                virtual std::unique_ptr<CheckResult> check(Environment const& env);
+
+                void exportPlotOfCurrentApproximation(Environment const& env);
+                
+            private:
+                
+                /*!
+                 * Cleans up all cached results from a previous check call
+                 */
+                void clean();
+                
+                /*!
+                 *   Builds the initial facets by optimizing the objectives individually.
+                 *   Adds the facets that need further processing to unprocessedFacets
+                 */
+                void initializeFacets(Environment const& env);
+                
+                /*!
+                 * Checks the precision of the given Facet and returns true, if no further processing of the facet is necessary
+                 */
+                bool checkFacetPrecision(Environment const& env, Facet const& f);
+                
+                /*! Processes the given facet as follows:
+                 * 1. Optimize in the facet direction. Potentially, this adds new, unprocessed facets
+                 * 2. Find points that have already been collected so far such that  they lie in the induced simplex of the facet.
+                 * 3. Find more points that lie on the facet
+                 * 4. Find all points that lie in the induced simplex or prove that there are none
+                 */
+                void processFacet(Environment const& env, Facet const& f);
+                
+                /*!
+                 * Optimizes in the facet direction. If this results in a point that does not lie on the facet,
+                 * 1. The new Pareto optimal point is added
+                 * 2. New facets are generated and (if not already precise enough) added to unprocessedFacets
+                 * 3. true is returned
+                 */
+                bool optimizeAndSplitFacet(Environment const& env, Facet const& f);
+                
+                /*!
+                 * Finds all points that lie within the induced Simplex of the given facet.
+                 * Returns true if the facet is sufficiently precise when considering all added points
+                 */
+                bool findAndCheckCachedPoints(Environment const& env, Facet const& f, Polytope const& inducedSimplex, std::set<PointId>& collectedPoints);
+                
+                /*!
+                 * Finds points that lie on the facet
+                 * Returns true if the facet has been analyzed sufficiently precise.
+                 * If false is returned, it means that *all* points that lie on the facet have been analyzed but the analysis is still not precise enough
+                 *
+                 * use smt to find an eps-box in the simplex that does not contain a point. Add new points until one in the box is found. repeat.
+                 * stop when no more points or boxes can be found.
+                 */
+                bool analyzePointsOnFacet(Environment const& env, Facet const& f, Polytope const& inducedSimplex, std::set<PointId>& collectedPoints);
+                
+                bool analyzePointsInSimplex(Environment const& env, Facet const& f, Polytope const& inducedSimplex, std::set<PointId>& collectedPoints);
+                
+                Pointset pointset;
+                std::queue<Facet> unprocessedFacets;
+                Polytope overApproximation;
+                std::vector<Polytope> unachievableAreas;
+                
+            };
+            
+        }
+    }
+}
