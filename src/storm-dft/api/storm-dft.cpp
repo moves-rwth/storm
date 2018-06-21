@@ -29,7 +29,7 @@ namespace storm {
         }
 
         template<>
-        void transformToGSPN(storm::storage::DFT<double> const& dft) {
+        std::pair<std::shared_ptr<storm::gspn::GSPN>, uint64_t> transformToGSPN(storm::storage::DFT<double> const& dft) {
             storm::settings::modules::FaultTreeSettings const& ftSettings = storm::settings::getModule<storm::settings::modules::FaultTreeSettings>();
             storm::settings::modules::DftGspnSettings const& dftGspnSettings = storm::settings::getModule<storm::settings::modules::DftGspnSettings>();
 
@@ -46,15 +46,15 @@ namespace storm {
             storm::transformations::dft::DftToGspnTransformator<double> gspnTransformator(dft);
             auto priorities = gspnTransformator.computePriorities();
             gspnTransformator.transform(priorities, dontCareElements, !dftGspnSettings.isDisableSmartTransformation(), dftGspnSettings.isMergeDCFailed());
-            storm::gspn::GSPN* gspn = gspnTransformator.obtainGSPN();
-            uint64_t toplevelFailedPlace = gspnTransformator.toplevelFailedPlaceId();
+            std::shared_ptr<storm::gspn::GSPN> gspn(gspnTransformator.obtainGSPN());
+            return std::make_pair(gspn, gspnTransformator.toplevelFailedPlaceId());
+        }
 
-            // Export
-            storm::api::handleGSPNExportSettings(*gspn);
+        std::shared_ptr<storm::jani::Model> transformToJani(storm::gspn::GSPN const& gspn, uint64_t toplevelFailedPlace) {
+            storm::builder::JaniGSPNBuilder builder(gspn);
+            std::shared_ptr<storm::jani::Model> model(builder.build());
 
-            std::shared_ptr<storm::expressions::ExpressionManager> const& exprManager = gspn->getExpressionManager();
-            storm::builder::JaniGSPNBuilder builder(*gspn);
-            storm::jani::Model* model = builder.build();
+            std::shared_ptr<storm::expressions::ExpressionManager> const& exprManager = gspn.getExpressionManager();
             storm::jani::Variable const& topfailedVar = builder.getPlaceVariable(toplevelFailedPlace);
 
             storm::expressions::Expression targetExpression = exprManager->integer(1) == topfailedVar.getExpressionVariable().getExpression();
@@ -70,12 +70,11 @@ namespace storm {
                 storm::api::exportJaniModel(*model, {storm::jani::Property("time-bounded", tbUntil), storm::jani::Property("mttf", rewFormula)}, janiSettings.getJaniFilename());
             }
 
-            delete model;
-            delete gspn;
+            return model;
         }
 
         template<>
-        void transformToGSPN(storm::storage::DFT<storm::RationalFunction> const& dft) {
+        std::pair<std::shared_ptr<storm::gspn::GSPN>, uint64_t> transformToGSPN(storm::storage::DFT<storm::RationalFunction> const& dft) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Transformation to GSPN not supported for this data type.");
         }
 

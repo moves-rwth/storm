@@ -52,7 +52,15 @@ void processOptions() {
 
     if (dftGspnSettings.isTransformToGspn()) {
         // Transform to GSPN
-        storm::api::transformToGSPN(*dft);
+        std::pair<std::shared_ptr<storm::gspn::GSPN>, uint64_t> pair = storm::api::transformToGSPN(*dft);
+        std::shared_ptr<storm::gspn::GSPN> gspn = pair.first;
+        uint64_t toplevelFailedPlace = pair.second;
+
+        // Export
+        storm::api::handleGSPNExportSettings(*gspn);
+
+        // Transform to Jani
+        std::shared_ptr<storm::jani::Model> model = storm::api::transformToJani(*gspn, toplevelFailedPlace);
         return;
     }
 
