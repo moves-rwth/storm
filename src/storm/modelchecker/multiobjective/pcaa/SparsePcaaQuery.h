@@ -89,13 +89,6 @@ namespace storm {
                  */
                 bool maxStepsPerformed(Environment const& env) const;
                 
-                /*
-                 * Transforms the given point (or polytope) to values w.r.t. the original model/formula (e.g. negates values for minimizing objectives).
-                 */
-                Point transformPointToOriginalModel(Point const& polytope) const;
-                std::shared_ptr<storm::storage::geometry::Polytope<GeometryValueType>> transformPolytopeToOriginalModel(std::shared_ptr<storm::storage::geometry::Polytope<GeometryValueType>> const& polytope) const;
-
-                
                 SparseModelType const& originalModel;
                 storm::logic::MultiObjectiveFormula const& originalFormula;
                 

@@ -8,6 +8,8 @@
 #include "storm/utility/constants.h"
 #include "storm/utility/vector.h"
 #include "storm/environment/modelchecker/MultiObjectiveModelCheckerEnvironment.h"
+#include "storm/modelchecker/multiobjective/MultiObjectivePostprocessing.h"
+
 
 namespace storm {
     namespace modelchecker {
@@ -37,12 +39,12 @@ namespace storm {
                 std::vector<Point> vertices = this->underApproximation->getVertices();
                 paretoOptimalPoints.reserve(vertices.size());
                 for(auto const& vertex : vertices) {
-                    paretoOptimalPoints.push_back(storm::utility::vector::convertNumericVector<typename SparseModelType::ValueType>(this->transformPointToOriginalModel(vertex)));
+                    paretoOptimalPoints.push_back(storm::utility::vector::convertNumericVector<typename SparseModelType::ValueType>(transformObjectiveValuesToOriginal(this->objectives, vertex)));
                 }
                 return std::unique_ptr<CheckResult>(new ExplicitParetoCurveCheckResult<typename SparseModelType::ValueType>(this->originalModel.getInitialStates().getNextSetIndex(0),
                                                                         std::move(paretoOptimalPoints),
-                                                                        this->transformPolytopeToOriginalModel(this->underApproximation)->template convertNumberRepresentation<typename SparseModelType::ValueType>(),
-                                                                        this->transformPolytopeToOriginalModel(this->overApproximation)->template convertNumberRepresentation<typename SparseModelType::ValueType>()));
+                                                                        transformObjectivePolytopeToOriginal(this->objectives, this->underApproximation)->template convertNumberRepresentation<typename SparseModelType::ValueType>(),
+                                                                        transformObjectivePolytopeToOriginal(this->objectives, this->overApproximation)->template convertNumberRepresentation<typename SparseModelType::ValueType>()));
                 
                 
             }
