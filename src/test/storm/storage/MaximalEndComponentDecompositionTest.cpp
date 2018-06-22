@@ -148,7 +148,7 @@ TEST(MaximalEndComponentDecomposition, Example1) {
     
     storm::storage::MaximalEndComponentDecomposition<double> mecDecomposition(*mdp);
     
-    EXPECT_EQ(mecDecomposition.size(), 2);
+    EXPECT_EQ(2ull, mecDecomposition.size());
     
     ASSERT_TRUE(mecDecomposition[0].getStateSet() == storm::storage::MaximalEndComponent::set_type{2});
     EXPECT_TRUE(mecDecomposition[0].getChoicesForState(2) == storm::storage::MaximalEndComponent::set_type{3});
@@ -167,7 +167,7 @@ TEST(MaximalEndComponentDecomposition, Example2) {
     
     storm::storage::MaximalEndComponentDecomposition<double> mecDecomposition(*mdp);
     
-    EXPECT_EQ(mecDecomposition.size(), 2);
+    EXPECT_EQ(2ull, mecDecomposition.size());
     
     ASSERT_TRUE(mecDecomposition[0].getStateSet() == storm::storage::MaximalEndComponent::set_type{2});
     EXPECT_TRUE(mecDecomposition[0].getChoicesForState(2) == storm::storage::MaximalEndComponent::set_type{4});
