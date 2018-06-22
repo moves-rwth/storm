@@ -1,5 +1,7 @@
 #include "storm/adapters/Z3ExpressionAdapter.h"
 
+#include <cstdint>
+
 #include "storm/storage/expressions/Expressions.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/utility/macros.h"
@@ -15,7 +17,7 @@ namespace storm {
         
 #ifdef STORM_Z3_API_USES_STANDARD_INTEGERS
             typedef int64_t Z3_SIGNED_INTEGER;
-            typedef int64_t Z3_UNSIGNED_INTEGER;
+            typedef uint64_t Z3_UNSIGNED_INTEGER;
 #else
             typedef long long Z3_SIGNED_INTEGER;
             typedef unsigned long long Z3_UNSIGNED_INTEGER;
