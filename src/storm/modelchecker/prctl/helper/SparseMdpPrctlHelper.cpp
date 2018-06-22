@@ -35,6 +35,8 @@
 #include "storm/utility/ProgressMeasurement.h"
 #include "storm/utility/export.h"
 
+#include "storm/transformer/EndComponentEliminator.h"
+
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 
 #include "storm/exceptions/InvalidStateException.h"
@@ -837,6 +839,79 @@ namespace storm {
                 multiplier->repeatedMultiplyAndReduce(env, goal.direction(), result, &totalRewardVector, stepBound);
                 
                 return result;
+            }
+            
+            template<typename ValueType>
+            template<typename RewardModelType>
+            MDPSparseModelCheckingHelperReturnType<ValueType> SparseMdpPrctlHelper<ValueType>::computeTotalRewards(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, RewardModelType const& rewardModel, bool qualitative, bool produceScheduler, ModelCheckerHint const& hint) {
+
+                // Reduce to reachability rewards
+                if (goal.minimize) {
+                    STORM_LOG_ERROR_COND(!produceScheduler, "Can not produce scheduler for this property (functionality not implemented");
+                    // Identify the states from which no reward can be collected under some scheduler
+                    storm::storage::BitVector choicesWithoutReward = rewardModel.getChoicesWithZeroReward(transitionMatrix);
+                    storm::storage::BitVector statesWithZeroRewardChoice(transitionMatrix.getRowGroupCount(), false);
+                    for (uint64_t state = 0; state < transitionMatrix.getRowGroupCount(); ++state) {
+                        if (choicesWithoutReward.getNextSetIndex(transitionMatrix.getRowGroupIndices()[state])< transitionMatrix.getRowGroupIndices()[state + 1]) {
+                            statesWithZeroRewardChoice.set(state);
+                        }
+                    }
+                    storm::storage::BitVector rew0EStates = storm::utility::graph::performProbGreater0A(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions, statesWithZeroRewardChoice, ~statesWithZeroRewardChoice, false, 0, choicesWithoutReward);
+                    rew0EStates.complement();
+                    return computeReachabilityRewards(env, std::move(goal), transitionMatrix, backwardTransitions, rewardModel, rew0EStates, qualitative, false, hint);
+                } else {
+                    // Identify the states from which only states with zero reward are reachable.
+                    storm::storage::BitVector statesWithoutReward = rewardModel.getStatesWithZeroReward(transitionMatrix);
+                    storm::storage::BitVector rew0AStates = storm::utility::graph::performProbGreater0E(backwardTransitions, statesWithoutReward, ~statesWithoutReward);
+                    rew0AStates.complement();
+                    
+                    // There might be end components that consists only of states/choices with zero rewards. The reachability reward semantics would assign such
+                    // end components reward infinity. To avoid this, we potentially need to eliminate such end components
+                    storm::storage::BitVector trueStates(transitionMatrix.getRowGroupCount(), true);
+                    if (storm::utility::graph::performProb1A(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions, trueStates, rew0AStates).full()) {
+                        return computeReachabilityRewards(env, std::move(goal), transitionMatrix, backwardTransitions, rewardModel, rew0AStates, qualitative, produceScheduler, hint);
+                    } else {
+                        // The transformation of schedulers for the ec-eliminated system back to the original one is not implemented.
+                        STORM_LOG_ERROR_COND(!produceScheduler, "Can not produce scheduler for this property (functionality not implemented");
+                        storm::storage::BitVector choicesWithoutReward = rewardModel.getChoicesWithZeroReward(transitionMatrix);
+                        auto ecElimResult = storm::transformer::EndComponentEliminator<ValueType>::transform(transitionMatrix, storm::storage::BitVector(transitionMatrix.getRowGroupCount(), true), choicesWithoutReward, rew0AStates, true);
+                        storm::storage::BitVector newRew0AStates(ecElimResult.matrix.getRowGroupCount(), false);
+                        for (auto const& oldRew0AState : rew0AStates) {
+                            newRew0AStates.set(ecElimResult.oldToNewStateMapping[oldRew0AState]);
+                        }
+                        
+                        return computeReachabilityRewardsHelper(env, std::move(goal), ecElimResult.matrix, ecElimResult.matrix.transpose(true),
+                                                                [&] (uint_fast64_t rowCount, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& maybeStates) {
+                                                                    std::vector<ValueType> result;
+                                                                    std::vector<ValueType> oldChoiceRewards = rewardModel.getTotalRewardVector(rowCount, transitionMatrix);
+                                                                    result.reserve(rowCount);
+                                                                    for (uint64_t newState : maybeStates) {
+                                                                        for (uint64_t newChoice = transitionMatrix.getRowGroupIndices()[newState]; newChoice < transitionMatrix.getRowGroupIndices()[newState + 1]; ++newChoice) {
+                                                                            uint64_t oldChoice = ecElimResult.newToOldRowMapping[newChoice];
+                                                                            result.push_back(oldChoiceRewards[oldChoice]);
+                                                                        }
+                                                                    }
+                                                                    STORM_LOG_ASSERT(result.size() == rowCount, "Unexpected size of reward vector.");
+                                                                    return result;
+                                                                }, newRew0AStates, qualitative, false,
+                                                                [&] () {
+                                                                    storm::storage::BitVector newStatesWithoutReward(ecElimResult.matrix.getRowGroupCount(), false);
+                                                                    for (auto const& oldStateWithoutRew : statesWithoutReward) {
+                                                                        newStatesWithoutReward.set(ecElimResult.oldToNewStateMapping[oldStateWithoutRew]);
+                                                                    }
+                                                                    return newStatesWithoutReward;
+                                                                },
+                                                                [&] () {
+                                                                    storm::storage::BitVector newChoicesWithoutReward(ecElimResult.matrix.getRowGroupCount(), false);
+                                                                    for (uint64_t newChoice = 0; newChoice < ecElimResult.matrix.getRowCount(); ++newChoice) {
+                                                                            if (choicesWithoutReward.get(ecElimResult.newToOldChoiceMapping[newChoice])) {
+                                                                                newChoicesWithoutReward.set(newChoice);
+                                                                            }
+                                                                    }
+                                                                    return newChoicesWithoutReward;
+                                                                });
+                    }
+                }
             }
             
             template<typename ValueType>
