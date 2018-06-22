@@ -433,6 +433,7 @@ namespace storm {
                 stream << space3 << "<transition name=\"" << trans.getName() << "\" ";
                 stream << "type=\"EXP\" ";
                 stream << "nservers-x=\"" << trans.getRate() << "\" ";
+                stream << "delay=\"" << trans.getRate() << "\" ";
                 if (transitionLayout.count(trans.getID()) > 0) {
                     stream << "x=\"" << transitionLayout.at(trans.getID()).x << "\" ";
                     stream << "y=\"" << transitionLayout.at(trans.getID()).y << "\" ";
