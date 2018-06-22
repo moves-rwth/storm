@@ -105,6 +105,8 @@ namespace storm {
                 return this->computeInstantaneousRewards(env, rewardMeasureType, checkTask.substituteFormula(rewardFormula.asInstantaneousRewardFormula()));
             } else if (rewardFormula.isReachabilityRewardFormula()) {
                 return this->computeReachabilityRewards(env, rewardMeasureType, checkTask.substituteFormula(rewardFormula.asReachabilityRewardFormula()));
+            } else if (rewardFormula.isTotalRewardFormula()) {
+                return this->computeTotalRewards(env, rewardMeasureType, checkTask.substituteFormula(rewardFormula.asTotalRewardFormula()));
             } else if (rewardFormula.isLongRunAverageRewardFormula()) {
                 return this->computeLongRunAverageRewards(env, rewardMeasureType, checkTask.substituteFormula(rewardFormula.asLongRunAverageRewardFormula()));
             } else if (rewardFormula.isConditionalRewardFormula()) {
@@ -130,6 +132,11 @@ namespace storm {
 
         template<typename ModelType>
         std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeReachabilityRewards(Environment const& env, storm::logic::RewardMeasureType, CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) {
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker does not support the formula: " << checkTask.getFormula() << ".");
+        }
+        
+        template<typename ModelType>
+        std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeTotalRewards(Environment const& env, storm::logic::RewardMeasureType, CheckTask<storm::logic::TotalRewardFormula, ValueType> const& checkTask) {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker does not support the formula: " << checkTask.getFormula() << ".");
         }
 

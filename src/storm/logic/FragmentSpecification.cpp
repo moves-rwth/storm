@@ -59,6 +59,7 @@ namespace storm {
             prctl.setCumulativeRewardFormulasAllowed(true);
             prctl.setInstantaneousFormulasAllowed(true);
             prctl.setReachabilityRewardFormulasAllowed(true);
+            prctl.setTotalRewardFormulasAllowed(true);
             prctl.setLongRunAverageOperatorsAllowed(true);
             prctl.setStepBoundedCumulativeRewardFormulasAllowed(true);
             prctl.setTimeBoundedCumulativeRewardFormulasAllowed(true);
@@ -81,6 +82,7 @@ namespace storm {
             csrl.setCumulativeRewardFormulasAllowed(true);
             csrl.setInstantaneousFormulasAllowed(true);
             csrl.setReachabilityRewardFormulasAllowed(true);
+            csrl.setTotalRewardFormulasAllowed(true);
             csrl.setLongRunAverageOperatorsAllowed(true);
             csrl.setTimeBoundedCumulativeRewardFormulasAllowed(true);
             
