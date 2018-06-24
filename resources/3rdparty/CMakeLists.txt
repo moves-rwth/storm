@@ -168,6 +168,15 @@ else()
     message (WARNING "Storm - Z3 not found. Building of Prism/JANI models will not be supported.")
 endif(Z3_FOUND)
 
+# split Z3 version into its components
+string(REPLACE "." ";" Z3_VERSION_LIST ${Z3_VERSION})
+list(GET Z3_VERSION_LIST 0 STORM_Z3_VERSION_MAJOR)
+list(GET Z3_VERSION_LIST 1 STORM_Z3_VERSION_MINOR)
+list(GET Z3_VERSION_LIST 2 STORM_Z3_VERSION_PATCH)
+if (NOT "${Z3_VERSION}" VERSION_LESS "4.7.1")
+    set(STORM_Z3_API_USES_STANDARD_INTEGERS ON)
+endif()
+
 #############################################################
 ##
 ##	glpk
@@ -239,16 +248,16 @@ if(carl_FOUND AND NOT STORM_FORCE_SHIPPED_CARL)
 else()
 	set(STORM_SHIPPED_CARL ON)
 	# The first external project will be built at *configure stage*
-	message("START CARL CONFIG PROCESS")
-	file(MAKE_DIRECTORY ${STORM_3RDPARTY_BINARY_DIR}/carl_download) 
+	message(STATUS "Carl - Start of config process")
+	file(MAKE_DIRECTORY ${STORM_3RDPARTY_BINARY_DIR}/carl_download)
 	execute_process(
 	COMMAND ${CMAKE_COMMAND} ${STORM_3RDPARTY_SOURCE_DIR}/carl "-DSTORM_3RDPARTY_BINARY_DIR=${STORM_3RDPARTY_BINARY_DIR}" "-DBoost_LIBRARY_DIRS=${Boost_LIBRARY_DIRS}" "-DBoost_INCLUDE_DIRS=${Boost_INCLUDE_DIRS}"
 	WORKING_DIRECTORY ${STORM_3RDPARTY_BINARY_DIR}/carl_download
 	OUTPUT_VARIABLE carlconfig_out
 	RESULT_VARIABLE carlconfig_result)
-								
+
 	if(NOT carlconfig_result)
-		message("${carlconfig_out}")
+		message(STATUS "${carlconfig_out}")
 	endif()
 	execute_process(
 		COMMAND ${CMAKE_COMMAND} --build . --target carl-config
@@ -257,10 +266,10 @@ else()
 		RESULT_VARIABLE carlconfig_result
 		)
 		if(NOT carlconfig_result)
-		message("${carlconfig_out}")
+		message(STATUS "${carlconfig_out}")
 	endif()
-    message("END CARL CONFIG PROCESS")
-    	
+    message(STATUS "Carl - End of config process")
+
     message(STATUS "Storm - Using shipped version of carl.")
     ExternalProject_Add(
             carl

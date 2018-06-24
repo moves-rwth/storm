@@ -17,7 +17,7 @@ namespace storm {
         namespace stateelimination {
                         
             struct PriorityComparator {
-                bool operator()(std::pair<storm::storage::sparse::state_type, uint_fast64_t> const& first, std::pair<storm::storage::sparse::state_type, uint_fast64_t> const& second) {
+                bool operator()(std::pair<storm::storage::sparse::state_type, uint_fast64_t> const& first, std::pair<storm::storage::sparse::state_type, uint_fast64_t> const& second) const {
                     return (first.second < second.second) || (first.second == second.second && first.first < second.first) ;
                 }
             };
