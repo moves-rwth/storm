@@ -37,10 +37,13 @@ namespace storm {
             template<typename ValueType>
             std::map<uint64_t, uint64_t> DftToGspnTransformator<ValueType>::computePriorities() {
                 std::map<uint64_t, uint64_t> priorities;
+                // Set priority for PDEP and FDEP according to Monolithic MA semantics
+                uint64_t dependency_priority = 2;
                 for (std::size_t i = 0; i < mDft.nrElements(); i++) {
-                    // Give all elements the same priority
-                    priorities[i] = (-(mDft.getElement(i)->rank()) + mDft.maxRank()) * 2 + 2;
-
+                    if (mDft.getElement(i)->type() == storm::storage::DFTElementType::PDEP)
+                        priorities[i] = dependency_priority;
+                    else
+                        priorities[i] = (-(mDft.getElement(i)->rank()) + mDft.maxRank()) * 2 + 5;
                 }
                 return priorities;
             }
@@ -126,7 +129,6 @@ namespace storm {
                                                         dftBE->name() + STR_ACTIVATED);
                 activePlaces.emplace(dftBE->id(), activePlace);
                 builder.setPlaceLayoutInfo(activePlace, storm::gspn::LayoutInfo(xcenter - 3.0, ycenter));
-
                 uint64_t tActive = builder.addTimedTransition(getFailPriority(dftBE), dftBE->activeFailureRate(),
                                                               dftBE->name() + "_activeFailing");
                 builder.setTransitionLayoutInfo(tActive, storm::gspn::LayoutInfo(xcenter, ycenter + 3.0));
