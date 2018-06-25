@@ -140,6 +140,7 @@ namespace {
         ValueType precision() const { return TestType::isExact ? parseNumber("0") : parseNumber("1e-6");}
         bool isSparseModel() const { return std::is_same<typename TestType::ModelType, SparseModelType>::value; }
         bool isSymbolicModel() const { return std::is_same<typename TestType::ModelType, SymbolicModelType>::value; }
+        storm::settings::modules::CoreSettings::Engine getEngine() const { return TestType::engine; }
         
         template <typename MT = typename TestType::ModelType>
         typename std::enable_if<std::is_same<MT, SparseModelType>::value, std::pair<std::shared_ptr<MT>, std::vector<std::shared_ptr<storm::logic::Formula const>>>>::type
@@ -362,7 +363,29 @@ namespace {
         
         result = checker->check(this->env(), tasks[6]);
         EXPECT_NEAR(this->parseNumber("0.9100373532"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+    }
+    
+    TYPED_TEST(CtmcCslModelCheckerTest, simple2) {
+        std::string formulasString = "R{\"rew1\"}=? [ C ]";
+        formulasString += "; R{\"rew2\"}=? [ C ]";
         
+        auto modelFormulas = this->buildModelFormulas(STORM_TEST_RESOURCES_DIR "/ctmc/simple2.sm", formulasString);
+        auto model = std::move(modelFormulas.first);
+        auto tasks = this->getTasks(modelFormulas.second);
+        EXPECT_EQ(5ul, model->getNumberOfStates());
+        EXPECT_EQ(8ul, model->getNumberOfTransitions());
+        ASSERT_EQ(model->getType(), storm::models::ModelType::Ctmc);
+        auto checker = this->createModelChecker(model);
+        std::unique_ptr<storm::modelchecker::CheckResult> result;
+        
+        // Total reward formulas are currently not supported for non-sparse models.
+        if (this->isSparseModel()) {
+            result = checker->check(this->env(), tasks[0]);
+            EXPECT_NEAR(this->parseNumber("23/8"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+            
+            result = checker->check(this->env(), tasks[1]);
+            EXPECT_TRUE(storm::utility::isInfinity(this->getQuantitativeResultAtInitialState(model, result), this->precision()));
+        }
         
     }
 }
