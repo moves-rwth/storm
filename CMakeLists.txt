@@ -78,7 +78,15 @@ set(BIN_INSTALL_DIR lib/ CACHE PATH "Installation directory for executables")
 set(DEF_INSTALL_CMAKE_DIR "lib/CMake/storm")
 set(CMAKE_INSTALL_DIR ${DEF_INSTALL_CMAKE_DIR} CACHE PATH  "Installation directory for CMake files")
 
-message("CMAKE_INSTALL_DIR: ${CMAKE_INSTALL_DIR}")
+# Add CMake install prefix
+foreach(p LIB BIN INCLUDE CMAKE)
+  set(var ${p}_INSTALL_DIR)
+  if(NOT IS_ABSOLUTE "${${var}}")
+    set(${var} "${CMAKE_INSTALL_PREFIX}/${${var}}")
+  endif()
+endforeach()
+
+message(STATUS "Storm - CMake install dir: ${CMAKE_INSTALL_DIR}")
 
 # If the STORM_DEVELOPER option was turned on, by default we target a debug version, otherwise a release version.
 if (STORM_DEVELOPER)
@@ -145,15 +153,15 @@ elseif (WIN32)
 	set(STATIC_EXT ".lib")
 	set(LIB_PREFIX "")
 endif()
-message(STATUS "Assuming extension for shared libraries: ${DYNAMIC_EXT}")
-message(STATUS "Assuming extension for static libraries: ${STATIC_EXT}")
+message(STATUS "Storm - Assuming extension for shared libraries: ${DYNAMIC_EXT}")
+message(STATUS "Storm - Assuming extension for static libraries: ${STATIC_EXT}")
 
 if(BUILD_SHARED_LIBS)
     set(LIB_EXT ${DYNAMIC_EXT})
-    message(STATUS "Build dynamic libraries.")
+    message(STATUS "Storm - Build dynamic libraries.")
 else()
     set(LIB_EXT ${STATIC_EXT})
-    message(STATUS "Build static libraries.")
+    message(STATUS "Storm - Build static libraries.")
 endif()
 
 #############################################################
@@ -435,7 +443,7 @@ if (STORM_GIT_VERSION_STRING MATCHES "NOTFOUND")
 	set(STORM_VERSION_SOURCE "VersionSource::Static")
 	set(STORM_VERSION_COMMITS_AHEAD "boost::none")
 	include(version.cmake)
-	message(WARNING "Storm - git version information not available, statically assuming version ${STORM_VERSION_MAJOR}.${STORM_VERSION_MINOR}.${STORM_VERSION_PATCH}.")
+	message(WARNING "Storm - Git version information not available, statically assuming version ${STORM_VERSION_MAJOR}.${STORM_VERSION_MINOR}.${STORM_VERSION_PATCH}.")
 endif()
 
 # check whether there is a label ('alpha', 'pre', etc.)
@@ -465,7 +473,7 @@ endif()
 set(STORM_VERSION "${STORM_VERSION_MAJOR}.${STORM_VERSION_MINOR}.${STORM_VERSION_DEV_PATCH}")
 set(STORM_VERSION_STRING "${STORM_VERSION}${STORM_VERSION_LABEL_STRING}${STORM_VERSION_DEV_STRING}")
 
-message(STATUS "Storm - version is ${STORM_VERSION_STRING} (version ${STORM_VERSION_MAJOR}.${STORM_VERSION_MINOR}.${STORM_VERSION_PATCH}${STORM_VERSION_LABEL_STRING} + ${STORM_VERSION_COMMITS_AHEAD} commits), building from git: ${STORM_VERSION_GIT_HASH} (dirty: ${STORM_VERSION_DIRTY}).")
+message(STATUS "Storm - Version is ${STORM_VERSION_STRING} (version ${STORM_VERSION_MAJOR}.${STORM_VERSION_MINOR}.${STORM_VERSION_PATCH}${STORM_VERSION_LABEL_STRING} + ${STORM_VERSION_COMMITS_AHEAD} commits), building from git: ${STORM_VERSION_GIT_HASH} (dirty: ${STORM_VERSION_DIRTY}).")
 
 
 # Configure a header file to pass some of the CMake settings to the source code
@@ -499,5 +507,9 @@ set(STORM_TARGETS "")
 add_subdirectory(src)
 
 include(export)
+
+install(FILES ${CMAKE_BINARY_DIR}/stormConfig.install.cmake DESTINATION ${CMAKE_INSTALL_DIR} RENAME stormConfig.cmake)
+install(FILES ${CMAKE_BINARY_DIR}/stormConfigVersion.cmake DESTINATION ${CMAKE_INSTALL_DIR})
+install(EXPORT storm_Targets FILE stormTargets.cmake DESTINATION ${CMAKE_INSTALL_DIR})
 
 include(StormCPackConfig.cmake)

@@ -4,8 +4,8 @@
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/exploration/SparseExplorationModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
-#include "storm/parser/PrismParser.h"
-#include "storm/parser/FormulaParser.h"
+#include "storm-parsers/parser/PrismParser.h"
+#include "storm-parsers/parser/FormulaParser.h"
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/ExplorationSettings.h"

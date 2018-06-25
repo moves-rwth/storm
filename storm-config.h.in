@@ -41,6 +41,13 @@
 // Whether the optimization feature of Z3 is available and to be used (define/undef)
 #cmakedefine STORM_HAVE_Z3_OPTIMIZE
 
+// Version of Z3 used by Storm.
+#define STORM_Z3_VERSION_MAJOR @STORM_Z3_VERSION_MAJOR@
+#define STORM_Z3_VERSION_MINOR @STORM_Z3_VERSION_MINOR@
+#define STORM_Z3_VERSION_PATCH @STORM_Z3_VERSION_PATCH@
+#define STORM_Z3_VERSION @Z3_VERSION@
+#cmakedefine STORM_Z3_API_USES_STANDARD_INTEGERS
+
 // Whether MathSAT is available and to be used (define/undef)
 #cmakedefine STORM_HAVE_MSAT
 

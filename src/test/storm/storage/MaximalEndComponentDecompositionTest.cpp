@@ -1,13 +1,13 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
-#include "storm/parser/AutoParser.h"
+#include "storm-parsers/parser/AutoParser.h"
 #include "storm/storage/MaximalEndComponentDecomposition.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/builder/ExplicitModelBuilder.h"
 #include "storm/storage/SymbolicModelDescription.h"
-#include "storm/parser/PrismParser.h"
+#include "storm-parsers/parser/PrismParser.h"
 
 TEST(MaximalEndComponentDecomposition, FullSystem1) {
     std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser<>::parseModel(STORM_TEST_RESOURCES_DIR "/tra/tiny1.tra", STORM_TEST_RESOURCES_DIR "/lab/tiny1.lab", "", "");
@@ -148,7 +148,7 @@ TEST(MaximalEndComponentDecomposition, Example1) {
     
     storm::storage::MaximalEndComponentDecomposition<double> mecDecomposition(*mdp);
     
-    EXPECT_EQ(mecDecomposition.size(), 2);
+    EXPECT_EQ(2ull, mecDecomposition.size());
     
     ASSERT_TRUE(mecDecomposition[0].getStateSet() == storm::storage::MaximalEndComponent::set_type{2});
     EXPECT_TRUE(mecDecomposition[0].getChoicesForState(2) == storm::storage::MaximalEndComponent::set_type{3});
@@ -167,7 +167,7 @@ TEST(MaximalEndComponentDecomposition, Example2) {
     
     storm::storage::MaximalEndComponentDecomposition<double> mecDecomposition(*mdp);
     
-    EXPECT_EQ(mecDecomposition.size(), 2);
+    EXPECT_EQ(2ull, mecDecomposition.size());
     
     ASSERT_TRUE(mecDecomposition[0].getStateSet() == storm::storage::MaximalEndComponent::set_type{2});
     EXPECT_TRUE(mecDecomposition[0].getChoicesForState(2) == storm::storage::MaximalEndComponent::set_type{4});

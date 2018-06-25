@@ -3,12 +3,12 @@
 #include <map>
 
 #include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/parser/ExpressionParser.h"
+#include "storm-parsers/parser/ExpressionParser.h"
 #include "storm/storage/expressions/ExpressionEvaluator.h"
 
 #include "storm-dft/storage/dft/DFT.h"
 #include "storm-dft/builder/DFTBuilder.h"
-#include "storm/parser/ValueParser.h"
+#include "storm-parsers/parser/ValueParser.h"
 
 
 namespace storm {

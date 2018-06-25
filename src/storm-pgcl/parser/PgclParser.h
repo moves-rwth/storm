@@ -5,9 +5,9 @@
 #include <memory>
 #include <iomanip>
 // Includes files for building and parsing the PGCL program
-#include "storm/parser/SpiritParserDefinitions.h"
-#include "storm/parser/SpiritErrorHandler.h"
-#include "storm/parser/ExpressionParser.h"
+#include "storm-parsers/parser/SpiritParserDefinitions.h"
+#include "storm-parsers/parser/SpiritErrorHandler.h"
+#include "storm-parsers/parser/ExpressionParser.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm-pgcl/storage/pgcl/PgclProgram.h"

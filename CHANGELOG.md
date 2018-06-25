@@ -12,6 +12,7 @@ Version 1.2.x
 - `storm-dft`: test cases for DFT analysis
 - Sound value iteration (SVI) for DTMCs and MDPs
 - Topological solver for linear equation systems and MinMax equation systems.
+- Added support for expected total rewards in the sparse engine
 
 
 ### Version 1.2.1 (2018/02)

@@ -384,6 +384,16 @@ namespace storm {
             }
             
             template<typename ValueType, typename RewardModelType>
+            std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeTotalRewards(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, RewardModelType const& rewardModel, bool qualitative, ModelCheckerHint const& hint) {
+                // Identify the states from which only states with zero reward are reachable.
+                // We can then compute reachability rewards assuming these states as target set.
+                storm::storage::BitVector statesWithoutReward = rewardModel.getStatesWithZeroReward(transitionMatrix);
+                storm::storage::BitVector rew0States = storm::utility::graph::performProbGreater0(backwardTransitions, statesWithoutReward, ~statesWithoutReward);
+                rew0States.complement();
+                return computeReachabilityRewards(env, std::move(goal), transitionMatrix, backwardTransitions, rewardModel, rew0States, qualitative, hint);
+            }
+            
+            template<typename ValueType, typename RewardModelType>
             std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeReachabilityRewards(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, RewardModelType const& rewardModel, storm::storage::BitVector const& targetStates, bool qualitative, ModelCheckerHint const& hint) {
                 
                 return computeReachabilityRewards(env, std::move(goal), transitionMatrix, backwardTransitions,

@@ -6,4 +6,4 @@ set_target_properties(storm-dft-cli PROPERTIES OUTPUT_NAME "storm-dft")
 add_dependencies(binaries storm-dft-cli)
 
 # installation
-install(TARGETS storm-dft-cli RUNTIME DESTINATION bin LIBRARY DESTINATION lib OPTIONAL)
+install(TARGETS storm-dft-cli EXPORT storm_Targets RUNTIME DESTINATION bin LIBRARY DESTINATION lib OPTIONAL)

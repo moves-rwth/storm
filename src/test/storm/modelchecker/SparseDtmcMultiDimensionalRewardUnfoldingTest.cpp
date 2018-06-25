@@ -7,6 +7,7 @@
 #include "storm/settings/SettingsManager.h"
 #include "storm/utility/constants.h"
 #include "storm/api/storm.h"
+#include "storm-parsers/api/storm-parsers.h"
 #include "storm/environment/Environment.h"
 
 TEST(SparseDtmcMultiDimensionalRewardUnfoldingTest, cost_bounded_die) {

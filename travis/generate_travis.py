@@ -44,6 +44,9 @@ if __name__ == "__main__":
     s += "dist: trusty\n"
     s += "language: cpp\n"
     s += "\n"
+    s += "git:\n"
+    s += "  depth: false\n"
+    s += "\n"
     s += "# Enable caching\n"
     s += "cache:\n"
     s += "  timeout: 1000\n"
@@ -61,7 +64,7 @@ if __name__ == "__main__":
     s += "    on_failure: always\n"
     s += "    on_success: change\n"
     s += "    recipients:\n"
-    s += '    secure: "Q9CW/PtyWkZwExDrfFFb9n1STGYsRfI6awv1bZHcGwfrDvhpXoMCuF8CwviIfilm7fFJJEoKizTtdRpY0HrOnY/8KY111xrtcFYosxdndv7xbESodIxQOUoIEFCO0mCNHwWYisoi3dAA7H3Yn661EsxluwHjzX5vY0xSbw0n229hlsFz092HwGLSU33zHl7eXpQk+BOFmBTRGlOq9obtDZ17zbHz1oXFZntHK/JDUIYP0b0uq8NvE2jM6CIVdcuSwmIkOhZJoO2L3Py3rBbPci+L2PSK4Smv2UjCPF8KusnOaFIyDB3LcNM9Jqq5ssJMrK/KaO6BiuYrOZXYWZ7KEg3Y/naC8HjOH1dzty+P7oW46sb9F03pTsufqD4R7wcK+9wROTztO6aJPDG/IPH7EWgrBTxqlOkVRwi2eYuQouZpZUW6EMClKbMHMIxCH2S8aOk/r1w2cNwmPEcunnP0nl413x/ByHr4fTPFykPj8pQxIsllYjpdWBRQfDOauKWGzk6LcrFW0qpWP+/aJ2vYu/IoZQMG5lMHbp6Y1Lg09pYm7Q983v3b7D+JvXhOXMyGq91HyPahA2wwKoG1GA4uoZ2I95/IFYNiKkelDd3WTBoFLNF9YFoEJNdCywm1fO2WY4WkyEFBuQcgDA+YpFMJJMxjTbivYk9jvHk2gji//2w="\n'
+    s += '    - secure: "VWnsiQkt1xjgRo1hfNiNQqvLSr0fshFmLV7jJlUixhCr094mgD0U2bNKdUfebm28Byg9UyDYPbOFDC0sx7KydKiL1q7FKKXkyZH0k04wUu8XiNw+fYkDpmPnQs7G2n8oJ/GFJnr1Wp/1KI3qX5LX3xot4cJfx1I5iFC2O+p+ng6v/oSX+pewlMv4i7KL16ftHHHMo80N694v3g4B2NByn4GU2/bjVQcqlBp/TiVaUa5Nqu9DxZi/n9CJqGEaRHOblWyMO3EyTZsn45BNSWeQ3DtnMwZ73rlIr9CaEgCeuArc6RGghUAVqRI5ao+N5apekIaILwTgL6AJn+Lw/+NRPa8xclgd0rKqUQJMJCDZKjKz2lmIs3bxfELOizxJ3FJQ5R95FAxeAZ6rb/j40YqVVTw2IMBDnEE0J5ZmpUYNUtPti/Adf6GD9Fb2y8sLo0XDJzkI8OxYhfgjSy5KYmRj8O5MXcP2MAE8LQauNO3MaFnL9VMVOTZePJrPozQUgM021uyahf960+QNI06Uqlmg+PwWkSdllQlxHHplOgW7zClFhtSUpnJxcsUBzgg4kVg80gXUwAQkaDi7A9Wh2bs+TvMlmHzBwg+2SaAfWDgjeJIeOaipDkF1uSGzC+EHAiiKYMLd4Aahoi8SuelJUucoyJyLAq00WdUFQIh/izVhM4Y="\n'
     s += "\n"
     s += "#\n"
     s += "# Configurations\n"

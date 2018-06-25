@@ -3,7 +3,7 @@
 #include <map>
 
 #include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/parser/ExpressionParser.h"
+#include "storm-parsers/parser/ExpressionParser.h"
 #include "storm/storage/expressions/ExpressionEvaluator.h"
 
 #include "storm-dft/storage/dft/DFT.h"

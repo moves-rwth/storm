@@ -18,7 +18,7 @@ namespace storm {
                 // The resulting matrix
                 storm::storage::SparseMatrix<ValueType> matrix;
                 // Index mapping that gives for each row of the resulting matrix the corresponding row in the original matrix.
-                // For the empty rows added to EC states, an arbitrary row of the original matrix that stays inside the EC is given.
+                // For the sink rows added to EC states, an arbitrary row of the original matrix that stays inside the EC is given.
                 std::vector<uint_fast64_t> newToOldRowMapping;
                 // Gives for each state (=rowGroup) of the original matrix the corresponding state in the resulting matrix.
                 // States of a removed ECs are mapped to the state that substitutes the EC.
@@ -38,9 +38,10 @@ namespace storm {
              *
              * For each such EC (that is not contained in another EC), we add a new state and redirect all incoming and outgoing
              * transitions of the EC to (and from) this state.
-             * If addEmptyRowStates is true for at least one state of an eliminated EC, an empty row is added to the new state (representing the choice to stay at the EC forever).
+             * If addSinkRowStates is true for at least one state of an eliminated EC, a row is added to the new state (representing the choice to stay at the EC forever).
+             * If addSelfLoopAtSinkStates is true, such rows get a selfloop (with value 1). Otherwise, the row remains empty.
              */
-            static EndComponentEliminatorReturnType transform(storm::storage::SparseMatrix<ValueType> const& originalMatrix, storm::storage::BitVector const& subsystemStates, storm::storage::BitVector const& possibleECRows, storm::storage::BitVector const& addEmptyRowStates) {
+            static EndComponentEliminatorReturnType transform(storm::storage::SparseMatrix<ValueType> const& originalMatrix, storm::storage::BitVector const& subsystemStates, storm::storage::BitVector const& possibleECRows, storm::storage::BitVector const& addSinkRowStates, bool addSelfLoopAtSinkStates = false) {
                 STORM_LOG_DEBUG("Invoked EndComponentEliminator on matrix with " << originalMatrix.getRowGroupCount() << " row groups.");
                 
                 storm::storage::MaximalEndComponentDecomposition<ValueType> ecs = computeECs(originalMatrix, possibleECRows, subsystemStates);
@@ -57,7 +58,7 @@ namespace storm {
                 EndComponentEliminatorReturnType result;
                 std::vector<uint_fast64_t> newRowGroupIndices;
                 result.oldToNewStateMapping = std::vector<uint_fast64_t>(originalMatrix.getRowGroupCount(), std::numeric_limits<uint_fast64_t>::max());
-                storm::storage::BitVector emptyRows(originalMatrix.getRowCount(), false); // will be resized as soon as the rowCount of the resulting matrix is known
+                storm::storage::BitVector sinkRows(originalMatrix.getRowCount(), false); // will be resized as soon as the rowCount of the resulting matrix is known
                 
                 for(auto keptState : keptStates) {
                     result.oldToNewStateMapping[keptState] = newRowGroupIndices.size(); // i.e., the current number of processed states
@@ -68,7 +69,7 @@ namespace storm {
                 }
                 for (auto const& ec : ecs) {
                     newRowGroupIndices.push_back(result.newToOldRowMapping.size());
-                    bool ecGetsEmptyRow = false;
+                    bool ecGetsSinkRow = false;
                     for (auto const& stateActionsPair : ec) {
                         result.oldToNewStateMapping[stateActionsPair.first] = newRowGroupIndices.size()-1;
                         for(uint_fast64_t row = originalMatrix.getRowGroupIndices()[stateActionsPair.first]; row < originalMatrix.getRowGroupIndices()[stateActionsPair.first +1]; ++row) {
@@ -76,18 +77,18 @@ namespace storm {
                                 result.newToOldRowMapping.push_back(row);
                             }
                         }
-                        ecGetsEmptyRow |= addEmptyRowStates.get(stateActionsPair.first);
+                        ecGetsSinkRow |= addSinkRowStates.get(stateActionsPair.first);
                     }
-                    if(ecGetsEmptyRow) {
+                    if(ecGetsSinkRow) {
                         STORM_LOG_ASSERT(result.newToOldRowMapping.size() < originalMatrix.getRowCount(), "Didn't expect to see more rows in the reduced matrix than in the original one.");
-                        emptyRows.set(result.newToOldRowMapping.size(), true);
+                        sinkRows.set(result.newToOldRowMapping.size(), true);
                         result.newToOldRowMapping.push_back(*ec.begin()->second.begin());
                     }
                 }
                 newRowGroupIndices.push_back(result.newToOldRowMapping.size());
-                emptyRows.resize(result.newToOldRowMapping.size());
+                sinkRows.resize(result.newToOldRowMapping.size());
                 
-                result.matrix = buildTransformedMatrix(originalMatrix, newRowGroupIndices, result.newToOldRowMapping, result.oldToNewStateMapping, emptyRows);
+                result.matrix = buildTransformedMatrix(originalMatrix, newRowGroupIndices, result.newToOldRowMapping, result.oldToNewStateMapping, sinkRows, addSelfLoopAtSinkStates);
                 STORM_LOG_DEBUG("EndComponentEliminator is done. Resulting  matrix has " << result.matrix.getRowGroupCount() << " row groups.");
                 return result;
             }
@@ -136,15 +137,20 @@ namespace storm {
                                                                                   std::vector<uint_fast64_t> const& newRowGroupIndices,
                                                                                   std::vector<uint_fast64_t> const& newToOldRowMapping,
                                                                                   std::vector<uint_fast64_t> const& oldToNewStateMapping,
-                                                                                  storm::storage::BitVector const& emptyRows) {
+                                                                                  storm::storage::BitVector const& sinkRows,
+                                                                                  bool addSelfLoopAtSinkStates) {
                 
                 uint_fast64_t numRowGroups = newRowGroupIndices.size()-1;
                 uint_fast64_t newRow = 0;
                 storm::storage::SparseMatrixBuilder<ValueType> builder(newToOldRowMapping.size(), numRowGroups, originalMatrix.getEntryCount(), false, true, numRowGroups);
-                for(uint_fast64_t newRowGroup = 0; newRowGroup < numRowGroups; ++newRowGroup) {
+                for (uint_fast64_t newRowGroup = 0; newRowGroup < numRowGroups; ++newRowGroup) {
                     builder.newRowGroup(newRow);
-                    for(; newRow < newRowGroupIndices[newRowGroup+1]; ++newRow) {
-                        if(!emptyRows.get(newRow)) {
+                    for (; newRow < newRowGroupIndices[newRowGroup + 1]; ++newRow) {
+                        if (sinkRows.get(newRow)) {
+                            if (addSelfLoopAtSinkStates) {
+                                builder.addNextValue(newRow, newRowGroup, storm::utility::one<ValueType>());
+                            }
+                        } else {
                             // Make sure that the entries for this row are inserted in the right order.
                             // Also, transitions to the same EC need to be merged and transitions to states that are erased need to be ignored
                             std::map<uint_fast64_t, ValueType> sortedEntries;

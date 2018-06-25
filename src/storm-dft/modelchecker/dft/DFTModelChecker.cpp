@@ -1,9 +1,12 @@
 #include "DFTModelChecker.h"
 
 #include "storm/settings/modules/IOSettings.h"
+#include "storm/settings/modules/GeneralSettings.h"
 #include "storm/builder/ParallelCompositionBuilder.h"
 #include "storm/utility/bitoperations.h"
 #include "storm/utility/DirectEncodingExporter.h"
+#include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 
 #include "storm-dft/builder/ExplicitDFTModelBuilder.h"
 #include "storm-dft/storage/dft/DFTIsomorphism.h"

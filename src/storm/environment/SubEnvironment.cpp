@@ -16,29 +16,42 @@
 namespace storm {
     
     template<typename EnvironmentType>
-    SubEnvironment<EnvironmentType>::SubEnvironment() : subEnv(std::make_unique<EnvironmentType>()) {
+    SubEnvironment<EnvironmentType>::SubEnvironment() : subEnv(nullptr) {
         // Intentionally left empty
     }
     
     template<typename EnvironmentType>
-    SubEnvironment<EnvironmentType>::SubEnvironment(SubEnvironment const& other) : subEnv(new EnvironmentType(*other.subEnv)) {
+    SubEnvironment<EnvironmentType>::SubEnvironment(SubEnvironment const& other) : subEnv(other.subEnv ? new EnvironmentType(*other.subEnv) : nullptr) {
         // Intentionally left empty
     }
     
     template<typename EnvironmentType>
     SubEnvironment<EnvironmentType>& SubEnvironment<EnvironmentType>::operator=(SubEnvironment const& other) {
-        subEnv = std::make_unique<EnvironmentType>(*other.subEnv);
+        if (other.subEnv) {
+            subEnv = std::make_unique<EnvironmentType>(*other.subEnv);
+        } else {
+            subEnv.reset();
+        }
         return *this;
     }
     
     template<typename EnvironmentType>
     EnvironmentType const& SubEnvironment<EnvironmentType>::get() const {
+        assertInitialized();
         return *subEnv;
     }
     
     template<typename EnvironmentType>
     EnvironmentType& SubEnvironment<EnvironmentType>::get() {
+        assertInitialized();
         return *subEnv;
+    }
+    
+    template<typename EnvironmentType>
+    void SubEnvironment<EnvironmentType>::assertInitialized() const {
+        if (!subEnv) {
+            subEnv = std::make_unique<EnvironmentType>();
+        }
     }
     
     template class SubEnvironment<InternalEnvironment>;
