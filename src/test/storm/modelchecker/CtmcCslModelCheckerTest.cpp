@@ -384,7 +384,7 @@ namespace {
             EXPECT_NEAR(this->parseNumber("23/8"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
             
             result = checker->check(this->env(), tasks[1]);
-            EXPECT_TRUE(storm::utility::isInfinity(this->getQuantitativeResultAtInitialState(model, result), this->precision()));
+            EXPECT_TRUE(storm::utility::isInfinity(this->getQuantitativeResultAtInitialState(model, result)));
         }
         
     }

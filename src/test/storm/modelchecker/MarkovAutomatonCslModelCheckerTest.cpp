@@ -135,11 +135,12 @@ namespace {
         template <typename MT = typename TestType::ModelType>
         typename std::enable_if<std::is_same<MT, SymbolicModelType>::value, std::shared_ptr<storm::modelchecker::AbstractModelChecker<MT>>>::type
         createModelChecker(std::shared_ptr<MT> const& model) const {
-            if (TestType::engine == storm::settings::modules::CoreSettings::Engine::Hybrid) {
-                return std::make_shared<storm::modelchecker::HybridMarkovAutomatonCslModelChecker<SymbolicModelType>>(*model);
-            } else if (TestType::engine == storm::settings::modules::CoreSettings::Engine::Dd) {
-                return std::make_shared<storm::modelchecker::SymbolicMarkovAutomatonCslModelChecker<SymbolicModelType>>(*model);
-            }
+//            if (TestType::engine == storm::settings::modules::CoreSettings::Engine::Hybrid) {
+//              return std::make_shared<storm::modelchecker::HybridMarkovAutomatonCslModelChecker<SymbolicModelType>>(*model);
+//            } else if (TestType::engine == storm::settings::modules::CoreSettings::Engine::Dd) {
+//                return std::make_shared<storm::modelchecker::SymbolicMarkovAutomatonCslModelChecker<SymbolicModelType>>(*model);
+//            }
+            return nullptr;
         }
         
         bool getQualitativeResultAtInitialState(std::shared_ptr<storm::models::Model<ValueType>> const& model, std::unique_ptr<storm::modelchecker::CheckResult>& result) {
@@ -161,7 +162,8 @@ namespace {
             if (isSparseModel()) {
                 return std::make_unique<storm::modelchecker::ExplicitQualitativeCheckResult>(model->template as<SparseModelType>()->getInitialStates());
             } else {
-                return std::make_unique<storm::modelchecker::SymbolicQualitativeCheckResult<TestType::ddType>>(model->template as<SymbolicModelType>()->getReachableStates(), model->template as<SymbolicModelType>()->getInitialStates());
+            //    return std::make_unique<storm::modelchecker::SymbolicQualitativeCheckResult<TestType::ddType>>(model->template as<SymbolicModelType>()->getReachableStates(), model->template as<SymbolicModelType>()->getInitialStates());
+                return nullptr;
             }
         }
     };
@@ -170,7 +172,7 @@ namespace {
             SparseDoubleValueIterationEnvironment,
             SparseDoubleIntervalIterationEnvironment,
             SparseRationalPolicyIterationEnvironment,
-            SparseRationalRationalSearchEnvironment,
+            SparseRationalRationalSearchEnvironment
         > TestingTypes;
     
     TYPED_TEST_CASE(MarkovAutomatonCslModelCheckerTest, TestingTypes);
@@ -196,8 +198,10 @@ namespace {
         result = checker->check(this->env(), tasks[1]);
         EXPECT_NEAR(this->parseNumber("2/3"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
         
-        result = checker->check(this->env(), tasks[2]);
-        EXPECT_NEAR(this->parseNumber("0.455504"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        if (!storm::utility::isZero(this->precision())) {
+            result = checker->check(this->env(), tasks[2]);
+            EXPECT_NEAR(this->parseNumber("0.455504"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        }
         
     }
     
@@ -214,11 +218,13 @@ namespace {
         auto checker = this->createModelChecker(model);
         std::unique_ptr<storm::modelchecker::CheckResult> result;
         
-        result = checker->check(this->env(), tasks[0]);
-        EXPECT_NEAR(this->parseNumber("0.6321205588"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
-        
-        result = checker->check(this->env(), tasks[1]);
-        EXPECT_NEAR(this->parseNumber("0.727468207"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        if (!storm::utility::isZero(this->precision())) {
+            result = checker->check(this->env(), tasks[0]);
+            EXPECT_NEAR(this->parseNumber("0.6321205588"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+            
+            result = checker->check(this->env(), tasks[1]);
+            EXPECT_NEAR(this->parseNumber("0.727468207"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        }
     }
     
     TYPED_TEST(MarkovAutomatonCslModelCheckerTest, simple2) {
@@ -230,11 +236,11 @@ namespace {
                     formulasString += "; R{\"rew2\"}min=? [C]";
                     formulasString += "; R{\"rew3\"}min=? [C]";
         
-        auto modelFormulas = this->buildModelFormulas(STORM_TEST_RESOURCES_DIR "/ma/simple2.nm", formulasString);
+        auto modelFormulas = this->buildModelFormulas(STORM_TEST_RESOURCES_DIR "/ma/simple2.ma", formulasString);
         auto model = std::move(modelFormulas.first);
         auto tasks = this->getTasks(modelFormulas.second);
-        EXPECT_EQ(5ul, model->getNumberOfStates());
-        EXPECT_EQ(8ul, model->getNumberOfTransitions());
+        EXPECT_EQ(6ul, model->getNumberOfStates());
+        EXPECT_EQ(11ul, model->getNumberOfTransitions());
         ASSERT_EQ(model->getType(), storm::models::ModelType::MarkovAutomaton);
         auto checker = this->createModelChecker(model);
         std::unique_ptr<storm::modelchecker::CheckResult> result;
