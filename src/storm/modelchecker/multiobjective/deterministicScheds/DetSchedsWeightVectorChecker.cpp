@@ -1,5 +1,10 @@
 #include "storm/modelchecker/multiobjective/deterministicScheds/DetSchedsWeightVectorChecker.h"
 
+#include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/models/sparse/Mdp.h"
+#include "storm/models/sparse/MarkovAutomaton.h"
+#include "storm/models/sparse/StandardRewardModel.h"
+
 namespace storm {
     namespace modelchecker {
         namespace multiobjective {
@@ -74,6 +79,11 @@ namespace storm {
                 return schedulerEvaluator->getScheduler();
             }
             
+            template class DetSchedsWeightVectorChecker<storm::models::sparse::Mdp<double>>;
+            template class DetSchedsWeightVectorChecker<storm::models::sparse::Mdp<storm::RationalNumber>>;
+            template class DetSchedsWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>;
+            template class DetSchedsWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>;
+
             
         }
     }
