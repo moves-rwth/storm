@@ -3,6 +3,9 @@
 #include <memory>
 
 #include "storm/modelchecker/multiobjective/preprocessing/SparseMultiObjectivePreprocessorResult.h"
+#include "storm/modelchecker/multiobjective/deterministicScheds/MultiObjectiveSchedulerEvaluator.h"
+#include "storm/modelchecker/multiobjective/deterministicScheds/DetSchedsWeightVectorChecker.h"
+
 #include "storm/storage/geometry/Polytope.h"
 #include "storm/storage/geometry/Halfspace.h"
 #include "storm/modelchecker/results/CheckResult.h"
@@ -19,6 +22,7 @@ namespace storm {
             public:
                 typedef uint64_t PointId;
                 typedef typename std::shared_ptr<storm::storage::geometry::Polytope<GeometryValueType>> Polytope;
+                typedef typename SparseModelType::ValueType ModelValueType;
                 
                 class Point {
                 public:
@@ -51,6 +55,10 @@ namespace storm {
                 
                 class Pointset {
                 public:
+                    
+                    typedef typename std::map<PointId, Point>::const_iterator iterator_type;
+
+                    
                     Pointset();
                     
                     /*!
@@ -60,17 +68,25 @@ namespace storm {
                      * Erases all points in the set, that are dominated by the given point.
                      * If the same point is already contained in the set, its id is returned
                      */
-                    boost::optional<PointId> addPoint(Point const& point);
+                    boost::optional<PointId> addPoint(Point&& point);
                     
                     /*!
                      * Returns the point with the given ID
                      */
                     Point const& getPoint(PointId const& id) const;
                     
+                    iterator_type begin() const;
+                    iterator_type end() const;
+                    
                     /*!
                      * Returns the number of points currently contained in the set
                      */
                     uint64_t size() const;
+                    
+                    /*!
+                     * Returns the downward closure of the contained points.
+                     */
+                    Polytope downwardClosure() const;
                     
                     void collectPointsInPolytope(std::set<PointId>& collectedPoints, Polytope const& polytope);
                     
@@ -85,6 +101,7 @@ namespace storm {
                 public:
                     Facet(storm::storage::geometry::Halfspace<GeometryValueType> const& halfspace);
                     Facet(storm::storage::geometry::Halfspace<GeometryValueType>&& halfspace);
+                    storm::storage::geometry::Halfspace<GeometryValueType> const& getHalfspace() const;
                     void addPoint(PointId const& pointId);
                     std::vector<PointId> const& getPoints() const;
                     uint64_t getNumberOfPoints() const;
@@ -94,13 +111,14 @@ namespace storm {
                      * More precisely, the vertices of the polytope are the points on the facet
                      * and point p with p_i = min {x_i | x lies on facet}
                      */
-                    Polytope getInducedSimplex(Pointset const& pointset) const;
+                    Polytope const& getInducedSimplex(Pointset const& pointset);
                     
                     
 
                 private:
                     storm::storage::geometry::Halfspace<GeometryValueType> halfspace;
                     std::vector<PointId> paretoPointsOnFacet;
+                    Polytope inducedSimplex;
                 };
                 
                 
@@ -126,7 +144,13 @@ namespace storm {
                 /*!
                  * Checks the precision of the given Facet and returns true, if no further processing of the facet is necessary
                  */
-                bool checkFacetPrecision(Environment const& env, Facet const& f);
+                bool checkFacetPrecision(Environment const& env, Facet& f);
+                
+                /*!
+                 * Checks the precision of the given Facet and returns true, if no further processing of the facet is necessary.
+                 * Also takes the given points within the simplex of the facet into account
+                 */
+                bool checkFacetPrecision(Environment const& env, Facet& f, std::set<PointId> const& collectedSimplexPoints);
                 
                 /*! Processes the given facet as follows:
                  * 1. Optimize in the facet direction. Potentially, this adds new, unprocessed facets
@@ -134,7 +158,7 @@ namespace storm {
                  * 3. Find more points that lie on the facet
                  * 4. Find all points that lie in the induced simplex or prove that there are none
                  */
-                void processFacet(Environment const& env, Facet const& f);
+                void processFacet(Environment const& env, Facet& f);
                 
                 /*!
                  * Optimizes in the facet direction. If this results in a point that does not lie on the facet,
@@ -142,13 +166,13 @@ namespace storm {
                  * 2. New facets are generated and (if not already precise enough) added to unprocessedFacets
                  * 3. true is returned
                  */
-                bool optimizeAndSplitFacet(Environment const& env, Facet const& f);
+                bool optimizeAndSplitFacet(Environment const& env, Facet& f);
                 
                 /*!
                  * Finds all points that lie within the induced Simplex of the given facet.
                  * Returns true if the facet is sufficiently precise when considering all added points
                  */
-                bool findAndCheckCachedPoints(Environment const& env, Facet const& f, Polytope const& inducedSimplex, std::set<PointId>& collectedPoints);
+                bool findAndCheckCachedPoints(Environment const& env, Facet& f, std::set<PointId>& collectedPoints);
                 
                 /*!
                  * Finds points that lie on the facet
@@ -158,15 +182,19 @@ namespace storm {
                  * use smt to find an eps-box in the simplex that does not contain a point. Add new points until one in the box is found. repeat.
                  * stop when no more points or boxes can be found.
                  */
-                bool analyzePointsOnFacet(Environment const& env, Facet const& f, Polytope const& inducedSimplex, std::set<PointId>& collectedPoints);
+                bool analyzePointsOnFacet(Environment const& env, Facet& f, std::set<PointId>& collectedPoints);
                 
-                bool analyzePointsInSimplex(Environment const& env, Facet const& f, Polytope const& inducedSimplex, std::set<PointId>& collectedPoints);
+                bool analyzePointsInSimplex(Environment const& env, Facet& f, std::set<PointId>& collectedPoints);
                 
                 Pointset pointset;
                 std::queue<Facet> unprocessedFacets;
                 Polytope overApproximation;
                 std::vector<Polytope> unachievableAreas;
                 
+                std::shared_ptr<MultiObjectiveSchedulerEvaluator<SparseModelType>> schedulerEvaluator;
+                std::shared_ptr<DetSchedsWeightVectorChecker<SparseModelType>> weightVectorChecker;
+                std::shared_ptr<SparseModelType> const& model;
+                std::vector<Objective<ModelValueType>> const& objectives;
             };
             
         }
