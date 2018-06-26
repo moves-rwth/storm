@@ -117,6 +117,13 @@ namespace storm {
                 virtual std::shared_ptr<Polytope<ValueType>> affineTransformation(std::vector<Point> const& matrix, Point const& vector) const = 0;
                 
                 /*!
+                 * Returns the Polytope described by the set {x+b | x \in this}
+                 *
+                 * @param b the transformation offset
+                 */
+                std::shared_ptr<Polytope<ValueType>> shift(Point const& b) const;
+                
+                /*!
                  * Returns the downward closure of this, i.e., the set { x | ex. y \in P : x<=y} where P is this Polytope.
                  */
                 virtual std::shared_ptr<Polytope<ValueType>> downwardClosure() const;

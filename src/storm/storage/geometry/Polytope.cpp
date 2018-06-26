@@ -168,6 +168,16 @@ namespace storm {
             }
 
             template <typename ValueType>
+            std::shared_ptr<Polytope<ValueType>> Polytope<ValueType>::shift(Point const& b) const {
+                // perform an affine transformation with identity matrix
+                std::vector<Point> idMatrix(b.size(), Point(b.size(), storm::utility::zero<ValueType>()));
+                for (uint64_t i = 0; i < b.size(); ++i) {
+                    idMatrix[i][i] = storm::utility::one<ValueType>();
+                }
+                return affineTransformation(idMatrix, b);
+            }
+
+            template <typename ValueType>
             std::shared_ptr<Polytope<ValueType>> Polytope<ValueType>::downwardClosure() const {
                 return createDownwardClosure(this->getVertices());
             }
