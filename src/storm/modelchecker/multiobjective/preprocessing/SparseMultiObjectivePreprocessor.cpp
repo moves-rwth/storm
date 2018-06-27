@@ -253,7 +253,7 @@ namespace storm {
                     reachableFromInit &= ~notLeftOrRight;
                     // If we can reach a state that is reachable from goal, but which is not a goal state, it means that the transformation to expected rewards is not possible.
                     if ((reachableFromInit & reachableFromGoal).empty()) {
-                        STORM_LOG_INFO("Objective " << data.objectives.back()->originalFormula << " is transformed to an expected total/cumulative reward property.");
+                        STORM_LOG_INFO("Objective " << *data.objectives.back()->originalFormula << " is transformed to an expected total/cumulative reward property.");
                         // Transform to expected total rewards:
                         // build stateAction reward vector that gives (one*transitionProbability) reward whenever a transition leads from a reachableFromInit state to a goalState
                         std::vector<typename SparseModelType::ValueType> objectiveRewards(data.model->getTransitionMatrix().getRowCount(), storm::utility::zero<typename SparseModelType::ValueType>());
@@ -269,7 +269,7 @@ namespace storm {
                         }
                         data.objectives.back()->formula = std::make_shared<storm::logic::RewardOperatorFormula>(subformula, rewardModelName, opInfo);
                     } else {
-                        STORM_LOG_INFO("Objective " << data.objectives.back()->originalFormula << " can not be transformed to an expected total/cumulative reward property.");
+                        STORM_LOG_INFO("Objective " << *data.objectives.back()->originalFormula << " can not be transformed to an expected total/cumulative reward property.");
                         data.objectives.back()->formula =  std::make_shared<storm::logic::ProbabilityOperatorFormula>(formula.asSharedPointer(), opInfo);
                     }
                 }
@@ -308,7 +308,7 @@ namespace storm {
                 template<typename SparseModelType>
                 void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessEventuallyFormula(storm::logic::EventuallyFormula const& formula, storm::logic::OperatorInformation const& opInfo, PreprocessorData& data, boost::optional<std::string> const& optionalRewardModelName) {
                     if (formula.isReachabilityProbabilityFormula()){
-                        preprocessUntilFormula(storm::logic::UntilFormula(storm::logic::Formula::getTrueFormula(), formula.getSubformula().asSharedPointer()), opInfo, data);
+                        preprocessUntilFormula(*std::make_shared<storm::logic::UntilFormula>(storm::logic::Formula::getTrueFormula(), formula.getSubformula().asSharedPointer()), opInfo, data);
                         return;
                     }
                     
@@ -326,7 +326,7 @@ namespace storm {
                     reachableFromInit &= ~subFormulaResult;
                     // If we can reach a state that is reachable from goal but which is not a goal state, it means that the transformation to expected total rewards is not possible.
                     if ((reachableFromInit & reachableFromGoal).empty()) {
-                        STORM_LOG_INFO("Objective " << data.objectives.back()->originalFormula << " is transformed to an expected total reward property.");
+                        STORM_LOG_INFO("Objective " << *data.objectives.back()->originalFormula << " is transformed to an expected total reward property.");
                         // Transform to expected total rewards:
                         
                         std::string rewardModelName = data.rewardModelNamePrefix + std::to_string(data.objectives.size());
@@ -357,12 +357,18 @@ namespace storm {
                             STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "The formula " << formula << " neither considers reachability probabilities nor reachability rewards " << (data.model->isOfType(storm::models::ModelType::MarkovAutomaton) ?  "nor reachability time" : "") << ". This is not supported.");
                         }
                     } else {
-                        STORM_LOG_INFO("Objective " << data.objectives.back()->originalFormula << " can not be transformed to an expected total/cumulative reward property.");
+                        STORM_LOG_INFO("Objective " << *data.objectives.back()->originalFormula << " can not be transformed to an expected total/cumulative reward property.");
                         if (formula.isReachabilityRewardFormula()) {
                             assert(optionalRewardModelName.is_initialized());
                             data.objectives.back()->formula =  std::make_shared<storm::logic::RewardOperatorFormula>(formula.asSharedPointer(), optionalRewardModelName.get(), opInfo);
                         } else if (formula.isReachabilityTimeFormula() && data.model->isOfType(storm::models::ModelType::MarkovAutomaton)) {
-                            data.objectives.back()->formula =  std::make_shared<storm::logic::TimeOperatorFormula>(formula.asSharedPointer(), opInfo);
+                            // Reduce to reachability rewards so that time formulas do not have to be treated seperately later.
+                            std::string rewardModelName = data.rewardModelNamePrefix + std::to_string(data.objectives.size());
+                            auto newsubformula = std::make_shared<storm::logic::EventuallyFormula>(formula.getSubformula().asSharedPointer(), storm::logic::FormulaContext::Reward);
+                            data.objectives.back()->formula =  std::make_shared<storm::logic::RewardOperatorFormula>(newsubformula, rewardModelName, opInfo);
+                            std::vector<typename SparseModelType::ValueType> timeRewards(data.model->getNumberOfStates(), storm::utility::zero<typename SparseModelType::ValueType>());
+                            storm::utility::vector::setVectorValues(timeRewards, dynamic_cast<storm::models::sparse::MarkovAutomaton<typename SparseModelType::ValueType> const&>(*data.model).getMarkovianStates(), storm::utility::one<typename SparseModelType::ValueType>());
+                            data.model->addRewardModel(rewardModelName, typename SparseModelType::RewardModelType(std::move(timeRewards)));
                         } else {
                             STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "The formula " << formula << " neither considers reachability probabilities nor reachability rewards " << (data.model->isOfType(storm::models::ModelType::MarkovAutomaton) ?  "nor reachability time" : "") << ". This is not supported.");
                         }
