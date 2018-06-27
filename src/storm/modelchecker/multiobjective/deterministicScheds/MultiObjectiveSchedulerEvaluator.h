@@ -3,6 +3,7 @@
 #include <vector>
 
 #include "storm/modelchecker/multiobjective/preprocessing/SparseMultiObjectivePreprocessorResult.h"
+#include "storm/models/sparse/Mdp.h"
 
 namespace storm {
     
@@ -45,6 +46,9 @@ namespace storm {
                 void initializeSchedulerIndependentStates();
                 
                 ModelType const& model;
+                // In case the model is a markov automaton, we transform it to an mdp
+                std::shared_ptr<storm::models::sparse::Mdp<ValueType>> mdp;
+                
                 std::vector<Objective<ValueType>> const& objectives;
                 
                 // Indicates for each objective the set of states for which the result is fix (i.e. independent of the scheduler).

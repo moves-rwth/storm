@@ -1,3 +1,4 @@
+#include <storm/transformer/ContinuousToDiscreteTimeModelTransformer.h>
 #include "storm/modelchecker/multiobjective/deterministicScheds/MultiObjectiveSchedulerEvaluator.h"
 
 
@@ -27,9 +28,21 @@ namespace storm {
             
             template <class ModelType>
             MultiObjectiveSchedulerEvaluator<ModelType>::MultiObjectiveSchedulerEvaluator(preprocessing::SparseMultiObjectivePreprocessorResult<ModelType>& preprocessorResult) : model(*preprocessorResult.preprocessedModel), objectives(preprocessorResult.objectives), currSchedHasBeenChecked(false) {
-                results.resize(this->objectives.size());
+                results.resize(this->objectives.size(), std::vector<ValueType>(getModel().getNumberOfStates()));
                 currSched.resize(this->getModel().getNumberOfStates(), 0);
                 initializeSchedulerIndependentStates();
+                if (getModel().isOfType(storm::models::ModelType::MarkovAutomaton)) {
+                    bool transformMaToMdp = true;
+                    for (auto const& obj : objectives) {
+                        if (!storm::transformer::ContinuousToDiscreteTimeModelTransformer<ValueType>::preservesFormula(*obj.formula)) {
+                            transformMaToMdp = false;
+                        }
+                    }
+                    if (transformMaToMdp) {
+                        auto modelAsMa = getModel().template as<storm::models::sparse::MarkovAutomaton<ValueType>>();
+                        mdp = storm::transformer::ContinuousToDiscreteTimeModelTransformer<ValueType>::transform(*modelAsMa);
+                    }
+                }
             }
             
             template <class ModelType>
@@ -71,7 +84,6 @@ namespace storm {
             template<typename ValueType>
             std::unique_ptr<storm::modelchecker::CheckResult> invokeModelChecker(Environment const& env, std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
                 if (model->getType() == storm::models::ModelType::Dtmc) {
-                    return storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<ValueType>>(*model->template as<storm::models::sparse::Dtmc<ValueType>>()).check(env, task);
                 } else if(model->getType() == storm::models::ModelType::Ctmc) {
                     return storm::modelchecker::SparseCtmcCslModelChecker<storm::models::sparse::Ctmc<ValueType>>(*model->template as<storm::models::sparse::Ctmc<ValueType>>()).check(env, task);
                 } else {
@@ -87,11 +99,12 @@ namespace storm {
                         scheduler.setChoice(currSched[state], state);
                     }
                     
-                    auto detModel = model.applyScheduler(scheduler, false);
-                    
+                    auto detModel = mdp ? mdp->applyScheduler(scheduler, false) : model.applyScheduler(scheduler, false);
+                    STORM_LOG_ASSERT(detModel->isOfType(storm::models::ModelType::Dtmc), "Model is of unexpected type.");
+                    auto const& dtmc = *(detModel->template as<storm::models::sparse::Dtmc<ValueType>>());
                     for (uint64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
                         storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> task(*this->objectives[objIndex].formula, false);
-                        auto res = invokeModelChecker<ValueType>(env, detModel, task);
+                        auto res = storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<ValueType>>(dtmc).check(env, task);
                         results[objIndex] = std::move(res->template asExplicitQuantitativeCheckResult<ValueType>().getValueVector());
                     }
                     currSchedHasBeenChecked = true;
