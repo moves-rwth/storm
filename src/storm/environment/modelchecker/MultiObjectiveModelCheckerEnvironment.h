@@ -42,12 +42,16 @@ namespace storm {
         void setSchedulerRestriction(storm::storage::SchedulerClass const& value);
         void unsetSchedulerRestriction();
         
+        bool isPrintResultsSet() const;
+        void setPrintResults(bool value);
+        
     private:
         storm::modelchecker::multiobjective::MultiObjectiveMethod method;
         boost::optional<std::string> plotPathUnderApprox, plotPathOverApprox, plotPathParetoPoints;
         storm::RationalNumber precision;
         boost::optional<uint64_t> maxSteps;
         boost::optional<storm::storage::SchedulerClass> schedulerRestriction;
+        bool printResults;
     };
 }
 

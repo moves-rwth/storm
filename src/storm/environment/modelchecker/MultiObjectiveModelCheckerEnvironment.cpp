@@ -23,6 +23,8 @@ namespace storm {
         if (multiobjectiveSettings.hasSchedulerRestriction()) {
             schedulerRestriction = multiobjectiveSettings.getSchedulerRestriction();
         }
+        
+        printResults = multiobjectiveSettings.isPrintResultsSet();
     }
     
     MultiObjectiveModelCheckerEnvironment::~MultiObjectiveModelCheckerEnvironment() {
@@ -115,5 +117,13 @@ namespace storm {
     
     void MultiObjectiveModelCheckerEnvironment::unsetSchedulerRestriction() {
         schedulerRestriction = boost::none;
+    }
+    
+    bool MultiObjectiveModelCheckerEnvironment::isPrintResultsSet() const {
+        return printResults;
+    }
+    
+    void MultiObjectiveModelCheckerEnvironment::setPrintResults(bool value) {
+        printResults = value;
     }
 }

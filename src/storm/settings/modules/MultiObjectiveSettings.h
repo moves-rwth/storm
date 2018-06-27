@@ -68,6 +68,12 @@ namespace storm {
 				 */
 				storm::storage::SchedulerClass getSchedulerRestriction() const;
 				
+				
+				/*!
+				 * Retrieves whether output of intermediate results is enabled.
+				 */
+				bool isPrintResultsSet() const;
+				
                 
                 /*!
                  * Checks whether the settings are consistent. If they are inconsistent, an exception is thrown.
@@ -85,6 +91,7 @@ namespace storm {
 				const static std::string precisionOptionName;
 				const static std::string maxStepsOptionName;
 				const static std::string schedulerRestrictionOptionName;
+				const static std::string printResultsOptionName;
             };
             
         } // namespace modules

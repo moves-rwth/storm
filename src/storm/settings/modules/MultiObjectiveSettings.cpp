@@ -17,6 +17,7 @@ namespace storm {
             const std::string MultiObjectiveSettings::precisionOptionName = "precision";
             const std::string MultiObjectiveSettings::maxStepsOptionName = "maxsteps";
             const std::string MultiObjectiveSettings::schedulerRestrictionOptionName = "schedrest";
+            const std::string MultiObjectiveSettings::printResultsOptionName = "printres";
             
             MultiObjectiveSettings::MultiObjectiveSettings() : ModuleSettings(moduleName) {
                 std::vector<std::string> methods = {"pcaa", "constraintbased"};
@@ -31,6 +32,7 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, schedulerRestrictionOptionName, false, "Restricts the class of considered schedulers to non-randomized schedulers with the provided memory pattern.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("memorypattern", "The Pattern of the memory.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(memoryPatterns)).build())
                                 .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("memorystates", "The Number of memory states (only if supported by the pattern).").setDefaultValueUnsignedInteger(0).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, printResultsOptionName, true, "Prints intermediate results of the computation to standard output.").build();
             }
             
             storm::modelchecker::multiobjective::MultiObjectiveMethod MultiObjectiveSettings::getMultiObjectiveMethod() const {
@@ -93,6 +95,10 @@ namespace storm {
                 return result;
             }
 				
+            bool MultiObjectiveSettings::isPrintResultsSet() const {
+                return this->getOption(printResultsOptionName).getHasOptionBeenSet();
+            }
+            
             bool MultiObjectiveSettings::check() const {
                 std::shared_ptr<storm::settings::ArgumentValidator<std::string>> validator = ArgumentValidatorFactory::createWritableFileValidator();
                 
