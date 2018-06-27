@@ -171,7 +171,7 @@ namespace storm {
             
             template <typename ValueType, typename RewardModelType>
             bool MarkovAutomaton<ValueType, RewardModelType>::isConvertibleToCtmc() const {
-                return markovianStates.full();
+                return isClosed() && markovianStates.full();
             }
             
             template <typename ValueType, typename RewardModelType>
@@ -203,6 +203,19 @@ namespace storm {
             
             template <typename ValueType, typename RewardModelType>
             std::shared_ptr<storm::models::sparse::Ctmc<ValueType, RewardModelType>> MarkovAutomaton<ValueType, RewardModelType>::convertToCtmc() const {
+                if (isClosed() && markovianStates.full()) {
+                    storm::storage::sparse::ModelComponents<ValueType, RewardModelType> components(this->getTransitionMatrix(), this->getStateLabeling(), this->getRewardModels(), false);
+                    if (this->hasChoiceLabeling()) {
+                        components.choiceLabeling = this->getChoiceLabeling();
+                    }
+                    if (this->hasStateValuations()) {
+                        components.stateValuations = this->getStateValuations();
+                    }
+                    if (this->hasChoiceOrigins()) {
+                        components.choiceOrigins = this->getChoiceOrigins();
+                    }
+                    return std::make_shared<storm::models::sparse::Ctmc<ValueType, RewardModelType>>(std::move(components));
+                }
                 STORM_LOG_TRACE("MA matrix:" << std::endl << this->getTransitionMatrix());
                 STORM_LOG_TRACE("Markovian states: " << getMarkovianStates());
 
@@ -249,12 +262,10 @@ namespace storm {
 
                 //TODO update reward models and choice labels according to kept states
                 STORM_LOG_WARN_COND(this->getRewardModels().empty(), "Conversion of MA to CTMC does not preserve rewards.");
-                std::unordered_map<std::string, RewardModelType> rewardModels = this->getRewardModels();
                 STORM_LOG_WARN_COND(!this->hasChoiceLabeling(), "Conversion of MA to CTMC does not preserve choice labels.");
                 STORM_LOG_WARN_COND(!this->hasStateValuations(), "Conversion of MA to CTMC does not preserve choice labels.");
                 STORM_LOG_WARN_COND(!this->hasChoiceOrigins(), "Conversion of MA to CTMC does not preserve choice labels.");
-
-                return std::make_shared<storm::models::sparse::Ctmc<ValueType, RewardModelType>>(std::move(rateMatrix), std::move(stateLabeling), std::move(rewardModels));
+                return std::make_shared<storm::models::sparse::Ctmc<ValueType, RewardModelType>>(std::move(rateMatrix), std::move(stateLabeling));
             }
 
             
