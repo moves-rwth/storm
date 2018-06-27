@@ -3,10 +3,11 @@
 #include <algorithm>
 #include <set>
 
+#include "storm/environment/modelchecker/MultiObjectiveModelCheckerEnvironment.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/modelchecker/multiobjective/preprocessing/SparseMultiObjectiveMemoryIncorporation.h"
+#include "storm/transformer/MemoryIncorporation.h"
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "storm/modelchecker/prctl/helper/BaierUpperRewardBoundsComputer.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
@@ -30,9 +31,26 @@ namespace storm {
             namespace preprocessing {
                 
                 template<typename SparseModelType>
-                typename SparseMultiObjectivePreprocessor<SparseModelType>::ReturnType SparseMultiObjectivePreprocessor<SparseModelType>::preprocess(SparseModelType const& originalModel, storm::logic::MultiObjectiveFormula const& originalFormula) {
+                typename SparseMultiObjectivePreprocessor<SparseModelType>::ReturnType SparseMultiObjectivePreprocessor<SparseModelType>::preprocess(Environment const& env, SparseModelType const& originalModel, storm::logic::MultiObjectiveFormula const& originalFormula) {
                     
-                    auto model = SparseMultiObjectiveMemoryIncorporation<SparseModelType>::incorporateGoalMemory(originalModel, originalFormula);
+                    std::shared_ptr<SparseModelType> model;
+                    
+                    // Incorporate the necessary memory
+                    if (env.modelchecker().multi().isSchedulerRestrictionSet()) {
+                        auto const& schedRestr = env.modelchecker().multi().getSchedulerRestriction();
+                        if (schedRestr.getMemoryPattern() == storm::storage::SchedulerClass::MemoryPattern::GoalMemory) {
+                            model = storm::transformer::MemoryIncorporation<SparseModelType>::incorporateGoalMemory(originalModel, originalFormula.getSubformulas());
+                        } else if (schedRestr.getMemoryPattern() == storm::storage::SchedulerClass::MemoryPattern::Arbitrary && schedRestr.getMemoryStates() > 1) {
+                            model = storm::transformer::MemoryIncorporation<SparseModelType>::incorporateFullMemory(originalModel, schedRestr.getMemoryStates());
+                        } else if (schedRestr.isPositional()) {
+                            model = std::make_shared<SparseModelType>(originalModel);
+                        } else {
+                            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "The given scheduler restriction has not been implemented.");
+                        }
+                    } else {
+                         model = storm::transformer::MemoryIncorporation<SparseModelType>::incorporateGoalMemory(originalModel, originalFormula.getSubformulas());
+                    }
+                    
                     PreprocessorData data(model);
                     
                     //Invoke preprocessing on the individual objectives

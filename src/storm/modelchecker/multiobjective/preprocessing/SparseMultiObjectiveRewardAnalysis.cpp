@@ -7,7 +7,6 @@
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/modelchecker/multiobjective/preprocessing/SparseMultiObjectiveMemoryIncorporation.h"
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "storm/modelchecker/prctl/helper/BaierUpperRewardBoundsComputer.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
