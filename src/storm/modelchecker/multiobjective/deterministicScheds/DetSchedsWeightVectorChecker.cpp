@@ -66,7 +66,7 @@ namespace storm {
                         }
                     }
                 } while (!schedulerEvaluator->hasCurrentSchedulerBeenChecked());
-                
+                return resultStack;
             }
             
             template <typename ModelType>
