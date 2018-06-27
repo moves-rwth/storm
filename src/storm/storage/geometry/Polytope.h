@@ -7,6 +7,7 @@
 
 #include "storm/storage/geometry/Halfspace.h"
 #include "storm/storage/BitVector.h"
+#include "storm/storage/expressions/Expressions.h"
 
 namespace storm {
     namespace storage {
@@ -136,6 +137,18 @@ namespace storm {
                  * - The polytope is not bounded in the given direction
                  */
                 virtual std::pair<Point, bool> optimize(Point const& direction) const = 0;
+                
+                /*!
+                 * Declares one variable for each dimension and returns the obtained variables.
+                 * @param manager The expression manager that keeps track of the variables
+                 * @param namePrefix The prefix that is prepanded to the variable index
+                 */
+                virtual std::vector<storm::expressions::Variable> declareVariables(storm::expressions::ExpressionManager& manager, std::string const& namePrefix) const;
+
+                /*!
+                 * Returns the constrains defined by this polytope as an expression over the given variables
+                 */
+                virtual std::vector<storm::expressions::Expression> getConstraints(storm::expressions::ExpressionManager const& manager, std::vector<storm::expressions::Variable> const& variables) const;
                 
                 /*!
                  * converts the intern number representation of the polytope to the given target type

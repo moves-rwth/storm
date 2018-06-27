@@ -2,7 +2,6 @@
 #define STORM_STORAGE_GEOMETRY_NATIVEPOLYTOPE_H_
 
 #include "storm/storage/geometry/Polytope.h"
-#include "storm/storage/expressions/Expressions.h"
 #include "storm/adapters/EigenAdapter.h"
 
 namespace storm {
@@ -125,8 +124,20 @@ namespace storm {
                  */
                 virtual std::pair<Point, bool> optimize(Point const& direction) const override;
 
-                virtual bool isNativePolytope() const override;
+                /*!
+                 * declares one variable for each dimension and returns the obtained variables.
+                 * @param manager The expression manager that keeps track of the variables
+                 * @param namePrefix The prefix that is prepanded to the variable index
+                 */
+                virtual std::vector<storm::expressions::Variable> declareVariables(storm::expressions::ExpressionManager& manager, std::string const& namePrefix) const override;
+
+                /*!
+                 * returns the constrains defined by this polytope as an expression over the given variables
+                 */
+                virtual std::vector<storm::expressions::Expression> getConstraints(storm::expressions::ExpressionManager const& manager, std::vector<storm::expressions::Variable> const& variables) const override;
                 
+
+                virtual bool isNativePolytope() const override;
             private:
 
                 // returns the vertices of this polytope as EigenVectors
@@ -135,12 +146,6 @@ namespace storm {
                 // As optimize(..) but with EigenVectors
                 std::pair<EigenVector, bool> optimize(EigenVector const& direction) const;
 
-
-                // declares one variable for each constraint and returns the obtained variables.
-                std::vector<storm::expressions::Variable> declareVariables(storm::expressions::ExpressionManager& manager, std::string const& namePrefix) const;
-
-                // returns the constrains defined by this polytope as an expresseion
-                std::vector<storm::expressions::Expression> getConstraints(storm::expressions::ExpressionManager const& manager, std::vector<storm::expressions::Variable> const& variables) const;
 
 
                 //Stores whether the polytope is empty or not

@@ -183,6 +183,21 @@ namespace storm {
             }
             
             template <typename ValueType>
+            std::vector<storm::expressions::Variable> Polytope<ValueType>::declareVariables(storm::expressions::ExpressionManager& manager, std::string const& namePrefix) const {
+                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Functionality not implemented for this polytope implementation.");
+                std::vector<storm::expressions::Variable> result;
+                return result;
+            }
+
+            template <typename ValueType>
+            std::vector<storm::expressions::Expression> Polytope<ValueType>::getConstraints(storm::expressions::ExpressionManager const& manager, std::vector<storm::expressions::Variable> const& variables) const {
+                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Functionality not implemented for this polytope implementation.");
+                std::vector<storm::expressions::Expression> result;
+                return result;
+            }
+
+            
+            template <typename ValueType>
             template <typename TargetType>
             std::shared_ptr<Polytope<TargetType>> Polytope<ValueType>::convertNumberRepresentation() const {
                 if(isEmpty()) {
