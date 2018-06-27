@@ -91,9 +91,10 @@ namespace storm {
             fragment.setUntilFormulasAllowed(true);
             fragment.setRewardOperatorsAllowed(true);
             fragment.setReachabilityRewardFormulasAllowed(true);
+            fragment.setTotalRewardFormulasAllowed(true);
+            fragment.setMultiObjectiveFormulasAllowed(true);
             return formula.isInFragment(fragment);
         }
-        
   
         template <typename ValueType, typename RewardModelType>
         std::shared_ptr<storm::models::sparse::Mdp<ValueType, RewardModelType>> ContinuousToDiscreteTimeModelTransformer<ValueType, RewardModelType>::transform(storm::models::sparse::MarkovAutomaton<ValueType, RewardModelType> const& ma, boost::optional<std::string> const& timeRewardModelName) {
