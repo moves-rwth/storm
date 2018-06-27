@@ -68,7 +68,7 @@ namespace storm {
                      * Erases all points in the set, that are dominated by the given point.
                      * If the same point is already contained in the set, its id is returned
                      */
-                    boost::optional<PointId> addPoint(Point&& point);
+                    boost::optional<PointId> addPoint(Environment const& env, Point&& point);
                     
                     /*!
                      * Returns the point with the given ID
@@ -136,6 +136,16 @@ namespace storm {
                 void clean();
                 
                 /*!
+                 * Intersects the overapproximation with the given halfspace
+                 */
+                void addHalfspaceToOverApproximation(Environment const& env, std::vector<GeometryValueType> const& normalVector, Point const& pointOnHalfspace);
+                
+                /*!
+                 * Adds a polytope which consists of unachievable point
+                 */
+                void addUnachievableArea(Environment const& env, Polytope const& area);
+                
+                /*!
                  *   Builds the initial facets by optimizing the objectives individually.
                  *   Adds the facets that need further processing to unprocessedFacets
                  */
@@ -194,6 +204,7 @@ namespace storm {
                 std::shared_ptr<MultiObjectiveSchedulerEvaluator<SparseModelType>> schedulerEvaluator;
                 std::shared_ptr<DetSchedsWeightVectorChecker<SparseModelType>> weightVectorChecker;
                 std::shared_ptr<SparseModelType> const& model;
+                uint64_t originalModelInitialState;
                 std::vector<Objective<ModelValueType>> const& objectives;
             };
             

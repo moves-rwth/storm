@@ -6,7 +6,7 @@ namespace storm {
         namespace geometry {
             
             template <typename T>
-            T euclideanDistance(std::vector<T> const& p, std::vector<T> const& q) {
+            T squaredEuclideanDistance(std::vector<T> const& p, std::vector<T> const& q) {
                 STORM_LOG_ASSERT(p.size() == q.size(), "Invalid dimensions of input vectors.");
                 T squaredSum =  storm::utility::zero<T>();
                 auto pIt = p.begin();
@@ -16,7 +16,7 @@ namespace storm {
                     T diff = *pIt - *qIt;
                     squaredSum += diff * diff;
                 }
-                return storm::utility::sqrt(squaredSum);
+                return squaredSum;
             }
             
         }

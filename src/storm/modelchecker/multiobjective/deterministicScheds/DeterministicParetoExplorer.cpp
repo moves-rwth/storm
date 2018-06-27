@@ -7,6 +7,8 @@
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/modelchecker/multiobjective/MultiObjectivePostprocessing.h"
+#include "storm/modelchecker/results/ExplicitParetoCurveCheckResult.h"
 #include "storm/environment/modelchecker/MultiObjectiveModelCheckerEnvironment.h"
 
 #include "storm/utility/export.h"
@@ -101,7 +103,7 @@ namespace storm {
                         out << ", ";
                     }
                     if (convertToDouble) {
-                        out << pi;
+                        out << storm::utility::convertNumber<double>(pi);
                     } else {
                         out << pi;
                     }
@@ -128,7 +130,7 @@ namespace storm {
             }
         
             template <class SparseModelType, typename GeometryValueType>
-            boost::optional<typename DeterministicParetoExplorer<SparseModelType, GeometryValueType>::PointId> DeterministicParetoExplorer<SparseModelType, GeometryValueType>::Pointset::addPoint(Point&& point) {
+            boost::optional<typename DeterministicParetoExplorer<SparseModelType, GeometryValueType>::PointId> DeterministicParetoExplorer<SparseModelType, GeometryValueType>::Pointset::addPoint(Environment const& env, Point&& point) {
             
                 // Find dominated and dominating points
                 auto pointsIt = points.begin();
@@ -138,13 +140,15 @@ namespace storm {
                         case Point::DominanceResult::Incomparable:
                             // Nothing to be done for this point
                             ++pointsIt;
+                            break;
                         case Point::DominanceResult::Dominates:
                             // Found a point in the set that is dominated by the new point, so we erase it
                             if (pointsIt->second.isParetoOptimal()) {
-                                STORM_LOG_WARN("Potential precision issues: Found a point that dominates another point which was flagged as pareto optimal. Distance of points is " << storm::storage::geometry::euclideanDistance(pointsIt->second.get(), point.get()));
+                                STORM_LOG_WARN("Potential precision issues: Found a point that dominates another point which was flagged as pareto optimal. Distance of points is " << std::sqrt(storm::utility::convertNumber<double>(storm::storage::geometry::squaredEuclideanDistance(pointsIt->second.get(), point.get()))));
                                 point.setParetoOptimal(true);
                             }
                             pointsIt = points.erase(pointsIt);
+                            break;
                         case Point::DominanceResult::Dominated:
                             // The new point is dominated by another point.
                             return boost::none;
@@ -154,6 +158,10 @@ namespace storm {
                             }
                             return pointsIt->first;
                     }
+                }
+                
+                if (env.modelchecker().multi().isPrintResultsSet()) {
+                    std::cout << "## achievable point: [" << point.toString(true) << "]" << std::endl;
                 }
                 
                 points.emplace_hint(points.end(), currId, std::move(point));
@@ -276,6 +284,7 @@ namespace storm {
             
             template <class SparseModelType, typename GeometryValueType>
             DeterministicParetoExplorer<SparseModelType, GeometryValueType>::DeterministicParetoExplorer(preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType>& preprocessorResult) : model(preprocessorResult.preprocessedModel), objectives(preprocessorResult.objectives) {
+                originalModelInitialState = *preprocessorResult.originalModel.getInitialStates().begin();
                 schedulerEvaluator = std::make_shared<MultiObjectiveSchedulerEvaluator<SparseModelType>>(preprocessorResult);
                 weightVectorChecker = std::make_shared<DetSchedsWeightVectorChecker<SparseModelType>>(schedulerEvaluator);
             }
@@ -290,9 +299,14 @@ namespace storm {
                     unprocessedFacets.pop();
                     processFacet(env, f);
                 }
-    
-                // Todo: Prepare check result
-                return nullptr;
+                
+                std::vector<std::vector<ModelValueType>>paretoPoints;
+                paretoPoints.reserve(pointset.size());
+                for (auto const& p : pointset) {
+                    paretoPoints.push_back(storm::utility::vector::convertNumericVector<ModelValueType>(transformObjectiveValuesToOriginal(objectives, p.second.get())));
+                }
+                return std::make_unique<storm::modelchecker::ExplicitParetoCurveCheckResult<ModelValueType>>(originalModelInitialState, std::move(paretoPoints),
+                                                                                            nullptr, nullptr);
             }
             
             template <class SparseModelType, typename GeometryValueType>
@@ -303,6 +317,60 @@ namespace storm {
                 unachievableAreas.clear();
             }
             
+            template <class SparseModelType, typename GeometryValueType>
+            void DeterministicParetoExplorer<SparseModelType, GeometryValueType>::addHalfspaceToOverApproximation(Environment const& env, std::vector<GeometryValueType> const& normalVector, Point const& pointOnHalfspace) {
+                GeometryValueType offset = storm::utility::vector::dotProduct(normalVector, pointOnHalfspace.get());
+                if (env.modelchecker().multi().isPrintResultsSet()) {
+                    std::cout << "## unachievable halfspace: [";
+                    bool first = true;
+                    for (auto const& xi : normalVector) {
+                        if (first) {
+                            first = false;
+                        } else {
+                            std::cout << ",";
+                        }
+                        std::cout << storm::utility::convertNumber<double>(xi);
+                    }
+                    std::cout << "];[" << storm::utility::convertNumber<double>(offset) << "]" << std::endl;
+                }
+                storm::storage::geometry::Halfspace<GeometryValueType> overApproxHalfspace(normalVector, offset);
+                overApproximation = overApproximation->intersection(overApproxHalfspace);
+            }
+            
+            template <class SparseModelType, typename GeometryValueType>
+            void DeterministicParetoExplorer<SparseModelType, GeometryValueType>::addUnachievableArea(Environment const& env, Polytope const& area) {
+                if (env.modelchecker().multi().isPrintResultsSet()) {
+                    std::vector<std::vector<GeometryValueType>> vertices;
+                    if (objectives.size() == 2) {
+                        vertices = area->getVerticesInClockwiseOrder();
+                    } else {
+                        vertices = area->getVertices();
+                    }
+                    std::cout << "## unachievable polytope: ";
+                    bool firstVertex = true;
+                    for (auto const& v : vertices) {
+                        if (firstVertex) {
+                            firstVertex = false;
+                        } else {
+                            std::cout << ";";
+                        }
+                        std::cout << "[";
+                        bool firstEntry = true;
+                        for (auto const& vi : v) {
+                            if (firstEntry) {
+                                firstEntry = false;
+                            } else {
+                                std::cout << ",";
+                            }
+                            std::cout << storm::utility::convertNumber<double>(vi);
+                        }
+                        std::cout << "]";
+                    }
+                    std::cout << std::endl;
+                }
+                unachievableAreas.push_back(area);
+            }
+                
             template <class SparseModelType, typename GeometryValueType>
             void DeterministicParetoExplorer<SparseModelType, GeometryValueType>::initializeFacets(Environment const& env) {
                 for (uint64_t objIndex = 0; objIndex < objectives.size(); ++objIndex) {
@@ -327,11 +395,9 @@ namespace storm {
                             // Adapt the overapproximation
                             std::vector<GeometryValueType> normalVector(objectives.size(), storm::utility::zero<GeometryValueType>());
                             normalVector[objIndex] = storm::utility::one<GeometryValueType>();
-                            GeometryValueType offset = storm::utility::vector::dotProduct(normalVector, p.get());
-                            storm::storage::geometry::Halfspace<GeometryValueType> overApproxHalfspace(std::move(normalVector), std::move(offset));
-                            overApproximation = overApproximation->intersection(overApproxHalfspace);
+                            addHalfspaceToOverApproximation(env, normalVector, p);
                         }
-                        pointset.addPoint(std::move(p));
+                        pointset.addPoint(env, std::move(p));
                     }
                 }
                 
@@ -390,7 +456,7 @@ namespace storm {
                 }
                 
                 // Reaching this point means that the facet could not be analyzed completely.
-                STORM_LOG_ERROR("Facet " << f.getHalfspace().toString(true) << "could not be analyzed completely.");
+                STORM_LOG_ERROR("Facet " << f.getHalfspace().toString(true) << " could not be analyzed completely.");
             }
             
             template <class SparseModelType, typename GeometryValueType>
@@ -417,13 +483,10 @@ namespace storm {
                     if (last) {
                         last = false;
                         p.setParetoOptimal(true);
-                        // Adapt the overapproximation
-                        GeometryValueType offset = storm::utility::vector::dotProduct(f.getHalfspace().normalVector(), p.get());
-                        storm::storage::geometry::Halfspace<GeometryValueType> overApproxHalfspace(f.getHalfspace().normalVector(), std::move(offset));
-                        overApproximation = overApproximation->intersection(overApproxHalfspace);
-                        optPointId = pointset.addPoint(std::move(p));
+                        addHalfspaceToOverApproximation(env, f.getHalfspace().normalVector(), p);
+                        optPointId = pointset.addPoint(env, std::move(p));
                     } else {
-                        pointset.addPoint(std::move(p));
+                        pointset.addPoint(env, std::move(p));
                     }
                 }
                 
@@ -456,7 +519,9 @@ namespace storm {
                                     ++vertexIt;
                                 }
                                 assert(vertexIt == vertices.end());
-                                unprocessedFacets.push(std::move(fNew));
+                                if (!checkFacetPrecision(env, fNew)) {
+                                    unprocessedFacets.push(std::move(fNew));
+                                }
                             }
                         }
                         return true;
