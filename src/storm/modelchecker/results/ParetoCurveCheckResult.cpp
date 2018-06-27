@@ -44,9 +44,13 @@ namespace storm {
         template<typename ValueType>
         std::ostream& ParetoCurveCheckResult<ValueType>::writeToStream(std::ostream& out) const {
             out << std::endl;
-            out << "Underapproximation of achievable values: " << underApproximation->toString() << std::endl;
-            out << "Overapproximation of achievable values: " << overApproximation->toString() << std::endl;
-            out << points.size() << " pareto optimal points found (Note that these points are safe, i.e., contained in the underapproximation, but there is no guarantee for optimality):" << std::endl;
+            if (underApproximation) {
+                out << "Underapproximation of achievable values: " << underApproximation->toString() << std::endl;
+            }
+            if (overApproximation) {
+                out << "Overapproximation of achievable values: " << overApproximation->toString() << std::endl;
+            }
+            out << points.size() << " pareto optimal points found:" << std::endl;
             for(auto const& p : points) {
                 out << "   (";
                 for(auto it = p.begin(); it != p.end(); ++it){
