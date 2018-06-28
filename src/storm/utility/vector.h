@@ -1120,6 +1120,11 @@ namespace storm {
             bool hasNonZeroEntry(std::vector<T> const& v){
                 return std::any_of(v.begin(), v.end(), [](T value){return !storm::utility::isZero(value);});
             }
+            
+            template<typename T>
+            bool hasZeroEntry(std::vector<T> const& v){
+                return std::any_of(v.begin(), v.end(), [](T value){return storm::utility::isZero(value);});
+            }
 
             inline std::set<storm::RationalFunctionVariable> getVariables(std::vector<storm::RationalFunction> const& vector) {
                 std::set<storm::RationalFunctionVariable> result;
