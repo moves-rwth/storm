@@ -9,6 +9,8 @@
 #include "storm/storage/geometry/Polytope.h"
 #include "storm/storage/geometry/Halfspace.h"
 #include "storm/modelchecker/results/CheckResult.h"
+#include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/solver/SmtSolver.h"
 
 namespace storm {
     
@@ -44,12 +46,15 @@ namespace storm {
                     
                     void setParetoOptimal(bool value = true);
                     bool isParetoOptimal() const;
+                    void setOnFacet(bool value = true);
+                    bool liesOnFacet() const;
                     
                     std::string toString(bool convertToDouble = false) const;
 
                 private:
                     std::vector<GeometryValueType> coordinates;
                     bool paretoOptimal;
+                    bool onFacet;
                 };
                 
                 
@@ -102,7 +107,7 @@ namespace storm {
                     Facet(storm::storage::geometry::Halfspace<GeometryValueType> const& halfspace);
                     Facet(storm::storage::geometry::Halfspace<GeometryValueType>&& halfspace);
                     storm::storage::geometry::Halfspace<GeometryValueType> const& getHalfspace() const;
-                    void addPoint(PointId const& pointId);
+                    void addPoint(PointId const& pointId, Point const& point);
                     std::vector<PointId> const& getPoints() const;
                     uint64_t getNumberOfPoints() const;
                     
@@ -119,6 +124,19 @@ namespace storm {
                     storm::storage::geometry::Halfspace<GeometryValueType> halfspace;
                     std::vector<PointId> paretoPointsOnFacet;
                     Polytope inducedSimplex;
+                };
+                
+                struct FacetAnalysisContext {
+                    FacetAnalysisContext(Facet& f);
+                    
+                    Facet& facet;
+                    std::set<PointId> collectedPoints;
+                    std::unique_ptr<storm::solver::SmtSolver> smtSolver;
+                    std::shared_ptr<storm::expressions::ExpressionManager> expressionManager;
+                    
+                    // Variables that encode two points that lie in the induced simplex of the analyzed facet
+                    // xMinusEps = (x_1-eps, x_m-eps)
+                    std::vector<storm::expressions::Variable> x, xMinusEps;
                 };
                 
                 
@@ -170,6 +188,8 @@ namespace storm {
                  */
                 void processFacet(Environment const& env, Facet& f);
                 
+                FacetAnalysisContext createAnalysisContext(Environment const& env, Facet& f);
+                
                 /*!
                  * Optimizes in the facet direction. If this results in a point that does not lie on the facet,
                  * 1. The new Pareto optimal point is added
@@ -182,7 +202,7 @@ namespace storm {
                  * Finds all points that lie within the induced Simplex of the given facet.
                  * Returns true if the facet is sufficiently precise when considering all added points
                  */
-                bool findAndCheckCachedPoints(Environment const& env, Facet& f, std::set<PointId>& collectedPoints);
+                bool findAndCheckCachedPoints(Environment const& env, FacetAnalysisContext& context);
                 
                 /*!
                  * Finds points that lie on the facet
@@ -192,9 +212,9 @@ namespace storm {
                  * use smt to find an eps-box in the simplex that does not contain a point. Add new points until one in the box is found. repeat.
                  * stop when no more points or boxes can be found.
                  */
-                bool analyzePointsOnFacet(Environment const& env, Facet& f, std::set<PointId>& collectedPoints);
+                bool analyzePointsOnFacet(Environment const& env, FacetAnalysisContext& context);
                 
-                bool analyzePointsInSimplex(Environment const& env, Facet& f, std::set<PointId>& collectedPoints);
+                bool analyzePointsInSimplex(Environment const& env, FacetAnalysisContext& context);
                 
                 Pointset pointset;
                 std::queue<Facet> unprocessedFacets;

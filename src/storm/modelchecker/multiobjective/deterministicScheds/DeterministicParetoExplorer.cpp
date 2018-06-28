@@ -12,7 +12,9 @@
 #include "storm/environment/modelchecker/MultiObjectiveModelCheckerEnvironment.h"
 
 #include "storm/utility/export.h"
+#include "storm/utility/solver.h"
 
+#include "storm/exceptions/UnexpectedException.h"
 #include "storm/exceptions/InvalidOperationException.h"
 
 
@@ -21,12 +23,12 @@ namespace storm {
         namespace multiobjective {
             
             template <class SparseModelType, typename GeometryValueType>
-            DeterministicParetoExplorer<SparseModelType, GeometryValueType>::Point::Point(std::vector<GeometryValueType> const& coordinates) : coordinates(coordinates), paretoOptimal(false) {
+            DeterministicParetoExplorer<SparseModelType, GeometryValueType>::Point::Point(std::vector<GeometryValueType> const& coordinates) : coordinates(coordinates), paretoOptimal(false), onFacet(false) {
                 STORM_LOG_ASSERT(!this->coordinates.empty(), "Points with dimension 0 are not supported");
             }
             
             template <class SparseModelType, typename GeometryValueType>
-            DeterministicParetoExplorer<SparseModelType, GeometryValueType>::Point::Point(std::vector<GeometryValueType>&& coordinates) : coordinates(std::move(coordinates)), paretoOptimal(false) {
+            DeterministicParetoExplorer<SparseModelType, GeometryValueType>::Point::Point(std::vector<GeometryValueType>&& coordinates) : coordinates(std::move(coordinates)), paretoOptimal(false), onFacet(false) {
                 STORM_LOG_ASSERT(!this->coordinates.empty(), "Points with dimension 0 are not supported");
             }
             
@@ -93,6 +95,16 @@ namespace storm {
             }
             
             template <class SparseModelType, typename GeometryValueType>
+            void DeterministicParetoExplorer<SparseModelType, GeometryValueType>::Point::setOnFacet(bool value) {
+                onFacet = value;
+            }
+            
+            template <class SparseModelType, typename GeometryValueType>
+            bool DeterministicParetoExplorer<SparseModelType, GeometryValueType>::Point::liesOnFacet() const {
+                return onFacet;
+            }
+            
+            template <class SparseModelType, typename GeometryValueType>
             std::string DeterministicParetoExplorer<SparseModelType, GeometryValueType>::Point::toString(bool convertToDouble) const {
                 std::stringstream out;
                 bool first = true;
@@ -147,7 +159,12 @@ namespace storm {
                                 STORM_LOG_WARN("Potential precision issues: Found a point that dominates another point which was flagged as pareto optimal. Distance of points is " << std::sqrt(storm::utility::convertNumber<double>(storm::storage::geometry::squaredEuclideanDistance(pointsIt->second.get(), point.get()))));
                                 point.setParetoOptimal(true);
                             }
-                            pointsIt = points.erase(pointsIt);
+                            if (pointsIt->second.liesOnFacet()) {
+                                // Do not erase points that lie on a facet
+                                ++pointsIt;
+                            } else {
+                                pointsIt = points.erase(pointsIt);
+                            }
                             break;
                         case Point::DominanceResult::Dominated:
                             // The new point is dominated by another point.
@@ -155,6 +172,9 @@ namespace storm {
                         case Point::DominanceResult::Equal:
                             if (point.isParetoOptimal()) {
                                 pointsIt->second.setParetoOptimal();
+                            }
+                            if (point.liesOnFacet()) {
+                                pointsIt->second.setOnFacet();
                             }
                             return pointsIt->first;
                     }
@@ -234,8 +254,17 @@ namespace storm {
             }
             
             template <class SparseModelType, typename GeometryValueType>
-            void DeterministicParetoExplorer<SparseModelType, GeometryValueType>::Facet::addPoint(PointId const& pointId) {
+            void DeterministicParetoExplorer<SparseModelType, GeometryValueType>::Facet::addPoint(PointId const& pointId, Point const& point) {
                 inducedSimplex = nullptr;
+                GeometryValueType product = storm::utility::vector::dotProduct(getHalfspace().normalVector(), point.get());
+                if (product != getHalfspace().offset()) {
+                    if (product < getHalfspace().offset()) {
+                        STORM_LOG_DEBUG("The point on the facet actually has distance " << storm::utility::convertNumber<double>(getHalfspace().euclideanDistance(point.get())));
+                    } else {
+                        STORM_LOG_DEBUG("Halfspace of facet is shifted by " << storm::utility::convertNumber<double>(getHalfspace().euclideanDistance(point.get())) << " to capture all points that are supposed to lie on the facet.");
+                        halfspace.offset() = product;
+                    }
+                }
                 paretoPointsOnFacet.push_back(pointId);
             }
             
@@ -280,6 +309,11 @@ namespace storm {
                     }
                 }
                 return inducedSimplex;
+            }
+            
+            template <class SparseModelType, typename GeometryValueType>
+            DeterministicParetoExplorer<SparseModelType, GeometryValueType>::FacetAnalysisContext::FacetAnalysisContext(Facet& f) : facet(f) {
+                // Intentionally left empty
             }
             
             template <class SparseModelType, typename GeometryValueType>
@@ -391,7 +425,7 @@ namespace storm {
                         Point p(storm::utility::vector::convertNumericVector<GeometryValueType>(*pIt));
                         if (last) {
                             last = false;
-                            p.setParetoOptimal(true);
+                            p.setOnFacet();
                             // Adapt the overapproximation
                             std::vector<GeometryValueType> normalVector(objectives.size(), storm::utility::zero<GeometryValueType>());
                             normalVector[objIndex] = storm::utility::one<GeometryValueType>();
@@ -406,7 +440,7 @@ namespace storm {
                     Facet f(std::move(h));
                     for (auto const& p : pointset) {
                         if (f.getHalfspace().isPointOnBoundary(p.second.get())) {
-                            f.addPoint(p.first);
+                            f.addPoint(p.first, p.second);
                         }
                     }
                     STORM_LOG_ASSERT(std::count(f.getHalfspace().normalVector().begin(), f.getHalfspace().normalVector().end(), storm::utility::zero<GeometryValueType>()) + f.getNumberOfPoints() == objectives.size(), "Unexpected number of points on facet.");
@@ -441,17 +475,18 @@ namespace storm {
                 if (optimizeAndSplitFacet(env,f)) {
                     return;
                 }
-                std::set<PointId> collectedPoints;
                 
-                if (findAndCheckCachedPoints(env, f, collectedPoints)) {
+                FacetAnalysisContext context = createAnalysisContext(env, f);
+                
+                if (findAndCheckCachedPoints(env, context)) {
                     return;
                 }
                 
-                if (analyzePointsOnFacet(env, f, collectedPoints)) {
+                if (analyzePointsOnFacet(env, context)) {
                     return;
                 }
                 
-                if (analyzePointsInSimplex(env, f, collectedPoints)) {
+                if (analyzePointsInSimplex(env, context)) {
                     return;
                 }
                 
@@ -460,9 +495,46 @@ namespace storm {
             }
             
             template <class SparseModelType, typename GeometryValueType>
+            typename DeterministicParetoExplorer<SparseModelType, GeometryValueType>::FacetAnalysisContext DeterministicParetoExplorer<SparseModelType, GeometryValueType>::createAnalysisContext(Environment const& env, Facet& f) {
+                FacetAnalysisContext res(f);
+                
+                res.expressionManager = std::make_shared<storm::expressions::ExpressionManager>();
+                res.smtSolver = storm::utility::solver::SmtSolverFactory().create(*res.expressionManager);
+                
+                Polytope const& inducedPoly = res.facet.getInducedSimplex(pointset);
+                
+                res.x = inducedPoly->declareVariables(*res.expressionManager, "x");
+                for (auto const& c : inducedPoly->getConstraints(*res.expressionManager, res.x)) {
+                    res.smtSolver->add(c);
+                }
+                
+                res.xMinusEps = inducedPoly->declareVariables(*res.expressionManager, "y");
+                for (auto const& c : inducedPoly->getConstraints(*res.expressionManager, res.xMinusEps)) {
+                    res.smtSolver->add(c);
+                }
+                
+                auto eps = res.expressionManager->rational(env.modelchecker().multi().getPrecision());
+                storm::expressions::Expression xme;
+                for (uint64_t i = 0; i < res.x.size(); ++i) {
+                    storm::expressions::Expression subExpr = (res.xMinusEps[i].getExpression() == res.x[i].getExpression() - eps);
+                    if (i == 0) {
+                        xme = subExpr;
+                    } else {
+                        xme = xme && subExpr;
+                    }
+                }
+                res.smtSolver->add(xme);
+                
+                res.smtSolver->push();
+                
+                return res;
+            }
+            
+            template <class SparseModelType, typename GeometryValueType>
             bool DeterministicParetoExplorer<SparseModelType, GeometryValueType>::optimizeAndSplitFacet(Environment const& env, Facet& f) {
                 // Obtain the correct weight vector
                 auto weightVector = storm::utility::vector::convertNumericVector<ModelValueType>(f.getHalfspace().normalVector());
+                bool weightVectorYieldsParetoOptimalPoint = !storm::utility::vector::hasZeroEntry(weightVector);
                 for (uint_fast64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
                     if (storm::solver::minimize(objectives[objIndex].formula->getOptimalityType())) {
                         weightVector[objIndex] *= -storm::utility::one<ModelValueType>();
@@ -482,7 +554,8 @@ namespace storm {
                     Point p(storm::utility::vector::convertNumericVector<GeometryValueType>(*pIt));
                     if (last) {
                         last = false;
-                        p.setParetoOptimal(true);
+                        p.setParetoOptimal(weightVectorYieldsParetoOptimalPoint);
+                        p.setOnFacet();
                         addHalfspaceToOverApproximation(env, f.getHalfspace().normalVector(), p);
                         optPointId = pointset.addPoint(env, std::move(p));
                     } else {
@@ -508,13 +581,13 @@ namespace storm {
                             if (!storm::utility::vector::hasNegativeEntry(h.normalVector())) {
                                 STORM_LOG_ASSERT(h.isPointOnBoundary(optPoint.get()), "Unexpected facet found while splitting.");
                                 Facet fNew(std::move(h));
-                                fNew.addPoint(optPointId.get());
+                                fNew.addPoint(optPointId.get(), optPoint);
                                 auto vertexIt = vertices.begin();
                                 ++vertexIt;
                                 for (auto const& pId : f.getPoints()) {
                                     assert(pointset.getPoint(pId).get() == *vertexIt);
                                     if (fNew.getHalfspace().isPointOnBoundary(*vertexIt)) {
-                                        fNew.addPoint(pId);
+                                        fNew.addPoint(pId, pointset.getPoint(pId));
                                     }
                                     ++vertexIt;
                                 }
@@ -533,20 +606,49 @@ namespace storm {
             }
             
             template <class SparseModelType, typename GeometryValueType>
-            bool DeterministicParetoExplorer<SparseModelType, GeometryValueType>::findAndCheckCachedPoints(Environment const& env, Facet& f, std::set<PointId>& collectedPoints) {
+            bool DeterministicParetoExplorer<SparseModelType, GeometryValueType>::findAndCheckCachedPoints(Environment const& env, FacetAnalysisContext& context) {
+                Polytope inducedPoly = context.facet.getInducedSimplex(pointset);
+                pointset.collectPointsInPolytope(context.collectedPoints, inducedPoly);
+                if (context.collectedPoints.size() != context.facet.getNumberOfPoints()) {
+                    STORM_LOG_ASSERT(context.collectedPoints.size() > context.facet.getNumberOfPoints(), "Did not find all points on the facet");
+                    // formulate SMT constraints to assert that xMinusEps is not dominated by one of the cached points
+                    for (auto const& pId : context.collectedPoints) {
+                        auto const& coordinates = pointset.getPoint(pId).get();
+                        storm::expressions::Expression pointAchievesXMinusEps;
+                        for (uint64_t i = 0; i < coordinates.size(); ++i) {
+                            storm::expressions::Expression subExpr = context.xMinusEps[i] <= context.expressionManager->rational(coordinates[i]);
+                            if (i == 0) {
+                                pointAchievesXMinusEps = subExpr;
+                            } else {
+                                pointAchievesXMinusEps = pointAchievesXMinusEps && subExpr;
+                            }
+                        }
+                        context.smtSolver->add(!pointAchievesXMinusEps);
+                    }
+                    
+                    context.smtSolver->push();
+                    
+                    auto smtCheckResult = context.smtSolver->check();
+                    if (smtCheckResult == storm::solver::SmtSolver::CheckResult::Unsat) {
+                        // There is no point x that violates the 'precision criterion' for this facet
+                        return true;
+                    } else {
+                        STORM_LOG_THROW(smtCheckResult == storm::solver::SmtSolver::CheckResult::Sat, storm::exceptions::UnexpectedException, "The smt solver did not yield sat or unsat.");
+                        return false;
+                    }
+                }
+                return false;
+            }
+            
+            template <class SparseModelType, typename GeometryValueType>
+            bool DeterministicParetoExplorer<SparseModelType, GeometryValueType>::analyzePointsOnFacet(Environment const& env, FacetAnalysisContext& context) {
+            
                 // TODO
                 return false;
             }
             
             template <class SparseModelType, typename GeometryValueType>
-            bool DeterministicParetoExplorer<SparseModelType, GeometryValueType>::analyzePointsOnFacet(Environment const& env, Facet& f, std::set<PointId>& collectedPoints) {
-            
-                // TODO
-                return false;
-            }
-            
-            template <class SparseModelType, typename GeometryValueType>
-            bool DeterministicParetoExplorer<SparseModelType, GeometryValueType>::analyzePointsInSimplex(Environment const& env, Facet& f, std::set<PointId>& collectedPoints) {
+            bool DeterministicParetoExplorer<SparseModelType, GeometryValueType>::analyzePointsInSimplex(Environment const& env, FacetAnalysisContext& context) {
                 // TODO
                 return false;
             }
