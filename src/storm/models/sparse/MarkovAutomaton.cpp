@@ -205,6 +205,7 @@ namespace storm {
             std::shared_ptr<storm::models::sparse::Ctmc<ValueType, RewardModelType>> MarkovAutomaton<ValueType, RewardModelType>::convertToCtmc() const {
                 if (isClosed() && markovianStates.full()) {
                     storm::storage::sparse::ModelComponents<ValueType, RewardModelType> components(this->getTransitionMatrix(), this->getStateLabeling(), this->getRewardModels(), false);
+                    components.transitionMatrix.makeRowGroupingTrivial();
                     if (this->hasChoiceLabeling()) {
                         components.choiceLabeling = this->getChoiceLabeling();
                     }
