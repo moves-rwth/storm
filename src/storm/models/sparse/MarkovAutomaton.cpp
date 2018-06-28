@@ -206,6 +206,7 @@ namespace storm {
                 if (isClosed() && markovianStates.full()) {
                     storm::storage::sparse::ModelComponents<ValueType, RewardModelType> components(this->getTransitionMatrix(), this->getStateLabeling(), this->getRewardModels(), false);
                     components.transitionMatrix.makeRowGroupingTrivial();
+                    components.exitRates = this->getExitRates();
                     if (this->hasChoiceLabeling()) {
                         components.choiceLabeling = this->getChoiceLabeling();
                     }
