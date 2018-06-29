@@ -398,8 +398,22 @@ namespace storm {
                     opDecl["op"] = "Emin";
                     opDecl["reach"] = boost::any_cast<modernjson::json>(f.getSubformula().asEventuallyFormula().getSubformula().accept(*this, data));
                 }
-                STORM_LOG_THROW(f.hasRewardModelName(), storm::exceptions::NotSupportedException, "Reward name has to be specified for Jani-conversion");
-                opDecl["exp"] = f.getRewardModelName();
+                std::string rewardModelName;
+                if (f.hasRewardModelName()) {
+                    rewardModelName = f.getRewardModelName();
+                } else {
+                    if (model.getGlobalVariables().getNumberOfRealTransientVariables() == 1) {
+                        for (auto const& variable : model.getGlobalVariables().getRealVariables()) {
+                            if (variable.isTransient()) {
+                                rewardModelName = variable.getName();
+                                STORM_LOG_WARN("Reward model name was not given, assuming the only global real transient variable '" << rewardModelName << "' to measure the reward.");
+                                break;
+                            }
+                        }
+                    }
+                }
+                STORM_LOG_THROW(!rewardModelName.empty(), storm::exceptions::NotSupportedException, "Reward name has to be specified for Jani-conversion");
+                opDecl["exp"] = rewardModelName;
                 opDecl["accumulate"] = modernjson::json(accvec);
             }
             return opDecl;
@@ -408,7 +422,6 @@ namespace storm {
         boost::any FormulaToJaniJson::visit(storm::logic::TotalRewardFormula const&, boost::any const&) const {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Jani currently does not support a total reward formula");
         }
-
         
         boost::any FormulaToJaniJson::visit(storm::logic::UnaryBooleanStateFormula const& f, boost::any const& data) const {
             modernjson::json opDecl;
