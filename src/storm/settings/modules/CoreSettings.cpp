@@ -45,7 +45,7 @@ namespace storm {
                 
                 std::vector<std::string> linearEquationSolver = {"gmm++", "native", "eigen", "elimination", "topological"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, eqSolverOptionName, false, "Sets which solver is preferred for solving systems of linear equations.")
-                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the solver to prefer.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(linearEquationSolver)).setDefaultValueString("gmm++").build()).build());
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the solver to prefer.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(linearEquationSolver)).setDefaultValueString("native").build()).build());
                 
                 std::vector<std::string> ddLibraries = {"cudd", "sylvan"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, ddLibraryOptionName, false, "Sets which library is preferred for decision-diagram operations.")
