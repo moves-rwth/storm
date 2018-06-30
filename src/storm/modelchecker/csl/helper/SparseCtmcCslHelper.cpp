@@ -478,6 +478,17 @@ namespace storm {
                         }
                     }
                     
+                    // Build a different system depending on the problem format of the equation solver.
+                    // Check solver requirements.
+                    storm::solver::GeneralLinearEquationSolverFactory<ValueType> linearEquationSolverFactory;
+                    auto requirements = linearEquationSolverFactory.getRequirements(env);
+                    STORM_LOG_THROW(!requirements.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + requirements.getEnabledRequirementsAsString() + " not checked.");
+                    
+                    bool fixedPointSystem = false;
+                    if (linearEquationSolverFactory.getEquationProblemFormat(env) == storm::solver::LinearEquationSolverProblemFormat::FixedPointSystem) {
+                        fixedPointSystem = true;
+                    }
+                    
                     // Now build the final equation system matrix, the initial guess and the right-hand side in one go.
                     std::vector<ValueType> bsccEquationSystemRightSide(bsccEquationSystem.getColumnCount(), zero);
                     storm::storage::SparseMatrixBuilder<ValueType> builder;
@@ -486,7 +497,7 @@ namespace storm {
                         // If the current row is the first one belonging to a BSCC, we substitute it by the constraint that the
                         // values for states of this BSCC must sum to one. However, in order to have a non-zero value on the
                         // diagonal, we add the constraint of the BSCC that produces a 1 on the diagonal.
-                        if (firstStatesInBsccs.get(row)) {
+                        if (!fixedPointSystem && firstStatesInBsccs.get(row)) {
                             uint_fast64_t requiredBscc = stateToBsccIndexMap[row];
                             storm::storage::StronglyConnectedComponent const& bscc = bsccDecomposition[requiredBscc];
                             
@@ -499,14 +510,13 @@ namespace storm {
                         } else {
                             // Otherwise, we copy the row, and subtract 1 from the diagonal.
                             for (auto& entry : bsccEquationSystem.getRow(row)) {
-                                if (entry.getColumn() == row) {
-                                    builder.addNextValue(row, entry.getColumn(), entry.getValue() - one);
-                                } else {
+                                if (fixedPointSystem || entry.getColumn() != row) {
                                     builder.addNextValue(row, entry.getColumn(), entry.getValue());
+                                } else {
+                                    builder.addNextValue(row, entry.getColumn(), entry.getValue() - one);
                                 }
                             }
                         }
-                        
                     }
                     
                     // Create the initial guess for the LRAs. We take a uniform distribution over all states in a BSCC.
@@ -522,12 +532,6 @@ namespace storm {
                     bsccEquationSystem = builder.build();
                     
                     {
-                        // Check solver requirements
-                        storm::solver::GeneralLinearEquationSolverFactory<ValueType> linearEquationSolverFactory;
-                        auto requirements = linearEquationSolverFactory.getRequirements(env);
-                        STORM_LOG_THROW(!requirements.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + requirements.getEnabledRequirementsAsString() + " not checked.");
-                        // Check whether we have the right input format for the solver.
-                        STORM_LOG_THROW(linearEquationSolverFactory.getEquationProblemFormat(env) == storm::solver::LinearEquationSolverProblemFormat::EquationSystem, storm::exceptions::FormatUnsupportedBySolverException, "The selected solver does not support the required format.");
                         std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(env, std::move(bsccEquationSystem));
                         solver->solveEquations(env, bsccEquationSystemSolution, bsccEquationSystemRightSide);
                     }
