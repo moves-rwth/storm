@@ -59,10 +59,6 @@ namespace storm {
                 std::map<uint_fast64_t, std::list<uint_fast64_t>> relevantChoicesForRelevantStates;
             };
 
-            struct GeneratorStats {
-
-            };
-
             struct VariableInformation {
                 // The manager responsible for the constraints we are building.
                 std::shared_ptr<storm::expressions::ExpressionManager> manager;
@@ -271,21 +267,6 @@ namespace storm {
                 return variableInformation;
             }
 
-            /*!
-             * Asserts the constraints that are initially needed for the Fu-Malik procedure.
-             *
-             * @param solver The solver in which to assert the constraints.
-             * @param variableInformation A structure with information about the variables for the labels.
-             */
-            static void assertFuMalikInitialConstraints(z3::solver& solver, VariableInformation const& variableInformation) {
-                // Assert that at least one of the labels must be taken.
-                z3::expr formula = variableInformation.labelVariables.at(0);
-                for (uint_fast64_t index = 1; index < variableInformation.labelVariables.size(); ++index) {
-                    formula = formula || variableInformation.labelVariables.at(index);
-                }
-                solver.add(formula);
-            }
-            
             static storm::expressions::Expression getOtherSynchronizationEnabledFormula(boost::container::flat_set<uint_fast64_t> const& labelSet, std::map<uint_fast64_t, std::set<boost::container::flat_set<uint_fast64_t>>> const& synchronizingLabels, boost::container::flat_map<boost::container::flat_set<uint_fast64_t>, storm::expressions::Expression> const& labelSetToFormula, VariableInformation const& variableInformation, RelevancyInformation const& relevancyInformation) {
                 // Taking all commands of a combination does not necessarily mean that a following label set needs to be taken.
                 // This is because it could be that the commands are taken to enable other synchronizations. Therefore, we need
@@ -970,22 +951,7 @@ namespace storm {
                 }
                 solver.add(disjunction);
             }
-            
-            /*!
-             * Asserts that the conjunction of the given formulae holds. If the content of the conjunction is empty,
-             * this corresponds to asserting true.
-             *
-             * @param context The Z3 context in which to build the expressions.
-             * @param solver The solver to use for the satisfiability evaluation.
-             * @param formulaVector A vector of expressions that shall form the conjunction.
-             */
-            static void assertConjunction(z3::context& context, z3::solver& solver, std::vector<z3::expr> const& formulaVector) {
-                z3::expr conjunction = context.bool_val(true);
-                for (auto expr : formulaVector) {
-                    conjunction = conjunction && expr;
-                }
-                solver.add(conjunction);
-            }
+
             
             /*!
              * Creates a full-adder for the two inputs and returns the resulting bit as well as the carry bit.
@@ -1617,6 +1583,13 @@ namespace storm {
                 uint64_t maximumCounterexamples = 1;
                 uint64_t multipleCounterexampleSizeCap = 100000000;
             };
+
+            struct GeneratorStats {
+                std::chrono::milliseconds setupTime;
+                std::chrono::milliseconds solverTime;
+                std::chrono::milliseconds modelCheckingTime;
+                std::chrono::milliseconds analysisTime;
+            };
             
             /*!
              * Computes the minimal command set that is needed in the given model to exceed the given probability threshold for satisfying phi until psi.
@@ -1630,7 +1603,7 @@ namespace storm {
              * @param strictBound Indicates whether the threshold needs to be achieved (true) or exceeded (false).
              * @param options A set of options for customization.
              */
-            static std::vector<boost::container::flat_set<uint_fast64_t>> getMinimalLabelSet(Environment const& env, storm::storage::SymbolicModelDescription const& symbolicModel, storm::models::sparse::Model<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, double propertyThreshold, boost::optional<std::string> const& rewardName, bool strictBound, boost::container::flat_set<uint_fast64_t> const& dontCareLabels = boost::container::flat_set<uint_fast64_t>(), Options const& options = Options()) {
+            static std::vector<boost::container::flat_set<uint_fast64_t>> getMinimalLabelSet(Environment const& env, GeneratorStats& stats, storm::storage::SymbolicModelDescription const& symbolicModel, storm::models::sparse::Model<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, double propertyThreshold, boost::optional<std::string> const& rewardName, bool strictBound, boost::container::flat_set<uint_fast64_t> const& dontCareLabels = boost::container::flat_set<uint_fast64_t>(), Options const& options = Options()) {
 #ifdef STORM_HAVE_Z3
                 std::vector<boost::container::flat_set<uint_fast64_t>> result;
                 // Set up all clocks used for time measurement.
@@ -1821,12 +1794,19 @@ namespace storm {
 
                 // Compute and emit the time measurements if the corresponding flag was set.
                 totalTime = std::chrono::high_resolution_clock::now() - totalClock;
+
+                stats.analysisTime = std::chrono::duration_cast<std::chrono::milliseconds>(totalAnalysisTime);
+                stats.setupTime = std::chrono::duration_cast<std::chrono::milliseconds>(totalSetupTime);
+                stats.modelCheckingTime = std::chrono::duration_cast<std::chrono::milliseconds>(totalModelCheckingTime);
+                stats.solverTime = std::chrono::duration_cast<std::chrono::milliseconds>(totalSolverTime);
+
                 if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
                     boost::container::flat_set<uint64_t> allLabels;
                     for (auto const& e : labelSets) {
                         allLabels.insert(e.begin(), e.end());
                     }
-                    
+
+
                     std::cout << "Metrics:" << std::endl;
                     std::cout << "    * all labels: " << allLabels.size() << std::endl;
                     std::cout << "    * known labels: " << relevancyInformation.knownLabels.size() << std::endl;
@@ -1851,7 +1831,7 @@ namespace storm {
 #endif
             }
             
-            static void extendLabelSetLowerBound(storm::models::sparse::Model<T> const& model, boost::container::flat_set<uint_fast64_t>& commandSet, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool silent = false) {
+            static void extendLabelSetLowerBound(storm::models::sparse::Model<T> const& model, boost::container::flat_set<uint_fast64_t>& commandSet, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates,  bool silent = false) {
                 auto startTime = std::chrono::high_resolution_clock::now();
                 
                 // Create sub-model that only contains the choices allowed by the given command set.
@@ -1935,7 +1915,7 @@ namespace storm {
 
             }
 
-            static std::vector<boost::container::flat_set<uint_fast64_t>> computeCounterexampleLabelSet(Environment const& env, storm::storage::SymbolicModelDescription const& symbolicModel, storm::models::sparse::Model<T> const& model, std::shared_ptr<storm::logic::Formula const> const& formula, boost::container::flat_set<uint_fast64_t> const& dontCareLabels = boost::container::flat_set<uint_fast64_t>(),  Options const& options = Options(true)) {
+            static std::vector<boost::container::flat_set<uint_fast64_t>> computeCounterexampleLabelSet(Environment const& env, GeneratorStats& stats, storm::storage::SymbolicModelDescription const& symbolicModel, storm::models::sparse::Model<T> const& model, std::shared_ptr<storm::logic::Formula const> const& formula, boost::container::flat_set<uint_fast64_t> const& dontCareLabels = boost::container::flat_set<uint_fast64_t>(),  Options const& options = Options(true)) {
                 STORM_LOG_THROW(model.isOfType(storm::models::ModelType::Dtmc) || model.isOfType(storm::models::ModelType::Mdp), storm::exceptions::NotSupportedException, "MaxSAT-based counterexample generation is supported only for discrete-time models.");
                 if (!options.silent) {
                     std::cout << std::endl << "Generating minimal label counterexample for formula " << *formula << std::endl;
@@ -2027,7 +2007,7 @@ namespace storm {
 
                 // Delegate the actual computation work to the function of equal name.
                 auto startTime = std::chrono::high_resolution_clock::now();
-                auto labelSets = getMinimalLabelSet(env, symbolicModel, model, phiStates, psiStates, threshold, rewardName, strictBound, dontCareLabels, options);
+                auto labelSets = getMinimalLabelSet(env, stats, symbolicModel, model, phiStates, psiStates, threshold, rewardName, strictBound, dontCareLabels, options);
                 auto endTime = std::chrono::high_resolution_clock::now();
                 if (!options.silent) {
                     for (auto const& labelSet : labelSets) {
@@ -2049,7 +2029,8 @@ namespace storm {
 
             static std::shared_ptr<HighLevelCounterexample> computeCounterexample(Environment const& env, storm::storage::SymbolicModelDescription const& symbolicModel, storm::models::sparse::Model<T> const& model, std::shared_ptr<storm::logic::Formula const> const& formula) {
 #ifdef STORM_HAVE_Z3
-                auto labelSets = computeCounterexampleLabelSet(env, symbolicModel, model, formula);
+                GeneratorStats stats;
+                auto labelSets = computeCounterexampleLabelSet(env, stats, symbolicModel, model, formula);
 
 
                 if (symbolicModel.isPrismProgram()) {

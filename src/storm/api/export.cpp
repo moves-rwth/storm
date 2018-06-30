@@ -5,13 +5,18 @@ namespace storm {
         
         void exportJaniModel(storm::jani::Model const& model, std::vector<storm::jani::Property> const& properties, std::string const& filename) {
             auto janiSettings = storm::settings::getModule<storm::settings::modules::JaniExportSettings>();
-            
+
+            storm::jani::Model modelForExport = model;
+            if (janiSettings.isExportFlattenedSet()) {
+                modelForExport = modelForExport.flattenComposition();
+            }
+
             if (janiSettings.isExportAsStandardJaniSet()) {
-                storm::jani::Model normalisedModel = model;
+                storm::jani::Model normalisedModel = modelForExport;
                 normalisedModel.makeStandardJaniCompliant();
                 storm::jani::JsonExporter::toFile(normalisedModel, properties, filename);
             } else {
-                storm::jani::JsonExporter::toFile(model, properties, filename);
+                storm::jani::JsonExporter::toFile(modelForExport, properties, filename);
             }
         }
 
