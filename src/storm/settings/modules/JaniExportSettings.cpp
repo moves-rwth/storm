@@ -16,11 +16,13 @@ namespace storm {
             const std::string JaniExportSettings::janiFileOptionShortName = "output";
             const std::string JaniExportSettings::standardCompliantOptionName = "standard-compliant";
             const std::string JaniExportSettings::standardCompliantOptionShortName = "standard";
+            const std::string JaniExportSettings::exportFlattenOptionName = "flatten";
 
             
             JaniExportSettings::JaniExportSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, janiFileOptionName, false, "Destination for the jani model.").setShortName(janiFileOptionShortName).addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "path to file").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, standardCompliantOptionName, false, "Export in standard compliant variant.").setShortName(standardCompliantOptionShortName).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, exportFlattenOptionName, false, "Export in standard compliant variant.").build());
             }
             
             bool JaniExportSettings::isJaniFileSet() const {
@@ -33,6 +35,10 @@ namespace storm {
             
             bool JaniExportSettings::isExportAsStandardJaniSet() const {
                 return this->getOption(standardCompliantOptionName).getHasOptionBeenSet();
+            }
+
+            bool JaniExportSettings::isExportFlattenedSet() const {
+                return this->getOption(exportFlattenOptionName).getHasOptionBeenSet();
             }
             
             void JaniExportSettings::finalize() {
