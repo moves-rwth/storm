@@ -424,11 +424,11 @@ namespace storm {
                 }
 
                 if (f.getSubformula().isEventuallyFormula()) {
-                    opDecl["left"]["reach"] = boost::any_cast<modernjson::json>(f.getSubformula().asEventuallyFormula().getSubformula().accept(*this, data));
+                    opDecl["reach"] = boost::any_cast<modernjson::json>(f.getSubformula().asEventuallyFormula().getSubformula().accept(*this, data));
                 } else if (f.getSubformula().isCumulativeRewardFormula()) {
-                    opDecl["left"][instantName] = buildExpression(f.getSubformula().asCumulativeRewardFormula().getBound(), model.getConstants(), model.getGlobalVariables());
+                    opDecl[instantName] = buildExpression(f.getSubformula().asCumulativeRewardFormula().getBound(), model.getConstants(), model.getGlobalVariables());
                 } else if (f.getSubformula().isInstantaneousRewardFormula()) {
-                    opDecl["left"][instantName] = buildExpression(f.getSubformula().asInstantaneousRewardFormula().getBound(), model.getConstants(), model.getGlobalVariables());
+                    opDecl[instantName] = buildExpression(f.getSubformula().asInstantaneousRewardFormula().getBound(), model.getConstants(), model.getGlobalVariables());
                 }
 
                 opDecl["exp"] = rewardModelName;
