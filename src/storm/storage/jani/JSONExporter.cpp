@@ -264,7 +264,7 @@ namespace storm {
         }
         
         boost::any FormulaToJaniJson::visit(storm::logic::LongRunAverageOperatorFormula const& f, boost::any const& data) const {
-             modernjson::json opDecl;
+            modernjson::json opDecl;
             if(f.hasBound()) {
                 auto bound = f.getBound();
                 opDecl["op"] = comparisonTypeToJani(bound.comparisonType);
@@ -288,7 +288,6 @@ namespace storm {
                 }
             }
             return opDecl;
-
         }
         
         boost::any FormulaToJaniJson::visit(storm::logic::LongRunAverageRewardFormula const&, boost::any const&) const {
@@ -369,52 +368,73 @@ namespace storm {
         boost::any FormulaToJaniJson::visit(storm::logic::RewardOperatorFormula const& f, boost::any const& data) const {
             modernjson::json opDecl;
             std::vector<std::string> accvec;
-            if(model.isDiscreteTimeModel()) {
+            std::string instantName;
+            if (model.isDiscreteTimeModel()) {
                 accvec.push_back("steps");
+                instantName = "step-instant";
             } else {
                 accvec.push_back("time");
+                instantName = "time-instant";
             }
+
+            std::string rewardModelName;
+            if (f.hasRewardModelName()) {
+                rewardModelName = f.getRewardModelName();
+            } else {
+                if (model.getGlobalVariables().getNumberOfRealTransientVariables() == 1) {
+                    for (auto const& variable : model.getGlobalVariables().getRealVariables()) {
+                        if (variable.isTransient()) {
+                            rewardModelName = variable.getName();
+                            STORM_LOG_WARN("Reward model name was not given, assuming the only global real transient variable '" << rewardModelName << "' to measure the reward.");
+                            break;
+                        }
+                    }
+                }
+            }
+            STORM_LOG_THROW(!rewardModelName.empty(), storm::exceptions::NotSupportedException, "Reward name has to be specified for Jani-conversion");
+
             if(f.hasBound()) {
                 auto bound = f.getBound();
                 opDecl["op"] = comparisonTypeToJani(bound.comparisonType);
                 if(f.hasOptimalityType()) {
                     opDecl["left"]["op"] = f.getOptimalityType() == storm::solver::OptimizationDirection::Minimize ? "Emin" : "Emax";
-                    opDecl["left"]["reach"] = boost::any_cast<modernjson::json>(f.getSubformula().asEventuallyFormula().getSubformula().accept(*this, data));
                 } else {
                     opDecl["left"]["op"] = (bound.comparisonType == storm::logic::ComparisonType::Less || bound.comparisonType == storm::logic::ComparisonType::LessEqual) ? "Emax" : "Emin";
+                }
+                if (f.getSubformula().isEventuallyFormula()) {
                     opDecl["left"]["reach"] = boost::any_cast<modernjson::json>(f.getSubformula().asEventuallyFormula().getSubformula().accept(*this, data));
+                } else if (f.getSubformula().isCumulativeRewardFormula()) {
+                    opDecl["left"][instantName] = buildExpression(f.getSubformula().asCumulativeRewardFormula().getBound(), model.getConstants(), model.getGlobalVariables());
+                } else if (f.getSubformula().isInstantaneousRewardFormula()) {
+                    opDecl["left"][instantName] = buildExpression(f.getSubformula().asInstantaneousRewardFormula().getBound(), model.getConstants(), model.getGlobalVariables());
                 }
                 STORM_LOG_THROW(f.hasRewardModelName(), storm::exceptions::NotSupportedException, "Reward name has to be specified for Jani-conversion");
-                opDecl["left"]["exp"] = f.getRewardModelName();
-                opDecl["left"]["accumulate"] = modernjson::json(accvec);
+                opDecl["left"]["exp"] = rewardModelName;
+                if (f.getSubformula().isReachabilityRewardFormula() || f.getSubformula().isCumulativeRewardFormula()) {
+                    opDecl["left"]["accumulate"] = modernjson::json(accvec);
+                }
                 opDecl["right"] = buildExpression(bound.threshold, model.getConstants(), model.getGlobalVariables());
             } else {
-                if(f.hasOptimalityType()) {
+                if (f.hasOptimalityType()) {
                     opDecl["op"] = f.getOptimalityType() == storm::solver::OptimizationDirection::Minimize ? "Emin" : "Emax";
-                    opDecl["reach"] = boost::any_cast<modernjson::json>(f.getSubformula().asEventuallyFormula().getSubformula().accept(*this, data));
                     
                 } else {
                     // TODO add checks
                     opDecl["op"] = "Emin";
-                    opDecl["reach"] = boost::any_cast<modernjson::json>(f.getSubformula().asEventuallyFormula().getSubformula().accept(*this, data));
                 }
-                std::string rewardModelName;
-                if (f.hasRewardModelName()) {
-                    rewardModelName = f.getRewardModelName();
-                } else {
-                    if (model.getGlobalVariables().getNumberOfRealTransientVariables() == 1) {
-                        for (auto const& variable : model.getGlobalVariables().getRealVariables()) {
-                            if (variable.isTransient()) {
-                                rewardModelName = variable.getName();
-                                STORM_LOG_WARN("Reward model name was not given, assuming the only global real transient variable '" << rewardModelName << "' to measure the reward.");
-                                break;
-                            }
-                        }
-                    }
+
+                if (f.getSubformula().isEventuallyFormula()) {
+                    opDecl["left"]["reach"] = boost::any_cast<modernjson::json>(f.getSubformula().asEventuallyFormula().getSubformula().accept(*this, data));
+                } else if (f.getSubformula().isCumulativeRewardFormula()) {
+                    opDecl["left"][instantName] = buildExpression(f.getSubformula().asCumulativeRewardFormula().getBound(), model.getConstants(), model.getGlobalVariables());
+                } else if (f.getSubformula().isInstantaneousRewardFormula()) {
+                    opDecl["left"][instantName] = buildExpression(f.getSubformula().asInstantaneousRewardFormula().getBound(), model.getConstants(), model.getGlobalVariables());
                 }
-                STORM_LOG_THROW(!rewardModelName.empty(), storm::exceptions::NotSupportedException, "Reward name has to be specified for Jani-conversion");
+
                 opDecl["exp"] = rewardModelName;
-                opDecl["accumulate"] = modernjson::json(accvec);
+                if (f.getSubformula().isReachabilityRewardFormula() || f.getSubformula().isCumulativeRewardFormula()) {
+                    opDecl["accumulate"] = modernjson::json(accvec);
+                }
             }
             return opDecl;
         }
