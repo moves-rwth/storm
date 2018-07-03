@@ -17,7 +17,7 @@ namespace storm {
             add(assignment);
         }
         
-        bool OrderedAssignments::add(Assignment const& assignment) {
+        bool OrderedAssignments::add(Assignment const& assignment, bool addToExisting) {
             // If the element is contained in this set of assignment, nothing needs to be added.
             if (this->contains(assignment)) {
                 return false;
@@ -27,18 +27,22 @@ namespace storm {
             auto it = lowerBound(assignment, allAssignments);
 
             if (it != allAssignments.end()) {
-                STORM_LOG_THROW(assignment.getExpressionVariable() != (*it)->getExpressionVariable(), storm::exceptions::InvalidArgumentException, "Cannot add assignment ('" << assignment.getAssignedExpression() << "') as an assignment ('" << (*it)->getAssignedExpression()  << "') to variable '" <<  (*it)->getVariable().getName() << "' already exists.");
-            }
-            
-            // Finally, insert the new element in the correct vectors.
-            auto elementToInsert = std::make_shared<Assignment>(assignment);
-            allAssignments.emplace(it, elementToInsert);
-            if (assignment.isTransient()) {
-                auto transientIt = lowerBound(assignment, transientAssignments);
-                transientAssignments.emplace(transientIt, elementToInsert);
+                if ((!addToExisting || !assignment.getExpressionVariable().hasNumericalType())) {
+                    STORM_LOG_THROW(assignment.getExpressionVariable() != (*it)->getExpressionVariable(), storm::exceptions::InvalidArgumentException, "Cannot add assignment ('" << assignment.getAssignedExpression() << "') as an assignment ('" << (*it)->getAssignedExpression()  << "') to variable '" <<  (*it)->getVariable().getName() << "' already exists.");
+                } else if (addToExisting && assignment.getExpressionVariable().hasNumericalType()) {
+                    (*it)->setAssignedExpression((*it)->getAssignedExpression() + assignment.getAssignedExpression());
+                }
             } else {
-                auto nonTransientIt = lowerBound(assignment, nonTransientAssignments);
-                nonTransientAssignments.emplace(nonTransientIt, elementToInsert);
+                // Finally, insert the new element in the correct vectors.
+                auto elementToInsert = std::make_shared<Assignment>(assignment);
+                allAssignments.emplace(it, elementToInsert);
+                if (assignment.isTransient()) {
+                    auto transientIt = lowerBound(assignment, transientAssignments);
+                    transientAssignments.emplace(transientIt, elementToInsert);
+                } else {
+                    auto nonTransientIt = lowerBound(assignment, nonTransientAssignments);
+                    nonTransientAssignments.emplace(nonTransientIt, elementToInsert);
+                }
             }
             
             return true;

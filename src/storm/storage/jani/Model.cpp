@@ -1107,6 +1107,11 @@ namespace storm {
      
         void Model::makeStandardJaniCompliant() {
             for (auto& automaton : automata) {
+                // For discrete-time models, we push the assignments to real-valued transient variables (rewards) to the
+                // edges.
+                if (this->isDiscreteTimeModel()) {
+                    automaton.pushTransientRealLocationAssignmentsToEdges();
+                }
                 automaton.pushEdgeAssignmentsToDestinations();
             }
         }

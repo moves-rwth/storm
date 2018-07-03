@@ -295,6 +295,12 @@ namespace storm {
             void pushEdgeAssignmentsToDestinations();
             
             /*!
+             * Pushes the assignments to real-valued transient variables to the edges.
+             * Note: This is currently only supported if the template edges are uniquely coupled with one source location.
+             */
+            void pushTransientRealLocationAssignmentsToEdges();
+            
+            /*!
              * Retrieves whether there is any transient edge destination assignment in the automaton.
              */
             bool hasTransientEdgeDestinationAssignments() const;

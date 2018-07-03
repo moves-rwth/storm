@@ -20,8 +20,8 @@ namespace storm {
             destinations.emplace_back(destination);
         }
         
-        bool TemplateEdge::addTransientAssignment(Assignment const& assignment) {
-            return assignments.add(assignment);
+        bool TemplateEdge::addTransientAssignment(Assignment const& assignment, bool addToExisting) {
+            return assignments.add(assignment, addToExisting);
         }
         
         void TemplateEdge::finalize(Model const& containingModel) {
@@ -106,7 +106,7 @@ namespace storm {
             STORM_LOG_ASSERT(!destinations.empty(), "Need non-empty destinations for this transformation.");
             for (auto const& assignment : this->getAssignments()) {
                 for (auto& destination : destinations) {
-                    destination.addAssignment(assignment);
+                    destination.addAssignment(assignment, true);
                 }
             }
             this->assignments.clear();
