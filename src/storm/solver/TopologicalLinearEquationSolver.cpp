@@ -68,7 +68,7 @@ namespace storm {
             
             storm::Environment sccSolverEnvironment = getEnvironmentForUnderlyingSolver(env, needAdaptPrecision);
             
-            STORM_LOG_INFO("Found " << this->sortedSccDecomposition->size() << "SCCs. Average size is " << static_cast<double>(this->getMatrixRowCount()) / static_cast<double>(this->sortedSccDecomposition->size()) << ".");
+            STORM_LOG_INFO("Found " << this->sortedSccDecomposition->size() << " SCC(s). Average size is " << static_cast<double>(this->getMatrixRowCount()) / static_cast<double>(this->sortedSccDecomposition->size()) << ".");
             if (this->longestSccChainSize) {
                 STORM_LOG_INFO("Longest SCC chain size is " << this->longestSccChainSize.get() << ".");
             }
