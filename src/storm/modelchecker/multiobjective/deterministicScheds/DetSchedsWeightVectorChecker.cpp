@@ -38,6 +38,7 @@ namespace storm {
                         
                         ValueType currChoiceValue = storm::utility::zero<ValueType>();
                         for (uint64_t objIndex = 0; objIndex < numObjectives; ++objIndex) {
+                            STORM_LOG_ASSERT(!storm::utility::isInfinity(stateResults[objIndex][state]), "Scheduler induces value infinity at a state.");
                             currChoiceValue += weightVector[objIndex] * stateResults[objIndex][state];
                         }
                         
@@ -60,6 +61,7 @@ namespace storm {
                                 }
                             }
                             
+                            // TODO: For non-exact solving this could 'close' End Components which actually decreases
                             if (choiceValue > currChoiceValue) {
                                 schedulerEvaluator->setChoiceAtState(state, choice);
                             }
