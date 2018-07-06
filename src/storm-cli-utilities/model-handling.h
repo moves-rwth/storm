@@ -359,18 +359,12 @@ namespace storm {
                 result->second = true;
                 
                 std::shared_ptr<storm::models::symbolic::Model<DdType, ExportValueType>> symbolicModel = result->first->template as<storm::models::symbolic::Model<DdType, ExportValueType>>();
-                if (symbolicModel->isOfType(storm::models::ModelType::Dtmc)) {
-                    storm::transformer::SymbolicDtmcToSparseDtmcTransformer<DdType, ExportValueType> transformer;
-                    result->first = transformer.translate(*symbolicModel->template as<storm::models::symbolic::Dtmc<DdType, ExportValueType>>());
-                } else if (symbolicModel->isOfType(storm::models::ModelType::Ctmc)) {
-                    storm::transformer::SymbolicCtmcToSparseCtmcTransformer<DdType, ExportValueType> transformer;
-                    result->first = transformer.translate(*symbolicModel->template as<storm::models::symbolic::Ctmc<DdType, ExportValueType>>());
-                } else if (symbolicModel->isOfType(storm::models::ModelType::Mdp)) {
-                    storm::transformer::SymbolicMdpToSparseMdpTransformer<DdType, ExportValueType> transformer;
-                    result->first = transformer.translate(*symbolicModel->template as<storm::models::symbolic::Mdp<DdType, ExportValueType>>());
-                } else {
-                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The translation to a sparse model is not supported for the given model type.");
+                std::vector<std::shared_ptr<storm::logic::Formula const>> formulas;
+                for (auto const& property : input.properties) {
+                    formulas.emplace_back(property.getRawFormula());
                 }
+                result->first = storm::api::transformSymbolicToSparseModel(symbolicModel, formulas);
+                STORM_LOG_THROW(result, storm::exceptions::NotSupportedException, "The translation to a sparse model is not supported for the given model type.");
             }
             
             return *result;
