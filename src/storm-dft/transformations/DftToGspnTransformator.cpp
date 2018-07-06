@@ -987,13 +987,14 @@ namespace storm {
 
                     uint64_t tWinFlip = builder.addImmediateTransition(getFailPriority(dftDependency) + 1,
                                                                        dftDependency->probability(),
-                                                                       "_win_flip");
+                                                                       dftDependency->name() + "_win_flip");
                     builder.addInputArc(flipPlace, tWinFlip);
                     builder.addOutputArc(tWinFlip, forwardPlace);
 
                     uint64_t tLooseFlip = builder.addImmediateTransition(getFailPriority(dftDependency) + 1,
                                                                          storm::utility::one<ValueType>() -
-                                                                         dftDependency->probability(), "_loose_flip");
+                                                                         dftDependency->probability(),
+                                                                         dftDependency->name() + "_lose_flip");
                     builder.addInputArc(flipPlace, tLooseFlip);
                 } else {
                     // FDEP
@@ -1061,6 +1062,9 @@ namespace storm {
                         builder.addOutputArc(triggerDontCare, failedPlace);
                     }
 
+                }
+                if (failedPlace == 0) {
+                    failedPlaces.push_back(failedPlace);
                 }
             }
 

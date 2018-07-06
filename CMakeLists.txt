@@ -81,17 +81,7 @@ set(CMAKE_INSTALL_DIR ${DEF_INSTALL_CMAKE_DIR} CACHE PATH  "Installation directo
 message("CMAKE_INSTALL_DIR: ${CMAKE_INSTALL_DIR}")
 
 # If the STORM_DEVELOPER option was turned on, by default we target a debug version, otherwise a release version.
-if (STORM_DEVELOPER)
-    if (NOT CMAKE_BUILD_TYPE)
-        set(CMAKE_BUILD_TYPE "DEBUG")
-    endif()
-    add_definitions(-DSTORM_DEV)
-else()
-    set(STORM_LOG_DISABLE_DEBUG ON)
-    if (NOT CMAKE_BUILD_TYPE)
-        set(CMAKE_BUILD_TYPE "RELEASE")
-    endif()
-endif()
+set(CMAKE_BUILD_TYPE "DEBUG")
 
 message(STATUS "Storm - Building ${CMAKE_BUILD_TYPE} version.")
 
