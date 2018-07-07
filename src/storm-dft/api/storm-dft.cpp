@@ -44,8 +44,9 @@ namespace storm {
 
             // Transform to GSPN
             storm::transformations::dft::DftToGspnTransformator<double> gspnTransformator(dft);
-            auto priorities = gspnTransformator.computePriorities();
-            gspnTransformator.transform(priorities, dontCareElements, !dftGspnSettings.isDisableSmartTransformation(), dftGspnSettings.isMergeDCFailed());
+            auto priorities = gspnTransformator.computePriorities(dftGspnSettings.isExtendPriorities());
+            gspnTransformator.transform(priorities, dontCareElements, !dftGspnSettings.isDisableSmartTransformation(),
+                                        dftGspnSettings.isMergeDCFailed(), dftGspnSettings.isExtendPriorities());
             std::shared_ptr<storm::gspn::GSPN> gspn(gspnTransformator.obtainGSPN());
             return std::make_pair(gspn, gspnTransformator.toplevelFailedPlaceId());
         }

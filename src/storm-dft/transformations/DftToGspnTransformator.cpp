@@ -19,12 +19,13 @@ namespace storm {
             template<typename ValueType>
             void DftToGspnTransformator<ValueType>::transform(std::map<uint64_t, uint64_t> const &priorities,
                                                               std::set<uint64_t> const &dontCareElements, bool smart,
-                                                              bool mergeDCFailed) {
+                                                              bool mergeDCFailed, bool extendPriorities) {
                 this->priorities = priorities;
                 this->dontCareElements = dontCareElements;
                 this->smart = smart;
                 this->mergedDCFailed = mergeDCFailed;
                 this->dontCarePriority = 1;
+                this->extendedPriorities = extendPriorities;
                 builder.setGspnName("DftToGspnTransformation");
 
                 // Translate all GSPN elements
@@ -35,16 +36,53 @@ namespace storm {
             }
 
             template<typename ValueType>
-            std::map<uint64_t, uint64_t> DftToGspnTransformator<ValueType>::computePriorities() {
+            std::map<uint64_t, uint64_t> DftToGspnTransformator<ValueType>::computePriorities(bool extendedPrio) {
                 std::map<uint64_t, uint64_t> priorities;
-                // Set priority for PDEP and FDEP according to Monolithic MA semantics
-                uint64_t dependency_priority = 2;
-                for (std::size_t i = 0; i < mDft.nrElements(); i++) {
-                    if (mDft.getElement(i)->type() == storm::storage::DFTElementType::PDEP)
-                        priorities[i] = dependency_priority;
-                    else
-                        priorities[i] = (-(mDft.getElement(i)->rank()) + mDft.maxRank()) * 2 + 5;
+                if (!extendedPrio) {
+                    // Set priority for PDEP and FDEP according to Monolithic MA semantics
+                    uint64_t dependency_priority = 2;
+                    for (std::size_t i = 0; i < mDft.nrElements(); i++) {
+                        if (mDft.getElement(i)->type() == storm::storage::DFTElementType::PDEP)
+                            priorities[i] = dependency_priority;
+                        else
+                            priorities[i] = (-(mDft.getElement(i)->rank()) + mDft.maxRank()) * 2 + 5;
+                    }
+                } else {
+                    // make sure every element has a unique priority by working with the rank
+                    std::map<uint64_t, uint64_t> rankMap;
+                    std::map<uint64_t, uint64_t> rankCounter;
+                    // initialize rankMap
+                    for (std::size_t i = 0; i <= mDft.maxRank(); i++) {
+                        rankMap[i] = 0;
+                        rankCounter[i] = 0;
+                    }
+                    // Count the number of elements with each rank
+                    for (std::size_t i = 0; i < mDft.nrElements(); i++) {
+                        ++rankMap[mDft.getElement(i)->rank()];
+                        ++rankCounter[mDft.getElement(i)->rank()];
+                    }
+
+                    for (std::size_t i = 0; i <= mDft.maxRank(); i++) {
+                        STORM_LOG_DEBUG("With Rank " << i << ": " << rankMap[i]);
+                    }
+                    uint64_t dependency_priority = mDft.nrElements() + 1;
+                    for (std::size_t i = 0; i < mDft.nrElements(); i++) {
+                        if (mDft.getElement(i)->type() == storm::storage::DFTElementType::PDEP)
+                            priorities[i] = dependency_priority;
+                        else {
+                            // Offset saves the number of elements with higher rank than the current element
+                            uint64_t offset = 0;
+                            for (std::size_t j = mDft.maxRank(); j > mDft.getElement(i)->rank(); --j) {
+                                offset += rankMap[j];
+                            }
+                            // Set priority according to rank such that all elements with the same rank have a unique prio
+                            priorities[i] =
+                                    (offset + rankCounter[mDft.getElement(i)->rank()]) * 3 + 3 + mDft.nrElements();
+                            rankCounter[mDft.getElement(i)->rank()]--;
+                        }
+                    }
                 }
+
                 return priorities;
             }
 
@@ -122,6 +160,11 @@ namespace storm {
                     std::shared_ptr<storm::storage::DFTBE<ValueType> const> dftBE) {
                 double xcenter = mDft.getElementLayoutInfo(dftBE->id()).x;
                 double ycenter = mDft.getElementLayoutInfo(dftBE->id()).y;
+                uint64_t propagationPrio = 0;
+                if (extendedPriorities)
+                    propagationPrio = (getFailPriority(dftBE) - mDft.nrElements() - 3) / 3 + 3;
+                else
+                    propagationPrio = dontCarePriority;
 
                 uint64_t failedPlace = addFailedPlace(dftBE, storm::gspn::LayoutInfo(xcenter + 3.0, ycenter));
 
@@ -164,7 +207,7 @@ namespace storm {
                             dependencyPropagationPlaces.emplace(dftBE->id(), dependencyPropagationPlace);
                             builder.setPlaceLayoutInfo(dependencyPropagationPlace,
                                                        storm::gspn::LayoutInfo(xcenter + 10.0, ycenter - 5.0));
-                            uint64_t tPropagationFailed = builder.addImmediateTransition(dontCarePriority, 0.0,
+                            uint64_t tPropagationFailed = builder.addImmediateTransition(propagationPrio, 0.0,
                                                                                          dftBE->name() + "_prop_fail");
                             builder.setTransitionLayoutInfo(tPropagationFailed,
                                                             storm::gspn::LayoutInfo(xcenter + 8.0, ycenter));
@@ -172,7 +215,7 @@ namespace storm {
                             builder.addInputArc(failedPlace, tPropagationFailed);
                             builder.addOutputArc(tPropagationFailed, failedPlace);
                             builder.addOutputArc(tPropagationFailed, dependencyPropagationPlace);
-                            uint64_t tPropagationDontCare = builder.addImmediateTransition(dontCarePriority, 0.0,
+                            uint64_t tPropagationDontCare = builder.addImmediateTransition(propagationPrio, 0.0,
                                                                                            dftBE->name() +
                                                                                            "_prop_dontCare");
                             builder.setTransitionLayoutInfo(tPropagationDontCare,
@@ -242,6 +285,11 @@ namespace storm {
                     std::shared_ptr<storm::storage::DFTAnd<ValueType> const> dftAnd) {
                 double xcenter = mDft.getElementLayoutInfo(dftAnd->id()).x;
                 double ycenter = mDft.getElementLayoutInfo(dftAnd->id()).y;
+                uint64_t propagationPrio = 0;
+                if (extendedPriorities)
+                    propagationPrio = (getFailPriority(dftAnd) - mDft.nrElements() - 3) / 3 + 3;
+                else
+                    propagationPrio = dontCarePriority;
 
                 uint64_t failedPlace = addFailedPlace(dftAnd, storm::gspn::LayoutInfo(xcenter, ycenter - 3.0));
 
@@ -265,7 +313,7 @@ namespace storm {
                             uint64_t propagationPlace = builder.addPlace(1, 0, dftAnd->name() + "_prop");
                             builder.setPlaceLayoutInfo(propagationPlace,
                                                        storm::gspn::LayoutInfo(xcenter + 12.0, ycenter + 8.0));
-                            uint64_t tPropagationFailed = builder.addImmediateTransition(dontCarePriority, 0.0,
+                            uint64_t tPropagationFailed = builder.addImmediateTransition(propagationPrio, 0.0,
                                                                                          dftAnd->name() + "_prop_fail");
                             builder.setTransitionLayoutInfo(tPropagationFailed,
                                                             storm::gspn::LayoutInfo(xcenter + 10.0, ycenter + 6.0));
@@ -273,7 +321,7 @@ namespace storm {
                             builder.addInputArc(failedPlace, tPropagationFailed);
                             builder.addOutputArc(tPropagationFailed, failedPlace);
                             builder.addOutputArc(tPropagationFailed, propagationPlace);
-                            uint64_t tPropagationDontCare = builder.addImmediateTransition(dontCarePriority, 0.0,
+                            uint64_t tPropagationDontCare = builder.addImmediateTransition(propagationPrio, 0.0,
                                                                                            dftAnd->name() +
                                                                                            "_prop_dontCare");
                             builder.setTransitionLayoutInfo(tPropagationDontCare,
@@ -329,6 +377,11 @@ namespace storm {
                     std::shared_ptr<storm::storage::DFTOr<ValueType> const> dftOr) {
                 double xcenter = mDft.getElementLayoutInfo(dftOr->id()).x;
                 double ycenter = mDft.getElementLayoutInfo(dftOr->id()).y;
+                uint64_t propagationPrio = 0;
+                if (extendedPriorities)
+                    propagationPrio = (getFailPriority(dftOr) - mDft.nrElements() - 3) / 3 + 3;
+                else
+                    propagationPrio = dontCarePriority;
 
                 uint64_t failedPlace = addFailedPlace(dftOr, storm::gspn::LayoutInfo(xcenter, ycenter - 3.0));
 
@@ -346,7 +399,7 @@ namespace storm {
                             uint64_t propagationPlace = builder.addPlace(1, 0, dftOr->name() + "_prop");
                             builder.setPlaceLayoutInfo(propagationPlace,
                                                        storm::gspn::LayoutInfo(xcenter + 12.0, ycenter + 8.0));
-                            uint64_t tPropagationFailed = builder.addImmediateTransition(dontCarePriority, 0.0,
+                            uint64_t tPropagationFailed = builder.addImmediateTransition(propagationPrio, 0.0,
                                                                                          dftOr->name() + "_prop_fail");
                             builder.setTransitionLayoutInfo(tPropagationFailed,
                                                             storm::gspn::LayoutInfo(xcenter + 10.0, ycenter + 6.0));
@@ -354,7 +407,7 @@ namespace storm {
                             builder.addInputArc(failedPlace, tPropagationFailed);
                             builder.addOutputArc(tPropagationFailed, failedPlace);
                             builder.addOutputArc(tPropagationFailed, propagationPlace);
-                            uint64_t tPropagationDontCare = builder.addImmediateTransition(dontCarePriority, 0.0,
+                            uint64_t tPropagationDontCare = builder.addImmediateTransition(propagationPrio, 0.0,
                                                                                            dftOr->name() +
                                                                                            "_prop_dontCare");
                             builder.setTransitionLayoutInfo(tPropagationDontCare,
@@ -423,6 +476,11 @@ namespace storm {
 
                 double xcenter = mDft.getElementLayoutInfo(dftVot->id()).x;
                 double ycenter = mDft.getElementLayoutInfo(dftVot->id()).y;
+                uint64_t propagationPrio = 0;
+                if (extendedPriorities)
+                    propagationPrio = (getFailPriority(dftVot) - mDft.nrElements() - 3) / 3 + 3;
+                else
+                    propagationPrio = dontCarePriority;
 
                 uint64_t failedPlace = addFailedPlace(dftVot, storm::gspn::LayoutInfo(xcenter, ycenter - 3.0));
 
@@ -469,7 +527,7 @@ namespace storm {
                             uint64_t propagationPlace = builder.addPlace(1, 0, dftVot->name() + "_prop");
                             builder.setPlaceLayoutInfo(propagationPlace,
                                                        storm::gspn::LayoutInfo(xcenter + 12.0, ycenter + 8.0));
-                            uint64_t tPropagationFailed = builder.addImmediateTransition(dontCarePriority, 0.0,
+                            uint64_t tPropagationFailed = builder.addImmediateTransition(propagationPrio, 0.0,
                                                                                          dftVot->name() + "_prop_fail");
                             builder.setTransitionLayoutInfo(tPropagationFailed,
                                                             storm::gspn::LayoutInfo(xcenter + 10.0, ycenter + 6.0));
@@ -477,7 +535,7 @@ namespace storm {
                             builder.addInputArc(failedPlace, tPropagationFailed);
                             builder.addOutputArc(tPropagationFailed, failedPlace);
                             builder.addOutputArc(tPropagationFailed, propagationPlace);
-                            uint64_t tPropagationDontCare = builder.addImmediateTransition(dontCarePriority, 0.0,
+                            uint64_t tPropagationDontCare = builder.addImmediateTransition(propagationPrio, 0.0,
                                                                                            dftVot->name() +
                                                                                            "_prop_dontCare");
                             builder.setTransitionLayoutInfo(tPropagationDontCare,
@@ -523,6 +581,11 @@ namespace storm {
                 //TODO Layouting
                 double xcenter = mDft.getElementLayoutInfo(dftPand->id()).x;
                 double ycenter = mDft.getElementLayoutInfo(dftPand->id()).y;
+                uint64_t propagationPrio = 0;
+                if (extendedPriorities)
+                    propagationPrio = (getFailPriority(dftPand) - mDft.nrElements() - 3) / 3 + 3;
+                else
+                    propagationPrio = dontCarePriority;
 
                 uint64_t failedPlace = addFailedPlace(dftPand, storm::gspn::LayoutInfo(xcenter + 3.0, ycenter - 3.0));
 
@@ -597,11 +660,11 @@ namespace storm {
                     uint64_t propagationPlace = builder.addPlace(1, 0, dftPand->name() + "_prop");
                     builder.setPlaceLayoutInfo(propagationPlace,
                                                storm::gspn::LayoutInfo(xcenter + 12.0, ycenter + 8.0));
-                    uint64_t tPropagationFailed = builder.addImmediateTransition(dontCarePriority, 0.0,
+                    uint64_t tPropagationFailed = builder.addImmediateTransition(propagationPrio, 0.0,
                                                                                  dftPand->name() + "_prop_fail");
                     builder.setTransitionLayoutInfo(tPropagationFailed,
                                                     storm::gspn::LayoutInfo(xcenter + 10.0, ycenter + 6.0));
-                    uint64_t tPropagationFailsafe = builder.addImmediateTransition(dontCarePriority, 0.0,
+                    uint64_t tPropagationFailsafe = builder.addImmediateTransition(propagationPrio, 0.0,
                                                                                    dftPand->name() + "_prop_failsafe");
                     builder.setTransitionLayoutInfo(tPropagationFailsafe,
                                                     storm::gspn::LayoutInfo(xcenter + 8.0, ycenter + 6.0));
@@ -634,7 +697,7 @@ namespace storm {
                                                        storm::gspn::LayoutInfo(xcenter + 16.0, ycenter + 4.0));
                             builder.addInhibitionArc(dontCarePlace, tDontCare);
                             builder.addOutputArc(tDontCare, dontCarePlace);
-                            uint64_t tPropagationDontCare = builder.addImmediateTransition(dontCarePriority, 0.0,
+                            uint64_t tPropagationDontCare = builder.addImmediateTransition(propagationPrio, 0.0,
                                                                                            dftPand->name() +
                                                                                            "_prop_dontCare");
                             builder.setTransitionLayoutInfo(tPropagationDontCare,
@@ -658,6 +721,11 @@ namespace storm {
 
                 double xcenter = mDft.getElementLayoutInfo(dftPor->id()).x;
                 double ycenter = mDft.getElementLayoutInfo(dftPor->id()).y;
+                uint64_t propagationPrio = 0;
+                if (extendedPriorities)
+                    propagationPrio = (getFailPriority(dftPor) - mDft.nrElements() - 3) / 3 + 3;
+                else
+                    propagationPrio = dontCarePriority;
 
                 uint64_t delayPlace = 0;
 
@@ -731,11 +799,11 @@ namespace storm {
                     uint64_t propagationPlace = builder.addPlace(1, 0, dftPor->name() + "_prop");
                     builder.setPlaceLayoutInfo(propagationPlace,
                                                storm::gspn::LayoutInfo(xcenter + 12.0, ycenter + 8.0));
-                    uint64_t tPropagationFailed = builder.addImmediateTransition(dontCarePriority, 0.0,
+                    uint64_t tPropagationFailed = builder.addImmediateTransition(propagationPrio, 0.0,
                                                                                  dftPor->name() + "_prop_fail");
                     builder.setTransitionLayoutInfo(tPropagationFailed,
                                                     storm::gspn::LayoutInfo(xcenter + 10.0, ycenter + 6.0));
-                    uint64_t tPropagationFailsafe = builder.addImmediateTransition(dontCarePriority, 0.0,
+                    uint64_t tPropagationFailsafe = builder.addImmediateTransition(propagationPrio, 0.0,
                                                                                    dftPor->name() + "_prop_failsafe");
                     builder.setTransitionLayoutInfo(tPropagationFailsafe,
                                                     storm::gspn::LayoutInfo(xcenter + 8.0, ycenter + 6.0));
@@ -768,7 +836,7 @@ namespace storm {
                                                        storm::gspn::LayoutInfo(xcenter + 16.0, ycenter + 4.0));
                             builder.addInhibitionArc(dontCarePlace, tDontCare);
                             builder.addOutputArc(tDontCare, dontCarePlace);
-                            uint64_t tPropagationDontCare = builder.addImmediateTransition(dontCarePriority, 0.0,
+                            uint64_t tPropagationDontCare = builder.addImmediateTransition(propagationPrio, 0.0,
                                                                                            dftPor->name() +
                                                                                            "_prop_dontCare");
                             builder.setTransitionLayoutInfo(tPropagationDontCare,
@@ -792,6 +860,11 @@ namespace storm {
                     std::shared_ptr<storm::storage::DFTSpare<ValueType> const> dftSpare) {
                 double xcenter = mDft.getElementLayoutInfo(dftSpare->id()).x;
                 double ycenter = mDft.getElementLayoutInfo(dftSpare->id()).y;
+                uint64_t propagationPrio = 0;
+                if (extendedPriorities)
+                    propagationPrio = (getFailPriority(dftSpare) - mDft.nrElements() - 3) / 3 + 3;
+                else
+                    propagationPrio = dontCarePriority;
 
                 uint64_t failedPlace = addFailedPlace(dftSpare, storm::gspn::LayoutInfo(xcenter + 10.0, ycenter - 8.0));
 
@@ -900,7 +973,7 @@ namespace storm {
                                                                          dftSpare->name() + "_prop");
                             builder.setPlaceLayoutInfo(propagationPlace,
                                                        storm::gspn::LayoutInfo(xcenter + 12.0, ycenter + 8.0));
-                            uint64_t tPropagationFailed = builder.addImmediateTransition(dontCarePriority, 0.0,
+                            uint64_t tPropagationFailed = builder.addImmediateTransition(propagationPrio, 0.0,
                                                                                          dftSpare->name() +
                                                                                          "_prop_fail");
                             builder.setTransitionLayoutInfo(tPropagationFailed,
@@ -909,7 +982,7 @@ namespace storm {
                             builder.addInputArc(failedPlace, tPropagationFailed);
                             builder.addOutputArc(tPropagationFailed, failedPlace);
                             builder.addOutputArc(tPropagationFailed, propagationPlace);
-                            uint64_t tPropagationDontCare = builder.addImmediateTransition(dontCarePriority, 0.0,
+                            uint64_t tPropagationDontCare = builder.addImmediateTransition(propagationPrio, 0.0,
                                                                                            dftSpare->name() +
                                                                                            "_prop_dontCare");
                             builder.setTransitionLayoutInfo(tPropagationDontCare,
@@ -1150,9 +1223,17 @@ namespace storm {
             DftToGspnTransformator<ValueType>::addDontcareTransition(
                     std::shared_ptr<const storm::storage::DFTElement<ValueType> > dftElement,
                     storm::gspn::LayoutInfo const &layoutInfo) {
-                uint64_t dontcareTransition = builder.addImmediateTransition(dontCarePriority, 0.0,
-                                                                             dftElement->name() + STR_DONTCARE +
-                                                                             "_transition");
+                uint64_t dontcareTransition;
+                if (extendedPriorities && !dftElement->isDependency()) {
+                    uint64_t prio = (getFailPriority(dftElement) - mDft.nrElements() - 3) / 3 + 3;
+                    dontcareTransition = builder.addImmediateTransition(prio, 0.0,
+                                                                        dftElement->name() + STR_DONTCARE +
+                                                                        "_transition");
+                } else {
+                    dontcareTransition = builder.addImmediateTransition(dontCarePriority, 0.0,
+                                                                        dftElement->name() + STR_DONTCARE +
+                                                                        "_transition");
+                }
                 dontcareTransitions.emplace(dftElement->id(), dontcareTransition);
                 builder.setTransitionLayoutInfo(dontcareTransition, layoutInfo);
                 return dontcareTransition;

@@ -38,6 +38,13 @@ namespace storm {
                  */
                 bool isMergeDCFailed() const;
 
+                /*!
+                 * Retrieves whether the experimental setting of priorities should be used
+                 *
+                 * @return True if the settig is enabled is enabled.
+                 */
+                bool isExtendPriorities() const;
+
                 bool check() const override;
 
                 void finalize() override;
@@ -50,7 +57,7 @@ namespace storm {
                 static const std::string transformToGspnOptionName;
                 static const std::string disableSmartTransformationOptionName;
                 static const std::string mergeDCFailedOptionName;
-
+                static const std::string extendPrioritiesOptionName;
             };
 
         } // namespace modules
