@@ -488,27 +488,36 @@ namespace storm {
                     if (linearEquationSolverFactory.getEquationProblemFormat(env) == storm::solver::LinearEquationSolverProblemFormat::FixedPointSystem) {
                         fixedPointSystem = true;
                     }
-                    
+
                     // Now build the final equation system matrix, the initial guess and the right-hand side in one go.
                     std::vector<ValueType> bsccEquationSystemRightSide(bsccEquationSystem.getColumnCount(), zero);
                     storm::storage::SparseMatrixBuilder<ValueType> builder;
                     for (uint_fast64_t row = 0; row < bsccEquationSystem.getRowCount(); ++row) {
-                        
+                    
                         // If the current row is the first one belonging to a BSCC, we substitute it by the constraint that the
                         // values for states of this BSCC must sum to one. However, in order to have a non-zero value on the
                         // diagonal, we add the constraint of the BSCC that produces a 1 on the diagonal.
-                        if (!fixedPointSystem && firstStatesInBsccs.get(row)) {
+                        if (firstStatesInBsccs.get(row)) {
                             uint_fast64_t requiredBscc = stateToBsccIndexMap[row];
                             storm::storage::StronglyConnectedComponent const& bscc = bsccDecomposition[requiredBscc];
-                            
-                            for (auto const& state : bscc) {
-                                builder.addNextValue(row, indexInStatesInBsccs[state], one);
+
+                            if (fixedPointSystem) {
+                                for (auto const& state : bscc) {
+                                    if (row == indexInStatesInBsccs[state]) {
+                                        builder.addNextValue(row, indexInStatesInBsccs[state], zero);
+                                    } else {
+                                        builder.addNextValue(row, indexInStatesInBsccs[state], -one);
+                                    }
+                                }
+                            } else {
+                                for (auto const& state : bscc) {
+                                    builder.addNextValue(row, indexInStatesInBsccs[state], one);
+                                }
                             }
                             
                             bsccEquationSystemRightSide[row] = one;
-                            
                         } else {
-                            // Otherwise, we copy the row, and subtract 1 from the diagonal.
+                            // Otherwise, we copy the row, and subtract 1 from the diagonal (only for the equation solver format).
                             for (auto& entry : bsccEquationSystem.getRow(row)) {
                                 if (fixedPointSystem || entry.getColumn() != row) {
                                     builder.addNextValue(row, entry.getColumn(), entry.getValue());
@@ -530,7 +539,6 @@ namespace storm {
                     }
                     
                     bsccEquationSystem = builder.build();
-                    
                     {
                         std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(env, std::move(bsccEquationSystem));
                         solver->solveEquations(env, bsccEquationSystemSolution, bsccEquationSystemRightSide);
