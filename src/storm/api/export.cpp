@@ -16,6 +16,10 @@ namespace storm {
                 }
             }
 
+            if (janiSettings.isExportFlattenedSet()) {
+                exportModel = exportModel.flattenComposition();
+            }
+
             if (janiSettings.isExportAsStandardJaniSet()) {
                 storm::jani::Model normalisedModel = exportModel;
                 normalisedModel.makeStandardJaniCompliant();
