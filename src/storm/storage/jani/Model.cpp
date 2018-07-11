@@ -742,11 +742,6 @@ namespace storm {
         }
         
         std::shared_ptr<Composition> Model::getStandardSystemComposition() const {
-            // If there's just one automaton, we must not use the parallel composition operator.
-            if (this->getNumberOfAutomata() == 1) {
-                return std::make_shared<AutomatonComposition>(this->getAutomata().front().getName());
-            }
-            
             // Determine the action indices used by each of the automata and create the standard subcompositions.
             std::set<uint64_t> allActionIndices;
             std::vector<std::set<uint64_t>> automatonActionIndices;

@@ -7,6 +7,9 @@
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/TemplateEdge.h"
 
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/JaniExportSettings.h"
+
 #include "storm/utility/macros.h"
 #include "storm/exceptions/NotImplementedException.h"
 
@@ -15,6 +18,8 @@ namespace storm {
         
         storm::jani::Model ToJaniConverter::convert(storm::prism::Program const& program, bool allVariablesGlobal, std::string suffix) {
             std::shared_ptr<storm::expressions::ExpressionManager> manager = program.getManager().getSharedPointer();
+            
+            bool produceStateRewards = !storm::settings::getModule<storm::settings::modules::JaniExportSettings>().isExportAsStandardJaniSet() || program.getModelType() == storm::prism::Program::ModelType::CTMC;
                         
             // Start by creating an empty JANI model.
             storm::jani::ModelType modelType;
@@ -153,6 +158,20 @@ namespace storm {
             }
             STORM_LOG_THROW(transientEdgeAssignments.empty() || transientLocationAssignments.empty() || !program.specifiesSystemComposition(), storm::exceptions::NotImplementedException, "Cannot translate reward models from PRISM to JANI that specify a custom system composition.");
             
+            // If we are not allowed to produce state rewards, we need to create a mapping from action indices to transient
+            // location assignments. This is done so that all assignments are added only *once* for synchronizing actions.
+            std::map<uint_fast64_t, std::vector<storm::jani::Assignment>> transientRewardLocationAssignmentsPerAction;
+            if (!produceStateRewards) {
+                for (auto const& action : program.getActions()) {
+                    auto& list = transientRewardLocationAssignmentsPerAction[janiModel.getActionIndex(action)];
+                    for (auto const& assignment : transientLocationAssignments) {
+                        if (assignment.isTransient() && assignment.getVariable().isRealVariable()) {
+                            list.emplace_back(assignment);
+                        }
+                    }
+                }
+            }
+            
             // Now create the separate JANI automata from the modules of the PRISM program. While doing so, we use the
             // previously built mapping to make variables global that are read by more than one module.
             std::set<uint64_t> firstModules;
@@ -195,10 +214,13 @@ namespace storm {
                 automaton.addInitialLocation(onlyLocationIndex);
                 
                 // If we are translating the first module that has the action, we need to add the transient assignments to the location.
+                // However, in standard compliant JANI, there are no state rewards
                 if (firstModule) {
                     storm::jani::Location& onlyLocation = automaton.getLocation(onlyLocationIndex);
                     for (auto const& assignment : transientLocationAssignments) {
-                        onlyLocation.addTransientAssignment(assignment);
+                        if (assignment.getVariable().isBooleanVariable() || produceStateRewards) {
+                            onlyLocation.addTransientAssignment(assignment);
+                        }
                     }
                 }
                 
@@ -243,6 +265,12 @@ namespace storm {
                             templateEdge->addTransientAssignment(assignment);
                         }
                     }
+                    if (!produceStateRewards) {
+                        transientEdgeAssignmentsToAdd = transientRewardLocationAssignmentsPerAction.find(janiModel.getActionIndex(command.getActionName()));
+                        for (auto const& assignment : transientEdgeAssignmentsToAdd->second) {
+                            templateEdge->addTransientAssignment(assignment, true);
+                        }
+                    }
 
                     // Create the edge object.
                     storm::jani::Edge newEdge;
@@ -261,6 +289,11 @@ namespace storm {
                 // NOTE: This only works for the standard composition and not for any custom compositions. This case
                 // must be checked for earlier.
                 for (auto actionIndex : actionIndicesOfModule) {
+                    // Do not delete rewards dealt out on non-synchronizing edges.
+                    if (actionIndex == janiModel.getActionIndex("")) {
+                        continue;
+                    }
+                    
                     auto it = transientEdgeAssignments.find(actionIndex);
                     if (it != transientEdgeAssignments.end()) {
                         transientEdgeAssignments.erase(it);

@@ -427,23 +427,28 @@ namespace storm {
                 auto& location = locations[locationIndex];
                 auto edges = this->getEdgesFromLocation(locationIndex);
             
+                storm::jani::Location newLocation(location.getName());
+                bool createNewLocation = true;
                 for (auto& edge : edges) {
                     STORM_LOG_THROW(encounteredTemplateEdges.find(edge.getTemplateEdge()) == encounteredTemplateEdges.end(), storm::exceptions::NotSupportedException, "Pushing location assignments to edges is only supported for automata with unique template edges.");
 
                     auto& templateEdge = edge.getTemplateEdge();
                     encounteredTemplateEdges.insert(templateEdge);
                     
-                    storm::jani::Location newLocation(location.getName());
                     for (auto const& assignment : location.getAssignments().getTransientAssignments()) {
                         if (assignment.getVariable().isTransient() && assignment.getVariable().isRealVariable()) {
                             templateEdge->addTransientAssignment(assignment, true);
-                        } else {
+                        } else if (createNewLocation) {
                             newLocation.addTransientAssignment(assignment);
                         }
                     }
                     
-                    location = std::move(newLocation);
+                    if (createNewLocation) {
+                        createNewLocation = false;
+                    }
                 }
+
+                location = std::move(newLocation);
             }
         }
         
