@@ -11,7 +11,7 @@ Version 1.2.x
 - `storm-dft`: improvements in Galileo parser
 - `storm-dft`: test cases for DFT analysis
 - Sound value iteration (SVI) for DTMCs and MDPs
-- Topological solver for linear equation systems and MinMax equation systems.
+- Topological solver for linear equation systems and MinMax equation systems (enabled by default)
 - Added support for expected total rewards in the sparse engine
 - `storm-parsers` extracted to reduce linking time
 - `storm-counterexamples` extracted to reduce linking time
