@@ -426,7 +426,10 @@ namespace storm {
             
             STORM_LOG_THROW(model->isSparseModel(), storm::exceptions::NotSupportedException, "Counterexample generation is currently only supported for sparse models.");
             auto sparseModel = model->as<storm::models::sparse::Model<ValueType>>();
-            
+            for (auto& rewModel : sparseModel->getRewardModels()) {
+                rewModel.second.reduceToStateBasedRewards(sparseModel->getTransitionMatrix(), true);
+            }
+
             STORM_LOG_THROW(sparseModel->isOfType(storm::models::ModelType::Dtmc) || sparseModel->isOfType(storm::models::ModelType::Mdp), storm::exceptions::NotSupportedException, "Counterexample is currently only supported for discrete-time models.");
             
             auto counterexampleSettings = storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>();
