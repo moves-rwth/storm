@@ -54,6 +54,10 @@ namespace storm {
             return variables.addVariable(variable);
         }
 
+        bool Automaton::hasVariable(std::string const& name) const {
+            return variables.hasVariable(name);
+        }
+
         VariableSet& Automaton::getVariables() {
             return variables;
         }

@@ -186,11 +186,15 @@ namespace storm {
         
         template <typename ValueType>
         std::shared_ptr<storm::models::ModelBase> buildModelSparse(SymbolicInput const& input, storm::settings::modules::BuildSettings const& buildSettings) {
-            auto counterexampleGeneratorSettings = storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>();
             storm::builder::BuilderOptions options(createFormulasToRespect(input.properties));
             options.setBuildChoiceLabels(buildSettings.isBuildChoiceLabelsSet());
             options.setBuildStateValuations(buildSettings.isBuildStateValuationsSet());
-            options.setBuildChoiceOrigins(counterexampleGeneratorSettings.isMinimalCommandSetGenerationSet());
+            if (storm::settings::manager().hasModule(storm::settings::modules::CounterexampleGeneratorSettings::moduleName)) {
+                auto counterexampleGeneratorSettings = storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>();
+                options.setBuildChoiceOrigins(counterexampleGeneratorSettings.isMinimalCommandSetGenerationSet());
+            } else {
+                options.setBuildChoiceOrigins(false);
+            }
             options.setBuildAllLabels(buildSettings.isBuildFullModelSet());
             options.setBuildAllRewardModels(buildSettings.isBuildFullModelSet());
             options.setAddOutOfBoundsState(buildSettings.isBuildOutOfBoundsStateSet());
