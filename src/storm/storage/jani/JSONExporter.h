@@ -3,7 +3,7 @@
 
 #include "storm/storage/expressions/ExpressionVisitor.h"
 #include "storm/logic/FormulaVisitor.h"
-#include "Model.h"
+#include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/Property.h"
 #include "storm/adapters/RationalNumberAdapter.h"
 // JSON parser
@@ -80,7 +80,7 @@ namespace storm {
             
             
         private:
-            void convertModel(storm::jani::Model const& model);
+            void convertModel(storm::jani::Model const& model, bool commentExpressions = true);
             void convertProperties(std::vector<storm::jani::Property> const& formulas, storm::jani::Model const& model);
             void appendVariableDeclaration(storm::jani::Variable const& variable);
             

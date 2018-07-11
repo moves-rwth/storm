@@ -648,7 +648,7 @@ namespace storm {
             
         }
         
-        modernjson::json buildAssignmentArray(storm::jani::OrderedAssignments const& orderedAssignments, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables) {
+        modernjson::json buildAssignmentArray(storm::jani::OrderedAssignments const& orderedAssignments, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables, bool commentExpressions) {
             std::vector<modernjson::json> assignmentDeclarations;
             bool addIndex = orderedAssignments.hasMultipleLevels();
             for(auto const& assignment : orderedAssignments) {
@@ -659,18 +659,21 @@ namespace storm {
                     assignmentEntry["index"] = assignment.getLevel();
                 }
                 assignmentDeclarations.push_back(assignmentEntry);
+                if (commentExpressions) {
+                    assignmentEntry["comment"] = assignment.getVariable().getName() + " <- " + assignment.getAssignedExpression().toString();
+                }
             }
             return modernjson::json(assignmentDeclarations);
         }
         
-        modernjson::json buildLocationsArray(std::vector<storm::jani::Location> const& locations, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables) {
+        modernjson::json buildLocationsArray(std::vector<storm::jani::Location> const& locations, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables, bool commentExpressions) {
             std::vector<modernjson::json> locationDeclarations;
             for(auto const& location : locations) {
                 modernjson::json locEntry;
                 locEntry["name"] = location.getName();
                 // TODO support invariants?
                 if (!location.getAssignments().empty()) {
-                    locEntry["transient-values"] = buildAssignmentArray(location.getAssignments(), constants, globalVariables, localVariables);
+                    locEntry["transient-values"] = buildAssignmentArray(location.getAssignments(), constants, globalVariables, localVariables, commentExpressions);
                 }
                 locationDeclarations.push_back(locEntry);
             }
@@ -685,7 +688,7 @@ namespace storm {
             return modernjson::json(names);
         }
         
-        modernjson::json buildDestinations(std::vector<EdgeDestination> const& destinations, std::map<uint64_t, std::string> const& locationNames, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables) {
+        modernjson::json buildDestinations(std::vector<EdgeDestination> const& destinations, std::map<uint64_t, std::string> const& locationNames, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables, bool commentExpressions) {
             assert(destinations.size() > 0);
             std::vector<modernjson::json> destDeclarations;
             for(auto const& destination : destinations) {
@@ -699,16 +702,19 @@ namespace storm {
                 }
                 if (!prob1) {
                     destEntry["probability"]["exp"] = buildExpression(destination.getProbability(), constants, globalVariables, localVariables);
+                    if (commentExpressions) {
+                        destEntry["probability"]["comment"] = destination.getProbability().toString();
+                    }
                 }
                 if (!destination.getOrderedAssignments().empty()) {
-                    destEntry["assignments"] = buildAssignmentArray(destination.getOrderedAssignments(), constants, globalVariables, localVariables);
+                    destEntry["assignments"] = buildAssignmentArray(destination.getOrderedAssignments(), constants, globalVariables, localVariables, commentExpressions);
                 }
                 destDeclarations.push_back(destEntry);
             }
             return modernjson::json(destDeclarations);
         }
         
-        modernjson::json buildEdges(std::vector<Edge> const& edges , std::map<uint64_t, std::string> const& actionNames, std::map<uint64_t, std::string> const& locationNames, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables) {
+        modernjson::json buildEdges(std::vector<Edge> const& edges , std::map<uint64_t, std::string> const& actionNames, std::map<uint64_t, std::string> const& locationNames, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables, bool commentExpressions) {
             std::vector<modernjson::json> edgeDeclarations;
             for(auto const& edge : edges) {
                 if (edge.getGuard().isFalse()) {
@@ -722,13 +728,19 @@ namespace storm {
                 }
                 if(edge.hasRate()) {
                     edgeEntry["rate"]["exp"] = buildExpression(edge.getRate(), constants, globalVariables, localVariables);
+                    if (commentExpressions) {
+                        edgeEntry["rate"]["comment"] = edge.getRate().toString();
+                    }
                 }
                 if (!edge.getGuard().isTrue()) {
                     edgeEntry["guard"]["exp"] = buildExpression(edge.getGuard(), constants, globalVariables, localVariables);
+                    if (commentExpressions) {
+                        edgeEntry["guard"]["comment"] = edge.getGuard().toString();
+                    }
                 }
-                edgeEntry["destinations"] = buildDestinations(edge.getDestinations(), locationNames, constants, globalVariables, localVariables);
+                edgeEntry["destinations"] = buildDestinations(edge.getDestinations(), locationNames, constants, globalVariables, localVariables, commentExpressions);
                 if (!edge.getAssignments().empty()) {
-                    edgeEntry["assignments"] = buildAssignmentArray(edge.getAssignments(), constants, globalVariables, localVariables);
+                    edgeEntry["assignments"] = buildAssignmentArray(edge.getAssignments(), constants, globalVariables, localVariables, commentExpressions);
                 }
                 
                 edgeDeclarations.push_back(edgeEntry);
@@ -736,7 +748,7 @@ namespace storm {
             return modernjson::json(edgeDeclarations);
         }
         
-        modernjson::json buildAutomataArray(std::vector<storm::jani::Automaton> const& automata, std::map<uint64_t, std::string> const& actionNames, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables) {
+        modernjson::json buildAutomataArray(std::vector<storm::jani::Automaton> const& automata, std::map<uint64_t, std::string> const& actionNames, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, bool commentExpressions) {
             std::vector<modernjson::json> automataDeclarations;
             for(auto const& automaton : automata) {
                 modernjson::json autoEntry;
@@ -745,16 +757,16 @@ namespace storm {
                 if(automaton.hasRestrictedInitialStates()) {
                     autoEntry["restrict-initial"]["exp"] = buildExpression(automaton.getInitialStatesRestriction(), constants, globalVariables, automaton.getVariables());
                 }
-                autoEntry["locations"] = buildLocationsArray(automaton.getLocations(), constants, globalVariables, automaton.getVariables());
+                autoEntry["locations"] = buildLocationsArray(automaton.getLocations(), constants, globalVariables, automaton.getVariables(), commentExpressions);
                 autoEntry["initial-locations"] = buildInitialLocations(automaton);
-                autoEntry["edges"] = buildEdges(automaton.getEdges(), actionNames, automaton.buildIdToLocationNameMap(), constants, globalVariables, automaton.getVariables());
+                autoEntry["edges"] = buildEdges(automaton.getEdges(), actionNames, automaton.buildIdToLocationNameMap(), constants, globalVariables, automaton.getVariables(), commentExpressions);
                 automataDeclarations.push_back(autoEntry);
             }
             return modernjson::json(automataDeclarations);
         }
         
         
-        void JsonExporter::convertModel(storm::jani::Model const& janiModel) {
+        void JsonExporter::convertModel(storm::jani::Model const& janiModel, bool commentExpressions) {
             jsonStruct["jani-version"] = janiModel.getJaniVersion();
             jsonStruct["name"] = janiModel.getName();
             jsonStruct["type"] = to_string(janiModel.getModelType());
@@ -762,7 +774,7 @@ namespace storm {
             jsonStruct["constants"] = buildConstantsArray(janiModel.getConstants());
             jsonStruct["variables"] = buildVariablesArray(janiModel.getGlobalVariables(), janiModel.getConstants(), janiModel.getGlobalVariables());
             jsonStruct["restrict-initial"]["exp"] = buildExpression(janiModel.getInitialStatesRestriction(), janiModel.getConstants(), janiModel.getGlobalVariables());
-            jsonStruct["automata"] = buildAutomataArray(janiModel.getAutomata(), janiModel.getActionIndexToNameMap(), janiModel.getConstants(), janiModel.getGlobalVariables());
+            jsonStruct["automata"] = buildAutomataArray(janiModel.getAutomata(), janiModel.getActionIndexToNameMap(), janiModel.getConstants(), janiModel.getGlobalVariables(), commentExpressions);
             jsonStruct["system"] = CompositionJsonExporter::translate(janiModel.getSystemComposition());
             std::vector<std::string> standardFeatureVector = {"derived-operators"};
             jsonStruct["features"] = standardFeatureVector;
