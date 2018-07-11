@@ -13,7 +13,10 @@ Version 1.2.x
 - Sound value iteration (SVI) for DTMCs and MDPs
 - Topological solver for linear equation systems and MinMax equation systems.
 - Added support for expected total rewards in the sparse engine
-
+- `storm-parsers` extracted to reduce linking time
+- `storm-counterexamples` extracted to reduce linking time
+- Improved export for jani models
+- Several extensions to high-level counterexamples
 
 ### Version 1.2.1 (2018/02)
 - Multi-dimensional reward bounded reachability properties for DTMCs.
