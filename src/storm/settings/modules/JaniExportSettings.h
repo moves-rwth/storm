@@ -28,6 +28,10 @@ namespace storm {
 
                 bool isExportFlattenedSet() const;
 
+                bool isLocationVariablesSet() const;
+
+                std::vector<std::pair<std::string, std::string>> getLocationVariables() const;
+
                 bool check() const override;
                 void finalize() override;
                 
@@ -39,6 +43,7 @@ namespace storm {
                 static const std::string standardCompliantOptionName;
                 static const std::string standardCompliantOptionShortName;
                 static const std::string exportFlattenOptionName;
+                static const std::string locationVariablesOptionName;
                 
             };
         }
