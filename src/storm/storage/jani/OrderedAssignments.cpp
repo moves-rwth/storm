@@ -16,6 +16,14 @@ namespace storm {
         OrderedAssignments::OrderedAssignments(Assignment const& assignment) {
             add(assignment);
         }
+
+        OrderedAssignments OrderedAssignments::clone() const {
+            OrderedAssignments result;
+            for (auto const& assignment : allAssignments) {
+                result.add(Assignment(*assignment));
+            }
+            return result;
+        }
         
         bool OrderedAssignments::add(Assignment const& assignment) {
             // If the element is contained in this set of assignment, nothing needs to be added.

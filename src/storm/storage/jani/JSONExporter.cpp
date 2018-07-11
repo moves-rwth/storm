@@ -35,6 +35,7 @@ namespace storm {
 
 
         modernjson::json buildExpression(storm::expressions::Expression const& exp,  std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables = VariableSet(), VariableSet const& localVariables = VariableSet()) {
+            STORM_LOG_TRACE("Exporting " << exp);
             return ExpressionToJson::translate(exp,  constants, globalVariables, localVariables);
         }
 

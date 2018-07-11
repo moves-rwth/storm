@@ -245,6 +245,19 @@ namespace storm {
              */
             std::vector<Automaton> const& getAutomata() const;
 
+            /**
+             * Replaces the automaton at index with a new automaton.
+             * @param index
+             * @param newAutomaton
+             */
+            void replaceAutomaton(uint64_t index, Automaton const& newAutomaton);
+
+            /*!
+             * Rerieves whether there exists an automaton with the given name.
+             * @param name
+             * @return
+             */
+            bool hasAutomaton(std::string const& name) const;
             /*!
              * Retrieves the automaton with the given name.
              */

@@ -18,7 +18,8 @@ namespace storm {
              * Creates a new location.
              */
             Location(std::string const& name, std::vector<Assignment> const& transientAssignments = {});
-            
+
+            Location(std::string const& name, OrderedAssignments const& assignments);
             /*!
              * Retrieves the name of the location.
              */

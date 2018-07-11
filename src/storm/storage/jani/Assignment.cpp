@@ -37,7 +37,7 @@ namespace storm  {
         }
         
         void Assignment::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {
-            this->setAssignedExpression(this->getAssignedExpression().substitute(substitution));
+            this->setAssignedExpression(this->getAssignedExpression().substitute(substitution).simplify());
         }
         
         int64_t Assignment::getLevel() const {

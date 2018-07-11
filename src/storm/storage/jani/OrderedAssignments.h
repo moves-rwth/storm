@@ -140,7 +140,9 @@ namespace storm {
             bool areLinear() const;
             
             friend std::ostream& operator<<(std::ostream& stream, OrderedAssignments const& assignments);
-            
+
+            OrderedAssignments clone() const;
+
         private:
             uint64_t isReadBeforeAssignment(Variable const& var, uint64_t assignmentNumber, uint64_t start = 0) const;
             uint64_t isWrittenBeforeAssignment(Variable const& var, uint64_t assignmentNumber, uint64_t start = 0) const;

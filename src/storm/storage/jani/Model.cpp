@@ -711,7 +711,15 @@ namespace storm {
         std::vector<Automaton> const& Model::getAutomata() const {
             return automata;
         }
-        
+
+        bool Model::hasAutomaton(std::string const& name) const {
+            return automatonToIndex.find(name) != automatonToIndex.end();
+        }
+
+        void Model::replaceAutomaton(uint64_t index, Automaton const& automaton) {
+            automata[index] = automaton;
+        }
+
         Automaton& Model::getAutomaton(std::string const& name) {
             auto it = automatonToIndex.find(name);
             STORM_LOG_THROW(it != automatonToIndex.end(), storm::exceptions::InvalidOperationException, "Unable to retrieve unknown automaton '" << name << "'.");
