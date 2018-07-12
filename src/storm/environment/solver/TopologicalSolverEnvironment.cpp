@@ -14,7 +14,7 @@ namespace storm {
         underlyingEquationSolverTypeSetFromDefault = topologicalSettings.isUnderlyingEquationSolverTypeSetFromDefaultValue();
         
         underlyingMinMaxMethod = topologicalSettings.getUnderlyingMinMaxMethod();
-        underlyingEquationSolverTypeSetFromDefault = topologicalSettings.isUnderlyingMinMaxMethodSetFromDefaultValue();
+        underlyingMinMaxMethodSetFromDefault = topologicalSettings.isUnderlyingMinMaxMethodSetFromDefaultValue();
     }
 
     TopologicalSolverEnvironment::~TopologicalSolverEnvironment() {
