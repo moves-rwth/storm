@@ -230,7 +230,8 @@ namespace storm {
                     }
                     std::shared_ptr<storm::logic::Formula const> reach;
                     if (propertyStructure.count("reach") > 0) {
-                        reach = std::make_shared<storm::logic::EventuallyFormula>(parseFormula(propertyStructure.at("reach"), time ? storm::logic::FormulaContext::Time : storm::logic::FormulaContext::Reward, globalVars, constants, "Reach-expression of operator " + opString));
+                        auto context = time ? storm::logic::FormulaContext::Time : storm::logic::FormulaContext::Reward;
+                        reach = std::make_shared<storm::logic::EventuallyFormula>(parseFormula(propertyStructure.at("reach"), context, globalVars, constants, "Reach-expression of operator " + opString), context);
                     } else {
                         STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Total reward is currently not supported");
                     }
@@ -304,9 +305,12 @@ namespace storm {
                     //STORM_LOG_THROW(!accTime && !accSteps, storm::exceptions::NotSupportedException, "Storm only allows accumulation if a step- or time-bound is given.");
                     
                     if (rewExpr.isVariable()) {
+                        assert(!time);
                         std::string rewardName = rewExpr.getVariables().begin()->getName();
                         return std::make_shared<storm::logic::RewardOperatorFormula>(reach, rewardName, opInfo);
                     } else if (!rewExpr.containsVariables()) {
+                        assert(time);
+                        assert(reach->isTimePathFormula());
                         if(rewExpr.hasIntegerType()) {
                             if (rewExpr.evaluateAsInt() == 1) {
                                 
@@ -480,6 +484,7 @@ namespace storm {
             STORM_LOG_THROW(propertyStructure.count("name") ==  1, storm::exceptions::InvalidJaniException, "Property must have a name");
             // TODO check unique name
             std::string name = getString(propertyStructure.at("name"), "property-name");
+            STORM_LOG_TRACE("Parsing property named: " << name);
             std::string comment = "";
             if (propertyStructure.count("comment") > 0) {
                 comment = getString(propertyStructure.at("comment"), "comment for property named '" + name + "'.");
