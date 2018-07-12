@@ -20,7 +20,8 @@ namespace storm {
             const std::string ParametricSettings::onlyWellformednessConstraintsOptionName = "onlyconstraints";
             const std::string ParametricSettings::samplesOptionName = "samples";
             const std::string ParametricSettings::samplesGraphPreservingOptionName = "samples-graph-preserving";
-            
+            const std::string ParametricSettings::sampleExactOptionName = "sample-exact";
+
             ParametricSettings::ParametricSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportResultOptionName, false, "A path to a file where the parametric result should be saved.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("path", "the location.").addValidatorString(ArgumentValidatorFactory::createWritableFileValidator()).build()).build());
@@ -30,6 +31,7 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, samplesOptionName, false, "The points at which to sample the model.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("samples", "The samples are semicolon-separated entries of the form 'Var1=Val1:Val2:...:Valk,Var2=... that span the sample spaces.").setDefaultValueString("").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, samplesGraphPreservingOptionName, false, "Sets whether it can be assumed that the samples are graph-preserving.").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, sampleExactOptionName, false, "Sets whether to sample using exact arithmetic.").build());
             }
             
             bool ParametricSettings::exportResultToFile() const {
@@ -58,6 +60,10 @@ namespace storm {
             
             bool ParametricSettings::isSamplesAreGraphPreservingSet() const {
                 return this->getOption(samplesGraphPreservingOptionName).getHasOptionBeenSet();
+            }
+            
+            bool ParametricSettings::isSampleExactSet() const {
+                return this->getOption(sampleExactOptionName).getHasOptionBeenSet();
             }
             
         } // namespace modules

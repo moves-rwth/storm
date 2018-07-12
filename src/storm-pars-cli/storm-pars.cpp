@@ -33,7 +33,7 @@ namespace storm {
 
         template <typename ValueType>
         struct SampleInformation {
-            SampleInformation(bool graphPreserving = false) : graphPreserving(graphPreserving) {
+            SampleInformation(bool graphPreserving = false, bool exact = false) : graphPreserving(graphPreserving), exact(exact) {
                 // Intentionally left empty.
             }
             
@@ -43,6 +43,7 @@ namespace storm {
             
             std::vector<std::map<typename utility::parametric::VariableType<ValueType>::type, std::vector<typename utility::parametric::CoefficientType<ValueType>::type>>> cartesianProducts;
             bool graphPreserving;
+            bool exact;
         };
         
         template <typename ValueType>
@@ -320,6 +321,19 @@ namespace storm {
             }
         }
         
+        template <typename ValueType, typename SolveValueType = double>
+        void verifyPropertiesAtSamplePoints(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, SymbolicInput const& input, SampleInformation<ValueType> const& samples) {
+            if (model->isOfType(storm::models::ModelType::Dtmc)) {
+                verifyPropertiesAtSamplePoints<storm::modelchecker::SparseDtmcInstantiationModelChecker, storm::models::sparse::Dtmc<ValueType>, ValueType, SolveValueType>(*model->template as<storm::models::sparse::Dtmc<ValueType>>(), input, samples);
+            } else if (model->isOfType(storm::models::ModelType::Ctmc)) {
+                verifyPropertiesAtSamplePoints<storm::modelchecker::SparseCtmcInstantiationModelChecker, storm::models::sparse::Ctmc<ValueType>, ValueType, SolveValueType>(*model->template as<storm::models::sparse::Ctmc<ValueType>>(), input, samples);
+            } else if (model->isOfType(storm::models::ModelType::Ctmc)) {
+                verifyPropertiesAtSamplePoints<storm::modelchecker::SparseMdpInstantiationModelChecker, storm::models::sparse::Mdp<ValueType>, ValueType, SolveValueType>(*model->template as<storm::models::sparse::Mdp<ValueType>>(), input, samples);
+            } else {
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Sampling is currently only supported for DTMCs, CTMCs and MDPs.");
+            }
+        }
+        
         template <typename ValueType>
         void verifyPropertiesWithSparseEngine(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, SymbolicInput const& input, SampleInformation<ValueType> const& samples) {
             
@@ -342,14 +356,11 @@ namespace storm {
                                             });
             } else {
                 STORM_LOG_TRACE("Sampling the model at given points.");
-                if (model->isOfType(storm::models::ModelType::Dtmc)) {
-                    verifyPropertiesAtSamplePoints<storm::modelchecker::SparseDtmcInstantiationModelChecker, storm::models::sparse::Dtmc<ValueType>, ValueType, double>(*model->template as<storm::models::sparse::Dtmc<ValueType>>(), input, samples);
-                } else if (model->isOfType(storm::models::ModelType::Ctmc)) {
-                    verifyPropertiesAtSamplePoints<storm::modelchecker::SparseCtmcInstantiationModelChecker, storm::models::sparse::Ctmc<ValueType>, ValueType, double>(*model->template as<storm::models::sparse::Ctmc<ValueType>>(), input, samples);
-                } else if (model->isOfType(storm::models::ModelType::Ctmc)) {
-                    verifyPropertiesAtSamplePoints<storm::modelchecker::SparseMdpInstantiationModelChecker, storm::models::sparse::Mdp<ValueType>, ValueType, double>(*model->template as<storm::models::sparse::Mdp<ValueType>>(), input, samples);
+                
+                if (samples.exact) {
+                    verifyPropertiesAtSamplePoints<ValueType, storm::RationalNumber>(model, input, samples);
                 } else {
-                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Sampling is currently only supported for DTMCs, CTMCs and MDPs.");
+                    verifyPropertiesAtSamplePoints<ValueType, double>(model, input, samples);
                 }
             }
         }
@@ -455,6 +466,7 @@ namespace storm {
             
             std::vector<storm::storage::ParameterRegion<ValueType>> regions = parseRegions<ValueType>(model);
             SampleInformation<ValueType> samples = parseSamples<ValueType>(model, parSettings.getSamples(), parSettings.isSamplesAreGraphPreservingSet());
+            samples.exact = parSettings.isSampleExactSet();
             
             if (model) {
                 storm::cli::exportModel<DdType, ValueType>(model, input);

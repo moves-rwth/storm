@@ -59,6 +59,11 @@ namespace storm {
                  */
                 bool isSamplesAreGraphPreservingSet() const;
                 
+                /*!
+                 * Retrieves whether samples are to be computed exactly.
+                 */
+                bool isSampleExactSet() const;
+                
                 const static std::string moduleName;
                 
             private:
@@ -69,6 +74,7 @@ namespace storm {
                 const static std::string onlyWellformednessConstraintsOptionName;
                 const static std::string samplesOptionName;
                 const static std::string samplesGraphPreservingOptionName;
+                const static std::string sampleExactOptionName;
             };
             
         } // namespace modules
