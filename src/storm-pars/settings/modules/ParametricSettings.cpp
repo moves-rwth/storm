@@ -19,6 +19,7 @@ namespace storm {
             const std::string ParametricSettings::transformContinuousShortOptionName = "tc";
             const std::string ParametricSettings::onlyWellformednessConstraintsOptionName = "onlyconstraints";
             const std::string ParametricSettings::samplesOptionName = "samples";
+            const std::string ParametricSettings::samplesGraphPreservingOptionName = "samples-graph-preserving";
             
             ParametricSettings::ParametricSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportResultOptionName, false, "A path to a file where the parametric result should be saved.")
@@ -28,6 +29,7 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, onlyWellformednessConstraintsOptionName, false, "Sets whether you only want to obtain the wellformedness constraints").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, samplesOptionName, false, "The points at which to sample the model.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("samples", "The samples given in the form 'Var1=Val1:Val2:...:Valk,Var2=...").setDefaultValueString("").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, samplesGraphPreservingOptionName, false, "Sets whether it can be assumed that the samples are graph-preserving.").build());
             }
             
             bool ParametricSettings::exportResultToFile() const {
@@ -52,6 +54,10 @@ namespace storm {
             
             std::string ParametricSettings::getSamples() const {
                 return this->getOption(samplesOptionName).getArgumentByName("samples").getValueAsString();
+            }
+            
+            bool ParametricSettings::isSamplesAreGraphPreservingSet() const {
+                return this->getOption(samplesGraphPreservingOptionName).getHasOptionBeenSet();
             }
             
         } // namespace modules

@@ -169,8 +169,8 @@ namespace storm {
             if (asEquationSystem) {
                 sccA.convertToEquationSystem();
             }
-            //std::cout << "Solving SCC " << scc << std::endl;
-            //std::cout << "Matrix is " << sccA << std::endl;
+//            std::cout << "Solving SCC " << scc << std::endl;
+//            std::cout << "Matrix is " << sccA << std::endl;
             this->sccSolver->setMatrix(std::move(sccA));
             
             // x Vector

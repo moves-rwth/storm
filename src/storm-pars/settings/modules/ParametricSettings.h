@@ -54,6 +54,11 @@ namespace storm {
                  */
                 std::string getSamples() const;
                 
+                /*!
+                 * Retrieves whether the samples are graph preserving.
+                 */
+                bool isSamplesAreGraphPreservingSet() const;
+                
                 const static std::string moduleName;
                 
             private:
@@ -63,6 +68,7 @@ namespace storm {
                 const static std::string transformContinuousShortOptionName;
                 const static std::string onlyWellformednessConstraintsOptionName;
                 const static std::string samplesOptionName;
+                const static std::string samplesGraphPreservingOptionName;
             };
             
         } // namespace modules
