@@ -28,7 +28,7 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, transformContinuousOptionName, false, "Sets whether to transform a continuous time input model to a discrete time model.").setShortName(transformContinuousShortOptionName).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, onlyWellformednessConstraintsOptionName, false, "Sets whether you only want to obtain the wellformedness constraints").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, samplesOptionName, false, "The points at which to sample the model.")
-                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("samples", "The samples given in the form 'Var1=Val1:Val2:...:Valk,Var2=...").setDefaultValueString("").build()).build());
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("samples", "The samples are semicolon-separated entries of the form 'Var1=Val1:Val2:...:Valk,Var2=... that span the sample spaces.").setDefaultValueString("").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, samplesGraphPreservingOptionName, false, "Sets whether it can be assumed that the samples are graph-preserving.").build());
             }
             
