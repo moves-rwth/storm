@@ -1,5 +1,5 @@
 #include "storm/logic/TimeOperatorFormula.h"
-
+#include "storm/logic/EventuallyFormula.h"
 #include "storm/logic/FormulaVisitor.h"
 
 #include "storm/utility/macros.h"
@@ -8,6 +8,7 @@
 namespace storm {
     namespace logic {
         TimeOperatorFormula::TimeOperatorFormula(std::shared_ptr<Formula const> const& subformula, OperatorInformation const& operatorInformation, RewardMeasureType rewardMeasureType) : OperatorFormula(subformula, operatorInformation), rewardMeasureType(rewardMeasureType) {
+            assert(subformula->isTimePathFormula());
             // Intentionally left empty.
         }
         

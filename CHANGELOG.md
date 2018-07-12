@@ -17,6 +17,7 @@ Version 1.2.x
 - `storm-counterexamples` extracted to reduce linking time
 - Improved export for jani models
 - Several extensions to high-level counterexamples
+- A fix in parsing jani properties
 
 ### Version 1.2.1 (2018/02)
 - Multi-dimensional reward bounded reachability properties for DTMCs.

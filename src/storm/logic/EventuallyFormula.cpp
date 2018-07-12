@@ -31,7 +31,7 @@ namespace storm {
         }
         
         bool EventuallyFormula::isProbabilityPathFormula() const {
-            return this->isEventuallyFormula();
+            return this->isReachabilityProbabilityFormula();
         }
         
         bool EventuallyFormula::isRewardPathFormula() const {
