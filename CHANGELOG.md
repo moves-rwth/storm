@@ -7,17 +7,19 @@ The releases of major and minor versions contain an overview of changes since th
 Version 1.2.x
 -------------
 
-### Version 1.2.2 (to be released)
-- `storm-dft`: improvements in Galileo parser
-- `storm-dft`: test cases for DFT analysis
+### Version 1.2.2 (2018/07)
 - Sound value iteration (SVI) for DTMCs and MDPs
 - Topological solver for linear equation systems and MinMax equation systems (enabled by default)
 - Added support for expected total rewards in the sparse engine
+- Improved export for jani models
+- A fix in parsing jani properties
+- Several extensions to high-level counterexamples
 - `storm-parsers` extracted to reduce linking time
 - `storm-counterexamples` extracted to reduce linking time
-- Improved export for jani models
-- Several extensions to high-level counterexamples
-- A fix in parsing jani properties
+- `storm-dft`: improvements in Galileo parser
+- `storm-dft`: test cases for DFT analysis
+- Improved Storm installation
+- Several bug fixes
 
 ### Version 1.2.1 (2018/02)
 - Multi-dimensional reward bounded reachability properties for DTMCs.
