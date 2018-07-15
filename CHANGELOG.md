@@ -11,6 +11,7 @@ Version 1.2.x
 - Sound value iteration (SVI) for DTMCs and MDPs
 - Topological solver for linear equation systems and MinMax equation systems (enabled by default)
 - Added support for expected total rewards in the sparse engine
+- By default, iteration-based solvers are no longer aborted after a given number of steps.
 - Improved export for jani models
 - A fix in parsing jani properties
 - Several extensions to high-level counterexamples
