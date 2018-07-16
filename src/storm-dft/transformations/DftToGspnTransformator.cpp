@@ -56,20 +56,33 @@ namespace storm {
                         rankMap[i] = 0;
                         rankCounter[i] = 0;
                     }
-                    // Count the number of elements with each rank
+                    // Count the number of elements with each rank and get max. grade of dependency
+                    uint64_t maxNrChildren = 0;
+                    uint64_t maxGrade = 0;
+                    uint64_t numberDependencies = 0;
                     for (std::size_t i = 0; i < mDft.nrElements(); i++) {
                         ++rankMap[mDft.getElement(i)->rank()];
                         ++rankCounter[mDft.getElement(i)->rank()];
+                        if (mDft.getElement(i)->type() == storm::storage::DFTElementType::PDEP) {
+                            numberDependencies++;
+                            uint64_t nrDependentEvents =
+                                    sizeof((std::static_pointer_cast<storm::storage::DFTDependency<ValueType> const>(
+                                            mDft.getElement(i)))->dependentEvents());
+                            if (nrDependentEvents > maxGrade) {
+                                maxGrade = nrDependentEvents;
+                            }
+                        }
+                        if (mDft.getElement(i)->nrChildren() > maxNrChildren)
+                            maxNrChildren = mDft.getElement(i)->nrChildren();
                     }
+                    STORM_LOG_DEBUG("MaxGrade " << maxGrade);
 
-                    for (std::size_t i = 0; i <= mDft.maxRank(); i++) {
-                        STORM_LOG_DEBUG("With Rank " << i << ": " << rankMap[i]);
-                    }
                     uint64_t dependency_priority = mDft.nrElements() + 1;
                     for (std::size_t i = 0; i < mDft.nrElements(); i++) {
-                        if (mDft.getElement(i)->type() == storm::storage::DFTElementType::PDEP)
+                        if (mDft.getElement(i)->type() == storm::storage::DFTElementType::PDEP) {
                             priorities[i] = dependency_priority;
-                        else {
+                            dependency_priority++;
+                        } else {
                             // Offset saves the number of elements with higher rank than the current element
                             uint64_t offset = 0;
                             for (std::size_t j = mDft.maxRank(); j > mDft.getElement(i)->rank(); --j) {
@@ -77,7 +90,8 @@ namespace storm {
                             }
                             // Set priority according to rank such that all elements with the same rank have a unique prio
                             priorities[i] =
-                                    (offset + rankCounter[mDft.getElement(i)->rank()]) * 3 + 3 + mDft.nrElements();
+                                    (offset + rankCounter[mDft.getElement(i)->rank()]) * (maxNrChildren + 3) +
+                                    mDft.nrElements() + maxGrade * numberDependencies + 4;
                             rankCounter[mDft.getElement(i)->rank()]--;
                         }
                     }
@@ -455,7 +469,12 @@ namespace storm {
 
                 for (size_t i = 0; i < dftOr->nrChildren(); ++i) {
                     auto const &child = dftOr->children().at(i);
-                    uint64_t tFailed = builder.addImmediateTransition(getFailPriority(dftOr), 0.0,
+                    uint64_t tFailed = 0;
+                    if (extendedPriorities)
+                        tFailed = builder.addImmediateTransition(getFailPriority(dftOr) + i, 0.0,
+                                                                 dftOr->name() + STR_FAILING + std::to_string(i));
+                    else
+                        tFailed = builder.addImmediateTransition(getFailPriority(dftOr), 0.0,
                                                                       dftOr->name() + STR_FAILING + std::to_string(i));
                     builder.setTransitionLayoutInfo(tFailed,
                                                     storm::gspn::LayoutInfo(xcenter - 5.0 + i * 3.0, ycenter + 3.0));
@@ -503,8 +522,13 @@ namespace storm {
                     auto const &child = dftVot->children().at(i);
                     uint64_t childNextPlace = builder.addPlace(defaultCapacity, 1,
                                                                dftVot->name() + "_child_next" + std::to_string(i));
-
-                    uint64_t tCollect = builder.addImmediateTransition(getFailPriority(dftVot), 0.0,
+                    uint64_t tCollect;
+                    if (extendedPriorities)
+                        tCollect = builder.addImmediateTransition(getFailPriority(dftVot) + i, 0.0,
+                                                                  dftVot->name() + "_child_collect" +
+                                                                  std::to_string(i));
+                    else
+                        tCollect = builder.addImmediateTransition(getFailPriority(dftVot), 0.0,
                                                                        dftVot->name() + "_child_collect" +
                                                                        std::to_string(i));
                     builder.addOutputArc(tCollect, collectorPlace);
@@ -1074,10 +1098,13 @@ namespace storm {
                     forwardPlace = getFailedPlace(dftDependency->triggerEvent());
                 }
 
+                // if the extended priorities option is set, set the priority for the forwarding transitions uniquely
+                uint64_t propagationPriority = getFailPriority(dftDependency);
                 for (auto const &child : dftDependency->dependentEvents()) {
-                    uint64_t tForwardFailure = builder.addImmediateTransition(getFailPriority(dftDependency), 0.0,
+                    uint64_t tForwardFailure = builder.addImmediateTransition(propagationPriority, 0.0,
                                                                               dftDependency->name() + "_propagate_" +
                                                                               child->name());
+
                     builder.addInputArc(forwardPlace, tForwardFailure);
                     builder.addOutputArc(tForwardFailure, forwardPlace);
                     builder.addOutputArc(tForwardFailure, getFailedPlace(child));
@@ -1224,11 +1251,11 @@ namespace storm {
                     std::shared_ptr<const storm::storage::DFTElement<ValueType> > dftElement,
                     storm::gspn::LayoutInfo const &layoutInfo) {
                 uint64_t dontcareTransition;
-                if (extendedPriorities && !dftElement->isDependency()) {
-                    uint64_t prio = (getFailPriority(dftElement) - mDft.nrElements() - 3) / 3 + 3;
-                    dontcareTransition = builder.addImmediateTransition(prio, 0.0,
+                if (extendedPriorities) {
+                    dontcareTransition = builder.addImmediateTransition(dontCarePriority, 0.0,
                                                                         dftElement->name() + STR_DONTCARE +
                                                                         "_transition");
+                    dontCarePriority++;
                 } else {
                     dontcareTransition = builder.addImmediateTransition(dontCarePriority, 0.0,
                                                                         dftElement->name() + STR_DONTCARE +
