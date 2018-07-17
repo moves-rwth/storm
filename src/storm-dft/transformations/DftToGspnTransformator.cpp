@@ -1226,7 +1226,8 @@ namespace storm {
             uint64_t DftToGspnTransformator<ValueType>::addUnavailablePlace(
                     std::shared_ptr<storm::storage::DFTElement<ValueType> const> dftElement,
                     storm::gspn::LayoutInfo const &layoutInfo, bool initialAvailable) {
-                uint64_t unavailablePlace = builder.addPlace(defaultCapacity, initialAvailable ? 0 : 1,
+                unsigned int capacity = 2; // Unavailable place has capacity 2
+                uint64_t unavailablePlace = builder.addPlace(capacity, initialAvailable ? 0 : 1,
                                                              dftElement->name() + "_unavail");
                 unavailablePlaces.emplace(dftElement->id(), unavailablePlace);
                 builder.setPlaceLayoutInfo(unavailablePlace, layoutInfo);
