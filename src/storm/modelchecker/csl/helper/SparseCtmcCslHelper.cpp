@@ -482,6 +482,8 @@ namespace storm {
                     // Check solver requirements.
                     storm::solver::GeneralLinearEquationSolverFactory<ValueType> linearEquationSolverFactory;
                     auto requirements = linearEquationSolverFactory.getRequirements(env);
+                    requirements.clearLowerBounds();
+                    requirements.clearUpperBounds();
                     STORM_LOG_THROW(!requirements.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + requirements.getEnabledRequirementsAsString() + " not checked.");
                     
                     bool fixedPointSystem = false;
@@ -541,6 +543,8 @@ namespace storm {
                     bsccEquationSystem = builder.build();
                     {
                         std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(env, std::move(bsccEquationSystem));
+                        solver->setLowerBound(storm::utility::zero<ValueType>());
+                        solver->setUpperBound(storm::utility::one<ValueType>());
                         solver->solveEquations(env, bsccEquationSystemSolution, bsccEquationSystemRightSide);
                     }
                     
