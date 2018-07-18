@@ -1200,8 +1200,8 @@ namespace storm {
                     solver.add(variableInformation.auxiliaryVariables.back());
                     variableInformation.auxiliaryVariables.push_back(assertLessOrEqualKRelaxed(solver, variableInformation, ++currentBound));
                     assumption = !variableInformation.auxiliaryVariables.back();
-                    if (currentBound > (1 << variableInformation.minimalityLabelVariables.size())) {
-                        STORM_LOG_DEBUG("Constraint system fully explored: Bound exceeds maximum of " << (1 << variableInformation.minimalityLabelVariables.size()));
+                    if (currentBound > variableInformation.minimalityLabelVariables.size()) {
+                        STORM_LOG_DEBUG("Constraint system fully explored: Bound exceeds maximum of " <<  variableInformation.minimalityLabelVariables.size());
                         return boost::none;
                     }
                 }
@@ -1523,11 +1523,6 @@ namespace storm {
                         ++currentRow;
                     }
 
-                }
-
-                if (rewardName) {
-                    auto const &origRewModel = model.getRewardModel(rewardName.get());
-                    assert(origRewModel.hasOnlyStateRewards());
                 }
 
                 std::shared_ptr<storm::models::sparse::Model<T>> resultModel;
