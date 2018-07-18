@@ -171,7 +171,7 @@ $ storm --prism leader4.nm --prop "Pmin=? [F<=40 (s1=4 | s2=4 | s3=4 | s4=4) ]"
 
 {% include includes/show_output.html class="prism_async_leader_mdp_bounded_eventually_elected" path="prism/async_leader_bounded_eventually_elected.out" %}
 
-Storm should tell you that this probability is 0.375. So what does it mean? It means that even in the worst of all cases, so when every nondeterministic choice in the model is chosen to minimize the probability to elect a leader quickly, then we will elect a leader within our time bound in about 3 out of 8 cases.
+Storm should tell you that this probability is 0.3828125. So what does it mean? It means that even in the worst of all cases, so when every nondeterministic choice in the model is chosen to minimize the probability to elect a leader quickly, then we will elect a leader within our time bound in about 49 out of 128 cases.
 
 {:.alert .alert-info}
 For [nondeterministic models (MDPs and MAs)](models.html#models-with-nondeterminism){:.alert-link}, you will have to specify in which direction the nondeterminism is going to be resolved.

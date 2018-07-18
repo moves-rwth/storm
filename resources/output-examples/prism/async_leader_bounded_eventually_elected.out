@@ -19,5 +19,5 @@ choice labels: 	no
 --------------------------------------------------------------
 
 Model checking property Pmin=? [true U<=40 ((((s1 = 4) | (s2 = 4)) | (s3 = 4)) | (s4 = 4))] ...
-Result (initial states): 0.375
+Result (initial states): 0.3828125
 Time for model checking: 0.030s.
