@@ -58,7 +58,7 @@ namespace storm {
         
         template <typename ValueType>
         SampleInformation<ValueType> parseSamples(std::shared_ptr<storm::models::ModelBase> const& model, std::string const& sampleString, bool graphPreserving) {
-            STORM_LOG_THROW(model->isSparseModel(), storm::exceptions::NotSupportedException, "Sampling is only supported for sparse models.");
+            STORM_LOG_THROW(!model || model->isSparseModel(), storm::exceptions::NotSupportedException, "Sampling is only supported for sparse models.");
 
             SampleInformation<ValueType> sampleInfo(graphPreserving);
             if (sampleString.empty()) {
@@ -465,8 +465,12 @@ namespace storm {
             }
             
             std::vector<storm::storage::ParameterRegion<ValueType>> regions = parseRegions<ValueType>(model);
-            SampleInformation<ValueType> samples = parseSamples<ValueType>(model, parSettings.getSamples(), parSettings.isSamplesAreGraphPreservingSet());
-            samples.exact = parSettings.isSampleExactSet();
+            std::string samplesAsString = parSettings.getSamples();
+            SampleInformation<ValueType> samples;
+            if (!samplesAsString.empty()) {
+                samples = parseSamples<ValueType>(model, samplesAsString, parSettings.isSamplesAreGraphPreservingSet());
+                samples.exact = parSettings.isSampleExactSet();
+            }
             
             if (model) {
                 storm::cli::exportModel<DdType, ValueType>(model, input);
