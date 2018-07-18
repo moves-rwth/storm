@@ -1482,7 +1482,7 @@ namespace storm {
              * Returns the sub-model obtained from removing all choices that do not originate from the specified filterLabelSet.
              * Also returns the Labelsets of the sub-model.
              */
-            static std::pair<std::shared_ptr<storm::models::sparse::Model<T>>, std::vector<boost::container::flat_set<uint_fast64_t>>> restrictModelToLabelSet(storm::models::sparse::Model<T> const& model,  boost::container::flat_set<uint_fast64_t> const& filterLabelSet, boost::optional<std::string> const& rewardName = boost::none, boost::optional<uint64_t> absorbState = boost::none) {
+            static std::pair<std::shared_ptr<storm::models::sparse::Model<T>>, std::vector<boost::container::flat_set<uint_fast64_t>>> restrictModelToLabelSet(storm::models::sparse::Model<T> const& model,  boost::container::flat_set<uint_fast64_t> const& filterLabelSet, boost::optional<uint64_t> absorbState = boost::none) {
 
                 bool customRowGrouping = model.isOfType(storm::models::ModelType::Mdp);
                 
@@ -1535,30 +1535,42 @@ namespace storm {
                 return std::make_pair(resultModel, std::move(resultLabelSet));
             }
 
-            static T computeMaximalReachabilityProbability(Environment const& env, storm::models::sparse::Model<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, boost::optional<std::string> const& rewardName) {
-                T result = storm::utility::zero<T>();
-                
+            static std::vector<T> computeMaximalReachabilityProbability(Environment const& env, storm::models::sparse::Model<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, boost::optional<std::vector<std::string>> const& rewardName) {
+                std::vector<T> results;
+
                 std::vector<T> allStatesResult;
                 
                 STORM_LOG_DEBUG("Invoking model checker.");
                 if (model.isOfType(storm::models::ModelType::Dtmc)) {
                     if (rewardName == boost::none) {
+                        results.push_back(storm::utility::zero<T>());
                         allStatesResult = storm::modelchecker::helper::SparseDtmcPrctlHelper<T>::computeUntilProbabilities(env, false, model.getTransitionMatrix(), model.getBackwardTransitions(), phiStates, psiStates, false);
+                        for (auto state : model.getInitialStates()) {
+                            results.back() = std::max(results.back(), allStatesResult[state]);
+                        }
                     } else {
-                        allStatesResult = storm::modelchecker::helper::SparseDtmcPrctlHelper<T>::computeReachabilityRewards(env, false, model.getTransitionMatrix(), model.getBackwardTransitions(), model.getRewardModel(rewardName.get()), psiStates, false);
+                        for (auto const &rewName : rewardName.get()) {
+                            results.push_back(storm::utility::zero<T>());
+                            allStatesResult = storm::modelchecker::helper::SparseDtmcPrctlHelper<T>::computeReachabilityRewards(env, false, model.getTransitionMatrix(), model.getBackwardTransitions(), model.getRewardModel(rewName), psiStates, false);
+                            for (auto state : model.getInitialStates()) {
+                                results.back() = std::max(results.back(), allStatesResult[state]);
+                            }
+                        }
                     }
                 } else {
                     if (rewardName == boost::none) {
+                        results.push_back(storm::utility::zero<T>());
                         storm::modelchecker::helper::SparseMdpPrctlHelper<T> modelCheckerHelper;
                         allStatesResult = std::move(modelCheckerHelper.computeUntilProbabilities(env, false, model.getTransitionMatrix(),model.getBackwardTransitions(), phiStates,psiStates, false, false).values);
+                        for (auto state : model.getInitialStates()) {
+                            results.back() = std::max(results.back(), allStatesResult[state]);
+                        }
                     } else {
                         STORM_LOG_THROW(rewardName != boost::none, storm::exceptions::NotSupportedException, "Reward property counterexample generation is currently only supported for DTMCs.");
                     }
                 }
-                for (auto state : model.getInitialStates()) {
-                    result = std::max(result, allStatesResult[state]);
-                }
-                return result;
+
+                return results;
             }
             
         public:
@@ -1598,8 +1610,10 @@ namespace storm {
              * @param strictBound Indicates whether the threshold needs to be achieved (true) or exceeded (false).
              * @param options A set of options for customization.
              */
-            static std::vector<boost::container::flat_set<uint_fast64_t>> getMinimalLabelSet(Environment const& env, GeneratorStats& stats, storm::storage::SymbolicModelDescription const& symbolicModel, storm::models::sparse::Model<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, double propertyThreshold, boost::optional<std::string> const& rewardName, bool strictBound, boost::container::flat_set<uint_fast64_t> const& dontCareLabels = boost::container::flat_set<uint_fast64_t>(), Options const& options = Options()) {
+            static std::vector<boost::container::flat_set<uint_fast64_t>> getMinimalLabelSet(Environment const& env, GeneratorStats& stats, storm::storage::SymbolicModelDescription const& symbolicModel, storm::models::sparse::Model<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, std::vector<double> propertyThreshold, boost::optional<std::vector<std::string>> const& rewardName, bool strictBound, boost::container::flat_set<uint_fast64_t> const& dontCareLabels = boost::container::flat_set<uint_fast64_t>(), Options const& options = Options()) {
 #ifdef STORM_HAVE_Z3
+                STORM_LOG_THROW(propertyThreshold.size() > 0, storm::exceptions::InvalidArgumentException, "At least one threshold has to be specified.");
+                STORM_LOG_THROW(propertyThreshold.size() == 1 || (rewardName &&  rewardName.get().size() == propertyThreshold.size()), storm::exceptions::InvalidArgumentException, "Multiple thresholds is only supported for multiple reward structures");
                 std::vector<boost::container::flat_set<uint_fast64_t>> result;
                 // Set up all clocks used for time measurement.
                 auto totalClock = std::chrono::high_resolution_clock::now();
@@ -1638,12 +1652,15 @@ namespace storm {
                 assert(labelSets.size() == model.getNumberOfChoices());
                 
                 // (1) Check whether its possible to exceed the threshold if checkThresholdFeasible is set.
-                double maximalReachabilityProbability = 0;
+                std::vector<double> maximalReachabilityProbability;
                 if (options.checkThresholdFeasible) {
                     maximalReachabilityProbability = computeMaximalReachabilityProbability(env, model, phiStates, psiStates, rewardName);
-                    
-                    STORM_LOG_THROW((strictBound && maximalReachabilityProbability >= propertyThreshold) || (!strictBound && maximalReachabilityProbability > propertyThreshold), storm::exceptions::InvalidArgumentException, "Given probability threshold " << propertyThreshold << " can not be " << (strictBound ? "achieved" : "exceeded") << " in model with maximal reachability probability of " << maximalReachabilityProbability << ".");
-                    std::cout << std::endl << "Maximal property value in model is " << maximalReachabilityProbability << "." << std::endl << std::endl;
+
+                    for (uint64_t i = 0; i < maximalReachabilityProbability.size(); ++i) {
+                        STORM_LOG_THROW((strictBound && maximalReachabilityProbability[i] >= propertyThreshold[i]) || (!strictBound && maximalReachabilityProbability[i] > propertyThreshold[i]), storm::exceptions::InvalidArgumentException, "Given probability threshold " << propertyThreshold[i] << " can not be " << (strictBound ? "achieved" : "exceeded") << " in model with maximal reachability probability of " << maximalReachabilityProbability[i] << ".");
+                        std::cout << std::endl << "Maximal property value  in model is " << maximalReachabilityProbability[i] << "." << std::endl << std::endl;
+                    }
+
                 }
                 
                 // (2) Identify all states and commands that are relevant, because only these need to be considered later.
@@ -1695,7 +1712,7 @@ namespace storm {
                 uint_fast64_t lastSize = 0;
                 uint_fast64_t iterations = 0;
                 uint_fast64_t currentBound = 0;
-                double maximalPropertyValue = 0;
+                std::vector<double> maximalPropertyValue;
                 uint_fast64_t zeroProbabilityCount = 0;
                 uint64_t smallestCounterexampleSize = model.getNumberOfChoices(); // Definitive u
                 uint64_t progressDelay = storm::settings::getModule<storm::settings::modules::GeneralSettings>().getShowProgressDelay();
@@ -1722,7 +1739,7 @@ namespace storm {
                     }
 
 
-                    auto subChoiceOrigins = restrictModelToLabelSet(model, commandSet, rewardName, psiStates.getNextSetIndex(0));
+                    auto subChoiceOrigins = restrictModelToLabelSet(model, commandSet, psiStates.getNextSetIndex(0));
                     std::shared_ptr<storm::models::sparse::Model<T>> const& subModel = subChoiceOrigins.first;
                     std::vector<boost::container::flat_set<uint_fast64_t>> const& subLabelSets = subChoiceOrigins.second;
   
@@ -1732,8 +1749,13 @@ namespace storm {
                     
                     // Depending on whether the threshold was successfully achieved or not, we proceed by either analyzing the bad solution or stopping the iteration process.
                     analysisClock = std::chrono::high_resolution_clock::now();
-                    if ((strictBound && maximalPropertyValue < propertyThreshold) || (!strictBound && maximalPropertyValue <= propertyThreshold)) {
-                        if (maximalPropertyValue == storm::utility::zero<T>()) {
+                    bool violation = false;
+                    for (uint64_t i = 0; i < maximalPropertyValue.size(); i++) {
+                        violation |= (strictBound && maximalPropertyValue[i] < propertyThreshold[i]) || (!strictBound && maximalPropertyValue[i] <= propertyThreshold[i]);
+                    }
+
+                    if (violation) {
+                        if (!rewardName && maximalPropertyValue.front() == storm::utility::zero<T>()) {
                             ++zeroProbabilityCount;
                         }
                         
@@ -1910,47 +1932,57 @@ namespace storm {
 
             }
 
-            static std::vector<boost::container::flat_set<uint_fast64_t>> computeCounterexampleLabelSet(Environment const& env, GeneratorStats& stats, storm::storage::SymbolicModelDescription const& symbolicModel, storm::models::sparse::Model<T> const& model, std::shared_ptr<storm::logic::Formula const> const& formula, boost::container::flat_set<uint_fast64_t> const& dontCareLabels = boost::container::flat_set<uint_fast64_t>(),  Options const& options = Options(true)) {
-                STORM_LOG_THROW(model.isOfType(storm::models::ModelType::Dtmc) || model.isOfType(storm::models::ModelType::Mdp), storm::exceptions::NotSupportedException, "MaxSAT-based counterexample generation is supported only for discrete-time models.");
-                if (!options.silent) {
-                    std::cout << std::endl << "Generating minimal label counterexample for formula " << *formula << std::endl;
-                }
 
+            struct CexInput {
                 storm::logic::ComparisonType comparisonType;
-                double threshold;
-                boost::optional<std::string> rewardName = boost::none;
-                
+                std::vector<double> threshold;
+                boost::optional<std::vector<std::string>> rewardName = boost::none;
+                bool lowerBoundedFormula = false;
+                bool strictBound;
+                storm::storage::BitVector phiStates;
+                storm::storage::BitVector psiStates;
+
+                void addRewardThresholdCombination(std::string reward, double thresh) {
+                    STORM_LOG_THROW(rewardName, storm::exceptions::InvalidOperationException, "Can only add more reward names if a reward name is already set");
+                    rewardName.get().push_back(reward);
+                    threshold.push_back(thresh);
+                }
+            };
+
+            static CexInput precompute(Environment const& env, storm::storage::SymbolicModelDescription const& symbolicModel, storm::models::sparse::Model<T> const& model, std::shared_ptr<storm::logic::Formula const> const& formula) {
+
+                CexInput result;
                 STORM_LOG_THROW(formula->isProbabilityOperatorFormula() || formula->isRewardOperatorFormula(), storm::exceptions::InvalidPropertyException, "Counterexample generation does not support this kind of formula. Expecting a probability operator as the outermost formula element.");
                 if (formula->isProbabilityOperatorFormula()) {
                     storm::logic::ProbabilityOperatorFormula const& probabilityOperator = formula->asProbabilityOperatorFormula();
                     STORM_LOG_THROW(probabilityOperator.hasBound(), storm::exceptions::InvalidPropertyException, "Counterexample generation only supports bounded formulas.");
                     STORM_LOG_THROW(probabilityOperator.getSubformula().isUntilFormula() || probabilityOperator.getSubformula().isEventuallyFormula(), storm::exceptions::InvalidPropertyException, "Path formula is required to be of the form 'phi U psi' for counterexample generation.");
 
-                    comparisonType = probabilityOperator.getComparisonType();
-                    threshold = probabilityOperator.getThresholdAs<T>();
+                    result.comparisonType = probabilityOperator.getComparisonType();
+                    result.threshold.push_back(probabilityOperator.getThresholdAs<T>());
                 } else {
                     assert(formula->isRewardOperatorFormula());
                     storm::logic::RewardOperatorFormula const& rewardOperator = formula->asRewardOperatorFormula();
                     STORM_LOG_THROW(rewardOperator.hasBound(), storm::exceptions::InvalidPropertyException, "Counterexample generation only supports bounded formulas.");
                     STORM_LOG_THROW( rewardOperator.getSubformula().isEventuallyFormula(), storm::exceptions::InvalidPropertyException, "Path formula is required to be of the form 'F phi' for counterexample generation.");
-                    
-                    comparisonType = rewardOperator.getComparisonType();
-                    threshold = rewardOperator.getThresholdAs<T>();
-                    rewardName = rewardOperator.getRewardModelName();
 
-                    STORM_LOG_THROW(!storm::logic::isLowerBound(comparisonType), storm::exceptions::NotSupportedException, "Lower bounds in counterexamples are only supported for probability formulas.");
-                    STORM_LOG_THROW(model.hasRewardModel(rewardName.get()), storm::exceptions::InvalidPropertyException, "Property refers to reward " << rewardName.get() << " but model does not contain such a reward model.");
-                    STORM_LOG_THROW(model.getRewardModel(rewardName.get()).hasOnlyStateRewards(), storm::exceptions::NotSupportedException, "We only support state-based rewards at the moment.");
+                    result.comparisonType = rewardOperator.getComparisonType();
+                    result.threshold.push_back(rewardOperator.getThresholdAs<T>());
+                    result.rewardName = std::vector<std::string>();
+                    result.rewardName.get().push_back(rewardOperator.getRewardModelName());
+
+                    STORM_LOG_THROW(!storm::logic::isLowerBound(result.comparisonType), storm::exceptions::NotSupportedException, "Lower bounds in counterexamples are only supported for probability formulas.");
+                    STORM_LOG_THROW(model.hasRewardModel(result.rewardName.get().front()), storm::exceptions::InvalidPropertyException, "Property refers to reward " << result.rewardName.get().front() << " but model does not contain such a reward model.");
+                    STORM_LOG_THROW(model.getRewardModel(result.rewardName.get().front()).hasOnlyStateRewards(), storm::exceptions::NotSupportedException, "We only support state-based rewards at the moment.");
                 }
-                bool strictBound = comparisonType == storm::logic::ComparisonType::Less;
+                result.strictBound = result.comparisonType == storm::logic::ComparisonType::Less;
                 storm::logic::Formula const& subformula = formula->asOperatorFormula().getSubformula();
-                
-                storm::storage::BitVector phiStates;
-                storm::storage::BitVector psiStates;
+
+
                 storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Model<T>> modelchecker(model);
 
                 if (subformula.isUntilFormula()) {
-                    STORM_LOG_THROW(!storm::logic::isLowerBound(comparisonType), storm::exceptions::NotSupportedException, "Lower bounds in counterexamples are only supported for eventually formulas.");
+                    STORM_LOG_THROW(!storm::logic::isLowerBound(result.comparisonType), storm::exceptions::NotSupportedException, "Lower bounds in counterexamples are only supported for eventually formulas.");
                     storm::logic::UntilFormula const& untilFormula = subformula.asUntilFormula();
 
                     std::unique_ptr<storm::modelchecker::CheckResult> leftResult = modelchecker.check(env, untilFormula.getLeftSubformula());
@@ -1959,8 +1991,8 @@ namespace storm {
                     storm::modelchecker::ExplicitQualitativeCheckResult const& leftQualitativeResult = leftResult->asExplicitQualitativeCheckResult();
                     storm::modelchecker::ExplicitQualitativeCheckResult const& rightQualitativeResult = rightResult->asExplicitQualitativeCheckResult();
 
-                    phiStates = leftQualitativeResult.getTruthValuesVector();
-                    psiStates = rightQualitativeResult.getTruthValuesVector();
+                    result.phiStates = leftQualitativeResult.getTruthValuesVector();
+                    result.psiStates = rightQualitativeResult.getTruthValuesVector();
                 } else if (subformula.isEventuallyFormula()) {
                     storm::logic::EventuallyFormula const& eventuallyFormula = subformula.asEventuallyFormula();
 
@@ -1968,12 +2000,12 @@ namespace storm {
 
                     storm::modelchecker::ExplicitQualitativeCheckResult const& subQualitativeResult = subResult->asExplicitQualitativeCheckResult();
 
-                    phiStates = storm::storage::BitVector(model.getNumberOfStates(), true);
-                    psiStates = subQualitativeResult.getTruthValuesVector();
+                    result.phiStates = storm::storage::BitVector(model.getNumberOfStates(), true);
+                    result.psiStates = subQualitativeResult.getTruthValuesVector();
                 }
 
                 bool lowerBoundedFormula = false;
-                if (storm::logic::isLowerBound(comparisonType)) {
+                if (storm::logic::isLowerBound(result.comparisonType)) {
                     // If the formula specifies a lower bound, we need to modify the phi and psi states.
                     // More concretely, we convert P(min)>lambda(F psi) to P(max)<(1-lambda)(G !psi) = P(max)<(1-lambda)(!psi U prob0E(psi))
                     // where prob0E(psi) is the set of states for which there exists a strategy \sigma_0 that avoids
@@ -1982,27 +2014,32 @@ namespace storm {
                     // This means that from all states in prob0E(psi) we need to include labels such that \sigma_0
                     // is actually included in the resulting model. This prevents us from guaranteeing the minimality of
                     // the returned counterexample, so we warn about that.
-                    if (!options.silent) {
-                        STORM_LOG_WARN("Generating counterexample for lower-bounded property. The resulting command set need not be minimal.");
-                    }
+
 
                     // Modify bound appropriately.
-                    comparisonType = storm::logic::invertPreserveStrictness(comparisonType);
-                    threshold = storm::utility::one<T>() - threshold;
+                    result.comparisonType = storm::logic::invertPreserveStrictness(result.comparisonType);
+                    result.threshold.back() = storm::utility::one<T>() - result.threshold.back();
 
                     // Modify the phi and psi states appropriately.
-                    storm::storage::BitVector statesWithProbability0E = storm::utility::graph::performProb0E(model.getTransitionMatrix(), model.getTransitionMatrix().getRowGroupIndices(), model.getBackwardTransitions(), phiStates, psiStates);
-                    phiStates = ~psiStates;
-                    psiStates = std::move(statesWithProbability0E);
+                    storm::storage::BitVector statesWithProbability0E = storm::utility::graph::performProb0E(model.getTransitionMatrix(), model.getTransitionMatrix().getRowGroupIndices(), model.getBackwardTransitions(), result.phiStates, result.psiStates);
+                    result.phiStates = ~result.psiStates;
+                    result.psiStates = std::move(statesWithProbability0E);
 
                     // Remember our transformation so we can add commands to guarantee that the prob0E(a) states actually
                     // have a strategy that voids a states.
                     lowerBoundedFormula = true;
                 }
+                return result;
+
+            }
+
+
+            static std::vector<boost::container::flat_set<uint_fast64_t>> computeCounterexampleLabelSet(Environment const& env, GeneratorStats& stats, storm::storage::SymbolicModelDescription const& symbolicModel, storm::models::sparse::Model<T> const& model, CexInput const& counterexInput, boost::container::flat_set<uint_fast64_t> const& dontCareLabels = boost::container::flat_set<uint_fast64_t>(),  Options const& options = Options(true)) {
+                STORM_LOG_THROW(model.isOfType(storm::models::ModelType::Dtmc) || model.isOfType(storm::models::ModelType::Mdp), storm::exceptions::NotSupportedException, "MaxSAT-based counterexample generation is supported only for discrete-time models.");
 
                 // Delegate the actual computation work to the function of equal name.
                 auto startTime = std::chrono::high_resolution_clock::now();
-                auto labelSets = getMinimalLabelSet(env, stats, symbolicModel, model, phiStates, psiStates, threshold, rewardName, strictBound, dontCareLabels, options);
+                auto labelSets = getMinimalLabelSet(env, stats, symbolicModel, model, counterexInput.phiStates, counterexInput.psiStates, counterexInput.threshold, counterexInput.rewardName, counterexInput.strictBound, dontCareLabels, options);
                 auto endTime = std::chrono::high_resolution_clock::now();
                 if (!options.silent) {
                     for (auto const& labelSet : labelSets) {
@@ -2015,8 +2052,8 @@ namespace storm {
 
                 // Extend the command set properly.
                 for (auto& labelSet : labelSets) {
-                    if (lowerBoundedFormula) {
-                        extendLabelSetLowerBound(model, labelSet, phiStates, psiStates, options.silent);
+                    if (counterexInput.lowerBoundedFormula) {
+                        extendLabelSetLowerBound(model, labelSet, counterexInput.phiStates, counterexInput.psiStates, options.silent);
                     }
                 }
                 return labelSets;
@@ -2024,8 +2061,13 @@ namespace storm {
 
             static std::shared_ptr<HighLevelCounterexample> computeCounterexample(Environment const& env, storm::storage::SymbolicModelDescription const& symbolicModel, storm::models::sparse::Model<T> const& model, std::shared_ptr<storm::logic::Formula const> const& formula) {
 #ifdef STORM_HAVE_Z3
+                std::cout << std::endl << "Generating minimal label counterexample for formula " << *formula << std::endl;
                 GeneratorStats stats;
-                auto labelSets = computeCounterexampleLabelSet(env, stats, symbolicModel, model, formula);
+                CexInput prec = precompute(env, symbolicModel, model, formula);
+                if (prec.lowerBoundedFormula) {
+                    STORM_LOG_WARN("Generating counterexample for lower-bounded property. The resulting command set need not be minimal.");
+                }
+                auto labelSets = computeCounterexampleLabelSet(env, stats, symbolicModel, model, prec);
 
 
                 if (symbolicModel.isPrismProgram()) {
