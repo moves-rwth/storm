@@ -349,27 +349,32 @@ namespace storm {
                     }
                     if (propertyStructure.count("step-bounds") > 0) {
                         storm::jani::PropertyInterval pi = parsePropertyInterval(propertyStructure.at("step-bounds"));
-                        STORM_LOG_THROW(pi.hasUpperBound(), storm::exceptions::NotSupportedException, "Storm only supports step-bounded until with an upper bound");
-                        if(pi.hasLowerBound()) {
-                            STORM_LOG_THROW(pi.lowerBound.evaluateAsInt() == 0, storm::exceptions::NotSupportedException, "Storm only supports step-bounded until without a (non-trivial) lower-bound");
+                        boost::optional<storm::logic::TimeBound> lowerBound, upperBound;
+                        if (pi.hasLowerBound()) {
+                            int64_t lowerBoundInt = pi.lowerBound.evaluateAsInt();
+                            STORM_LOG_THROW(lowerBoundInt >= 0, storm::exceptions::InvalidJaniException, "Step-bounds cannot be negative");
+                            lowerBound = storm::logic::TimeBound(pi.lowerBoundStrict, pi.lowerBound);
                         }
-                        int64_t upperBound = pi.upperBound.evaluateAsInt();
-                        if(pi.upperBoundStrict) {
-                            upperBound--;
+                        if (pi.hasUpperBound()) {
+                            int64_t upperBoundInt = pi.upperBound.evaluateAsInt();
+                            STORM_LOG_THROW(upperBoundInt >= 0, storm::exceptions::InvalidJaniException, "Step-bounds cannot be negative");
+                            upperBound = storm::logic::TimeBound(pi.upperBoundStrict, pi.upperBound);
                         }
-                        STORM_LOG_THROW(upperBound >= 0, storm::exceptions::InvalidJaniException, "Step-bounds cannot be negative");
-                        return std::make_shared<storm::logic::BoundedUntilFormula const>(args[0], args[1], storm::logic::TimeBound(pi.lowerBoundStrict, pi.lowerBound), storm::logic::TimeBound(pi.upperBoundStrict, pi.upperBound), storm::logic::TimeBoundReference(storm::logic::TimeBoundType::Steps));
+                        return std::make_shared<storm::logic::BoundedUntilFormula const>(args[0], args[1], lowerBound, upperBound, storm::logic::TimeBoundReference(storm::logic::TimeBoundType::Steps));
                     } else if (propertyStructure.count("time-bounds") > 0) {
                         storm::jani::PropertyInterval pi = parsePropertyInterval(propertyStructure.at("time-bounds"));
-                        STORM_LOG_THROW(pi.hasUpperBound(), storm::exceptions::NotSupportedException, "Storm only supports time-bounded until with an upper bound.");
-                        double lowerBound = 0.0;
-                        if(pi.hasLowerBound()) {
-                            lowerBound = pi.lowerBound.evaluateAsDouble();
+                        boost::optional<storm::logic::TimeBound> lowerBound, upperBound;
+                        if (pi.hasLowerBound()) {
+                            double lowerBoundDouble = pi.lowerBound.evaluateAsInt();
+                            STORM_LOG_THROW(lowerBoundDouble >= 0, storm::exceptions::InvalidJaniException, "time-bounds cannot be negative");
+                            lowerBound = storm::logic::TimeBound(pi.lowerBoundStrict, pi.lowerBound);
                         }
-                        double upperBound = pi.upperBound.evaluateAsDouble();
-                        STORM_LOG_THROW(lowerBound >= 0, storm::exceptions::InvalidJaniException, "(Lower) time-bounds cannot be negative");
-                        STORM_LOG_THROW(upperBound >= 0, storm::exceptions::InvalidJaniException, "(Upper) time-bounds cannot be negative");
-                        return std::make_shared<storm::logic::BoundedUntilFormula const>(args[0], args[1], storm::logic::TimeBound(pi.lowerBoundStrict, pi.lowerBound), storm::logic::TimeBound(pi.upperBoundStrict, pi.upperBound), storm::logic::TimeBoundReference(storm::logic::TimeBoundType::Time));
+                        if (pi.hasUpperBound()) {
+                            double upperBoundDouble = pi.upperBound.evaluateAsInt();
+                            STORM_LOG_THROW(upperBoundDouble >= 0, storm::exceptions::InvalidJaniException, "time-bounds cannot be negative");
+                            upperBound = storm::logic::TimeBound(pi.upperBoundStrict, pi.upperBound);
+                        }
+                        return std::make_shared<storm::logic::BoundedUntilFormula const>(args[0], args[1], lowerBound, upperBound, storm::logic::TimeBoundReference(storm::logic::TimeBoundType::Time));
                         
                     } else if (propertyStructure.count("reward-bounds") > 0 ) {
                         std::vector<boost::optional<storm::logic::TimeBound>> lowerBounds;
