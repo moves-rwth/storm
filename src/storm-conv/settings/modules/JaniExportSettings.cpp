@@ -26,8 +26,7 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, janiFileOptionName, false, "Destination for the jani model.").setShortName(janiFileOptionShortName).addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "path to file").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, locationVariablesOptionName, true, "Variables to export in the location").addArgument(storm::settings::ArgumentBuilder::createStringArgument("variables", "A comma separated list with local variables.").setDefaultValueString("").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, standardCompliantOptionName, false, "Export in standard compliant variant.").setShortName(standardCompliantOptionShortName).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, exportFlattenOptionName, true, "Export in standard compliant variant.").build());
-
+                this->addOption(storm::settings::OptionBuilder(moduleName, exportFlattenOptionName, true, "Flattens the composition of Automata to obtain an equivalent model that contains exactly one automaton").build());
             }
             
             bool JaniExportSettings::isJaniFileSet() const {
