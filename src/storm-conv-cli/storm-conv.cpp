@@ -16,6 +16,7 @@
 
 
 #include "storm-cli-utilities/cli.h"
+#include "storm/exceptions/OptionParserException.h"
 
 namespace storm {
     namespace conv {
@@ -40,15 +41,18 @@ namespace storm {
         }
         
         void processPrismInputJaniOutput(storm::prism::Program const& prismProg, std::vector<storm::jani::Property> const& properties) {
+            auto const& output = storm::settings::getModule<storm::settings::modules::ConversionOutputSettings>();
+            auto const& input = storm::settings::getModule<storm::settings::modules::ConversionInputSettings>();
+            auto const& jani = storm::settings::getModule<storm::settings::modules::JaniExportSettings>();
             
             storm::converter::PrismToJaniConverterOptions options;
             options.allVariablesGlobal = true;
-            // TODO: fill in options
+            options.suffix = "";
+            options.janiOptions.standardCompliant = jani.isExportAsStandardJaniSet();
+            options.janiOptions.locationVariables = jani.getLocationVariables();
+            options.janiOptions.exportFlattened = jani.isExportFlattenedSet();
             auto janiModelProperties = storm::api::convertPrismToJani(prismProg, properties, options);
-
             
-            auto const& output = storm::settings::getModule<storm::settings::modules::ConversionOutputSettings>();
-            auto const& input = storm::settings::getModule<storm::settings::modules::ConversionInputSettings>();
             std::string outputFilename = "";
             if (output.isJaniOutputFilenameSet()) {
                 outputFilename = output.getJaniOutputFilename();
@@ -116,6 +120,35 @@ namespace storm {
     }
 }
 
+bool parseOptions(const int argc, const char* argv[]) {
+    try {
+        storm::settings::mutableManager().setFromCommandLine(argc, argv);
+    } catch (storm::exceptions::OptionParserException& e) {
+        storm::settings::manager().printHelp();
+        throw e;
+        return false;
+    }
+    
+    auto const& general = storm::settings::getModule<storm::settings::modules::ConversionGeneralSettings>();
+    
+    // Set options from config file (if given)
+    if (general.isConfigSet()) {
+        storm::settings::mutableManager().setFromConfigurationFile(general.getConfigFilename());
+    }
+
+    bool result = true;
+    if (general.isHelpSet()) {
+        storm::settings::manager().printHelp(general.getHelpModuleName());
+        result = false;
+    }
+    
+    if (general.isVersionSet()) {
+        storm::cli::printVersion("storm-conv");
+        result = false;;
+    }
+
+    return result;
+}
 
 /*!
  * Main entry point of the executable storm-conv.
@@ -129,7 +162,7 @@ int main(const int argc, const char** argv) {
         bool outputToStdOut = false;
         for (int i = 1; i < argc; ++i) {
             if (std::string(argv[i]) == "--" + storm::settings::modules::ConversionOutputSettings::stdoutOptionName) {
-                outputToStdOut = false;
+                outputToStdOut = true;
             }
         }
         if (outputToStdOut) {
@@ -139,7 +172,7 @@ int main(const int argc, const char** argv) {
         }
         
         storm::settings::initializeConvSettings("Storm-conv", "storm-conv");
-        if (!storm::cli::parseOptions(argc, argv)) {
+        if (!parseOptions(argc, argv)) {
             return -1;
         }
 

@@ -71,8 +71,6 @@ namespace storm {
             }
 
             bool ConversionInputSettings::check() const {
-                // Ensure that exactly one input is specified
-                STORM_LOG_THROW(isPrismInputSet(), storm::exceptions::InvalidSettingsException, "No Input specified.");
                 return true;
             }
             

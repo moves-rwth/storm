@@ -34,7 +34,7 @@ namespace storm {
             std::pair<storm::jani::Model, std::vector<storm::jani::Property>> res;
         
             // Perform conversion
-            auto modelAndRenaming = program.toJaniWithLabelRenaming(options.allVariablesGlobal, options.suffix);
+            auto modelAndRenaming = program.toJaniWithLabelRenaming(options.allVariablesGlobal, options.suffix, options.janiOptions.standardCompliant);
             res.first = std::move(modelAndRenaming.first);
         
             // Amend properties to potentially changed labels

@@ -20,7 +20,7 @@ namespace storm {
             ConversionOutputSettings::ConversionOutputSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, stdoutOptionName, false, "If set, the output will be printed to stdout.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, janiOutputOptionName, false, "converts the input model to Jani.")
-                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "the name of the output file (if not empty).").setDefaultValueString("")).build());
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "the name of the output file (if not empty).").setDefaultValueString("").build()).build());
             }
             
             bool ConversionOutputSettings::isStdOutOutputEnabled() const {
@@ -48,8 +48,6 @@ namespace storm {
             }
 
             bool ConversionOutputSettings::check() const {
-                // Ensure that exactly one Output is specified
-                STORM_LOG_THROW(isJaniOutputSet(), storm::exceptions::InvalidSettingsException, "No Output specified.");
                 STORM_LOG_THROW(!isJaniOutputFilenameSet() || ArgumentValidatorFactory::createWritableFileValidator()->isValid(getJaniOutputFilename()), storm::exceptions::InvalidSettingsException, "Unable to write at file " + getJaniOutputFilename());
                 return true;
             }
