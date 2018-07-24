@@ -603,13 +603,13 @@ namespace storm {
             /*!
              * Converts the PRISM model into an equivalent JANI model.
              */
-            storm::jani::Model toJani(bool allVariablesGlobal = false, std::string suffix = "") const;
+            storm::jani::Model toJani(bool allVariablesGlobal = true, std::string suffix = "", bool standardCompliant = false) const;
             
             /*!
              * Converts the PRISM model into an equivalent JANI model and retrieves possible label renamings that had
              * to be performed in the process.
              */
-            std::pair<storm::jani::Model, std::map<std::string, std::string>> toJaniWithLabelRenaming(bool allVariablesGlobal = false, std::string suffix = "") const;
+            std::pair<storm::jani::Model, std::map<std::string, std::string>> toJaniWithLabelRenaming(bool allVariablesGlobal = true, std::string suffix = "", bool standardCompliant = false) const;
             
         private:
             /*!

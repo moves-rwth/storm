@@ -8,7 +8,6 @@
 #include "storm/storage/jani/TemplateEdge.h"
 
 #include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/JaniExportSettings.h"
 
 #include "storm/utility/macros.h"
 #include "storm/exceptions/NotImplementedException.h"
@@ -16,10 +15,10 @@
 namespace storm {
     namespace prism {
         
-        storm::jani::Model ToJaniConverter::convert(storm::prism::Program const& program, bool allVariablesGlobal, std::string suffix) {
+        storm::jani::Model ToJaniConverter::convert(storm::prism::Program const& program, bool allVariablesGlobal, std::string suffix, bool standardCompliant) {
             std::shared_ptr<storm::expressions::ExpressionManager> manager = program.getManager().getSharedPointer();
             
-            bool produceStateRewards = !storm::settings::getModule<storm::settings::modules::JaniExportSettings>().isExportAsStandardJaniSet() || program.getModelType() == storm::prism::Program::ModelType::CTMC;
+            bool produceStateRewards = !standardCompliant || program.getModelType() == storm::prism::Program::ModelType::CTMC || program.getModelType() == storm::prism::Program::ModelType::MA;
                         
             // Start by creating an empty JANI model.
             storm::jani::ModelType modelType;

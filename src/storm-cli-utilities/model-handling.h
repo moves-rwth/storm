@@ -17,6 +17,7 @@
 
 
 #include "storm/storage/SymbolicModelDescription.h"
+#include "storm/storage/jani/Property.h"
 
 #include "storm/models/ModelBase.h"
 
@@ -129,7 +130,7 @@ namespace storm {
                 
                 if (transformToJani) {
                     storm::prism::Program const& model = output.model.get().asPrismProgram();
-                    auto modelAndRenaming = model.toJaniWithLabelRenaming(true);
+                    auto modelAndRenaming = model.toJaniWithLabelRenaming(true, "", false);
                     output.model = modelAndRenaming.first;
                     
                     if (!modelAndRenaming.second.empty()) {
@@ -152,10 +153,6 @@ namespace storm {
                 storm::storage::SymbolicModelDescription const& model = input.model.get();
                 if (ioSettings.isExportJaniDotSet()) {
                     storm::api::exportJaniModelAsDot(model.asJaniModel(), ioSettings.getExportJaniDotFilename());
-                }
-                
-                if (model.isJaniModel() && storm::settings::getModule<storm::settings::modules::JaniExportSettings>().isJaniFileSet()) {
-                    storm::api::exportJaniModel(model.asJaniModel(), input.properties, storm::settings::getModule<storm::settings::modules::JaniExportSettings>().getJaniFilename());
                 }
             }
         }

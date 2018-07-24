@@ -1,8 +1,5 @@
 #pragma once
 
-#include "storm/storage/jani/JSONExporter.h"
-
-
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/JaniExportSettings.h"
 
@@ -11,9 +8,12 @@
 #include "storm/utility/macros.h"
 
 namespace storm {
+    
+    namespace jani {
+        class Model;
+    }
+    
     namespace api {
-        
-        void exportJaniModel(storm::jani::Model const& model, std::vector<storm::jani::Property> const& properties, std::string const& filename);
         
         void exportJaniModelAsDot(storm::jani::Model const& model, std::string const& filename);
 
