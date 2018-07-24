@@ -207,7 +207,11 @@ namespace storm {
                 return this->getOption(janiPropertyOptionName).getHasOptionBeenSet();
             }
 
-            std::vector<std::string> IOSettings::getJaniProperties() const {
+            bool IOSettings::areJaniPropertiesSelected() const {
+                return this->getOption(janiPropertyOptionName).getHasOptionBeenSet() && (this->getOption(janiPropertyOptionName).getArgumentByName("values").getValueAsString() != "");
+            }
+
+            std::vector<std::string> IOSettings::getSelectedJaniProperties() const {
                 return storm::parser::parseCommaSeperatedValues(this->getOption(janiPropertyOptionName).getArgumentByName("values").getValueAsString());
             }
 
