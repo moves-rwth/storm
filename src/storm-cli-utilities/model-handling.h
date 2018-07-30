@@ -512,7 +512,7 @@ namespace storm {
         }
         
         void printModelCheckingProperty(storm::jani::Property const& property) {
-            STORM_PRINT(std::endl << "Model checking property " << *property.getRawFormula() << " ..." << std::endl);
+            STORM_PRINT(std::endl << "Model checking property \"" << property.getName() << "\": " << *property.getRawFormula() << " ..." << std::endl);
         }
         
         template<typename ValueType>
