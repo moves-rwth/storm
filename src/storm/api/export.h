@@ -1,7 +1,6 @@
 #pragma once
 
 #include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/JaniExportSettings.h"
 
 #include "storm/utility/DirectEncodingExporter.h"
 #include "storm/utility/file.h"
