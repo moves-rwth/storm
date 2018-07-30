@@ -11,6 +11,8 @@
 #include "storm-parsers/api/storm-parsers.h"
 
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
+#include "storm/storage/jani/Property.h"
+
 
 namespace {
     class DoubleViEnvironment {

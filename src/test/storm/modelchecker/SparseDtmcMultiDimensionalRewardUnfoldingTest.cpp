@@ -3,6 +3,7 @@
 
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/models/sparse/Dtmc.h"
+#include "storm/storage/jani/Property.h"
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/utility/constants.h"
