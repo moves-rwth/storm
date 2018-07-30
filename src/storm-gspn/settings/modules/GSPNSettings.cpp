@@ -36,10 +36,6 @@ namespace storm {
                 return this->getOption(gspnFileOptionName).getArgumentByName("filename").getValueAsString();
             }
             
-            bool GSPNSettings::isToJaniSet() const {
-                return this->getOption(gspnToJaniOptionName).getHasOptionBeenSet();
-            }
-            
             bool GSPNSettings::isCapacitiesFileSet() const {
                 return this->getOption(capacitiesFileOptionName).getHasOptionBeenSet();
             }
@@ -54,9 +50,6 @@ namespace storm {
             
             bool GSPNSettings::check() const {
                 if(!isGspnFileSet()) {
-                    if(isToJaniSet()) {
-                        return false;
-                    }
                     if(isCapacitiesFileSet()) {
                         return false;
                     }

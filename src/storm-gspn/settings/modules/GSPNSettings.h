@@ -25,11 +25,6 @@ namespace storm {
                 std::string getGspnFilename() const;
                 
                 /**
-                 * Whether the gspn should be transformed to Jani
-                 */
-                bool isToJaniSet() const;
-                
-                /**
                  * Retrievew whether the pgcl file option was set
                  */
                 bool isCapacitiesFileSet() const;
