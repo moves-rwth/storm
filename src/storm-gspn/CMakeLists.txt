@@ -12,7 +12,7 @@ file(GLOB_RECURSE STORM_GSPN_HEADERS ${PROJECT_SOURCE_DIR}/src/storm-gspn/*/*.h)
 add_library(storm-gspn SHARED ${STORM_GSPN_SOURCES} ${STORM_GSPN_HEADERS})
 list(APPEND STORM_TARGETS storm-gspn)
 set(STORM_TARGETS ${STORM_TARGETS} PARENT_SCOPE)
-target_link_libraries(storm-gspn storm ${STORM_GSPN_LINK_LIBRARIES})
+target_link_libraries(storm-gspn storm storm-conv ${STORM_GSPN_LINK_LIBRARIES})
 
 # installation
 install(TARGETS storm-gspn EXPORT storm_Targets RUNTIME DESTINATION bin LIBRARY DESTINATION lib OPTIONAL)

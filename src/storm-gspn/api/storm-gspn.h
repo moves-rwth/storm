@@ -12,6 +12,8 @@ namespace storm {
          */
         storm::jani::Model* buildJani(storm::gspn::GSPN const& gspn);
 
-        void handleGSPNExportSettings(storm::gspn::GSPN const& gspn);
+        void handleGSPNExportSettings(storm::gspn::GSPN const& gspn,
+                                      std::function<std::vector<storm::jani::Property>(storm::builder::JaniGSPNBuilder const&)> const& janiProperyGetter = [](storm::builder::JaniGSPNBuilder const&) { return std::vector<storm::jani::Property>(); });
+                                      
     }
 }

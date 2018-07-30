@@ -112,14 +112,8 @@ int main(const int argc, const char **argv) {
             gspn->setCapacities(capacities);
         }
 
-        storm::api::handleGSPNExportSettings(*gspn);
+        storm::api::handleGSPNExportSettings(*gspn, [&]std::vector<storm::jani::Property>(storm::builder::JaniGSPNBuilder const&) { return properties });
         
-        if(storm::settings::getModule<storm::settings::modules::JaniExportSettings>().isJaniFileSet()) {
-            storm::jani::Model* model = storm::api::buildJani(*gspn);
-            storm::api::exportJaniModel(*model, properties, storm::settings::getModule<storm::settings::modules::JaniExportSettings>().getJaniFilename());
-            delete model;
-        }
-
         delete gspn;
         return 0;
         
