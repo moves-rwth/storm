@@ -232,7 +232,11 @@ namespace storm {
                 opDecl["op"] = comparisonTypeToJani(bound.comparisonType);
                 if(f.hasOptimalityType()) {
                     opDecl["left"]["op"] = f.getOptimalityType() == storm::solver::OptimizationDirection::Minimize ? "Emin" : "Emax";
-                    opDecl["left"]["reach"] = boost::any_cast<modernjson::json>(f.getSubformula().accept(*this, data));
+                    if (f.getSubformula().isEventuallyFormula()) {
+                        opDecl["left"]["reach"] = boost::any_cast<modernjson::json>(f.getSubformula().asEventuallyFormula().getSubformula().accept(*this, data));
+                    } else {
+                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Unsupported subformula for time operator formula " << f);
+                    }
                 } else {
                     opDecl["left"]["op"] = (bound.comparisonType == storm::logic::ComparisonType::Less || bound.comparisonType == storm::logic::ComparisonType::LessEqual) ? "Emax" : "Emin";
                     opDecl["left"]["reach"] = boost::any_cast<modernjson::json>(f.getSubformula().accept(*this, data));
@@ -243,8 +247,11 @@ namespace storm {
             } else {
                 if(f.hasOptimalityType()) {
                     opDecl["op"] = f.getOptimalityType() == storm::solver::OptimizationDirection::Minimize ? "Emin" : "Emax";
-                    opDecl["reach"] = boost::any_cast<modernjson::json>(f.getSubformula().accept(*this, data));
-                    
+                    if (f.getSubformula().isEventuallyFormula()) {
+                        opDecl["reach"] = boost::any_cast<modernjson::json>(f.getSubformula().asEventuallyFormula().getSubformula().accept(*this, data));
+                    } else {
+                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Unsupported subformula for time operator formula " << f);
+                    }
                 } else {
                     // TODO add checks
                     opDecl["op"] = "Emin";
