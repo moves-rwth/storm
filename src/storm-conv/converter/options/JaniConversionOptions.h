@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include "storm-conv/settings/modules/JaniExportSettings.h"
 
 namespace storm {
     namespace converter {
@@ -9,6 +10,7 @@ namespace storm {
         struct JaniConversionOptions {
             
             JaniConversionOptions();
+            JaniConversionOptions(storm::settings::modules::JaniExportSettings const& settings);
             
             /// (Automaton,Variable)-pairs that will be transformed to location variables of the respective automaton.
             std::vector<std::pair<std::string, std::string>> locationVariables;

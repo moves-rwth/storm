@@ -48,9 +48,7 @@ namespace storm {
             storm::converter::PrismToJaniConverterOptions options;
             options.allVariablesGlobal = true;
             options.suffix = "";
-            options.janiOptions.standardCompliant = jani.isExportAsStandardJaniSet();
-            options.janiOptions.locationVariables = jani.getLocationVariables();
-            options.janiOptions.exportFlattened = jani.isExportFlattenedSet();
+            options.janiOptions = storm::converter::JaniConversionOptions(jani);
             auto janiModelProperties = storm::api::convertPrismToJani(prismProg, properties, options);
             
             std::string outputFilename = "";
