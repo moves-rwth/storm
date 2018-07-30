@@ -113,8 +113,6 @@ namespace storm {
             auto const& input = storm::settings::getModule<storm::settings::modules::ConversionInputSettings>();
             if (input.isPrismInputSet()) {
                 processPrismInput();
-            } else {
-                STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Could not find a supported input format.");
             }
         }
     }
