@@ -15,7 +15,7 @@ namespace storm {
             return builder.build();
         }
 
-        void handleGSPNExportSettings(storm::gspn::GSPN const& gspn, std::vector<storm::jani::Property> const& properties) {
+        void handleGSPNExportSettings(storm::gspn::GSPN const& gspn, std::function<std::vector<storm::jani::Property>(storm::builder::JaniGSPNBuilder const&)> const& janiProperyGetter) {
             storm::settings::modules::GSPNExportSettings const& exportSettings = storm::settings::getModule<storm::settings::modules::GSPNExportSettings>();
             if (exportSettings.isWriteToDotSet()) {
                 std::ofstream fs;
@@ -62,12 +62,13 @@ namespace storm {
                 auto const& jani = storm::settings::getModule<storm::settings::modules::JaniExportSettings>();
                 storm::converter::JaniConversionOptions options(jani);
     
-                storm::jani::Model* model = storm::api::buildJani(gspn);
+                storm::builder::JaniGSPNBuilder builder(gspn);
+                storm::jani::Model* model = builder.build();
+
                 storm::api::postprocessJani(*model, options);
-                storm::api::exportJaniToFile(*model, properties, storm::settings::getModule<storm::settings::modules::GSPNExportSettings>().getWriteToJaniFilename());
+                storm::api::exportJaniToFile(*model, janiProperyGetter(builder), storm::settings::getModule<storm::settings::modules::GSPNExportSettings>().getWriteToJaniFilename());
                 delete model;
             }
         }
-
     }
 }

@@ -43,8 +43,6 @@ namespace storm {
             private:
                 static const std::string gspnFileOptionName;
                 static const std::string gspnFileOptionShortName;
-                static const std::string gspnToJaniOptionName;
-                static const std::string gspnToJaniOptionShortName;
                 static const std::string capacitiesFileOptionName;
                 static const std::string capacitiesFileOptionShortName;
                 

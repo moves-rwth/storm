@@ -34,7 +34,7 @@ namespace storm {
             storm::gspn::GSPN* gspn = gspnTransformator.obtainGSPN();
             uint64_t toplevelFailedPlace = gspnTransformator.toplevelFailedPlaceId();
 
-            storm::api::handleGSPNExportSettings(*gspn, [&]std::vector<storm::jani::Property>(storm::builder::JaniGSPNBuilder const& builder) {
+            storm::api::handleGSPNExportSettings(*gspn, [&](storm::builder::JaniGSPNBuilder const& builder) {
                     std::shared_ptr<storm::expressions::ExpressionManager> const& exprManager = gspn->getExpressionManager();
                     storm::jani::Variable const& topfailedVar = builder.getPlaceVariable(toplevelFailedPlace);
 
@@ -45,11 +45,11 @@ namespace storm {
 
                     auto evFormula = std::make_shared<storm::logic::EventuallyFormula>(evtlFormula, storm::logic::FormulaContext::Time);
                     auto rewFormula = std::make_shared<storm::logic::TimeOperatorFormula>(evFormula, storm::logic::OperatorInformation(), storm::logic::RewardMeasureType::Expectation);
-                    return {storm::jani::Property("time-bounded", tbUntil), storm::jani::Property("mttf", rewFormula)};
+                    std::vector<storm::jani::Property> res({storm::jani::Property("time-bounded", tbUntil), storm::jani::Property("mttf", rewFormula)});
+                    return res;
                 }
             );
 
-            delete model;
             delete gspn;
         }
 

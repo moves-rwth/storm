@@ -112,7 +112,7 @@ int main(const int argc, const char **argv) {
             gspn->setCapacities(capacities);
         }
 
-        storm::api::handleGSPNExportSettings(*gspn, [&]std::vector<storm::jani::Property>(storm::builder::JaniGSPNBuilder const&) { return properties });
+        storm::api::handleGSPNExportSettings(*gspn, [&](storm::builder::JaniGSPNBuilder const&) { return properties; });
         
         delete gspn;
         return 0;

@@ -16,15 +16,12 @@ namespace storm {
             
             const std::string GSPNSettings::gspnFileOptionName = "gspnfile";
             const std::string GSPNSettings::gspnFileOptionShortName = "gspn";
-            const std::string GSPNSettings::gspnToJaniOptionName = "to-jani";
-            const std::string GSPNSettings::gspnToJaniOptionShortName = "tj";
             const std::string GSPNSettings::capacitiesFileOptionName = "capacitiesfile";
             const std::string GSPNSettings::capacitiesFileOptionShortName = "capacities";
             
             
             GSPNSettings::GSPNSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, gspnFileOptionName, false, "Parses the GSPN.").setShortName(gspnFileOptionShortName).addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "path to file").addValidatorString(ArgumentValidatorFactory::createExistingFileValidator()).build()).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, gspnToJaniOptionName, false, "Transform to JANI.").setShortName(gspnToJaniOptionShortName).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, capacitiesFileOptionName, false, "Capacaties as invariants for places.").setShortName(capacitiesFileOptionShortName).addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "path to file").addValidatorString(ArgumentValidatorFactory::createExistingFileValidator()).build()).build());
             }
             

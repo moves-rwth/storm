@@ -21,7 +21,7 @@ namespace storm {
             
             storm::jani::Model* build(std::string const& automatonName = "gspn_automaton");
             
-            storm::jani::Variable const& getPlaceVariable(uint64_t placeId) {
+            storm::jani::Variable const& getPlaceVariable(uint64_t placeId) const {
                 return *vars.at(placeId);
             }
 
