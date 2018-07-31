@@ -46,7 +46,7 @@ namespace storm {
             auto const& jani = storm::settings::getModule<storm::settings::modules::JaniExportSettings>();
             
             storm::converter::PrismToJaniConverterOptions options;
-            options.allVariablesGlobal = true;
+            options.allVariablesGlobal = jani.isGlobalVarsSet();
             options.suffix = "";
             options.janiOptions = storm::converter::JaniConversionOptions(jani);
             auto janiModelProperties = storm::api::convertPrismToJani(prismProg, properties, options);

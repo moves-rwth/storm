@@ -18,12 +18,14 @@ namespace storm {
             const std::string JaniExportSettings::standardCompliantOptionShortName = "standard";
             const std::string JaniExportSettings::exportFlattenOptionName = "flatten";
             const std::string JaniExportSettings::locationVariablesOptionName = "location-variables";
+            const std::string JaniExportSettings::globalVariablesOptionName = "globalvars";
 
             
             JaniExportSettings::JaniExportSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, locationVariablesOptionName, true, "Variables to export in the location").addArgument(storm::settings::ArgumentBuilder::createStringArgument("variables", "A comma separated list with local variables.").setDefaultValueString("").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, standardCompliantOptionName, false, "Export in standard compliant variant.").setShortName(standardCompliantOptionShortName).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportFlattenOptionName, true, "Flattens the composition of Automata to obtain an equivalent model that contains exactly one automaton").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, globalVariablesOptionName, true, "If set, variables will preferably be made global, e.g., to guarantee the same variable order as in the input file.").build());
             }
             
             bool JaniExportSettings::isExportAsStandardJaniSet() const {
@@ -54,6 +56,10 @@ namespace storm {
                 return result;
             }
 
+            bool JaniExportSettings::isGlobalVarsSet() const {
+                return this->getOption(exportFlattenOptionName).getHasOptionBeenSet();
+            }
+            
             void JaniExportSettings::finalize() {
                 
             }
