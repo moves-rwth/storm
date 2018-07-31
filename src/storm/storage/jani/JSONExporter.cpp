@@ -179,32 +179,56 @@ namespace storm {
             return opDecl;
         }
         boost::any FormulaToJaniJson::visit(storm::logic::BoundedUntilFormula const& f, boost::any const& data) const {
+            STORM_LOG_THROW(!f.hasMultiDimensionalSubformulas(), storm::exceptions::NotSupportedException, "Jani export of multi-dimensional bounded until formulas is not supported.");
             modernjson::json opDecl;
             opDecl["op"] = "U";
             opDecl["left"] = boost::any_cast<modernjson::json>(f.getLeftSubformula().accept(*this, data));
             opDecl["right"] = boost::any_cast<modernjson::json>(f.getRightSubformula().accept(*this, data));
             
-            boost::optional<storm::expressions::Expression> lower, upper;
-            boost::optional<bool> lowerExclusive, upperExclusive;
-            if (f.hasLowerBound()) {
-                lower = f.getLowerBound();
-                lowerExclusive = f.isLowerBoundStrict();
+            bool hasStepBounds(false), hasTimeBounds(false);
+            std::vector<modernjson::json> rewardBounds;
+            
+            for (uint64_t i = 0; i < f.getDimension(); ++i) {
+                boost::optional<storm::expressions::Expression> lower, upper;
+                boost::optional<bool> lowerExclusive, upperExclusive;
+                if (f.hasLowerBound(i)) {
+                    lower = f.getLowerBound(i);
+                    lowerExclusive = f.isLowerBoundStrict(i);
+                }
+                if (f.hasUpperBound(i)) {
+                    upper = f.getUpperBound(i);
+                    upperExclusive = f.isUpperBoundStrict(i);
+                }
+                modernjson::json propertyInterval = constructPropertyInterval(lower, lowerExclusive, upper, upperExclusive);
+    
+                auto tbr = f.getTimeBoundReference(i);
+                if (tbr.isStepBound()) {
+                    STORM_LOG_THROW(!hasStepBounds, storm::exceptions::NotSupportedException, "Jani export of until formulas with multiple step bounds is not supported.");
+                    hasStepBounds = true;
+                    opDecl["step-bounds"] = propertyInterval;
+                } else if(tbr.isRewardBound()) {
+                    modernjson::json rewbound;
+                    rewbound["exp"] = tbr.getRewardName();
+                    std::vector<std::string> accvec;
+                    if (model.isDiscreteTimeModel()) {
+                        accvec.push_back("steps");
+                    } else {
+                        accvec.push_back("time");
+                    }
+                    rewbound["accumulate"] = modernjson::json(accvec);
+                    rewbound["bounds"] = propertyInterval;
+                    rewardBounds.push_back(std::move(rewbound));
+                } else {
+                    STORM_LOG_THROW(!hasTimeBounds, storm::exceptions::NotSupportedException, "Jani export of until formulas with multiple step bounds is not supported.");
+                    hasTimeBounds = true;
+                    opDecl["time-bounds"] = propertyInterval;
+                }
             }
-            if (f.hasUpperBound()) {
-                upper = f.getUpperBound();
-                upperExclusive = f.isUpperBoundStrict();
-            }
-            modernjson::json propertyInterval = constructPropertyInterval(lower, lowerExclusive, upper, upperExclusive);
-
-            auto tbr = f.getTimeBoundReference();
-            if (tbr.isStepBound()) {
-                opDecl["step-bounds"] = propertyInterval;
-            } else if(tbr.isRewardBound()) {
-                opDecl["reward-bounds"] = propertyInterval;
-            } else {
-                opDecl["time-bounds"] = propertyInterval;
+            if (!rewardBounds.empty()) {
+                opDecl["reward-bounds"] = modernjson::json(rewardBounds);
             }
             return opDecl;
+
         }
         
         boost::any FormulaToJaniJson::visit(storm::logic::ConditionalFormula const&, boost::any const&) const {
