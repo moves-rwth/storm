@@ -263,7 +263,7 @@ namespace storm {
                     }
                 } else {
                     opDecl["left"]["op"] = (bound.comparisonType == storm::logic::ComparisonType::Less || bound.comparisonType == storm::logic::ComparisonType::LessEqual) ? "Emax" : "Emin";
-                    opDecl["left"]["reach"] = boost::any_cast<modernjson::json>(f.getSubformula().accept(*this, data));
+                    opDecl["left"]["reach"] = boost::any_cast<modernjson::json>(f.getSubformula().asEventuallyFormula().getSubformula().accept(*this, data));
                 }
                 opDecl["left"]["exp"] = modernjson::json(1);
                 opDecl["left"]["accumulate"] = modernjson::json(tvec);
@@ -279,7 +279,7 @@ namespace storm {
                 } else {
                     // TODO add checks
                     opDecl["op"] = "Emin";
-                    opDecl["reach"] = boost::any_cast<modernjson::json>(f.getSubformula().accept(*this, data));
+                    opDecl["reach"] = boost::any_cast<modernjson::json>(f.getSubformula().asEventuallyFormula().getSubformula().accept(*this, data));
                 }
                 opDecl["exp"] = modernjson::json(1);
                 opDecl["accumulate"] = modernjson::json(tvec);
