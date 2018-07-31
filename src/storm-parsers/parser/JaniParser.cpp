@@ -228,13 +228,7 @@ namespace storm {
                     } else {
                         time = true;
                     }
-                    std::shared_ptr<storm::logic::Formula const> reach;
-                    if (propertyStructure.count("reach") > 0) {
-                        auto context = time ? storm::logic::FormulaContext::Time : storm::logic::FormulaContext::Reward;
-                        reach = std::make_shared<storm::logic::EventuallyFormula>(parseFormula(propertyStructure.at("reach"), context, globalVars, constants, "Reach-expression of operator " + opString), context);
-                    } else {
-                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Total reward is currently not supported");
-                    }
+
                     storm::logic::OperatorInformation opInfo;
                     opInfo.optimalityType =  opString == "Emin" ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize;
                     opInfo.bound = bound;
@@ -257,6 +251,9 @@ namespace storm {
                     
                     
                     if (propertyStructure.count("step-instant") > 0) {
+                        STORM_LOG_THROW(propertyStructure.count("time-instant") == 0, storm::exceptions::NotSupportedException, "Storm does not support to have a step-instant and a time-instant in " + context);
+                        STORM_LOG_THROW(propertyStructure.count("reward-instants") == 0, storm::exceptions::NotSupportedException, "Storm does not support to have a step-instant and a reward-instant in " + context);
+
                         storm::expressions::Expression stepInstantExpr = parseExpression(propertyStructure.at("step-instant"), "Step instant in " + context, globalVars, constants);
                         STORM_LOG_THROW(!stepInstantExpr.containsVariables(), storm::exceptions::NotSupportedException, "Storm only allows constant step-instants");
 
@@ -278,6 +275,8 @@ namespace storm {
                             }
                         }
                     } else if (propertyStructure.count("time-instant") > 0) {
+                        STORM_LOG_THROW(propertyStructure.count("reward-instants") == 0, storm::exceptions::NotSupportedException, "Storm does not support to have a time-instant and a reward-instant in " + context);
+
                         storm::expressions::Expression timeInstantExpr = parseExpression(propertyStructure.at("time-instant"), "time instant in " + context, globalVars, constants);
                         STORM_LOG_THROW(!timeInstantExpr.containsVariables(), storm::exceptions::NotSupportedException, "Storm only allows constant time-instants");
 
@@ -299,41 +298,71 @@ namespace storm {
                             }
                         }
                     } else if (propertyStructure.count("reward-instants") > 0) {
-                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Instant Reward for reward constraints not supported currently.");
-                    }
-                    
-                    //STORM_LOG_THROW(!accTime && !accSteps, storm::exceptions::NotSupportedException, "Storm only allows accumulation if a step- or time-bound is given.");
-                    
-                    if (rewExpr.isVariable()) {
-                        assert(!time);
-                        std::string rewardName = rewExpr.getVariables().begin()->getName();
-                        return std::make_shared<storm::logic::RewardOperatorFormula>(reach, rewardName, opInfo);
-                    } else if (!rewExpr.containsVariables()) {
-                        assert(time);
-                        assert(reach->isTimePathFormula());
-                        if(rewExpr.hasIntegerType()) {
-                            if (rewExpr.evaluateAsInt() == 1) {
-                                
-                                return std::make_shared<storm::logic::TimeOperatorFormula>(reach, opInfo);
-                            } else {
-                                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Expected steps/time only works with constant one.");
+                        std::vector<storm::logic::TimeBound> bounds;
+                        std::vector<storm::logic::TimeBoundReference> boundReferences;
+                        for (auto const& rewInst : propertyStructure.at("reward-instants")) {
+                            storm::expressions::Expression rewInstExpression = parseExpression(rewInst.at("exp"), "Reward expression in " + context, globalVars, constants);
+                            STORM_LOG_THROW(!rewInstExpression.isVariable(), storm::exceptions::NotSupportedException, "Reward bounded cumulative reward formulas should only argue over reward expressions.");
+                            boundReferences.emplace_back(rewInstExpression.getVariables().begin()->getName());
+                            bool rewInstAccSteps(false), rewInstAccTime(false);
+                            for (auto const& accEntry : rewInst.at("accumulate")) {
+                                if (accEntry == "steps") {
+                                    rewInstAccSteps = true;
+                                } else if (accEntry == "time") {
+                                    rewInstAccTime = true;
+                                } else {
+                                    STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "One may only accumulate either 'steps' or 'time', got " << accEntry.dump() << " in "  << context);
+                                }
                             }
-                        } else if (rewExpr.hasRationalType()){
-                            if (rewExpr.evaluateAsDouble() == 1.0) {
-                                
-                                return std::make_shared<storm::logic::TimeOperatorFormula>(reach, opInfo);
-                            } else {
-                                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Expected steps/time only works with constant one.");
-                            }
-                        } else {
-                            STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Only numerical reward expressions are allowed");
+                            STORM_LOG_THROW((rewInstAccTime && !rewInstAccSteps) || (!rewInstAccTime && rewInstAccSteps), storm::exceptions::NotSupportedException, "Storm only allows to accumulate either over time or over steps in " + context);
+                            storm::expressions::Expression rewInstantExpr = parseExpression(rewInst.at("instant"), "reward instant in " + context, globalVars, constants);
+                            STORM_LOG_THROW(!rewInstantExpr.containsVariables(), storm::exceptions::NotSupportedException, "Storm only allows constant time-instants");
+                            double rewInstant = rewInstantExpr.evaluateAsDouble();
+                            STORM_LOG_THROW(rewInstant >= 0, storm::exceptions::InvalidJaniException, "Only non-negative reward-instants are allowed");
+                            bounds.emplace_back(false, rewInstantExpr);
                         }
-                        
+                        if (rewExpr.isVariable()) {
+                            std::string rewardName = rewExpr.getVariables().begin()->getName();
+                            return std::make_shared<storm::logic::RewardOperatorFormula>(std::make_shared<storm::logic::CumulativeRewardFormula>(bounds, boundReferences), rewardName, opInfo);
+                        } else {
+                            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Only simple reward expressions are currently supported");
+                        }
                     } else {
-                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "No complex reward expressions are supported at the moment");
+                        std::shared_ptr<storm::logic::Formula const> subformula;
+                        if (propertyStructure.count("reach") > 0) {
+                            auto context = time ? storm::logic::FormulaContext::Time : storm::logic::FormulaContext::Reward;
+                            subformula = std::make_shared<storm::logic::EventuallyFormula>(parseFormula(propertyStructure.at("reach"), context, globalVars, constants, "Reach-expression of operator " + opString), context);
+                        } else {
+                            subformula = std::make_shared<storm::logic::TotalRewardFormula>();
+                        }
+                        if (rewExpr.isVariable()) {
+                            assert(!time);
+                            std::string rewardName = rewExpr.getVariables().begin()->getName();
+                            return std::make_shared<storm::logic::RewardOperatorFormula>(subformula, rewardName, opInfo);
+                        } else if (!rewExpr.containsVariables()) {
+                            assert(time);
+                            assert(subformula->isTotalRewardFormula() || subformula->isTimePathFormula());
+                            if(rewExpr.hasIntegerType()) {
+                                if (rewExpr.evaluateAsInt() == 1) {
+                                    return std::make_shared<storm::logic::TimeOperatorFormula>(subformula, opInfo);
+                                } else {
+                                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Expected steps/time only works with constant one.");
+                                }
+                            } else if (rewExpr.hasRationalType()){
+                                if (rewExpr.evaluateAsDouble() == 1.0) {
+                                    
+                                    return std::make_shared<storm::logic::TimeOperatorFormula>(subformula, opInfo);
+                                } else {
+                                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Expected steps/time only works with constant one.");
+                                }
+                            } else {
+                                STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Only numerical reward expressions are allowed");
+                            }
+                            
+                        } else {
+                            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "No complex reward expressions are supported at the moment");
+                        }
                     }
-                    
-
                 } else if (opString == "Smin" || opString == "Smax") {
                     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Smin and Smax are currently not supported");
                 } else if (opString == "U" || opString == "F") {
@@ -382,7 +411,6 @@ namespace storm {
                         std::vector<storm::logic::TimeBoundReference> tbReferences;
                         for (auto const& rbStructure : propertyStructure.at("reward-bounds")) {
                             storm::jani::PropertyInterval pi = parsePropertyInterval(rbStructure.at("bounds"));
-                            STORM_LOG_THROW(pi.hasUpperBound(), storm::exceptions::NotSupportedException, "Storm only supports time-bounded until with an upper bound.");
                             STORM_LOG_THROW(rbStructure.count("exp") == 1, storm::exceptions::InvalidJaniException, "Expecting reward-expression for operator " << opString << " in  " << context);
                             storm::expressions::Expression rewExpr = parseExpression(rbStructure.at("exp"), "Reward expression in " + context, globalVars, constants);
                             STORM_LOG_THROW(rewExpr.isVariable(), storm::exceptions::NotSupportedException, "Storm currently does not support complex reward expressions.");
