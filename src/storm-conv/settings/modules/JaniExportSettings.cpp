@@ -57,7 +57,7 @@ namespace storm {
             }
 
             bool JaniExportSettings::isGlobalVarsSet() const {
-                return this->getOption(exportFlattenOptionName).getHasOptionBeenSet();
+                return this->getOption(globalVariablesOptionName).getHasOptionBeenSet();
             }
             
             void JaniExportSettings::finalize() {
