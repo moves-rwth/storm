@@ -81,6 +81,8 @@ namespace storm {
             if (!destinations.empty()) {
                 auto const& destination = *destinations.begin();
                 
+                std::vector<std::shared_ptr<Assignment>> assignmentsToLift;
+                
                 for (auto const& assignment : destination.getOrderedAssignments().getTransientAssignments()) {
                     // Check if we can lift the assignment to the edge.
                     bool canBeLifted = true;
@@ -91,12 +93,18 @@ namespace storm {
                         }
                     }
                     
-                    // If so, remove the assignment from all destinations.
                     if (canBeLifted) {
-                        this->addTransientAssignment(assignment);
-                        for (auto& destination : destinations) {
-                            destination.removeAssignment(assignment);
-                        }
+                        // Do not remove the assignment now, as we currently iterate over them.
+                        // Also we need to make a copy of the assignment since we are about to delete it
+                        assignmentsToLift.push_back(std::make_shared<Assignment>(assignment));
+                    }
+                }
+                
+                // now actually lift the assignments
+                for (auto const& assignment : assignmentsToLift) {
+                    this->addTransientAssignment(*assignment);
+                    for (auto& destination : destinations) {
+                        destination.removeAssignment(*assignment);
                     }
                 }
             }
