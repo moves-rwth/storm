@@ -163,12 +163,10 @@ namespace storm {
             return { parseFormula(propertyStructure.at("left"), formulaContext, globalVars, constants, "Operand of operator " + opstring),  parseFormula(propertyStructure.at("right"), formulaContext, globalVars, constants, "Operand of operator " + opstring)  };
         }
         
-        storm::jani::PropertyInterval JaniParser::parsePropertyInterval(json const& piStructure) {
+        storm::jani::PropertyInterval JaniParser::parsePropertyInterval(json const& piStructure, std::unordered_map<std::string, std::shared_ptr<storm::jani::Constant>> const& constants) {
             storm::jani::PropertyInterval pi;
             if (piStructure.count("lower") > 0) {
-                pi.lowerBound = parseExpression(piStructure.at("lower"), "Lower bound for property interval", {}, {});
-                // TODO substitute constants.
-                STORM_LOG_THROW(!pi.lowerBound.containsVariables(), storm::exceptions::NotSupportedException, "Only constant expressions are supported as lower bounds");
+                pi.lowerBound = parseExpression(piStructure.at("lower"), "Lower bound for property interval", {}, constants);
             }
             if (piStructure.count("lower-exclusive") > 0) {
                 STORM_LOG_THROW(pi.lowerBound.isInitialized(), storm::exceptions::InvalidJaniException, "Lower-exclusive can only be set if a lower bound is present");
@@ -176,9 +174,7 @@ namespace storm {
                 
             }
             if (piStructure.count("upper") > 0) {
-                pi.upperBound = parseExpression(piStructure.at("upper"), "Upper bound for property interval", {}, {});
-                // TODO substitute constants.
-                STORM_LOG_THROW(!pi.upperBound.containsVariables(), storm::exceptions::NotSupportedException, "Only constant expressions are supported as upper bounds");
+                pi.upperBound = parseExpression(piStructure.at("upper"), "Upper bound for property interval", {}, constants);
                 
             }
             if (piStructure.count("upper-exclusive") > 0) {
@@ -274,7 +270,6 @@ namespace storm {
                         STORM_LOG_THROW(propertyStructure.count("reward-instants") == 0, storm::exceptions::NotSupportedException, "Storm does not support to have a time-instant and a reward-instant in " + context);
 
                         storm::expressions::Expression timeInstantExpr = parseExpression(propertyStructure.at("time-instant"), "time instant in " + context, globalVars, constants);
-                        STORM_LOG_THROW(!timeInstantExpr.containsVariables(), storm::exceptions::NotSupportedException, "Storm only allows constant time-instants");
 
                         if(!accTime && !accSteps) {
                             if (rewExpr.isVariable()) {
@@ -310,7 +305,6 @@ namespace storm {
                             }
                             STORM_LOG_THROW((rewInstAccTime && !rewInstAccSteps) || (!rewInstAccTime && rewInstAccSteps), storm::exceptions::NotSupportedException, "Storm only allows to accumulate either over time or over steps in " + context);
                             storm::expressions::Expression rewInstantExpr = parseExpression(rewInst.at("instant"), "reward instant in " + context, globalVars, constants);
-                            STORM_LOG_THROW(!rewInstantExpr.containsVariables(), storm::exceptions::NotSupportedException, "Storm only allows constant time-instants");
                             bounds.emplace_back(false, rewInstantExpr);
                         }
                         if (rewExpr.isVariable()) {
@@ -372,7 +366,7 @@ namespace storm {
                     std::vector<boost::optional<storm::logic::TimeBound>> lowerBounds, upperBounds;
                     std::vector<storm::logic::TimeBoundReference> tbReferences;
                     if (propertyStructure.count("step-bounds") > 0) {
-                        storm::jani::PropertyInterval pi = parsePropertyInterval(propertyStructure.at("step-bounds"));
+                        storm::jani::PropertyInterval pi = parsePropertyInterval(propertyStructure.at("step-bounds"), constants);
                         boost::optional<storm::logic::TimeBound> lowerBound, upperBound;
                         if (pi.hasLowerBound()) {
                             lowerBounds.push_back(storm::logic::TimeBound(pi.lowerBoundStrict, pi.lowerBound));
@@ -387,7 +381,7 @@ namespace storm {
                         tbReferences.emplace_back(storm::logic::TimeBoundType::Steps);
                     }
                     if (propertyStructure.count("time-bounds") > 0) {
-                        storm::jani::PropertyInterval pi = parsePropertyInterval(propertyStructure.at("time-bounds"));
+                        storm::jani::PropertyInterval pi = parsePropertyInterval(propertyStructure.at("time-bounds"), constants);
                         boost::optional<storm::logic::TimeBound> lowerBound, upperBound;
                         if (pi.hasLowerBound()) {
                             lowerBounds.push_back(storm::logic::TimeBound(pi.lowerBoundStrict, pi.lowerBound));
@@ -403,7 +397,7 @@ namespace storm {
                     }
                     if (propertyStructure.count("reward-bounds") > 0 ) {
                         for (auto const& rbStructure : propertyStructure.at("reward-bounds")) {
-                            storm::jani::PropertyInterval pi = parsePropertyInterval(rbStructure.at("bounds"));
+                            storm::jani::PropertyInterval pi = parsePropertyInterval(rbStructure.at("bounds"), constants);
                             STORM_LOG_THROW(rbStructure.count("exp") == 1, storm::exceptions::InvalidJaniException, "Expecting reward-expression for operator " << opString << " in  " << context);
                             storm::expressions::Expression rewExpr = parseExpression(rbStructure.at("exp"), "Reward expression in " + context, globalVars, constants);
                             STORM_LOG_THROW(rewExpr.isVariable(), storm::exceptions::NotSupportedException, "Storm currently does not support complex reward expressions.");

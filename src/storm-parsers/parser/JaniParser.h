@@ -65,7 +65,7 @@ namespace storm {
 
             std::vector<std::shared_ptr<storm::logic::Formula const>> parseUnaryFormulaArgument(json const& propertyStructure, storm::logic::FormulaContext formulaContext,  std::string const& opstring, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& globalVars, std::unordered_map<std::string, std::shared_ptr<storm::jani::Constant>> const& constants, std::string const& context);
             std::vector<std::shared_ptr<storm::logic::Formula const>> parseBinaryFormulaArguments(json const& propertyStructure, storm::logic::FormulaContext formulaContext, std::string const& opstring, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& globalVars, std::unordered_map<std::string, std::shared_ptr<storm::jani::Constant>> const& constants, std::string const& context);
-            storm::jani::PropertyInterval parsePropertyInterval(json const& piStructure);
+            storm::jani::PropertyInterval parsePropertyInterval(json const& piStructure, std::unordered_map<std::string, std::shared_ptr<storm::jani::Constant>> const& constants);
                 
             
             std::shared_ptr<storm::jani::Composition> parseComposition(json const& compositionStructure);
