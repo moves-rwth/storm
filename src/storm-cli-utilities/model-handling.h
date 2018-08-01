@@ -38,7 +38,6 @@
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/settings/modules/AbstractionSettings.h"
 #include "storm/settings/modules/ResourceSettings.h"
-#include "storm/settings/modules/JaniExportSettings.h"
 
 #include "storm/utility/Stopwatch.h"
 
