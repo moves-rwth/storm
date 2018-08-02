@@ -35,7 +35,7 @@
 #include "storm-gspn/settings/modules/GSPNExportSettings.h"
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/settings/modules/DebugSettings.h"
-#include "storm/settings/modules/JaniExportSettings.h"
+#include "storm-conv/settings/modules/JaniExportSettings.h"
 #include "storm/settings/modules/ResourceSettings.h"
 
 
