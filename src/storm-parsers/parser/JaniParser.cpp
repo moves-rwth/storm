@@ -817,7 +817,7 @@ namespace storm {
                     if(opstring == "ite") {
                         STORM_LOG_THROW(expressionStructure.count("if") == 1, storm::exceptions::InvalidJaniException, "If operator required");
                         STORM_LOG_THROW(expressionStructure.count("else") == 1, storm::exceptions::InvalidJaniException, "Else operator required");
-                        STORM_LOG_THROW(expressionStructure.count("then") == 1, storm::exceptions::InvalidJaniException, "If operator required");
+                        STORM_LOG_THROW(expressionStructure.count("then") == 1, storm::exceptions::InvalidJaniException, "Then operator required");
                         arguments.push_back(parseExpression(expressionStructure.at("if"), "if-formula in " + scopeDescription, globalVars, constants, localVars, returnNoneInitializedOnUnknownOperator));
                         arguments.push_back(parseExpression(expressionStructure.at("then"), "then-formula in " + scopeDescription, globalVars, constants, localVars, returnNoneInitializedOnUnknownOperator));
                         arguments.push_back(parseExpression(expressionStructure.at("else"), "else-formula in " + scopeDescription, globalVars, constants, localVars, returnNoneInitializedOnUnknownOperator));
