@@ -1,7 +1,7 @@
 //
 // Created by Jip Spel on 26.07.18.
 //
-
+// TODO: Use templates
 #include "Transformer.h"
 namespace storm {
     namespace analysis {
@@ -9,19 +9,19 @@ namespace storm {
                                         storm::storage::BitVector const &initialStates,
                                         storm::storage::BitVector topStates,
                                         storm::storage::BitVector bottomStates, uint_fast64_t numberOfStates) {
+            // TODO: take SparseModel as input
             // Transform the transition matrix into a vector containing the states with the state to which the transition goes.
             std::vector<State*> stateVector = toStateVector(matrix, initialStates);
 
-            // Start creating the Lattice.
+            // TODO: not initializing all fields of Lattice::Node yet, what to do?
+            // Start creating the Lattice
             Lattice::Node top = {topStates};
             Lattice::Node bottom = {bottomStates};
             Lattice *lattice = new Lattice(&top, &bottom, numberOfStates);
             storm::storage::BitVector oldStates(numberOfStates);
             // Create a copy of the states already present in the lattice.
             storm::storage::BitVector seenStates = topStates|=bottomStates;
-
-            matrix.printAsMatlabMatrix(std::cout);
-
+            
             while (oldStates != seenStates) {
                 // As long as new states are discovered, continue.
                 oldStates = storm::storage::BitVector(seenStates);
@@ -46,7 +46,7 @@ namespace storm {
                             uint_fast64_t successor2 = currentState->successor2;
                             int compareResult = lattice->compare(successor1, successor2);
                             if (compareResult == 1) {
-                                //TODO dit in een aparte methode doen
+                                // TODO: create seperate method or change compareResult method?
                                 Lattice::Node *above = lattice->getNode(successor1);
                                 Lattice::Node *below = lattice->getNode(successor2);
                                 std::vector<Lattice::Node *> states1 = above->below;
@@ -61,12 +61,6 @@ namespace storm {
                                                 && prob2 != storm::RationalFunction(1)
                                                 && getProbability((*itr1)->states, above->states, matrix) == prob1
                                                 && getProbability((*itr1)->states, below->states, matrix) == prob2) {
-
-                                                std::cout << "Van: " << currentState-> stateNumber << " naar: " << successor1 << std::endl;
-                                                std::cout << prob1 << std::endl;
-                                                std::cout << "Van: " << currentState-> stateNumber << " naar: " << successor2 << std::endl;
-                                                std::cout << prob2 << std::endl;
-
                                                 lattice->addToNode(currentState->stateNumber, (*itr1));
                                                 seenStates.set(currentState->stateNumber);
                                                 added = true;
@@ -100,11 +94,6 @@ namespace storm {
                                                 && prob2 != storm::RationalFunction(1)
                                                 && getProbability((*itr1)->states, above->states, matrix) == prob1
                                                 && getProbability((*itr1)->states, below->states, matrix) == prob2) {
-
-                                                std::cout << "Van: " << currentState-> stateNumber << " naar: " << successor2 << std::endl;
-                                                std::cout << prob1 << std::endl;
-                                                std::cout << "Van: " << currentState-> stateNumber << " naar: " << successor1 << std::endl;
-                                                std::cout << prob2 << std::endl;
 
                                                 lattice->addToNode(currentState->stateNumber, (*itr1));
                                                 seenStates.set(currentState->stateNumber);
@@ -147,6 +136,7 @@ namespace storm {
         std::vector<Transformer::State *>
         Transformer::toStateVector(storm::storage::SparseMatrix<storm::RationalFunction> transitionMatrix,
                                    storm::storage::BitVector const &initialStates) {
+            // TODO: Remove this, unnecessary
             std::vector < State *> states = std::vector<State *>({});
             std::vector <uint_fast64_t> stack(initialStates.begin(), initialStates.end());
             std::vector <uint_fast64_t> seenStates(initialStates.begin(), initialStates.end());
@@ -186,6 +176,8 @@ namespace storm {
         }
 
         void Transformer::print(storm::storage::BitVector vector, std::string message) {
+            // TODO: Remove this, unnecessary
+
             uint_fast64_t index = vector.getNextSetIndex(0);
             std::cout << message <<": {";
             while (index < vector.size()) {
@@ -199,6 +191,7 @@ namespace storm {
         }
 
         std::vector<uint_fast64_t> Transformer::getNumbers(storm::storage::BitVector vector) {
+            // TODO: Remove this, unnecessary
             std::vector<uint_fast64_t> result = std::vector<uint_fast64_t>({});
             uint_fast64_t index = vector.getNextSetIndex(0);
             while (index < vector.size()) {
@@ -234,11 +227,7 @@ namespace storm {
 
             for (auto itr = row.begin(); itr < row.end() && result == storm::RationalFunction(1); ++itr) {
                 if ((*itr).getColumn() == successor) {
-                    std::cout << "Tralala" << std::endl;
-                    // TODO: nog checken dat ie wel met state te doen heeft
                     result = (*itr).getValue();
-                    std::cout << "Van: " << state << " naar: " << successor << std::endl;
-                    std::cout << result << std::endl;
                 }
 
             }

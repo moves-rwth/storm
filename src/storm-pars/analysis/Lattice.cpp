@@ -58,6 +58,7 @@ namespace storm {
         }
 
         Lattice::Node *Lattice::getNode(uint_fast64_t stateNumber) {
+            // TODO: might return nullptr, what to do with it?
             Node *node;
             for (auto itr = nodes.begin(); itr != nodes.end(); ++itr) {
                 storm::storage::BitVector states = (*itr)->states;
@@ -79,8 +80,8 @@ namespace storm {
                         out << ", ";
                     }
                 }
-                out << "}" << std::endl;
-                out << "  Address: " << node << std::endl;
+                out << "}" << "\n";
+                out << "  Address: " << node << "\n";
                 out << "    Above: {";
                 for (auto itr2 = node->above.begin(); itr2 != node->above.end(); ++itr2) {
                     Node *above = *itr2;
@@ -99,7 +100,7 @@ namespace storm {
                         out << ", ";
                     }
                 }
-                out << "}" << std::endl;
+                out << "}" << "\n";
 
                 out << "    Below: {";
                 for (auto itr2 = node->below.begin(); itr2 != node->below.end(); ++itr2) {
@@ -119,7 +120,7 @@ namespace storm {
                         out << ", ";
                     }
                 }
-                out << "}" << std::endl;
+                out << "}" << "\n";
             }
         }
 

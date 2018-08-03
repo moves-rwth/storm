@@ -481,21 +481,26 @@ namespace storm {
                 std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(input.properties);
 
                 STORM_LOG_THROW((*(formulas[0])).isProbabilityOperatorFormula() && (*(formulas[0])).asProbabilityOperatorFormula().getSubformula().isUntilFormula(), storm::exceptions::NotSupportedException, "Expecting until formula");
-                // Check that formulas[0] is actually a ProbabilityOperator ...
-                // Check that formulas[0]->asProbabilityOperator().subformula() is an EventuallyFormula..
-                // Compute phiStates, psiStates via formulas[0]....subformula().as..().subformula
                 storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Model<ValueType>> propositionalChecker(*sparseModel);
                 storm::storage::BitVector phiStates = propositionalChecker.check((*(formulas[0])).asProbabilityOperatorFormula().getSubformula().asUntilFormula().getLeftSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
                 storm::storage::BitVector psiStates = propositionalChecker.check((*(formulas[0])).asProbabilityOperatorFormula().getSubformula().asUntilFormula().getRightSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector(); //right
                 // get the maybeStates
                 std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(sparseModel.get()->getBackwardTransitions(), phiStates, psiStates);
 
-                model.get()->printModelInformationToStream(std::cout);
-
                 storm::storage::BitVector topStates = statesWithProbability01.second;
                 storm::storage::BitVector bottomStates = statesWithProbability01.first;
                 storm::analysis::Lattice* lattice = storm::analysis::Transformer::toLattice(matrix, initialStates, topStates, bottomStates, sparseModel.get()->getNumberOfStates());
-                lattice->toString(std::cout);
+
+                // TODO: Analyse lattice with transition matrix
+                // Where do the parameters occur?
+                // initially incr.Boolean and decr.Boolean true
+                // At every occurence as long as either incr.Boolean or decr.Boolean true
+                //      --> check if monotonic
+                //          --> yes --> check position in lattice
+                //              --> if incr. set incr.Boolean = incr.Boolean && true, decr.Boolean = false;
+                //              --> if decr. set incr.Boolean = false, decr.Boolean = decr.Boolean && true;
+                //          --> no --> set both booleans to false
+                //              --> set both incr.bool  and decr.bool to false
                 return;
             }
 
