@@ -548,8 +548,13 @@ namespace storm {
         }
         
         modernjson::json ExpressionToJson::translate(storm::expressions::Expression const& expr, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables) {
+            
+            // Simplify the expression first and reduce the nesting
+            auto simplifiedExpr = expr.simplify().reduceNesting();
+            
+            
             ExpressionToJson visitor(constants, globalVariables, localVariables);
-            return boost::any_cast<modernjson::json>(expr.accept(visitor, boost::none));
+            return boost::any_cast<modernjson::json>(simplifiedExpr.accept(visitor, boost::none));
         }
         
         
