@@ -63,6 +63,8 @@ namespace storm {
                  * Retrieves whether samples are to be computed exactly.
                  */
                 bool isSampleExactSet() const;
+
+                bool isMonotonicityAnalysisSet() const;
                 
                 const static std::string moduleName;
                 

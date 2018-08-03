@@ -3,6 +3,8 @@
 #include "storm-pars/settings/ParsSettings.h"
 #include "storm-pars/settings/modules/ParametricSettings.h"
 #include "storm-pars/settings/modules/RegionSettings.h"
+#include "storm-pars/analysis/Lattice.h"
+#include "storm-pars/analysis/Transformer.h"
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/api/storm.h"
@@ -455,7 +457,9 @@ namespace storm {
             }
             
             STORM_LOG_THROW(model || input.properties.empty(), storm::exceptions::InvalidSettingsException, "No input model.");
-            
+
+            // TODO: Shift this to after preprocessing?
+
             if (model) {
                 auto preprocessingResult = storm::pars::preprocessModel<DdType, ValueType>(model, input);
                 if (preprocessingResult.second) {
@@ -463,7 +467,40 @@ namespace storm {
                     model->printModelInformationToStream(std::cout);
                 }
             }
-            
+
+
+            if (parSettings.isMonotonicityAnalysisSet()) {
+                // Do something more fancy.
+                std::cout << "Hello, Jip" << std::endl;
+                std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel = model->as<storm::models::sparse::Model<ValueType>>();
+
+                storm::storage::SparseMatrix<ValueType> matrix = sparseModel.get()->getTransitionMatrix();
+
+                storm::storage::BitVector initialStates = sparseModel.get()->getInitialStates();
+
+                std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(input.properties);
+
+                STORM_LOG_THROW((*(formulas[0])).isProbabilityOperatorFormula() && (*(formulas[0])).asProbabilityOperatorFormula().getSubformula().isUntilFormula(), storm::exceptions::NotSupportedException, "Expecting until formula");
+                // Check that formulas[0] is actually a ProbabilityOperator ...
+                // Check that formulas[0]->asProbabilityOperator().subformula() is an EventuallyFormula..
+                // Compute phiStates, psiStates via formulas[0]....subformula().as..().subformula
+                storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Model<ValueType>> propositionalChecker(*sparseModel);
+                storm::storage::BitVector phiStates = propositionalChecker.check((*(formulas[0])).asProbabilityOperatorFormula().getSubformula().asUntilFormula().getLeftSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
+                storm::storage::BitVector psiStates = propositionalChecker.check((*(formulas[0])).asProbabilityOperatorFormula().getSubformula().asUntilFormula().getRightSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector(); //right
+                // get the maybeStates
+                std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(sparseModel.get()->getBackwardTransitions(), phiStates, psiStates);
+
+                model.get()->printModelInformationToStream(std::cout);
+
+                storm::storage::BitVector topStates = statesWithProbability01.second;
+                storm::storage::BitVector bottomStates = statesWithProbability01.first;
+                storm::analysis::Lattice* lattice = storm::analysis::Transformer::toLattice(matrix, initialStates, topStates, bottomStates, sparseModel.get()->getNumberOfStates());
+                lattice->toString(std::cout);
+                return;
+            }
+
+
+
             std::vector<storm::storage::ParameterRegion<ValueType>> regions = parseRegions<ValueType>(model);
             std::string samplesAsString = parSettings.getSamples();
             SampleInformation<ValueType> samples;

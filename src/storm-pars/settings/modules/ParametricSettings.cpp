@@ -65,7 +65,11 @@ namespace storm {
             bool ParametricSettings::isSampleExactSet() const {
                 return this->getOption(sampleExactOptionName).getHasOptionBeenSet();
             }
-            
+
+            bool ParametricSettings::isMonotonicityAnalysisSet() const {
+                // TODO: Make this dependent on the input.
+                return true;
+            }
         } // namespace modules
     } // namespace settings
 } // namespace storm
