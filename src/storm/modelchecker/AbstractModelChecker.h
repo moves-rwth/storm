@@ -1,6 +1,7 @@
 #ifndef STORM_MODELCHECKER_ABSTRACTMODELCHECKER_H_
 #define STORM_MODELCHECKER_ABSTRACTMODELCHECKER_H_
 
+#include <string>
 #include <boost/optional.hpp>
 
 #include "storm/modelchecker/CheckTask.h"
@@ -24,7 +25,12 @@ namespace storm {
             }
 
             typedef typename ModelType::ValueType ValueType;
-            
+
+            /*!
+             * Returns the name of the model checker class (e.g., for display in error messages).
+             */
+            virtual std::string getClassName() const;
+
             /*!
              * Determines whether the model checker can handle the given verification task. If this method returns
              * false, the task must not be checked using this model checker.
