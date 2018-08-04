@@ -24,8 +24,15 @@
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
 
+#include <boost/core/typeinfo.hpp>
+
 namespace storm {
     namespace modelchecker {
+
+        template<typename ModelType>
+        std::string AbstractModelChecker<ModelType>::getClassName() const {
+            return std::string(boost::core::demangled_name(BOOST_CORE_TYPEID(*this)));
+        }
 
         template<typename ModelType>
         std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::check(CheckTask<storm::logic::Formula, ValueType> const& checkTask) {
