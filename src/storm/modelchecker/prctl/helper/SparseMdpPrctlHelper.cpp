@@ -933,6 +933,22 @@ namespace storm {
                                                         hint);
             }
             
+            template<typename ValueType>
+            MDPSparseModelCheckingHelperReturnType<ValueType> SparseMdpPrctlHelper<ValueType>::computeReachabilityTimes(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& targetStates, bool qualitative, bool produceScheduler, ModelCheckerHint const& hint) {
+                return computeReachabilityRewardsHelper(env, std::move(goal), transitionMatrix, backwardTransitions,
+                                                        [] (uint_fast64_t rowCount, storm::storage::SparseMatrix<ValueType> const&, storm::storage::BitVector const&) {
+                                                            return std::vector<ValueType>(rowCount, storm::utility::one<ValueType>());
+                                                        },
+                                                        targetStates, qualitative, produceScheduler,
+                                                        [&] () {
+                                                            return storm::storage::BitVector(transitionMatrix.getRowGroupCount(), false);
+                                                        },
+                                                        [&] () {
+                                                            return storm::storage::BitVector(transitionMatrix.getRowCount(), false);
+                                                        },
+                                                        hint);
+            }
+            
 #ifdef STORM_HAVE_CARL
             template<typename ValueType>
             std::vector<ValueType> SparseMdpPrctlHelper<ValueType>::computeReachabilityRewards(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::models::sparse::StandardRewardModel<storm::Interval> const& intervalRewardModel, bool lowerBoundOfIntervals, storm::storage::BitVector const& targetStates, bool qualitative) {

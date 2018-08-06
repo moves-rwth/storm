@@ -202,6 +202,12 @@ namespace storm {
                 return infinityStates.ite(model.getManager().getConstant(storm::utility::infinity<ValueType>()), result);
             }
             
+            template<storm::dd::DdType DdType, typename ValueType>
+            storm::dd::Add<DdType, ValueType> SymbolicDtmcPrctlHelper<DdType, ValueType>::computeReachabilityTimes(Environment const& env, storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, storm::dd::Bdd<DdType> const& targetStates, bool qualitative, boost::optional<storm::dd::Add<DdType, ValueType>> const& startValues) {
+                RewardModelType rewardModel(model.getManager().getConstant(storm::utility::one<ValueType>()), boost::none, boost::none);
+                return computeReachabilityRewards(env, model, transitionMatrix, rewardModel, targetStates, qualitative, startValues);
+            }
+            
             template class SymbolicDtmcPrctlHelper<storm::dd::DdType::CUDD, double>;
             template class SymbolicDtmcPrctlHelper<storm::dd::DdType::Sylvan, double>;
 

@@ -249,8 +249,12 @@ namespace storm {
         
         boost::any FormulaToJaniJson::visit(storm::logic::TimeOperatorFormula const& f, boost::any const& data) const {
             modernjson::json opDecl;
-            std::vector<std::string> tvec;
-            tvec.push_back("time");
+            std::vector<std::string> accvec;
+            if (model.isDiscreteTimeModel()) {
+                accvec.push_back("steps");
+            } else {
+                accvec.push_back("time");
+            }
             if(f.hasBound()) {
                 auto bound = f.getBound();
                 opDecl["op"] = comparisonTypeToJani(bound.comparisonType);
@@ -266,7 +270,7 @@ namespace storm {
                     opDecl["left"]["reach"] = boost::any_cast<modernjson::json>(f.getSubformula().asEventuallyFormula().getSubformula().accept(*this, data));
                 }
                 opDecl["left"]["exp"] = modernjson::json(1);
-                opDecl["left"]["accumulate"] = modernjson::json(tvec);
+                opDecl["left"]["accumulate"] = modernjson::json(accvec);
                 opDecl["right"] = buildExpression(bound.threshold, model.getConstants(), model.getGlobalVariables());
             } else {
                 if(f.hasOptimalityType()) {
@@ -282,7 +286,7 @@ namespace storm {
                     opDecl["reach"] = boost::any_cast<modernjson::json>(f.getSubformula().asEventuallyFormula().getSubformula().accept(*this, data));
                 }
                 opDecl["exp"] = modernjson::json(1);
-                opDecl["accumulate"] = modernjson::json(tvec);
+                opDecl["accumulate"] = modernjson::json(accvec);
             }
             return opDecl;
         }
