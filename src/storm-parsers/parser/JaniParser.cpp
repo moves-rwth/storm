@@ -1022,7 +1022,7 @@ namespace storm {
                 }
                 STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "No supported operator declaration found for complex expressions as " << expressionStructure.dump() << " in  " << scopeDescription << ".");
             }
-            assert(false);
+            STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "No supported expression found at " << expressionStructure.dump() << " in  " << scopeDescription << ".");
             // Silly warning suppression.
             return storm::expressions::Expression();
 

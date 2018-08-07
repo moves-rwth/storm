@@ -603,7 +603,7 @@ namespace storm {
                     }
                 }
             }
-            STORM_LOG_ASSERT(false, "Expression variable '" << expression.getVariableName() << "' not known in Jani data structures.");
+            STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Expression variable '" << expression.getVariableName() << "' not known in Jani data structures.");
             return modernjson::json(); // should not reach this point.
         }
         boost::any ExpressionToJson::visit(storm::expressions::UnaryBooleanFunctionExpression const& expression, boost::any const& data) {
