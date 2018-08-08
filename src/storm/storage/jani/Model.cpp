@@ -608,7 +608,15 @@ namespace storm {
         std::vector<Constant>& Model::getConstants() {
             return constants;
         }
-        
+
+        std::size_t Model::getNumberOfEdges() const {
+            size_t res = 0;
+            for (auto const& aut : getAutomata()) {
+                res += aut.getNumberOfEdges();
+            }
+            return res;
+        }
+
         Variable const& Model::addVariable(Variable const& variable) {
             if (variable.isBooleanVariable()) {
                 return addVariable(variable.asBooleanVariable());

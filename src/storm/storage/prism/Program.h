@@ -157,7 +157,12 @@ namespace storm {
              * @return
              */
             std::vector<Constant> usedConstants() const;
-            
+
+            /*!
+             * The total number of commands in the prism file.
+             */
+             size_t getNumberOfCommands() const;
+
             /*!
              * Retrieves whether a global Boolean variable with the given name exists
              * 

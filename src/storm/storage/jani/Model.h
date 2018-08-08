@@ -287,6 +287,11 @@ namespace storm {
              * Retrieves the number of automata in this model.
              */
             std::size_t getNumberOfAutomata() const;
+
+            /*!
+             *  Retrieves the total number of edges in this model.
+             */
+            std::size_t getNumberOfEdges() const;
             
             /*!
              * Sets the system composition expression of the JANI model.

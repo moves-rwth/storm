@@ -192,6 +192,14 @@ namespace storm {
         bool Program::isDeterministicModel() const {
             return modelType == ModelType::DTMC || modelType == ModelType::CTMC;
         }
+
+        size_t Program::getNumberOfCommands() const {
+            size_t res = 0;
+            for (auto const& module : this->getModules()) {
+                res += module.getNumberOfCommands();
+            }
+            return res;
+        }
         
         bool Program::hasUndefinedConstants() const {
             for (auto const& constant : this->getConstants()) {
