@@ -82,7 +82,7 @@ namespace storm {
                 } else if (type == "or") {
                     success = builder.addOrElement(name, childNames);
                 } else if (type == "vot") {
-                    std::string votThreshold = data.at("voting");
+                    std::string votThreshold = parseJsonNumber(data.at("voting"));
                     success = builder.addVotElement(name, boost::lexical_cast<unsigned>(votThreshold), childNames);
                 } else if (type == "pand") {
                     success = builder.addPandElement(name, childNames);
@@ -95,11 +95,11 @@ namespace storm {
                 } else if (type== "fdep") {
                     success = builder.addDepElement(name, childNames, storm::utility::one<ValueType>());
                 } else if (type== "pdep") {
-                    ValueType probability = parseRationalExpression(data.at("prob"));
+                    ValueType probability = parseRationalExpression(parseJsonNumber(data.at("prob")));
                     success = builder.addDepElement(name, childNames, probability);
                 } else if (type == "be") {
-                    ValueType failureRate = parseRationalExpression(data.at("rate"));
-                    ValueType dormancyFactor = parseRationalExpression(data.at("dorm"));
+                    ValueType failureRate = parseRationalExpression(parseJsonNumber(data.at("rate")));
+                    ValueType dormancyFactor = parseRationalExpression(parseJsonNumber(data.at("dorm")));
                     bool transient = false;
                     if (data.count("transient") > 0) {
                         transient = data.at("transient");
@@ -123,9 +123,20 @@ namespace storm {
                 STORM_LOG_THROW(success, storm::exceptions::FileIoException, "Error while adding element '" << element << "'.");
             }
 
-            std::string toplevelName = nameMapping[parsedJson.at("toplevel")];
+            std::string toplevelName = nameMapping[parseJsonNumber(parsedJson.at("toplevel"))];
             if(!builder.setTopLevel(toplevelName)) {
                 STORM_LOG_THROW(false, storm::exceptions::FileIoException, "Top level id unknown.");
+            }
+        }
+
+        template<typename ValueType>
+        std::string DFTJsonParser<ValueType>::parseJsonNumber(json number) {
+            if (number.is_string()) {
+                return number.get<std::string>();
+            } else {
+                std::stringstream stream;
+                stream << number;
+                return stream.str();
             }
         }
 

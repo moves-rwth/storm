@@ -41,6 +41,8 @@ namespace storm {
             std::string generateUniqueName(std::string const& id, std::string const& name);
 
             ValueType parseRationalExpression(std::string const& expr);
+
+            std::string parseJsonNumber(json number);
         };
     }
 }
