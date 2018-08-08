@@ -37,7 +37,7 @@ namespace storm {
             if (descr.isJaniModel()) {
                 return descr.asJaniModel().getNumberOfEdges();
             } else {
-                assert(descr.isPrismModel());
+                assert(descr.isPrismProgram());
                 return descr.asPrismProgram().getNumberOfCommands();
             }
         }
