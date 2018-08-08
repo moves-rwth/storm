@@ -10,9 +10,6 @@ namespace storm {
     namespace storage {
 
         template<typename ValueType>
-        size_t DftJsonExporter<ValueType>::currentId = 0;
-
-        template<typename ValueType>
         void DftJsonExporter<ValueType>::toFile(storm::storage::DFT<ValueType> const& dft, std::string const& filepath) {
             std::ofstream ofs;
             ofs.open(filepath, std::ofstream::out);
@@ -31,46 +28,34 @@ namespace storm {
 
         template<typename ValueType>
         modernjson::json DftJsonExporter<ValueType>::translate(storm::storage::DFT<ValueType> const& dft) {
-            modernjson::json jsonDft;
-            currentId = 0;
-
             // Nodes
             modernjson::json jsonNodes;
             for (size_t i = 0; i < dft.nrElements(); ++i) {
                 modernjson::json jsonNode = translateNode(dft.getElement(i));
-                jsonDft.push_back(jsonNode);
+                jsonNodes.push_back(jsonNode);
             }
 
-            // Edges
-            modernjson::json jsonEdges;
-            for (size_t i = 0; i < dft.nrElements(); ++i) {
-                if (dft.isGate(i)) {
-                    std::shared_ptr<DFTGate<ValueType> const> gate = dft.getGate(i);
-                    for (size_t index = 0; index < gate->nrChildren(); ++index) {
-                        DFTElementPointer child = gate->children()[index];
-                        modernjson::json jsonEdge = translateEdge(gate, child, index);
-                        jsonDft.push_back(jsonEdge);
-                    }
-                }
-            }
-
+            modernjson::json jsonDft;
+            jsonDft["toplevel"] = std::to_string(dft.getTopLevelIndex());
+            jsonDft["nodes"] = jsonNodes;
             return jsonDft;
         }
 
         template<typename ValueType>
         modernjson::json DftJsonExporter<ValueType>::translateNode(DFTElementCPointer const& element) {
             modernjson::json nodeData;
-            nodeData["id"] = element->id();
-            ++currentId;
-            STORM_LOG_ASSERT(element->id() == currentId-1, "Ids do not correspond");
+            nodeData["id"] = std::to_string(element->id());
             nodeData["name"] = element->name();
+            std::string type = storm::storage::toString(element->type());
+            std::transform(type.begin(), type.end(), type.begin(), ::tolower);
+            nodeData["type"] = type;
 
             if (element->isGate()) {
                 // Set children for gate
                 std::shared_ptr<DFTGate<ValueType> const> gate = std::static_pointer_cast<DFTGate<ValueType> const>(element);
-                std::vector<size_t> children;
+                std::vector<std::string> children;
                 for (DFTElementPointer const& child : gate->children()) {
-                    children.push_back(child->id());
+                    children.push_back(std::to_string(child->id()));
                 }
                 nodeData["children"] = children;
             } else if (element->isBasicElement()) {
@@ -86,39 +71,14 @@ namespace storm {
 
             modernjson::json jsonNode;
             jsonNode["data"] = nodeData;
-
             jsonNode["group"] = "nodes";
-            std::string type = storm::storage::toString(element->type());
-            std::transform(type.begin(), type.end(), type.begin(), ::tolower);
             jsonNode["classes"] = type;
-            return jsonNode;
-        }
-
-        template<typename ValueType>
-        modernjson::json DftJsonExporter<ValueType>::translateEdge(std::shared_ptr<DFTGate<ValueType> const> const& gate, DFTElementCPointer const& child, size_t index) {
-            modernjson::json nodeData;
-            std::stringstream stream;
-            stream << gate->id() << "e" << child->id();
-            nodeData["id"] = stream.str();
-            ++currentId;
-            nodeData["source"] = gate->id();
-            nodeData["target"] = child->id();
-            nodeData["index"] = index;
-
-            modernjson::json jsonNode;
-            jsonNode["data"] = nodeData;
-
-            jsonNode["group"] = "edges";
-            jsonNode["classes"] = "";
             return jsonNode;
         }
 
         // Explicitly instantiate the class.
         template class DftJsonExporter<double>;
-
-#ifdef STORM_HAVE_CARL
         template class DftJsonExporter<storm::RationalFunction>;
-#endif
 
     }
 }
