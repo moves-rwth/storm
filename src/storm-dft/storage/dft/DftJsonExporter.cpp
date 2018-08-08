@@ -58,6 +58,24 @@ namespace storm {
                     children.push_back(std::to_string(child->id()));
                 }
                 nodeData["children"] = children;
+                // Gate dependent export
+                switch (element->type()) {
+                    case storm::storage::DFTElementType::VOT:
+                        nodeData["voting"] = std::static_pointer_cast<storm::storage::DFTVot<ValueType> const>(element)->threshold();
+                        break;
+                    case storm::storage::DFTElementType::PDEP:
+                    {
+                        ValueType probability = std::static_pointer_cast<storm::storage::DFTDependency<ValueType> const>(element)->probability();
+                        if (!storm::utility::isOne<ValueType>(probability)) {
+                            std::stringstream stream;
+                            stream << probability;
+                            nodeData["prob"] = stream.str();
+                        }
+                        break;
+                    }
+                    default:
+                        break;
+                }
             } else if (element->isBasicElement()) {
                 // Set rates for BE
                 std::shared_ptr<DFTBE<ValueType> const> be = std::static_pointer_cast<DFTBE<ValueType> const>(element);
