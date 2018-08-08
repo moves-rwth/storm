@@ -2004,8 +2004,8 @@ namespace storm {
                     result.psiStates = subQualitativeResult.getTruthValuesVector();
                 }
 
-                bool lowerBoundedFormula = false;
                 if (storm::logic::isLowerBound(result.comparisonType)) {
+                    STORM_LOG_DEBUG("Computing counterexample for a lowerbound.");
                     // If the formula specifies a lower bound, we need to modify the phi and psi states.
                     // More concretely, we convert P(min)>lambda(F psi) to P(max)<(1-lambda)(G !psi) = P(max)<(1-lambda)(!psi U prob0E(psi))
                     // where prob0E(psi) is the set of states for which there exists a strategy \sigma_0 that avoids
@@ -2027,7 +2027,7 @@ namespace storm {
 
                     // Remember our transformation so we can add commands to guarantee that the prob0E(a) states actually
                     // have a strategy that voids a states.
-                    lowerBoundedFormula = true;
+                    result.lowerBoundedFormula = true;
                 }
                 return result;
 
@@ -2053,6 +2053,7 @@ namespace storm {
                 // Extend the command set properly.
                 for (auto& labelSet : labelSets) {
                     if (counterexInput.lowerBoundedFormula) {
+                        STORM_LOG_DEBUG("Extending the counterexample due to lower bound computation.");
                         extendLabelSetLowerBound(model, labelSet, counterexInput.phiStates, counterexInput.psiStates, options.silent);
                     }
                 }
