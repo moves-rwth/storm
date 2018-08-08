@@ -34,15 +34,17 @@ namespace storm {
 
         template<typename ValueType>
         storm::storage::DFT<ValueType> DFTJsonParser<ValueType>::parseJson(json const& jsonInput) {
-            // Parse parameters
-            json parameters = jsonInput.at("parameters");
-            for (auto it = parameters.begin(); it != parameters.end(); ++it) {
-            STORM_LOG_THROW((std::is_same<ValueType, storm::RationalFunction>::value), storm::exceptions::NotSupportedException, "Parameters only allowed when using rational functions.");
-                std::string parameter = it.key();
-                storm::expressions::Variable var = manager->declareRationalVariable(parameter);
-                identifierMapping.emplace(var.getName(), var);
-                parser.setIdentifierMapping(identifierMapping);
-                STORM_LOG_TRACE("Added parameter: " << var.getName());
+            // Try to parse parameters
+            if (jsonInput.find("parameters") != jsonInput.end()) {
+                json parameters = jsonInput.at("parameters");
+                STORM_LOG_THROW(parameters.empty() || (std::is_same<ValueType, storm::RationalFunction>::value), storm::exceptions::NotSupportedException, "Parameters only allowed when using rational functions.");
+                for (auto it = parameters.begin(); it != parameters.end(); ++it) {
+                    std::string parameter = it.key();
+                    storm::expressions::Variable var = manager->declareRationalVariable(parameter);
+                    identifierMapping.emplace(var.getName(), var);
+                    parser.setIdentifierMapping(identifierMapping);
+                    STORM_LOG_TRACE("Added parameter: " << var.getName());
+                }
             }
 
             json nodes = jsonInput.at("nodes");
@@ -102,15 +104,18 @@ namespace storm {
                     success = false;
                 }
 
-                // Do not set layout for dependencies
-                // This does not work because dependencies might be splitted
-                // TODO: do splitting later in rewriting step
-                if (type != "fdep" && type != "pdep") {
-                    // Set layout positions
-                    json position = element.at("position");
-                    double x = position.at("x");
-                    double y = position.at("y");
-                    builder.addLayoutInfo(name, x / 7, y / 7);
+                // Try to set layout information
+                if (element.find("position") != element.end()) {
+                    // Do not set layout for dependencies
+                    // This does not work because dependencies might be splitted
+                    // TODO: do splitting later in rewriting step
+                    if (type != "fdep" && type != "pdep") {
+                        // Set layout positions
+                        json position = element.at("position");
+                        double x = position.at("x");
+                        double y = position.at("y");
+                        builder.addLayoutInfo(name, x / 7, y / 7);
+                    }
                 }
                 STORM_LOG_THROW(success, storm::exceptions::FileIoException, "Error while adding element '" << element << "'.");
             }
