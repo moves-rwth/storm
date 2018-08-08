@@ -33,10 +33,12 @@ namespace storm {
             DFTJsonParser() : manager(new storm::expressions::ExpressionManager()), parser(*manager), evaluator(*manager) {
             }
 
-            storm::storage::DFT<ValueType> parseJson(std::string const& filename);
-            
+            storm::storage::DFT<ValueType> parseJsonFromString(std::string const& jsonString);
+
+            storm::storage::DFT<ValueType> parseJsonFromFile(std::string const& filename);
+
         private:
-            void readFile(std::string const& filename);
+            storm::storage::DFT<ValueType> parseJson(json const& jsonInput);
 
             std::string generateUniqueName(std::string const& id, std::string const& name);
 

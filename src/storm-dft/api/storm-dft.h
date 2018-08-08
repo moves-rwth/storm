@@ -23,8 +23,21 @@ namespace storm {
          * @return DFT.
          */
         template<typename ValueType>
-        std::shared_ptr<storm::storage::DFT<ValueType>> loadDFTGalileo(std::string const& file) {
+        std::shared_ptr<storm::storage::DFT<ValueType>> loadDFTGalileoFile(std::string const& file) {
              return std::make_shared<storm::storage::DFT<ValueType>>(storm::parser::DFTGalileoParser<ValueType>::parseDFT(file));
+        }
+
+        /*!
+         * Load DFT from JSON string.
+         *
+         * @param jsonString String containing DFT description in JSON format.
+         *
+         * @return DFT.
+         */
+        template<typename ValueType>
+        std::shared_ptr<storm::storage::DFT<ValueType>> loadDFTJsonString(std::string const& jsonString) {
+                storm::parser::DFTJsonParser<ValueType> parser;
+                return std::make_shared<storm::storage::DFT<ValueType>>(parser.parseJsonFromString(jsonString));
         }
 
         /*!
@@ -35,9 +48,9 @@ namespace storm {
          * @return DFT.
          */
         template<typename ValueType>
-        std::shared_ptr<storm::storage::DFT<ValueType>> loadDFTJson(std::string const& file) {
+        std::shared_ptr<storm::storage::DFT<ValueType>> loadDFTJsonFile(std::string const& file) {
                 storm::parser::DFTJsonParser<ValueType> parser;
-                return std::make_shared<storm::storage::DFT<ValueType>>(parser.parseJson(file));
+                return std::make_shared<storm::storage::DFT<ValueType>>(parser.parseJsonFromFile(file));
         }
 
         /*!
