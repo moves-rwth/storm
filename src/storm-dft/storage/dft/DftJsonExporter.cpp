@@ -82,8 +82,9 @@ namespace storm {
                 std::stringstream stream;
                 stream << be->activeFailureRate();
                 nodeData["rate"] = stream.str();
-                stream.clear();
-                stream << (be->passiveFailureRate() / be->activeFailureRate());
+                stream.str(std::string()); // Clear stringstream
+                ValueType dormancy = be->passiveFailureRate() / be->activeFailureRate();
+                stream << dormancy;
                 nodeData["dorm"] = stream.str();
             }
 
