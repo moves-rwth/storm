@@ -1776,6 +1776,10 @@ namespace storm {
                         break;
                     }
 
+                    if (commandSet.size() == nrCommands(symbolicModel)) {
+                        result.push_back(commandSet);
+                        break;
+                    }
 
                     auto subChoiceOrigins = restrictModelToLabelSet(model, commandSet, psiStates.getNextSetIndex(0));
                     std::shared_ptr<storm::models::sparse::Model<T>> const& subModel = subChoiceOrigins.first;
