@@ -46,7 +46,7 @@ void processOptions() {
 
         if (dftIOSettings.isExportToJson()) {
             // Export to json
-            storm::api::exportDFTToJson<ValueType>(*dft, dftIOSettings.getExportJsonFilename());
+            storm::api::exportDFTToJsonFile<ValueType>(*dft, dftIOSettings.getExportJsonFilename());
             return;
         }
 

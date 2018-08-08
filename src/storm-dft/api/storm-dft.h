@@ -107,7 +107,15 @@ namespace storm {
          * @param file File.
          */
         template<typename ValueType>
-        void exportDFTToJson(storm::storage::DFT<ValueType> const& dft, std::string const& file);
+        void exportDFTToJsonFile(storm::storage::DFT<ValueType> const& dft, std::string const& file);
+
+        /*!
+         * Export DFT to JSON string.
+         *
+         * @param dft DFT.
+         */
+        template<typename ValueType>
+        std::string exportDFTToJsonString(storm::storage::DFT<ValueType> const& dft);
 
         /*!
          * Export DFT to SMT encoding.

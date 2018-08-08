@@ -4,12 +4,24 @@ namespace storm {
     namespace api {
 
         template<>
-        void exportDFTToJson(storm::storage::DFT<double> const& dft, std::string const& file) {
+        void exportDFTToJsonFile(storm::storage::DFT<double> const& dft, std::string const& file) {
             storm::storage::DftJsonExporter<double>::toFile(dft, file);
         }
 
         template<>
-        void exportDFTToJson(storm::storage::DFT<storm::RationalFunction> const& dft, std::string const& file) {
+        void exportDFTToJsonFile(storm::storage::DFT<storm::RationalFunction> const& dft, std::string const& file) {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Export to JSON not supported for this data type.");
+        }
+
+        template<>
+        std::string exportDFTToJsonString(storm::storage::DFT<double> const& dft) {
+            std::stringstream stream;
+            storm::storage::DftJsonExporter<double>::toStream(dft, stream);
+            return stream.str();
+        }
+
+        template<>
+        std::string exportDFTToJsonString(storm::storage::DFT<storm::RationalFunction> const& dft) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Export to JSON not supported for this data type.");
         }
 
