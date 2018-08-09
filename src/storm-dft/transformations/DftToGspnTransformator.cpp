@@ -1153,9 +1153,9 @@ namespace storm {
                                 "Sequence enforcers with gates as children are currently not supported");
                 double xcenter = mDft.getElementLayoutInfo(dftSeq->id()).x;
                 double ycenter = mDft.getElementLayoutInfo(dftSeq->id()).y;
-
+                u_int64_t failedPlace = 0;
                 if (!smart) {
-                    addFailedPlace(dftSeq, storm::gspn::LayoutInfo(xcenter + 10.0, ycenter - 8.0));
+                    failedPlace = addFailedPlace(dftSeq, storm::gspn::LayoutInfo(xcenter + 10.0, ycenter - 8.0));
                     addUnavailablePlace(dftSeq, storm::gspn::LayoutInfo(xcenter + 16.0, ycenter - 8.0));
                 }
 
@@ -1181,6 +1181,32 @@ namespace storm {
                     if (i > 0) {
                         builder.addInputArc(getFailedPlace(dftSeq->children().at(i - 1)), tEnable);
                     }
+                }
+                // Dont Care
+                if (dontCareElements.count(dftSeq->id())) {
+                    if (!mergedDCFailed) {
+                        u_int64_t dontCarePlace = builder.addPlace(1, 0, dftSeq->name() + STR_DONTCARE);
+                        builder.setPlaceLayoutInfo(dontCarePlace,
+                                                   storm::gspn::LayoutInfo(xcenter + 10.0, ycenter - 8.0));
+                        for (auto const &child : dftSeq->children()) {
+                            if (dontCareElements.count(child->id())) {
+                                u_int64_t childDontCare = dontcareTransitions.at(child->id());
+                                builder.addInputArc(dontCarePlace, childDontCare);
+                            }
+                        }
+                    } else {
+                        if (failedPlace == 0) {
+                            failedPlace = addFailedPlace(dftSeq,
+                                                         storm::gspn::LayoutInfo(xcenter + 10.0, ycenter - 8.0));
+                        }
+                        for (auto const &child : dftSeq->children()) {
+                            if (dontCareElements.count(child->id())) {
+                                u_int64_t childDontCare = dontcareTransitions.at(child->id());
+                                builder.addInputArc(failedPlace, childDontCare);
+                            }
+                        }
+                    }
+
                 }
 
             }
