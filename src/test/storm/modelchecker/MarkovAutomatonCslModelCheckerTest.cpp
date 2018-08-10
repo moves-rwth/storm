@@ -4,6 +4,7 @@
 #include "test/storm_gtest.h"
 
 #include "storm/api/builder.h"
+#include "storm-conv/api/storm-conv.h"
 #include "storm-parsers/api/model_descriptions.h"
 #include "storm/api/properties.h"
 #include "storm-parsers/api/properties.h"
@@ -23,10 +24,42 @@
 #include "storm/exceptions/UncheckedRequirementException.h"
 
 namespace {
+    
+    enum class MaEngine {PrismSparse, JaniSparse, JitSparse};
+
+    
     class SparseDoubleValueIterationEnvironment {
     public:
         static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan; // Unused for sparse models
-        static const storm::settings::modules::CoreSettings::Engine engine = storm::settings::modules::CoreSettings::Engine::Sparse;
+        static const MaEngine engine = MaEngine::PrismSparse;
+        static const bool isExact = false;
+        typedef double ValueType;
+        typedef storm::models::sparse::MarkovAutomaton<ValueType> ModelType;
+        static storm::Environment createEnvironment() {
+            storm::Environment env;
+            env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
+            env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-10));
+            return env;
+        }
+    };
+    class JaniSparseDoubleValueIterationEnvironment {
+    public:
+        static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan; // Unused for sparse models
+        static const MaEngine engine = MaEngine::JaniSparse;
+        static const bool isExact = false;
+        typedef double ValueType;
+        typedef storm::models::sparse::MarkovAutomaton<ValueType> ModelType;
+        static storm::Environment createEnvironment() {
+            storm::Environment env;
+            env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
+            env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-10));
+            return env;
+        }
+    };
+    class JitSparseDoubleValueIterationEnvironment {
+    public:
+        static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan; // Unused for sparse models
+        static const MaEngine engine = MaEngine::JitSparse;
         static const bool isExact = false;
         typedef double ValueType;
         typedef storm::models::sparse::MarkovAutomaton<ValueType> ModelType;
@@ -40,7 +73,7 @@ namespace {
     class SparseDoubleIntervalIterationEnvironment {
     public:
         static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan; // Unused for sparse models
-        static const storm::settings::modules::CoreSettings::Engine engine = storm::settings::modules::CoreSettings::Engine::Sparse;
+        static const MaEngine engine = MaEngine::PrismSparse;
         static const bool isExact = false;
         typedef double ValueType;
         typedef storm::models::sparse::MarkovAutomaton<ValueType> ModelType;
@@ -56,7 +89,7 @@ namespace {
     class SparseRationalPolicyIterationEnvironment {
     public:
         static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan; // Unused for sparse models
-        static const storm::settings::modules::CoreSettings::Engine engine = storm::settings::modules::CoreSettings::Engine::Sparse;
+        static const MaEngine engine = MaEngine::PrismSparse;
         static const bool isExact = true;
         typedef storm::RationalNumber ValueType;
         typedef storm::models::sparse::MarkovAutomaton<ValueType> ModelType;
@@ -69,7 +102,7 @@ namespace {
     class SparseRationalRationalSearchEnvironment {
     public:
         static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan; // Unused for sparse models
-        static const storm::settings::modules::CoreSettings::Engine engine = storm::settings::modules::CoreSettings::Engine::Sparse;
+        static const MaEngine engine = MaEngine::PrismSparse;
         static const bool isExact = true;
         typedef storm::RationalNumber ValueType;
         typedef storm::models::sparse::MarkovAutomaton<ValueType> ModelType;
@@ -100,8 +133,18 @@ namespace {
             std::pair<std::shared_ptr<MT>, std::vector<std::shared_ptr<storm::logic::Formula const>>> result;
             storm::prism::Program program = storm::api::parseProgram(pathToPrismFile);
             program = storm::utility::prism::preprocess(program, constantDefinitionString);
-            result.second = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
-            result.first = storm::api::buildSparseModel<ValueType>(program, result.second)->template as<MT>();
+            if (TestType::engine == MaEngine::PrismSparse) {
+                result.second = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
+                result.first = storm::api::buildSparseModel<ValueType>(program, result.second)->template as<MT>();
+            } else if (TestType::engine == MaEngine::JaniSparse || TestType::engine == MaEngine::JitSparse) {
+                storm::converter::PrismToJaniConverterOptions options;
+                options.allVariablesGlobal = true;
+                options.janiOptions.standardCompliant = true;
+                options.janiOptions.exportFlattened = true;
+                auto janiData = storm::api::convertPrismToJani(program, storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
+                result.second = storm::api::extractFormulasFromProperties(janiData.second);
+                result.first = storm::api::buildSparseModel<ValueType>(janiData.first, result.second, TestType::engine == MaEngine::JitSparse)->template as<MT>();
+            }
             return result;
         }
         
@@ -127,7 +170,7 @@ namespace {
         template <typename MT = typename TestType::ModelType>
         typename std::enable_if<std::is_same<MT, SparseModelType>::value, std::shared_ptr<storm::modelchecker::AbstractModelChecker<MT>>>::type
         createModelChecker(std::shared_ptr<MT> const& model) const {
-            if (TestType::engine == storm::settings::modules::CoreSettings::Engine::Sparse) {
+            if (TestType::engine == MaEngine::PrismSparse || TestType::engine == MaEngine::JaniSparse || TestType::engine == MaEngine::JitSparse) {
                 return std::make_shared<storm::modelchecker::SparseMarkovAutomatonCslModelChecker<SparseModelType>>(*model);
             }
         }
@@ -135,12 +178,11 @@ namespace {
         template <typename MT = typename TestType::ModelType>
         typename std::enable_if<std::is_same<MT, SymbolicModelType>::value, std::shared_ptr<storm::modelchecker::AbstractModelChecker<MT>>>::type
         createModelChecker(std::shared_ptr<MT> const& model) const {
-//            if (TestType::engine == storm::settings::modules::CoreSettings::Engine::Hybrid) {
+//            if (TestType::engine == MaEngine::Hybrid) {
 //              return std::make_shared<storm::modelchecker::HybridMarkovAutomatonCslModelChecker<SymbolicModelType>>(*model);
-//            } else if (TestType::engine == storm::settings::modules::CoreSettings::Engine::Dd) {
+//            } else if (TestType::engine == MaEngine::Dd) {
 //                return std::make_shared<storm::modelchecker::SymbolicMarkovAutomatonCslModelChecker<SymbolicModelType>>(*model);
 //            }
-            return nullptr;
         }
         
         bool getQualitativeResultAtInitialState(std::shared_ptr<storm::models::Model<ValueType>> const& model, std::unique_ptr<storm::modelchecker::CheckResult>& result) {
@@ -170,6 +212,8 @@ namespace {
   
     typedef ::testing::Types<
             SparseDoubleValueIterationEnvironment,
+            JaniSparseDoubleValueIterationEnvironment,
+            JitSparseDoubleValueIterationEnvironment,
             SparseDoubleIntervalIterationEnvironment,
             SparseRationalPolicyIterationEnvironment,
             SparseRationalRationalSearchEnvironment
