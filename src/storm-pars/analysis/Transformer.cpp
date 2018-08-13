@@ -175,47 +175,22 @@ namespace storm {
             return states;
         }
 
-        void Transformer::print(storm::storage::BitVector vector, std::string message) {
-            // TODO: Remove this, unnecessary
-
-            uint_fast64_t index = vector.getNextSetIndex(0);
-            std::cout << message <<": {";
-            while (index < vector.size()) {
-                std::cout << index;
-                index = vector.getNextSetIndex(index+1);
-                if (index < vector.size()) {
-                    std::cout << ", ";
-                }
-            }
-            std::cout << "}" << std::endl;
-        }
-
-        std::vector<uint_fast64_t> Transformer::getNumbers(storm::storage::BitVector vector) {
-            // TODO: Remove this, unnecessary
-            std::vector<uint_fast64_t> result = std::vector<uint_fast64_t>({});
-            uint_fast64_t index = vector.getNextSetIndex(0);
-            while (index < vector.size()) {
-                result.push_back(index);
-                index = vector.getNextSetIndex(index+1);
-
-            }
-            return result;
-        }
-
         storm::RationalFunction Transformer::getProbability(storm::storage::BitVector state, storm::storage::BitVector successor, storm::storage::SparseMatrix<storm::RationalFunction>  matrix) {
-            std::vector<uint_fast64_t> successorNumbers = getNumbers(successor);
             storm::RationalFunction result = storm::RationalFunction(1);
-            for (auto itr = successorNumbers.begin(); itr < successorNumbers.end() && result == storm::RationalFunction(1); ++itr) {
-                result = getProbability(state, (*itr), matrix);
+            uint_fast64_t index = successor.getNextSetIndex(0);
+            while (index < successor.size() && result == storm::RationalFunction(1)) {
+                result = getProbability(state, index, matrix);
+                index = successor.getNextSetIndex(index+1);
             }
             return result;
         }
 
         storm::RationalFunction Transformer::getProbability(storm::storage::BitVector state, uint_fast64_t successor, storm::storage::SparseMatrix<storm::RationalFunction>  matrix) {
-            std::vector<uint_fast64_t> stateNumbers = getNumbers(state);
             storm::RationalFunction result = storm::RationalFunction(1);
-            for (auto itr = stateNumbers.begin(); itr < stateNumbers.end() && result == storm::RationalFunction(1); ++itr) {
-                result = getProbability((*itr), successor, matrix);
+            uint_fast64_t index = state.getNextSetIndex(0);
+            while (index < state.size() && result == storm::RationalFunction(1)) {
+                result = getProbability(index, successor, matrix);
+                index = state.getNextSetIndex(index+1);
             }
             return result;
         }

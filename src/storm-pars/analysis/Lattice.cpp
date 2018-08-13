@@ -14,8 +14,6 @@ namespace storm {
             top->below.push_back(bottom);
             bottom->above.push_back(top);
             nodes = std::vector<Node *>({top, bottom});
-//            addedStates.insert(addedStates.end(), top->states.begin(), top->states.end());
-//            addedStates.insert(addedStates.end(), bottom->states.begin(), bottom->states.end());
             this->numberOfStates = numberOfStates;
         }
 
@@ -30,12 +28,10 @@ namespace storm {
             (below->above).push_back(newNode);
             above->below.push_back(newNode);
             nodes.push_back(newNode);
-//            addedStates.push_back(state);
         }
 
         void Lattice::addToNode(uint_fast64_t state, Node *node) {
             node->states.set(state);
-//            addedStates.push_back(state);
         }
 
         int Lattice::compare(uint_fast64_t state1, uint_fast64_t state2) {

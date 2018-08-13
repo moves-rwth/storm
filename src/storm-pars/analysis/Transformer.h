@@ -40,10 +40,6 @@ namespace storm {
             toStateVector(storm::storage::SparseMatrix<storm::RationalFunction> transitionMatrix,
                           storm::storage::BitVector const &initialStates);
 
-            static void print(storm::storage::BitVector vector, std::string message);
-
-            static std::vector<uint_fast64_t> getNumbers(storm::storage::BitVector vector);
-
             static storm::RationalFunction getProbability(storm::storage::BitVector state, storm::storage::BitVector successor, storm::storage::SparseMatrix<storm::RationalFunction> matrix);
 
             static storm::RationalFunction getProbability(storm::storage::BitVector state, uint_fast64_t successor, storm::storage::SparseMatrix<storm::RationalFunction> matrix);
