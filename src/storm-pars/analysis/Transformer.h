@@ -5,6 +5,7 @@
 #ifndef LATTICE_BUILDER_H
 #define LATTICE_BUILDER_H
 
+#include <storm/models/sparse/Model.h>
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
 #include "Lattice.h"
@@ -36,15 +37,12 @@ namespace storm {
                                       storm::storage::BitVector bottomStates, uint_fast64_t numberOfStates);
 
         private:
-            static std::vector<Transformer::State *>
-            toStateVector(storm::storage::SparseMatrix<storm::RationalFunction> transitionMatrix,
-                          storm::storage::BitVector const &initialStates);
-
             static storm::RationalFunction getProbability(storm::storage::BitVector state, storm::storage::BitVector successor, storm::storage::SparseMatrix<storm::RationalFunction> matrix);
 
             static storm::RationalFunction getProbability(storm::storage::BitVector state, uint_fast64_t successor, storm::storage::SparseMatrix<storm::RationalFunction> matrix);
 
             static storm::RationalFunction getProbability(uint_fast64_t state, uint_fast64_t successor, storm::storage::SparseMatrix<storm::RationalFunction> matrix);
+
             };
     }
 }

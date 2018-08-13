@@ -11,7 +11,30 @@ namespace storm {
                                         storm::storage::BitVector bottomStates, uint_fast64_t numberOfStates) {
             // TODO: take SparseModel as input
             // Transform the transition matrix into a vector containing the states with the state to which the transition goes.
-            std::vector<State*> stateVector = toStateVector(matrix, initialStates);
+            std::vector <State*> stateVector = std::vector<State *>({});
+
+            for (uint_fast64_t i = 0; i < numberOfStates; ++i) {
+                State* state = new State();
+                state->stateNumber = i;
+                state->successor1 = numberOfStates;
+                state->successor2 = numberOfStates;
+
+                auto row = matrix.getRow(i);
+                for (auto itr = row.begin(); itr < row.end() && state->successor2 == numberOfStates; ++itr) {
+                    if ((*itr).getValue() != storm::RationalFunction(1)) {
+                        if (state->successor1 == numberOfStates) {
+                            state->successor1 = (*itr).getColumn();
+                        } else {
+                            state->successor2 = (*itr).getColumn();
+                        }
+                    } else {
+                        state-> successor1 = (*itr).getColumn();
+                        state-> successor2 = (*itr).getColumn();
+                    }
+                }
+                stateVector.push_back(state);
+            }
+
 
             // Start creating the Lattice
             Lattice *lattice = new Lattice(topStates, bottomStates, numberOfStates);
@@ -48,7 +71,6 @@ namespace storm {
                                 Lattice::Node *below = lattice->getNode(successor2);
                                 std::vector<Lattice::Node *> states1 = above->below;
                                 std::vector<Lattice::Node *> states2 = below->above;
-                                bool added = false;
                                 for (auto itr1 = states1.begin(); itr1 < states1.end(); ++itr1) {
                                     for (auto itr2 = states2.begin(); itr2 < states2.end(); ++itr2) {
                                         if ((*itr1)->states == (*itr2)->states) {
@@ -60,14 +82,13 @@ namespace storm {
                                                 && getProbability((*itr1)->states, below->states, matrix) == prob2) {
                                                 lattice->addToNode(currentState->stateNumber, (*itr1));
                                                 seenStates.set(currentState->stateNumber);
-                                                added = true;
                                             }
                                         }
 
                                     }
                                 }
 
-                                if (!added) {
+                                if (!seenStates.get(currentState->stateNumber)) {
                                     // successor 1 is closer to top than successor 2
                                     lattice->addBetween(currentState->stateNumber, lattice->getNode(successor1),
                                                         lattice->getNode(successor2));
@@ -128,48 +149,6 @@ namespace storm {
             }
 
             return lattice;
-        }
-
-        std::vector<Transformer::State *>
-        Transformer::toStateVector(storm::storage::SparseMatrix<storm::RationalFunction> transitionMatrix,
-                                   storm::storage::BitVector const &initialStates) {
-            // TODO: Remove this, unnecessary
-            std::vector < State *> states = std::vector<State *>({});
-            std::vector <uint_fast64_t> stack(initialStates.begin(), initialStates.end());
-            std::vector <uint_fast64_t> seenStates(initialStates.begin(), initialStates.end());
-            uint_fast64_t currentState;
-
-            while (!stack.empty()) {
-                currentState = stack.back();
-                stack.pop_back();
-                std::vector <uint_fast64_t> successorStates(0, 2);
-
-                // Assume there are at most 2 successors
-                for (auto const &successor : transitionMatrix.getRowGroup(currentState)) {
-                    if (!storm::utility::isZero(successor.getValue())) {
-                        // Only explore the state if the transition was actually there.
-                        uint_fast64_t successorNumber = successor.getColumn();
-                        if (std::find(seenStates.begin(), seenStates.end(), successorNumber) == seenStates.end()) {
-                            stack.push_back(successorNumber);
-                            seenStates.push_back(successorNumber);
-                        }
-                        successorStates.push_back(successorNumber);
-                    }
-                }
-
-                State *state = new State();
-                state->stateNumber = currentState;
-                state->successor1 = successorStates.back();
-                successorStates.pop_back();
-                if (!successorStates.empty()) {
-                    state->successor2 = successorStates.back();
-                    successorStates.pop_back();
-                } else {
-                    state->successor2 = state->successor1;
-                }
-                states.push_back(state);
-            }
-            return states;
         }
 
         storm::RationalFunction Transformer::getProbability(storm::storage::BitVector state, storm::storage::BitVector successor, storm::storage::SparseMatrix<storm::RationalFunction>  matrix) {
