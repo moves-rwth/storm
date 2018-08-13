@@ -13,11 +13,8 @@ namespace storm {
             // Transform the transition matrix into a vector containing the states with the state to which the transition goes.
             std::vector<State*> stateVector = toStateVector(matrix, initialStates);
 
-            // TODO: not initializing all fields of Lattice::Node yet, what to do?
             // Start creating the Lattice
-            Lattice::Node top = {topStates};
-            Lattice::Node bottom = {bottomStates};
-            Lattice *lattice = new Lattice(&top, &bottom, numberOfStates);
+            Lattice *lattice = new Lattice(topStates, bottomStates, numberOfStates);
             storm::storage::BitVector oldStates(numberOfStates);
             // Create a copy of the states already present in the lattice.
             storm::storage::BitVector seenStates = topStates|=bottomStates;

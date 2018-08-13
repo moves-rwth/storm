@@ -6,11 +6,12 @@
 #include "Lattice.h"
 namespace storm {
     namespace analysis {
-        Lattice::Lattice(Node *topNode, Node *bottomNode, uint_fast64_t numberOfStates) {
+        Lattice::Lattice(storm::storage::BitVector topStates,
+                         storm::storage::BitVector bottomStates, uint_fast64_t numberOfStates) {
             Node *top = new Node();
-            top->states = topNode->states;
+            top->states = topStates;
             Node *bottom = new Node();
-            bottom->states = bottomNode->states;
+            bottom->states = bottomStates;
             top->below.push_back(bottom);
             bottom->above.push_back(top);
             nodes = std::vector<Node *>({top, bottom});

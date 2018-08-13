@@ -27,7 +27,8 @@ namespace storm {
                      * @param topNode The top node of the resulting lattice.
                      * @param bottomNode The bottom node of the resulting lattice.
                      */
-                    Lattice(Node *topNode, Node *bottomNode, uint_fast64_t numberOfStates);
+                    Lattice(storm::storage::BitVector topStates,
+                            storm::storage::BitVector bottomStates, uint_fast64_t numberOfStates);
 
                     /*!
                      * Adds a node with the given state below node1 and above node2.
