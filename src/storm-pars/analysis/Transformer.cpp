@@ -35,7 +35,6 @@ namespace storm {
                 stateVector.push_back(state);
             }
 
-
             // Start creating the Lattice
             Lattice *lattice = new Lattice(topStates, bottomStates, numberOfStates);
             storm::storage::BitVector oldStates(numberOfStates);
@@ -43,7 +42,7 @@ namespace storm {
             storm::storage::BitVector seenStates = topStates|=bottomStates;
             
             while (oldStates != seenStates) {
-                // As long as new states are discovered, continue.
+                // As long as new states are added to the lattice, continue.
                 oldStates = storm::storage::BitVector(seenStates);
 
                 for (auto itr = stateVector.begin(); itr != stateVector.end(); ++itr) {
@@ -65,8 +64,16 @@ namespace storm {
                             uint_fast64_t successor1 = currentState->successor1;
                             uint_fast64_t successor2 = currentState->successor2;
                             int compareResult = lattice->compare(successor1, successor2);
-                            if (compareResult == 1) {
-                                // TODO: create seperate method or change compareResult method?
+                            if (compareResult == 1 || compareResult == 2) {
+
+                                if (compareResult == 2) {
+                                    // swap
+                                    auto temp = successor1;
+                                    successor1 = successor2;
+                                    successor2 = temp;
+                                }
+                                // Additional check, if states have the same probability of reaching a given next state,
+                                // then they should be at the same node
                                 Lattice::Node *above = lattice->getNode(successor1);
                                 Lattice::Node *below = lattice->getNode(successor2);
                                 std::vector<Lattice::Node *> states1 = above->below;
@@ -84,7 +91,6 @@ namespace storm {
                                                 seenStates.set(currentState->stateNumber);
                                             }
                                         }
-
                                     }
                                 }
 
@@ -95,43 +101,6 @@ namespace storm {
                                     // Add stateNumber to the set with seen states.
                                     seenStates.set(currentState->stateNumber);
                                 }
-                            } else if (compareResult == 2) {
-                                //TODO dit in een aparte methode doen
-                                // als er in de below van successor 2 en de above van succesor 1 een overlap is met een state, dan moet je kijken naar de kans
-                                Lattice::Node *above = lattice->getNode(successor2);
-                                Lattice::Node *below = lattice->getNode(successor1);
-                                std::vector<Lattice::Node *> states1 = above->below;
-                                std::vector<Lattice::Node *> states2 = below->above;
-                                bool added = false;
-                                for (auto itr1 = states1.begin(); itr1 < states1.end(); ++itr1) {
-                                    for (auto itr2 = states2.begin(); itr2 < states2.end(); ++itr2) {
-                                        if ((*itr1)->states == (*itr2)->states) {
-                                            storm::RationalFunction prob1 = getProbability(currentState->stateNumber, successor2, matrix);
-                                            storm::RationalFunction prob2 = getProbability(currentState->stateNumber, successor1, matrix);
-                                            if (prob1 != storm::RationalFunction(1)
-                                                && prob2 != storm::RationalFunction(1)
-                                                && getProbability((*itr1)->states, above->states, matrix) == prob1
-                                                && getProbability((*itr1)->states, below->states, matrix) == prob2) {
-
-                                                lattice->addToNode(currentState->stateNumber, (*itr1));
-                                                seenStates.set(currentState->stateNumber);
-                                                added = true;
-                                            }
-                                        }
-                                    }
-                                }
-
-                                if (!added) {
-                                    // successor 2 is closer to top than successor 1
-                                    lattice->addBetween(currentState->stateNumber, lattice->getNode(successor2),
-                                                        lattice->getNode(successor1));
-                                    // Add stateNumber to the set with seen states.
-                                    seenStates.set(currentState->stateNumber);
-                                }
-
-
-
-
                             } else if (compareResult == 0) {
                                 // the successors are at the same level
                                 lattice->addToNode(currentState->stateNumber, lattice->getNode(successor1));
@@ -141,13 +110,10 @@ namespace storm {
                                 // TODO: what to do?
                                 STORM_LOG_DEBUG("Failed to add" << currentState->stateNumber << "\n");
                             }
-
                         }
                     }
                 }
-
             }
-
             return lattice;
         }
 
