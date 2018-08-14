@@ -4,7 +4,6 @@
 #include "storm-pars/settings/modules/ParametricSettings.h"
 #include "storm-pars/settings/modules/RegionSettings.h"
 #include "storm-pars/analysis/Lattice.h"
-#include "storm-pars/analysis/Transformer.h"
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/api/storm.h"
@@ -46,6 +45,12 @@ namespace storm {
             std::vector<std::map<typename utility::parametric::VariableType<ValueType>::type, std::vector<typename utility::parametric::CoefficientType<ValueType>::type>>> cartesianProducts;
             bool graphPreserving;
             bool exact;
+        };
+
+        struct State {
+            uint_fast64_t stateNumber;
+            uint_fast64_t successor1;
+            uint_fast64_t successor2;
         };
         
         template <typename ValueType>
@@ -429,13 +434,168 @@ namespace storm {
                 storm::pars::verifyRegionsWithSparseEngine(model, input, regions);
             }
         }
-        
+
         template <storm::dd::DdType DdType, typename ValueType>
         void verifyParametricModel(std::shared_ptr<storm::models::ModelBase> const& model, SymbolicInput const& input, std::vector<storm::storage::ParameterRegion<ValueType>> const& regions, SampleInformation<ValueType> const& samples) {
             STORM_LOG_ASSERT(model->isSparseModel(), "Unexpected model type.");
             storm::pars::verifyWithSparseEngine<ValueType>(model->as<storm::models::sparse::Model<ValueType>>(), input, regions, samples);
         }
-        
+
+
+        template <typename ValueType>
+        ValueType getProbability(uint_fast64_t state, uint_fast64_t successor, storm::storage::SparseMatrix<ValueType>  matrix) {
+            ValueType result = ValueType(1);
+            // Iterate over all row groups.
+            auto row = matrix.getRow(state);
+
+            for (auto itr = row.begin(); itr < row.end() && result == ValueType(1); ++itr) {
+                if ((*itr).getColumn() == successor) {
+                    result = (*itr).getValue();
+                }
+
+            }
+
+            return result;
+        }
+
+        template <typename ValueType>
+        ValueType getProbability(storm::storage::BitVector state, uint_fast64_t successor, storm::storage::SparseMatrix<ValueType>  matrix) {
+            ValueType result = ValueType(1);
+            uint_fast64_t index = state.getNextSetIndex(0);
+            while (index < state.size() && result == ValueType(1)) {
+                result = getProbability(index, successor, matrix);
+                index = state.getNextSetIndex(index+1);
+            }
+            return result;
+        }
+
+        template <typename ValueType>
+        ValueType getProbability(storm::storage::BitVector state, storm::storage::BitVector successor, storm::storage::SparseMatrix<ValueType>  matrix) {
+            ValueType result = ValueType(1);
+            uint_fast64_t index = successor.getNextSetIndex(0);
+            while (index < successor.size() && result == ValueType(1)) {
+                result = getProbability(state, index, matrix);
+                index = successor.getNextSetIndex(index+1);
+            }
+            return result;
+        }
+
+        template <typename ValueType>
+        storm::analysis::Lattice* toLattice(std::shared_ptr<storm::models::sparse::Model<ValueType>> model,
+                                                   storm::storage::BitVector topStates,
+                                                   storm::storage::BitVector bottomStates) {
+            storm::storage::SparseMatrix<ValueType> matrix = model.get()->getTransitionMatrix();
+            storm::storage::BitVector initialStates = model.get()->getInitialStates();
+            uint_fast64_t numberOfStates = model.get()->getNumberOfStates();
+
+            // Transform the transition matrix into a vector containing the states with the state to which the transition goes.
+            std::vector <State*> stateVector = std::vector<State *>({});
+            for (uint_fast64_t i = 0; i < numberOfStates; ++i) {
+                State* state = new State();
+                state->stateNumber = i;
+                state->successor1 = numberOfStates;
+                state->successor2 = numberOfStates;
+
+                auto row = matrix.getRow(i);
+                for (auto itr = row.begin(); itr < row.end() && state->successor2 == numberOfStates; ++itr) {
+                    if ((*itr).getValue() != ValueType(1)) {
+                        if (state->successor1 == numberOfStates) {
+                            state->successor1 = (*itr).getColumn();
+                        } else {
+                            state->successor2 = (*itr).getColumn();
+                        }
+                    } else {
+                        state-> successor1 = (*itr).getColumn();
+                        state-> successor2 = (*itr).getColumn();
+                    }
+                }
+                stateVector.push_back(state);
+            }
+
+            // Start creating the Lattice
+            storm::analysis::Lattice *lattice = new storm::analysis::Lattice(topStates, bottomStates, numberOfStates);
+            storm::storage::BitVector oldStates(numberOfStates);
+            // Create a copy of the states already present in the lattice.
+            storm::storage::BitVector seenStates = topStates|=bottomStates;
+
+            while (oldStates != seenStates) {
+                // As long as new states are added to the lattice, continue.
+                oldStates = storm::storage::BitVector(seenStates);
+
+                for (auto itr = stateVector.begin(); itr != stateVector.end(); ++itr) {
+                    // Iterate over all states
+                    State *currentState = *itr;
+
+                    if (!seenStates[currentState->stateNumber]
+                        && seenStates[currentState->successor1]
+                        && seenStates[currentState->successor2]) {
+
+                        // Check if the current state number has not been added, but its successors have been added.
+                        if (currentState->successor1 == currentState->successor2) {
+                            // If there is only one successor, the state should be added to the same Node as its successor
+                            lattice->addToNode(currentState->stateNumber, lattice->getNode(currentState->successor1));
+                            // Add stateNumber to the set with seen states.
+                            seenStates.set(currentState->stateNumber);
+                        } else {
+                            // Otherwise, check how the two states compare, and add if the comparison is possible.
+                            uint_fast64_t successor1 = currentState->successor1;
+                            uint_fast64_t successor2 = currentState->successor2;
+                            int compareResult = lattice->compare(successor1, successor2);
+                            if (compareResult == 1 || compareResult == 2) {
+
+                                if (compareResult == 2) {
+                                    // swap
+                                    auto temp = successor1;
+                                    successor1 = successor2;
+                                    successor2 = temp;
+                                }
+                                // Additional check, if states have the same probability of reaching a given next state,
+                                // then they should be at the same node
+                                // TODO: can this be removed, e.g. adding a step to preprocessing, making this superfluous
+                                storm::analysis::Lattice::Node *above = lattice->getNode(successor1);
+                                storm::analysis::Lattice::Node *below = lattice->getNode(successor2);
+                                std::vector<storm::analysis::Lattice::Node *> states1 = above->below;
+                                std::vector<storm::analysis::Lattice::Node *> states2 = below->above;
+                                for (auto itr1 = states1.begin(); itr1 < states1.end(); ++itr1) {
+                                    for (auto itr2 = states2.begin(); itr2 < states2.end(); ++itr2) {
+                                        if ((*itr1)->states == (*itr2)->states) {
+                                            ValueType prob1 = getProbability(currentState->stateNumber, successor1, matrix);
+                                            ValueType prob2 = getProbability(currentState->stateNumber, successor2, matrix);
+                                            if (prob1 != ValueType(1)
+                                                && prob2 != ValueType(1)
+                                                && getProbability((*itr1)->states, above->states, matrix) == prob1
+                                                && getProbability((*itr1)->states, below->states, matrix) == prob2) {
+                                                lattice->addToNode(currentState->stateNumber, (*itr1));
+                                                seenStates.set(currentState->stateNumber);
+                                            }
+                                        }
+                                    }
+                                }
+
+                                if (!seenStates.get(currentState->stateNumber)) {
+                                    // successor 1 is closer to top than successor 2
+                                    lattice->addBetween(currentState->stateNumber, lattice->getNode(successor1),
+                                                        lattice->getNode(successor2));
+                                    // Add stateNumber to the set with seen states.
+                                    seenStates.set(currentState->stateNumber);
+                                }
+                            } else if (compareResult == 0) {
+                                // the successors are at the same level
+                                lattice->addToNode(currentState->stateNumber, lattice->getNode(successor1));
+                                // Add stateNumber to the set with seen states.
+                                seenStates.set(currentState->stateNumber);
+                            } else {
+                                // TODO: what to do?
+                                STORM_LOG_DEBUG("Failed to add" << currentState->stateNumber << "\n");
+                            }
+                        }
+                    }
+                }
+            }
+            return lattice;
+        }
+
+
         template <storm::dd::DdType DdType, typename ValueType>
         void processInputWithValueTypeAndDdlib(SymbolicInput& input) {
             auto coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
@@ -458,8 +618,6 @@ namespace storm {
             
             STORM_LOG_THROW(model || input.properties.empty(), storm::exceptions::InvalidSettingsException, "No input model.");
 
-            // TODO: Shift this to after preprocessing?
-
             if (model) {
                 auto preprocessingResult = storm::pars::preprocessModel<DdType, ValueType>(model, input);
                 if (preprocessingResult.second) {
@@ -472,24 +630,24 @@ namespace storm {
             if (parSettings.isMonotonicityAnalysisSet()) {
                 // Do something more fancy.
                 std::cout << "Hello, Jip" << std::endl;
+
                 std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel = model->as<storm::models::sparse::Model<ValueType>>();
-
-                storm::storage::SparseMatrix<ValueType> matrix = sparseModel.get()->getTransitionMatrix();
-
-                storm::storage::BitVector initialStates = sparseModel.get()->getInitialStates();
-
                 std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(input.properties);
 
                 STORM_LOG_THROW((*(formulas[0])).isProbabilityOperatorFormula() && (*(formulas[0])).asProbabilityOperatorFormula().getSubformula().isUntilFormula(), storm::exceptions::NotSupportedException, "Expecting until formula");
                 storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Model<ValueType>> propositionalChecker(*sparseModel);
                 storm::storage::BitVector phiStates = propositionalChecker.check((*(formulas[0])).asProbabilityOperatorFormula().getSubformula().asUntilFormula().getLeftSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
                 storm::storage::BitVector psiStates = propositionalChecker.check((*(formulas[0])).asProbabilityOperatorFormula().getSubformula().asUntilFormula().getRightSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector(); //right
-                // get the maybeStates
-                std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(sparseModel.get()->getBackwardTransitions(), phiStates, psiStates);
 
+                // Get the maybeStates
+                std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(sparseModel.get()->getBackwardTransitions(), phiStates, psiStates);
                 storm::storage::BitVector topStates = statesWithProbability01.second;
                 storm::storage::BitVector bottomStates = statesWithProbability01.first;
-                storm::analysis::Lattice* lattice = storm::analysis::Transformer::toLattice(matrix, initialStates, topStates, bottomStates, sparseModel.get()->getNumberOfStates());
+
+                // Transform to LatticeLattice
+                storm::analysis::Lattice* lattice = toLattice(sparseModel, topStates, bottomStates);
+                lattice->toString(std::cout);
+                std::cout << "Bye, Jip" << std::endl;
 
                 // TODO: Analyse lattice with transition matrix
                 // Where do the parameters occur?
@@ -528,6 +686,8 @@ namespace storm {
                 verifyParametricModel<DdType, ValueType>(model, input, regions, samples);
             }
         }
+
+
         
         void processOptions() {
             // Start by setting some urgent options (log levels, resources, etc.)
