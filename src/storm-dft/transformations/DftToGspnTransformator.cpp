@@ -63,9 +63,14 @@ namespace storm {
                                 maxNrDependentEvents = nrDependentEvents;
                             }
                         }
-                        // Get the maximum number of children
-                        if (maxNrOfChildren < mDft.getElement(i)->nrChildren()) {
-                            maxNrOfChildren = mDft.getElement(i)->nrChildren();
+                        // Get the maximum number of children/ SPAREs need additional transitions
+
+                        u_int64_t nrChildren = mDft.getElement(i)->nrChildren();
+                        if (mDft.getElement(i)->type() == storm::storage::DFTElementType::SPARE) {
+                            nrChildren *= 4;
+                        }
+                        if (maxNrOfChildren < nrChildren) {
+                            maxNrOfChildren = nrChildren;
                         }
                         // Organize the elements according to their rank
                         if (!elementList.empty()) {
@@ -863,6 +868,8 @@ namespace storm {
                 double xcenter = mDft.getElementLayoutInfo(dftSpare->id()).x;
                 double ycenter = mDft.getElementLayoutInfo(dftSpare->id()).y;
 
+                u_int64_t prio = getFailPriority(dftSpare);
+
                 uint64_t failedPlace = addFailedPlace(dftSpare, storm::gspn::LayoutInfo(xcenter + 10.0, ycenter - 8.0));
 
                 bool isRepresentative = mDft.isRepresentative(dftSpare->id());
@@ -895,9 +902,10 @@ namespace storm {
                     }
 
                     // Cannot claim child
-                    uint64_t tConsiderNext = builder.addImmediateTransition(getFailPriority(dftSpare), 0.0,
+                    uint64_t tConsiderNext = builder.addImmediateTransition(prio, 0.0,
                                                                             dftSpare->name() + "_cannot_claim_" +
                                                                             child->name());
+                    prio++;
                     builder.setTransitionLayoutInfo(tConsiderNext,
                                                     storm::gspn::LayoutInfo(xcenter - 7.0 + i * 14.0, ycenter - 8.0));
                     builder.addInputArc(considerPlace, tConsiderNext);
@@ -910,8 +918,9 @@ namespace storm {
                                                            dftSpare->name() + "_claimed_" + child->name());
                     builder.setPlaceLayoutInfo(claimedPlace,
                                                storm::gspn::LayoutInfo(xcenter - 15.0 + i * 14.0, ycenter + 5.0));
-                    uint64_t tClaim = builder.addImmediateTransition(getFailPriority(dftSpare), 0.0,
+                    uint64_t tClaim = builder.addImmediateTransition(prio, 0.0,
                                                                      dftSpare->name() + "_claim_" + child->name());
+                    prio++;
                     builder.setTransitionLayoutInfo(tClaim,
                                                     storm::gspn::LayoutInfo(xcenter - 15.0 + i * 14.0, ycenter));
                     builder.addInhibitionArc(unavailablePlaces.at(child->id()), tClaim);
@@ -920,9 +929,10 @@ namespace storm {
                     builder.addOutputArc(tClaim, unavailablePlaces.at(child->id()));
 
                     // Claim next
-                    uint64_t tClaimNext = builder.addImmediateTransition(getFailPriority(dftSpare), 0.0,
+                    uint64_t tClaimNext = builder.addImmediateTransition(prio, 0.0,
                                                                          dftSpare->name() + "_next_claim_" +
                                                                          std::to_string(i));
+                    prio++;
                     builder.setTransitionLayoutInfo(tClaimNext,
                                                     storm::gspn::LayoutInfo(xcenter - 7.0 + i * 14.0, ycenter + 5.0));
                     builder.addInputArc(claimedPlace, tClaimNext);
@@ -933,10 +943,11 @@ namespace storm {
                     // Activate all elements in spare module
                     uint64_t l = 0;
                     for (uint64_t k : mDft.module(child->id())) {
-                        uint64_t tActivate = builder.addImmediateTransition(getFailPriority(dftSpare), 0.0,
+                        uint64_t tActivate = builder.addImmediateTransition(prio, 0.0,
                                                                             dftSpare->name() + "_activate_" +
                                                                             std::to_string(i) + "_" +
                                                                             std::to_string(k));
+                        prio++;
                         builder.setTransitionLayoutInfo(tActivate, storm::gspn::LayoutInfo(xcenter - 18.0 + (i + l) * 3,
                                                                                            ycenter - 12.0));
                         builder.addInhibitionArc(activePlaces.at(k), tActivate);
