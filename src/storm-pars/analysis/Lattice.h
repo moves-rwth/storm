@@ -63,7 +63,7 @@ namespace storm {
                      *
                      * @param state The number of the state.
                      *
-                     * @return The pointer to the node of the state.
+                     * @return The pointer to the node of the state, nullptr if the node does not exist
                      */
                     Node *getNode(uint_fast64_t state);
 
@@ -82,8 +82,6 @@ namespace storm {
                     uint_fast64_t numberOfStates;
 
                     bool above(Node *, Node *);
-
-                    bool below(Node *, Node *);
 
                     void remove(std::vector<Node *> *nodes, Node *node);
 

@@ -511,12 +511,11 @@ namespace storm {
                 }
                 stateVector.push_back(state);
             }
-
             // Start creating the Lattice
             storm::analysis::Lattice *lattice = new storm::analysis::Lattice(topStates, bottomStates, numberOfStates);
             storm::storage::BitVector oldStates(numberOfStates);
             // Create a copy of the states already present in the lattice.
-            storm::storage::BitVector seenStates = topStates|=bottomStates;
+            storm::storage::BitVector seenStates = topStates|= bottomStates;
 
             while (oldStates != seenStates) {
                 // As long as new states are added to the lattice, continue.
@@ -530,65 +529,60 @@ namespace storm {
                         && seenStates[currentState->successor1]
                         && seenStates[currentState->successor2]) {
 
-                        // Check if the current state number has not been added, but its successors have been added.
-                        if (currentState->successor1 == currentState->successor2) {
-                            // If there is only one successor, the state should be added to the same Node as its successor
-                            lattice->addToNode(currentState->stateNumber, lattice->getNode(currentState->successor1));
-                            // Add stateNumber to the set with seen states.
-                            seenStates.set(currentState->stateNumber);
-                        } else {
-                            // Otherwise, check how the two states compare, and add if the comparison is possible.
-                            uint_fast64_t successor1 = currentState->successor1;
-                            uint_fast64_t successor2 = currentState->successor2;
-                            int compareResult = lattice->compare(successor1, successor2);
-                            if (compareResult == 1 || compareResult == 2) {
 
-                                if (compareResult == 2) {
-                                    // swap
-                                    auto temp = successor1;
-                                    successor1 = successor2;
-                                    successor2 = temp;
-                                }
-                                // Additional check, if states have the same probability of reaching a given next state,
-                                // then they should be at the same node
-                                // TODO: can this be removed, e.g. adding a step to preprocessing, making this superfluous
-                                storm::analysis::Lattice::Node *above = lattice->getNode(successor1);
-                                storm::analysis::Lattice::Node *below = lattice->getNode(successor2);
-                                std::vector<storm::analysis::Lattice::Node *> states1 = above->below;
-                                std::vector<storm::analysis::Lattice::Node *> states2 = below->above;
-                                for (auto itr1 = states1.begin(); itr1 < states1.end(); ++itr1) {
-                                    for (auto itr2 = states2.begin(); itr2 < states2.end(); ++itr2) {
-                                        if ((*itr1)->states == (*itr2)->states) {
-                                            ValueType prob1 = getProbability(currentState->stateNumber, successor1, matrix);
-                                            ValueType prob2 = getProbability(currentState->stateNumber, successor2, matrix);
-                                            if (prob1 != ValueType(1)
-                                                && prob2 != ValueType(1)
-                                                && getProbability((*itr1)->states, above->states, matrix) == prob1
-                                                && getProbability((*itr1)->states, below->states, matrix) == prob2) {
-                                                lattice->addToNode(currentState->stateNumber, (*itr1));
-                                                seenStates.set(currentState->stateNumber);
-                                            }
+                        // Otherwise, check how the two states compare, and add if the comparison is possible.
+                        uint_fast64_t successor1 = currentState->successor1;
+                        uint_fast64_t successor2 = currentState->successor2;
+                        int compareResult = lattice->compare(successor1, successor2);
+                        if (compareResult == 1 || compareResult == 2) {
+                            // getNode will not return nullptr, as compare already checked this
+                            if (compareResult == 2) {
+                                // swap
+                                auto temp = successor1;
+                                successor1 = successor2;
+                                successor2 = temp;
+                            }
+                            // Additional check, if states have the same probability of reaching a given next state,
+                            // then they should be at the same node
+                            // TODO: can this be removed, e.g. adding a step to preprocessing, making this superfluous
+                            // TODO: 1 prob. and same probs to same states should be removed from matrix
+                            storm::analysis::Lattice::Node *above = lattice->getNode(successor1);
+                            storm::analysis::Lattice::Node *below = lattice->getNode(successor2);
+                            std::vector<storm::analysis::Lattice::Node *> states1 = above->below;
+                            std::vector<storm::analysis::Lattice::Node *> states2 = below->above;
+                            for (auto itr1 = states1.begin(); itr1 < states1.end(); ++itr1) {
+                                for (auto itr2 = states2.begin(); itr2 < states2.end(); ++itr2) {
+                                    if ((*itr1)->states == (*itr2)->states) {
+                                        ValueType prob1 = getProbability(currentState->stateNumber, successor1, matrix);
+                                        ValueType prob2 = getProbability(currentState->stateNumber, successor2, matrix);
+                                        if (prob1 != ValueType(1)
+                                            && prob2 != ValueType(1)
+                                            && getProbability((*itr1)->states, above->states, matrix) == prob1
+                                            && getProbability((*itr1)->states, below->states, matrix) == prob2) {
+                                            lattice->addToNode(currentState->stateNumber, (*itr1));
+                                            seenStates.set(currentState->stateNumber);
                                         }
                                     }
                                 }
+                            }
 
-                                if (!seenStates.get(currentState->stateNumber)) {
-                                    // successor 1 is closer to top than successor 2
-                                    lattice->addBetween(currentState->stateNumber, lattice->getNode(successor1),
-                                                        lattice->getNode(successor2));
-                                    // Add stateNumber to the set with seen states.
-                                    seenStates.set(currentState->stateNumber);
-                                }
-                            } else if (compareResult == 0) {
-                                // the successors are at the same level
-                                lattice->addToNode(currentState->stateNumber, lattice->getNode(successor1));
+                            if (!seenStates.get(currentState->stateNumber)) {
+                                // successor 1 is closer to top than successor 2
+                                lattice->addBetween(currentState->stateNumber, lattice->getNode(successor1),
+                                                    lattice->getNode(successor2));
                                 // Add stateNumber to the set with seen states.
                                 seenStates.set(currentState->stateNumber);
-                            } else {
-                                // TODO: what to do?
-                                STORM_LOG_DEBUG("Failed to add" << currentState->stateNumber << "\n");
                             }
+                        } else if (compareResult == 0) {
+                            // the successors are at the same level
+                            lattice->addToNode(currentState->stateNumber, lattice->getNode(successor1));
+                            // Add stateNumber to the set with seen states.
+                            seenStates.set(currentState->stateNumber);
+                        } else {
+                            // TODO: what to do?
+                            STORM_LOG_DEBUG("Failed to add" << currentState->stateNumber << "\n");
                         }
+
                     }
                 }
             }

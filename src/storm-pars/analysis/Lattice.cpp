@@ -39,23 +39,24 @@ namespace storm {
             Node *node1 = getNode(state1);
             Node *node2 = getNode(state2);
 
-            if (node1 == node2) {
-                return 0;
-            }
+            if (node1 != nullptr && node2 != nullptr) {
+                if (node1 == node2) {
+                    return 0;
+                }
 
-            if (above(node1, node2)) {
-                return 1;
-            }
+                if (above(node1, node2)) {
+                    return 1;
+                }
 
-            if (below(node1, node2)) {
-                return 2;
+                if (above(node2, node1)) {
+                    return 2;
+                }
             }
 
             return -1;
         }
 
         Lattice::Node *Lattice::getNode(uint_fast64_t stateNumber) {
-            // TODO: might return nullptr, what to do with it?
             Node *node;
             for (auto itr = nodes.begin(); itr != nodes.end(); ++itr) {
                 storm::storage::BitVector states = (*itr)->states;
@@ -122,33 +123,10 @@ namespace storm {
         }
 
         bool Lattice::above(Node *node1, Node *node2) {
-            if (node1->below.empty()) {
-                return false;
-            }
+            bool result = !node1->below.empty() && std::find(node1->below.begin(), node1->below.end(), node2) != node1->below.end();
 
-            if (std::find(node1->below.begin(), node1->below.end(), node2) != node1->below.end()) {
-                return true;
-            }
-
-            bool result = false;
-            for (auto itr = node1->below.begin(); node1->below.end() != itr; ++itr) {
+            for (auto itr = node1->below.begin(); !result && node1->below.end() != itr; ++itr) {
                 result |= above(*itr, node2);
-            }
-            return result;
-        }
-
-        bool Lattice::below(Node *node1, Node *node2) {
-            if (node1->above.empty()) {
-                return false;
-            }
-
-            if (std::find(node1->above.begin(), node1->above.end(), node2) != node1->above.end()) {
-                return true;
-            }
-
-            bool result = false;
-            for (auto itr = node1->above.begin(); node1->above.end() != itr; ++itr) {
-                result |= below(*itr, node2);
             }
             return result;
         }
