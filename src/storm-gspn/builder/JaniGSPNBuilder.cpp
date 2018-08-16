@@ -253,7 +253,7 @@ namespace storm {
                     storm::logic::OperatorInformation(storm::solver::OptimizationDirection::Maximize));
             standardProperties.emplace_back("MaxPrReachDeadlock", maxReachDeadlock, "The maximal probability to eventually reach a deadlock.");
             
-            auto exprTB = expressionManager->declareIntegerVariable(getUniqueVarName(*expressionManager, "TIME_BOUND"));
+            auto exprTB = expressionManager->declareRationalVariable(getUniqueVarName(*expressionManager, "TIME_BOUND"));
             auto janiTB = storm::jani::Constant(exprTB.getName(), exprTB);
             model->addConstant(janiTB);
             storm::logic::TimeBound tb(false, janiTB.getExpressionVariable().getExpression());
