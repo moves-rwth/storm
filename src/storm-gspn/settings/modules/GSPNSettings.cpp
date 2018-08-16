@@ -24,7 +24,7 @@ namespace storm {
             GSPNSettings::GSPNSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, gspnFileOptionName, false, "Parses the GSPN.").setShortName(gspnFileOptionShortName).addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "path to file").addValidatorString(ArgumentValidatorFactory::createExistingFileValidator()).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, capacitiesFileOptionName, false, "Capacaties as invariants for places.").setShortName(capacitiesFileOptionShortName).addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "path to file").addValidatorString(ArgumentValidatorFactory::createExistingFileValidator()).build()).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, capacityOptionName, false, "Global capacity as invariants for all places.").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("value", "capacity").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, capacityOptionName, false, "Global capacity as invariants for all places.").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("value", "capacity").addValidatorUnsignedInteger(ArgumentValidatorFactory::createUnsignedGreaterValidator(0)).build()).build());
             }
             
             bool GSPNSettings::isGspnFileSet() const {
