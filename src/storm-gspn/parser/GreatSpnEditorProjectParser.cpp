@@ -9,6 +9,7 @@
 
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/exceptions/WrongFormatException.h"
+#include "storm/exceptions/NotSupportedException.h"
 #include "storm/utility/macros.h"
 
 namespace {
@@ -22,7 +23,10 @@ namespace {
 namespace storm {
     namespace parser {
 
-
+        GreatSpnEditorProjectParser::GreatSpnEditorProjectParser() : manager(std::make_shared<storm::expressions::ExpressionManager>()), expressionParser(*manager) {
+            // Intentionally left empty
+        }
+        
         storm::gspn::GSPN* GreatSpnEditorProjectParser::parse(xercesc::DOMElement const*  elementRoot) {
             if (storm::adapters::XMLtoString(elementRoot->getTagName()) == "project") {
                 traverseProjectElement(elementRoot);
@@ -31,8 +35,6 @@ namespace storm {
                 // If the top-level node is not a "pnml" or "" node, then throw an exception.
                 STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Failed to identify the root element.\n");
             }
-            
-            
         }
         
         void GreatSpnEditorProjectParser::traverseProjectElement(xercesc::DOMNode const* const node) {
@@ -118,6 +120,19 @@ namespace storm {
             }
 
             // traverse children
+            // First pass: find constant definitions
+            std::unordered_map<std::string, storm::expressions::Expression> identifierMapping;
+            expressionParser.setIdentifierMapping(identifierMapping);
+            for (uint_fast64_t i = 0; i < node->getChildNodes()->getLength(); ++i) {
+                auto child = node->getChildNodes()->item(i);
+                auto name = storm::adapters::getName(child);
+                if (name.compare("constant") == 0) {
+                    traverseConstantElement(child, identifierMapping);
+                }
+            }
+            expressionParser.setIdentifierMapping(identifierMapping);
+            
+            // Second pass: traverse other children
             for (uint_fast64_t i = 0; i < node->getChildNodes()->getLength(); ++i) {
                 auto child = node->getChildNodes()->item(i);
                 auto name = storm::adapters::getName(child);
@@ -126,7 +141,62 @@ namespace storm {
                     traversePlaceElement(child);
                 } else if(name.compare("transition") == 0) {
                     traverseTransitionElement(child);
+                } else if(name.compare("constant") == 0) {
+                    // Ignore constant def in second pass
                 } else if (isOnlyWhitespace(name)) {
+                    // ignore node (contains only whitespace)
+                } else {
+                    // Found node or attribute which is at the moment nod handled by this parser.
+                    // Notify the user and continue the parsing.
+                    STORM_PRINT_AND_LOG("unknown child (node=" + storm::adapters::XMLtoString(node->getNodeName()) + "): " + name + "\n");
+                }
+            }
+        }
+
+        void GreatSpnEditorProjectParser::traverseConstantElement(xercesc::DOMNode const* const node, std::unordered_map<std::string, storm::expressions::Expression>& identifierMapping) {
+            std::string identifier;
+            storm::expressions::Type type;
+            std::string valueStr = "";
+
+            // traverse attributes
+            for (uint_fast64_t i = 0; i < node->getAttributes()->getLength(); ++i) {
+                auto attr = node->getAttributes()->item(i);
+                auto name = storm::adapters::getName(attr);
+
+                if (name.compare("name") == 0) {
+                    identifier = storm::adapters::XMLtoString(attr->getNodeValue());
+                } else if (name.compare("consttype") == 0) {
+                    if (storm::adapters::XMLtoString(attr->getNodeValue()).compare("REAL") == 0) {
+                        type = manager->getRationalType();
+                    } else {
+                        STORM_PRINT_AND_LOG("Unknown consttype: " << storm::adapters::XMLtoString(attr->getNodeValue()) << std::endl);
+                    }
+                } else if (name.compare("value") == 0) {
+                    valueStr = storm::adapters::XMLtoString(attr->getNodeValue());
+                } else if ((name == "x") || (name == "y")) {
+                    // Ignore
+                } else {
+                    // Found node or attribute which is at the moment not handled by this parser.
+                    // Notify the user and continue the parsing.
+                    STORM_PRINT_AND_LOG("unknown attribute (node=" + storm::adapters::XMLtoString(node->getNodeName()) + "): " + name + "\n");
+                }
+            }
+            
+            storm::expressions::Expression valueExpression;
+            if (type.isRationalType()) {
+                expressionParser.setAcceptDoubleLiterals(true);
+                valueExpression = manager->rational(expressionParser.parseFromString(valueStr).evaluateAsRational());
+            } else {
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Unknown type of constant" << type << ".");
+            }
+            identifierMapping.emplace(identifier, valueExpression);
+
+            // traverse children
+            for (uint_fast64_t i = 0; i < node->getChildNodes()->getLength(); ++i) {
+                auto child = node->getChildNodes()->item(i);
+                auto name = storm::adapters::getName(child);
+
+                if (isOnlyWhitespace(name)) {
                     // ignore node (contains only whitespace)
                 } else {
                     // Found node or attribute which is at the moment nod handled by this parser.
@@ -217,7 +287,7 @@ namespace storm {
 
         bool ignoreTransitionAttribute(std::string const& name) {
             // TODO we should probably not ignore x-servers but check that it is 0.5.
-            if ((name == "label-x") || (name == "label-y") || (name == "x") || (name == "y") || (name == "nservers-x")) {
+            if ((name == "label-x") || (name == "label-y") || (name == "x") || (name == "y") || (name == "nservers-x") || (name == "delay-x") || (name == "delay-y") || (name == "rotation")) {
                 return true;
             }
             return false;
@@ -242,7 +312,8 @@ namespace storm {
                         immediateTransition = true;
                     }
                 } else if(name.compare("delay") == 0) {
-                    rate = std::stod(storm::adapters::XMLtoString(attr->getNodeValue()));
+                    expressionParser.setAcceptDoubleLiterals(true);
+                    rate = expressionParser.parseFromString(storm::adapters::XMLtoString(attr->getNodeValue())).evaluateAsDouble();
                 } else if (ignoreTransitionAttribute(name)) {
                     // ignore node
                 } else {
