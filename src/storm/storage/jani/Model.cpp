@@ -116,6 +116,10 @@ namespace storm {
             return name;
         }
         
+        void Model::setName(std::string const& newName) {
+            name = newName;
+        }
+        
         struct ConditionalMetaEdge {
             ConditionalMetaEdge() : actionIndex(0) {
                 // Intentionally left empty.

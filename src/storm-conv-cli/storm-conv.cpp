@@ -51,20 +51,39 @@ namespace storm {
             options.allVariablesGlobal = jani.isGlobalVarsSet();
             options.suffix = "";
             options.janiOptions = storm::converter::JaniConversionOptions(jani);
-            auto janiModelProperties = storm::api::convertPrismToJani(prismProg, properties, options);
             
             std::string outputFilename = "";
             if (output.isJaniOutputFilenameSet()) {
                 outputFilename = output.getJaniOutputFilename();
             } else if (input.isPrismInputSet() && !output.isStdOutOutputEnabled()) {
+                outputFilename = input.getPrismInputFilename();
+                // Remove extension if present
+                auto dotPos = outputFilename.rfind('.');
+                if (dotPos != std::string::npos) {
+                    outputFilename.erase(dotPos);
+                }
                 std::string suffix = "";
                 if (input.isConstantsSet()) {
                     suffix = input.getConstantDefinitionString();
                     std::replace(suffix.begin(), suffix.end(), ',', '_');
+                    std::replace(suffix.begin(), suffix.end(), '=', '-');
                 }
                 suffix = suffix + ".jani";
-                outputFilename = input.getPrismInputFilename() + suffix;
+                outputFilename += suffix;
             }
+            auto startOfFilename = outputFilename.rfind("/");
+            if (startOfFilename == std::string::npos) {
+                startOfFilename = 0;
+            } else {
+                ++startOfFilename;
+            }
+            auto endOfFilename = outputFilename.rfind(".");
+            if (endOfFilename == std::string::npos) {
+                endOfFilename = outputFilename.size();
+            }
+            options.janiOptions.modelName = outputFilename.substr(startOfFilename, endOfFilename - startOfFilename);
+
+            auto janiModelProperties = storm::api::convertPrismToJani(prismProg, properties, options);
             
             if (outputFilename != "") {
                 storm::api::exportJaniToFile(janiModelProperties.first, janiModelProperties.second, outputFilename);

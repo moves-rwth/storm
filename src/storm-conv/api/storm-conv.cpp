@@ -5,6 +5,9 @@
 #include "storm/storage/jani/JaniLocationExpander.h"
 #include "storm/storage/jani/JSONExporter.h"
 
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/CoreSettings.h"
+
 namespace storm {
     namespace api {
         
@@ -19,11 +22,21 @@ namespace storm {
             }
 
             if (options.exportFlattened) {
-                janiModel = janiModel.flattenComposition();
+                std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory;
+                if (storm::settings::hasModule<storm::settings::modules::CoreSettings>()) {
+                    smtSolverFactory = std::make_shared<storm::utility::solver::SmtSolverFactory>();
+                } else {
+                    smtSolverFactory = std::make_shared<storm::utility::solver::Z3SmtSolverFactory>();
+                }
+                janiModel = janiModel.flattenComposition(smtSolverFactory);
             }
 
             if (options.standardCompliant) {
                 janiModel.makeStandardJaniCompliant();
+            }
+            
+            if (options.modelName) {
+                janiModel.setName(options.modelName.get());
             }
         }
         

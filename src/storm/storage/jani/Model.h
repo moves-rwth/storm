@@ -77,9 +77,14 @@ namespace storm {
             ModelType const& getModelType() const;
             
             /*!
-             * Retrievest the name of the model.
+             * Retrieves the name of the model.
              */
             std::string const& getName() const;
+            
+            /*!
+             * Sets the name of the model.
+             */
+            void setName(std::string const& newName);
             
             /*!
              * Flatten the composition to obtain an equivalent model that contains exactly one automaton that has the
