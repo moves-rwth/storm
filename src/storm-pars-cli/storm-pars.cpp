@@ -641,18 +641,42 @@ namespace storm {
                 // Transform to LatticeLattice
                 storm::analysis::Lattice* lattice = toLattice(sparseModel, topStates, bottomStates);
                 lattice->toString(std::cout);
-                std::cout << "Bye, Jip" << std::endl;
 
-                // TODO: Analyse lattice with transition matrix
-                // Where do the parameters occur?
-                // initially incr.Boolean and decr.Boolean true
-                // At every occurence as long as either incr.Boolean or decr.Boolean true
-                //      --> check if monotonic
-                //          --> yes --> check position in lattice
-                //              --> if incr. set incr.Boolean = incr.Boolean && true, decr.Boolean = false;
-                //              --> if decr. set incr.Boolean = false, decr.Boolean = decr.Boolean && true;
-                //          --> no --> set both booleans to false
-                //              --> set both incr.bool  and decr.bool to false
+                bool monotoneInAll = true;
+
+                storm::storage::SparseMatrix<ValueType> matrix = sparseModel.get()->getTransitionMatrix();
+                for (uint_fast64_t i = 0; i < sparseModel.get()->getNumberOfStates(); ++i) {
+                    // go over all rows
+                    auto row = matrix.getRow(i);
+
+
+                    auto first = (*row.begin());
+                    if (first.getValue() != ValueType(1)) {
+                        auto second = (* (row.begin() + 1));
+
+                        auto val = first.getValue();
+                        auto vars = val.gatherVariables();
+                        for (auto itr = vars.begin(); itr != vars.end(); ++itr) {
+                            auto derivative = val.derivative(*itr);
+                            STORM_LOG_THROW(derivative.isConstant(), storm::exceptions::NotSupportedException, "Expecting probability to have at most degree 1");
+                            auto compare = lattice->compare(first.getColumn(), second.getColumn());
+                            if (compare == 1) {
+                                monotoneInAll &=derivative.constantPart() >= 0;
+                            } else if (compare == 2) {
+                                monotoneInAll &=derivative.constantPart() <= 0;
+                            } else {
+                                monotoneInAll = false;
+                            }
+                        }
+                    }
+
+
+                }
+                if (monotoneInAll) {
+                    std::cout << "Monotone increasing in all parameters" << std::endl;
+                }
+                // TODO: split into monotonicity in different parameters
+                std::cout << "Bye, Jip" << std::endl;
                 return;
             }
 
