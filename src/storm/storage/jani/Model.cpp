@@ -446,6 +446,10 @@ namespace storm {
                 variableRemapping.emplace(&variable, flattenedModel.addVariable(*renamedVariable));
             }
             
+            for (auto const& constant : getConstants()) {
+                flattenedModel.addConstant(constant);
+            }
+            
             std::vector<std::reference_wrapper<Automaton const>> composedAutomata;
             for (auto const& element : parallelComposition.getSubcompositions()) {
                 STORM_LOG_THROW(element->isAutomatonComposition(), storm::exceptions::WrongFormatException, "Cannot flatten recursive (not standard-compliant) composition.");
