@@ -86,14 +86,16 @@ int main(const int argc, const char **argv) {
         if (!optionsCorrect) {
             return -1;
         }
+        
+        auto gspnSettings = storm::settings::getModule<storm::settings::modules::GSPNSettings>();
 
         // parse gspn from file
-        if (!storm::settings::getModule<storm::settings::modules::GSPNSettings>().isGspnFileSet()) {
+        if (!gspnSettings.isGspnFileSet()) {
             return -1;
         }
         
         auto parser = storm::parser::GspnParser();
-        auto gspn = parser.parse(storm::settings::getModule<storm::settings::modules::GSPNSettings>().getGspnFilename());
+        auto gspn = parser.parse(gspnSettings.getGspnFilename());
 
         std::string formulaString = "";
         if (storm::settings::getModule<storm::settings::modules::IOSettings>().isPropertySet()) {
@@ -107,11 +109,11 @@ int main(const int argc, const char **argv) {
             STORM_LOG_ERROR("The gspn is not valid.");
         }
         
-        if(storm::settings::getModule<storm::settings::modules::GSPNSettings>().isCapacitiesFileSet()) {
-            auto capacities = parseCapacitiesList(storm::settings::getModule<storm::settings::modules::GSPNSettings>().getCapacitiesFilename());
+        if(gspnSettings.isCapacitiesFileSet()) {
+            auto capacities = parseCapacitiesList(gspnSettings.getCapacitiesFilename());
             gspn->setCapacities(capacities);
-        } else if (storm::settings::getModule<storm::settings::modules::GSPNSettings>().isCapacitySet()) {
-            uint64_t capacity = storm::settings::getModule<storm::settings::modules::GSPNSettings>().getCapacity();
+        } else if (gspnSettings.isCapacitySet()) {
+            uint64_t capacity = gspnSettings.getCapacity();
             std::unordered_map<std::string, uint64_t> capacities;
             for (auto const& place : gspn->getPlaces()) {
                 capacities.emplace(place.getName(), capacity);

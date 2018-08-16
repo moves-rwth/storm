@@ -1,9 +1,12 @@
 #include "JaniGSPNBuilder.h"
 
+#include <memory>
+
+#include "storm/logic/Formulas.h"
 namespace storm {
     namespace builder {
 
-        storm::jani::Model* JaniGSPNBuilder::build(std::string const& automatonName) {
+        storm::jani::Model* JaniGSPNBuilder::build(std::string const& automatonName, bool buildStandardProperties) {
             storm::jani::Model* model = new storm::jani::Model(gspn.getName(), storm::jani::ModelType::MA, janiVersion, expressionManager);
             storm::jani::Automaton mainAutomaton(automatonName, expressionManager->declareIntegerVariable("loc"));
             addVariables(model);
@@ -11,7 +14,14 @@ namespace storm {
             addEdges(mainAutomaton, locId);
             model->addAutomaton(mainAutomaton);
             model->setStandardSystemComposition();
+            if (buildStandardProperties) {
+                buildProperties(model);
+            }
             return model;
+        }
+        
+        std::vector<storm::jani::Property> const& JaniGSPNBuilder::getStandardProperties() const {
+            return standardProperties;
         }
 
         void JaniGSPNBuilder::addVariables(storm::jani::Model* model) {
@@ -150,5 +160,116 @@ namespace storm {
 
             }
         }
+        
+        storm::jani::Variable const& JaniGSPNBuilder::addDeadlockTransientVariable(storm::jani::Model* model, std::string name, bool ignoreCapacities, bool ignoreInhibitorArcs, bool ignoreEmptyPlaces) {
+            
+            storm::expressions::Expression transientValue = expressionManager->boolean(true);
+            
+            // build the conjunction over all transitions
+            std::vector<storm::gspn::Transition const*> transitions;
+            transitions.reserve(gspn.getNumberOfImmediateTransitions() + gspn.getNumberOfTimedTransitions());
+            for (auto const& t : gspn.getImmediateTransitions()) {
+                transitions.push_back(&t);
+            }
+            for (auto const& t : gspn.getTimedTransitions()) {
+                transitions.push_back(&t);
+            }
+            bool firstTransition = true;
+            for (auto const& transition : transitions) {
+                
+                // build the disjunction over all in/out places and inhibitor arcs
+                storm::expressions::Expression transitionDisabled = expressionManager->boolean(false);
+                bool firstPlace = true;
+                if (!ignoreEmptyPlaces) {
+                    for (auto const& placeIdMult : transition->getInputPlaces()) {
+                        storm::expressions::Expression placeBlocksTransition = (vars.at(placeIdMult.first)->getExpressionVariable() < expressionManager->integer(placeIdMult.second));
+                        if (firstPlace) {
+                            transitionDisabled = placeBlocksTransition;
+                            firstPlace = false;
+                        } else {
+                            transitionDisabled = transitionDisabled || placeBlocksTransition;
+                        }
+                    }
+                }
+                if (!ignoreInhibitorArcs) {
+                    for (auto const& placeIdMult : transition->getInhibitionPlaces()) {
+                        storm::expressions::Expression placeBlocksTransition = (vars.at(placeIdMult.first)->getExpressionVariable() >= expressionManager->integer(placeIdMult.second));
+                        if (firstPlace) {
+                            transitionDisabled = placeBlocksTransition;
+                            firstPlace = false;
+                        } else {
+                            transitionDisabled = transitionDisabled || placeBlocksTransition;
+                        }
+                    }
+                }
+                if (!ignoreCapacities) {
+                    for (auto const& placeIdMult : transition->getOutputPlaces()) {
+                        auto const& place = gspn.getPlace(placeIdMult.first);
+                        if (place->hasRestrictedCapacity()) {
+                            storm::expressions::Expression placeBlocksTransition = (vars.at(placeIdMult.first)->getExpressionVariable() + expressionManager->integer(placeIdMult.second) > expressionManager->integer(place->getCapacity()));
+                            if (firstPlace) {
+                                transitionDisabled = placeBlocksTransition;
+                                firstPlace = false;
+                            } else {
+                                transitionDisabled = transitionDisabled || placeBlocksTransition;
+                            }
+                        }
+                    }
+                }
+                
+                if (firstTransition) {
+                    transientValue = transitionDisabled;
+                    firstTransition = false;
+                } else {
+                    transientValue = transientValue && transitionDisabled;
+                }
+            }
+            
+            auto exprVar = expressionManager->declareBooleanVariable(name);
+            auto const& janiVar = model->addVariable(*storm::jani::makeBooleanVariable(name, exprVar, expressionManager->boolean(false), true));
+            storm::jani::Assignment assignment(janiVar, transientValue);
+            model->getAutomata().front().getLocations().front().addTransientAssignment(assignment);
+            return janiVar;
+        }
+        
+        
+        std::string getUniqueVarName(storm::expressions::ExpressionManager const& manager, std::string name) {
+            std::string res = name;
+            while (manager.hasVariable(res)) {
+                res.append("_");
+            }
+            return res;
+        }
+        
+        void JaniGSPNBuilder::buildProperties(storm::jani::Model* model) {
+            standardProperties.clear();
+            
+            auto const& deadlockVar = addDeadlockTransientVariable(model, getUniqueVarName(*expressionManager, "deadl"));
+            auto deadlock = std::make_shared<storm::logic::AtomicExpressionFormula>(deadlockVar.getExpressionVariable().getExpression());
+            auto trueFormula = std::make_shared<storm::logic::BooleanLiteralFormula>(true);
+            
+            auto maxReachDeadlock = std::make_shared<storm::logic::ProbabilityOperatorFormula>(
+                    std::make_shared<storm::logic::EventuallyFormula>(deadlock, storm::logic::FormulaContext::Probability),
+                    storm::logic::OperatorInformation(storm::solver::OptimizationDirection::Maximize));
+            standardProperties.emplace_back("MaxPrReachDeadlock", maxReachDeadlock, "The maximal probability to eventually reach a deadlock.");
+            
+            auto exprTB = expressionManager->declareIntegerVariable(getUniqueVarName(*expressionManager, "TIME_BOUND"));
+            auto janiTB = storm::jani::Constant(exprTB.getName(), exprTB);
+            model->addConstant(janiTB);
+            storm::logic::TimeBound tb(false, janiTB.getExpressionVariable().getExpression());
+            storm::logic::TimeBoundReference tbr(storm::logic::TimeBoundType::Time);
+            auto maxReachDeadlockTimeBounded = std::make_shared<storm::logic::ProbabilityOperatorFormula>(
+                    std::make_shared<storm::logic::BoundedUntilFormula>(trueFormula, deadlock, boost::none, tb, tbr),
+                    storm::logic::OperatorInformation(storm::solver::OptimizationDirection::Maximize));
+            standardProperties.emplace_back("MaxPrReachDeadlockTB", maxReachDeadlockTimeBounded, "The maximal probability to reach a deadlock within 'TIME_BOUND' steps.");
+            
+            auto expTimeDeadlock = std::make_shared<storm::logic::TimeOperatorFormula>(
+                    std::make_shared<storm::logic::EventuallyFormula>(deadlock, storm::logic::FormulaContext::Time),
+                    storm::logic::OperatorInformation(storm::solver::OptimizationDirection::Maximize));
+            standardProperties.emplace_back("MinExpTimeDeadlock", expTimeDeadlock, "The minimal expected time to reach a deadlock.");
+            
+        }
+
+        
     }
 }
