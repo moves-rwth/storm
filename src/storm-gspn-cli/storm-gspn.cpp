@@ -110,6 +110,13 @@ int main(const int argc, const char **argv) {
         if(storm::settings::getModule<storm::settings::modules::GSPNSettings>().isCapacitiesFileSet()) {
             auto capacities = parseCapacitiesList(storm::settings::getModule<storm::settings::modules::GSPNSettings>().getCapacitiesFilename());
             gspn->setCapacities(capacities);
+        } else if (storm::settings::getModule<storm::settings::modules::GSPNSettings>().isCapacitySet()) {
+            uint64_t capacity = storm::settings::getModule<storm::settings::modules::GSPNSettings>().getCapacity();
+            std::unordered_map<std::string, uint64_t> capacities;
+            for (auto const& place : gspn->getPlaces()) {
+                capacities.emplace(place.getName(), capacity);
+            }
+            gspn->setCapacities(capacities);
         }
 
         storm::api::handleGSPNExportSettings(*gspn, [&](storm::builder::JaniGSPNBuilder const&) { return properties; });

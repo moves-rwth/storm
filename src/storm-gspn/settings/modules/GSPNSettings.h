@@ -34,6 +34,16 @@ namespace storm {
                  */
                 std::string getCapacitiesFilename() const;
                 
+                /**
+                 * Retrievew whether a global capacity was set
+                 */
+                bool isCapacitySet() const;
+                
+                /**
+                 * Retrieves the global capacity
+                 */
+                uint64_t getCapacity() const;
+                
                 
                 bool check() const override;
                 void finalize() override;
@@ -45,6 +55,7 @@ namespace storm {
                 static const std::string gspnFileOptionShortName;
                 static const std::string capacitiesFileOptionName;
                 static const std::string capacitiesFileOptionShortName;
+                static const std::string capacityOptionName;
                 
             };
         }
