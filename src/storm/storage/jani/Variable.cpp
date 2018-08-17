@@ -4,6 +4,7 @@
 #include "storm/storage/jani/BoundedIntegerVariable.h"
 #include "storm/storage/jani/UnboundedIntegerVariable.h"
 #include "storm/storage/jani/RealVariable.h"
+#include "storm/storage/jani/ArrayVariable.h"
 
 namespace storm {
     namespace jani {
@@ -45,6 +46,10 @@ namespace storm {
         }
 
         bool Variable::isRealVariable() const {
+            return false;
+        }
+        
+        bool Variable::isArrayVariable() const {
             return false;
         }
         
@@ -94,6 +99,14 @@ namespace storm {
         
         RealVariable const& Variable::asRealVariable() const {
             return static_cast<RealVariable const&>(*this);
+        }
+        
+        ArrayVariable& Variable::asArrayVariable() {
+            return static_cast<ArrayVariable&>(*this);
+        }
+        
+        ArrayVariable const& Variable::asArrayVariable() const {
+            return static_cast<ArrayVariable const&>(*this);
         }
         
         void Variable::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {

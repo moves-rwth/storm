@@ -924,10 +924,11 @@ namespace storm {
         }
         
         bool Model::hasArrayVariables() const {
-            return true;
+            return getExpressionManager().getNumberOfArrayVariables() != 0;
         }
         
         Model Model::convertArrays() const {
+            std::cout << "TODO";
             return *this;
         }
         
