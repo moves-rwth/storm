@@ -353,6 +353,16 @@ namespace storm {
             std::map<storm::expressions::Variable, storm::expressions::Expression> getConstantsSubstitution() const;
             
             /*!
+             * Returns true if at least one array variable occurs in the model.
+             */
+            bool hasArrayVariables() const;
+            
+            /*!
+             * Converts occurring (fixed size) arrays into multiple variables.
+             */
+            Model convertArrays() const;
+            
+            /*!
              * Retrieves whether there is an expression restricting the legal initial values of the global variables.
              */
             bool hasInitialStatesRestriction() const;

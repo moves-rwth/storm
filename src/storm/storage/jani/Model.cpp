@@ -923,6 +923,14 @@ namespace storm {
             return result;
         }
         
+        bool Model::hasArrayVariables() const {
+            return true;
+        }
+        
+        Model Model::convertArrays() const {
+            return *this;
+        }
+        
         void Model::setInitialStatesRestriction(storm::expressions::Expression const& initialStatesRestriction) {
             this->initialStatesRestriction = initialStatesRestriction;
         }
