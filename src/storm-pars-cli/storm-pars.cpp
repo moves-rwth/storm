@@ -466,6 +466,7 @@ namespace storm {
 
             if (parSettings.isMonotonicityAnalysisSet()) {
                 std::cout << "Hello, Jip1" << std::endl;
+                storm::utility::Stopwatch simplifyingWatch(true);
                 auto consideredModel = (model->as<storm::models::sparse::Dtmc<ValueType>>());
                 // TODO: check if it is a Dtmc
                 auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<ValueType>>(*consideredModel);
@@ -477,6 +478,9 @@ namespace storm {
                     STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Simplifying the model was not successfull.");
                 }
                 model = simplifier.getSimplifiedModel();
+                simplifyingWatch.stop();
+                STORM_PRINT(std::endl << "Time for model simplification: " << simplifyingWatch << "." << std::endl << std::endl);
+                model->printModelInformationToStream(std::cout);
                 std::cout << "Bye, Jip1" << std::endl;
             }
 
@@ -491,7 +495,7 @@ namespace storm {
             if (parSettings.isMonotonicityAnalysisSet()) {
                 // Do something more fancy.
                 std::cout << "Hello, Jip2" << std::endl;
-
+                storm::utility::Stopwatch latticeWatch(true);
                 std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel = model->as<storm::models::sparse::Model<ValueType>>();
                 std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(input.properties);
 
@@ -508,9 +512,14 @@ namespace storm {
                 // Transform to LatticeLattice
                 storm::storage::SparseMatrix<ValueType> matrix = sparseModel.get()->getTransitionMatrix();
                 storm::analysis::Lattice* lattice = storm::analysis::Lattice::toLattice<ValueType>(matrix, topStates, bottomStates);
+
+                latticeWatch.stop();
+                STORM_PRINT(std::endl << "Time for lattice creation: " << latticeWatch << "." << std::endl << std::endl);
                 lattice->toString(std::cout);
 
                 // Monotonicity?
+                storm::utility::Stopwatch monotonicityWatch(true);
+
                 bool monotoneInAll = true;
                 for (uint_fast64_t i = 0; i < sparseModel.get()->getNumberOfStates(); ++i) {
                     // go over all rows
@@ -539,6 +548,8 @@ namespace storm {
 
 
                 }
+                monotonicityWatch.stop();
+                STORM_PRINT(std::endl << "Time for monotonicity: " << monotonicityWatch << "." << std::endl << std::endl);
                 if (monotoneInAll) {
                     std::cout << "Monotone increasing in all parameters" << std::endl;
                 }
