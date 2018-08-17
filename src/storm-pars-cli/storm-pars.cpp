@@ -499,18 +499,15 @@ namespace storm {
                 state->successor2 = numberOfStates;
 
                 auto row = matrix.getRow(i);
-                for (auto itr = row.begin(); itr < row.end() && state->successor2 == numberOfStates; ++itr) {
-                    if ((*itr).getValue() != ValueType(1)) {
-                        if (state->successor1 == numberOfStates) {
-                            state->successor1 = (*itr).getColumn();
-                        } else {
-                            state->successor2 = (*itr).getColumn();
-                        }
-                    } else {
-                        state-> successor1 = (*itr).getColumn();
-                        state-> successor2 = (*itr).getColumn();
-                    }
+                //TODO assert that there are at most two successors
+                if ((*(row.begin())).getValue() != ValueType(1)) {
+                    state->successor1 = (*(row.begin())).getColumn();
+                    state->successor2 = (*(++row.begin())).getColumn();
+                } else {
+                    state-> successor1 = (*(row.begin())).getColumn();
+                    state-> successor2 = (*(row.begin())).getColumn();
                 }
+
                 stateVector.push_back(state);
             }
             // Start creating the Lattice
@@ -548,25 +545,25 @@ namespace storm {
                             // then they should be at the same node
                             // TODO: can this be removed, e.g. adding a step to preprocessing, making this superfluous
                             // TODO: 1 prob. and same probs to same states should be removed from matrix
-                            storm::analysis::Lattice::Node *above = lattice->getNode(successor1);
-                            storm::analysis::Lattice::Node *below = lattice->getNode(successor2);
-                            std::vector<storm::analysis::Lattice::Node *> states1 = above->below;
-                            std::vector<storm::analysis::Lattice::Node *> states2 = below->above;
-                            for (auto itr1 = states1.begin(); itr1 < states1.end(); ++itr1) {
-                                for (auto itr2 = states2.begin(); itr2 < states2.end(); ++itr2) {
-                                    if ((*itr1)->states == (*itr2)->states) {
-                                        ValueType prob1 = getProbability(currentState->stateNumber, successor1, matrix);
-                                        ValueType prob2 = getProbability(currentState->stateNumber, successor2, matrix);
-                                        if (prob1 != ValueType(1)
-                                            && prob2 != ValueType(1)
-                                            && getProbability((*itr1)->states, above->states, matrix) == prob1
-                                            && getProbability((*itr1)->states, below->states, matrix) == prob2) {
-                                            lattice->addToNode(currentState->stateNumber, (*itr1));
-                                            seenStates.set(currentState->stateNumber);
-                                        }
-                                    }
-                                }
-                            }
+//                            storm::analysis::Lattice::Node *above = lattice->getNode(successor1);
+//                            storm::analysis::Lattice::Node *below = lattice->getNode(successor2);
+//                            std::vector<storm::analysis::Lattice::Node *> states1 = above->below;
+//                            std::vector<storm::analysis::Lattice::Node *> states2 = below->above;
+//                            for (auto itr1 = states1.begin(); itr1 < states1.end(); ++itr1) {
+//                                for (auto itr2 = states2.begin(); itr2 < states2.end(); ++itr2) {
+//                                    if ((*itr1)->states == (*itr2)->states) {
+//                                        ValueType prob1 = getProbability(currentState->stateNumber, successor1, matrix);
+//                                        ValueType prob2 = getProbability(currentState->stateNumber, successor2, matrix);
+//                                        if (prob1 != ValueType(1)
+//                                            && prob2 != ValueType(1)
+//                                            && getProbability((*itr1)->states, above->states, matrix) == prob1
+//                                            && getProbability((*itr1)->states, below->states, matrix) == prob2) {
+//                                            lattice->addToNode(currentState->stateNumber, (*itr1));
+//                                            seenStates.set(currentState->stateNumber);
+//                                        }
+//                                    }
+//                                }
+//                            }
 
                             if (!seenStates.get(currentState->stateNumber)) {
                                 // successor 1 is closer to top than successor 2
@@ -614,6 +611,21 @@ namespace storm {
             
             STORM_LOG_THROW(model || input.properties.empty(), storm::exceptions::InvalidSettingsException, "No input model.");
 
+            if (parSettings.isMonotonicityAnalysisSet()) {
+                std::cout << "Hello, Jip1" << std::endl;
+                auto consideredModel = (model->as<storm::models::sparse::Dtmc<ValueType>>());
+                // TODO: check if it is a Dtmc
+                auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<ValueType>>(*consideredModel);
+
+                std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(input.properties);
+                STORM_LOG_THROW(formulas.begin()!=formulas.end(), storm::exceptions::NotSupportedException, "Only one formula at the time supported");
+
+                if (!simplifier.simplify(*(formulas[0]))) {
+                    STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Simplifying the model was not successfull.");
+                }
+                model = simplifier.getSimplifiedModel();
+                std::cout << "Bye, Jip1" << std::endl;
+            }
 
             if (model) {
                 auto preprocessingResult = storm::pars::preprocessModel<DdType, ValueType>(model, input);
@@ -623,25 +635,12 @@ namespace storm {
                 }
             }
 
-
             if (parSettings.isMonotonicityAnalysisSet()) {
                 // Do something more fancy.
-                std::cout << "Hello, Jip" << std::endl;
-                auto testModel = (model->as<storm::models::sparse::Dtmc<ValueType>>());
-                // TODO: check if it is a Dtmc
-                auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<ValueType>>(*testModel);
+                std::cout << "Hello, Jip2" << std::endl;
 
-
+                std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel = model->as<storm::models::sparse::Model<ValueType>>();
                 std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(input.properties);
-                STORM_LOG_THROW(formulas.begin()!=formulas.end(), storm::exceptions::NotSupportedException, "Only one formula at the time supported");
-
-                if (!simplifier.simplify(*(formulas[0]))) {
-                    STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Simplifying the model was not successfull.");
-                }
-
-
-                std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel = simplifier.getSimplifiedModel();//->as<storm::models::sparse::Model<ValueType>>();
-//                formulas = std::vector<std::shared_ptr<storm::logic::Formula const>>({simplifier.getSimplifiedFormula()});//storm::api::extractFormulasFromProperties(input.properties);
 
                 STORM_LOG_THROW((*(formulas[0])).isProbabilityOperatorFormula() && (*(formulas[0])).asProbabilityOperatorFormula().getSubformula().isUntilFormula(), storm::exceptions::NotSupportedException, "Expecting until formula");
                 storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Model<ValueType>> propositionalChecker(*sparseModel);
@@ -652,13 +651,13 @@ namespace storm {
                 std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(sparseModel.get()->getBackwardTransitions(), phiStates, psiStates);
                 storm::storage::BitVector topStates = statesWithProbability01.second;
                 storm::storage::BitVector bottomStates = statesWithProbability01.first;
-
+                
                 // Transform to LatticeLattice
                 storm::analysis::Lattice* lattice = toLattice(sparseModel, topStates, bottomStates);
                 lattice->toString(std::cout);
 
+                // Monotonicity?
                 bool monotoneInAll = true;
-
                 storm::storage::SparseMatrix<ValueType> matrix = sparseModel.get()->getTransitionMatrix();
                 for (uint_fast64_t i = 0; i < sparseModel.get()->getNumberOfStates(); ++i) {
                     // go over all rows
