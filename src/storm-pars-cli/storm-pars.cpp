@@ -49,8 +49,6 @@ namespace storm {
             bool exact;
         };
 
-
-        
         template <typename ValueType>
         std::vector<storm::storage::ParameterRegion<ValueType>> parseRegions(std::shared_ptr<storm::models::ModelBase> const& model) {
             std::vector<storm::storage::ParameterRegion<ValueType>> result;
@@ -519,8 +517,10 @@ namespace storm {
 
                 // Monotonicity?
                 storm::utility::Stopwatch monotonicityWatch(true);
+                // Map with for each variable bool whether it is monotonic or not (assume montone increasing)
+                std::map<carl::Variable, bool> varsMonotoneIncr;
+                std::map<carl::Variable, bool> varsMonotoneDecr;
 
-                bool monotoneInAll = true;
                 for (uint_fast64_t i = 0; i < sparseModel.get()->getNumberOfStates(); ++i) {
                     // go over all rows
                     auto row = matrix.getRow(i);
@@ -536,12 +536,19 @@ namespace storm {
                             auto derivative = val.derivative(*itr);
                             STORM_LOG_THROW(derivative.isConstant(), storm::exceptions::NotSupportedException, "Expecting probability to have at most degree 1");
                             auto compare = lattice->compare(first.getColumn(), second.getColumn());
+                            if (varsMonotoneIncr.find(*itr) == varsMonotoneIncr.end()) {
+                                varsMonotoneIncr[*itr] = true;
+                                varsMonotoneDecr[*itr] = true;
+                            }
                             if (compare == 1) {
-                                monotoneInAll &=derivative.constantPart() >= 0;
+                                varsMonotoneIncr.find(*itr)->second &=derivative.constantPart() >= 0;
+                                varsMonotoneDecr.find(*itr)->second &=derivative.constantPart() <= 0;
                             } else if (compare == 2) {
-                                monotoneInAll &=derivative.constantPart() <= 0;
+                                varsMonotoneIncr.find(*itr)->second &= derivative.constantPart() <= 0;
+                                varsMonotoneDecr.find(*itr)->second &= derivative.constantPart() >= 0;
                             } else {
-                                monotoneInAll = false;
+                                varsMonotoneIncr.find(*itr)->second = false;
+                                varsMonotoneDecr.find(*itr)->second = false;
                             }
                         }
                     }
@@ -550,10 +557,22 @@ namespace storm {
                 }
                 monotonicityWatch.stop();
                 STORM_PRINT(std::endl << "Time for monotonicity: " << monotonicityWatch << "." << std::endl << std::endl);
-                if (monotoneInAll) {
-                    std::cout << "Monotone increasing in all parameters" << std::endl;
+
+                for (auto itr = varsMonotoneIncr.begin(); itr != varsMonotoneIncr.end(); ++itr) {
+                    if (itr->second) {
+                        std::cout << "Monotone increasing in: " << itr->first << std::endl;
+                    } else {
+                        std::cout << "Not monotone increasing in: " << itr->first << std::endl;
+                    }
                 }
-                // TODO: split into monotonicity in different parameters
+                for (auto itr = varsMonotoneDecr.begin(); itr != varsMonotoneDecr.end(); ++itr) {
+                    if (itr->second) {
+                        std::cout << "Monotone decreasing in: " << itr->first << std::endl;
+                    } else {
+                        std::cout << "Not monotone decreasing in: " << itr->first << std::endl;
+                    }
+                }
+
                 std::cout << "Bye, Jip2" << std::endl;
                 return;
             }
