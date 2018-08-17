@@ -9,9 +9,9 @@ namespace storm {
         Lattice::Lattice(storm::storage::BitVector topStates,
                          storm::storage::BitVector bottomStates, uint_fast64_t numberOfStates) {
 
-            Node *top = new Node();
+            top = new Node();
             top->states = topStates;
-            Node *bottom = new Node();
+            bottom = new Node();
             bottom->states = bottomStates;
             top->below.push_back(bottom);
             bottom->above.push_back(top);
@@ -29,7 +29,6 @@ namespace storm {
         }
 
         void Lattice::addBetween(uint_fast64_t state, Node *above, Node *below) {
-            std::cout << "Adding: " << state << std::endl;
             Node *newNode = new Node();
             newNode->states = storm::storage::BitVector(numberOfStates);
             newNode->states.set(state);
@@ -45,6 +44,10 @@ namespace storm {
         void Lattice::addToNode(uint_fast64_t state, Node *node) {
             node->states.set(state);
             nodes.at(state) = node;
+        }
+
+        void Lattice::add(uint_fast64_t state) {
+            addBetween(state, top, bottom);
         }
 
         int Lattice::compare(uint_fast64_t state1, uint_fast64_t state2) {

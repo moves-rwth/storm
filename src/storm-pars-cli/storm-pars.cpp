@@ -49,11 +49,7 @@ namespace storm {
             bool exact;
         };
 
-        struct State {
-            uint_fast64_t stateNumber;
-            uint_fast64_t successor1;
-            uint_fast64_t successor2;
-        };
+
         
         template <typename ValueType>
         std::vector<storm::storage::ParameterRegion<ValueType>> parseRegions(std::shared_ptr<storm::models::ModelBase> const& model) {
@@ -443,86 +439,7 @@ namespace storm {
             storm::pars::verifyWithSparseEngine<ValueType>(model->as<storm::models::sparse::Model<ValueType>>(), input, regions, samples);
         }
 
-        template <typename ValueType>
-        storm::analysis::Lattice* toLattice(std::shared_ptr<storm::models::sparse::Model<ValueType>> model,
-                                                   storm::storage::BitVector topStates,
-                                                   storm::storage::BitVector bottomStates) {
-            storm::storage::SparseMatrix<ValueType> matrix = model.get()->getTransitionMatrix();
-            storm::storage::BitVector initialStates = model.get()->getInitialStates();
-            uint_fast64_t numberOfStates = model.get()->getNumberOfStates();
 
-            // Transform the transition matrix into a vector containing the states with the state to which the transition goes.
-            std::vector <State*> stateVector = std::vector<State *>({});
-            for (uint_fast64_t i = 0; i < numberOfStates; ++i) {
-                State* state = new State();
-                state->stateNumber = i;
-                state->successor1 = numberOfStates;
-                state->successor2 = numberOfStates;
-
-                auto row = matrix.getRow(i);
-                //TODO assert that there are at most two successors
-                if ((*(row.begin())).getValue() != ValueType(1)) {
-                    state->successor1 = (*(row.begin())).getColumn();
-                    state->successor2 = (*(++row.begin())).getColumn();
-                } else {
-                    state-> successor1 = (*(row.begin())).getColumn();
-                    state-> successor2 = (*(row.begin())).getColumn();
-                }
-
-                stateVector.push_back(state);
-            }
-            // Start creating the Lattice
-            storm::analysis::Lattice *lattice = new storm::analysis::Lattice(topStates, bottomStates, numberOfStates);
-            storm::storage::BitVector oldStates(numberOfStates);
-            // Create a copy of the states already present in the lattice.
-            storm::storage::BitVector seenStates = topStates|= bottomStates;
-
-            while (oldStates != seenStates) {
-                // As long as new states are added to the lattice, continue.
-                oldStates = storm::storage::BitVector(seenStates);
-
-                for (auto itr = stateVector.begin(); itr != stateVector.end(); ++itr) {
-                    // Iterate over all states
-                    State *currentState = *itr;
-
-                    if (!seenStates[currentState->stateNumber]
-                        && seenStates[currentState->successor1]
-                        && seenStates[currentState->successor2]) {
-
-
-                        // Otherwise, check how the two states compare, and add if the comparison is possible.
-                        uint_fast64_t successor1 = currentState->successor1;
-                        uint_fast64_t successor2 = currentState->successor2;
-                        int compareResult = lattice->compare(successor1, successor2);
-                        if (compareResult == 1 || compareResult == 2) {
-                            // getNode will not return nullptr, as compare already checked this
-                            if (compareResult == 2) {
-                                // swap
-                                auto temp = successor1;
-                                successor1 = successor2;
-                                successor2 = temp;
-                            }
-
-                            // successor 1 is closer to top than successor 2
-                            lattice->addBetween(currentState->stateNumber, lattice->getNode(successor1),
-                                                lattice->getNode(successor2));
-                            // Add stateNumber to the set with seen states.
-                            seenStates.set(currentState->stateNumber);
-                        } else if (compareResult == 0) {
-                            // the successors are at the same level
-                            lattice->addToNode(currentState->stateNumber, lattice->getNode(successor1));
-                            // Add stateNumber to the set with seen states.
-                            seenStates.set(currentState->stateNumber);
-                        } else {
-                            // TODO: what to do?
-                            STORM_LOG_DEBUG("Failed to add" << currentState->stateNumber << "\n");
-                        }
-
-                    }
-                }
-            }
-            return lattice;
-        }
 
 
         template <storm::dd::DdType DdType, typename ValueType>
@@ -589,12 +506,12 @@ namespace storm {
                 storm::storage::BitVector bottomStates = statesWithProbability01.first;
 
                 // Transform to LatticeLattice
-                storm::analysis::Lattice* lattice = toLattice(sparseModel, topStates, bottomStates);
+                storm::storage::SparseMatrix<ValueType> matrix = sparseModel.get()->getTransitionMatrix();
+                storm::analysis::Lattice* lattice = storm::analysis::Lattice::toLattice<ValueType>(matrix, topStates, bottomStates);
                 lattice->toString(std::cout);
 
                 // Monotonicity?
                 bool monotoneInAll = true;
-                storm::storage::SparseMatrix<ValueType> matrix = sparseModel.get()->getTransitionMatrix();
                 for (uint_fast64_t i = 0; i < sparseModel.get()->getNumberOfStates(); ++i) {
                     // go over all rows
                     auto row = matrix.getRow(i);
