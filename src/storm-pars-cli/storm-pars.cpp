@@ -1,4 +1,6 @@
 
+#include <storm-pars/transformer/SparseParametricModelSimplifier.h>
+#include <storm-pars/transformer/SparseParametricDtmcSimplifier.h>
 #include "storm-pars/api/storm-pars.h"
 #include "storm-pars/settings/ParsSettings.h"
 #include "storm-pars/settings/modules/ParametricSettings.h"
@@ -612,6 +614,7 @@ namespace storm {
             
             STORM_LOG_THROW(model || input.properties.empty(), storm::exceptions::InvalidSettingsException, "No input model.");
 
+
             if (model) {
                 auto preprocessingResult = storm::pars::preprocessModel<DdType, ValueType>(model, input);
                 if (preprocessingResult.second) {
@@ -624,9 +627,21 @@ namespace storm {
             if (parSettings.isMonotonicityAnalysisSet()) {
                 // Do something more fancy.
                 std::cout << "Hello, Jip" << std::endl;
+                auto testModel = (model->as<storm::models::sparse::Dtmc<ValueType>>());
+                // TODO: check if it is a Dtmc
+                auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<ValueType>>(*testModel);
 
-                std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel = model->as<storm::models::sparse::Model<ValueType>>();
+
                 std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(input.properties);
+                STORM_LOG_THROW(formulas.begin()!=formulas.end(), storm::exceptions::NotSupportedException, "Only one formula at the time supported");
+
+                if (!simplifier.simplify(*(formulas[0]))) {
+                    STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Simplifying the model was not successfull.");
+                }
+
+
+                std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel = simplifier.getSimplifiedModel();//->as<storm::models::sparse::Model<ValueType>>();
+//                formulas = std::vector<std::shared_ptr<storm::logic::Formula const>>({simplifier.getSimplifiedFormula()});//storm::api::extractFormulasFromProperties(input.properties);
 
                 STORM_LOG_THROW((*(formulas[0])).isProbabilityOperatorFormula() && (*(formulas[0])).asProbabilityOperatorFormula().getSubformula().isUntilFormula(), storm::exceptions::NotSupportedException, "Expecting until formula");
                 storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Model<ValueType>> propositionalChecker(*sparseModel);
