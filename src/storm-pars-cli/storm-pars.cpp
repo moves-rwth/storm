@@ -443,45 +443,6 @@ namespace storm {
             storm::pars::verifyWithSparseEngine<ValueType>(model->as<storm::models::sparse::Model<ValueType>>(), input, regions, samples);
         }
 
-
-        template <typename ValueType>
-        ValueType getProbability(uint_fast64_t state, uint_fast64_t successor, storm::storage::SparseMatrix<ValueType>  matrix) {
-            ValueType result = ValueType(1);
-            // Iterate over all row groups.
-            auto row = matrix.getRow(state);
-
-            for (auto itr = row.begin(); itr < row.end() && result == ValueType(1); ++itr) {
-                if ((*itr).getColumn() == successor) {
-                    result = (*itr).getValue();
-                }
-
-            }
-
-            return result;
-        }
-
-        template <typename ValueType>
-        ValueType getProbability(storm::storage::BitVector state, uint_fast64_t successor, storm::storage::SparseMatrix<ValueType>  matrix) {
-            ValueType result = ValueType(1);
-            uint_fast64_t index = state.getNextSetIndex(0);
-            while (index < state.size() && result == ValueType(1)) {
-                result = getProbability(index, successor, matrix);
-                index = state.getNextSetIndex(index+1);
-            }
-            return result;
-        }
-
-        template <typename ValueType>
-        ValueType getProbability(storm::storage::BitVector state, storm::storage::BitVector successor, storm::storage::SparseMatrix<ValueType>  matrix) {
-            ValueType result = ValueType(1);
-            uint_fast64_t index = successor.getNextSetIndex(0);
-            while (index < successor.size() && result == ValueType(1)) {
-                result = getProbability(state, index, matrix);
-                index = successor.getNextSetIndex(index+1);
-            }
-            return result;
-        }
-
         template <typename ValueType>
         storm::analysis::Lattice* toLattice(std::shared_ptr<storm::models::sparse::Model<ValueType>> model,
                                                    storm::storage::BitVector topStates,
@@ -541,37 +502,12 @@ namespace storm {
                                 successor1 = successor2;
                                 successor2 = temp;
                             }
-                            // Additional check, if states have the same probability of reaching a given next state,
-                            // then they should be at the same node
-                            // TODO: can this be removed, e.g. adding a step to preprocessing, making this superfluous
-                            // TODO: 1 prob. and same probs to same states should be removed from matrix
-//                            storm::analysis::Lattice::Node *above = lattice->getNode(successor1);
-//                            storm::analysis::Lattice::Node *below = lattice->getNode(successor2);
-//                            std::vector<storm::analysis::Lattice::Node *> states1 = above->below;
-//                            std::vector<storm::analysis::Lattice::Node *> states2 = below->above;
-//                            for (auto itr1 = states1.begin(); itr1 < states1.end(); ++itr1) {
-//                                for (auto itr2 = states2.begin(); itr2 < states2.end(); ++itr2) {
-//                                    if ((*itr1)->states == (*itr2)->states) {
-//                                        ValueType prob1 = getProbability(currentState->stateNumber, successor1, matrix);
-//                                        ValueType prob2 = getProbability(currentState->stateNumber, successor2, matrix);
-//                                        if (prob1 != ValueType(1)
-//                                            && prob2 != ValueType(1)
-//                                            && getProbability((*itr1)->states, above->states, matrix) == prob1
-//                                            && getProbability((*itr1)->states, below->states, matrix) == prob2) {
-//                                            lattice->addToNode(currentState->stateNumber, (*itr1));
-//                                            seenStates.set(currentState->stateNumber);
-//                                        }
-//                                    }
-//                                }
-//                            }
 
-                            if (!seenStates.get(currentState->stateNumber)) {
-                                // successor 1 is closer to top than successor 2
-                                lattice->addBetween(currentState->stateNumber, lattice->getNode(successor1),
-                                                    lattice->getNode(successor2));
-                                // Add stateNumber to the set with seen states.
-                                seenStates.set(currentState->stateNumber);
-                            }
+                            // successor 1 is closer to top than successor 2
+                            lattice->addBetween(currentState->stateNumber, lattice->getNode(successor1),
+                                                lattice->getNode(successor2));
+                            // Add stateNumber to the set with seen states.
+                            seenStates.set(currentState->stateNumber);
                         } else if (compareResult == 0) {
                             // the successors are at the same level
                             lattice->addToNode(currentState->stateNumber, lattice->getNode(successor1));
@@ -651,7 +587,7 @@ namespace storm {
                 std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(sparseModel.get()->getBackwardTransitions(), phiStates, psiStates);
                 storm::storage::BitVector topStates = statesWithProbability01.second;
                 storm::storage::BitVector bottomStates = statesWithProbability01.first;
-                
+
                 // Transform to LatticeLattice
                 storm::analysis::Lattice* lattice = toLattice(sparseModel, topStates, bottomStates);
                 lattice->toString(std::cout);
@@ -690,7 +626,7 @@ namespace storm {
                     std::cout << "Monotone increasing in all parameters" << std::endl;
                 }
                 // TODO: split into monotonicity in different parameters
-                std::cout << "Bye, Jip" << std::endl;
+                std::cout << "Bye, Jip2" << std::endl;
                 return;
             }
 
