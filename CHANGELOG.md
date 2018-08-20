@@ -7,6 +7,14 @@ The releases of major and minor versions contain an overview of changes since th
 Version 1.2.x
 -------------
 
+### Version 1.2.4 (2018/08)
+- New binary `storm-conv` that handles conversions between model files (currently: prism to jani)
+- Added support for expected time properties for discrete time models
+- Several bug fixes related to jani
+- `storm-gspn`: Improved .pnpro parser
+- `storm-gspn`: Added option to set a global capacity for all places
+- `storm-gspn`: Added option to include a set of standard properties when converting GSPNs to jani
+
 ### Version 1.2.3 (2018/07)
 - Fix in version parsing
 
