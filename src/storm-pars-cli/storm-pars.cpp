@@ -1,5 +1,5 @@
 
-#include <storm-pars/transformer/SparseParametricModelSimplifier.h>
+#include <storm-pars/transformer/SparseParametricMdpSimplifier.h>
 #include <storm-pars/transformer/SparseParametricDtmcSimplifier.h>
 #include "storm-pars/api/storm-pars.h"
 #include "storm-pars/settings/ParsSettings.h"
@@ -437,9 +437,6 @@ namespace storm {
             storm::pars::verifyWithSparseEngine<ValueType>(model->as<storm::models::sparse::Model<ValueType>>(), input, regions, samples);
         }
 
-
-
-
         template <storm::dd::DdType DdType, typename ValueType>
         void processInputWithValueTypeAndDdlib(SymbolicInput& input) {
             auto coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
@@ -465,17 +462,32 @@ namespace storm {
             if (parSettings.isMonotonicityAnalysisSet()) {
                 std::cout << "Hello, Jip1" << std::endl;
                 storm::utility::Stopwatch simplifyingWatch(true);
-                auto consideredModel = (model->as<storm::models::sparse::Dtmc<ValueType>>());
-                // TODO: check if it is a Dtmc
-                auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<ValueType>>(*consideredModel);
+                if (model->isOfType(storm::models::ModelType::Dtmc)) {
+                    auto consideredModel = (model->as<storm::models::sparse::Dtmc<ValueType>>());
+                    auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<ValueType>>(*consideredModel);
 
-                std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(input.properties);
-                STORM_LOG_THROW(formulas.begin()!=formulas.end(), storm::exceptions::NotSupportedException, "Only one formula at the time supported");
+                    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(input.properties);
+                    STORM_LOG_THROW(formulas.begin()!=formulas.end(), storm::exceptions::NotSupportedException, "Only one formula at the time supported");
 
-                if (!simplifier.simplify(*(formulas[0]))) {
-                    STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Simplifying the model was not successfull.");
+                    if (!simplifier.simplify(*(formulas[0]))) {
+                        STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Simplifying the model was not successfull.");
+                    }
+                    model = simplifier.getSimplifiedModel();
+                } else if (model->isOfType(storm::models::ModelType::Mdp)) {
+                    auto consideredModel = (model->as<storm::models::sparse::Mdp<ValueType>>());
+                    auto simplifier = storm::transformer::SparseParametricMdpSimplifier<storm::models::sparse::Mdp<ValueType>>(*consideredModel);
+
+                    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(input.properties);
+                    STORM_LOG_THROW(formulas.begin()!=formulas.end(), storm::exceptions::NotSupportedException, "Only one formula at the time supported");
+
+                    if (!simplifier.simplify(*(formulas[0]))) {
+                        STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Simplifying the model was not successfull.");
+                    }
+                    model = simplifier.getSimplifiedModel();
+                } else {
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Unable to perform parameterLifting on the provided model type.");
                 }
-                model = simplifier.getSimplifiedModel();
+
                 simplifyingWatch.stop();
                 STORM_PRINT(std::endl << "Time for model simplification: " << simplifyingWatch << "." << std::endl << std::endl);
                 model->printModelInformationToStream(std::cout);
@@ -491,9 +503,9 @@ namespace storm {
             }
 
             if (parSettings.isMonotonicityAnalysisSet()) {
-                // Do something more fancy.
                 std::cout << "Hello, Jip2" << std::endl;
                 storm::utility::Stopwatch latticeWatch(true);
+
                 std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel = model->as<storm::models::sparse::Model<ValueType>>();
                 std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(input.properties);
 
@@ -535,11 +547,13 @@ namespace storm {
                         for (auto itr = vars.begin(); itr != vars.end(); ++itr) {
                             auto derivative = val.derivative(*itr);
                             STORM_LOG_THROW(derivative.isConstant(), storm::exceptions::NotSupportedException, "Expecting probability to have at most degree 1");
-                            auto compare = lattice->compare(first.getColumn(), second.getColumn());
+
                             if (varsMonotoneIncr.find(*itr) == varsMonotoneIncr.end()) {
                                 varsMonotoneIncr[*itr] = true;
                                 varsMonotoneDecr[*itr] = true;
                             }
+
+                            auto compare = lattice->compare(first.getColumn(), second.getColumn());
                             if (compare == 1) {
                                 varsMonotoneIncr.find(*itr)->second &=derivative.constantPart() >= 0;
                                 varsMonotoneDecr.find(*itr)->second &=derivative.constantPart() <= 0;
