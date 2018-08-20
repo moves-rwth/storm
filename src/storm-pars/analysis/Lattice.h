@@ -143,22 +143,20 @@ namespace storm {
                                         lattice->addBetween(currentState->stateNumber, lattice->getNode(successor1),
                                                             lattice->getNode(successor2));
                                         // Add stateNumber to the set with seen states.
-                                        seenStates.set(currentState->stateNumber);
                                     } else if (compareResult == 2) {
                                         // successor 2 is closer to top than successor 1
                                         lattice->addBetween(currentState->stateNumber, lattice->getNode(successor2),
                                                             lattice->getNode(successor1));
                                         // Add stateNumber to the set with seen states.
-                                        seenStates.set(currentState->stateNumber);
                                     } else if (compareResult == 0) {
                                         // the successors are at the same level
                                         lattice->addToNode(currentState->stateNumber, lattice->getNode(successor1));
                                         // Add stateNumber to the set with seen states.
-                                        seenStates.set(currentState->stateNumber);
                                     } else {
                                         // TODO: is this what we want?
                                         lattice->add(currentState->stateNumber);
                                     }
+                                    seenStates.set(currentState->stateNumber);
 
                                 }
                             }

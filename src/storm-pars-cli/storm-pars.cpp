@@ -461,7 +461,7 @@ namespace storm {
 
             if (parSettings.isMonotonicityAnalysisSet()) {
                 std::cout << "Hello, Jip1" << std::endl;
-                STORM_LOG_THROW(storm::settings::getModule<storm::settings::modules::GeneralSettings>().isBisimulationSet(), storm::exceptions::InvalidSettingsException, "Monotonicity analysis requires bisimulation");
+//                STORM_LOG_THROW(storm::settings::getModule<storm::settings::modules::GeneralSettings>().isBisimulationSet(), storm::exceptions::InvalidSettingsException, "Monotonicity analysis requires bisimulation");
                 storm::utility::Stopwatch simplifyingWatch(true);
                 if (model->isOfType(storm::models::ModelType::Dtmc)) {
                     auto consideredModel = (model->as<storm::models::sparse::Dtmc<ValueType>>());
