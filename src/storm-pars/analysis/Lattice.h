@@ -133,7 +133,6 @@ namespace storm {
                                     && seenStates[currentState->successor1]
                                     && seenStates[currentState->successor2]) {
 
-
                                     // Otherwise, check how the two states compare, and add if the comparison is possible.
                                     uint_fast64_t successor1 = currentState->successor1;
                                     uint_fast64_t successor2 = currentState->successor2;
