@@ -22,7 +22,7 @@ namespace storm {
 
             
             JaniExportSettings::JaniExportSettings() : ModuleSettings(moduleName) {
-                this->addOption(storm::settings::OptionBuilder(moduleName, locationVariablesOptionName, true, "Variables to export in the location").addArgument(storm::settings::ArgumentBuilder::createStringArgument("variables", "A comma separated list with local variables.").setDefaultValueString("").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, locationVariablesOptionName, true, "Variables to export in the location").addArgument(storm::settings::ArgumentBuilder::createStringArgument("variables", "A comma separated list of automaton and local variable names seperated by a dot, e.g. A.x,B.y.").setDefaultValueString("").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, standardCompliantOptionName, false, "Export in standard compliant variant.").setShortName(standardCompliantOptionShortName).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportFlattenOptionName, false, "Flattens the composition of Automata to obtain an equivalent model that contains exactly one automaton").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, globalVariablesOptionName, false, "If set, variables will preferably be made global, e.g., to guarantee the same variable order as in the input file.").build());
