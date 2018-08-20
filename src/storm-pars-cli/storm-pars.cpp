@@ -461,6 +461,7 @@ namespace storm {
 
             if (parSettings.isMonotonicityAnalysisSet()) {
                 std::cout << "Hello, Jip1" << std::endl;
+                STORM_LOG_THROW(storm::settings::getModule<storm::settings::modules::GeneralSettings>().isBisimulationSet(), storm::exceptions::InvalidSettingsException, "Monotonicity analysis requires bisimulation");
                 storm::utility::Stopwatch simplifyingWatch(true);
                 if (model->isOfType(storm::models::ModelType::Dtmc)) {
                     auto consideredModel = (model->as<storm::models::sparse::Dtmc<ValueType>>());
@@ -576,14 +577,14 @@ namespace storm {
                     if (itr->second) {
                         std::cout << "Monotone increasing in: " << itr->first << std::endl;
                     } else {
-                        std::cout << "Not monotone increasing in: " << itr->first << std::endl;
+                        std::cout << "Do not know if monotone increasing in: " << itr->first << std::endl;
                     }
                 }
                 for (auto itr = varsMonotoneDecr.begin(); itr != varsMonotoneDecr.end(); ++itr) {
                     if (itr->second) {
                         std::cout << "Monotone decreasing in: " << itr->first << std::endl;
                     } else {
-                        std::cout << "Not monotone decreasing in: " << itr->first << std::endl;
+                        std::cout << "Do not know if monotone decreasing in: " << itr->first << std::endl;
                     }
                 }
 
