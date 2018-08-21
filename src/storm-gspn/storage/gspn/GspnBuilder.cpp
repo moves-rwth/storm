@@ -65,13 +65,22 @@ namespace storm {
             return newId;
             
         }
-
+        
         uint_fast64_t GspnBuilder::addTimedTransition(uint_fast64_t const &priority, double const &rate, std::string const& name) {
+            return addTimedTransition(priority, rate, 1, name);
+        }
+        
+        uint_fast64_t GspnBuilder::addTimedTransition(uint_fast64_t const &priority, double const &rate, boost::optional<uint64_t> numServers, std::string const& name) {
             auto trans = storm::gspn::TimedTransition<double>();
             auto newId = GSPN::timedTransitionIdToTransitionId(timedTransitions.size());
             trans.setName(name);
             trans.setPriority(priority);
             trans.setRate(rate);
+            if (numServers) {
+                trans.setKServerSemantics(numServers.get());
+            } else {
+                trans.setInfiniteServerSemantics();
+            }
             trans.setID(newId);
             timedTransitions.push_back(trans);
             

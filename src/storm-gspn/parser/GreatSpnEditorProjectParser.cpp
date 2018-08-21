@@ -297,6 +297,7 @@ namespace storm {
             std::string transitionName;
             bool immediateTransition;
             double rate = 1.0; // The default rate in GreatSPN.
+            boost::optional<uint64_t> numServers;
 
             // traverse attributes
             for (uint_fast64_t i = 0; i < node->getAttributes()->getLength(); ++i) {
@@ -314,6 +315,16 @@ namespace storm {
                 } else if(name.compare("delay") == 0) {
                     expressionParser.setAcceptDoubleLiterals(true);
                     rate = expressionParser.parseFromString(storm::adapters::XMLtoString(attr->getNodeValue())).evaluateAsDouble();
+                } else if (name.compare("nservers") == 0) {
+                    std::string nservers = storm::adapters::XMLtoString(attr->getNodeValue());
+                    if (nservers == "Single") {
+                        numServers = 1;
+                    } else if (nservers == "Infinite") {
+                        // Ignore this case as we assume infinite by default (similar to GreatSpn)
+                    } else {
+                        expressionParser.setAcceptDoubleLiterals(false);
+                        numServers = expressionParser.parseFromString(nservers).evaluateAsInt();
+                    }
                 } else if (ignoreTransitionAttribute(name)) {
                     // ignore node
                 } else {
@@ -327,7 +338,7 @@ namespace storm {
             if (immediateTransition) {
                 builder.addImmediateTransition(0, 0, transitionName);
             } else {
-                builder.addTimedTransition(0, rate, transitionName);
+                builder.addTimedTransition(0, rate, numServers, transitionName);
             }
 
             // traverse children

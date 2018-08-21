@@ -168,6 +168,7 @@ namespace storm {
             for (auto& trans : this->getTimedTransitions()) {
                 outStream << "\t" << trans.getName() << " [label=\"" << trans.getName();
                 outStream << "(" << trans.getRate() << ")\"];" << std::endl;
+                STORM_LOG_WARN_COND(trans.hasSingleServerSemantics(), "Unable to export non-trivial transition semantics"); // TODO
             }
             
             // print arcs
@@ -555,6 +556,7 @@ namespace storm {
 
             // add timed transitions
             for (const auto &trans : timedTransitions) {
+                STORM_LOG_WARN_COND(trans.hasInfiniteServerSemantics(), "Unable to export non-trivial transition semantics"); // TODO
                 stream << space2 << "<transition id=\"" << trans.getName() << "\">" << std::endl;
                 stream << space3 << "<rate>" << std::endl;
                 stream << space4 << "<value>" << trans.getRate() << "</value>" << std::endl;

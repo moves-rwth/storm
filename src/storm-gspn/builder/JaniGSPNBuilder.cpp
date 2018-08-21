@@ -3,6 +3,8 @@
 #include <memory>
 
 #include "storm/logic/Formulas.h"
+
+#include "storm/exceptions/InvalidModelException.h"
 namespace storm {
     namespace builder {
 
@@ -132,7 +134,7 @@ namespace storm {
             }
             for (auto const& trans : gspn.getTimedTransitions()) {
                 storm::expressions::Expression guard = expressionManager->boolean(true);
-
+                
                 std::vector<storm::jani::Assignment> assignments;
                 for (auto const& inPlaceEntry : trans.getInputPlaces()) {
                     guard = guard && (vars[inPlaceEntry.first]->getExpressionVariable() >= inPlaceEntry.second);
@@ -153,9 +155,29 @@ namespace storm {
 
                 std::shared_ptr<storm::jani::TemplateEdge> templateEdge = std::make_shared<storm::jani::TemplateEdge>(guard);
                 automaton.registerTemplateEdge(templateEdge);
+                
+                storm::expressions::Expression rate = expressionManager->rational(trans.getRate());
+                if (trans.hasInfiniteServerSemantics() || (trans.hasKServerSemantics() && !trans.hasSingleServerSemantics())) {
+                    STORM_LOG_THROW(trans.hasKServerSemantics() || !trans.getInputPlaces().empty(), storm::exceptions::InvalidModelException, "Unclear semantics: Found a transition with infinite-server semantics and without input place.");
+                    storm::expressions::Expression enablingDegree;
+                    bool firstArgumentOfMinExpression = true;
+                    if (trans.hasKServerSemantics()) {
+                        enablingDegree = expressionManager->integer(trans.getNumberOfServers());
+                        firstArgumentOfMinExpression = false;
+                    }
+                    for (auto const& inPlaceEntry : trans.getInputPlaces()) {
+                        storm::expressions::Expression enablingDegreeInPlace = vars[inPlaceEntry.first]->getExpressionVariable() / expressionManager->integer(inPlaceEntry.second); // Integer division!
+                        if (firstArgumentOfMinExpression == true) {
+                            enablingDegree = enablingDegreeInPlace;
+                        } else {
+                            enablingDegree = storm::expressions::minimum(enablingDegree, enablingDegreeInPlace);
+                        }
+                    }
+                    rate = rate * enablingDegree;
+                }
 
                 templateEdge->addDestination(assignments);
-                storm::jani::Edge e(locId, storm::jani::Model::SILENT_ACTION_INDEX, expressionManager->rational(trans.getRate()), templateEdge, {locId}, {expressionManager->integer(1)});
+                storm::jani::Edge e(locId, storm::jani::Model::SILENT_ACTION_INDEX, rate, templateEdge, {locId}, {expressionManager->integer(1)});
                 automaton.addEdge(e);
 
             }
