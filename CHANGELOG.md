@@ -12,6 +12,7 @@ Version 1.2.x
 - Added support for expected time properties for discrete time models
 - Several bug fixes related to jani
 - `storm-gspn`: Improved .pnpro parser
+- `storm-gspn`: Added support for single/infinite/k-server semantics for GSPNs given in the .pnpro format
 - `storm-gspn`: Added option to set a global capacity for all places
 - `storm-gspn`: Added option to include a set of standard properties when converting GSPNs to jani
 
