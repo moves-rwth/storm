@@ -540,7 +540,12 @@ namespace storm {
 
                 latticeWatch.stop();
                 STORM_PRINT(std::endl << "Time for lattice creation: " << latticeWatch << "." << std::endl << std::endl);
-                lattice->toString(std::cout);
+
+                ofstream myfile;
+                myfile.open ("output.dot");
+                lattice->toDotFile(myfile);
+                myfile.close();
+
 
                 // Monotonicity?
                 storm::utility::Stopwatch monotonicityWatch(true);

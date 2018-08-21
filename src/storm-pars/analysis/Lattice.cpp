@@ -136,6 +136,45 @@ namespace storm {
             }
         }
 
+        void Lattice::toDotFile(std::ostream &out) {
+            out << "digraph \"Lattice\" {" << std::endl;
+
+            // print all nodes
+            std::vector<Node*> printed;
+            out << "\t" << "node [shape=ellipse]" << std::endl;
+            for (auto itr = nodes.begin(); itr != nodes.end(); ++itr) {
+                if (find(printed.begin(), printed.end(), (*itr)) == printed.end()) {
+                    out << "\t\"" << (*itr) << "\" [label = \"";
+                    uint_fast64_t index = (*itr)->states.getNextSetIndex(0);
+                    while (index < numberOfStates) {
+                        out << index;
+                        index = (*itr)->states.getNextSetIndex(index + 1);
+                        if (index < numberOfStates) {
+                            out << ", ";
+                        }
+                    }
+
+                    out << "\"]" << std::endl;
+                    printed.push_back(*itr);
+                }
+            }
+
+            // print arcs
+            printed.clear();
+            for (auto itr = nodes.begin(); itr != nodes.end(); ++itr) {
+                if (find(printed.begin(), printed.end(), (*itr)) == printed.end()) {
+                    auto below = (*itr)->below;
+                    for (auto itr2 = below.begin(); itr2 != below.end(); ++itr2) {
+                        out << "\t\"" << (*itr) << "\" -> \"" << (*itr2) << "\";" << std::endl;
+                    }
+                    printed.push_back(*itr);
+                }
+            }
+
+            out << "}" << std::endl;
+
+
+        }
         bool Lattice::above(Node *node1, Node *node2) {
             bool result = !node1->below.empty() && std::find(node1->below.begin(), node1->below.end(), node2) != node1->below.end();
 

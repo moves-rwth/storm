@@ -83,6 +83,8 @@ namespace storm {
                      */
                     void toString(std::ostream &out);
 
+                    void toDotFile(std::ostream &out);
+
                     /*!
                      * Creates a Lattice based on the transition matrix, topStates of the Lattice and bottomStates of the Lattice
                      * @tparam ValueType Type of the probabilities
@@ -171,11 +173,11 @@ namespace storm {
                         uint_fast64_t successor2;
                     };
 
-                    std::vector<Node *> nodes;
+                    std::vector<Node*> nodes;
 
-                    Node * top;
+                    Node* top;
 
-                    Node * bottom;
+                    Node* bottom;
 
                     uint_fast64_t numberOfStates;
 
