@@ -20,7 +20,7 @@ namespace storm {
             
         public:
             
-            GreatSpnEditorProjectParser();
+            GreatSpnEditorProjectParser(std::string const& constantDefinitionString);
             
             /*!
              * Parses the given file into the GSPN.
@@ -46,7 +46,7 @@ namespace storm {
             storm::gspn::GspnBuilder builder;
             std::shared_ptr<storm::expressions::ExpressionManager> manager;
             storm::parser::ExpressionParser expressionParser;
-
+            std::unordered_map<std::string, std::string> constantDefinitions;
         };
     }
 }

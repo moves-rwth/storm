@@ -23,8 +23,15 @@ namespace {
 namespace storm {
     namespace parser {
 
-        GreatSpnEditorProjectParser::GreatSpnEditorProjectParser() : manager(std::make_shared<storm::expressions::ExpressionManager>()), expressionParser(*manager) {
-            // Intentionally left empty
+        GreatSpnEditorProjectParser::GreatSpnEditorProjectParser(std::string const& constantDefinitionString) : manager(std::make_shared<storm::expressions::ExpressionManager>()), expressionParser(*manager) {
+            std::vector<std::string> constDefs;
+            boost::split( constDefs, constantDefinitionString, boost::is_any_of(","));
+            for (auto const& pair : constDefs) {
+                std::vector<std::string> keyvaluepair;
+                boost::split( keyvaluepair, pair, boost::is_any_of("="));
+                STORM_LOG_THROW(keyvaluepair.size() == 2, storm::exceptions::WrongFormatException, "Expected a constant definition of the form N=42 but got " << pair);
+                constantDefinitions.emplace(keyvaluepair.at(0), keyvaluepair.at(1));
+            }
         }
         
         storm::gspn::GSPN* GreatSpnEditorProjectParser::parse(xercesc::DOMElement const*  elementRoot) {
@@ -168,6 +175,8 @@ namespace storm {
                 } else if (name.compare("consttype") == 0) {
                     if (storm::adapters::XMLtoString(attr->getNodeValue()).compare("REAL") == 0) {
                         type = manager->getRationalType();
+                    } else if (storm::adapters::XMLtoString(attr->getNodeValue()).compare("INTEGER") == 0) {
+                        type = manager->getIntegerType();
                     } else {
                         STORM_PRINT_AND_LOG("Unknown consttype: " << storm::adapters::XMLtoString(attr->getNodeValue()) << std::endl);
                     }
@@ -182,10 +191,20 @@ namespace storm {
                 }
             }
             
+            STORM_LOG_THROW(constantDefinitions.count(identifier) == 0, storm::exceptions::NotSupportedException, "Multiple definitions of constant '" << identifier << "' were found.");
+            
             storm::expressions::Expression valueExpression;
+            if (valueStr == "") {
+                auto constDef = constantDefinitions.find(identifier);
+                STORM_LOG_THROW(constDef != constantDefinitions.end(), storm::exceptions::NotSupportedException, "Constant '" << identifier << "' has no value defined.");
+                valueStr = constDef->second;
+            }
             if (type.isRationalType()) {
                 expressionParser.setAcceptDoubleLiterals(true);
                 valueExpression = manager->rational(expressionParser.parseFromString(valueStr).evaluateAsRational());
+            } else if (type.isIntegerType()) {
+                expressionParser.setAcceptDoubleLiterals(false);
+                valueExpression = manager->integer(expressionParser.parseFromString(valueStr).evaluateAsInt());
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Unknown type of constant" << type << ".");
             }
@@ -257,7 +276,8 @@ namespace storm {
                 if (name.compare("name") == 0) {
                     placeName = storm::adapters::XMLtoString(attr->getNodeValue());
                 } else if (name.compare("marking") == 0) {
-                    initialTokens = std::stoull(storm::adapters::XMLtoString(attr->getNodeValue()));
+                    expressionParser.setAcceptDoubleLiterals(false);
+                    initialTokens = expressionParser.parseFromString(storm::adapters::XMLtoString(attr->getNodeValue())).evaluateAsInt();
                 } else if (ignorePlaceAttribute(name)) {
                     // ignore node
                 } else {
@@ -388,7 +408,8 @@ namespace storm {
                 } else if (name.compare("kind") == 0) {
                     kind = storm::adapters::XMLtoString(attr->getNodeValue());
                 } else if (name.compare("mult") == 0) {
-                    mult = std::stoull(storm::adapters::XMLtoString(attr->getNodeValue()));
+                    expressionParser.setAcceptDoubleLiterals(false);
+                    mult = expressionParser.parseFromString(storm::adapters::XMLtoString(attr->getNodeValue())).evaluateAsInt();
                 } else if (ignoreArcAttribute(name)) {
                     // ignore node
                 } else {

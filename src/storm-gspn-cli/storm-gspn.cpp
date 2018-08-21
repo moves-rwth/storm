@@ -94,8 +94,13 @@ int main(const int argc, const char **argv) {
             return -1;
         }
         
+        std::string constantDefinitionString = "";
+        if (gspnSettings.isConstantsSet()) {
+            constantDefinitionString = gspnSettings.getConstantDefinitionString();
+        }
+        
         auto parser = storm::parser::GspnParser();
-        auto gspn = parser.parse(gspnSettings.getGspnFilename());
+        auto gspn = parser.parse(gspnSettings.getGspnFilename(), constantDefinitionString);
 
         std::string formulaString = "";
         if (storm::settings::getModule<storm::settings::modules::IOSettings>().isPropertySet()) {
