@@ -36,7 +36,7 @@ namespace storm {
             void traverseNodesElement(xercesc::DOMNode const* const node);
             void traverseEdgesElement(xercesc::DOMNode const* const node);
             
-            void traverseConstantElement(xercesc::DOMNode const* const node, std::unordered_map<std::string, storm::expressions::Expression>& identifierMapping);
+            void traverseConstantOrTemplateElement(xercesc::DOMNode const* const node, std::unordered_map<std::string, storm::expressions::Expression>& identifierMapping);
             void traversePlaceElement(xercesc::DOMNode const* const node);
             void traverseTransitionElement(xercesc::DOMNode const* const node);
             void traverseArcElement(xercesc::DOMNode const* const node);

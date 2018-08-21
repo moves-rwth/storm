@@ -24,13 +24,15 @@ namespace storm {
     namespace parser {
 
         GreatSpnEditorProjectParser::GreatSpnEditorProjectParser(std::string const& constantDefinitionString) : manager(std::make_shared<storm::expressions::ExpressionManager>()), expressionParser(*manager) {
-            std::vector<std::string> constDefs;
-            boost::split( constDefs, constantDefinitionString, boost::is_any_of(","));
-            for (auto const& pair : constDefs) {
-                std::vector<std::string> keyvaluepair;
-                boost::split( keyvaluepair, pair, boost::is_any_of("="));
-                STORM_LOG_THROW(keyvaluepair.size() == 2, storm::exceptions::WrongFormatException, "Expected a constant definition of the form N=42 but got " << pair);
-                constantDefinitions.emplace(keyvaluepair.at(0), keyvaluepair.at(1));
+            if (constantDefinitionString != "") {
+                std::vector<std::string> constDefs;
+                boost::split( constDefs, constantDefinitionString, boost::is_any_of(","));
+                for (auto const& pair : constDefs) {
+                    std::vector<std::string> keyvaluepair;
+                    boost::split( keyvaluepair, pair, boost::is_any_of("="));
+                    STORM_LOG_THROW(keyvaluepair.size() == 2, storm::exceptions::WrongFormatException, "Expected a constant definition of the form N=42 but got " << pair);
+                    constantDefinitions.emplace(keyvaluepair.at(0), keyvaluepair.at(1));
+                }
             }
         }
         
@@ -133,8 +135,8 @@ namespace storm {
             for (uint_fast64_t i = 0; i < node->getChildNodes()->getLength(); ++i) {
                 auto child = node->getChildNodes()->item(i);
                 auto name = storm::adapters::getName(child);
-                if (name.compare("constant") == 0) {
-                    traverseConstantElement(child, identifierMapping);
+                if (name.compare("constant") == 0 || name.compare("template") == 0) {
+                    traverseConstantOrTemplateElement(child, identifierMapping);
                 }
             }
             expressionParser.setIdentifierMapping(identifierMapping);
@@ -148,7 +150,7 @@ namespace storm {
                     traversePlaceElement(child);
                 } else if(name.compare("transition") == 0) {
                     traverseTransitionElement(child);
-                } else if(name.compare("constant") == 0) {
+                } else if(name.compare("constant") == 0 || name.compare("template") == 0) {
                     // Ignore constant def in second pass
                 } else if (isOnlyWhitespace(name)) {
                     // ignore node (contains only whitespace)
@@ -160,7 +162,7 @@ namespace storm {
             }
         }
 
-        void GreatSpnEditorProjectParser::traverseConstantElement(xercesc::DOMNode const* const node, std::unordered_map<std::string, storm::expressions::Expression>& identifierMapping) {
+        void GreatSpnEditorProjectParser::traverseConstantOrTemplateElement(xercesc::DOMNode const* const node, std::unordered_map<std::string, storm::expressions::Expression>& identifierMapping) {
             std::string identifier;
             storm::expressions::Type type;
             std::string valueStr = "";
@@ -172,7 +174,7 @@ namespace storm {
 
                 if (name.compare("name") == 0) {
                     identifier = storm::adapters::XMLtoString(attr->getNodeValue());
-                } else if (name.compare("consttype") == 0) {
+                } else if (name.compare("consttype") == 0 || name.compare("type") == 0) {
                     if (storm::adapters::XMLtoString(attr->getNodeValue()).compare("REAL") == 0) {
                         type = manager->getRationalType();
                     } else if (storm::adapters::XMLtoString(attr->getNodeValue()).compare("INTEGER") == 0) {
@@ -191,8 +193,7 @@ namespace storm {
                 }
             }
             
-            STORM_LOG_THROW(constantDefinitions.count(identifier) == 0, storm::exceptions::NotSupportedException, "Multiple definitions of constant '" << identifier << "' were found.");
-            
+            STORM_LOG_THROW(identifierMapping.count(identifier) == 0, storm::exceptions::NotSupportedException, "Multiple definitions of constant '" << identifier << "' were found.");
             storm::expressions::Expression valueExpression;
             if (valueStr == "") {
                 auto constDef = constantDefinitions.find(identifier);
@@ -317,6 +318,8 @@ namespace storm {
             std::string transitionName;
             bool immediateTransition;
             double rate = 1.0; // The default rate in GreatSPN.
+            double weight = 1.0; // The default weight in GreatSpn
+            uint64_t priority = 1; // The default priority in GreatSpn
             boost::optional<uint64_t> numServers;
 
             // traverse attributes
@@ -329,12 +332,20 @@ namespace storm {
                 } else if (name.compare("type") == 0) {
                     if (storm::adapters::XMLtoString(attr->getNodeValue()).compare("EXP") == 0) {
                         immediateTransition = false;
-                    } else {
+                    } else if (storm::adapters::XMLtoString(attr->getNodeValue()).compare("IMM") == 0) {
                         immediateTransition = true;
+                    } else {
+                        STORM_PRINT_AND_LOG("unknown transition type: " << storm::adapters::XMLtoString(attr->getNodeValue()));
                     }
                 } else if(name.compare("delay") == 0) {
                     expressionParser.setAcceptDoubleLiterals(true);
                     rate = expressionParser.parseFromString(storm::adapters::XMLtoString(attr->getNodeValue())).evaluateAsDouble();
+                } else if(name.compare("weight") == 0) {
+                    expressionParser.setAcceptDoubleLiterals(true);
+                    weight = expressionParser.parseFromString(storm::adapters::XMLtoString(attr->getNodeValue())).evaluateAsDouble();
+                } else if(name.compare("priority") == 0) {
+                    expressionParser.setAcceptDoubleLiterals(false);
+                    priority = expressionParser.parseFromString(storm::adapters::XMLtoString(attr->getNodeValue())).evaluateAsInt();
                 } else if (name.compare("nservers") == 0) {
                     std::string nservers = storm::adapters::XMLtoString(attr->getNodeValue());
                     if (nservers == "Single") {
@@ -356,7 +367,7 @@ namespace storm {
             }
 
             if (immediateTransition) {
-                builder.addImmediateTransition(0, 0, transitionName);
+                builder.addImmediateTransition(priority, weight, transitionName);
             } else {
                 builder.addTimedTransition(0, rate, numServers, transitionName);
             }
@@ -405,7 +416,7 @@ namespace storm {
                     head = storm::adapters::XMLtoString(attr->getNodeValue());
                 } else if (name.compare("tail") == 0) {
                     tail = storm::adapters::XMLtoString(attr->getNodeValue());
-                } else if (name.compare("kind") == 0) {
+                } else if (name.compare("kind") == 0 || name.compare("type") == 0) {
                     kind = storm::adapters::XMLtoString(attr->getNodeValue());
                 } else if (name.compare("mult") == 0) {
                     expressionParser.setAcceptDoubleLiterals(false);
