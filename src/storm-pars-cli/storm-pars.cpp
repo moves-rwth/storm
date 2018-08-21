@@ -533,9 +533,8 @@ namespace storm {
 
                 // Monotonicity?
                 storm::utility::Stopwatch monotonicityWatch(true);
-                // Map with for each variable bool whether it is monotonic or not (assume montone increasing)
-                std::map<carl::Variable, bool> varsMonotoneIncr;
-                std::map<carl::Variable, bool> varsMonotoneDecr;
+                // Map with for each variable bool pair whether it is monotone increasing (first) or monotone decreasing (second)
+                std::map<carl::Variable, std::pair<bool, bool>> varsMonotone;
 
                 for (uint_fast64_t i = 0; i < sparseModel.get()->getNumberOfStates(); ++i) {
                     // go over all rows
@@ -552,21 +551,22 @@ namespace storm {
                             auto derivative = val.derivative(*itr);
                             STORM_LOG_THROW(derivative.isConstant(), storm::exceptions::NotSupportedException, "Expecting probability to have at most degree 1");
 
-                            if (varsMonotoneIncr.find(*itr) == varsMonotoneIncr.end()) {
-                                varsMonotoneIncr[*itr] = true;
-                                varsMonotoneDecr[*itr] = true;
+                            if (varsMonotone.find(*itr) == varsMonotone.end()) {
+                                varsMonotone[*itr].first = true;
+                                varsMonotone[*itr].second = true;
                             }
 
                             auto compare = lattice->compare(first.getColumn(), second.getColumn());
+                            std::pair<bool, bool>* value = &varsMonotone.find(*itr)->second;
                             if (compare == 1) {
-                                varsMonotoneIncr.find(*itr)->second &=derivative.constantPart() >= 0;
-                                varsMonotoneDecr.find(*itr)->second &=derivative.constantPart() <= 0;
+                                value->first &=derivative.constantPart() >= 0;
+                                value->second &=derivative.constantPart() <= 0;
                             } else if (compare == 2) {
-                                varsMonotoneIncr.find(*itr)->second &= derivative.constantPart() <= 0;
-                                varsMonotoneDecr.find(*itr)->second &= derivative.constantPart() >= 0;
+                                value->first &=derivative.constantPart() <= 0;
+                                value->second &=derivative.constantPart() >= 0;
                             } else {
-                                varsMonotoneIncr.find(*itr)->second = false;
-                                varsMonotoneDecr.find(*itr)->second = false;
+                                value->first = false;
+                                value->second = false;
                             }
                         }
                     }
@@ -575,16 +575,13 @@ namespace storm {
                 }
                 monotonicityWatch.stop();
                 STORM_PRINT(std::endl << "Time for monotonicity: " << monotonicityWatch << "." << std::endl << std::endl);
-
-                for (auto itr = varsMonotoneIncr.begin(); itr != varsMonotoneIncr.end(); ++itr) {
-                    if (itr->second) {
+                for (auto itr = varsMonotone.begin(); itr != varsMonotone.end(); ++itr) {
+                    if (itr->second.first) {
                         std::cout << "Monotone increasing in: " << itr->first << std::endl;
                     } else {
                         std::cout << "Do not know if monotone increasing in: " << itr->first << std::endl;
                     }
-                }
-                for (auto itr = varsMonotoneDecr.begin(); itr != varsMonotoneDecr.end(); ++itr) {
-                    if (itr->second) {
+                    if (itr->second.second) {
                         std::cout << "Monotone decreasing in: " << itr->first << std::endl;
                     } else {
                         std::cout << "Do not know if monotone decreasing in: " << itr->first << std::endl;
