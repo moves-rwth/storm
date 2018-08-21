@@ -34,8 +34,8 @@ namespace storm {
             newNode->states.set(state);
             newNode->above = std::vector<Node *>({above});
             newNode->below = std::vector<Node *>({below});
-//            remove(&(below->above), above);
-//            remove(&(above->below), below);
+            remove(&(below->above), above);
+            remove(&(above->below), below);
             (below->above).push_back(newNode);
             above->below.push_back(newNode);
             nodes.at(state) = newNode;
