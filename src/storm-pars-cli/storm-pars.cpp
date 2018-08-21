@@ -523,6 +523,8 @@ namespace storm {
                 storm::storage::BitVector topStates = statesWithProbability01.second;
                 storm::storage::BitVector bottomStates = statesWithProbability01.first;
 
+                STORM_LOG_THROW(topStates.begin() != topStates.end(), storm::exceptions::NotImplementedException, "Formula yields to no 1 states");
+                STORM_LOG_THROW(bottomStates.begin() != bottomStates.end(), storm::exceptions::NotImplementedException, "Formula yields to no zero states");
                 // Transform to Lattice
                 storm::storage::SparseMatrix<ValueType> matrix = sparseModel.get()->getTransitionMatrix();
                 storm::analysis::Lattice* lattice = storm::analysis::Lattice::toLattice<ValueType>(matrix, topStates, bottomStates);
@@ -540,16 +542,15 @@ namespace storm {
                     // go over all rows
                     auto row = matrix.getRow(i);
 
-
                     auto first = (*row.begin());
                     if (first.getValue() != ValueType(1)) {
-                        auto second = (* (row.begin() + 1));
+                        auto second = (*(++row.begin()));
 
                         auto val = first.getValue();
                         auto vars = val.gatherVariables();
                         for (auto itr = vars.begin(); itr != vars.end(); ++itr) {
                             auto derivative = val.derivative(*itr);
-                            STORM_LOG_THROW(derivative.isConstant(), storm::exceptions::NotSupportedException, "Expecting probability to have at most degree 1");
+                            STORM_LOG_THROW(derivative.isConstant(), storm::exceptions::NotSupportedException, "Expecting derivative to be constant");
 
                             if (varsMonotone.find(*itr) == varsMonotone.end()) {
                                 varsMonotone[*itr].first = true;
