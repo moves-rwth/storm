@@ -542,7 +542,7 @@ namespace storm {
                 STORM_PRINT(std::endl << "Time for lattice creation: " << latticeWatch << "." << std::endl << std::endl);
 
                 ofstream myfile;
-                myfile.open ("output.dot");
+                myfile.open ("lattice.dot");
                 lattice->toDotFile(myfile);
                 myfile.close();
 
@@ -552,6 +552,16 @@ namespace storm {
                 // Map with for each variable bool pair whether it is monotone increasing (first) or monotone decreasing (second)
                 std::map<carl::Variable, std::pair<bool, bool>> varsMonotone;
 
+                myfile.open ("mc.dot");
+                myfile << "digraph \"MC\" {" << std::endl;
+                myfile << "\t" << "node [shape=ellipse]" << std::endl;
+                // print all nodes
+                for (uint_fast64_t i = 0; i < sparseModel.get()->getNumberOfStates(); ++i) {
+                    myfile << "\t\"" << i << "\" [label = \"" << i << "\"]" << std::endl;
+                }
+
+
+
                 for (uint_fast64_t i = 0; i < sparseModel.get()->getNumberOfStates(); ++i) {
                     // go over all rows
                     auto row = matrix.getRow(i);
@@ -559,7 +569,7 @@ namespace storm {
                     auto first = (*row.begin());
                     if (first.getValue() != ValueType(1)) {
                         auto second = (*(++row.begin()));
-
+                        string color = "";
                         auto val = first.getValue();
                         auto vars = val.gatherVariables();
                         for (auto itr = vars.begin(); itr != vars.end(); ++itr) {
@@ -573,6 +583,7 @@ namespace storm {
 
                             auto compare = lattice->compare(first.getColumn(), second.getColumn());
                             std::pair<bool, bool>* value = &varsMonotone.find(*itr)->second;
+                            std::pair<bool, bool> old = *value;
                             if (compare == 1) {
                                 value->first &=derivative.constantPart() >= 0;
                                 value->second &=derivative.constantPart() <= 0;
@@ -583,11 +594,41 @@ namespace storm {
                                 value->first = false;
                                 value->second = false;
                             }
+                            if ((value->first != old.first) && (value->second != old.second)) {
+                                color = "color = red, ";
+                            } else if ((value->first != old.first)) {
+                                myfile << "\t edge[style=dashed];" << std::endl;
+                                color = "color = blue, ";
+                            } else if ((value->second != old.second)) {
+                                myfile << "\t edge[style=dotted];" << std::endl;
+                                color = "color = blue, ";
+                            }
                         }
+                        myfile << "\t" << i << " -> " << first.getColumn() << "[" << color << "label=\"" << first.getValue() << "\"];"
+                               << std::endl;
+                        myfile << "\t" << i << " -> " << second.getColumn() << "[" << color << "label=\"" << second.getValue() << "\"];"
+                               << std::endl;
+                        myfile << "\t edge[style=\"\"];" << std::endl;
+                    } else {
+                        myfile << "\t" << i << " -> " << first.getColumn() << "[label=\"" << first.getValue() << "\"];"
+                               << std::endl;
                     }
 
 
                 }
+
+                myfile << "\tsubgraph legend {" << std::endl;
+//                myfile << "\t\trank=\"source\";" << std::endl;
+                myfile << "\t\tnode [color=white];" << std::endl;
+                myfile << "\t\tedge [style=invis];" << std::endl;
+                myfile << "\t\tedge [style=invis];" << std::endl;
+                myfile << "\t\tt0 [label=\"incr+decr false\", fontcolor=red];" << std::endl;
+                myfile << "\t\tt1 [label=\"incr false (dashed)\", fontcolor=blue];" << std::endl;
+                myfile << "\t\tt2 [label=\"decr false (dotted)\", fontcolor=blue];" << std::endl;
+
+                myfile << "\t}" << std::endl;
+                myfile << "}" << std::endl;
+                myfile.close();
                 monotonicityWatch.stop();
                 STORM_PRINT(std::endl << "Time for monotonicity: " << monotonicityWatch << "." << std::endl << std::endl);
                 for (auto itr = varsMonotone.begin(); itr != varsMonotone.end(); ++itr) {
