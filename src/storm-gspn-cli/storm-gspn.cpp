@@ -69,7 +69,8 @@ int main(const int argc, const char **argv) {
 
         // parse gspn from file
         if (!gspnSettings.isGspnFileSet()) {
-            return -1;
+            // If no gspn file is given, nothing needs to be done.
+            return 0;
         }
         
         std::string constantDefinitionString = "";
