@@ -171,8 +171,13 @@ namespace storm {
         
         
 
-        storm::gspn::GSPN* GspnBuilder::buildGspn() const {
-            std::shared_ptr<storm::expressions::ExpressionManager> exprManager(new storm::expressions::ExpressionManager());
+        storm::gspn::GSPN* GspnBuilder::buildGspn(std::shared_ptr<storm::expressions::ExpressionManager> const& exprManager, std::map<storm::expressions::Variable, storm::expressions::Expression> const& constantsSubstitution) const {
+            std::shared_ptr<storm::expressions::ExpressionManager> actualExprManager;
+            if (exprManager) {
+                actualExprManager = exprManager;
+            } else {
+                actualExprManager = std::make_shared<storm::expressions::ExpressionManager>();
+            }
 
             std::vector<TransitionPartition> orderedPartitions;
             for(auto const& priorityPartitions : partitions) {
@@ -188,10 +193,10 @@ namespace storm {
             }
             std::reverse(orderedPartitions.begin(), orderedPartitions.end());
             for(auto const& placeEntry : placeNames) {
-                exprManager->declareIntegerVariable(placeEntry.first, false);
+                actualExprManager->declareIntegerVariable(placeEntry.first, false);
             }
 
-            GSPN* result = new GSPN(gspnName, places, immediateTransitions, timedTransitions, orderedPartitions, exprManager);
+            GSPN* result = new GSPN(gspnName, places, immediateTransitions, timedTransitions, orderedPartitions, actualExprManager, constantsSubstitution);
             result->setTransitionLayoutInfo(transitionLayout);
             result->setPlaceLayoutInfo(placeLayout);
             return result;

@@ -100,10 +100,10 @@ namespace storm {
             
             
             /**
-             *
+             * @param exprManager The expression manager that will be associated with the new gspn. If this is nullptr, a new expressionmanager will be created.
              * @return The gspn which is constructed by the builder.
              */
-            storm::gspn::GSPN* buildGspn() const;
+            storm::gspn::GSPN* buildGspn(std::shared_ptr<storm::expressions::ExpressionManager> const& exprManager = nullptr, std::map<storm::expressions::Variable, storm::expressions::Expression> const& constantsSubstitution = std::map<storm::expressions::Variable, storm::expressions::Expression>()) const;
         private:
             bool isImmediateTransitionId(uint64_t) const;
             bool isTimedTransitionId(uint64_t) const;

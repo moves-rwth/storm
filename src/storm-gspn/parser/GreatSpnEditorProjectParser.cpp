@@ -23,7 +23,7 @@ namespace {
 namespace storm {
     namespace parser {
 
-        GreatSpnEditorProjectParser::GreatSpnEditorProjectParser(std::string const& constantDefinitionString) : manager(std::make_shared<storm::expressions::ExpressionManager>()), expressionParser(*manager) {
+        GreatSpnEditorProjectParser::GreatSpnEditorProjectParser(std::string const& constantDefinitionString) : manager(std::make_shared<storm::expressions::ExpressionManager>()) {
             if (constantDefinitionString != "") {
                 std::vector<std::string> constDefs;
                 boost::split( constDefs, constantDefinitionString, boost::is_any_of(","));
@@ -39,7 +39,7 @@ namespace storm {
         storm::gspn::GSPN* GreatSpnEditorProjectParser::parse(xercesc::DOMElement const*  elementRoot) {
             if (storm::adapters::XMLtoString(elementRoot->getTagName()) == "project") {
                 traverseProjectElement(elementRoot);
-                return builder.buildGspn();
+                return builder.buildGspn(manager, constantsSubstitution);
             } else {
                 // If the top-level node is not a "pnml" or "" node, then throw an exception.
                 STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Failed to identify the root element.\n");
@@ -130,17 +130,23 @@ namespace storm {
 
             // traverse children
             // First pass: find constant definitions
+            constantsSubstitution.clear();
+            expressionParser = std::make_shared<storm::parser::ExpressionParser>(*manager);
             std::unordered_map<std::string, storm::expressions::Expression> identifierMapping;
-            expressionParser.setIdentifierMapping(identifierMapping);
+            expressionParser->setIdentifierMapping(identifierMapping);
             for (uint_fast64_t i = 0; i < node->getChildNodes()->getLength(); ++i) {
                 auto child = node->getChildNodes()->item(i);
                 auto name = storm::adapters::getName(child);
                 if (name.compare("constant") == 0 || name.compare("template") == 0) {
-                    traverseConstantOrTemplateElement(child, identifierMapping);
+                    traverseConstantOrTemplateElement(child);
                 }
             }
-            expressionParser.setIdentifierMapping(identifierMapping);
-            
+            // Update the expression parser to make the newly created variables known to it
+            expressionParser = std::make_shared<storm::parser::ExpressionParser>(*manager);
+            for (auto const& var : manager->getVariables()) {
+                identifierMapping.emplace(var.getName(), var.getExpression());
+            }
+            expressionParser->setIdentifierMapping(identifierMapping);
             // Second pass: traverse other children
             for (uint_fast64_t i = 0; i < node->getChildNodes()->getLength(); ++i) {
                 auto child = node->getChildNodes()->item(i);
@@ -162,7 +168,7 @@ namespace storm {
             }
         }
 
-        void GreatSpnEditorProjectParser::traverseConstantOrTemplateElement(xercesc::DOMNode const* const node, std::unordered_map<std::string, storm::expressions::Expression>& identifierMapping) {
+        void GreatSpnEditorProjectParser::traverseConstantOrTemplateElement(xercesc::DOMNode const* const node) {
             std::string identifier;
             storm::expressions::Type type;
             std::string valueStr = "";
@@ -193,24 +199,24 @@ namespace storm {
                 }
             }
             
-            STORM_LOG_THROW(identifierMapping.count(identifier) == 0, storm::exceptions::NotSupportedException, "Multiple definitions of constant '" << identifier << "' were found.");
-            storm::expressions::Expression valueExpression;
+            STORM_LOG_THROW(!manager->hasVariable(identifier), storm::exceptions::NotSupportedException, "Multiple definitions of constant '" << identifier << "' were found.");
             if (valueStr == "") {
                 auto constDef = constantDefinitions.find(identifier);
                 STORM_LOG_THROW(constDef != constantDefinitions.end(), storm::exceptions::NotSupportedException, "Constant '" << identifier << "' has no value defined.");
                 valueStr = constDef->second;
             }
+            storm::expressions::Variable var;
             if (type.isRationalType()) {
-                expressionParser.setAcceptDoubleLiterals(true);
-                valueExpression = manager->rational(expressionParser.parseFromString(valueStr).evaluateAsRational());
+                var = manager->declareRationalVariable(identifier);
+                expressionParser->setAcceptDoubleLiterals(true);
             } else if (type.isIntegerType()) {
-                expressionParser.setAcceptDoubleLiterals(false);
-                valueExpression = manager->integer(expressionParser.parseFromString(valueStr).evaluateAsInt());
+                var = manager->declareIntegerVariable(identifier);
+                expressionParser->setAcceptDoubleLiterals(false);
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Unknown type of constant" << type << ".");
             }
-            identifierMapping.emplace(identifier, valueExpression);
-
+            constantsSubstitution.emplace(var, expressionParser->parseFromString(valueStr));
+            
             // traverse children
             for (uint_fast64_t i = 0; i < node->getChildNodes()->getLength(); ++i) {
                 auto child = node->getChildNodes()->item(i);
@@ -277,8 +283,7 @@ namespace storm {
                 if (name.compare("name") == 0) {
                     placeName = storm::adapters::XMLtoString(attr->getNodeValue());
                 } else if (name.compare("marking") == 0) {
-                    expressionParser.setAcceptDoubleLiterals(false);
-                    initialTokens = expressionParser.parseFromString(storm::adapters::XMLtoString(attr->getNodeValue())).evaluateAsInt();
+                    initialTokens = parseInt(storm::adapters::XMLtoString(attr->getNodeValue()));
                 } else if (ignorePlaceAttribute(name)) {
                     // ignore node
                 } else {
@@ -338,14 +343,11 @@ namespace storm {
                         STORM_PRINT_AND_LOG("unknown transition type: " << storm::adapters::XMLtoString(attr->getNodeValue()));
                     }
                 } else if(name.compare("delay") == 0) {
-                    expressionParser.setAcceptDoubleLiterals(true);
-                    rate = expressionParser.parseFromString(storm::adapters::XMLtoString(attr->getNodeValue())).evaluateAsDouble();
+                    rate = parseReal(storm::adapters::XMLtoString(attr->getNodeValue()));
                 } else if(name.compare("weight") == 0) {
-                    expressionParser.setAcceptDoubleLiterals(true);
-                    weight = expressionParser.parseFromString(storm::adapters::XMLtoString(attr->getNodeValue())).evaluateAsDouble();
+                    weight = parseReal(storm::adapters::XMLtoString(attr->getNodeValue()));
                 } else if(name.compare("priority") == 0) {
-                    expressionParser.setAcceptDoubleLiterals(false);
-                    priority = expressionParser.parseFromString(storm::adapters::XMLtoString(attr->getNodeValue())).evaluateAsInt();
+                    priority = parseInt(storm::adapters::XMLtoString(attr->getNodeValue()));
                 } else if (name.compare("nservers") == 0) {
                     std::string nservers = storm::adapters::XMLtoString(attr->getNodeValue());
                     if (nservers == "Single") {
@@ -353,8 +355,7 @@ namespace storm {
                     } else if (nservers == "Infinite") {
                         // Ignore this case as we assume infinite by default (similar to GreatSpn)
                     } else {
-                        expressionParser.setAcceptDoubleLiterals(false);
-                        numServers = expressionParser.parseFromString(nservers).evaluateAsInt();
+                        numServers = parseInt(nservers);
                     }
                 } else if (ignoreTransitionAttribute(name)) {
                     // ignore node
@@ -419,8 +420,7 @@ namespace storm {
                 } else if (name.compare("kind") == 0 || name.compare("type") == 0) {
                     kind = storm::adapters::XMLtoString(attr->getNodeValue());
                 } else if (name.compare("mult") == 0) {
-                    expressionParser.setAcceptDoubleLiterals(false);
-                    mult = expressionParser.parseFromString(storm::adapters::XMLtoString(attr->getNodeValue())).evaluateAsInt();
+                    mult = parseInt(storm::adapters::XMLtoString(attr->getNodeValue()));
                 } else if (ignoreArcAttribute(name)) {
                     // ignore node
                 } else {
@@ -462,6 +462,21 @@ namespace storm {
                 }
             }
         }
+        
+        int64_t GreatSpnEditorProjectParser::parseInt(std::string str) {
+            expressionParser->setAcceptDoubleLiterals(false);
+            auto expr = expressionParser->parseFromString(str).substitute(constantsSubstitution);
+            STORM_LOG_ASSERT(!expr.containsVariables(), "Can not evaluate expression " << str << " as it contains undefined variables.");
+            return expr.evaluateAsInt();
+        }
+        
+        double GreatSpnEditorProjectParser::parseReal(std::string str) {
+            expressionParser->setAcceptDoubleLiterals(true);
+            auto expr = expressionParser->parseFromString(str).substitute(constantsSubstitution);
+            STORM_LOG_ASSERT(!expr.containsVariables(), "Can not evaluate expression " << str << " as it contains undefined variables.");
+            return expr.evaluateAsDouble();
+        }
+        
         
     }
 }
