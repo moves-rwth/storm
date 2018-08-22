@@ -94,9 +94,8 @@ namespace storm {
                     /*!
                      * Creates a Lattice based on the transition matrix, topStates of the Lattice and bottomStates of the Lattice
                      * @tparam ValueType Type of the probabilities
-                     * @param matrix The transition matrix.
-                     * @param topStates Set of topStates of the Lattice.
-                     * @param bottomStates Set of bottomStates of the Lattice.
+                     * @param model The pointer to the model
+                     * @param formulas Vector with pointer to formula
                      * @return pointer to the created Lattice.
                      */
                     template <typename ValueType>
