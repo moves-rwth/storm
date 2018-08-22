@@ -461,7 +461,7 @@ namespace storm {
 
             if (parSettings.isMonotonicityAnalysisSet()) {
                 std::cout << "Hello, Jip1" << std::endl;
-//                STORM_LOG_THROW(storm::settings::getModule<storm::settings::modules::GeneralSettings>().isBisimulationSet(), storm::exceptions::InvalidSettingsException, "Monotonicity analysis requires bisimulation");
+                // Simplify the model
                 storm::utility::Stopwatch simplifyingWatch(true);
                 if (model->isOfType(storm::models::ModelType::Dtmc)) {
                     auto consideredModel = (model->as<storm::models::sparse::Dtmc<ValueType>>());
@@ -486,7 +486,7 @@ namespace storm {
                     }
                     model = simplifier.getSimplifiedModel();
                 } else {
-                    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Unable to perform parameterLifting on the provided model type.");
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Unable to perform monotonicity analysis on the provided model type.");
                 }
 
                 simplifyingWatch.stop();
@@ -508,35 +508,10 @@ namespace storm {
                 storm::utility::Stopwatch latticeWatch(true);
 
                 std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(input.properties);
-
-                STORM_LOG_THROW((++formulas.begin()) == formulas.end(), storm::exceptions::NotSupportedException, "Only one formula allowed for monotonicity analysis");
-                STORM_LOG_THROW((*(formulas[0])).isProbabilityOperatorFormula()
-                                && ((*(formulas[0])).asProbabilityOperatorFormula().getSubformula().isUntilFormula()
-                                        || (*(formulas[0])).asProbabilityOperatorFormula().getSubformula().isEventuallyFormula()), storm::exceptions::NotSupportedException, "Expecting until formula");
-
                 std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel = model->as<storm::models::sparse::Model<ValueType>>();
-                storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Model<ValueType>> propositionalChecker(*sparseModel);
 
-                storm::storage::BitVector phiStates;
-                storm::storage::BitVector psiStates;
-                if ((*(formulas[0])).asProbabilityOperatorFormula().getSubformula().isUntilFormula()) {
-                    phiStates = propositionalChecker.check((*(formulas[0])).asProbabilityOperatorFormula().getSubformula().asUntilFormula().getLeftSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
-                    psiStates = propositionalChecker.check((*(formulas[0])).asProbabilityOperatorFormula().getSubformula().asUntilFormula().getRightSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
-                } else {
-                    phiStates = storm::storage::BitVector(sparseModel.get()->getNumberOfStates(), true);
-                    psiStates = propositionalChecker.check((*(formulas[0])).asProbabilityOperatorFormula().getSubformula().asEventuallyFormula().getSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
-                }
-
-                // Get the maybeStates
-                std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(sparseModel.get()->getBackwardTransitions(), phiStates, psiStates);
-                storm::storage::BitVector topStates = statesWithProbability01.second;
-                storm::storage::BitVector bottomStates = statesWithProbability01.first;
-
-                STORM_LOG_THROW(topStates.begin() != topStates.end(), storm::exceptions::NotImplementedException, "Formula yields to no 1 states");
-                STORM_LOG_THROW(bottomStates.begin() != bottomStates.end(), storm::exceptions::NotImplementedException, "Formula yields to no zero states");
                 // Transform to Lattice
-                storm::storage::SparseMatrix<ValueType> matrix = sparseModel.get()->getTransitionMatrix();
-                storm::analysis::Lattice* lattice = storm::analysis::Lattice::toLattice<ValueType>(matrix, topStates, bottomStates);
+                storm::analysis::Lattice* lattice = storm::analysis::Lattice::toLattice<ValueType>(sparseModel, formulas);
 
                 latticeWatch.stop();
                 STORM_PRINT(std::endl << "Time for lattice creation: " << latticeWatch << "." << std::endl << std::endl);
@@ -561,7 +536,7 @@ namespace storm {
                 }
 
 
-
+                storm::storage::SparseMatrix<ValueType> matrix = sparseModel.get()->getTransitionMatrix();
                 for (uint_fast64_t i = 0; i < sparseModel.get()->getNumberOfStates(); ++i) {
                     // go over all rows
                     auto row = matrix.getRow(i);
@@ -618,13 +593,11 @@ namespace storm {
                 }
 
                 myfile << "\tsubgraph legend {" << std::endl;
-//                myfile << "\t\trank=\"source\";" << std::endl;
                 myfile << "\t\tnode [color=white];" << std::endl;
                 myfile << "\t\tedge [style=invis];" << std::endl;
-                myfile << "\t\tedge [style=invis];" << std::endl;
-                myfile << "\t\tt0 [label=\"incr+decr false\", fontcolor=red];" << std::endl;
-                myfile << "\t\tt1 [label=\"incr false (dashed)\", fontcolor=blue];" << std::endl;
-                myfile << "\t\tt2 [label=\"decr false (dotted)\", fontcolor=blue];" << std::endl;
+                myfile << "\t\tt0 [label=\"incr? and decr?\", fontcolor=red];" << std::endl;
+                myfile << "\t\tt1 [label=\"incr? (dashed)\", fontcolor=blue];" << std::endl;
+                myfile << "\t\tt2 [label=\"decr? (dotted)\", fontcolor=blue];" << std::endl;
 
                 myfile << "\t}" << std::endl;
                 myfile << "}" << std::endl;
@@ -647,8 +620,6 @@ namespace storm {
                 std::cout << "Bye, Jip2" << std::endl;
                 return;
             }
-
-
 
             std::vector<storm::storage::ParameterRegion<ValueType>> regions = parseRegions<ValueType>(model);
             std::string samplesAsString = parSettings.getSamples();

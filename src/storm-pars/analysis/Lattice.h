@@ -7,10 +7,16 @@
 
 #include <iostream>
 #include <vector>
+#include <storm/logic/Formula.h>
+#include <storm/modelchecker/propositional/SparsePropositionalModelChecker.h>
 
 #include "storm/models/sparse/Model.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
+#include "storm/utility/macros.h"
+#include "storm/utility/graph.h"
+#include "storm/exceptions/NotImplementedException.h"
+#include "storm/exceptions/NotSupportedException.h"
 
 
 namespace storm {
@@ -94,10 +100,35 @@ namespace storm {
                      * @return pointer to the created Lattice.
                      */
                     template <typename ValueType>
-                    static Lattice* toLattice(storm::storage::SparseMatrix<ValueType> matrix,
-                                                 storm::storage::BitVector topStates,
-                                                 storm::storage::BitVector bottomStates) {
-                        uint_fast64_t numberOfStates = matrix.getColumnCount();
+                    static Lattice* toLattice(std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel, std::vector<std::shared_ptr<storm::logic::Formula const>> formulas) {
+                        STORM_LOG_THROW((++formulas.begin()) == formulas.end(), storm::exceptions::NotSupportedException, "Only one formula allowed for monotonicity analysis");
+                        STORM_LOG_THROW((*(formulas[0])).isProbabilityOperatorFormula()
+                                        && ((*(formulas[0])).asProbabilityOperatorFormula().getSubformula().isUntilFormula()
+                                            || (*(formulas[0])).asProbabilityOperatorFormula().getSubformula().isEventuallyFormula()), storm::exceptions::NotSupportedException, "Expecting until formula");
+
+                        uint_fast64_t numberOfStates = sparseModel.get()->getNumberOfStates();
+
+                        storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Model<ValueType>> propositionalChecker(*sparseModel);
+                        storm::storage::BitVector phiStates;
+                        storm::storage::BitVector psiStates;
+                        if ((*(formulas[0])).asProbabilityOperatorFormula().getSubformula().isUntilFormula()) {
+                            phiStates = propositionalChecker.check((*(formulas[0])).asProbabilityOperatorFormula().getSubformula().asUntilFormula().getLeftSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
+                            psiStates = propositionalChecker.check((*(formulas[0])).asProbabilityOperatorFormula().getSubformula().asUntilFormula().getRightSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
+                        } else {
+                            phiStates = storm::storage::BitVector(numberOfStates, true);
+                            psiStates = propositionalChecker.check((*(formulas[0])).asProbabilityOperatorFormula().getSubformula().asEventuallyFormula().getSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
+                        }
+
+                        // Get the maybeStates
+                        std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(sparseModel.get()->getBackwardTransitions(), phiStates, psiStates);
+                        storm::storage::BitVector topStates = statesWithProbability01.second;
+                        storm::storage::BitVector bottomStates = statesWithProbability01.first;
+
+                        STORM_LOG_THROW(topStates.begin() != topStates.end(), storm::exceptions::NotImplementedException, "Formula yields to no 1 states");
+                        STORM_LOG_THROW(bottomStates.begin() != bottomStates.end(), storm::exceptions::NotImplementedException, "Formula yields to no zero states");
+
+                        // Transform to Lattice
+                        auto matrix = sparseModel.get()->getTransitionMatrix();
 
                         // Transform the transition matrix into a vector containing the states with the state to which the transition goes.
                         std::vector <State*> stateVector = std::vector<State *>({});
