@@ -209,10 +209,8 @@ namespace storm {
                 } else if(tbr.isRewardBound()) {
                     modernjson::json rewbound;
                     rewbound["exp"] = tbr.getRewardName();
-                    std::vector<std::string> accvec;
-                    if (model.isDiscreteTimeModel()) {
-                        accvec.push_back("steps");
-                    } else {
+                    std::vector<std::string> accvec = {"steps"};
+                    if (!model.isDiscreteTimeModel()) {
                         accvec.push_back("time");
                     }
                     rewbound["accumulate"] = modernjson::json(accvec);
@@ -403,10 +401,9 @@ namespace storm {
         
         boost::any FormulaToJaniJson::visit(storm::logic::RewardOperatorFormula const& f, boost::any const& data) const {
             modernjson::json opDecl;
-            std::vector<std::string> accvec;
+            std::vector<std::string> accvec = {"steps"};
             std::string instantName;
             if (model.isDiscreteTimeModel()) {
-                accvec.push_back("steps");
                 instantName = "step-instant";
             } else {
                 accvec.push_back("time");

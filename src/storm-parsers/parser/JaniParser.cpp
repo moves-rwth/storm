@@ -243,8 +243,7 @@ namespace storm {
                             }
                         }
                     }
-                    STORM_LOG_THROW(!(accTime && accSteps), storm::exceptions::NotSupportedException, "Storm does not allow to accumulate over both time and steps");
-                    
+                    // TODO: handle accumulation parameters!
                     
                     if (propertyStructure.count("step-instant") > 0) {
                         STORM_LOG_THROW(propertyStructure.count("time-instant") == 0, storm::exceptions::NotSupportedException, "Storm does not support to have a step-instant and a time-instant in " + context);
@@ -303,7 +302,8 @@ namespace storm {
                                     STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "One may only accumulate either 'steps' or 'time', got " << accEntry.dump() << " in "  << context);
                                 }
                             }
-                            STORM_LOG_THROW((rewInstAccTime && !rewInstAccSteps) || (!rewInstAccTime && rewInstAccSteps), storm::exceptions::NotSupportedException, "Storm only allows to accumulate either over time or over steps in " + context);
+                            STORM_LOG_THROW(rewInstAccSteps || rewInstAccTime, storm::exceptions::NotSupportedException, "Storm only allows to accumulate either over time or over steps in " + context);
+                            // TODO: handle accumulation parameters
                             storm::expressions::Expression rewInstantExpr = parseExpression(rewInst.at("instant"), "reward instant in " + context, globalVars, constants);
                             bounds.emplace_back(false, rewInstantExpr);
                         }
