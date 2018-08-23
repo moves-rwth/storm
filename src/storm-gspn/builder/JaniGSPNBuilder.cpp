@@ -9,7 +9,13 @@ namespace storm {
     namespace builder {
 
         storm::jani::Model* JaniGSPNBuilder::build(std::string const& automatonName, bool buildStandardProperties) {
-            storm::jani::Model* model = new storm::jani::Model(gspn.getName(), storm::jani::ModelType::MA, janiVersion, expressionManager);
+            storm::jani::ModelType modelType = storm::jani::ModelType::MA;
+            if (gspn.getNumberOfTimedTransitions() == 0) {
+                storm::jani::ModelType modelType = storm::jani::ModelType::MDP;
+            } else if (gspn.getNumberOfImmediateTransitions() == 0) {
+                storm::jani::ModelType modelType = storm::jani::ModelType::CTMC;
+            }
+            storm::jani::Model* model = new storm::jani::Model(gspn.getName(), modelType, janiVersion, expressionManager);
             storm::jani::Automaton mainAutomaton(automatonName, expressionManager->declareIntegerVariable("loc"));
             addVariables(model);
             uint64_t locId = addLocation(mainAutomaton);
