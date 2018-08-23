@@ -61,6 +61,14 @@ namespace storm {
                     void add(uint_fast64_t state);
 
                     /*!
+                     * Adds a new relation to the lattice
+                     * @param above The node closest to the top Node of the Lattice.
+                     * @param between The node between above and below.
+                     * @param below The node closest to the bottom Node of the Lattice.
+                     */
+                    void addRelation(Node* above, Node* between, Node* below);
+
+                    /*!
                      * Compares the level of the nodes of the states.
                      * Behaviour unknown when one or more of the states doesnot occur at any Node in the Lattice.
                      * @param state1 The first state.

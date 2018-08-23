@@ -49,6 +49,14 @@ namespace storm {
             addBetween(state, top, bottom);
         }
 
+        void Lattice::addRelation(storm::analysis::Lattice::Node *above, storm::analysis::Lattice::Node *between,
+                                  storm::analysis::Lattice::Node *below) {
+            above->below.insert(between);
+            between->above.insert(above);
+            between->below.insert(below);
+            below->above.insert(between);
+        }
+
         int Lattice::compare(uint_fast64_t state1, uint_fast64_t state2) {
             Node *node1 = getNode(state1);
             Node *node2 = getNode(state2);

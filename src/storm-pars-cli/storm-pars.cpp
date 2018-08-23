@@ -437,6 +437,90 @@ namespace storm {
             storm::pars::verifyWithSparseEngine<ValueType>(model->as<storm::models::sparse::Model<ValueType>>(), input, regions, samples);
         }
 
+        template <typename ValueType>
+        std::map<carl::Variable, std::pair<bool, bool>> analyseMonotonicity(storm::analysis::Lattice* lattice, storm::storage::SparseMatrix<ValueType> matrix) {
+            //TODO: Seperate cpp file with this and criticalstatefinding/handling
+            std::map<carl::Variable, std::pair<bool, bool>> varsMonotone;
+            ofstream myfile;
+            myfile.open ("mc.dot");
+            myfile << "digraph \"MC\" {" << std::endl;
+            myfile << "\t" << "node [shape=ellipse]" << std::endl;
+            // print all nodes
+            for (uint_fast64_t i = 0; i < matrix.getColumnCount(); ++i) {
+                myfile << "\t\"" << i << "\" [label = \"" << i << "\"]" << std::endl;
+            }
+
+
+            for (uint_fast64_t i = 0; i < matrix.getColumnCount(); ++i) {
+                // go over all rows
+                auto row = matrix.getRow(i);
+
+                auto first = (*row.begin());
+                if (first.getValue() != ValueType(1)) {
+                    auto second = (*(++row.begin()));
+                    string color = "";
+                    auto val = first.getValue();
+                    auto vars = val.gatherVariables();
+                    for (auto itr = vars.begin(); itr != vars.end(); ++itr) {
+                        auto derivative = val.derivative(*itr);
+                        STORM_LOG_THROW(derivative.isConstant(), storm::exceptions::NotSupportedException, "Expecting derivative to be constant");
+
+                        if (varsMonotone.find(*itr) == varsMonotone.end()) {
+                            varsMonotone[*itr].first = true;
+                            varsMonotone[*itr].second = true;
+                        }
+
+                        auto compare = lattice->compare(first.getColumn(), second.getColumn());
+                        std::pair<bool, bool>* value = &varsMonotone.find(*itr)->second;
+                        std::pair<bool, bool> old = *value;
+                        if (compare == 1) {
+                            value->first &=derivative.constantPart() >= 0;
+                            value->second &=derivative.constantPart() <= 0;
+                        } else if (compare == 2) {
+                            value->first &=derivative.constantPart() <= 0;
+                            value->second &=derivative.constantPart() >= 0;
+                        } else if (compare == 0) {
+                            STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Don't know what is happening, something in monotonicity checking went wrong");
+                        } else {
+                            value->first = false;
+                            value->second = false;
+                        }
+                        if ((value->first != old.first) && (value->second != old.second)) {
+                            color = "color = red, ";
+                        } else if ((value->first != old.first)) {
+                            myfile << "\t edge[style=dashed];" << std::endl;
+                            color = "color = blue, ";
+                        } else if ((value->second != old.second)) {
+                            myfile << "\t edge[style=dotted];" << std::endl;
+                            color = "color = blue, ";
+                        }
+                    }
+                    myfile << "\t" << i << " -> " << first.getColumn() << "[" << color << "label=\"" << first.getValue() << "\"];"
+                           << std::endl;
+                    myfile << "\t" << i << " -> " << second.getColumn() << "[" << color << "label=\"" << second.getValue() << "\"];"
+                           << std::endl;
+                    myfile << "\t edge[style=\"\"];" << std::endl;
+                } else {
+                    myfile << "\t" << i << " -> " << first.getColumn() << "[label=\"" << first.getValue() << "\"];"
+                           << std::endl;
+                }
+
+
+            }
+
+            myfile << "\tsubgraph legend {" << std::endl;
+            myfile << "\t\tnode [color=white];" << std::endl;
+            myfile << "\t\tedge [style=invis];" << std::endl;
+            myfile << "\t\tt0 [label=\"incr? and decr?\", fontcolor=red];" << std::endl;
+            myfile << "\t\tt1 [label=\"incr? (dashed)\", fontcolor=blue];" << std::endl;
+            myfile << "\t\tt2 [label=\"decr? (dotted)\", fontcolor=blue];" << std::endl;
+
+            myfile << "\t}" << std::endl;
+            myfile << "}" << std::endl;
+            myfile.close();
+            return varsMonotone;
+        };
+
         template <storm::dd::DdType DdType, typename ValueType>
         void processInputWithValueTypeAndDdlib(SymbolicInput& input) {
             auto coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
@@ -516,31 +600,14 @@ namespace storm {
                 latticeWatch.stop();
                 STORM_PRINT(std::endl << "Time for lattice creation: " << latticeWatch << "." << std::endl << std::endl);
 
-                ofstream myfile;
-                myfile.open ("lattice.dot");
-                lattice->toDotFile(myfile);
-                myfile.close();
-
-
-                // Monotonicity?
-                storm::utility::Stopwatch monotonicityWatch(true);
-                // Map with for each variable bool pair whether it is monotone increasing (first) or monotone decreasing (second)
-                std::map<carl::Variable, std::pair<bool, bool>> varsMonotone;
-
-                myfile.open ("mc.dot");
-                myfile << "digraph \"MC\" {" << std::endl;
-                myfile << "\t" << "node [shape=ellipse]" << std::endl;
-                // print all nodes
-                for (uint_fast64_t i = 0; i < sparseModel.get()->getNumberOfStates(); ++i) {
-                    myfile << "\t\"" << i << "\" [label = \"" << i << "\"]" << std::endl;
-                }
-
-
+                // CriticalStates
                 storm::storage::SparseMatrix<ValueType> matrix = sparseModel.get()->getTransitionMatrix();
+                //TODO: seperate class
+                storm::utility::Stopwatch criticalStatesWatch(true);
+                storm::storage::BitVector criticalStates = storm::storage::BitVector(sparseModel.get()->getNumberOfStates());
                 for (uint_fast64_t i = 0; i < sparseModel.get()->getNumberOfStates(); ++i) {
-                    // go over all rows
-                    auto row = matrix.getRow(i);
 
+                    auto row = matrix.getRow(i);
                     auto first = (*row.begin());
                     if (first.getValue() != ValueType(1)) {
                         auto second = (*(++row.begin()));
@@ -548,62 +615,77 @@ namespace storm {
                         auto val = first.getValue();
                         auto vars = val.gatherVariables();
                         for (auto itr = vars.begin(); itr != vars.end(); ++itr) {
-                            auto derivative = val.derivative(*itr);
-                            STORM_LOG_THROW(derivative.isConstant(), storm::exceptions::NotSupportedException, "Expecting derivative to be constant");
-
-                            if (varsMonotone.find(*itr) == varsMonotone.end()) {
-                                varsMonotone[*itr].first = true;
-                                varsMonotone[*itr].second = true;
-                            }
-
                             auto compare = lattice->compare(first.getColumn(), second.getColumn());
-                            std::pair<bool, bool>* value = &varsMonotone.find(*itr)->second;
-                            std::pair<bool, bool> old = *value;
-                            if (compare == 1) {
-                                value->first &=derivative.constantPart() >= 0;
-                                value->second &=derivative.constantPart() <= 0;
-                            } else if (compare == 2) {
-                                value->first &=derivative.constantPart() <= 0;
-                                value->second &=derivative.constantPart() >= 0;
-                            } else {
-                                value->first = false;
-                                value->second = false;
-                            }
-                            if ((value->first != old.first) && (value->second != old.second)) {
-                                color = "color = red, ";
-                            } else if ((value->first != old.first)) {
-                                myfile << "\t edge[style=dashed];" << std::endl;
-                                color = "color = blue, ";
-                            } else if ((value->second != old.second)) {
-                                myfile << "\t edge[style=dotted];" << std::endl;
-                                color = "color = blue, ";
+                            if (compare != 1 && compare != 2 && compare !=0) {
+                                auto rowFirst = matrix.getRow(first.getColumn());
+                                while ((*rowFirst.begin()).getValue() == ValueType(1)) {
+                                    rowFirst = matrix.getRow((*rowFirst.begin()).getColumn());
+                                }
+
+                                auto rowSecond = matrix.getRow(second.getColumn());
+                                while ((*rowSecond.begin()).getValue() == ValueType(1)) {
+                                    rowSecond = matrix.getRow((*rowSecond.begin()).getColumn());
+                                }
+
+                                auto succF1 = *rowFirst.begin();
+                                auto succF2 = *(++rowFirst.begin());
+                                auto compareF = lattice->compare(succF1.getColumn(), succF2.getColumn());
+                                ValueType valF;
+                                ValueType valS;
+                                if (compareF == 1) {
+                                    valF = succF1.getValue();
+                                } else if (compareF == 2) {
+                                    valF = succF2.getValue();
+                                } else {
+                                    continue;
+                                }
+
+                                auto succS1 = *rowSecond.begin();
+                                auto succS2 = *(++rowSecond.begin());
+                                auto compareS = lattice->compare(succS1.getColumn(), succS2.getColumn());
+                                if (compareS == 1) {
+                                    valS = succS1.getValue();
+                                } else if (compareS == 2) {
+                                    valS = succS2.getValue();
+                                } else {
+                                    continue;
+                                }
+
+                                storm::RationalFunction diff = valF-valS;
+                                auto vars = diff.gatherVariables();
+                                for (auto varsItr = vars.begin(); varsItr != vars.end(); ++varsItr) {
+                                    ValueType derivative = diff.derivative(*varsItr);
+                                    if (derivative.isConstant()) {
+                                        std::map<storm::RationalFunctionVariable, storm::RationalFunctionCoefficient> sub0;
+                                        sub0.emplace(*varsItr, storm::utility::convertNumber<storm::RationalFunctionCoefficient>(std::string("0")));
+                                        std::map<storm::RationalFunctionVariable, storm::RationalFunctionCoefficient> sub1;
+                                        sub1.emplace(*varsItr, storm::utility::convertNumber<storm::RationalFunctionCoefficient>(std::string("1")));
+                                        if (diff.evaluate(sub0) >= 0 && diff.evaluate(sub1) >= 0) {
+                                            lattice->addRelation(lattice->getNode(first.getColumn()), lattice->getNode(i), lattice->getNode(second.getColumn()));
+                                        } else if (diff.evaluate(sub0) <= 0 && diff.evaluate(sub1) <= 0) {
+                                            lattice->addRelation(lattice->getNode(second.getColumn()), lattice->getNode(i), lattice->getNode(first.getColumn()));
+                                        }
+                                    }
+                                }
                             }
                         }
-                        myfile << "\t" << i << " -> " << first.getColumn() << "[" << color << "label=\"" << first.getValue() << "\"];"
-                               << std::endl;
-                        myfile << "\t" << i << " -> " << second.getColumn() << "[" << color << "label=\"" << second.getValue() << "\"];"
-                               << std::endl;
-                        myfile << "\t edge[style=\"\"];" << std::endl;
-                    } else {
-                        myfile << "\t" << i << " -> " << first.getColumn() << "[label=\"" << first.getValue() << "\"];"
-                               << std::endl;
+
                     }
-
-
                 }
 
-                myfile << "\tsubgraph legend {" << std::endl;
-                myfile << "\t\tnode [color=white];" << std::endl;
-                myfile << "\t\tedge [style=invis];" << std::endl;
-                myfile << "\t\tt0 [label=\"incr? and decr?\", fontcolor=red];" << std::endl;
-                myfile << "\t\tt1 [label=\"incr? (dashed)\", fontcolor=blue];" << std::endl;
-                myfile << "\t\tt2 [label=\"decr? (dotted)\", fontcolor=blue];" << std::endl;
-
-                myfile << "\t}" << std::endl;
-                myfile << "}" << std::endl;
+                criticalStatesWatch.stop();
+                STORM_PRINT(std::endl << "Time for critical states checking: " << criticalStatesWatch << "." << std::endl << std::endl);
+                ofstream myfile;
+                myfile.open ("lattice.dot");
+                lattice->toDotFile(myfile);
                 myfile.close();
+
+                // Monotonicity?
+                storm::utility::Stopwatch monotonicityWatch(true);
+                std::map<carl::Variable, std::pair<bool, bool>> varsMonotone = analyseMonotonicity<ValueType>(lattice, matrix);
                 monotonicityWatch.stop();
                 STORM_PRINT(std::endl << "Time for monotonicity: " << monotonicityWatch << "." << std::endl << std::endl);
+
                 for (auto itr = varsMonotone.begin(); itr != varsMonotone.end(); ++itr) {
                     if (itr->second.first) {
                         std::cout << "Monotone increasing in: " << itr->first << std::endl;
@@ -643,8 +725,6 @@ namespace storm {
                 verifyParametricModel<DdType, ValueType>(model, input, regions, samples);
             }
         }
-
-
         
         void processOptions() {
             // Start by setting some urgent options (log levels, resources, etc.)
