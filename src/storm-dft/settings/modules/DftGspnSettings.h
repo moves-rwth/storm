@@ -41,9 +41,23 @@ namespace storm {
                 /*!
                  * Retrieves whether the experimental setting of priorities should be used
                  *
-                 * @return True if the settig is enabled is enabled.
+                 * @return True if the setting is enabled.
                  */
                 bool isExtendPriorities() const;
+
+                /*!
+                 * Retrieves whether the GSPN should be exported as a Jani file.
+                 *
+                 * @return True if the Jani file should be exported.
+                 */
+                bool isWriteToJaniSet() const;
+
+                /*!
+                 * Retrieves the jani filename for export.
+                 *
+                 * @return Filename.
+                 */
+                std::string getWriteToJaniFilename() const;
 
                 bool check() const override;
 
@@ -58,6 +72,7 @@ namespace storm {
                 static const std::string disableSmartTransformationOptionName;
                 static const std::string mergeDCFailedOptionName;
                 static const std::string extendPrioritiesOptionName;
+                static const std::string writeToJaniOptionName;
             };
 
         } // namespace modules
