@@ -58,12 +58,12 @@ namespace storm {
             return res;
         }
         
-        void exportJaniToFile(storm::jani::Model const& model, std::vector<storm::jani::Property> const& properties, std::string const& filename) {
-            storm::jani::JsonExporter::toFile(model, properties, filename);
+        void exportJaniToFile(storm::jani::Model const& model, std::vector<storm::jani::Property> const& properties, std::string const& filename, bool compact) {
+            storm::jani::JsonExporter::toFile(model, properties, filename, true, compact);
         }
         
-        void printJaniToStream(storm::jani::Model const& model, std::vector<storm::jani::Property> const& properties, std::ostream& ostream) {
-            storm::jani::JsonExporter::toStream(model, properties, ostream);
+        void printJaniToStream(storm::jani::Model const& model, std::vector<storm::jani::Property> const& properties, std::ostream& ostream, bool compact) {
+            storm::jani::JsonExporter::toStream(model, properties, ostream, true, compact);
         }
 
         

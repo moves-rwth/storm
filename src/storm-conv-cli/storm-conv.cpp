@@ -86,11 +86,11 @@ namespace storm {
             auto janiModelProperties = storm::api::convertPrismToJani(prismProg, properties, options);
             
             if (outputFilename != "") {
-                storm::api::exportJaniToFile(janiModelProperties.first, janiModelProperties.second, outputFilename);
+                storm::api::exportJaniToFile(janiModelProperties.first, janiModelProperties.second, outputFilename, jani.isCompactJsonSet());
             }
             
             if (output.isStdOutOutputEnabled()) {
-                storm::api::printJaniToStream(janiModelProperties.first, janiModelProperties.second, std::cout);
+                storm::api::printJaniToStream(janiModelProperties.first, janiModelProperties.second, std::cout, jani.isCompactJsonSet());
             }
         }
         

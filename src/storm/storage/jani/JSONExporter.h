@@ -75,8 +75,8 @@ namespace storm {
             JsonExporter() = default;
             
         public:
-            static void toFile(storm::jani::Model const& janiModel, std::vector<storm::jani::Property> const& formulas, std::string const& filepath, bool checkValid = true);
-            static void toStream(storm::jani::Model const& janiModel, std::vector<storm::jani::Property> const& formulas, std::ostream& ostream, bool checkValid = false);
+            static void toFile(storm::jani::Model const& janiModel, std::vector<storm::jani::Property> const& formulas, std::string const& filepath, bool checkValid = true, bool compact = false);
+            static void toStream(storm::jani::Model const& janiModel, std::vector<storm::jani::Property> const& formulas, std::ostream& ostream, bool checkValid = false, bool compact = false);
             
             
         private:

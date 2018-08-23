@@ -625,21 +625,27 @@ namespace storm {
             return modernjson::json(expression.getValueAsDouble());
         }
         
-        void JsonExporter::toFile(storm::jani::Model const& janiModel, std::vector<storm::jani::Property> const& formulas, std::string const& filepath, bool checkValid) {
+        void JsonExporter::toFile(storm::jani::Model const& janiModel, std::vector<storm::jani::Property> const& formulas, std::string const& filepath, bool checkValid, bool compact) {
             std::ofstream stream;
             storm::utility::openFile(filepath, stream);
-            toStream(janiModel, formulas, stream, checkValid);
+            toStream(janiModel, formulas, stream, checkValid, compact);
             storm::utility::closeFile(stream);
         }
         
-        void JsonExporter::toStream(storm::jani::Model const& janiModel,  std::vector<storm::jani::Property> const& formulas, std::ostream& os, bool checkValid) {
+        void JsonExporter::toStream(storm::jani::Model const& janiModel,  std::vector<storm::jani::Property> const& formulas, std::ostream& os, bool checkValid, bool compact) {
             if(checkValid) {
                 janiModel.checkValid();
             }
             JsonExporter exporter;
-            exporter.convertModel(janiModel);
+            exporter.convertModel(janiModel, !compact);
             exporter.convertProperties(formulas, janiModel);
-            os << exporter.finalize().dump(4) << std::endl;
+            if (compact) {
+                // Dump without line breaks/indents
+                os << exporter.finalize().dump() << std::endl;
+            } else {
+                // Dump with line breaks and indention with 4 spaces
+                os << exporter.finalize().dump(4) << std::endl;
+            }
         }
         
         modernjson::json buildActionArray(std::vector<storm::jani::Action> const& actions) {

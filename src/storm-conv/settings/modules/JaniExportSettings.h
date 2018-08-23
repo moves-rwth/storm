@@ -31,6 +31,8 @@ namespace storm {
                 bool isLocationVariablesSet() const;
                 
                 bool isGlobalVarsSet() const;
+                
+                bool isCompactJsonSet() const;
 
                 std::vector<std::pair<std::string, std::string>> getLocationVariables() const;
 
@@ -47,6 +49,7 @@ namespace storm {
                 static const std::string exportFlattenOptionName;
                 static const std::string locationVariablesOptionName;
                 static const std::string globalVariablesOptionName;
+                static const std::string compactJsonOptionName;
                 
             };
         }

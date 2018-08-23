@@ -72,7 +72,7 @@ namespace storm {
                 if (exportSettings.isAddJaniPropertiesSet()) {
                     properties.insert(properties.end(), builder.getStandardProperties().begin(), builder.getStandardProperties().end());
                 }
-                storm::api::exportJaniToFile(*model, properties, exportSettings.getWriteToJaniFilename());
+                storm::api::exportJaniToFile(*model, properties, exportSettings.getWriteToJaniFilename(), jani.isCompactJsonSet());
                 delete model;
             }
         }
