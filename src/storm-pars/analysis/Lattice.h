@@ -177,8 +177,6 @@ namespace storm {
                                     uint_fast64_t successor1 = currentState->successor1;
                                     uint_fast64_t successor2 = currentState->successor2;
                                     int compareResult = lattice->compare(successor1, successor2);
-                                    Node* node1 = lattice->getNode(successor1);
-                                    Node* node2 = lattice->getNode(successor2);
                                     if (compareResult == 1) {
                                         // successor 1 is closer to top than successor 2
                                         lattice->addBetween(currentState->stateNumber, lattice->getNode(successor1),
