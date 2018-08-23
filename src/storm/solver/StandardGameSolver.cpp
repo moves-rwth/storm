@@ -123,7 +123,9 @@ namespace storm {
                 } else {
                     // Update the solver.
                     getInducedMatrixVector(x, b, player1Choices, player2Choices, submatrix, subB);
-                    submatrix.convertToEquationSystem();
+                    if (this->linearEquationSolverFactory->getEquationProblemFormat(environmentOfSolver) == LinearEquationSolverProblemFormat::EquationSystem) {
+                        submatrix.convertToEquationSystem();
+                    }
                     submatrixSolver->setMatrix(std::move(submatrix));
                 }
                 

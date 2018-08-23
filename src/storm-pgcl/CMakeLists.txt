@@ -10,7 +10,7 @@ file(GLOB_RECURSE STORM_PGCL_HEADERS ${PROJECT_SOURCE_DIR}/src/storm-pgcl/*/*.h)
 
 # Create storm-pgcl.
 add_library(storm-pgcl SHARED ${STORM_PGCL_SOURCES} ${STORM_PGCL_HEADERS})
-target_link_libraries(storm-pgcl storm)
+target_link_libraries(storm-pgcl storm storm-parsers storm-conv)
 
 # installation
-install(TARGETS storm-pgcl RUNTIME DESTINATION bin LIBRARY DESTINATION lib OPTIONAL)
+install(TARGETS storm-pgcl EXPORT storm_Targets RUNTIME DESTINATION bin LIBRARY DESTINATION lib OPTIONAL)

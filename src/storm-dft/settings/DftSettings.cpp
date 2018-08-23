@@ -20,7 +20,7 @@
 #include "storm/settings/modules/GameSolverSettings.h"
 #include "storm/settings/modules/BisimulationSettings.h"
 #include "storm/settings/modules/ResourceSettings.h"
-#include "storm/settings/modules/JaniExportSettings.h"
+#include "storm-conv/settings/modules/JaniExportSettings.h"
 #include "storm-gspn/settings/modules/GSPNSettings.h"
 #include "storm-gspn/settings/modules/GSPNExportSettings.h"
 

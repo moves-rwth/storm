@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 
-#include "storm/parser/DirectEncodingParser.h"
+#include "storm-parsers/parser/DirectEncodingParser.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/MarkovAutomaton.h"

@@ -20,11 +20,11 @@ namespace storm {
         std::unique_ptr<CheckResult> SparseDtmcInstantiationModelChecker<SparseModelType, ConstantType>::check(Environment const& env, storm::utility::parametric::Valuation<typename SparseModelType::ValueType> const& valuation) {
             STORM_LOG_THROW(this->currentCheckTask, storm::exceptions::InvalidStateException, "Checking has been invoked but no property has been specified before.");
             auto const& instantiatedModel = modelInstantiator.instantiate(valuation);
-            STORM_LOG_ASSERT(instantiatedModel.getTransitionMatrix().isProbabilistic(), "Instantiated matrix is not probabilistic!");
+            STORM_LOG_THROW(instantiatedModel.getTransitionMatrix().isProbabilistic(), storm::exceptions::InvalidArgumentException, "Instantiation point is invalid as the transition matrix becomes non-stochastic.");
             storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<ConstantType>> modelChecker(instantiatedModel);
 
             // Check if there are some optimizations implemented for the specified property
-            if(this->currentCheckTask->getFormula().isInFragment(storm::logic::reachability())) {
+            if (this->currentCheckTask->getFormula().isInFragment(storm::logic::reachability())) {
                 return checkReachabilityProbabilityFormula(env, modelChecker);
             } else if (this->currentCheckTask->getFormula().isInFragment(storm::logic::propositional().setRewardOperatorsAllowed(true).setReachabilityRewardFormulasAllowed(true).setOperatorAtTopLevelRequired(true).setNestedOperatorsAllowed(false))) {
                 return checkReachabilityRewardFormula(env, modelChecker);

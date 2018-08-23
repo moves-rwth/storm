@@ -7,12 +7,35 @@
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/utility/macros.h"
 #include "storm/exceptions/NotImplementedException.h"
+#include "storm/logic/AtomicExpressionFormula.h"
+#include "storm/logic/AtomicLabelFormula.h"
 
 namespace storm {
     namespace transformer {
 
+        struct LabelInformation {
+            LabelInformation(std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) {
+                for (auto const& formula : formulas) {
+                    std::vector<std::shared_ptr<storm::logic::AtomicLabelFormula const>> atomicLabelFormulas = formula->getAtomicLabelFormulas();
+                    for (auto const& labelFormula : atomicLabelFormulas) {
+                        atomicLabels.insert(labelFormula->getLabel());
+                    }
+                    
+                    std::vector<std::shared_ptr<storm::logic::AtomicExpressionFormula const>> atomicExpressionFormulas = formula->getAtomicExpressionFormulas();
+                    for (auto const& expressionFormula : atomicExpressionFormulas) {
+                        std::stringstream ss;
+                        ss << expressionFormula->getExpression();
+                        expressionLabels[ss.str()] = expressionFormula->getExpression();
+                    }
+                }
+            }
+            
+            std::set<std::string> atomicLabels;
+            std::map<std::string, storm::expressions::Expression> expressionLabels;
+        };
+        
         template<storm::dd::DdType Type, typename ValueType>
-        std::shared_ptr<storm::models::sparse::Dtmc<ValueType>> SymbolicDtmcToSparseDtmcTransformer<Type, ValueType>::translate(storm::models::symbolic::Dtmc<Type, ValueType> const& symbolicDtmc) {
+        std::shared_ptr<storm::models::sparse::Dtmc<ValueType>> SymbolicDtmcToSparseDtmcTransformer<Type, ValueType>::translate(storm::models::symbolic::Dtmc<Type, ValueType> const& symbolicDtmc, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) {
             
             this->odd = symbolicDtmc.getReachableStates().createOdd();
             storm::storage::SparseMatrix<ValueType> transitionMatrix = symbolicDtmc.getTransitionMatrix().toMatrix(this->odd, this->odd);
@@ -36,8 +59,18 @@ namespace storm {
             
             labelling.addLabel("init", symbolicDtmc.getInitialStates().toVector(this->odd));
             labelling.addLabel("deadlock", symbolicDtmc.getDeadlockStates().toVector(this->odd));
-            for(auto const& label : symbolicDtmc.getLabels()) {
-                labelling.addLabel(label, symbolicDtmc.getStates(label).toVector(this->odd));
+            if (formulas.empty()) {
+                for (auto const& label : symbolicDtmc.getLabels()) {
+                    labelling.addLabel(label, symbolicDtmc.getStates(label).toVector(this->odd));
+                }
+            } else {
+                LabelInformation labelInfo(formulas);
+                for (auto const& label : labelInfo.atomicLabels) {
+                    labelling.addLabel(label, symbolicDtmc.getStates(label).toVector(this->odd));
+                }
+                for (auto const& expressionLabel : labelInfo.expressionLabels) {
+                    labelling.addLabel(expressionLabel.first, symbolicDtmc.getStates(expressionLabel.second).toVector(this->odd));
+                }
             }
             return std::make_shared<storm::models::sparse::Dtmc<ValueType>>(transitionMatrix, labelling, rewardModels);
         }
@@ -48,7 +81,7 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type, typename ValueType>
-        std::shared_ptr<storm::models::sparse::Mdp<ValueType>> SymbolicMdpToSparseMdpTransformer<Type, ValueType>::translate(storm::models::symbolic::Mdp<Type, ValueType> const& symbolicMdp) {
+        std::shared_ptr<storm::models::sparse::Mdp<ValueType>> SymbolicMdpToSparseMdpTransformer<Type, ValueType>::translate(storm::models::symbolic::Mdp<Type, ValueType> const& symbolicMdp, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) {
             storm::dd::Odd odd = symbolicMdp.getReachableStates().createOdd();
             storm::storage::SparseMatrix<ValueType> transitionMatrix = symbolicMdp.getTransitionMatrix().toMatrix(symbolicMdp.getNondeterminismVariables(), odd, odd);
             std::unordered_map<std::string, storm::models::sparse::StandardRewardModel<ValueType>> rewardModels;
@@ -69,15 +102,25 @@ namespace storm {
 
             labelling.addLabel("init", symbolicMdp.getInitialStates().toVector(odd));
             labelling.addLabel("deadlock", symbolicMdp.getDeadlockStates().toVector(odd));
-            for(auto const& label : symbolicMdp.getLabels()) {
-                labelling.addLabel(label, symbolicMdp.getStates(label).toVector(odd));
+            if (formulas.empty()) {
+                for (auto const& label : symbolicMdp.getLabels()) {
+                    labelling.addLabel(label, symbolicMdp.getStates(label).toVector(odd));
+                }
+            } else {
+                LabelInformation labelInfo(formulas);
+                for (auto const& label : labelInfo.atomicLabels) {
+                    labelling.addLabel(label, symbolicMdp.getStates(label).toVector(odd));
+                }
+                for (auto const& expressionLabel : labelInfo.expressionLabels) {
+                    labelling.addLabel(expressionLabel.first, symbolicMdp.getStates(expressionLabel.second).toVector(odd));
+                }
             }
+            
             return std::make_shared<storm::models::sparse::Mdp<ValueType>>(transitionMatrix, labelling, rewardModels);
         }
 
         template<storm::dd::DdType Type, typename ValueType>
-        std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> SymbolicCtmcToSparseCtmcTransformer<Type, ValueType>::translate(
-                storm::models::symbolic::Ctmc<Type, ValueType> const& symbolicCtmc) {
+        std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> SymbolicCtmcToSparseCtmcTransformer<Type, ValueType>::translate(storm::models::symbolic::Ctmc<Type, ValueType> const& symbolicCtmc, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) {
             storm::dd::Odd odd = symbolicCtmc.getReachableStates().createOdd();
             storm::storage::SparseMatrix<ValueType> transitionMatrix = symbolicCtmc.getTransitionMatrix().toMatrix(odd, odd);
             std::unordered_map<std::string, storm::models::sparse::StandardRewardModel<ValueType>> rewardModels;
@@ -100,9 +143,20 @@ namespace storm {
 
             labelling.addLabel("init", symbolicCtmc.getInitialStates().toVector(odd));
             labelling.addLabel("deadlock", symbolicCtmc.getDeadlockStates().toVector(odd));
-            for(auto const& label : symbolicCtmc.getLabels()) {
-                labelling.addLabel(label, symbolicCtmc.getStates(label).toVector(odd));
+            if (formulas.empty()) {
+                for (auto const& label : symbolicCtmc.getLabels()) {
+                    labelling.addLabel(label, symbolicCtmc.getStates(label).toVector(odd));
+                }
+            } else {
+                LabelInformation labelInfo(formulas);
+                for (auto const& label : labelInfo.atomicLabels) {
+                    labelling.addLabel(label, symbolicCtmc.getStates(label).toVector(odd));
+                }
+                for (auto const& expressionLabel : labelInfo.expressionLabels) {
+                    labelling.addLabel(expressionLabel.first, symbolicCtmc.getStates(expressionLabel.second).toVector(odd));
+                }
             }
+            
             return std::make_shared<storm::models::sparse::Ctmc<ValueType>>(transitionMatrix, labelling, rewardModels);
         }
 

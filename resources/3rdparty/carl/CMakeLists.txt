@@ -4,11 +4,11 @@ include(ExternalProject)
 
 option(STORM_3RDPARTY_BINARY_DIR "3rd party bin dir")
 
-message(STORM_3RDPARTY_BINARY_DIR: ${STORM_3RDPARTY_BINARY_DIR})
+message(STATUS "Carl - Storm 3rdparty binary dir: ${STORM_3RDPARTY_BINARY_DIR}")
 
 ExternalProject_Add(carl-config
 	GIT_REPOSITORY https://github.com/smtrat/carl
-	GIT_TAG 17.12
+	GIT_TAG 18.06
 	PREFIX here
 	SOURCE_DIR source_dir
 	BINARY_DIR ${STORM_3RDPARTY_BINARY_DIR}/carl
@@ -22,4 +22,4 @@ ExternalProject_Add(carl-config
 add_custom_target(build-carl)
 add_dependencies(build-carl carl-config)
 
-message("done")
+message(STATUS "Carl - Finished configuration.")

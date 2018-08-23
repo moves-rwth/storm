@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 
-#include "storm/parser/MarkovAutomatonParser.h"
+#include "storm-parsers/parser/MarkovAutomatonParser.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/exceptions/FileIoException.h"
 #include "storm/exceptions/OutOfRangeException.h"

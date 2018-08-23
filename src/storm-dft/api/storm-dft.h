@@ -23,8 +23,21 @@ namespace storm {
          * @return DFT.
          */
         template<typename ValueType>
-        std::shared_ptr<storm::storage::DFT<ValueType>> loadDFTGalileo(std::string const& file) {
-            return std::make_shared<storm::storage::DFT<ValueType>>(storm::parser::DFTGalileoParser<ValueType>::parseDFT(file));
+        std::shared_ptr<storm::storage::DFT<ValueType>> loadDFTGalileoFile(std::string const& file) {
+             return std::make_shared<storm::storage::DFT<ValueType>>(storm::parser::DFTGalileoParser<ValueType>::parseDFT(file));
+        }
+
+        /*!
+         * Load DFT from JSON string.
+         *
+         * @param jsonString String containing DFT description in JSON format.
+         *
+         * @return DFT.
+         */
+        template<typename ValueType>
+        std::shared_ptr<storm::storage::DFT<ValueType>> loadDFTJsonString(std::string const& jsonString) {
+                storm::parser::DFTJsonParser<ValueType> parser;
+                return std::make_shared<storm::storage::DFT<ValueType>>(parser.parseJsonFromString(jsonString));
         }
 
         /*!
@@ -35,9 +48,9 @@ namespace storm {
          * @return DFT.
          */
         template<typename ValueType>
-        std::shared_ptr<storm::storage::DFT<ValueType>> loadDFTJson(std::string const& file) {
-            storm::parser::DFTJsonParser<ValueType> parser;
-            return std::make_shared<storm::storage::DFT<ValueType>>(parser.parseJson(file));
+        std::shared_ptr<storm::storage::DFT<ValueType>> loadDFTJsonFile(std::string const& file) {
+                storm::parser::DFTJsonParser<ValueType> parser;
+                return std::make_shared<storm::storage::DFT<ValueType>>(parser.parseJsonFromFile(file));
         }
 
         /*!
@@ -99,7 +112,15 @@ namespace storm {
          * @param file File.
          */
         template<typename ValueType>
-        void exportDFTToJson(storm::storage::DFT<ValueType> const& dft, std::string const& file);
+        void exportDFTToJsonFile(storm::storage::DFT<ValueType> const& dft, std::string const& file);
+
+        /*!
+         * Export DFT to JSON string.
+         *
+         * @param dft DFT.
+         */
+        template<typename ValueType>
+        std::string exportDFTToJsonString(storm::storage::DFT<ValueType> const& dft);
 
         /*!
          * Export DFT to SMT encoding.

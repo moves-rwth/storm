@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
-#include "storm/parser/AutoParser.h"
+#include "storm-parsers/parser/AutoParser.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
 #include "storm/models/sparse/StandardRewardModel.h"

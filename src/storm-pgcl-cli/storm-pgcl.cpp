@@ -18,7 +18,8 @@
 #include "storm-pgcl/settings/modules/PGCLSettings.h"
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/settings/modules/DebugSettings.h"
-#include "storm/settings/modules/JaniExportSettings.h"
+#include "storm-conv/settings/modules/JaniExportSettings.h"
+#include "storm-conv/api/storm-conv.h"
 
 #include "storm/utility/file.h"
 
@@ -38,11 +39,13 @@ void initializeSettings() {
 }
 
 void handleJani(storm::jani::Model& model) {
-    if (!storm::settings::getModule<storm::settings::modules::JaniExportSettings>().isJaniFileSet()) {
-        // For now, we have to have a jani file
-        storm::jani::JsonExporter::toStream(model, {}, std::cout);
+    auto const& jani = storm::settings::getModule<storm::settings::modules::JaniExportSettings>();
+    storm::converter::JaniConversionOptions options(jani);
+    storm::api::postprocessJani(model, options);
+    if (storm::settings::getModule<storm::settings::modules::PGCLSettings>().isToJaniSet()) {
+        storm::api::exportJaniToFile(model, {}, storm::settings::getModule<storm::settings::modules::PGCLSettings>().getWriteToJaniFilename(), jani.isCompactJsonSet());
     } else {
-        storm::jani::JsonExporter::toFile(model, {}, storm::settings::getModule<storm::settings::modules::JaniExportSettings>().getJaniFilename());
+        storm::api::printJaniToStream(model, {}, std::cout);
     }
 }
 

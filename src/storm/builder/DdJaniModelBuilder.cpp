@@ -653,6 +653,40 @@ namespace storm {
                 ActionDd multiplyTransitions(storm::dd::Add<Type, ValueType> const& factor) const {
                     return ActionDd(guard, transitions * factor, transientEdgeAssignments, localNondeterminismVariables, variableToWritingFragment, illegalFragment);
                 }
+                
+                ActionDd add(ActionDd const& other) const {
+                    storm::dd::Bdd<Type> newGuard = this->guard || other.guard;
+                    storm::dd::Add<Type, ValueType> newTransitions = this->transitions + other.transitions;
+                    
+                    // Join the transient edge assignments.
+                    std::map<storm::expressions::Variable, storm::dd::Add<Type, ValueType>> newTransientEdgeAssignments(this->transientEdgeAssignments);
+                    for (auto const& entry : other.transientEdgeAssignments) {
+                        auto it = newTransientEdgeAssignments.find(entry.first);
+                        if (it == newTransientEdgeAssignments.end()) {
+                            newTransientEdgeAssignments[entry.first] = entry.second;
+                        } else {
+                            it->second += entry.second;
+                        }
+                    }
+                    
+                    std::pair<uint64_t, uint64_t> newLocalNondeterminismVariables = std::make_pair(std::min(this->localNondeterminismVariables.first, other.localNondeterminismVariables.first), std::max(this->localNondeterminismVariables.second, other.localNondeterminismVariables.second));
+
+                    // Join variable-to-writing-fragment maps.
+                    std::map<storm::expressions::Variable, storm::dd::Bdd<Type>> newVariableToWritingFragment(this->variableToWritingFragment);
+                    for (auto const& entry : other.variableToWritingFragment) {
+                        auto it = newVariableToWritingFragment.find(entry.first);
+                        if (it == newVariableToWritingFragment.end()) {
+                            newVariableToWritingFragment[entry.first] = entry.second;
+                        } else {
+                            it->second |= entry.second;
+                        }
+                    }
+                    
+                    // Join illegal fragments.
+                    storm::dd::Bdd<Type> newIllegalFragment = this->illegalFragment || other.illegalFragment;
+                    
+                    return ActionDd(newGuard, newTransitions, newTransientEdgeAssignments, newLocalNondeterminismVariables, newVariableToWritingFragment, newIllegalFragment);
+                }
 
                 bool isInputEnabled() const {
                     return inputEnabled;
@@ -975,7 +1009,16 @@ namespace storm {
 
                 // Finally, combine (potentially) multiple action DDs.
                 for (auto const& actionDds : actions) {
-                    ActionDd combinedAction = actionDds.second.size() > 1 ? combineUnsynchronizedActions(actionDds.second) : actionDds.second.front();
+                    ActionDd combinedAction;
+                    if (actionDds.first == silentMarkovianActionIdentification) {
+                        // For the Markovian transitions, we can simply add the actions.
+                        combinedAction = actionDds.second.front();
+                        for (uint64_t i = 1; i < actionDds.second.size(); ++i) {
+                            combinedAction = combinedAction.add(actionDds.second[i]);
+                        }
+                    } else {
+                        combinedAction = actionDds.second.size() > 1 ? combineUnsynchronizedActions(actionDds.second) : actionDds.second.front();
+                    }
                     result.actions[actionDds.first] = combinedAction;
                     result.extendLocalNondeterminismVariables(combinedAction.getLocalNondeterminismVariables());
                 }
@@ -1333,7 +1376,7 @@ namespace storm {
                     } else if (modelType == storm::jani::ModelType::MDP || modelType == storm::jani::ModelType::LTS) {
                         return combineEdgesToActionNondeterministic(edgeDds, localNondeterminismVariableOffset);
                     } else if (modelType == storm::jani::ModelType::MA) {
-                        if (instantiation.isMarkovian()){
+                        if (instantiation.isMarkovian()) {
                             return combineEdgesToActionDeterministic(edgeDds);
                         } else {
                             return combineEdgesToActionNondeterministic(edgeDds, localNondeterminismVariableOffset);

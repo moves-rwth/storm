@@ -4,8 +4,9 @@
 #include "test/storm_gtest.h"
 
 #include "storm/api/builder.h"
-#include "storm/api/model_descriptions.h"
+#include "storm-parsers/api/model_descriptions.h"
 #include "storm/api/properties.h"
+#include "storm-parsers/api/properties.h"
 
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/symbolic/Mdp.h"

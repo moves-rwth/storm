@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 #include "storm/models/sparse/StateLabeling.h"
-#include "storm/parser/SparseItemLabelingParser.h"
+#include "storm-parsers/parser/SparseItemLabelingParser.h"
 #include "storm/exceptions/FileIoException.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/exceptions/OutOfRangeException.h"

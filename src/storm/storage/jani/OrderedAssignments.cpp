@@ -16,29 +16,39 @@ namespace storm {
         OrderedAssignments::OrderedAssignments(Assignment const& assignment) {
             add(assignment);
         }
+
+        OrderedAssignments OrderedAssignments::clone() const {
+            OrderedAssignments result;
+            for (auto const& assignment : allAssignments) {
+                result.add(Assignment(*assignment));
+            }
+            return result;
+        }
         
-        bool OrderedAssignments::add(Assignment const& assignment) {
+        bool OrderedAssignments::add(Assignment const& assignment, bool addToExisting) {
             // If the element is contained in this set of assignment, nothing needs to be added.
-            if (this->contains(assignment)) {
+            if (!addToExisting && this->contains(assignment)) {
                 return false;
             }
             
             // Otherwise, we find the spot to insert it.
             auto it = lowerBound(assignment, allAssignments);
-
-            if (it != allAssignments.end()) {
-                STORM_LOG_THROW(assignment.getExpressionVariable() != (*it)->getExpressionVariable(), storm::exceptions::InvalidArgumentException, "Cannot add assignment ('" << assignment.getAssignedExpression() << "') as an assignment ('" << (*it)->getAssignedExpression()  << "') to variable '" <<  (*it)->getVariable().getName() << "' already exists.");
-            }
             
-            // Finally, insert the new element in the correct vectors.
-            auto elementToInsert = std::make_shared<Assignment>(assignment);
-            allAssignments.emplace(it, elementToInsert);
-            if (assignment.isTransient()) {
-                auto transientIt = lowerBound(assignment, transientAssignments);
-                transientAssignments.emplace(transientIt, elementToInsert);
+            // Check if an assignment to this variable is already present
+            if (it != allAssignments.end() && assignment.getExpressionVariable() == (*it)->getExpressionVariable()) {
+                STORM_LOG_THROW(addToExisting && assignment.getExpressionVariable().hasNumericalType(), storm::exceptions::InvalidArgumentException, "Cannot add assignment ('" << assignment.getAssignedExpression() << "') as an assignment ('" << (*it)->getAssignedExpression()  << "') to variable '" <<  (*it)->getVariable().getName() << "' already exists.");
+                (*it)->setAssignedExpression((*it)->getAssignedExpression() + assignment.getAssignedExpression());
             } else {
-                auto nonTransientIt = lowerBound(assignment, nonTransientAssignments);
-                nonTransientAssignments.emplace(nonTransientIt, elementToInsert);
+                // Finally, insert the new element in the correct vectors.
+                auto elementToInsert = std::make_shared<Assignment>(assignment);
+                allAssignments.emplace(it, elementToInsert);
+                if (assignment.isTransient()) {
+                    auto transientIt = lowerBound(assignment, transientAssignments);
+                    transientAssignments.emplace(transientIt, elementToInsert);
+                } else {
+                    auto nonTransientIt = lowerBound(assignment, nonTransientAssignments);
+                    nonTransientAssignments.emplace(nonTransientIt, elementToInsert);
+                }
             }
             
             return true;

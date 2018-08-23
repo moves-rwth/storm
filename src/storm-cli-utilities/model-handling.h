@@ -2,6 +2,9 @@
 
 #include "storm/api/storm.h"
 
+#include "storm-counterexamples/api/counterexamples.h"
+#include "storm-parsers/api/storm-parsers.h"
+
 #include "storm/utility/resources.h"
 #include "storm/utility/file.h"
 #include "storm/utility/storm-version.h"
@@ -14,6 +17,7 @@
 
 
 #include "storm/storage/SymbolicModelDescription.h"
+#include "storm/storage/jani/Property.h"
 
 #include "storm/models/ModelBase.h"
 
@@ -34,7 +38,6 @@
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/settings/modules/AbstractionSettings.h"
 #include "storm/settings/modules/ResourceSettings.h"
-#include "storm/settings/modules/JaniExportSettings.h"
 
 #include "storm/utility/Stopwatch.h"
 
@@ -63,10 +66,16 @@ namespace storm {
                     auto const& janiPropertyInput = janiInput.second;
                     
                     if (ioSettings.isJaniPropertiesSet()) {
-                        for (auto const& propName : ioSettings.getJaniProperties()) {
-                            auto propertyIt = janiPropertyInput.find(propName);
-                            STORM_LOG_THROW(propertyIt != janiPropertyInput.end(), storm::exceptions::InvalidArgumentException, "No JANI property with name '" << propName << "' is known.");
-                            input.properties.emplace_back(propertyIt->second);
+                        if (ioSettings.areJaniPropertiesSelected()) {
+                            for (auto const& propName : ioSettings.getSelectedJaniProperties()) {
+                                auto propertyIt = janiPropertyInput.find(propName);
+                                STORM_LOG_THROW(propertyIt != janiPropertyInput.end(), storm::exceptions::InvalidArgumentException, "No JANI property with name '" << propName << "' is known.");
+                                input.properties.emplace_back(propertyIt->second);
+                            }
+                        } else {
+                            for (auto const& property : janiPropertyInput) {
+                                input.properties.emplace_back(property.second);
+                            }
                         }
                     }
                 }
@@ -126,7 +135,7 @@ namespace storm {
                 
                 if (transformToJani) {
                     storm::prism::Program const& model = output.model.get().asPrismProgram();
-                    auto modelAndRenaming = model.toJaniWithLabelRenaming(true);
+                    auto modelAndRenaming = model.toJaniWithLabelRenaming(true, "", false);
                     output.model = modelAndRenaming.first;
                     
                     if (!modelAndRenaming.second.empty()) {
@@ -149,10 +158,6 @@ namespace storm {
                 storm::storage::SymbolicModelDescription const& model = input.model.get();
                 if (ioSettings.isExportJaniDotSet()) {
                     storm::api::exportJaniModelAsDot(model.asJaniModel(), ioSettings.getExportJaniDotFilename());
-                }
-                
-                if (model.isJaniModel() && storm::settings::getModule<storm::settings::modules::JaniExportSettings>().isJaniFileSet()) {
-                    storm::api::exportJaniModel(model.asJaniModel(), input.properties, storm::settings::getModule<storm::settings::modules::JaniExportSettings>().getJaniFilename());
                 }
             }
         }
@@ -183,11 +188,15 @@ namespace storm {
         
         template <typename ValueType>
         std::shared_ptr<storm::models::ModelBase> buildModelSparse(SymbolicInput const& input, storm::settings::modules::BuildSettings const& buildSettings) {
-            auto counterexampleGeneratorSettings = storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>();
             storm::builder::BuilderOptions options(createFormulasToRespect(input.properties));
             options.setBuildChoiceLabels(buildSettings.isBuildChoiceLabelsSet());
             options.setBuildStateValuations(buildSettings.isBuildStateValuationsSet());
-            options.setBuildChoiceOrigins(counterexampleGeneratorSettings.isMinimalCommandSetGenerationSet());
+            if (storm::settings::manager().hasModule(storm::settings::modules::CounterexampleGeneratorSettings::moduleName)) {
+                auto counterexampleGeneratorSettings = storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>();
+                options.setBuildChoiceOrigins(counterexampleGeneratorSettings.isMinimalCommandSetGenerationSet());
+            } else {
+                options.setBuildChoiceOrigins(false);
+            }
             options.setBuildAllLabels(buildSettings.isBuildFullModelSet());
             options.setBuildAllRewardModels(buildSettings.isBuildFullModelSet());
             options.setAddOutOfBoundsState(buildSettings.isBuildOutOfBoundsStateSet());
@@ -356,18 +365,12 @@ namespace storm {
                 result->second = true;
                 
                 std::shared_ptr<storm::models::symbolic::Model<DdType, ExportValueType>> symbolicModel = result->first->template as<storm::models::symbolic::Model<DdType, ExportValueType>>();
-                if (symbolicModel->isOfType(storm::models::ModelType::Dtmc)) {
-                    storm::transformer::SymbolicDtmcToSparseDtmcTransformer<DdType, ExportValueType> transformer;
-                    result->first = transformer.translate(*symbolicModel->template as<storm::models::symbolic::Dtmc<DdType, ExportValueType>>());
-                } else if (symbolicModel->isOfType(storm::models::ModelType::Ctmc)) {
-                    storm::transformer::SymbolicCtmcToSparseCtmcTransformer<DdType, ExportValueType> transformer;
-                    result->first = transformer.translate(*symbolicModel->template as<storm::models::symbolic::Ctmc<DdType, ExportValueType>>());
-                } else if (symbolicModel->isOfType(storm::models::ModelType::Mdp)) {
-                    storm::transformer::SymbolicMdpToSparseMdpTransformer<DdType, ExportValueType> transformer;
-                    result->first = transformer.translate(*symbolicModel->template as<storm::models::symbolic::Mdp<DdType, ExportValueType>>());
-                } else {
-                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The translation to a sparse model is not supported for the given model type.");
+                std::vector<std::shared_ptr<storm::logic::Formula const>> formulas;
+                for (auto const& property : input.properties) {
+                    formulas.emplace_back(property.getRawFormula());
                 }
+                result->first = storm::api::transformSymbolicToSparseModel(symbolicModel, formulas);
+                STORM_LOG_THROW(result, storm::exceptions::NotSupportedException, "The translation to a sparse model is not supported for the given model type.");
             }
             
             return *result;
@@ -419,7 +422,10 @@ namespace storm {
             
             STORM_LOG_THROW(model->isSparseModel(), storm::exceptions::NotSupportedException, "Counterexample generation is currently only supported for sparse models.");
             auto sparseModel = model->as<storm::models::sparse::Model<ValueType>>();
-            
+            for (auto& rewModel : sparseModel->getRewardModels()) {
+                rewModel.second.reduceToStateBasedRewards(sparseModel->getTransitionMatrix(), true);
+            }
+
             STORM_LOG_THROW(sparseModel->isOfType(storm::models::ModelType::Dtmc) || sparseModel->isOfType(storm::models::ModelType::Mdp), storm::exceptions::NotSupportedException, "Counterexample is currently only supported for discrete-time models.");
             
             auto counterexampleSettings = storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>();
@@ -505,7 +511,7 @@ namespace storm {
         }
         
         void printModelCheckingProperty(storm::jani::Property const& property) {
-            STORM_PRINT(std::endl << "Model checking property " << *property.getRawFormula() << " ..." << std::endl);
+            STORM_PRINT(std::endl << "Model checking property \"" << property.getName() << "\": " << *property.getRawFormula() << " ..." << std::endl);
         }
         
         template<typename ValueType>

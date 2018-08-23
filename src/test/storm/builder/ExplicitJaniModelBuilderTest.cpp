@@ -3,7 +3,7 @@
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/settings/SettingMemento.h"
-#include "storm/parser/PrismParser.h"
+#include "storm-parsers/parser/PrismParser.h"
 #include "storm/builder/ExplicitModelBuilder.h"
 #include "storm/generator/JaniNextStateGenerator.h"
 #include "storm/storage/jani/Model.h"

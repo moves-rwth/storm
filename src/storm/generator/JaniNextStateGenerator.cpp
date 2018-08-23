@@ -320,6 +320,10 @@ namespace storm {
             // If the model is a deterministic model, we need to fuse the choices into one.
             if (this->isDeterministicModel() && totalNumberOfChoices > 1) {
                 Choice<ValueType> globalChoice;
+
+                if (this->options.isAddOverlappingGuardLabelSet()) {
+                    this->overlappingGuardStates->push_back(stateToIdCallback(*this->state));
+                }
                 
                 // For CTMCs, we need to keep track of the total exit rate to scale the action rewards later. For DTMCs
                 // this is equal to the number of choices, which is why we initialize it like this here.
@@ -461,11 +465,11 @@ namespace storm {
                                 nextDistribution.add(newTargetState, probability);
                             }
                         }
-                        
-                        // Create the state-action reward for the newly created choice.
-                        auto valueIt = stateActionRewards.begin();
-                        performTransientAssignments(edge.getAssignments().getTransientAssignments(), [&valueIt] (ValueType const& value) { *valueIt += value; ++valueIt; } );
                     }
+                    
+                    // Create the state-action reward for the newly created choice.
+                    auto valueIt = stateActionRewards.begin();
+                    performTransientAssignments(edge.getAssignments().getTransientAssignments(), [&valueIt] (ValueType const& value) { *valueIt += value; ++valueIt; } );
                     
                     nextDistribution.compress();
                     

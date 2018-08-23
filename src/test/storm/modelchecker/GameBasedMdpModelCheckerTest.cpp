@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 
-#include "storm/parser/FormulaParser.h"
+#include "storm-parsers/parser/FormulaParser.h"
 #include "storm/logic/Formulas.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
 #include "storm/models/sparse/Model.h"
@@ -12,6 +12,8 @@
 #include "storm/settings/modules/NativeEquationSolverSettings.h"
 
 #include "storm/api/storm.h"
+
+#include "storm-parsers/api/storm-parsers.h"
 
 #if defined STORM_HAVE_MSAT
 TEST(GameBasedMdpModelCheckerTest, Dice_Cudd) {

@@ -108,6 +108,7 @@ namespace storm {
             bool isExplorationChecksSet() const;
             bool isShowProgressSet() const;
             bool isAddOutOfBoundsStateSet() const;
+            bool isAddOverlappingGuardLabelSet() const;
             uint64_t getShowProgressDelay() const;
 
             /**
@@ -164,6 +165,12 @@ namespace storm {
              */
             BuilderOptions& setAddOutOfBoundsState(bool newValue = true);
 
+            /**
+             * Should a state be labelled for overlapping guards
+             * @param newValue the new value (default true)
+             */
+            BuilderOptions& setAddOverlappingGuardsLabel(bool newValue = true);
+
 
         private:
             /// A flag that indicates whether all reward models are to be built. In this case, the reward model names are
@@ -194,9 +201,12 @@ namespace storm {
             // A flag that indicates whether or not to generate the information from which parts of the model specification
             // each choice originates.
             bool buildChoiceOrigins;
-            
+
             /// A flag that stores whether exploration checks are to be performed.
             bool explorationChecks;
+
+            /// A flag for states with overlapping guards
+            bool addOverlappingGuardsLabel;
 
             /// A flag indicating that the an additional state for out of bounds should be created.
             bool addOutOfBoundsState;

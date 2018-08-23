@@ -80,7 +80,20 @@ namespace storm {
                 endComponentStateSets.emplace_back(states.begin(), states.end(), true);
             }
             storm::storage::BitVector statesToCheck(numberOfStates);
-            
+            storm::storage::BitVector includedChoices;
+            if (choices) {
+                includedChoices = *choices;
+            } else if (states) {
+                includedChoices = storm::storage::BitVector(transitionMatrix.getRowCount());
+                for (auto state : *states) {
+                    for (uint_fast64_t choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1]; ++choice) {
+                        includedChoices.set(choice, true);
+                    }
+                }
+            } else {
+                includedChoices = storm::storage::BitVector(transitionMatrix.getRowCount(), true);
+            }
+                        
             for (std::list<StateBlock>::const_iterator mecIterator = endComponentStateSets.begin(); mecIterator != endComponentStateSets.end();) {
                 StateBlock const& mec = *mecIterator;
                 
@@ -88,7 +101,7 @@ namespace storm {
                 bool mecChanged = false;
                 
                 // Get an SCC decomposition of the current MEC candidate.
-                StronglyConnectedComponentDecomposition<ValueType> sccs(transitionMatrix, mec, true);
+                StronglyConnectedComponentDecomposition<ValueType> sccs(transitionMatrix, mec, includedChoices, true);
                 
                 // We need to do another iteration in case we have either more than once SCC or the SCC is smaller than
                 // the MEC canditate itself.
@@ -105,8 +118,14 @@ namespace storm {
                             bool keepStateInMEC = false;
                             
                             for (uint_fast64_t choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1]; ++choice) {
+                                
                                 // If the choice is not part of our subsystem, skip it.
                                 if (choices && !choices->get(choice)) {
+                                    continue;
+                                }
+
+                                // If the choice is not included any more, skip it.
+                                if (!includedChoices.get(choice)) {
                                     continue;
                                 }
                                 
@@ -117,6 +136,7 @@ namespace storm {
                                     }
                                         
                                     if (!scc.containsState(entry.getColumn())) {
+                                        includedChoices.set(choice, false);
                                         choiceContainedInMEC = false;
                                         break;
                                     }
@@ -125,7 +145,6 @@ namespace storm {
                                 // If there is at least one choice whose successor states are fully contained in the MEC, we can leave the state in the MEC.
                                 if (choiceContainedInMEC) {
                                     keepStateInMEC = true;
-                                    break;
                                 }
                             }
                             
@@ -185,15 +204,7 @@ namespace storm {
                             continue;
                         }
                         
-                        bool choiceContained = true;
-                        for (auto const& entry : transitionMatrix.getRow(choice)) {
-                            if (!mecStateSet.containsState(entry.getColumn())) {
-                                choiceContained = false;
-                                break;
-                            }
-                        }
-                        
-                        if (choiceContained) {
+                        if (includedChoices.get(choice)) {
                             containedChoices.insert(choice);
                         }
                     }

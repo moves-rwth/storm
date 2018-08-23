@@ -153,6 +153,13 @@ namespace storm {
             Expression simplify() const;
             
             /*!
+             * Tries to flatten the syntax tree of the expression, e.g., 1 + (2 + (3 + 4)) becomes (1 + 2) + (3 + 4)
+             *
+             * @return A semantically equivalent expression with reduced nesting
+             */
+            Expression reduceNesting() const;
+            
+            /*!
              * Retrieves the operator of a function application. This is only legal to call if the expression is
              * function application.
              *

@@ -29,14 +29,12 @@ namespace storm {
 
             static void toStream(storm::storage::DFT<ValueType> const& dft, std::ostream& os);
 
-            static modernjson::json translate(storm::storage::DFT<ValueType> const& dft);
-
-
         private:
+
+            static modernjson::json translate(storm::storage::DFT<ValueType> const& dft);
 
             static modernjson::json translateNode(DFTElementCPointer const& element);
 
         };
-
     }
 }

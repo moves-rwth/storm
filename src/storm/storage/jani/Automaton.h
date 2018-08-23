@@ -79,6 +79,8 @@ namespace storm {
              * Retrieves the variables of this automaton.
              */
             VariableSet const& getVariables() const;
+
+            bool hasVariable(std::string const& name) const;
             
             /*!
              * Retrieves all expression variables used by this automaton.
@@ -293,6 +295,12 @@ namespace storm {
              * Pushes the edge assignments to the corresponding destinations.
              */
             void pushEdgeAssignmentsToDestinations();
+            
+            /*!
+             * Pushes the assignments to real-valued transient variables to the edges.
+             * Note: This is currently only supported if the template edges are uniquely coupled with one source location.
+             */
+            void pushTransientRealLocationAssignmentsToEdges();
             
             /*!
              * Retrieves whether there is any transient edge destination assignment in the automaton.

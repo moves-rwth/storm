@@ -8,6 +8,7 @@
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidTypeException.h"
+#include "storm/exceptions/NotSupportedException.h"
 
 namespace storm {
     namespace jani {
@@ -51,6 +52,10 @@ namespace storm {
 
         RealVariable const& Automaton::addVariable(RealVariable const& variable) {
             return variables.addVariable(variable);
+        }
+
+        bool Automaton::hasVariable(std::string const& name) const {
+            return variables.hasVariable(name);
         }
 
         VariableSet& Automaton::getVariables() {
@@ -419,6 +424,38 @@ namespace storm {
             edges.pushAssignmentsToDestinations();
         }
         
+        void Automaton::pushTransientRealLocationAssignmentsToEdges() {
+            std::set<std::shared_ptr<storm::jani::TemplateEdge>> encounteredTemplateEdges;
+            
+            for (uint64_t locationIndex = 0; locationIndex < locations.size(); ++locationIndex) {
+                auto& location = locations[locationIndex];
+                auto edges = this->getEdgesFromLocation(locationIndex);
+            
+                storm::jani::Location newLocation(location.getName());
+                bool createNewLocation = true;
+                for (auto& edge : edges) {
+                    STORM_LOG_THROW(encounteredTemplateEdges.find(edge.getTemplateEdge()) == encounteredTemplateEdges.end(), storm::exceptions::NotSupportedException, "Pushing location assignments to edges is only supported for automata with unique template edges.");
+
+                    auto& templateEdge = edge.getTemplateEdge();
+                    encounteredTemplateEdges.insert(templateEdge);
+                    
+                    for (auto const& assignment : location.getAssignments().getTransientAssignments()) {
+                        if (assignment.getVariable().isTransient() && assignment.getVariable().isRealVariable()) {
+                            templateEdge->addTransientAssignment(assignment, true);
+                        } else if (createNewLocation) {
+                            newLocation.addTransientAssignment(assignment);
+                        }
+                    }
+                    
+                    if (createNewLocation) {
+                        createNewLocation = false;
+                    }
+                }
+
+                location = std::move(newLocation);
+            }
+        }
+        
         bool Automaton::hasTransientEdgeDestinationAssignments() const {
             for (auto const& edge : this->getEdges()) {
                 if (edge.hasTransientEdgeDestinationAssignments()) {
@@ -439,7 +476,6 @@ namespace storm {
             }
             return true;
         }
-
 
         bool Automaton::usesAssignmentLevels() const {
             return edges.usesAssignmentLevels();

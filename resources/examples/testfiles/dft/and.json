@@ -1,0 +1,71 @@
+{
+    "toplevel": "2",
+    "parameters": {},
+    "nodes": [
+        {
+            "data": {
+                "id": "0",
+                "name": "A",
+                "type": "be",
+                "rate": "1",
+                "dorm": "1",
+                "label": "A (1)"
+            },
+            "position": {
+                "x": 440,
+                "y": 260
+            },
+            "group": "nodes",
+            "removed": false,
+            "selected": false,
+            "selectable": true,
+            "locked": false,
+            "grabbable": true,
+            "classes": "be"
+        },
+        {
+            "data": {
+                "id": "1",
+                "name": "B",
+                "type": "be",
+                "rate": "1",
+                "dorm": "1",
+                "label": "B (1)"
+            },
+            "position": {
+                "x": 548,
+                "y": 265
+            },
+            "group": "nodes",
+            "removed": false,
+            "selected": false,
+            "selectable": true,
+            "locked": false,
+            "grabbable": true,
+            "classes": "be"
+        },
+        {
+            "data": {
+                "id": "2",
+                "name": "Z",
+                "type": "and",
+                "children": [
+                    "0",
+                    "1"
+                ],
+                "label": "Z"
+            },
+            "position": {
+                "x": 505,
+                "y": 119
+            },
+            "group": "nodes",
+            "removed": false,
+            "selected": false,
+            "selectable": true,
+            "locked": false,
+            "grabbable": true,
+            "classes": "and"
+        }
+    ]
+}

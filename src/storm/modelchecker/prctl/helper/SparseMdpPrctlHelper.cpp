@@ -35,6 +35,8 @@
 #include "storm/utility/ProgressMeasurement.h"
 #include "storm/utility/export.h"
 
+#include "storm/transformer/EndComponentEliminator.h"
+
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 
 #include "storm/exceptions/InvalidStateException.h"
@@ -841,6 +843,79 @@ namespace storm {
             
             template<typename ValueType>
             template<typename RewardModelType>
+            MDPSparseModelCheckingHelperReturnType<ValueType> SparseMdpPrctlHelper<ValueType>::computeTotalRewards(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, RewardModelType const& rewardModel, bool qualitative, bool produceScheduler, ModelCheckerHint const& hint) {
+
+                // Reduce to reachability rewards
+                if (goal.minimize()) {
+                    STORM_LOG_ERROR_COND(!produceScheduler, "Can not produce scheduler for this property (functionality not implemented");
+                    // Identify the states from which no reward can be collected under some scheduler
+                    storm::storage::BitVector choicesWithoutReward = rewardModel.getChoicesWithZeroReward(transitionMatrix);
+                    storm::storage::BitVector statesWithZeroRewardChoice(transitionMatrix.getRowGroupCount(), false);
+                    for (uint64_t state = 0; state < transitionMatrix.getRowGroupCount(); ++state) {
+                        if (choicesWithoutReward.getNextSetIndex(transitionMatrix.getRowGroupIndices()[state])< transitionMatrix.getRowGroupIndices()[state + 1]) {
+                            statesWithZeroRewardChoice.set(state);
+                        }
+                    }
+                    storm::storage::BitVector rew0EStates = storm::utility::graph::performProbGreater0A(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions, statesWithZeroRewardChoice, ~statesWithZeroRewardChoice, false, 0, choicesWithoutReward);
+                    rew0EStates.complement();
+                    return computeReachabilityRewards(env, std::move(goal), transitionMatrix, backwardTransitions, rewardModel, rew0EStates, qualitative, false, hint);
+                } else {
+                    // Identify the states from which only states with zero reward are reachable.
+                    storm::storage::BitVector statesWithoutReward = rewardModel.getStatesWithZeroReward(transitionMatrix);
+                    storm::storage::BitVector rew0AStates = storm::utility::graph::performProbGreater0E(backwardTransitions, statesWithoutReward, ~statesWithoutReward);
+                    rew0AStates.complement();
+                    
+                    // There might be end components that consists only of states/choices with zero rewards. The reachability reward semantics would assign such
+                    // end components reward infinity. To avoid this, we potentially need to eliminate such end components
+                    storm::storage::BitVector trueStates(transitionMatrix.getRowGroupCount(), true);
+                    if (storm::utility::graph::performProb1A(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions, trueStates, rew0AStates).full()) {
+                        return computeReachabilityRewards(env, std::move(goal), transitionMatrix, backwardTransitions, rewardModel, rew0AStates, qualitative, produceScheduler, hint);
+                    } else {
+                        // The transformation of schedulers for the ec-eliminated system back to the original one is not implemented.
+                        STORM_LOG_ERROR_COND(!produceScheduler, "Can not produce scheduler for this property (functionality not implemented");
+                        storm::storage::BitVector choicesWithoutReward = rewardModel.getChoicesWithZeroReward(transitionMatrix);
+                        auto ecElimResult = storm::transformer::EndComponentEliminator<ValueType>::transform(transitionMatrix, storm::storage::BitVector(transitionMatrix.getRowGroupCount(), true), choicesWithoutReward, rew0AStates, true);
+                        storm::storage::BitVector newRew0AStates(ecElimResult.matrix.getRowGroupCount(), false);
+                        for (auto const& oldRew0AState : rew0AStates) {
+                            newRew0AStates.set(ecElimResult.oldToNewStateMapping[oldRew0AState]);
+                        }
+                        
+                        return computeReachabilityRewardsHelper(env, std::move(goal), ecElimResult.matrix, ecElimResult.matrix.transpose(true),
+                                                                [&] (uint_fast64_t rowCount, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& maybeStates) {
+                                                                    std::vector<ValueType> result;
+                                                                    std::vector<ValueType> oldChoiceRewards = rewardModel.getTotalRewardVector(transitionMatrix);
+                                                                    result.reserve(rowCount);
+                                                                    for (uint64_t newState : maybeStates) {
+                                                                        for (uint64_t newChoice = transitionMatrix.getRowGroupIndices()[newState]; newChoice < transitionMatrix.getRowGroupIndices()[newState + 1]; ++newChoice) {
+                                                                            uint64_t oldChoice = ecElimResult.newToOldRowMapping[newChoice];
+                                                                            result.push_back(oldChoiceRewards[oldChoice]);
+                                                                        }
+                                                                    }
+                                                                    STORM_LOG_ASSERT(result.size() == rowCount, "Unexpected size of reward vector.");
+                                                                    return result;
+                                                                }, newRew0AStates, qualitative, false,
+                                                                [&] () {
+                                                                    storm::storage::BitVector newStatesWithoutReward(ecElimResult.matrix.getRowGroupCount(), false);
+                                                                    for (auto const& oldStateWithoutRew : statesWithoutReward) {
+                                                                        newStatesWithoutReward.set(ecElimResult.oldToNewStateMapping[oldStateWithoutRew]);
+                                                                    }
+                                                                    return newStatesWithoutReward;
+                                                                },
+                                                                [&] () {
+                                                                    storm::storage::BitVector newChoicesWithoutReward(ecElimResult.matrix.getRowGroupCount(), false);
+                                                                    for (uint64_t newChoice = 0; newChoice < ecElimResult.matrix.getRowCount(); ++newChoice) {
+                                                                            if (choicesWithoutReward.get(ecElimResult.newToOldRowMapping[newChoice])) {
+                                                                                newChoicesWithoutReward.set(newChoice);
+                                                                            }
+                                                                    }
+                                                                    return newChoicesWithoutReward;
+                                                                });
+                    }
+                }
+            }
+            
+            template<typename ValueType>
+            template<typename RewardModelType>
             MDPSparseModelCheckingHelperReturnType<ValueType> SparseMdpPrctlHelper<ValueType>::computeReachabilityRewards(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, RewardModelType const& rewardModel, storm::storage::BitVector const& targetStates, bool qualitative, bool produceScheduler, ModelCheckerHint const& hint) {
                 // Only compute the result if the model has at least one reward this->getModel().
                 STORM_LOG_THROW(!rewardModel.empty(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
@@ -854,6 +929,22 @@ namespace storm {
                                                         },
                                                         [&] () {
                                                             return rewardModel.getChoicesWithZeroReward(transitionMatrix);
+                                                        },
+                                                        hint);
+            }
+            
+            template<typename ValueType>
+            MDPSparseModelCheckingHelperReturnType<ValueType> SparseMdpPrctlHelper<ValueType>::computeReachabilityTimes(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& targetStates, bool qualitative, bool produceScheduler, ModelCheckerHint const& hint) {
+                return computeReachabilityRewardsHelper(env, std::move(goal), transitionMatrix, backwardTransitions,
+                                                        [] (uint_fast64_t rowCount, storm::storage::SparseMatrix<ValueType> const&, storm::storage::BitVector const&) {
+                                                            return std::vector<ValueType>(rowCount, storm::utility::one<ValueType>());
+                                                        },
+                                                        targetStates, qualitative, produceScheduler,
+                                                        [&] () {
+                                                            return storm::storage::BitVector(transitionMatrix.getRowGroupCount(), false);
+                                                        },
+                                                        [&] () {
+                                                            return storm::storage::BitVector(transitionMatrix.getRowCount(), false);
                                                         },
                                                         hint);
             }
@@ -1284,7 +1375,7 @@ namespace storm {
                         
                         // Now insert all (cumulative) probability values that target an MEC.
                         for (uint_fast64_t mecIndex = 0; mecIndex < auxiliaryStateToProbabilityMap.size(); ++mecIndex) {
-                            if (auxiliaryStateToProbabilityMap[mecIndex] != 0) {
+                            if (!storm::utility::isZero(auxiliaryStateToProbabilityMap[mecIndex])) {
                                 sspMatrixBuilder.addNextValue(currentChoice, firstAuxiliaryStateIndex + mecIndex, auxiliaryStateToProbabilityMap[mecIndex]);
                             }
                         }
@@ -1319,7 +1410,7 @@ namespace storm {
                                 
                                 // Now insert all (cumulative) probability values that target an MEC.
                                 for (uint_fast64_t targetMecIndex = 0; targetMecIndex < auxiliaryStateToProbabilityMap.size(); ++targetMecIndex) {
-                                    if (auxiliaryStateToProbabilityMap[targetMecIndex] != 0) {
+                                    if (!storm::utility::isZero(auxiliaryStateToProbabilityMap[targetMecIndex])) {
                                         sspMatrixBuilder.addNextValue(currentChoice, firstAuxiliaryStateIndex + targetMecIndex, auxiliaryStateToProbabilityMap[targetMecIndex]);
                                     }
                                 }
@@ -1686,6 +1777,7 @@ namespace storm {
             template std::vector<double> SparseMdpPrctlHelper<double>::computeInstantaneousRewards(Environment const& env, storm::solver::SolveGoal<double>&& goal, storm::storage::SparseMatrix<double> const& transitionMatrix, storm::models::sparse::StandardRewardModel<double> const& rewardModel, uint_fast64_t stepCount);
             template std::vector<double> SparseMdpPrctlHelper<double>::computeCumulativeRewards(Environment const& env, storm::solver::SolveGoal<double>&& goal, storm::storage::SparseMatrix<double> const& transitionMatrix, storm::models::sparse::StandardRewardModel<double> const& rewardModel, uint_fast64_t stepBound);
             template MDPSparseModelCheckingHelperReturnType<double> SparseMdpPrctlHelper<double>::computeReachabilityRewards(Environment const& env, storm::solver::SolveGoal<double>&& goal, storm::storage::SparseMatrix<double> const& transitionMatrix, storm::storage::SparseMatrix<double> const& backwardTransitions, storm::models::sparse::StandardRewardModel<double> const& rewardModel, storm::storage::BitVector const& targetStates, bool qualitative, bool produceScheduler, ModelCheckerHint const& hint);
+            template MDPSparseModelCheckingHelperReturnType<double> SparseMdpPrctlHelper<double>::computeTotalRewards(Environment const& env, storm::solver::SolveGoal<double>&& goal, storm::storage::SparseMatrix<double> const& transitionMatrix, storm::storage::SparseMatrix<double> const& backwardTransitions, storm::models::sparse::StandardRewardModel<double> const& rewardModel, bool qualitative, bool produceScheduler, ModelCheckerHint const& hint);
             template std::vector<double> SparseMdpPrctlHelper<double>::computeLongRunAverageRewards(Environment const& env, storm::solver::SolveGoal<double>&& goal, storm::storage::SparseMatrix<double> const& transitionMatrix, storm::storage::SparseMatrix<double> const& backwardTransitions, storm::models::sparse::StandardRewardModel<double> const& rewardModel);
             template double SparseMdpPrctlHelper<double>::computeLraForMaximalEndComponent(Environment const& env, OptimizationDirection dir, storm::storage::SparseMatrix<double> const& transitionMatrix, storm::models::sparse::StandardRewardModel<double> const& rewardModel, storm::storage::MaximalEndComponent const& mec);
             template double SparseMdpPrctlHelper<double>::computeLraForMaximalEndComponentVI(Environment const& env, OptimizationDirection dir, storm::storage::SparseMatrix<double> const& transitionMatrix, storm::models::sparse::StandardRewardModel<double> const& rewardModel, storm::storage::MaximalEndComponent const& mec);
@@ -1696,11 +1788,11 @@ namespace storm {
             template std::vector<storm::RationalNumber> SparseMdpPrctlHelper<storm::RationalNumber>::computeInstantaneousRewards(Environment const& env, storm::solver::SolveGoal<storm::RationalNumber>&& goal, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::models::sparse::StandardRewardModel<storm::RationalNumber> const& rewardModel, uint_fast64_t stepCount);
             template std::vector<storm::RationalNumber> SparseMdpPrctlHelper<storm::RationalNumber>::computeCumulativeRewards(Environment const& env, storm::solver::SolveGoal<storm::RationalNumber>&& goal, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::models::sparse::StandardRewardModel<storm::RationalNumber> const& rewardModel, uint_fast64_t stepBound);
             template MDPSparseModelCheckingHelperReturnType<storm::RationalNumber> SparseMdpPrctlHelper<storm::RationalNumber>::computeReachabilityRewards(Environment const& env, storm::solver::SolveGoal<storm::RationalNumber>&& goal, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions, storm::models::sparse::StandardRewardModel<storm::RationalNumber> const& rewardModel, storm::storage::BitVector const& targetStates, bool qualitative, bool produceScheduler, ModelCheckerHint const& hint);
+            template MDPSparseModelCheckingHelperReturnType<storm::RationalNumber> SparseMdpPrctlHelper<storm::RationalNumber>::computeTotalRewards(Environment const& env, storm::solver::SolveGoal<storm::RationalNumber>&& goal, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions, storm::models::sparse::StandardRewardModel<storm::RationalNumber> const& rewardModel, bool qualitative, bool produceScheduler, ModelCheckerHint const& hint);
             template std::vector<storm::RationalNumber> SparseMdpPrctlHelper<storm::RationalNumber>::computeLongRunAverageRewards(Environment const& env, storm::solver::SolveGoal<storm::RationalNumber>&& goal, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions, storm::models::sparse::StandardRewardModel<storm::RationalNumber> const& rewardModel);
             template storm::RationalNumber SparseMdpPrctlHelper<storm::RationalNumber>::computeLraForMaximalEndComponent(Environment const& env, OptimizationDirection dir, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::models::sparse::StandardRewardModel<storm::RationalNumber> const& rewardModel, storm::storage::MaximalEndComponent const& mec);
             template storm::RationalNumber SparseMdpPrctlHelper<storm::RationalNumber>::computeLraForMaximalEndComponentVI(Environment const& env, OptimizationDirection dir, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::models::sparse::StandardRewardModel<storm::RationalNumber> const& rewardModel, storm::storage::MaximalEndComponent const& mec);
             template storm::RationalNumber SparseMdpPrctlHelper<storm::RationalNumber>::computeLraForMaximalEndComponentLP(Environment const& env, OptimizationDirection dir, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::models::sparse::StandardRewardModel<storm::RationalNumber> const& rewardModel, storm::storage::MaximalEndComponent const& mec);
-
 #endif
         }
     }

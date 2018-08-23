@@ -40,9 +40,11 @@ namespace storm {
              * Adds a transient assignment to this edge.
              *
              * @param assignment The transient assignment to add.
+             * @param addToExisting Determines if adding the assigned expression to an already existing assignment is
+             * allowed (if the assigned variable is quantitative).
              * @return True if the assignment was added.
              */
-            bool addTransientAssignment(Assignment const& assignment);
+            bool addTransientAssignment(Assignment const& assignment, bool addToExisting = false);
             
             /*!
              * Retrieves a set of (global) variables that are written by at least one of the edge's destinations.

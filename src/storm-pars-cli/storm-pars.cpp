@@ -15,6 +15,8 @@
 #include "storm/utility/Stopwatch.h"
 #include "storm/utility/macros.h"
 
+#include "storm-pars/modelchecker/instantiation/SparseCtmcInstantiationModelChecker.h"
+
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/settings/modules/IOSettings.h"
@@ -29,7 +31,20 @@ namespace storm {
     
         typedef typename storm::cli::SymbolicInput SymbolicInput;
 
-
+        template <typename ValueType>
+        struct SampleInformation {
+            SampleInformation(bool graphPreserving = false, bool exact = false) : graphPreserving(graphPreserving), exact(exact) {
+                // Intentionally left empty.
+            }
+            
+            bool empty() const {
+                return cartesianProducts.empty();
+            }
+            
+            std::vector<std::map<typename utility::parametric::VariableType<ValueType>::type, std::vector<typename utility::parametric::CoefficientType<ValueType>::type>>> cartesianProducts;
+            bool graphPreserving;
+            bool exact;
+        };
         
         template <typename ValueType>
         std::vector<storm::storage::ParameterRegion<ValueType>> parseRegions(std::shared_ptr<storm::models::ModelBase> const& model) {
@@ -39,6 +54,76 @@ namespace storm {
                 result = storm::api::parseRegions<ValueType>(regionSettings.getRegionString(), *model);
             }
             return result;
+        }
+        
+        template <typename ValueType>
+        SampleInformation<ValueType> parseSamples(std::shared_ptr<storm::models::ModelBase> const& model, std::string const& sampleString, bool graphPreserving) {
+            STORM_LOG_THROW(!model || model->isSparseModel(), storm::exceptions::NotSupportedException, "Sampling is only supported for sparse models.");
+
+            SampleInformation<ValueType> sampleInfo(graphPreserving);
+            if (sampleString.empty()) {
+                return sampleInfo;
+            }
+            
+            // Get all parameters from the model.
+            std::set<typename utility::parametric::VariableType<ValueType>::type> modelParameters;
+            auto const& sparseModel = *model->as<storm::models::sparse::Model<ValueType>>();
+            modelParameters = storm::models::sparse::getProbabilityParameters(sparseModel);
+            auto rewParameters = storm::models::sparse::getRewardParameters(sparseModel);
+            modelParameters.insert(rewParameters.begin(), rewParameters.end());
+
+            std::vector<std::string> cartesianProducts;
+            boost::split(cartesianProducts, sampleString, boost::is_any_of(";"));
+            for (auto& product : cartesianProducts) {
+                boost::trim(product);
+                
+                // Get the values string for each variable.
+                std::vector<std::string> valuesForVariables;
+                boost::split(valuesForVariables, product, boost::is_any_of(","));
+                for (auto& values : valuesForVariables) {
+                    boost::trim(values);
+                }
+                
+                std::set<typename utility::parametric::VariableType<ValueType>::type> encounteredParameters;
+                sampleInfo.cartesianProducts.emplace_back();
+                auto& newCartesianProduct = sampleInfo.cartesianProducts.back();
+                for (auto const& varValues : valuesForVariables) {
+                    auto equalsPosition = varValues.find("=");
+                    STORM_LOG_THROW(equalsPosition != varValues.npos, storm::exceptions::WrongFormatException, "Incorrect format of samples.");
+                    std::string variableName = varValues.substr(0, equalsPosition);
+                    boost::trim(variableName);
+                    std::string values = varValues.substr(equalsPosition + 1);
+                    boost::trim(values);
+                    
+                    bool foundParameter = false;
+                    typename utility::parametric::VariableType<ValueType>::type theParameter;
+                    for (auto const& parameter : modelParameters) {
+                        std::stringstream parameterStream;
+                        parameterStream << parameter;
+                        if (parameterStream.str() == variableName) {
+                            foundParameter = true;
+                            theParameter = parameter;
+                            encounteredParameters.insert(parameter);
+                        }
+                    }
+                    STORM_LOG_THROW(foundParameter, storm::exceptions::WrongFormatException, "Unknown parameter '" << variableName << "'.");
+                    
+                    std::vector<std::string> splitValues;
+                    boost::split(splitValues, values, boost::is_any_of(":"));
+                    STORM_LOG_THROW(!splitValues.empty(), storm::exceptions::WrongFormatException, "Expecting at least one value per parameter.");
+                    
+                    auto& list = newCartesianProduct[theParameter];
+                    
+                    for (auto& value : splitValues) {
+                        boost::trim(value);
+                        list.push_back(storm::utility::convertNumber<typename utility::parametric::CoefficientType<ValueType>::type>(value));
+                    }
+                }
+                
+                STORM_LOG_THROW(encounteredParameters == modelParameters, storm::exceptions::WrongFormatException, "Variables for all parameters are required when providing samples.");
+            }
+            
+            return sampleInfo;
         }
         
         template <typename ValueType>
@@ -106,9 +191,24 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void printInitialStatesResult(std::unique_ptr<storm::modelchecker::CheckResult> const& result, storm::jani::Property const& property, storm::utility::Stopwatch* watch = nullptr) {
+        void printInitialStatesResult(std::unique_ptr<storm::modelchecker::CheckResult> const& result, storm::jani::Property const& property, storm::utility::Stopwatch* watch = nullptr, storm::utility::parametric::Valuation<ValueType> const* valuation = nullptr) {
             if (result) {
-                STORM_PRINT_AND_LOG("Result (initial states): " << std::endl);
+                STORM_PRINT_AND_LOG("Result (initial states)");
+                if (valuation) {
+                    bool first = true;
+                    std::stringstream ss;
+                    for (auto const& entry : *valuation) {
+                        if (!first) {
+                            ss << ", ";
+                        } else {
+                            first = false;
+                        }
+                        ss << entry.first << "=" << entry.second;
+                    }
+                    
+                    STORM_PRINT_AND_LOG(" for instance [" << ss.str() << "]");
+                }
+                STORM_PRINT_AND_LOG(": ")
                 
                 auto const* regionCheckResult = dynamic_cast<storm::modelchecker::RegionCheckResult<ValueType> const*>(result.get());
                 if (regionCheckResult != nullptr) {
@@ -132,7 +232,7 @@ namespace storm {
                     STORM_PRINT_AND_LOG(*result << std::endl);
                 }
                 if (watch) {
-                    STORM_PRINT_AND_LOG("Time for model checking: " << *watch << "." << std::endl);
+                    STORM_PRINT_AND_LOG("Time for model checking: " << *watch << "." << std::endl << std::endl);
                 }
             } else {
                 STORM_PRINT_AND_LOG(" failed, property is unsupported by selected engine/settings." << std::endl);
@@ -151,24 +251,118 @@ namespace storm {
             }
         }
         
+        template<template<typename, typename> class ModelCheckerType, typename ModelType, typename ValueType, typename SolveValueType = double>
+        void verifyPropertiesAtSamplePoints(ModelType const& model, SymbolicInput const& input, SampleInformation<ValueType> const& samples) {
+            
+            // When samples are provided, we create an instantiation model checker.
+            ModelCheckerType<ModelType, SolveValueType> modelchecker(model);
+            
+            for (auto const& property : input.properties) {
+                storm::cli::printModelCheckingProperty(property);
+                
+                modelchecker.specifyFormula(storm::api::createTask<ValueType>(property.getRawFormula(), true));
+                modelchecker.setInstantiationsAreGraphPreserving(samples.graphPreserving);
+                
+                storm::utility::parametric::Valuation<ValueType> valuation;
+                
+                std::vector<typename utility::parametric::VariableType<ValueType>::type> parameters;
+                std::vector<typename std::vector<typename utility::parametric::CoefficientType<ValueType>::type>::const_iterator> iterators;
+                std::vector<typename std::vector<typename utility::parametric::CoefficientType<ValueType>::type>::const_iterator> iteratorEnds;
+                
+                storm::utility::Stopwatch watch(true);
+                for (auto const& product : samples.cartesianProducts) {
+                    parameters.clear();
+                    iterators.clear();
+                    iteratorEnds.clear();
+                    
+                    for (auto const& entry : product) {
+                        parameters.push_back(entry.first);
+                        iterators.push_back(entry.second.cbegin());
+                        iteratorEnds.push_back(entry.second.cend());
+                    }
+                    
+                    bool done = false;
+                    while (!done) {
+                        // Read off valuation.
+                        for (uint64_t i = 0; i < parameters.size(); ++i) {
+                            valuation[parameters[i]] = *iterators[i];
+                        }
+                        
+                        storm::utility::Stopwatch valuationWatch(true);
+                        std::unique_ptr<storm::modelchecker::CheckResult> result = modelchecker.check(Environment(), valuation);
+                        valuationWatch.stop();
+                        
+                        if (result) {
+                            result->filter(storm::modelchecker::ExplicitQualitativeCheckResult(model.getInitialStates()));
+                        }
+                        printInitialStatesResult<ValueType>(result, property, &valuationWatch, &valuation);
+                        
+                        for (uint64_t i = 0; i < parameters.size(); ++i) {
+                            ++iterators[i];
+                            if (iterators[i] == iteratorEnds[i]) {
+                                // Reset iterator and proceed to move next iterator.
+                                iterators[i] = product.at(parameters[i]).cbegin();
+                                
+                                // If the last iterator was removed, we are done.
+                                if (i == parameters.size() - 1) {
+                                    done = true;
+                                }
+                            } else {
+                                // If an iterator was moved but not reset, we have another valuation to check.
+                                break;
+                            }
+                        }
+                        
+                    }
+                }
+                
+                watch.stop();
+                STORM_PRINT_AND_LOG("Overall time for sampling all instances: " << watch << std::endl << std::endl);
+            }
+        }
+        
+        template <typename ValueType, typename SolveValueType = double>
+        void verifyPropertiesAtSamplePoints(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, SymbolicInput const& input, SampleInformation<ValueType> const& samples) {
+            if (model->isOfType(storm::models::ModelType::Dtmc)) {
+                verifyPropertiesAtSamplePoints<storm::modelchecker::SparseDtmcInstantiationModelChecker, storm::models::sparse::Dtmc<ValueType>, ValueType, SolveValueType>(*model->template as<storm::models::sparse::Dtmc<ValueType>>(), input, samples);
+            } else if (model->isOfType(storm::models::ModelType::Ctmc)) {
+                verifyPropertiesAtSamplePoints<storm::modelchecker::SparseCtmcInstantiationModelChecker, storm::models::sparse::Ctmc<ValueType>, ValueType, SolveValueType>(*model->template as<storm::models::sparse::Ctmc<ValueType>>(), input, samples);
+            } else if (model->isOfType(storm::models::ModelType::Ctmc)) {
+                verifyPropertiesAtSamplePoints<storm::modelchecker::SparseMdpInstantiationModelChecker, storm::models::sparse::Mdp<ValueType>, ValueType, SolveValueType>(*model->template as<storm::models::sparse::Mdp<ValueType>>(), input, samples);
+            } else {
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Sampling is currently only supported for DTMCs, CTMCs and MDPs.");
+            }
+        }
+        
         template <typename ValueType>
-        void verifyPropertiesWithSparseEngine(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, SymbolicInput const& input) {
-            verifyProperties<ValueType>(input.properties,
-                                        [&model] (std::shared_ptr<storm::logic::Formula const> const& formula) {
-                                            std::unique_ptr<storm::modelchecker::CheckResult> result = storm::api::verifyWithSparseEngine<ValueType>(model, storm::api::createTask<ValueType>(formula, true));
-                                            if (result) {
-                                                result->filter(storm::modelchecker::ExplicitQualitativeCheckResult(model->getInitialStates()));
-                                            }
-                                            return result;
-                                        },
-                                        [&model] (std::unique_ptr<storm::modelchecker::CheckResult> const& result) {
-                                            auto parametricSettings = storm::settings::getModule<storm::settings::modules::ParametricSettings>();
-                                            if (parametricSettings.exportResultToFile() && model->isOfType(storm::models::ModelType::Dtmc)) {
-                                                auto dtmc = model->template as<storm::models::sparse::Dtmc<ValueType>>();
-												boost::optional<ValueType> rationalFunction = result->asExplicitQuantitativeCheckResult<ValueType>()[*model->getInitialStates().begin()];
-                                                storm::api::exportParametricResultToFile(rationalFunction, storm::analysis::ConstraintCollector<ValueType>(*dtmc), parametricSettings.exportResultPath());
-                                            }
-                                        });
+        void verifyPropertiesWithSparseEngine(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, SymbolicInput const& input, SampleInformation<ValueType> const& samples) {
+            
+            if (samples.empty()) {
+                verifyProperties<ValueType>(input.properties,
+                                            [&model] (std::shared_ptr<storm::logic::Formula const> const& formula) {
+                                                std::unique_ptr<storm::modelchecker::CheckResult> result = storm::api::verifyWithSparseEngine<ValueType>(model, storm::api::createTask<ValueType>(formula, true));
+                                                if (result) {
+                                                    result->filter(storm::modelchecker::ExplicitQualitativeCheckResult(model->getInitialStates()));
+                                                }
+                                                return result;
+                                            },
+                                            [&model] (std::unique_ptr<storm::modelchecker::CheckResult> const& result) {
+                                                auto parametricSettings = storm::settings::getModule<storm::settings::modules::ParametricSettings>();
+                                                if (parametricSettings.exportResultToFile() && model->isOfType(storm::models::ModelType::Dtmc)) {
+                                                    auto dtmc = model->template as<storm::models::sparse::Dtmc<ValueType>>();
+                                                    boost::optional<ValueType> rationalFunction = result->asExplicitQuantitativeCheckResult<ValueType>()[*model->getInitialStates().begin()];
+                                                    storm::api::exportParametricResultToFile(rationalFunction, storm::analysis::ConstraintCollector<ValueType>(*dtmc), parametricSettings.exportResultPath());
+                                                }
+                                            });
+            } else {
+                STORM_LOG_TRACE("Sampling the model at given points.");
+                
+                if (samples.exact) {
+                    verifyPropertiesAtSamplePoints<ValueType, storm::RationalNumber>(model, input, samples);
+                } else {
+                    verifyPropertiesAtSamplePoints<ValueType, double>(model, input, samples);
+                }
+            }
         }
         
         template <typename ValueType>
@@ -226,18 +420,18 @@ namespace storm {
         }
         
         template <typename ValueType>
-        void verifyWithSparseEngine(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, SymbolicInput const& input, std::vector<storm::storage::ParameterRegion<ValueType>> const& regions) {
+        void verifyWithSparseEngine(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, SymbolicInput const& input, std::vector<storm::storage::ParameterRegion<ValueType>> const& regions, SampleInformation<ValueType> const& samples) {
             if (regions.empty()) {
-                storm::pars::verifyPropertiesWithSparseEngine(model, input);
+                storm::pars::verifyPropertiesWithSparseEngine(model, input, samples);
             } else {
                 storm::pars::verifyRegionsWithSparseEngine(model, input, regions);
             }
         }
         
         template <storm::dd::DdType DdType, typename ValueType>
-        void verifyParametricModel(std::shared_ptr<storm::models::ModelBase> const& model, SymbolicInput const& input, std::vector<storm::storage::ParameterRegion<ValueType>> const& regions) {
+        void verifyParametricModel(std::shared_ptr<storm::models::ModelBase> const& model, SymbolicInput const& input, std::vector<storm::storage::ParameterRegion<ValueType>> const& regions, SampleInformation<ValueType> const& samples) {
             STORM_LOG_ASSERT(model->isSparseModel(), "Unexpected model type.");
-            storm::pars::verifyWithSparseEngine<ValueType>(model->as<storm::models::sparse::Model<ValueType>>(), input, regions);
+            storm::pars::verifyWithSparseEngine<ValueType>(model->as<storm::models::sparse::Model<ValueType>>(), input, regions, samples);
         }
         
         template <storm::dd::DdType DdType, typename ValueType>
@@ -271,9 +465,13 @@ namespace storm {
             }
             
             std::vector<storm::storage::ParameterRegion<ValueType>> regions = parseRegions<ValueType>(model);
-
-
-
+            std::string samplesAsString = parSettings.getSamples();
+            SampleInformation<ValueType> samples;
+            if (!samplesAsString.empty()) {
+                samples = parseSamples<ValueType>(model, samplesAsString, parSettings.isSamplesAreGraphPreservingSet());
+                samples.exact = parSettings.isSampleExactSet();
+            }
+            
             if (model) {
                 storm::cli::exportModel<DdType, ValueType>(model, input);
             }
@@ -285,7 +483,7 @@ namespace storm {
             }
 
             if (model) {
-                verifyParametricModel<DdType, ValueType>(model, input, regions);
+                verifyParametricModel<DdType, ValueType>(model, input, regions, samples);
             }
         }
         

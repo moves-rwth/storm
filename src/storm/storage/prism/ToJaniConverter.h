@@ -14,7 +14,7 @@ namespace storm {
         
         class ToJaniConverter {
         public:
-            storm::jani::Model convert(storm::prism::Program const& program, bool allVariablesGlobal = false, std::string suffix = "");
+            storm::jani::Model convert(storm::prism::Program const& program, bool allVariablesGlobal = true, std::string suffix = "", bool standardCompliant = false);
             
             bool labelsWereRenamed() const;
             std::map<std::string, std::string> const& getLabelRenaming() const;

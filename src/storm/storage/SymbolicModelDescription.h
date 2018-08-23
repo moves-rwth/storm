@@ -38,8 +38,8 @@ namespace storm {
             
             std::vector<std::string> getParameterNames() const;
             
-            SymbolicModelDescription toJani(bool makeVariablesGlobal = true) const;
-            std::pair<SymbolicModelDescription, std::map<std::string, std::string>> toJaniWithLabelRenaming(bool makeVariablesGlobal = true) const;
+            SymbolicModelDescription toJani(bool makeVariablesGlobal = true, bool standardCompliant = false) const;
+            std::pair<SymbolicModelDescription, std::map<std::string, std::string>> toJaniWithLabelRenaming(bool makeVariablesGlobal = true, bool standardCompliant = false) const;
             
             SymbolicModelDescription preprocess(std::string const& constantDefinitionString = "") const;
             SymbolicModelDescription preprocess(std::map<storm::expressions::Variable, storm::expressions::Expression> const& constantDefinitions) const;

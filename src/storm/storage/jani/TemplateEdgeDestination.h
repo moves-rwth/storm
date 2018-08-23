@@ -27,7 +27,7 @@ namespace storm {
             // Convenience methods to access the assignments.
             bool hasAssignment(Assignment const& assignment) const;
             bool removeAssignment(Assignment const& assignment);
-            void addAssignment(Assignment const& assignment);
+            void addAssignment(Assignment const& assignment, bool addToExisting = false);
             
             /*!
              * Retrieves whether this destination has transient assignments.

@@ -40,7 +40,10 @@ namespace storm {
                     STORM_LOG_WARN("The selected solution method does not guarantee exact results.");
                 }
             }
-            STORM_LOG_THROW(method == MinMaxMethod::ValueIteration || method == MinMaxMethod::PolicyIteration || method == MinMaxMethod::RationalSearch, storm::exceptions::InvalidEnvironmentException, "This solver does not support the selected method.");
+            if (method != MinMaxMethod::ValueIteration && method != MinMaxMethod::PolicyIteration && method != MinMaxMethod::RationalSearch) {
+                STORM_LOG_WARN("Selected method is not supported for this solver, switching to value iteration.");
+                method = MinMaxMethod::ValueIteration;
+            }
 
             return method;
         }
