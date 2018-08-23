@@ -26,8 +26,8 @@ namespace storm {
                 public:
                     struct Node {
                         storm::storage::BitVector states;
-                        std::vector<Node *> above;
-                        std::vector<Node *> below;
+                        std::set<Node *> above;
+                        std::set<Node *> below;
                     };
 
                     /*!
@@ -83,12 +83,17 @@ namespace storm {
                     Node *getNode(uint_fast64_t state);
 
                     /*!
-                     * Prints a string representation of the lattice to std::cout.
+                     * Prints a string representation of the lattice to the output stream.
                      *
                      * @param out The stream to output to.
                      */
                     void toString(std::ostream &out);
 
+                    /*!
+                     * Prints a dot representation of the lattice to the output stream.
+                     *
+                     * @param out The stream to output to.
+                     */
                     void toDotFile(std::ostream &out);
 
                     /*!
@@ -136,11 +141,14 @@ namespace storm {
                             state->stateNumber = i;
 
                             auto row = matrix.getRow(i);
-                            //TODO assert that there are at most two successors
+
+
                             if ((*(row.begin())).getValue() != ValueType(1)) {
+                                STORM_LOG_THROW((row.begin() + 2) == row.end(), storm::exceptions::NotSupportedException, "Only two outgoing transitions per state allowed");
                                 state->successor1 = (*(row.begin())).getColumn();
                                 state->successor2 = (*(++row.begin())).getColumn();
                             } else {
+
                                 state-> successor1 = (*(row.begin())).getColumn();
                                 state-> successor2 = (*(row.begin())).getColumn();
                             }
@@ -169,20 +177,19 @@ namespace storm {
                                     uint_fast64_t successor1 = currentState->successor1;
                                     uint_fast64_t successor2 = currentState->successor2;
                                     int compareResult = lattice->compare(successor1, successor2);
+                                    Node* node1 = lattice->getNode(successor1);
+                                    Node* node2 = lattice->getNode(successor2);
                                     if (compareResult == 1) {
                                         // successor 1 is closer to top than successor 2
                                         lattice->addBetween(currentState->stateNumber, lattice->getNode(successor1),
                                                             lattice->getNode(successor2));
-                                        // Add stateNumber to the set with seen states.
                                     } else if (compareResult == 2) {
                                         // successor 2 is closer to top than successor 1
                                         lattice->addBetween(currentState->stateNumber, lattice->getNode(successor2),
                                                             lattice->getNode(successor1));
-                                        // Add stateNumber to the set with seen states.
                                     } else if (compareResult == 0) {
                                         // the successors are at the same level
                                         lattice->addToNode(currentState->stateNumber, lattice->getNode(successor1));
-                                        // Add stateNumber to the set with seen states.
                                     } else {
                                         // TODO: is this what we want?
                                         lattice->add(currentState->stateNumber);
@@ -212,8 +219,6 @@ namespace storm {
                     uint_fast64_t numberOfStates;
 
                     bool above(Node *, Node *);
-
-                    void remove(std::vector<Node *> *nodes, Node *node);
 
                     void setStates(std::vector<uint_fast64_t>  states, Node *node);
 

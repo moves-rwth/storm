@@ -8,13 +8,12 @@ namespace storm {
     namespace analysis {
         Lattice::Lattice(storm::storage::BitVector topStates,
                          storm::storage::BitVector bottomStates, uint_fast64_t numberOfStates) {
-
             top = new Node();
             top->states = topStates;
             bottom = new Node();
             bottom->states = bottomStates;
-            top->below.push_back(bottom);
-            bottom->above.push_back(top);
+            top->below.insert(bottom);
+            bottom->above.insert(top);
 
             nodes = std::vector<Node *>(numberOfStates);
             for (auto i = topStates.getNextSetIndex(0); i < numberOfStates; i = topStates.getNextSetIndex(i+1)) {
@@ -32,12 +31,12 @@ namespace storm {
             Node *newNode = new Node();
             newNode->states = storm::storage::BitVector(numberOfStates);
             newNode->states.set(state);
-            newNode->above = std::vector<Node *>({above});
-            newNode->below = std::vector<Node *>({below});
-            remove(&(below->above), above);
-            remove(&(above->below), below);
-            (below->above).push_back(newNode);
-            above->below.push_back(newNode);
+            newNode->above = std::set<Node *>({above});
+            newNode->below = std::set<Node *>({below});
+            below->above.erase(above);
+            above->below.erase(below);
+            (below->above).insert(newNode);
+            above->below.insert(newNode);
             nodes.at(state) = newNode;
         }
 
@@ -107,7 +106,7 @@ namespace storm {
                         }
 
                         out << "}";
-                        if (itr2 + 1 != node->above.end()) {
+                        if ((++itr2) != node->above.end()) {
                             out << ", ";
                         }
                     }
@@ -127,7 +126,7 @@ namespace storm {
                         }
 
                         out << "}";
-                        if (itr2 + 1 != node->below.end()) {
+                        if ((++itr2) != node->below.end()) {
                             out << ", ";
                         }
                     }
@@ -183,13 +182,6 @@ namespace storm {
             }
             return result;
         }
-
-        void Lattice::remove(std::vector<Node *> *nodes, Node *node) {
-            auto index = std::find(nodes->begin(), nodes->end(), node);
-            if (index != nodes->end()) {
-                nodes->erase(index);
-            }
-        };
 
         void Lattice::setStates(std::vector<uint_fast64_t> states, Node *node) {
             for (auto itr = states.begin(); itr < states.end(); ++itr) {
