@@ -74,6 +74,7 @@ namespace storm {
             std::shared_ptr<storm::expressions::ExpressionManager> const& exprManager = gspn.getExpressionManager();
             storm::jani::Variable const& topfailedVar = builder.getPlaceVariable(toplevelFailedPlace);
             storm::expressions::Expression targetExpression = exprManager->integer(1) == topfailedVar.getExpressionVariable().getExpression();
+            storm::jani::Variable const& failedVar = builder.addTransientVariable(model.get(), "failed", targetExpression);
             STORM_LOG_TRACE("Target expression: " << targetExpression);
 
             auto evtlFormula = std::make_shared<storm::logic::AtomicExpressionFormula>(targetExpression);

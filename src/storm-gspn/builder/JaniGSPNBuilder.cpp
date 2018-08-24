@@ -252,15 +252,18 @@ namespace storm {
                     transientValue = transientValue && transitionDisabled;
                 }
             }
-            
+
+            return addTransientVariable(model, name, transientValue);
+        }
+
+        storm::jani::Variable const& JaniGSPNBuilder::addTransientVariable(storm::jani::Model* model, std::string name, storm::expressions::Expression expression) {
             auto exprVar = expressionManager->declareBooleanVariable(name);
             auto const& janiVar = model->addVariable(*storm::jani::makeBooleanVariable(name, exprVar, expressionManager->boolean(false), true));
-            storm::jani::Assignment assignment(janiVar, transientValue);
+            storm::jani::Assignment assignment(janiVar, expression);
             model->getAutomata().front().getLocations().front().addTransientAssignment(assignment);
             return janiVar;
         }
-        
-        
+
         std::string getUniqueVarName(storm::expressions::ExpressionManager const& manager, std::string name) {
             std::string res = name;
             while (manager.hasVariable(res)) {
