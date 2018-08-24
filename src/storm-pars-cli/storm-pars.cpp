@@ -1,6 +1,6 @@
 
-#include <storm-pars/transformer/SparseParametricMdpSimplifier.h>
-#include <storm-pars/transformer/SparseParametricDtmcSimplifier.h>
+#include "storm-pars/transformer/SparseParametricMdpSimplifier.h"
+#include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
 #include "storm-pars/api/storm-pars.h"
 #include "storm-pars/settings/ParsSettings.h"
 #include "storm-pars/settings/modules/ParametricSettings.h"
@@ -17,8 +17,11 @@
 #include "storm/utility/initialize.h"
 #include "storm/utility/Stopwatch.h"
 #include "storm/utility/macros.h"
+#include "storm-pars/api/region.h"
 
 #include "storm-pars/modelchecker/instantiation/SparseCtmcInstantiationModelChecker.h"
+#include "storm-pars/modelchecker/region/SparseParameterLiftingModelChecker.h"
+#include "storm-pars/modelchecker/region/SparseDtmcParameterLiftingModelChecker.h"
 
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/CoreSettings.h"
@@ -617,6 +620,33 @@ namespace storm {
                         for (auto itr = vars.begin(); itr != vars.end(); ++itr) {
                             auto compare = lattice->compare(first.getColumn(), second.getColumn());
                             if (compare != 1 && compare != 2 && compare !=0) {
+
+                                if (storm::utility::parameterlifting::validateParameterLiftingSound(*(sparseModel.get()), *((formulas[0]).get()))) {
+                                    //TODO: parameterlifting gebruiken om te kijken op kans op =) vanuit first.getCOlumn() en second.getColumn()
+                                    // als vanuit first.getColumn() >= second.getColumn() voor =) dan  lattice->addRelation(lattice->getNode(first.getColumn()),
+                                    //                                                                     lattice->getNode(i),
+                                    //                                                                     lattice->getNode(second.getColumn()));
+                                    // als vanuit second.getColumn() >= first.getColumn() voor =) dan  lattice->addRelation(lattice->getNode(second.getColumn()),
+                                    //                                                                     lattice->getNode(i),
+                                    //                                                                     lattice->getNode(first.getColumn()));
+
+
+                                    auto modelParameters = storm::models::sparse::getProbabilityParameters(*sparseModel);
+                                    auto rewParameters = storm::models::sparse::getRewardParameters(*sparseModel);
+                                    modelParameters.insert(rewParameters.begin(), rewParameters.end());
+
+//                                    auto regionChecker = storm::api::initializeParameterLiftingRegionModelChecker<ValueType, storm::RationalNumber>(Environment(), sparseModel, storm::api::createTask<storm::RationalFunction>(formulas[0], true));
+//
+//                                    //start testing
+//                                    auto allSatRegion=storm::api::parseRegion<storm::RationalFunction>("0.7<=pL<=0.9,0.75<=pK<=0.95", modelParameters);
+//                                    auto exBothRegion=storm::api::parseRegion<storm::RationalFunction>("0.4<=pL<=0.65,0.75<=pK<=0.95", modelParameters);
+//                                    auto allVioRegion=storm::api::parseRegion<storm::RationalFunction>("0.1<=pL<=0.73,0.2<=pK<=0.715", modelParameters);
+//                                    if (storm::modelchecker::RegionResult::AllSat == regionChecker->analyzeRegion(Environment(), allSatRegion, storm::modelchecker::RegionResultHypothesis::Unknown, storm::modelchecker::RegionResult::Unknown, true)) {
+//                                        std::cout << "Tralalala" << std::endl;
+//                                    }
+                                }
+
+
                                 auto rowFirst = matrix.getRow(first.getColumn());
                                 while ((*rowFirst.begin()).getValue() == ValueType(1)) {
                                     rowFirst = matrix.getRow((*rowFirst.begin()).getColumn());
@@ -653,17 +683,28 @@ namespace storm {
 
                                 storm::RationalFunction diff = valF-valS;
                                 auto vars = diff.gatherVariables();
-                                for (auto varsItr = vars.begin(); varsItr != vars.end(); ++varsItr) {
-                                    ValueType derivative = diff.derivative(*varsItr);
-                                    if (derivative.isConstant()) {
-                                        std::map<storm::RationalFunctionVariable, storm::RationalFunctionCoefficient> sub0;
-                                        sub0.emplace(*varsItr, storm::utility::convertNumber<storm::RationalFunctionCoefficient>(std::string("0")));
-                                        std::map<storm::RationalFunctionVariable, storm::RationalFunctionCoefficient> sub1;
-                                        sub1.emplace(*varsItr, storm::utility::convertNumber<storm::RationalFunctionCoefficient>(std::string("1")));
-                                        if (diff.evaluate(sub0) >= 0 && diff.evaluate(sub1) >= 0) {
-                                            lattice->addRelation(lattice->getNode(first.getColumn()), lattice->getNode(i), lattice->getNode(second.getColumn()));
-                                        } else if (diff.evaluate(sub0) <= 0 && diff.evaluate(sub1) <= 0) {
-                                            lattice->addRelation(lattice->getNode(second.getColumn()), lattice->getNode(i), lattice->getNode(first.getColumn()));
+                                if (vars.size() == 1) {
+                                    for (auto varsItr = vars.begin(); varsItr != vars.end(); ++varsItr) {
+                                        ValueType derivative = diff.derivative(*varsItr);
+                                        if (derivative.isConstant()) {
+                                            std::map<storm::RationalFunctionVariable, storm::RationalFunctionCoefficient> sub0;
+                                            sub0.emplace(*varsItr,
+                                                         storm::utility::convertNumber<storm::RationalFunctionCoefficient>(
+                                                                 std::string("0")));
+                                            std::map<storm::RationalFunctionVariable, storm::RationalFunctionCoefficient> sub1;
+                                            sub1.emplace(*varsItr,
+                                                         storm::utility::convertNumber<storm::RationalFunctionCoefficient>(
+                                                                 std::string("1")));
+                                            if (diff.evaluate(sub0) >= 0 && diff.evaluate(sub1) >= 0) {
+                                                lattice->addRelation(lattice->getNode(first.getColumn()),
+                                                                     lattice->getNode(i),
+                                                                     lattice->getNode(second.getColumn()));
+                                            } else if (diff.evaluate(sub0) <= 0 && diff.evaluate(sub1) <= 0) {
+                                                lattice->addRelation(lattice->getNode(second.getColumn()),
+                                                                     lattice->getNode(i),
+                                                                     lattice->getNode(first.getColumn()));
+                                            }
+
                                         }
                                     }
                                 }

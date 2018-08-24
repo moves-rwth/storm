@@ -61,6 +61,7 @@ namespace storm {
             Node *node1 = getNode(state1);
             Node *node2 = getNode(state2);
 
+            // TODO: Wat als above(node1, node2) en above(node2, node1), dan moeten ze samengevoegd?
             if (node1 != nullptr && node2 != nullptr) {
                 if (node1 == node2) {
                     return 0;
