@@ -90,6 +90,14 @@ namespace storm {
             storm::jani::ModelType type = storm::jani::getModelType(modeltypestring);
             STORM_LOG_THROW(type != storm::jani::ModelType::UNDEFINED, storm::exceptions::InvalidJaniException, "model type " + modeltypestring + " not recognized");
             storm::jani::Model model(name, type, version, expressionManager);
+            size_t featuresCount = parsedStructure.count("features");
+            STORM_LOG_THROW(featuresCount < 2, storm::exceptions::InvalidJaniException, "features-declarations can be given at most once.");
+            if (featuresCount == 1) {
+                std::unordered_set<std::string> supportedFeatures = {"derived-operators", "state-exit-rewards"};
+                for (auto const& feature : parsedStructure.at("features")) {
+                    STORM_LOG_WARN_COND(supportedFeatures.find(getString(feature)) != supportedFeatures.end(), "Storm does not support the model feature " << getString(feature) << ".");
+                }
+            }
             size_t actionCount = parsedStructure.count("actions");
             STORM_LOG_THROW(actionCount < 2, storm::exceptions::InvalidJaniException, "Action-declarations can be given at most once.");
             if (actionCount > 0) {
@@ -478,8 +486,6 @@ namespace storm {
 
                     } else if(propertyStructure.at("right").count("op") > 0 && (propertyStructure.at("right").at("op") == "Pmin" || propertyStructure.at("right").at("op") == "Pmax" || propertyStructure.at("right").at("op") == "Emin" || propertyStructure.at("right").at("op") == "Emax" || propertyStructure.at("right").at("op") == "Smin" || propertyStructure.at("right").at("op") == "Smax")) {
                         auto expr = parseExpression(propertyStructure.at("left"), "Threshold for operator " + propertyStructure.at("right").at("op").get<std::string>(),{},{});
-                        STORM_LOG_THROW(expr.getVariables().empty(), storm::exceptions::NotSupportedException, "Only constant thresholds supported");
-                        // TODO evaluate this expression directly as rational number
                         return parseFormula(propertyStructure.at("right"),formulaContext, globalVars, constants, "", storm::logic::Bound(ct, expr));
                     } else {
                          STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "No complex comparisons are allowed.");
@@ -950,8 +956,7 @@ namespace storm {
                         assert(arguments.size() == 2);
                         ensureNumericalType(arguments[0], opstring, 0, scopeDescription);
                         ensureNumericalType(arguments[1], opstring, 1, scopeDescription);
-                        // TODO implement
-                        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "modulo operation is not yet implemented");
+                        return arguments[0] % arguments[1];
                     } else if (opstring == "max") {
                         arguments = parseBinaryExpressionArguments(expressionStructure, opstring, scopeDescription, globalVars, constants, localVars, returnNoneInitializedOnUnknownOperator);
                         assert(arguments.size() == 2);
@@ -988,14 +993,13 @@ namespace storm {
                         arguments = parseUnaryExpressionArguments(expressionStructure, opstring, scopeDescription, globalVars, constants, localVars, returnNoneInitializedOnUnknownOperator);
                         assert(arguments.size() == 1);
                         ensureNumericalType(arguments[0], opstring, 0, scopeDescription);
-                        return storm::expressions::abs(arguments[0]);
+                        return storm::expressions::truncate(arguments[0]);
                     } else if (opstring == "pow") {
                         arguments = parseBinaryExpressionArguments(expressionStructure, opstring, scopeDescription, globalVars, constants, localVars, returnNoneInitializedOnUnknownOperator);
                         assert(arguments.size() == 2);
                         ensureNumericalType(arguments[0], opstring, 0, scopeDescription);
                         ensureNumericalType(arguments[1], opstring, 1, scopeDescription);
-                        // TODO implement
-                        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "pow operation is not yet implemented");
+                        return arguments[0]^arguments[1];
                     } else if (opstring == "exp") {
                         arguments = parseBinaryExpressionArguments(expressionStructure, opstring, scopeDescription, globalVars, constants, localVars, returnNoneInitializedOnUnknownOperator);
                         assert(arguments.size() == 2);
