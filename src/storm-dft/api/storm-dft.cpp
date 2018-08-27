@@ -65,7 +65,6 @@ namespace storm {
         }
 
         std::shared_ptr<storm::jani::Model> transformToJani(storm::gspn::GSPN const& gspn, uint64_t toplevelFailedPlace) {
-
             // Build Jani model
             storm::builder::JaniGSPNBuilder builder(gspn);
             std::shared_ptr<storm::jani::Model> model(builder.build("dft_gspn"));
@@ -74,23 +73,15 @@ namespace storm {
             std::shared_ptr<storm::expressions::ExpressionManager> const& exprManager = gspn.getExpressionManager();
             storm::jani::Variable const& topfailedVar = builder.getPlaceVariable(toplevelFailedPlace);
             storm::expressions::Expression targetExpression = exprManager->integer(1) == topfailedVar.getExpressionVariable().getExpression();
-            storm::jani::Variable const& failedVar = builder.addTransientVariable(model.get(), "failed", targetExpression);
-            STORM_LOG_TRACE("Target expression: " << targetExpression);
-
-            auto evtlFormula = std::make_shared<storm::logic::AtomicExpressionFormula>(targetExpression);
-            auto tbFormula = std::make_shared<storm::logic::BoundedUntilFormula>(std::make_shared<storm::logic::BooleanLiteralFormula>(true), evtlFormula, storm::logic::TimeBound(false, exprManager->integer(0)), storm::logic::TimeBound(false, exprManager->integer(10)), storm::logic::TimeBoundReference(storm::logic::TimeBoundType::Time));
-            auto tbUntil = std::make_shared<storm::logic::ProbabilityOperatorFormula>(tbFormula);
-            auto evFormula = std::make_shared<storm::logic::EventuallyFormula>(evtlFormula, storm::logic::FormulaContext::Time);
-            auto rewFormula = std::make_shared<storm::logic::TimeOperatorFormula>(evFormula, storm::logic::OperatorInformation(), storm::logic::RewardMeasureType::Expectation);
-
-            auto timeBoundedProperty = storm::jani::Property("time-bounded", tbUntil);
-            auto mttfProperty = storm::jani::Property("mttf", rewFormula);
+            // Add variable for easier access to 'failed' state
+            builder.addTransientVariable(model.get(), "failed", targetExpression);
+            auto failedFormula = std::make_shared<storm::logic::AtomicExpressionFormula>(targetExpression);
+            auto properties = builder.getStandardProperties(model.get(), failedFormula, "Failed", "a failed state", true);
 
             // Export Jani to file
             storm::settings::modules::DftGspnSettings const& dftGspnSettings = storm::settings::getModule<storm::settings::modules::DftGspnSettings>();
             if (dftGspnSettings.isWriteToJaniSet()) {
-                // Currently no properties are set
-                storm::api::exportJaniToFile(*model, {}, dftGspnSettings.getWriteToJaniFilename());
+                storm::api::exportJaniToFile(*model, properties, dftGspnSettings.getWriteToJaniFilename());
             }
 
             return model;
