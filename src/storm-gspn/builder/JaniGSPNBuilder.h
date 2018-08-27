@@ -27,7 +27,7 @@ namespace storm {
             /*!
              * Get standard properties (reachability, time bounded reachability, expected time) for a given atomic formula.
              */
-            std::vector<storm::jani::Property> const& getStandardProperties(storm::jani::Model* model, std::shared_ptr<storm::logic::AtomicExpressionFormula> atomicFormula, std::string name, std::string description, bool maximal);
+            std::vector<storm::jani::Property> getStandardProperties(storm::jani::Model* model, std::shared_ptr<storm::logic::AtomicExpressionFormula> atomicFormula, std::string name, std::string description, bool maximal);
 
             /*!
              * Get standard properties (reachability, time bounded reachability, expected time) for deadlocks.

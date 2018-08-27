@@ -264,7 +264,7 @@ namespace storm {
             return res;
         }
 
-        std::vector<storm::jani::Property> const& JaniGSPNBuilder::getStandardProperties(storm::jani::Model* model, std::shared_ptr<storm::logic::AtomicExpressionFormula> atomicFormula, std::string name, std::string description, bool maximal) {
+        std::vector<storm::jani::Property> JaniGSPNBuilder::getStandardProperties(storm::jani::Model* model, std::shared_ptr<storm::logic::AtomicExpressionFormula> atomicFormula, std::string name, std::string description, bool maximal) {
             std::vector<storm::jani::Property> standardProperties;
             std::string dirShort = maximal ? "Max" : "Min";
             std::string dirLong = maximal ? "maximal" : "minimal";
@@ -300,6 +300,7 @@ namespace storm {
                     std::make_shared<storm::logic::EventuallyFormula>(atomicFormula, storm::logic::FormulaContext::Time),
                     storm::logic::OperatorInformation(optimizationDirection));
             standardProperties.emplace_back(dirShort + "ExpTime" + name, expTimeFormula, "The " + dirLong + " expected time to reach " + description + ".");
+            return standardProperties;
         }
 
         std::vector<storm::jani::Property> const& JaniGSPNBuilder::getDeadlockProperties(storm::jani::Model* model) {
