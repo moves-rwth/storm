@@ -180,9 +180,8 @@ namespace storm {
             }
 
             out << "}" << std::endl;
-
-
         }
+
         bool Lattice::above(Node *node1, Node *node2) {
             bool result = !node1->below.empty() && std::find(node1->below.begin(), node1->below.end(), node2) != node1->below.end();
 
@@ -190,12 +189,6 @@ namespace storm {
                 result |= above(*itr, node2);
             }
             return result;
-        }
-
-        void Lattice::setStates(std::vector<uint_fast64_t> states, Node *node) {
-            for (auto itr = states.begin(); itr < states.end(); ++itr) {
-                node->states.set(*itr);
-            }
         }
     }
 }

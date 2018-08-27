@@ -150,17 +150,17 @@ namespace storm {
                             for (auto rowItr = row.begin(); rowItr != row.end(); ++rowItr) {
                                 stateMap[i].set(rowItr->getColumn(), true);
                             }
-                            // TODO: allow more than 2 transitions
+                            // TODO: allow more than 2 transitions? or fix this in preprocessing?
                             STORM_LOG_THROW(stateMap[i].getNumberOfSetBits() <= 2, storm::exceptions::NotSupportedException, "Only two outgoing transitions per state allowed");
                         }
 
                         // Start creating the Lattice
                         storm::analysis::Lattice *lattice = new storm::analysis::Lattice(topStates, bottomStates, numberOfStates);
                         storm::storage::BitVector oldStates(numberOfStates);
+
                         // Create a copy of the states already present in the lattice.
                         storm::storage::BitVector seenStates = topStates|= bottomStates;
 
-                        matrix.printAsMatlabMatrix(std::cout);
                         while (oldStates != seenStates) {
                             // As long as new states are added to the lattice, continue.
                             oldStates = storm::storage::BitVector(seenStates);
@@ -181,7 +181,7 @@ namespace storm {
                                     lattice->addToNode(stateNumber, lattice->getNode(successors.getNextSetIndex(0)));
                                     seenStates.set(stateNumber);
                                 } else if (check && successors.getNumberOfSetBits() > 1) {
-                                    // TODO: allow more than 2 transitions
+                                    // TODO: allow more than 2 transitions?
 
                                     // Otherwise, check how the two states compare, and add if the comparison is possible.
                                     uint_fast64_t successor1 = successors.getNextSetIndex(0);
@@ -220,9 +220,6 @@ namespace storm {
                     uint_fast64_t numberOfStates;
 
                     bool above(Node *, Node *);
-
-                    void setStates(std::vector<uint_fast64_t>  states, Node *node);
-
                 };
             }
 }
