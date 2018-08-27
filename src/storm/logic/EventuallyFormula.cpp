@@ -6,7 +6,7 @@
 
 namespace storm {
     namespace logic {
-        EventuallyFormula::EventuallyFormula(std::shared_ptr<Formula const> const& subformula, FormulaContext context) : UnaryPathFormula(subformula), context(context) {
+        EventuallyFormula::EventuallyFormula(std::shared_ptr<Formula const> const& subformula, FormulaContext context, boost::optional<RewardAccumulation> rewardAccumulation) : UnaryPathFormula(subformula), context(context), rewardAccumulation(rewardAccumulation) {
             STORM_LOG_THROW(context == FormulaContext::Probability || context == FormulaContext::Reward || context == FormulaContext::Time, storm::exceptions::InvalidPropertyException, "Invalid context for formula.");
         }
         
@@ -42,6 +42,14 @@ namespace storm {
             return this->isReachabilityTimeFormula();
         }
         
+        bool EventuallyFormula::hasRewardAccumulation() const {
+            return rewardAccumulation.is_initialized();
+        }
+        
+        RewardAccumulation const& EventuallyFormula::getRewardAccumulation() const {
+            return rewardAccumulation.get();
+        }
+        
         boost::any EventuallyFormula::accept(FormulaVisitor const& visitor, boost::any const& data) const {
             return visitor.visit(*this, data);
         }
@@ -49,6 +57,9 @@ namespace storm {
         std::ostream& EventuallyFormula::writeToStream(std::ostream& out) const {
             out << "F ";
             this->getSubformula().writeToStream(out);
+            if (hasRewardAccumulation()) {
+                out << "[" << getRewardAccumulation() << "]";
+            }
             return out;
         }
     }

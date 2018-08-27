@@ -10,8 +10,8 @@ namespace storm {
     namespace logic {
         class CumulativeRewardFormula : public PathFormula {
         public:
-            CumulativeRewardFormula(TimeBound const& bound, TimeBoundReference const& timeBoundReference = TimeBoundReference(TimeBoundType::Time));
-            CumulativeRewardFormula(std::vector<TimeBound> const& bounds, std::vector<TimeBoundReference> const& timeBoundReferences);
+            CumulativeRewardFormula(TimeBound const& bound, TimeBoundReference const& timeBoundReference = TimeBoundReference(TimeBoundType::Time), boost::optional<RewardAccumulation> rewardAccumulation = boost::none);
+            CumulativeRewardFormula(std::vector<TimeBound> const& bounds, std::vector<TimeBoundReference> const& timeBoundReferences, boost::optional<RewardAccumulation> rewardAccumulation = boost::none);
             
             virtual ~CumulativeRewardFormula() = default;
 
@@ -47,6 +47,9 @@ namespace storm {
             template <typename ValueType>
             ValueType getNonStrictBound() const;
             
+            bool hasRewardAccumulation() const;
+            RewardAccumulation const& getRewardAccumulation() const;
+            
             std::shared_ptr<CumulativeRewardFormula const> restrictToDimension(unsigned i) const;
             
         private:
@@ -54,6 +57,8 @@ namespace storm {
 
             std::vector<TimeBoundReference> timeBoundReferences;
             std::vector<TimeBound> bounds;
+            boost::optional<RewardAccumulation> rewardAccumulation;
+
         };
     }
 }

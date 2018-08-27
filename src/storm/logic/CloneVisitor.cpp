@@ -70,7 +70,11 @@ namespace storm {
         
         boost::any CloneVisitor::visit(EventuallyFormula const& f, boost::any const& data) const {
             std::shared_ptr<Formula> subformula = boost::any_cast<std::shared_ptr<Formula>>(f.getSubformula().accept(*this, data));
-            return std::static_pointer_cast<Formula>(std::make_shared<EventuallyFormula>(subformula, f.getContext()));
+            if (f.hasRewardAccumulation()) {
+                return std::static_pointer_cast<Formula>(std::make_shared<EventuallyFormula>(subformula, f.getContext(), f.getRewardAccumulation()));
+            } else {
+                return std::static_pointer_cast<Formula>(std::make_shared<EventuallyFormula>(subformula, f.getContext()));
+            }
         }
         
         boost::any CloneVisitor::visit(TimeOperatorFormula const& f, boost::any const& data) const {
