@@ -19,6 +19,10 @@ namespace storm {
             return exit;
         }
 
+        bool RewardAccumulation::implies(RewardAccumulation const& other) const {
+            return (!isStepsSet() || other.isStepsSet()) && (!isTimeSet() || other.isTimeSet()) && (!isExitSet() || other.isExitSet());
+        }
+
         std::ostream& operator<<(std::ostream& out, RewardAccumulation const& acc) {
             bool hasEntry = false;
             if (acc.isStepsSet()) {
