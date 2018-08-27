@@ -95,7 +95,8 @@ namespace storm {
             if (featuresCount == 1) {
                 std::unordered_set<std::string> supportedFeatures = {"derived-operators", "state-exit-rewards"};
                 for (auto const& feature : parsedStructure.at("features")) {
-                    STORM_LOG_WARN_COND(supportedFeatures.find(getString(feature)) != supportedFeatures.end(), "Storm does not support the model feature " << getString(feature) << ".");
+					std::string featureStr = getString(feature, "Model feature");
+                    STORM_LOG_WARN_COND(supportedFeatures.find(featureStr) != supportedFeatures.end(), "Storm does not support the model feature " << featureStr << ".");
                 }
             }
             size_t actionCount = parsedStructure.count("actions");
