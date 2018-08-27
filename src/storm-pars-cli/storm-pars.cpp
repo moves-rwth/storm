@@ -1,36 +1,50 @@
 
-#include "storm-pars/transformer/SparseParametricMdpSimplifier.h"
-#include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
-#include "storm-pars/api/storm-pars.h"
-#include "storm-pars/settings/ParsSettings.h"
-#include "storm-pars/settings/modules/ParametricSettings.h"
-#include "storm-pars/settings/modules/RegionSettings.h"
-#include "storm-pars/analysis/Lattice.h"
 
-#include "storm/settings/SettingsManager.h"
-#include "storm/api/storm.h"
 #include "storm-cli-utilities/cli.h"
 #include "storm-cli-utilities/model-handling.h"
-#include "storm/models/ModelBase.h"
-#include "storm/storage/SymbolicModelDescription.h"
-#include "storm/utility/file.h"
-#include "storm/utility/initialize.h"
-#include "storm/utility/Stopwatch.h"
-#include "storm/utility/macros.h"
+
+#include "storm-pars/analysis/Lattice.h"
+
+#include "storm-pars/api/storm-pars.h"
 #include "storm-pars/api/region.h"
 
 #include "storm-pars/modelchecker/instantiation/SparseCtmcInstantiationModelChecker.h"
 #include "storm-pars/modelchecker/region/SparseParameterLiftingModelChecker.h"
 #include "storm-pars/modelchecker/region/SparseDtmcParameterLiftingModelChecker.h"
 
+#include "storm-pars/settings/ParsSettings.h"
+#include "storm-pars/settings/modules/ParametricSettings.h"
+#include "storm-pars/settings/modules/RegionSettings.h"
+
+#include "storm-pars/transformer/SparseParametricMdpSimplifier.h"
+#include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
+
+#include "storm/api/storm.h"
+
+#include "storm/exceptions/BaseException.h"
+#include "storm/exceptions/InvalidSettingsException.h"
+#include "storm/exceptions/InvalidSettingsException.h"
+#include "storm/exceptions/NotSupportedException.h"
+
+#include "storm/models/ModelBase.h"
+
+#include "storm/settings/SettingsManager.h"
+
+#include "storm/solver/stateelimination/PrioritizedStateEliminator.h"
+
+#include "storm/storage/StronglyConnectedComponentDecomposition.h"
+#include "storm/storage/SymbolicModelDescription.h"
+
+#include "storm/utility/file.h"
+#include "storm/utility/initialize.h"
+#include "storm/utility/Stopwatch.h"
+#include "storm/utility/macros.h"
+
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/settings/modules/IOSettings.h"
 #include "storm/settings/modules/BisimulationSettings.h"
 
-#include "storm/exceptions/BaseException.h"
-#include "storm/exceptions/InvalidSettingsException.h"
-#include "storm/exceptions/NotSupportedException.h"
 
 namespace storm {
     namespace pars {
@@ -592,20 +606,24 @@ namespace storm {
 
             if (parSettings.isMonotonicityAnalysisSet()) {
                 std::cout << "Hello, Jip2" << std::endl;
-                storm::utility::Stopwatch latticeWatch(true);
-
                 std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(input.properties);
                 std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel = model->as<storm::models::sparse::Model<ValueType>>();
 
                 // Transform to Lattice
+                storm::utility::Stopwatch latticeWatch(true);
                 storm::analysis::Lattice* lattice = storm::analysis::Lattice::toLattice<ValueType>(sparseModel, formulas);
-
                 latticeWatch.stop();
                 STORM_PRINT(std::endl << "Time for lattice creation: " << latticeWatch << "." << std::endl << std::endl);
+                ofstream myfile;
+                myfile.open ("lattice.dot");
+                lattice->toDotFile(myfile);
+                myfile.close();
+
 
                 // CriticalStates
+                //TODO: what if states not found in lattice/cyclic thingie
                 storm::storage::SparseMatrix<ValueType> matrix = sparseModel.get()->getTransitionMatrix();
-                //TODO: seperate class
+                //TODO: separate class
                 storm::utility::Stopwatch criticalStatesWatch(true);
                 storm::storage::BitVector criticalStates = storm::storage::BitVector(sparseModel.get()->getNumberOfStates());
                 for (uint_fast64_t i = 0; i < sparseModel.get()->getNumberOfStates(); ++i) {
@@ -704,7 +722,6 @@ namespace storm {
                                                                      lattice->getNode(i),
                                                                      lattice->getNode(first.getColumn()));
                                             }
-
                                         }
                                     }
                                 }
@@ -716,10 +733,10 @@ namespace storm {
 
                 criticalStatesWatch.stop();
                 STORM_PRINT(std::endl << "Time for critical states checking: " << criticalStatesWatch << "." << std::endl << std::endl);
-                ofstream myfile;
                 myfile.open ("lattice.dot");
                 lattice->toDotFile(myfile);
                 myfile.close();
+
 
                 // Monotonicity?
                 storm::utility::Stopwatch monotonicityWatch(true);
