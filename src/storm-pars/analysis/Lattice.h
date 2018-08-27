@@ -142,66 +142,67 @@ namespace storm {
                         // Transform to Lattice
                         auto matrix = sparseModel.get()->getTransitionMatrix();
 
-                        // Transform the transition matrix into a vector containing the states with the state to which the transition goes.
-                        std::vector <State*> stateVector = std::vector<State *>({});
+                        std::map<uint_fast64_t, storm::storage::BitVector> stateMap;
                         for (uint_fast64_t i = 0; i < numberOfStates; ++i) {
-                            State* state = new State();
-                            state->stateNumber = i;
+                            stateMap[i] = storm::storage::BitVector(numberOfStates, false);
 
                             auto row = matrix.getRow(i);
-
-
-                            if ((*(row.begin())).getValue() != ValueType(1)) {
-                                STORM_LOG_THROW((row.begin() + 2) == row.end(), storm::exceptions::NotSupportedException, "Only two outgoing transitions per state allowed");
-                                state->successor1 = (*(row.begin())).getColumn();
-                                state->successor2 = (*(++row.begin())).getColumn();
-                            } else {
-
-                                state-> successor1 = (*(row.begin())).getColumn();
-                                state-> successor2 = (*(row.begin())).getColumn();
+                            for (auto rowItr = row.begin(); rowItr != row.end(); ++rowItr) {
+                                stateMap[i].set(rowItr->getColumn(), true);
                             }
-
-                            stateVector.push_back(state);
+                            // TODO: allow more than 2 transitions
+                            STORM_LOG_THROW(stateMap[i].getNumberOfSetBits() <= 2, storm::exceptions::NotSupportedException, "Only two outgoing transitions per state allowed");
                         }
+
                         // Start creating the Lattice
                         storm::analysis::Lattice *lattice = new storm::analysis::Lattice(topStates, bottomStates, numberOfStates);
                         storm::storage::BitVector oldStates(numberOfStates);
                         // Create a copy of the states already present in the lattice.
                         storm::storage::BitVector seenStates = topStates|= bottomStates;
 
+                        matrix.printAsMatlabMatrix(std::cout);
                         while (oldStates != seenStates) {
                             // As long as new states are added to the lattice, continue.
                             oldStates = storm::storage::BitVector(seenStates);
 
-                            for (auto itr = stateVector.begin(); itr != stateVector.end(); ++itr) {
+                            for (auto stateItr = stateMap.begin(); stateItr != stateMap.end(); ++stateItr) {
                                 // Iterate over all states
-                                State *currentState = *itr;
+                                auto stateNumber = stateItr->first;
+                                storm::storage::BitVector successors = stateItr->second;
 
-                                if (!seenStates[currentState->stateNumber]
-                                    && seenStates[currentState->successor1]
-                                    && seenStates[currentState->successor2]) {
+                                // Check if current state has not been added yet, and all successors have
+                                bool check = !seenStates[stateNumber];
+                                for (auto succIndex = successors.getNextSetIndex(0); check && succIndex != numberOfStates; succIndex = successors.getNextSetIndex(++succIndex)) {
+                                    check &= seenStates[succIndex];
+                                }
+
+                                if (check && successors.getNumberOfSetBits() == 1) {
+                                    // As there is only one successor the current state and its successor must be at the same nodes.
+                                    lattice->addToNode(stateNumber, lattice->getNode(successors.getNextSetIndex(0)));
+                                    seenStates.set(stateNumber);
+                                } else if (check && successors.getNumberOfSetBits() > 1) {
+                                    // TODO: allow more than 2 transitions
 
                                     // Otherwise, check how the two states compare, and add if the comparison is possible.
-                                    uint_fast64_t successor1 = currentState->successor1;
-                                    uint_fast64_t successor2 = currentState->successor2;
+                                    uint_fast64_t successor1 = successors.getNextSetIndex(0);
+                                    uint_fast64_t successor2 = successors.getNextSetIndex(successor1 + 1);
                                     int compareResult = lattice->compare(successor1, successor2);
                                     if (compareResult == 1) {
                                         // successor 1 is closer to top than successor 2
-                                        lattice->addBetween(currentState->stateNumber, lattice->getNode(successor1),
+                                        lattice->addBetween(stateNumber, lattice->getNode(successor1),
                                                             lattice->getNode(successor2));
                                     } else if (compareResult == 2) {
                                         // successor 2 is closer to top than successor 1
-                                        lattice->addBetween(currentState->stateNumber, lattice->getNode(successor2),
+                                        lattice->addBetween(stateNumber, lattice->getNode(successor2),
                                                             lattice->getNode(successor1));
                                     } else if (compareResult == 0) {
                                         // the successors are at the same level
-                                        lattice->addToNode(currentState->stateNumber, lattice->getNode(successor1));
+                                        lattice->addToNode(stateNumber, lattice->getNode(successor1));
                                     } else {
                                         // TODO: is this what we want?
-                                        lattice->add(currentState->stateNumber);
+                                        lattice->add(stateNumber);
                                     }
-                                    seenStates.set(currentState->stateNumber);
-
+                                    seenStates.set(stateNumber);
                                 }
                             }
                         }
@@ -210,12 +211,6 @@ namespace storm {
                     }
 
                 private:
-                    struct State {
-                        uint_fast64_t stateNumber;
-                        uint_fast64_t successor1;
-                        uint_fast64_t successor2;
-                    };
-
                     std::vector<Node*> nodes;
 
                     Node* top;
