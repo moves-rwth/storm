@@ -619,6 +619,7 @@ namespace storm {
                 myfile.close();
 
                 // Monotonicity?
+                auto matrix = sparseModel.get()->getTransitionMatrix();
                 storm::utility::Stopwatch monotonicityWatch(true);
                 std::map<carl::Variable, std::pair<bool, bool>> varsMonotone = analyseMonotonicity<ValueType>(lattice, matrix);
                 monotonicityWatch.stop();
