@@ -8,6 +8,7 @@ namespace storm {
     namespace logic {
         EventuallyFormula::EventuallyFormula(std::shared_ptr<Formula const> const& subformula, FormulaContext context, boost::optional<RewardAccumulation> rewardAccumulation) : UnaryPathFormula(subformula), context(context), rewardAccumulation(rewardAccumulation) {
             STORM_LOG_THROW(context == FormulaContext::Probability || context == FormulaContext::Reward || context == FormulaContext::Time, storm::exceptions::InvalidPropertyException, "Invalid context for formula.");
+            STORM_LOG_THROW(context != FormulaContext::Probability || !rewardAccumulation.is_initialized(), storm::exceptions::InvalidPropertyException, "Reward accumulations should only be given for time- and reward formulas");
         }
         
         FormulaContext const& EventuallyFormula::getContext() const {
