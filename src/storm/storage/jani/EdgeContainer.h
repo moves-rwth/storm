@@ -95,6 +95,8 @@ namespace storm {
             void clearConcreteEdges();
             std::vector<Edge> const& getConcreteEdges() const;
             std::vector<Edge> & getConcreteEdges();
+            TemplateEdgeContainer const& getTemplateEdges const;
+            
             size_t size() const;
 
             iterator begin();
