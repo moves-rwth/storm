@@ -24,7 +24,7 @@ namespace storm {
                 nodes.at(i) = bottom;
             }
             this->numberOfStates = numberOfStates;
-
+            this->addedStates = storm::storage::BitVector(numberOfStates);
         }
 
         void Lattice::addBetween(uint_fast64_t state, Node *above, Node *below) {
@@ -38,11 +38,13 @@ namespace storm {
             (below->above).insert(newNode);
             above->below.insert(newNode);
             nodes.at(state) = newNode;
+            addedStates.set(state);
         }
 
         void Lattice::addToNode(uint_fast64_t state, Node *node) {
             node->states.set(state);
             nodes.at(state) = node;
+            addedStates.set(state);
         }
 
         void Lattice::add(uint_fast64_t state) {
@@ -81,6 +83,10 @@ namespace storm {
 
         Lattice::Node *Lattice::getNode(uint_fast64_t stateNumber) {
             return nodes.at(stateNumber);
+        }
+
+        storm::storage::BitVector Lattice::getAddedStates() {
+            return addedStates;
         }
 
         void Lattice::toString(std::ostream &out) {
