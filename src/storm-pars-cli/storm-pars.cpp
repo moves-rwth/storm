@@ -521,8 +521,6 @@ namespace storm {
                     myfile << "\t" << i << " -> " << first.getColumn() << "[label=\"" << first.getValue() << "\"];"
                            << std::endl;
                 }
-
-
             }
 
             myfile << "\tsubgraph legend {" << std::endl;
@@ -615,128 +613,10 @@ namespace storm {
                 latticeWatch.stop();
                 STORM_PRINT(std::endl << "Time for lattice creation: " << latticeWatch << "." << std::endl << std::endl);
                 ofstream myfile;
+
                 myfile.open ("lattice.dot");
                 lattice->toDotFile(myfile);
                 myfile.close();
-
-
-                // CriticalStates
-                //TODO: what if states not found in lattice/cyclic thingie
-                storm::storage::SparseMatrix<ValueType> matrix = sparseModel.get()->getTransitionMatrix();
-                //TODO: separate class
-                storm::utility::Stopwatch criticalStatesWatch(true);
-                storm::storage::BitVector criticalStates = storm::storage::BitVector(sparseModel.get()->getNumberOfStates());
-                for (uint_fast64_t i = 0; i < sparseModel.get()->getNumberOfStates(); ++i) {
-
-                    auto row = matrix.getRow(i);
-                    auto first = (*row.begin());
-                    if (first.getValue() != ValueType(1)) {
-                        auto second = (*(++row.begin()));
-                        string color = "";
-                        auto val = first.getValue();
-                        auto vars = val.gatherVariables();
-                        for (auto itr = vars.begin(); itr != vars.end(); ++itr) {
-                            auto compare = lattice->compare(first.getColumn(), second.getColumn());
-                            if (compare != 1 && compare != 2 && compare !=0) {
-
-                                if (storm::utility::parameterlifting::validateParameterLiftingSound(*(sparseModel.get()), *((formulas[0]).get()))) {
-                                    //TODO: parameterlifting gebruiken om te kijken op kans op =) vanuit first.getCOlumn() en second.getColumn()
-                                    // als vanuit first.getColumn() >= second.getColumn() voor =) dan  lattice->addRelation(lattice->getNode(first.getColumn()),
-                                    //                                                                     lattice->getNode(i),
-                                    //                                                                     lattice->getNode(second.getColumn()));
-                                    // als vanuit second.getColumn() >= first.getColumn() voor =) dan  lattice->addRelation(lattice->getNode(second.getColumn()),
-                                    //                                                                     lattice->getNode(i),
-                                    //                                                                     lattice->getNode(first.getColumn()));
-
-
-                                    auto modelParameters = storm::models::sparse::getProbabilityParameters(*sparseModel);
-                                    auto rewParameters = storm::models::sparse::getRewardParameters(*sparseModel);
-                                    modelParameters.insert(rewParameters.begin(), rewParameters.end());
-
-//                                    auto regionChecker = storm::api::initializeParameterLiftingRegionModelChecker<ValueType, storm::RationalNumber>(Environment(), sparseModel, storm::api::createTask<storm::RationalFunction>(formulas[0], true));
-//
-//                                    //start testing
-//                                    auto allSatRegion=storm::api::parseRegion<storm::RationalFunction>("0.7<=pL<=0.9,0.75<=pK<=0.95", modelParameters);
-//                                    auto exBothRegion=storm::api::parseRegion<storm::RationalFunction>("0.4<=pL<=0.65,0.75<=pK<=0.95", modelParameters);
-//                                    auto allVioRegion=storm::api::parseRegion<storm::RationalFunction>("0.1<=pL<=0.73,0.2<=pK<=0.715", modelParameters);
-//                                    if (storm::modelchecker::RegionResult::AllSat == regionChecker->analyzeRegion(Environment(), allSatRegion, storm::modelchecker::RegionResultHypothesis::Unknown, storm::modelchecker::RegionResult::Unknown, true)) {
-//                                        std::cout << "Tralalala" << std::endl;
-//                                    }
-                                }
-
-
-                                auto rowFirst = matrix.getRow(first.getColumn());
-                                while ((*rowFirst.begin()).getValue() == ValueType(1)) {
-                                    rowFirst = matrix.getRow((*rowFirst.begin()).getColumn());
-                                }
-
-                                auto rowSecond = matrix.getRow(second.getColumn());
-                                while ((*rowSecond.begin()).getValue() == ValueType(1)) {
-                                    rowSecond = matrix.getRow((*rowSecond.begin()).getColumn());
-                                }
-
-                                auto succF1 = *rowFirst.begin();
-                                auto succF2 = *(++rowFirst.begin());
-                                auto compareF = lattice->compare(succF1.getColumn(), succF2.getColumn());
-                                ValueType valF;
-                                ValueType valS;
-                                if (compareF == 1) {
-                                    valF = succF1.getValue();
-                                } else if (compareF == 2) {
-                                    valF = succF2.getValue();
-                                } else {
-                                    continue;
-                                }
-
-                                auto succS1 = *rowSecond.begin();
-                                auto succS2 = *(++rowSecond.begin());
-                                auto compareS = lattice->compare(succS1.getColumn(), succS2.getColumn());
-                                if (compareS == 1) {
-                                    valS = succS1.getValue();
-                                } else if (compareS == 2) {
-                                    valS = succS2.getValue();
-                                } else {
-                                    continue;
-                                }
-
-                                storm::RationalFunction diff = valF-valS;
-                                auto vars = diff.gatherVariables();
-                                if (vars.size() == 1) {
-                                    for (auto varsItr = vars.begin(); varsItr != vars.end(); ++varsItr) {
-                                        ValueType derivative = diff.derivative(*varsItr);
-                                        if (derivative.isConstant()) {
-                                            std::map<storm::RationalFunctionVariable, storm::RationalFunctionCoefficient> sub0;
-                                            sub0.emplace(*varsItr,
-                                                         storm::utility::convertNumber<storm::RationalFunctionCoefficient>(
-                                                                 std::string("0")));
-                                            std::map<storm::RationalFunctionVariable, storm::RationalFunctionCoefficient> sub1;
-                                            sub1.emplace(*varsItr,
-                                                         storm::utility::convertNumber<storm::RationalFunctionCoefficient>(
-                                                                 std::string("1")));
-                                            if (diff.evaluate(sub0) >= 0 && diff.evaluate(sub1) >= 0) {
-                                                lattice->addRelation(lattice->getNode(first.getColumn()),
-                                                                     lattice->getNode(i),
-                                                                     lattice->getNode(second.getColumn()));
-                                            } else if (diff.evaluate(sub0) <= 0 && diff.evaluate(sub1) <= 0) {
-                                                lattice->addRelation(lattice->getNode(second.getColumn()),
-                                                                     lattice->getNode(i),
-                                                                     lattice->getNode(first.getColumn()));
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                    }
-                }
-
-                criticalStatesWatch.stop();
-                STORM_PRINT(std::endl << "Time for critical states checking: " << criticalStatesWatch << "." << std::endl << std::endl);
-                myfile.open ("lattice.dot");
-                lattice->toDotFile(myfile);
-                myfile.close();
-
 
                 // Monotonicity?
                 storm::utility::Stopwatch monotonicityWatch(true);
@@ -746,14 +626,14 @@ namespace storm {
 
                 for (auto itr = varsMonotone.begin(); itr != varsMonotone.end(); ++itr) {
                     if (itr->second.first) {
-                        std::cout << "Monotone increasing in: " << itr->first << std::endl;
+                        STORM_PRINT("Monotone increasing in: " << itr->first << std::endl);
                     } else {
-                        std::cout << "Do not know if monotone increasing in: " << itr->first << std::endl;
+                        STORM_PRINT("Do not know if monotone increasing in: " << itr->first << std::endl);
                     }
                     if (itr->second.second) {
-                        std::cout << "Monotone decreasing in: " << itr->first << std::endl;
+                        STORM_PRINT("Monotone decreasing in: " << itr->first << std::endl);
                     } else {
-                        std::cout << "Do not know if monotone decreasing in: " << itr->first << std::endl;
+                        STORM_PRINT("Do not know if monotone decreasing in: " << itr->first << std::endl);
                     }
                 }
 
