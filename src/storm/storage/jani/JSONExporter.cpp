@@ -153,9 +153,40 @@ namespace storm {
             return iDecl;
         }
         
-        modernjson::json FormulaToJaniJson::translate(storm::logic::Formula const& formula, storm::jani::Model const& model) {
+        modernjson::json FormulaToJaniJson::constructRewardAccumulation(storm::logic::RewardAccumulation const& rewardAccumulation) const {
+            std::vector<std::string> res;
+            if (rewardAccumulation.isStepsSet()) {
+                res.push_back("steps");
+            }
+            if (rewardAccumulation.isTimeSet()) {
+                res.push_back("time");
+            }
+            if (rewardAccumulation.isExitSet()) {
+                stateExitRewards = true;
+                res.push_back("exit");
+            }
+            return res;
+        }
+
+        modernjson::json FormulaToJaniJson::constructStandardRewardAccumulation() const {
+            if (model.isDiscreteTimeModel()) {
+                return constructRewardAccumulation(storm::logic::RewardAccumulation(true, false, true));
+            } else {
+                return constructRewardAccumulation(storm::logic::RewardAccumulation(true, true, false));
+            }
+        }
+        
+        modernjson::json FormulaToJaniJson::translate(storm::logic::Formula const& formula, storm::jani::Model const& model, std::set<std::string>& modelFeatures) {
             FormulaToJaniJson translator(model);
-            return boost::any_cast<modernjson::json>(formula.accept(translator));
+            auto result = boost::any_cast<modernjson::json>(formula.accept(translator));
+            if (translator.containsStateExitRewards()) {
+                modelFeatures.insert("state-exit-rewards");
+            }
+            return result;
+        }
+        
+        bool FormulaToJaniJson::containsStateExitRewards() const {
+            return stateExitRewards;
         }
         
         boost::any FormulaToJaniJson::visit(storm::logic::AtomicExpressionFormula const& f, boost::any const&) const {
@@ -209,11 +240,11 @@ namespace storm {
                 } else if(tbr.isRewardBound()) {
                     modernjson::json rewbound;
                     rewbound["exp"] = tbr.getRewardName();
-                    std::vector<std::string> accvec = {"steps"};
-                    if (!model.isDiscreteTimeModel()) {
-                        accvec.push_back("time");
+                    if (tbr.hasRewardAccumulation()) {
+                        rewbound["accumulate"] = constructRewardAccumulation(tbr.getRewardAccumulation());
+                    } else {
+                        rewbound["accumulate"] = constructStandardRewardAccumulation();
                     }
-                    rewbound["accumulate"] = modernjson::json(accvec);
                     rewbound["bounds"] = propertyInterval;
                     rewardBounds.push_back(std::move(rewbound));
                 } else {
@@ -247,12 +278,14 @@ namespace storm {
         
         boost::any FormulaToJaniJson::visit(storm::logic::TimeOperatorFormula const& f, boost::any const& data) const {
             modernjson::json opDecl;
-            std::vector<std::string> accvec;
-            if (model.isDiscreteTimeModel()) {
-                accvec.push_back("steps");
-            } else {
-                accvec.push_back("time");
+            
+            // Create standard reward accumulation for time operator formulas.
+            storm::logic::RewardAccumulation rewAcc(model.isDiscreteTimeModel(), !model.isDiscreteTimeModel(), false);
+            if (f.getSubformula().isEventuallyFormula() && f.getSubformula().asEventuallyFormula().hasRewardAccumulation()) {
+                rewAcc = f.getSubformula().asEventuallyFormula().getRewardAccumulation();
             }
+            auto rewAccJson = constructRewardAccumulation(rewAcc);
+
             if(f.hasBound()) {
                 auto bound = f.getBound();
                 opDecl["op"] = comparisonTypeToJani(bound.comparisonType);
@@ -268,7 +301,7 @@ namespace storm {
                     opDecl["left"]["reach"] = boost::any_cast<modernjson::json>(f.getSubformula().asEventuallyFormula().getSubformula().accept(*this, data));
                 }
                 opDecl["left"]["exp"] = modernjson::json(1);
-                opDecl["left"]["accumulate"] = modernjson::json(accvec);
+                opDecl["left"]["accumulate"] = rewAccJson;
                 opDecl["right"] = buildExpression(bound.threshold, model.getConstants(), model.getGlobalVariables());
             } else {
                 if(f.hasOptimalityType()) {
@@ -284,7 +317,7 @@ namespace storm {
                     opDecl["reach"] = boost::any_cast<modernjson::json>(f.getSubformula().asEventuallyFormula().getSubformula().accept(*this, data));
                 }
                 opDecl["exp"] = modernjson::json(1);
-                opDecl["accumulate"] = modernjson::json(accvec);
+                opDecl["accumulate"] = rewAccJson;
             }
             return opDecl;
         }
@@ -401,12 +434,11 @@ namespace storm {
         
         boost::any FormulaToJaniJson::visit(storm::logic::RewardOperatorFormula const& f, boost::any const& data) const {
             modernjson::json opDecl;
-            std::vector<std::string> accvec = {"steps"};
+            
             std::string instantName;
             if (model.isDiscreteTimeModel()) {
                 instantName = "step-instant";
             } else {
-                accvec.push_back("time");
                 instantName = "time-instant";
             }
 
@@ -436,21 +468,29 @@ namespace storm {
                 }
                 if (f.getSubformula().isEventuallyFormula()) {
                     opDecl["left"]["reach"] = boost::any_cast<modernjson::json>(f.getSubformula().asEventuallyFormula().getSubformula().accept(*this, data));
+                    if (f.getSubformula().asEventuallyFormula().hasRewardAccumulation()) {
+                        opDecl["left"]["accumulate"] = constructRewardAccumulation(f.getSubformula().asEventuallyFormula().getRewardAccumulation());
+                    } else {
+                        opDecl["left"]["accumulate"] = constructStandardRewardAccumulation();
+                    }
                 } else if (f.getSubformula().isCumulativeRewardFormula()) {
+                    // TODO: support for reward bounded formulas
+                    STORM_LOG_WARN_COND(!f.getSubformula().asCumulativeRewardFormula().getTimeBoundReference().isRewardBound(), "Export for reward bounded cumulative reward formulas currently unsupported.");
                     opDecl["left"][instantName] = buildExpression(f.getSubformula().asCumulativeRewardFormula().getBound(), model.getConstants(), model.getGlobalVariables());
+                    if (f.getSubformula().asCumulativeRewardFormula().hasRewardAccumulation()) {
+                        opDecl["left"]["accumulate"] = constructRewardAccumulation(f.getSubformula().asCumulativeRewardFormula().getRewardAccumulation());
+                    } else {
+                        opDecl["left"]["accumulate"] = constructStandardRewardAccumulation();
+                    }
                 } else if (f.getSubformula().isInstantaneousRewardFormula()) {
                     opDecl["left"][instantName] = buildExpression(f.getSubformula().asInstantaneousRewardFormula().getBound(), model.getConstants(), model.getGlobalVariables());
                 }
                 STORM_LOG_THROW(f.hasRewardModelName(), storm::exceptions::NotSupportedException, "Reward name has to be specified for Jani-conversion");
                 opDecl["left"]["exp"] = rewardModelName;
-                if (f.getSubformula().isReachabilityRewardFormula() || f.getSubformula().isCumulativeRewardFormula()) {
-                    opDecl["left"]["accumulate"] = modernjson::json(accvec);
-                }
                 opDecl["right"] = buildExpression(bound.threshold, model.getConstants(), model.getGlobalVariables());
             } else {
                 if (f.hasOptimalityType()) {
                     opDecl["op"] = f.getOptimalityType() == storm::solver::OptimizationDirection::Minimize ? "Emin" : "Emax";
-                    
                 } else {
                     // TODO add checks
                     opDecl["op"] = "Emin";
@@ -458,16 +498,24 @@ namespace storm {
 
                 if (f.getSubformula().isEventuallyFormula()) {
                     opDecl["reach"] = boost::any_cast<modernjson::json>(f.getSubformula().asEventuallyFormula().getSubformula().accept(*this, data));
+                    if (f.getSubformula().asEventuallyFormula().hasRewardAccumulation()) {
+                        opDecl["accumulate"] = constructRewardAccumulation(f.getSubformula().asEventuallyFormula().getRewardAccumulation());
+                    } else {
+                        opDecl["accumulate"] = constructStandardRewardAccumulation();
+                    }
                 } else if (f.getSubformula().isCumulativeRewardFormula()) {
+                    // TODO: support for reward bounded formulas
+                    STORM_LOG_WARN_COND(!f.getSubformula().asCumulativeRewardFormula().getTimeBoundReference().isRewardBound(), "Export for reward bounded cumulative reward formulas currently unsupported.");
                     opDecl[instantName] = buildExpression(f.getSubformula().asCumulativeRewardFormula().getBound(), model.getConstants(), model.getGlobalVariables());
+                    if (f.getSubformula().asCumulativeRewardFormula().hasRewardAccumulation()) {
+                        opDecl["accumulate"] = constructRewardAccumulation(f.getSubformula().asCumulativeRewardFormula().getRewardAccumulation());
+                    } else {
+                        opDecl["accumulate"] = constructStandardRewardAccumulation();
+                    }
                 } else if (f.getSubformula().isInstantaneousRewardFormula()) {
                     opDecl[instantName] = buildExpression(f.getSubformula().asInstantaneousRewardFormula().getBound(), model.getConstants(), model.getGlobalVariables());
                 }
-
                 opDecl["exp"] = rewardModelName;
-                if (f.getSubformula().isReachabilityRewardFormula() || f.getSubformula().isCumulativeRewardFormula()) {
-                    opDecl["accumulate"] = modernjson::json(accvec);
-                }
             }
             return opDecl;
         }
@@ -841,8 +889,8 @@ namespace storm {
             return modernjson::json(automataDeclarations);
         }
         
-        
         void JsonExporter::convertModel(storm::jani::Model const& janiModel, bool commentExpressions) {
+            modelFeatures = {"derived-operators"};
             jsonStruct["jani-version"] = janiModel.getJaniVersion();
             jsonStruct["name"] = janiModel.getName();
             jsonStruct["type"] = to_string(janiModel.getModelType());
@@ -852,13 +900,7 @@ namespace storm {
             jsonStruct["restrict-initial"]["exp"] = buildExpression(janiModel.getInitialStatesRestriction(), janiModel.getConstants(), janiModel.getGlobalVariables());
             jsonStruct["automata"] = buildAutomataArray(janiModel.getAutomata(), janiModel.getActionIndexToNameMap(), janiModel.getConstants(), janiModel.getGlobalVariables(), commentExpressions);
             jsonStruct["system"] = CompositionJsonExporter::translate(janiModel.getSystemComposition());
-            std::vector<std::string> standardFeatureVector = {"derived-operators"};
-            jsonStruct["features"] = standardFeatureVector;
-            
         }
-        
-        
-        
         
         std::string janiFilterTypeString(storm::modelchecker::FilterType const& ft) {
             switch(ft) {
@@ -888,12 +930,12 @@ namespace storm {
             }
         }
         
-        modernjson::json convertFilterExpression(storm::jani::FilterExpression const& fe, storm::jani::Model const& model) {
+        modernjson::json convertFilterExpression(storm::jani::FilterExpression const& fe, storm::jani::Model const& model, std::set<std::string>& modelFeatures) {
             modernjson::json propDecl;
             propDecl["states"]["op"] = "initial";
             propDecl["op"] = "filter";
             propDecl["fun"] = janiFilterTypeString(fe.getFilterType());
-            propDecl["values"] = FormulaToJaniJson::translate(*fe.getFormula(), model);
+            propDecl["values"] = FormulaToJaniJson::translate(*fe.getFormula(), model, modelFeatures);
             return propDecl;
         }
         
@@ -904,7 +946,7 @@ namespace storm {
             for(auto const& f : formulas) {
                 modernjson::json propDecl;
                 propDecl["name"] = f.getName();
-                propDecl["expression"] = convertFilterExpression(f.getFilter(), model);
+                propDecl["expression"] = convertFilterExpression(f.getFilter(), model, modelFeatures);
                 ++index;
                 properties.push_back(propDecl);
             }
