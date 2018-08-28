@@ -13,8 +13,9 @@ namespace storm {
             bool isTimeSet() const; // If set, state rewards are accumulated over time (assuming 0 time passes in discrete-time model states)
             bool isExitSet() const; // If set, state rewards are accumulated upon exiting the state
             
-            // Returns true, if every reward-type set in this RewardAccumulation is also set for the other RewardAccumulation
-            bool implies(RewardAccumulation const& other) const;
+            // Returns true iff accumulation for all types of reward is disabled.
+            bool isEmpty() const;
+            
         private:
             bool time, steps, exit;
         };

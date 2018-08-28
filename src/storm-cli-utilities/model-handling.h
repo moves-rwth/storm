@@ -18,10 +18,12 @@
 
 #include "storm/storage/SymbolicModelDescription.h"
 #include "storm/storage/jani/Property.h"
+#include "storm/logic/RewardAccumulationEliminationVisitor.h"
 
 #include "storm/models/ModelBase.h"
 
 #include "storm/exceptions/OptionParserException.h"
+#include "storm/exceptions/UnexpectedException.h"
 
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
 
@@ -382,6 +384,7 @@ namespace storm {
             
             std::pair<std::shared_ptr<storm::models::ModelBase>, bool> result = std::make_pair(model, false);
             if (model->isSparseModel()) {
+                STORM_LOG_THROW((std::is_same<BuildValueType, ExportValueType>::value), storm::exceptions::UnexpectedException, "Build-Value Type and ExportValueType should be the same in the sparse engine.");
                 result = preprocessSparseModel<BuildValueType>(result.first->as<storm::models::sparse::Model<BuildValueType>>(), input);
             } else {
                 STORM_LOG_ASSERT(model->isSymbolicModel(), "Unexpected model type.");
@@ -394,6 +397,29 @@ namespace storm {
                 STORM_PRINT(std::endl << "Time for model preprocessing: " << preprocessingWatch << "." << std::endl << std::endl);
             }
             return result;
+        }
+        
+        template <typename ModelType>
+        storm::jani::Property preprocessProperty(std::shared_ptr<ModelType> const& model, storm::jani::Property const& property) {
+            storm::logic::RewardAccumulationEliminationVisitor<typename ModelType::RewardModelType> v(model->getRewardModels(), model->getType());
+            auto formula = v.eliminateRewardAccumulations(*property.getFilter().getFormula());
+            auto states = v.eliminateRewardAccumulations(*property.getFilter().getStatesFormula());
+            storm::jani::FilterExpression fe(formula, property.getFilter().getFilterType(), states);
+            return storm::jani::Property(property.getName(), fe, property.getComment());
+        }
+        
+        template <storm::dd::DdType DdType, typename ValueType>
+        std::vector<storm::jani::Property> preprocessProperties(std::shared_ptr<storm::models::ModelBase> const& model, SymbolicInput const& input) {
+            std::vector<storm::jani::Property> resultProperties;
+            for (auto const& property : input.properties) {
+                if (model->isSparseModel()) {
+                    resultProperties.push_back(preprocessProperty(model->as<storm::models::sparse::Model<ValueType>>(), property));
+                } else {
+                    STORM_LOG_ASSERT(model->isSymbolicModel(), "Unexpected model type.");
+                    resultProperties.push_back(preprocessProperty(model->as<storm::models::symbolic::Model<DdType, ValueType>>(), property));
+                }
+            }
+            return resultProperties;
         }
         
         void printComputingCounterexample(storm::jani::Property const& property) {
@@ -670,7 +696,7 @@ namespace storm {
         }
         
         template <storm::dd::DdType DdType, typename BuildValueType, typename VerificationValueType = BuildValueType>
-        std::shared_ptr<storm::models::ModelBase> buildPreprocessExportModelWithValueTypeAndDdlib(SymbolicInput const& input, storm::settings::modules::CoreSettings::Engine engine) {
+        std::shared_ptr<storm::models::ModelBase> buildPreprocessExportModelWithValueTypeAndDdlib(SymbolicInput& input, storm::settings::modules::CoreSettings::Engine engine) {
             auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
             auto buildSettings = storm::settings::getModule<storm::settings::modules::BuildSettings>();
             std::shared_ptr<storm::models::ModelBase> model;
@@ -690,6 +716,9 @@ namespace storm {
                     model = preprocessingResult.first;
                     model->printModelInformationToStream(std::cout);
                 }
+                if (!input.properties.empty()) {
+                    input.properties = preprocessProperties<DdType, VerificationValueType>(model, input);
+                }
                 exportModel<DdType, BuildValueType>(model, input);
             }
             return model;
@@ -708,15 +737,16 @@ namespace storm {
             } else if (engine == storm::settings::modules::CoreSettings::Engine::Exploration) {
                 verifyWithExplorationEngine<VerificationValueType>(input);
             } else {
-                std::shared_ptr<storm::models::ModelBase> model = buildPreprocessExportModelWithValueTypeAndDdlib<DdType, BuildValueType, VerificationValueType>(input, engine);
+                SymbolicInput preprocessedInput = input;
+                std::shared_ptr<storm::models::ModelBase> model = buildPreprocessExportModelWithValueTypeAndDdlib<DdType, BuildValueType, VerificationValueType>(preprocessedInput, engine);
 
                 if (model) {
                     if (coreSettings.isCounterexampleSet()) {
                         auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
-                        generateCounterexamples<VerificationValueType>(model, input);
+                        generateCounterexamples<VerificationValueType>(model, preprocessedInput);
                     } else {
                         auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
-                        verifyModel<DdType, VerificationValueType>(model, input, coreSettings);
+                        verifyModel<DdType, VerificationValueType>(model, preprocessedInput, coreSettings);
                     }
                 }
             }
