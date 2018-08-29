@@ -1,14 +1,17 @@
 #ifndef STORM_LOGIC_EVENTUALLYFORMULA_H_
 #define STORM_LOGIC_EVENTUALLYFORMULA_H_
 
+#include <boost/optional.hpp>
+
 #include "storm/logic/UnaryPathFormula.h"
 #include "storm/logic/FormulaContext.h"
+#include "storm/logic/RewardAccumulation.h"
 
 namespace storm {
     namespace logic {
         class EventuallyFormula : public UnaryPathFormula {
         public:            
-            EventuallyFormula(std::shared_ptr<Formula const> const& subformula, FormulaContext context = FormulaContext::Probability);
+            EventuallyFormula(std::shared_ptr<Formula const> const& subformula, FormulaContext context = FormulaContext::Probability, boost::optional<RewardAccumulation> rewardAccumulation = boost::none);
             
             virtual ~EventuallyFormula() {
                 // Intentionally left empty.
@@ -27,9 +30,12 @@ namespace storm {
             virtual boost::any accept(FormulaVisitor const& visitor, boost::any const& data) const override;
 
             virtual std::ostream& writeToStream(std::ostream& out) const override;
+            bool hasRewardAccumulation() const;
+            RewardAccumulation const& getRewardAccumulation() const;
             
         private:
             FormulaContext context;
+            boost::optional<RewardAccumulation> rewardAccumulation;
         };
     }
 }

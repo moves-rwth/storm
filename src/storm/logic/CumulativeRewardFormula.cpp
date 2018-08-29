@@ -9,11 +9,11 @@
 
 namespace storm {
     namespace logic {
-        CumulativeRewardFormula::CumulativeRewardFormula(TimeBound const& bound, TimeBoundReference const& timeBoundReference) : timeBoundReferences({timeBoundReference}), bounds({bound}) {
+        CumulativeRewardFormula::CumulativeRewardFormula(TimeBound const& bound, TimeBoundReference const& timeBoundReference, boost::optional<RewardAccumulation> rewardAccumulation) : timeBoundReferences({timeBoundReference}), bounds({bound}), rewardAccumulation(rewardAccumulation) {
             // Intentionally left empty.
         }
 
-        CumulativeRewardFormula::CumulativeRewardFormula(std::vector<TimeBound> const& bounds, std::vector<TimeBoundReference> const& timeBoundReferences) : timeBoundReferences(timeBoundReferences), bounds(bounds) {
+        CumulativeRewardFormula::CumulativeRewardFormula(std::vector<TimeBound> const& bounds, std::vector<TimeBoundReference> const& timeBoundReferences, boost::optional<RewardAccumulation> rewardAccumulation) : timeBoundReferences(timeBoundReferences), bounds(bounds), rewardAccumulation(rewardAccumulation) {
 
             STORM_LOG_ASSERT(this->timeBoundReferences.size() == this->bounds.size(), "Number of time bounds and number of time bound references does not match.");
             STORM_LOG_ASSERT(!this->timeBoundReferences.empty(), "No time bounds given.");
@@ -137,12 +137,24 @@ namespace storm {
             STORM_LOG_THROW(!bound.containsVariables(), storm::exceptions::InvalidOperationException, "Cannot evaluate time-bound '" << bound << "' as it contains undefined constants.");
         }
         
+        bool CumulativeRewardFormula::hasRewardAccumulation() const {
+            return rewardAccumulation.is_initialized();
+        }
+        
+        RewardAccumulation const& CumulativeRewardFormula::getRewardAccumulation() const {
+            return rewardAccumulation.get();
+        }
+        
+        
         std::shared_ptr<CumulativeRewardFormula const> CumulativeRewardFormula::restrictToDimension(unsigned i) const {
             return std::make_shared<CumulativeRewardFormula const>(bounds.at(i), getTimeBoundReference(i));
         }
         
         std::ostream& CumulativeRewardFormula::writeToStream(std::ostream& out) const {
             out << "C";
+            if (hasRewardAccumulation()) {
+                out << "[" << getRewardAccumulation() << "]";
+            }
             if (this->isMultiDimensional()) {
                 out << "^{";
             }
@@ -151,7 +163,11 @@ namespace storm {
                     out << ", ";
                 }
                 if (this->getTimeBoundReference(i).isRewardBound()) {
-                    out << "rew{\"" << this->getTimeBoundReference(i).getRewardName() << "\"}";
+                    out << "rew";
+                    if (this->getTimeBoundReference(i).hasRewardAccumulation()) {
+                        out << "[" << this->getTimeBoundReference(i).getRewardAccumulation() << "]";
+                    }
+                    out << "{\"" << this->getTimeBoundReference(i).getRewardName() << "\"}";
                 } else if (this->getTimeBoundReference(i).isStepBound()) {
                     out << "steps";
               //} else if (this->getTimeBoundReference(i).isStepBound())

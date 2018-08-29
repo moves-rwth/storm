@@ -4,7 +4,7 @@
 
 namespace storm {
     namespace logic {
-        TotalRewardFormula::TotalRewardFormula() {
+        TotalRewardFormula::TotalRewardFormula(boost::optional<RewardAccumulation> rewardAccumulation) : rewardAccumulation(rewardAccumulation) {
             // Intentionally left empty.
         }
         
@@ -14,6 +14,14 @@ namespace storm {
         
         bool TotalRewardFormula::isRewardPathFormula() const {
             return true;
+        }
+        
+        bool TotalRewardFormula::hasRewardAccumulation() const {
+            return rewardAccumulation.is_initialized();
+        }
+        
+        RewardAccumulation const& TotalRewardFormula::getRewardAccumulation() const {
+            return rewardAccumulation.get();
         }
         
         boost::any TotalRewardFormula::accept(FormulaVisitor const& visitor, boost::any const& data) const {
