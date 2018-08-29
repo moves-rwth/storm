@@ -14,16 +14,6 @@ namespace storm {
                  */
                 JaniExportSettings();
                 
-                /**
-                 * Retrievew whether the pgcl file option was set
-                 */
-                bool isJaniFileSet() const;
-                
-                /**
-                 * Retrieves the pgcl file name
-                 */
-                std::string getJaniFilename() const;
-                
                 bool isExportAsStandardJaniSet() const;
 
                 bool isExportFlattenedSet() const;
@@ -31,6 +21,8 @@ namespace storm {
                 bool isLocationVariablesSet() const;
                 
                 bool isGlobalVarsSet() const;
+                
+                bool isCompactJsonSet() const;
 
                 std::vector<std::pair<std::string, std::string>> getLocationVariables() const;
 
@@ -40,13 +32,12 @@ namespace storm {
                 static const std::string moduleName;
                 
             private:
-                static const std::string janiFileOptionName;
-                static const std::string janiFileOptionShortName;
                 static const std::string standardCompliantOptionName;
                 static const std::string standardCompliantOptionShortName;
                 static const std::string exportFlattenOptionName;
                 static const std::string locationVariablesOptionName;
                 static const std::string globalVariablesOptionName;
+                static const std::string compactJsonOptionName;
                 
             };
         }

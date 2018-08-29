@@ -53,6 +53,11 @@ namespace storm {
                  */
                 std::string getWriteToJaniFilename() const;
                 
+                /*!
+                 * Returns whether a set of standard properties is to be added when exporting to jani
+                 */
+                bool isAddJaniPropertiesSet() const;
+                
                 bool isDisplayStatsSet() const;
                 
                 bool isWriteStatsToFileSet() const;
@@ -71,6 +76,7 @@ namespace storm {
                 static const std::string writeToPnproOptionName;
                 static const std::string writeToJsonOptionName;
                 static const std::string writeToJaniOptionName;
+                static const std::string addJaniPropertiesOptionName;
                 static const std::string displayStatsOptionName;
                 static const std::string writeStatsOptionName;
                 

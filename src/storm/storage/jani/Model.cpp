@@ -116,6 +116,10 @@ namespace storm {
             return name;
         }
         
+        void Model::setName(std::string const& newName) {
+            name = newName;
+        }
+        
         struct ConditionalMetaEdge {
             ConditionalMetaEdge() : actionIndex(0) {
                 // Intentionally left empty.
@@ -440,6 +444,10 @@ namespace storm {
             for (auto const& variable : getGlobalVariables()) {
                 std::unique_ptr<Variable> renamedVariable = variable.clone();
                 variableRemapping.emplace(&variable, flattenedModel.addVariable(*renamedVariable));
+            }
+            
+            for (auto const& constant : getConstants()) {
+                flattenedModel.addConstant(constant);
             }
             
             std::vector<std::reference_wrapper<Automaton const>> composedAutomata;

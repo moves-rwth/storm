@@ -270,6 +270,10 @@ namespace storm {
             return ConstEdges(it1, it2);
         }
         
+        EdgeContainer const& Automaton::getEdgeContainer() const {
+            return edges;
+        }
+        
         void Automaton::addEdge(Edge const& edge) {
             STORM_LOG_THROW(edge.getSourceLocationIndex() < locations.size(), storm::exceptions::InvalidArgumentException, "Cannot add edge with unknown source location index '" << edge.getSourceLocationIndex() << "'.");
             assert(validate());

@@ -2,6 +2,8 @@
 
 #include <string>
 #include <vector>
+#include <boost/optional.hpp>
+
 #include "storm-conv/settings/modules/JaniExportSettings.h"
 
 namespace storm {
@@ -20,6 +22,9 @@ namespace storm {
             
             /// If set, the model is transformed into a single automaton
             bool exportFlattened;
+            
+            /// If given, the model will get this name
+            boost::optional<std::string> modelName;
             
         };
     }

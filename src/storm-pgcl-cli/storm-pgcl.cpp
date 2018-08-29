@@ -43,7 +43,7 @@ void handleJani(storm::jani::Model& model) {
     storm::converter::JaniConversionOptions options(jani);
     storm::api::postprocessJani(model, options);
     if (storm::settings::getModule<storm::settings::modules::PGCLSettings>().isToJaniSet()) {
-        storm::api::exportJaniToFile(model, {}, storm::settings::getModule<storm::settings::modules::PGCLSettings>().getWriteToJaniFilename());
+        storm::api::exportJaniToFile(model, {}, storm::settings::getModule<storm::settings::modules::PGCLSettings>().getWriteToJaniFilename(), jani.isCompactJsonSet());
     } else {
         storm::api::printJaniToStream(model, {}, std::cout);
     }
