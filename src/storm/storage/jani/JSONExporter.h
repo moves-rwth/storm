@@ -70,7 +70,8 @@ namespace storm {
             modernjson::json constructPropertyInterval(boost::optional<storm::expressions::Expression> const& lower, boost::optional<bool> const& lowerExclusive, boost::optional<storm::expressions::Expression> const& upper, boost::optional<bool> const& upperExclusive) const;
             
             modernjson::json constructRewardAccumulation(storm::logic::RewardAccumulation const& rewardAccumulation) const;
-            modernjson::json constructStandardRewardAccumulation() const;
+            modernjson::json constructRewardAccumulation(storm::logic::RewardAccumulation const& rewardAccumulation, std::string const& rewardModelName) const;
+            modernjson::json constructStandardRewardAccumulation(std::string const& rewardModelName) const;
 
             storm::jani::Model const& model;
             mutable bool stateExitRewards;

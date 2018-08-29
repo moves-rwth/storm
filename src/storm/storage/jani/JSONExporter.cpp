@@ -11,6 +11,7 @@
 
 #include "storm/exceptions/InvalidJaniException.h"
 #include "storm/exceptions/NotImplementedException.h"
+#include "storm/exceptions/InvalidPropertyException.h"
 
 #include "storm/storage/expressions/RationalLiteralExpression.h"
 #include "storm/storage/expressions/IntegerLiteralExpression.h"
@@ -29,6 +30,7 @@
 #include "storm/storage/jani/AutomatonComposition.h"
 #include "storm/storage/jani/ParallelComposition.h"
 #include "storm/storage/jani/Property.h"
+#include "storm/storage/jani/traverser/AssignmentsFinder.h"
 
 namespace storm {
     namespace jani {
@@ -153,6 +155,24 @@ namespace storm {
             return iDecl;
         }
         
+        modernjson::json FormulaToJaniJson::constructRewardAccumulation(storm::logic::RewardAccumulation const& rewardAccumulation, std::string const& rewardModelName) const {
+            
+            storm::jani::Variable const& transientVar = model.getGlobalVariable(rewardModelName);
+            storm::jani::AssignmentsFinder::ResultType assignmentKinds;
+            STORM_LOG_THROW(model.hasGlobalVariable(rewardModelName), storm::exceptions::InvalidPropertyException, "Unable to find transient variable with name " << rewardModelName << ".");
+            if (transientVar.getInitExpression().containsVariables() || !storm::utility::isZero(transientVar.getInitExpression().evaluateAsRational())) {
+                assignmentKinds.hasLocationAssignment = true;
+                assignmentKinds.hasEdgeAssignment = true;
+                assignmentKinds.hasEdgeDestinationAssignment = true;
+            }
+            assignmentKinds = storm::jani::AssignmentsFinder().find(model, transientVar);
+
+            bool steps = rewardAccumulation.isStepsSet() && (assignmentKinds.hasEdgeAssignment || assignmentKinds.hasEdgeDestinationAssignment);
+            bool time = rewardAccumulation.isTimeSet() && !model.isDiscreteTimeModel() && assignmentKinds.hasLocationAssignment;
+            bool exit = rewardAccumulation.isExitSet() && assignmentKinds.hasLocationAssignment;
+            return constructRewardAccumulation(storm::logic::RewardAccumulation(steps, time, exit));
+        }
+        
         modernjson::json FormulaToJaniJson::constructRewardAccumulation(storm::logic::RewardAccumulation const& rewardAccumulation) const {
             std::vector<std::string> res;
             if (rewardAccumulation.isStepsSet()) {
@@ -168,11 +188,11 @@ namespace storm {
             return res;
         }
 
-        modernjson::json FormulaToJaniJson::constructStandardRewardAccumulation() const {
+        modernjson::json FormulaToJaniJson::constructStandardRewardAccumulation(std::string const& rewardModelName) const {
             if (model.isDiscreteTimeModel()) {
-                return constructRewardAccumulation(storm::logic::RewardAccumulation(true, false, true));
+                return constructRewardAccumulation(storm::logic::RewardAccumulation(true, false, true), rewardModelName);
             } else {
-                return constructRewardAccumulation(storm::logic::RewardAccumulation(true, true, false));
+                return constructRewardAccumulation(storm::logic::RewardAccumulation(true, true, false), rewardModelName);
             }
         }
         
@@ -241,9 +261,9 @@ namespace storm {
                     modernjson::json rewbound;
                     rewbound["exp"] = tbr.getRewardName();
                     if (tbr.hasRewardAccumulation()) {
-                        rewbound["accumulate"] = constructRewardAccumulation(tbr.getRewardAccumulation());
+                        rewbound["accumulate"] = constructRewardAccumulation(tbr.getRewardAccumulation(), tbr.getRewardName());
                     } else {
-                        rewbound["accumulate"] = constructStandardRewardAccumulation();
+                        rewbound["accumulate"] = constructStandardRewardAccumulation(tbr.getRewardName());
                     }
                     rewbound["bounds"] = propertyInterval;
                     rewardBounds.push_back(std::move(rewbound));
@@ -469,18 +489,18 @@ namespace storm {
                 if (f.getSubformula().isEventuallyFormula()) {
                     opDecl["left"]["reach"] = boost::any_cast<modernjson::json>(f.getSubformula().asEventuallyFormula().getSubformula().accept(*this, data));
                     if (f.getSubformula().asEventuallyFormula().hasRewardAccumulation()) {
-                        opDecl["left"]["accumulate"] = constructRewardAccumulation(f.getSubformula().asEventuallyFormula().getRewardAccumulation());
+                        opDecl["left"]["accumulate"] = constructRewardAccumulation(f.getSubformula().asEventuallyFormula().getRewardAccumulation(), rewardModelName);
                     } else {
-                        opDecl["left"]["accumulate"] = constructStandardRewardAccumulation();
+                        opDecl["left"]["accumulate"] = constructStandardRewardAccumulation(rewardModelName);
                     }
                 } else if (f.getSubformula().isCumulativeRewardFormula()) {
                     // TODO: support for reward bounded formulas
                     STORM_LOG_WARN_COND(!f.getSubformula().asCumulativeRewardFormula().getTimeBoundReference().isRewardBound(), "Export for reward bounded cumulative reward formulas currently unsupported.");
                     opDecl["left"][instantName] = buildExpression(f.getSubformula().asCumulativeRewardFormula().getBound(), model.getConstants(), model.getGlobalVariables());
                     if (f.getSubformula().asCumulativeRewardFormula().hasRewardAccumulation()) {
-                        opDecl["left"]["accumulate"] = constructRewardAccumulation(f.getSubformula().asCumulativeRewardFormula().getRewardAccumulation());
+                        opDecl["left"]["accumulate"] = constructRewardAccumulation(f.getSubformula().asCumulativeRewardFormula().getRewardAccumulation(), rewardModelName);
                     } else {
-                        opDecl["left"]["accumulate"] = constructStandardRewardAccumulation();
+                        opDecl["left"]["accumulate"] = constructStandardRewardAccumulation(rewardModelName);
                     }
                 } else if (f.getSubformula().isInstantaneousRewardFormula()) {
                     opDecl["left"][instantName] = buildExpression(f.getSubformula().asInstantaneousRewardFormula().getBound(), model.getConstants(), model.getGlobalVariables());
@@ -499,18 +519,18 @@ namespace storm {
                 if (f.getSubformula().isEventuallyFormula()) {
                     opDecl["reach"] = boost::any_cast<modernjson::json>(f.getSubformula().asEventuallyFormula().getSubformula().accept(*this, data));
                     if (f.getSubformula().asEventuallyFormula().hasRewardAccumulation()) {
-                        opDecl["accumulate"] = constructRewardAccumulation(f.getSubformula().asEventuallyFormula().getRewardAccumulation());
+                        opDecl["accumulate"] = constructRewardAccumulation(f.getSubformula().asEventuallyFormula().getRewardAccumulation(), rewardModelName);
                     } else {
-                        opDecl["accumulate"] = constructStandardRewardAccumulation();
+                        opDecl["accumulate"] = constructStandardRewardAccumulation(rewardModelName);
                     }
                 } else if (f.getSubformula().isCumulativeRewardFormula()) {
                     // TODO: support for reward bounded formulas
                     STORM_LOG_WARN_COND(!f.getSubformula().asCumulativeRewardFormula().getTimeBoundReference().isRewardBound(), "Export for reward bounded cumulative reward formulas currently unsupported.");
                     opDecl[instantName] = buildExpression(f.getSubformula().asCumulativeRewardFormula().getBound(), model.getConstants(), model.getGlobalVariables());
                     if (f.getSubformula().asCumulativeRewardFormula().hasRewardAccumulation()) {
-                        opDecl["accumulate"] = constructRewardAccumulation(f.getSubformula().asCumulativeRewardFormula().getRewardAccumulation());
+                        opDecl["accumulate"] = constructRewardAccumulation(f.getSubformula().asCumulativeRewardFormula().getRewardAccumulation(), rewardModelName);
                     } else {
-                        opDecl["accumulate"] = constructStandardRewardAccumulation();
+                        opDecl["accumulate"] = constructStandardRewardAccumulation(rewardModelName);
                     }
                 } else if (f.getSubformula().isInstantaneousRewardFormula()) {
                     opDecl[instantName] = buildExpression(f.getSubformula().asInstantaneousRewardFormula().getBound(), model.getConstants(), model.getGlobalVariables());
