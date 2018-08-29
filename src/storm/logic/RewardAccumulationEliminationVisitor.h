@@ -5,21 +5,22 @@
 
 #include "storm/logic/CloneVisitor.h"
 #include "storm/logic/RewardAccumulation.h"
-#include "storm/models/ModelType.h"
-
+#include "storm/storage/jani/Model.h"
+#include "storm/storage/jani/Property.h"
 
 namespace storm {
     namespace logic {
         
-        template <class RewardModelType>
         class RewardAccumulationEliminationVisitor : public CloneVisitor {
         public:
-            RewardAccumulationEliminationVisitor(std::unordered_map<std::string, RewardModelType> const& rewardModels, storm::models::ModelType const& modelType);
+            RewardAccumulationEliminationVisitor(storm::jani::Model const& model);
             
             /*!
              * Eliminates any reward accumulations of the formula, where the presence of the reward accumulation does not change the result of the formula
              */
             std::shared_ptr<Formula> eliminateRewardAccumulations(Formula const& f) const;
+            
+            void eliminateRewardAccumulations(std::vector<storm::jani::Property>& properties) const;
            
             virtual boost::any visit(BoundedUntilFormula const& f, boost::any const& data) const override;
             virtual boost::any visit(CumulativeRewardFormula const& f, boost::any const& data) const override;
@@ -31,8 +32,7 @@ namespace storm {
         private:
             bool canEliminate(storm::logic::RewardAccumulation const& accumulation, boost::optional<std::string> rewardModelName) const;
             
-            std::unordered_map<std::string, RewardModelType> const& rewardModels;
-            bool isDiscreteTimeModel;
+            storm::jani::Model const& model;
         };
         
     }

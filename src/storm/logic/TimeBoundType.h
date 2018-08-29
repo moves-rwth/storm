@@ -51,7 +51,6 @@ namespace storm {
             }
             
             bool hasRewardAccumulation() const {
-                assert(isRewardBound());
                 return rewardAccumulation.is_initialized();
             }
             

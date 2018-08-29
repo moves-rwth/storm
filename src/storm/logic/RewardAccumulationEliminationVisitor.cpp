@@ -1,39 +1,35 @@
 #include "storm/logic/RewardAccumulationEliminationVisitor.h"
 #include "storm/logic/Formulas.h"
 
+#include "storm/storage/jani/Model.h"
+#include "storm/storage/jani/traverser/AssignmentsFinder.h"
 #include "storm/utility/macros.h"
 
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/exceptions/InvalidPropertyException.h"
-#include "storm/storage/dd/DdManager.h"
-#include "storm/storage/dd/Add.h"
-#include "storm/storage/dd/Bdd.h"
-
-#include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/models/symbolic/StandardRewardModel.h"
 
 namespace storm {
     namespace logic {
 
-        template <class RewardModelType>
-        RewardAccumulationEliminationVisitor<RewardModelType>::RewardAccumulationEliminationVisitor(std::unordered_map<std::string, RewardModelType> const& rewardModels, storm::models::ModelType const& modelType) : rewardModels(rewardModels) {
-            if (modelType == storm::models::ModelType::Dtmc || modelType == storm::models::ModelType::Mdp || modelType == storm::models::ModelType::S2pg) {
-                isDiscreteTimeModel = true;
-            } else if (modelType == storm::models::ModelType::Ctmc || modelType == storm::models::ModelType::MarkovAutomaton) {
-                isDiscreteTimeModel = false;
-            } else {
-                STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unhandled model type " << modelType << ".");
-            }
+        RewardAccumulationEliminationVisitor::RewardAccumulationEliminationVisitor(storm::jani::Model const& model) : model(model) {
+            // Intentionally left empty
         }
         
-        template <class RewardModelType>
-        std::shared_ptr<Formula> RewardAccumulationEliminationVisitor<RewardModelType>::eliminateRewardAccumulations(Formula const& f) const {
+        std::shared_ptr<Formula> RewardAccumulationEliminationVisitor::eliminateRewardAccumulations(Formula const& f) const {
             boost::any result = f.accept(*this, boost::any());
             return boost::any_cast<std::shared_ptr<Formula>>(result);
         }
         
-        template <class RewardModelType>
-        boost::any RewardAccumulationEliminationVisitor<RewardModelType>::visit(BoundedUntilFormula const& f, boost::any const& data) const {
+        void RewardAccumulationEliminationVisitor::eliminateRewardAccumulations(std::vector<storm::jani::Property>& properties) const {
+            for (auto& p : properties) {
+                auto formula = eliminateRewardAccumulations(*p.getFilter().getFormula());
+                auto states = eliminateRewardAccumulations(*p.getFilter().getStatesFormula());
+                storm::jani::FilterExpression fe(formula, p.getFilter().getFilterType(), states);
+                p = storm::jani::Property(p.getName(), storm::jani::FilterExpression(formula, p.getFilter().getFilterType(), states), p.getComment());
+            }
+        }
+        
+        boost::any RewardAccumulationEliminationVisitor::visit(BoundedUntilFormula const& f, boost::any const& data) const {
             std::vector<boost::optional<TimeBound>> lowerBounds, upperBounds;
             std::vector<TimeBoundReference> timeBoundReferences;
             for (uint64_t i = 0; i < f.getDimension(); ++i) {
@@ -68,8 +64,7 @@ namespace storm {
             }
         }
         
-        template <class RewardModelType>
-        boost::any RewardAccumulationEliminationVisitor<RewardModelType>::visit(CumulativeRewardFormula const& f, boost::any const& data) const {
+        boost::any RewardAccumulationEliminationVisitor::visit(CumulativeRewardFormula const& f, boost::any const& data) const {
             boost::optional<storm::logic::RewardAccumulation> rewAcc;
             STORM_LOG_THROW(!data.empty(), storm::exceptions::UnexpectedException, "Formula " << f << " does not seem to be a subformula of a reward operator.");
             auto rewName = boost::any_cast<boost::optional<std::string>>(data);
@@ -91,14 +86,13 @@ namespace storm {
             return std::static_pointer_cast<Formula>(std::make_shared<CumulativeRewardFormula>(bounds, timeBoundReferences, rewAcc));
         }
         
-        template <class RewardModelType>
-        boost::any RewardAccumulationEliminationVisitor<RewardModelType>::visit(EventuallyFormula const& f, boost::any const& data) const {
+        boost::any RewardAccumulationEliminationVisitor::visit(EventuallyFormula const& f, boost::any const& data) const {
            std::shared_ptr<Formula> subformula = boost::any_cast<std::shared_ptr<Formula>>(f.getSubformula().accept(*this, data));
             if (f.hasRewardAccumulation()) {
                 if (f.isTimePathFormula()) {
-                    if (isDiscreteTimeModel && ((!f.getRewardAccumulation().isExitSet() && !f.getRewardAccumulation().isStepsSet()) || (f.getRewardAccumulation().isStepsSet() && f.getRewardAccumulation().isExitSet()))) {
+                    if (model.isDiscreteTimeModel() && ((!f.getRewardAccumulation().isExitSet() && !f.getRewardAccumulation().isStepsSet()) || (f.getRewardAccumulation().isStepsSet() && f.getRewardAccumulation().isExitSet()))) {
                         return std::static_pointer_cast<Formula>(std::make_shared<EventuallyFormula>(subformula, f.getContext(), f.getRewardAccumulation()));
-                    } else if (!isDiscreteTimeModel && (!f.getRewardAccumulation().isTimeSet() || f.getRewardAccumulation().isExitSet() || f.getRewardAccumulation().isStepsSet())) {
+                    } else if (!model.isDiscreteTimeModel() && (!f.getRewardAccumulation().isTimeSet() || f.getRewardAccumulation().isExitSet() || f.getRewardAccumulation().isStepsSet())) {
                         return std::static_pointer_cast<Formula>(std::make_shared<EventuallyFormula>(subformula, f.getContext(), f.getRewardAccumulation()));
                     }
                 } else if (f.isRewardPathFormula()) {
@@ -112,14 +106,12 @@ namespace storm {
             return std::static_pointer_cast<Formula>(std::make_shared<EventuallyFormula>(subformula, f.getContext()));
         }
         
-        template <class RewardModelType>
-        boost::any RewardAccumulationEliminationVisitor<RewardModelType>::visit(RewardOperatorFormula const& f, boost::any const& data) const {
+        boost::any RewardAccumulationEliminationVisitor::visit(RewardOperatorFormula const& f, boost::any const& data) const {
             std::shared_ptr<Formula> subformula = boost::any_cast<std::shared_ptr<Formula>>(f.getSubformula().accept(*this, f.getOptionalRewardModelName()));
             return std::static_pointer_cast<Formula>(std::make_shared<RewardOperatorFormula>(subformula, f.getOptionalRewardModelName(), f.getOperatorInformation()));
         }
         
-        template <class RewardModelType>
-        boost::any RewardAccumulationEliminationVisitor<RewardModelType>::visit(TotalRewardFormula const& f, boost::any const& data) const {
+        boost::any RewardAccumulationEliminationVisitor::visit(TotalRewardFormula const& f, boost::any const& data) const {
             STORM_LOG_THROW(!data.empty(), storm::exceptions::UnexpectedException, "Formula " << f << " does not seem to be a subformula of a reward operator.");
             auto rewName = boost::any_cast<boost::optional<std::string>>(data);
             if (f.hasRewardAccumulation() || canEliminate(f.getRewardAccumulation(), rewName)) {
@@ -129,23 +121,22 @@ namespace storm {
             }
         }
         
-        template <class RewardModelType>
-        bool RewardAccumulationEliminationVisitor<RewardModelType>::canEliminate(storm::logic::RewardAccumulation const& accumulation, boost::optional<std::string> rewardModelName) const {
-            auto rewModelIt = rewardModels.end();
-            if (rewardModelName.is_initialized()){
-                rewModelIt = rewardModels.find(rewardModelName.get());
-                STORM_LOG_THROW(rewModelIt != rewardModels.end(), storm::exceptions::InvalidPropertyException, "Unable to find reward model with name " << rewardModelName.get());
-            } else if (rewardModels.size() == 1) {
-                rewModelIt = rewardModels.begin();
-            } else {
-                STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "Multiple reward models were defined but no reward model name was given for at least one property.");
+        bool RewardAccumulationEliminationVisitor::canEliminate(storm::logic::RewardAccumulation const& accumulation, boost::optional<std::string> rewardModelName) const {
+            STORM_LOG_THROW(rewardModelName.is_initialized(), storm::exceptions::InvalidPropertyException, "Unable to find transient variable with for unique reward model.");
+            storm::jani::AssignmentsFinder::ResultType assignmentKinds;
+            STORM_LOG_THROW(model.hasGlobalVariable(rewardModelName.get()), storm::exceptions::InvalidPropertyException, "Unable to find transient variable with name " << rewardModelName.get() << ".");
+            storm::jani::Variable const& transientVar = model.getGlobalVariable(rewardModelName.get());
+            if (transientVar.getInitExpression().containsVariables() || !storm::utility::isZero(transientVar.getInitExpression().evaluateAsRational())) {
+                assignmentKinds.hasLocationAssignment = true;
+                assignmentKinds.hasEdgeAssignment = true;
+                assignmentKinds.hasEdgeDestinationAssignment = true;
             }
-            RewardModelType const& rewardModel = rewModelIt->second;
-            if ((rewardModel.hasStateActionRewards() || rewardModel.hasTransitionRewards()) && !accumulation.isStepsSet()) {
+            assignmentKinds = storm::jani::AssignmentsFinder().find(model, transientVar);
+            if ((assignmentKinds.hasEdgeAssignment || assignmentKinds.hasEdgeDestinationAssignment) && !accumulation.isStepsSet()) {
                 return false;
             }
-            if (rewardModel.hasStateRewards()) {
-                if (isDiscreteTimeModel) {
+            if (assignmentKinds.hasLocationAssignment) {
+                if (model.isDiscreteTimeModel()) {
                     if (!accumulation.isExitSet()) {
                         return false;
                     }
@@ -158,16 +149,5 @@ namespace storm {
             }
             return true;
         }
-        
-        template class RewardAccumulationEliminationVisitor<storm::models::sparse::StandardRewardModel<double>>;
-        template class RewardAccumulationEliminationVisitor<storm::models::sparse::StandardRewardModel<storm::RationalNumber>>;
-        template class RewardAccumulationEliminationVisitor<storm::models::sparse::StandardRewardModel<storm::RationalFunction>>;
-        template class RewardAccumulationEliminationVisitor<storm::models::sparse::StandardRewardModel<storm::Interval>>;
-        
-        template class RewardAccumulationEliminationVisitor<storm::models::symbolic::StandardRewardModel<storm::dd::DdType::CUDD, double>>;
-        template class RewardAccumulationEliminationVisitor<storm::models::symbolic::StandardRewardModel<storm::dd::DdType::Sylvan, double>>;
-        template class RewardAccumulationEliminationVisitor<storm::models::symbolic::StandardRewardModel<storm::dd::DdType::Sylvan, storm::RationalNumber>>;
-        template class RewardAccumulationEliminationVisitor<storm::models::symbolic::StandardRewardModel<storm::dd::DdType::Sylvan, storm::RationalFunction>>;
-
     }
 }
