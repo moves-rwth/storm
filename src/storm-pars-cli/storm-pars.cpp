@@ -1,5 +1,6 @@
 
 
+#include "storm-pars/analysis/LatticeExtender.h"
 #include "storm-cli-utilities/cli.h"
 #include "storm-cli-utilities/model-handling.h"
 
@@ -609,7 +610,9 @@ namespace storm {
 
                 // Transform to Lattice
                 storm::utility::Stopwatch latticeWatch(true);
-                storm::analysis::Lattice* lattice = storm::analysis::Lattice::toLattice<ValueType>(sparseModel, formulas);
+
+                storm::analysis::LatticeExtender<storm::models::sparse::Model<ValueType>> extender = storm::analysis::LatticeExtender<storm::models::sparse::Model<ValueType>>(sparseModel);
+                storm::analysis::Lattice* lattice = extender.toLattice(formulas);
                 latticeWatch.stop();
                 STORM_PRINT(std::endl << "Time for lattice creation: " << latticeWatch << "." << std::endl << std::endl);
                 ofstream myfile;

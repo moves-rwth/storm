@@ -25,6 +25,8 @@ namespace storm {
             }
             this->numberOfStates = numberOfStates;
             this->addedStates = storm::storage::BitVector(numberOfStates);
+            this->addedStates.operator|=(topStates);
+            this->addedStates.operator|=(bottomStates);
         }
 
         void Lattice::addBetween(uint_fast64_t state, Node *above, Node *below) {

@@ -8,31 +8,27 @@
 #include <storm/logic/Formula.h>
 #include "storm/models/sparse/Dtmc.h"
 #include "storm-pars/analysis/Lattice.h"
+#include "storm/api/storm.h"
+
 
 
 
 namespace storm {
     namespace analysis {
 
-        template <typename ValueType>
+
+        template<typename SparseModelType>
         class LatticeExtender {
 
         public:
-            LatticeExtender();
+            LatticeExtender(std::shared_ptr<SparseModelType> model);
 
-//            /*!
-//             * Creates a Lattice based on the transition matrix, topStates of the Lattice and bottomStates of the Lattice
-//             * @tparam ValueType Type of the probabilities
-//             * @param model The pointer to the model
-//             * @param formulas Vector with pointer to formula
-//             * @return pointer to the created Lattice.
-//             */
-//            storm::analysis::Lattice* toLattice(std::vector<std::shared_ptr<storm::logic::Formula const>> formulas);
-//
-//            storm::analysis::Lattice* extendLattice(storm::analysis::Lattice* lattice, std::set<storm::expressions::Expression> assumptions);
+            storm::analysis::Lattice* toLattice(std::vector<std::shared_ptr<storm::logic::Formula const>> formulas);
+
+            storm::analysis::Lattice* extendLattice(storm::analysis::Lattice* lattice, std::set<storm::expressions::Expression> assumptions);
 
         private:
-            std::shared_ptr<storm::models::sparse::Dtmc<ValueType>> model;
+            std::shared_ptr<SparseModelType> model;
 
             std::map<uint_fast64_t, storm::storage::BitVector> stateMap;
         };
