@@ -5,7 +5,8 @@
 #include "storm-gspn/settings/modules/GSPNExportSettings.h"
 #include "storm-conv/settings/modules/JaniExportSettings.h"
 #include "storm-conv/api/storm-conv.h"
-
+#include "storm-parsers/parser/ExpressionParser.h"
+#include "storm/exceptions/WrongFormatException.h"
 
 namespace storm {
     namespace api {
@@ -71,9 +72,40 @@ namespace storm {
                 if (exportSettings.isAddJaniPropertiesSet()) {
                     properties.insert(properties.end(), builder.getStandardProperties().begin(), builder.getStandardProperties().end());
                 }
-                storm::api::exportJaniToFile(*model, properties, exportSettings.getWriteToJaniFilename());
+                storm::api::exportJaniToFile(*model, properties, exportSettings.getWriteToJaniFilename(), jani.isCompactJsonSet());
                 delete model;
             }
         }
+        
+        std::unordered_map<std::string, uint64_t> parseCapacitiesList(std::string const& filename, storm::gspn::GSPN const& gspn) {
+            storm::parser::ExpressionParser expressionParser(*gspn.getExpressionManager());
+            std::unordered_map<std::string, storm::expressions::Expression> identifierMapping;
+            for (auto const& var : gspn.getExpressionManager()->getVariables()) {
+                identifierMapping.emplace(var.getName(), var.getExpression());
+            }
+            expressionParser.setIdentifierMapping(identifierMapping);
+            expressionParser.setAcceptDoubleLiterals(false);
+            
+            std::unordered_map<std::string, uint64_t> map;
+            
+            std::ifstream stream;
+            storm::utility::openFile(filename, stream);
+            
+            std::string line;
+            while ( std::getline(stream, line) ) {
+                std::vector<std::string> strs;
+                boost::split(strs, line, boost::is_any_of("\t "));
+                STORM_LOG_THROW(strs.size() == 2, storm::exceptions::WrongFormatException, "Expect key value pairs");
+                storm::expressions::Expression expr = expressionParser.parseFromString(strs[1]);
+                if (!gspn.getConstantsSubstitution().empty()) {
+                    expr = expr.substitute(gspn.getConstantsSubstitution());
+                }
+                STORM_LOG_THROW(!expr.containsVariables(), storm::exceptions::WrongFormatException, "The capacity expression '" << strs[1] << "' still contains undefined constants.");
+                map[strs[0]] = expr.evaluateAsInt();
+            }
+            storm::utility::closeFile(stream);
+            return map;
+        }
     }
 }
+

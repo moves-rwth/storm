@@ -5,9 +5,6 @@
 #include "storm-gspn/builder/JaniGSPNBuilder.h"
 #include "storm-gspn/api/storm-gspn.h"
 
-#include "storm/exceptions/BaseException.h"
-#include "storm/exceptions/WrongFormatException.h"
-
 #include "storm/utility/macros.h"
 #include "storm/utility/initialize.h"
 
@@ -57,25 +54,6 @@ void initializeSettings() {
 }
 
 
-std::unordered_map<std::string, uint64_t> parseCapacitiesList(std::string const& filename) {
-    std::unordered_map<std::string, uint64_t> map;
-    
-    std::ifstream stream;
-    storm::utility::openFile(filename, stream);
-    
-    std::string line;
-    while ( std::getline(stream, line) ) {
-        std::vector<std::string> strs;
-        boost::split(strs, line, boost::is_any_of("\t "));
-        STORM_LOG_THROW(strs.size() == 2, storm::exceptions::WrongFormatException, "Expect key value pairs");
-        std::cout << std::stoll(strs[1]) << std::endl;
-        map[strs[0]] = std::stoll(strs[1]);
-    }
-    storm::utility::closeFile(stream);
-    return map;
-}
-
-
 int main(const int argc, const char **argv) {
     try {
         storm::utility::setUp();
@@ -91,11 +69,17 @@ int main(const int argc, const char **argv) {
 
         // parse gspn from file
         if (!gspnSettings.isGspnFileSet()) {
-            return -1;
+            // If no gspn file is given, nothing needs to be done.
+            return 0;
+        }
+        
+        std::string constantDefinitionString = "";
+        if (gspnSettings.isConstantsSet()) {
+            constantDefinitionString = gspnSettings.getConstantDefinitionString();
         }
         
         auto parser = storm::parser::GspnParser();
-        auto gspn = parser.parse(gspnSettings.getGspnFilename());
+        auto gspn = parser.parse(gspnSettings.getGspnFilename(), constantDefinitionString);
 
         std::string formulaString = "";
         if (storm::settings::getModule<storm::settings::modules::IOSettings>().isPropertySet()) {
@@ -104,13 +88,14 @@ int main(const int argc, const char **argv) {
         boost::optional<std::set<std::string>> propertyFilter;
         storm::parser::FormulaParser formulaParser(gspn->getExpressionManager());
         std::vector<storm::jani::Property> properties  = storm::api::parseProperties(formulaParser, formulaString, propertyFilter);
-
+        properties = storm::api::substituteConstantsInProperties(properties, gspn->getConstantsSubstitution());
+        
         if (!gspn->isValid()) {
             STORM_LOG_ERROR("The gspn is not valid.");
         }
         
         if(gspnSettings.isCapacitiesFileSet()) {
-            auto capacities = parseCapacitiesList(gspnSettings.getCapacitiesFilename());
+            auto capacities = storm::api::parseCapacitiesList(gspnSettings.getCapacitiesFilename(), *gspn);
             gspn->setCapacities(capacities);
         } else if (gspnSettings.isCapacitySet()) {
             uint64_t capacity = gspnSettings.getCapacity();
@@ -126,7 +111,6 @@ int main(const int argc, const char **argv) {
         delete gspn;
         return 0;
         
-//
 //        // construct ma
 //        auto builder = storm::builder::ExplicitGspnModelBuilder<>();
 //        auto ma = builder.translateGspn(gspn, formula);

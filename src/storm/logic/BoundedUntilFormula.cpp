@@ -285,7 +285,11 @@ namespace storm {
                         out << ", ";
                     }
                     if (this->getTimeBoundReference(i).isRewardBound()) {
-                        out << "rew{\"" << this->getTimeBoundReference(i).getRewardName() << "\"}";
+                        out << "rew";
+                        if (this->getTimeBoundReference(i).hasRewardAccumulation()) {
+                            out << "[" << this->getTimeBoundReference(i).getRewardAccumulation() << "]";
+                        }
+                        out << "{\"" << this->getTimeBoundReference(i).getRewardName() << "\"}";
                     } else if (this->getTimeBoundReference(i).isStepBound()) {
                         out << "steps";
                   //} else if (this->getTimeBoundReference(i).isStepBound())

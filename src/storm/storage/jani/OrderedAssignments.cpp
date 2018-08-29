@@ -27,19 +27,17 @@ namespace storm {
         
         bool OrderedAssignments::add(Assignment const& assignment, bool addToExisting) {
             // If the element is contained in this set of assignment, nothing needs to be added.
-            if (this->contains(assignment)) {
+            if (!addToExisting && this->contains(assignment)) {
                 return false;
             }
             
             // Otherwise, we find the spot to insert it.
             auto it = lowerBound(assignment, allAssignments);
-
-            if (it != allAssignments.end()) {
-                if ((!addToExisting || !assignment.getExpressionVariable().hasNumericalType())) {
-                    STORM_LOG_THROW(assignment.getExpressionVariable() != (*it)->getExpressionVariable(), storm::exceptions::InvalidArgumentException, "Cannot add assignment ('" << assignment.getAssignedExpression() << "') as an assignment ('" << (*it)->getAssignedExpression()  << "') to variable '" <<  (*it)->getVariable().getName() << "' already exists.");
-                } else if (addToExisting && assignment.getExpressionVariable().hasNumericalType()) {
-                    (*it)->setAssignedExpression((*it)->getAssignedExpression() + assignment.getAssignedExpression());
-                }
+            
+            // Check if an assignment to this variable is already present
+            if (it != allAssignments.end() && assignment.getExpressionVariable() == (*it)->getExpressionVariable()) {
+                STORM_LOG_THROW(addToExisting && assignment.getExpressionVariable().hasNumericalType(), storm::exceptions::InvalidArgumentException, "Cannot add assignment ('" << assignment.getAssignedExpression() << "') as an assignment ('" << (*it)->getAssignedExpression()  << "') to variable '" <<  (*it)->getVariable().getName() << "' already exists.");
+                (*it)->setAssignedExpression((*it)->getAssignedExpression() + assignment.getAssignedExpression());
             } else {
                 // Finally, insert the new element in the correct vectors.
                 auto elementToInsert = std::make_shared<Assignment>(assignment);

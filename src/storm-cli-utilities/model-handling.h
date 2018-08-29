@@ -18,6 +18,7 @@
 
 #include "storm/storage/SymbolicModelDescription.h"
 #include "storm/storage/jani/Property.h"
+#include "storm/logic/RewardAccumulationEliminationVisitor.h"
 
 #include "storm/models/ModelBase.h"
 
@@ -124,6 +125,10 @@ namespace storm {
             }
             if (!output.properties.empty()) {
                 output.properties = storm::api::substituteConstantsInProperties(output.properties, constantDefinitions);
+                if (output.model.is_initialized() && output.model->isJaniModel()) {
+                    storm::logic::RewardAccumulationEliminationVisitor v(output.model->asJaniModel());
+                    v.eliminateRewardAccumulations(output.properties);
+                }
             }
             
             // Check whether conversion for PRISM to JANI is requested or necessary.

@@ -192,6 +192,8 @@ namespace storm {
              */
             ConstEdges getEdgesFromLocation(uint64_t locationIndex, uint64_t actionIndex) const;
             
+            EdgeContainer const& getEdgeContainer() const;
+            
             /*!
              * Adds the template edge to the list of edges
              */

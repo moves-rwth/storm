@@ -20,7 +20,7 @@ namespace storm {
             
         public:
             
-            GreatSpnEditorProjectParser();
+            GreatSpnEditorProjectParser(std::string const& constantDefinitionString);
             
             /*!
              * Parses the given file into the GSPN.
@@ -36,17 +36,20 @@ namespace storm {
             void traverseNodesElement(xercesc::DOMNode const* const node);
             void traverseEdgesElement(xercesc::DOMNode const* const node);
             
-            void traverseConstantElement(xercesc::DOMNode const* const node, std::unordered_map<std::string, storm::expressions::Expression>& identifierMapping);
+            void traverseConstantOrTemplateElement(xercesc::DOMNode const* const node);
             void traversePlaceElement(xercesc::DOMNode const* const node);
             void traverseTransitionElement(xercesc::DOMNode const* const node);
             void traverseArcElement(xercesc::DOMNode const* const node);
             
+            int64_t parseInt(std::string str);
+            double parseReal(std::string str);
             
             // the constructed gspn
             storm::gspn::GspnBuilder builder;
             std::shared_ptr<storm::expressions::ExpressionManager> manager;
-            storm::parser::ExpressionParser expressionParser;
-
+            std::shared_ptr<storm::parser::ExpressionParser> expressionParser;
+            std::unordered_map<std::string, std::string> constantDefinitions;
+            std::map<storm::expressions::Variable, storm::expressions::Expression> constantsSubstitution;
         };
     }
 }

@@ -39,10 +39,19 @@ namespace storm {
             
             /**
              * Adds an timed transition to the gspn.
+             * The transition is assumed to have Single-Server-Semantics
              * @param priority The priority for the transtion.
-             * @param weight The weight for the transition.
+             * @param rate The rate for the transition.
              */
             uint_fast64_t addTimedTransition(uint_fast64_t const &priority, RateType const& rate, std::string const& name = "");
+            
+            /**
+             * Adds an timed transition to the gspn.
+             * @param priority The priority for the transtion.
+             * @param rate The rate for the transition.
+             * @param numServers The number of servers this transition has (in case of K-Server semantics) or boost::none (in case of Infinite-Server-Semantics).
+             */
+            uint_fast64_t addTimedTransition(uint_fast64_t const &priority, RateType const& rate, boost::optional<uint64_t> numServers, std::string const& name = "");
             
             void setTransitionLayoutInfo(uint64_t transitionId, LayoutInfo const& layoutInfo);
 
@@ -91,10 +100,10 @@ namespace storm {
             
             
             /**
-             *
+             * @param exprManager The expression manager that will be associated with the new gspn. If this is nullptr, a new expressionmanager will be created.
              * @return The gspn which is constructed by the builder.
              */
-            storm::gspn::GSPN* buildGspn() const;
+            storm::gspn::GSPN* buildGspn(std::shared_ptr<storm::expressions::ExpressionManager> const& exprManager = nullptr, std::map<storm::expressions::Variable, storm::expressions::Expression> const& constantsSubstitution = std::map<storm::expressions::Variable, storm::expressions::Expression>()) const;
         private:
             bool isImmediateTransitionId(uint64_t) const;
             bool isTimedTransitionId(uint64_t) const;
