@@ -303,7 +303,7 @@ namespace storm {
             return standardProperties;
         }
 
-        std::vector<storm::jani::Property> const& JaniGSPNBuilder::getDeadlockProperties(storm::jani::Model* model) {
+        std::vector<storm::jani::Property> JaniGSPNBuilder::getDeadlockProperties(storm::jani::Model* model) {
             auto const& deadlockVar = addDeadlockTransientVariable(model, getUniqueVarName(*expressionManager, "deadl"));
             auto deadlockFormula = std::make_shared<storm::logic::AtomicExpressionFormula>(deadlockVar.getExpressionVariable().getExpression());
             return getStandardProperties(model, deadlockFormula, "Deadlock", "a deadlock", true);

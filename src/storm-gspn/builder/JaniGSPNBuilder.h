@@ -32,7 +32,7 @@ namespace storm {
             /*!
              * Get standard properties (reachability, time bounded reachability, expected time) for deadlocks.
              */
-            std::vector<storm::jani::Property> const& getDeadlockProperties(storm::jani::Model* model);
+            std::vector<storm::jani::Property> getDeadlockProperties(storm::jani::Model* model);
 
             /*!
              * Add transient variable representing given expression.
