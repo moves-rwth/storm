@@ -126,7 +126,7 @@ namespace storm {
             size_t row = 0;
             size_t state = 0;
             bool firstState = true;
-            bool firstAction = true;
+            bool firstActionForState = true;
             while (std::getline(file, line)) {
                 STORM_LOG_TRACE("Parsing: " << line);
                 if (boost::starts_with(line, "state ")) {
@@ -135,7 +135,9 @@ namespace storm {
                         firstState = false;
                     } else {
                         ++state;
+                        ++row;
                     }
+                    firstActionForState = true;
                     STORM_LOG_TRACE("New state " << state);
 
                     // Parse state id
@@ -209,8 +211,8 @@ namespace storm {
 
                 } else if (boost::starts_with(line, "\taction ")) {
                     // New action
-                    if (firstAction) {
-                        firstAction = false;
+                    if (firstActionForState) {
+                        firstActionForState = false;
                     } else {
                         ++row;
                     }
@@ -232,7 +234,7 @@ namespace storm {
                 } else {
                     // New transition
                     size_t posColon = line.find(":");
-                    STORM_LOG_ASSERT(posColon != std::string::npos, "':' not found.");
+                    STORM_LOG_THROW(posColon != std::string::npos, storm::exceptions::WrongFormatException, "':' not found.");
                     size_t target = NumberParser<size_t>::parse(line.substr(2, posColon-3));
                     std::string valueStr = line.substr(posColon+2);
                     ValueType value = valueParser.parseValue(valueStr);

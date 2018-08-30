@@ -10,6 +10,7 @@ Version 1.2.x
 ### Version 1.2.4 (2018/08)
 - New binary `storm-conv` that handles conversions between model files (currently: prism to jani)
 - Added support for expected time properties for discrete time models
+- Bug fix in the parser for DRN (MDPs and MAs might have been affected).
 - Several bug fixes related to jani
 - `storm-gspn`: Improved .pnpro parser
 - `storm-gspn`: Added support for single/infinite/k-server semantics for GSPNs given in the .pnpro format
