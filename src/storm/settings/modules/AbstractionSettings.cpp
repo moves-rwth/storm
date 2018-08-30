@@ -180,6 +180,10 @@ namespace storm {
                 this->getOption(addAllGuardsOptionName).getArgumentByName("value").setFromStringValue(value ? "on" : "off");
             }
             
+            void AbstractionSettings::setAddAllInitialExpressions(bool value) {
+                this->getOption(addInitialExpressionsOptionName).getArgumentByName("value").setFromStringValue(value ? "on" : "off");
+            }
+            
             bool AbstractionSettings::isUseInterpolationSet() const {
                 return this->getOption(useInterpolationOptionName).getArgumentByName("value").getValueAsString() == "on";
             }
