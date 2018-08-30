@@ -59,7 +59,7 @@ namespace storm {
                 std::vector<std::string> solveModes = {"dd", "sparse"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, solveModeOptionName, true, "Sets how the abstractions are solved.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("mode", "The mode to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(solveModes))
-                                             .setDefaultValueString("dd").build())
+                                             .setDefaultValueString("sparse").build())
                                 .build());
 
                 this->addOption(storm::settings::OptionBuilder(moduleName, addAllGuardsOptionName, true, "Sets whether all guards are added as initial predicates.")
