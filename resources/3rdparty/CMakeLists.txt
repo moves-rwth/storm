@@ -141,46 +141,45 @@ find_package(Z3 QUIET)
 # Z3 Defines
 set(STORM_HAVE_Z3 ${Z3_FOUND})
 
+
 if(Z3_FOUND)
-    # Check whether the version of z3 supports optimization
-    if (Z3_EXEC)
-        execute_process (COMMAND ${Z3_EXEC} -version
-                OUTPUT_VARIABLE z3_version_output
-                ERROR_QUIET
-                OUTPUT_STRIP_TRAILING_WHITESPACE)
+    # Get the z3 version by compiling and running a simple program
+    try_run(version_run_result version_compile_result "${STORM_3RDPARTY_BINARY_DIR}/z3/" "${PROJECT_SOURCE_DIR}/resources/3rdparty/z3/output_version.cpp" LINK_LIBRARIES "${Z3_LIBRARIES}" RUN_OUTPUT_VARIABLE z3_version_output)
+    if (version_compile_result AND version_run_result EQUAL 0)
         if (z3_version_output MATCHES "([0-9]*\\.[0-9]*\\.[0-9]*)")
             set(Z3_VERSION "${CMAKE_MATCH_1}")
-            if(NOT "${Z3_VERSION}" VERSION_LESS "4.5.0")
-                set(STORM_HAVE_Z3_OPTIMIZE ON)
-            endif()
         endif()
     endif()
 
-    if(STORM_HAVE_Z3_OPTIMIZE)
-        message (STATUS "Storm - Linking with Z3 (version ${Z3_VERSION}). (Z3 version supports optimization)")
+    if(Z3_VERSION)
+        # Split Z3 version into its components
+        string(REPLACE "." ";" Z3_VERSION_LIST ${Z3_VERSION})
+        list(GET Z3_VERSION_LIST 0 STORM_Z3_VERSION_MAJOR)
+        list(GET Z3_VERSION_LIST 1 STORM_Z3_VERSION_MINOR)
+        list(GET Z3_VERSION_LIST 2 STORM_Z3_VERSION_PATCH)
+
+        # Check whether the version of z3 supports optimization
+        if(NOT "${Z3_VERSION}" VERSION_LESS "4.5.0")
+            set(STORM_HAVE_Z3_OPTIMIZE ON)
+            message (STATUS "Storm - Linking with Z3 (version ${Z3_VERSION}). (Z3 version supports optimization)")
+        else()
+            message (STATUS "Storm - Linking with Z3 (version ${Z3_VERSION}). (Z3 version does not support optimization)")
+        endif()
+        if (NOT "${Z3_VERSION}" VERSION_LESS "4.7.1")
+            set(STORM_Z3_API_USES_STANDARD_INTEGERS ON)
+        endif()
+
+        add_imported_library(z3 SHARED ${Z3_LIBRARIES} ${Z3_INCLUDE_DIRS})
+        list(APPEND STORM_DEP_TARGETS z3_SHARED)
     else()
-        message (STATUS "Storm - Linking with Z3 (version ${Z3_VERSION}). (Z3 version does not support optimization)")
+        message(WARNING "Storm - Could not obtain Z3 version. Building of Prism/JANI models will not be supported.")
+        set(Z3_FOUND FALSE)
     endif()
 
-    add_imported_library(z3 SHARED ${Z3_LIBRARIES} ${Z3_INCLUDE_DIRS})
-    list(APPEND STORM_DEP_TARGETS z3_SHARED)
 else()
     message (WARNING "Storm - Z3 not found. Building of Prism/JANI models will not be supported.")
 endif(Z3_FOUND)
 
-# split Z3 version into its components
-if(Z3_VERSION)
-    string(REPLACE "." ";" Z3_VERSION_LIST ${Z3_VERSION})
-    list(GET Z3_VERSION_LIST 0 STORM_Z3_VERSION_MAJOR)
-    list(GET Z3_VERSION_LIST 1 STORM_Z3_VERSION_MINOR)
-    list(GET Z3_VERSION_LIST 2 STORM_Z3_VERSION_PATCH)
-    if (NOT "${Z3_VERSION}" VERSION_LESS "4.7.1")
-        set(STORM_Z3_API_USES_STANDARD_INTEGERS ON)
-    endif()
-else()
-    message(WARNING "Storm - Could not obtain Z3 version. Do you have the binary installed?. Building of Prism/JANI models will not be supported.")
-    set(Z3_FOUND FALSE)
-endif()
 
 #############################################################
 ##
