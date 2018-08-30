@@ -169,12 +169,17 @@ else()
 endif(Z3_FOUND)
 
 # split Z3 version into its components
-string(REPLACE "." ";" Z3_VERSION_LIST ${Z3_VERSION})
-list(GET Z3_VERSION_LIST 0 STORM_Z3_VERSION_MAJOR)
-list(GET Z3_VERSION_LIST 1 STORM_Z3_VERSION_MINOR)
-list(GET Z3_VERSION_LIST 2 STORM_Z3_VERSION_PATCH)
-if (NOT "${Z3_VERSION}" VERSION_LESS "4.7.1")
-    set(STORM_Z3_API_USES_STANDARD_INTEGERS ON)
+if(Z3_VERSION)
+    string(REPLACE "." ";" Z3_VERSION_LIST ${Z3_VERSION})
+    list(GET Z3_VERSION_LIST 0 STORM_Z3_VERSION_MAJOR)
+    list(GET Z3_VERSION_LIST 1 STORM_Z3_VERSION_MINOR)
+    list(GET Z3_VERSION_LIST 2 STORM_Z3_VERSION_PATCH)
+    if (NOT "${Z3_VERSION}" VERSION_LESS "4.7.1")
+        set(STORM_Z3_API_USES_STANDARD_INTEGERS ON)
+    endif()
+else()
+    message(WARNING "Storm - Could not obtain Z3 version. Do you have the binary installed?. Building of Prism/JANI models will not be supported.")
+    set(Z3_FOUND FALSE)
 endif()
 
 #############################################################
