@@ -13,7 +13,11 @@ namespace storm {
         method = gmmxxSettings.getLinearEquationSystemMethod();
         preconditioner = gmmxxSettings.getPreconditioningMethod();
         restartThreshold = gmmxxSettings.getRestartIterationCount();
-        maxIterationCount = gmmxxSettings.getMaximalIterationCount();
+        if (gmmxxSettings.isMaximalIterationCountSet()) {
+            maxIterationCount = gmmxxSettings.getMaximalIterationCount();
+        } else {
+            maxIterationCount = std::numeric_limits<uint_fast64_t>::max();
+        }
         precision = storm::utility::convertNumber<storm::RationalNumber>(gmmxxSettings.getPrecision());
     }
 

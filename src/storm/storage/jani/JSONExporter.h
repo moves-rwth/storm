@@ -3,7 +3,7 @@
 
 #include "storm/storage/expressions/ExpressionVisitor.h"
 #include "storm/logic/FormulaVisitor.h"
-#include "Model.h"
+#include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/Property.h"
 #include "storm/adapters/RationalNumberAdapter.h"
 // JSON parser
@@ -41,7 +41,8 @@ namespace storm {
         class FormulaToJaniJson : public storm::logic::FormulaVisitor {
             
         public:
-            static modernjson::json translate(storm::logic::Formula const& formula, storm::jani::Model const& modeln);
+            static modernjson::json translate(storm::logic::Formula const& formula, storm::jani::Model const& model, std::set<std::string>& modelFeatures);
+            bool containsStateExitRewards() const; // Returns true iff the  previously translated formula contained state exit rewards
             virtual boost::any visit(storm::logic::AtomicExpressionFormula const& f, boost::any const& data) const;
             virtual boost::any visit(storm::logic::AtomicLabelFormula const& f, boost::any const& data) const;
             virtual boost::any visit(storm::logic::BinaryBooleanStateFormula const& f, boost::any const& data) const;
@@ -64,32 +65,39 @@ namespace storm {
             virtual boost::any visit(storm::logic::UntilFormula const& f, boost::any const& data) const;
       
         private:
-            FormulaToJaniJson(storm::jani::Model const& model) : model(model) { }
+            FormulaToJaniJson(storm::jani::Model const& model) : model(model), stateExitRewards(false) { }
 
             modernjson::json constructPropertyInterval(boost::optional<storm::expressions::Expression> const& lower, boost::optional<bool> const& lowerExclusive, boost::optional<storm::expressions::Expression> const& upper, boost::optional<bool> const& upperExclusive) const;
+            
+            modernjson::json constructRewardAccumulation(storm::logic::RewardAccumulation const& rewardAccumulation) const;
+            modernjson::json constructRewardAccumulation(storm::logic::RewardAccumulation const& rewardAccumulation, std::string const& rewardModelName) const;
+            modernjson::json constructStandardRewardAccumulation(std::string const& rewardModelName) const;
 
             storm::jani::Model const& model;
+            mutable bool stateExitRewards;
         };
         
         class JsonExporter {
             JsonExporter() = default;
             
         public:
-            static void toFile(storm::jani::Model const& janiModel, std::vector<storm::jani::Property> const& formulas, std::string const& filepath, bool checkValid = true);
-            static void toStream(storm::jani::Model const& janiModel, std::vector<storm::jani::Property> const& formulas, std::ostream& ostream, bool checkValid = false);
+            static void toFile(storm::jani::Model const& janiModel, std::vector<storm::jani::Property> const& formulas, std::string const& filepath, bool checkValid = true, bool compact = false);
+            static void toStream(storm::jani::Model const& janiModel, std::vector<storm::jani::Property> const& formulas, std::ostream& ostream, bool checkValid = false, bool compact = false);
             
             
         private:
-            void convertModel(storm::jani::Model const& model);
+            void convertModel(storm::jani::Model const& model, bool commentExpressions = true);
             void convertProperties(std::vector<storm::jani::Property> const& formulas, storm::jani::Model const& model);
             void appendVariableDeclaration(storm::jani::Variable const& variable);
             
             modernjson::json finalize() {
+                std::vector<std::string> featureVector(modelFeatures.begin(), modelFeatures.end());
+                jsonStruct["features"] = featureVector;
                 return jsonStruct;
             }
             
             modernjson::json jsonStruct;
-            
+            std::set<std::string> modelFeatures;
             
         };
     }

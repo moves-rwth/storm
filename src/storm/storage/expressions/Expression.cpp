@@ -73,6 +73,10 @@ namespace storm {
             return Expression(this->getBaseExpression().simplify());
         }
         
+        Expression Expression::reduceNesting() const {
+            return Expression(this->getBaseExpression().reduceNesting());
+        }
+        
         OperatorType Expression::getOperator() const {
             return this->getBaseExpression().getOperator();
         }

@@ -219,6 +219,7 @@ namespace storm {
                             subB[state] = storm::utility::zero<ValueType>();
                         }
                     }
+
                     submatrixSolver->setMatrix(std::move(submatrix));
                 }
                 

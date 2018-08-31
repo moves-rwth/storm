@@ -8,7 +8,7 @@
 #include "storm/models/symbolic/Ctmc.h"
 #include "storm/models/symbolic/Mdp.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
-#include "storm/parser/PrismParser.h"
+#include "storm-parsers/parser/PrismParser.h"
 #include "storm/builder/DdPrismModelBuilder.h"
 
 TEST(DdPrismModelBuilderTest_Sylvan, Dtmc) {

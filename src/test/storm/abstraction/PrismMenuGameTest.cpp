@@ -3,7 +3,7 @@
 
 #ifdef STORM_HAVE_MSAT
 
-#include "storm/parser/PrismParser.h"
+#include "storm-parsers/parser/PrismParser.h"
 
 #include "storm/abstraction/MenuGameRefiner.h"
 #include "storm/abstraction/prism/PrismMenuGameAbstractor.h"

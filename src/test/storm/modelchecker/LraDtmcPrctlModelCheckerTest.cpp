@@ -2,7 +2,7 @@
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 
-#include "storm/parser/FormulaParser.h"
+#include "storm-parsers/parser/FormulaParser.h"
 #include "storm/settings/SettingMemento.h"
 #include "storm/logic/Formulas.h"
 #include "storm/solver/NativeLinearEquationSolver.h"
@@ -17,7 +17,7 @@
 #include "storm/environment/solver/EigenSolverEnvironment.h"
 #include "storm/environment/solver/GmmxxSolverEnvironment.h"
 
-#include "storm/parser/AutoParser.h"
+#include "storm-parsers/parser/AutoParser.h"
 #include "storm/builder/ExplicitModelBuilder.h"
 
 namespace {

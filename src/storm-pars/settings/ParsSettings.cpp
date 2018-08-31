@@ -1,4 +1,3 @@
-#include <storm/settings/modules/CounterexampleGeneratorSettings.h>
 #include "storm-pars/settings/ParsSettings.h"
 
 #include "storm-pars/settings/modules/ParametricSettings.h"
@@ -21,7 +20,6 @@
 #include "storm/settings/modules/GameSolverSettings.h"
 #include "storm/settings/modules/BisimulationSettings.h"
 #include "storm/settings/modules/ResourceSettings.h"
-#include "storm/settings/modules/JaniExportSettings.h"
 #include "storm/settings/modules/JitBuilderSettings.h"
 #include "storm/settings/modules/MultiplierSettings.h"
 
@@ -38,7 +36,6 @@ namespace storm {
             storm::settings::addModule<storm::settings::modules::ParametricSettings>();
             storm::settings::addModule<storm::settings::modules::RegionSettings>();
             storm::settings::addModule<storm::settings::modules::BuildSettings>();
-            storm::settings::addModule<storm::settings::modules::CounterexampleGeneratorSettings>();
             storm::settings::addModule<storm::settings::modules::ModelCheckerSettings>();
             storm::settings::addModule<storm::settings::modules::DebugSettings>();
             storm::settings::addModule<storm::settings::modules::SylvanSettings>();
@@ -51,7 +48,6 @@ namespace storm {
             storm::settings::addModule<storm::settings::modules::GameSolverSettings>();
             storm::settings::addModule<storm::settings::modules::BisimulationSettings>();
             storm::settings::addModule<storm::settings::modules::ResourceSettings>();
-            storm::settings::addModule<storm::settings::modules::JaniExportSettings>();
             storm::settings::addModule<storm::settings::modules::JitBuilderSettings>();
             storm::settings::addModule<storm::settings::modules::MultiplierSettings>();
         }

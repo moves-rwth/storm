@@ -12,7 +12,11 @@ namespace storm {
         
         method = nativeSettings.getLinearEquationSystemMethod();
         methodSetFromDefault = nativeSettings.isLinearEquationSystemTechniqueSetFromDefaultValue();
-        maxIterationCount = nativeSettings.getMaximalIterationCount();
+        if (nativeSettings.isMaximalIterationCountSet()) {
+            maxIterationCount = nativeSettings.getMaximalIterationCount();
+        } else {
+            maxIterationCount = std::numeric_limits<uint_fast64_t>::max();
+        }
         precision = storm::utility::convertNumber<storm::RationalNumber>(nativeSettings.getPrecision());
         considerRelativeTerminationCriterion = nativeSettings.getConvergenceCriterion() == storm::settings::modules::NativeEquationSolverSettings::ConvergenceCriterion::Relative;
         STORM_LOG_ASSERT(considerRelativeTerminationCriterion || nativeSettings.getConvergenceCriterion() == storm::settings::modules::NativeEquationSolverSettings::ConvergenceCriterion::Absolute, "Unknown convergence criterion");

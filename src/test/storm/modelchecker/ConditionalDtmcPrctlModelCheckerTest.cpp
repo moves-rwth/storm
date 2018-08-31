@@ -2,12 +2,12 @@
 #include "test/storm_gtest.h"
 #include "storm-config.h"
 
-#include "storm/parser/FormulaParser.h"
+#include "storm-parsers/parser/FormulaParser.h"
 #include "storm/logic/Formulas.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
-#include "storm/parser/PrismParser.h"
+#include "storm-parsers/parser/PrismParser.h"
 #include "storm/api/builder.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 

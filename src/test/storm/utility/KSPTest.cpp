@@ -3,7 +3,7 @@
 
 #include "storm/builder/ExplicitModelBuilder.h"
 #include "storm/models/sparse/Dtmc.h"
-#include "storm/parser/PrismParser.h"
+#include "storm-parsers/parser/PrismParser.h"
 #include "storm/storage/SymbolicModelDescription.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/shortestPaths.h"
@@ -81,7 +81,7 @@ TEST(KSPTest, kspStateSet) {
     storm::utility::ksp::ShortestPathsGenerator<double> spg(*model, testState);
 
     auto bv = spg.getStates(7);
-    EXPECT_EQ(50, bv.getNumberOfSetBits());
+    EXPECT_EQ(50ull, bv.getNumberOfSetBits());
 
     // The result may sadly depend on the compiler/system, so checking a particular outcome is not feasible.
 //    storm::storage::BitVector referenceBV(model->getNumberOfStates(), false);
@@ -97,7 +97,7 @@ TEST(KSPTest, kspPathAsList) {
     storm::utility::ksp::ShortestPathsGenerator<double> spg(*model, testState);
 
     auto list = spg.getPathAsList(7);
-    EXPECT_EQ(50, list.size());
+    EXPECT_EQ(50ull, list.size());
     
     // TODO: use path that actually has a loop or something to make this more interesting
 //    auto reference = storm::utility::ksp::OrderedStateList{296, 288, 281, 272, 266, 260, 253, 245, 238, 230, 224, 218, 211, 203, 196, 188, 182, 176, 169, 161, 154, 146, 140, 134, 127, 119, 112, 104, 98, 92, 85, 77, 70, 81, 74, 65, 58, 52, 45, 37, 30, 22, 17, 12, 9, 6, 4, 2, 1, 0};

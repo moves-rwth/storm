@@ -186,6 +186,13 @@ namespace storm {
             virtual std::shared_ptr<BaseExpression const> simplify() const = 0;
             
             /*!
+             * Tries to flatten the syntax tree of the expression, e.g., 1 + (2 + (3 + 4)) becomes (1 + 2) + (3 + 4)
+             *
+             * @return A semantically equivalent expression with reduced nesting
+             */
+            std::shared_ptr<BaseExpression const> reduceNesting() const;
+            
+            /*!
              * Accepts the given visitor by calling its visit method.
              *
              * @param visitor The visitor that is to be accepted.

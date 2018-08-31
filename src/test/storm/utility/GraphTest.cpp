@@ -2,7 +2,7 @@
 #include "storm-config.h"
 
 #include "storm/storage/SymbolicModelDescription.h"
-#include "storm/parser/PrismParser.h"
+#include "storm-parsers/parser/PrismParser.h"
 #include "storm/models/symbolic/Dtmc.h"
 #include "storm/models/symbolic/Mdp.h"
 #include "storm/models/symbolic/StandardRewardModel.h"

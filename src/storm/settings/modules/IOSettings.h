@@ -234,9 +234,15 @@ namespace storm {
                 bool isJaniPropertiesSet() const;
 
                 /*!
+                 * Retrieves whether one or more jani-properties have been selected
+                 * @return
+                 */
+                bool areJaniPropertiesSelected() const;
+                
+                /*!
                  * @return  The names of the jani properties to check
                  */
-                std::vector<std::string> getJaniProperties() const;
+                std::vector<std::string> getSelectedJaniProperties() const;
 
                 /*!
                  * Retrieves whether the property option was set.

@@ -26,9 +26,11 @@ namespace storm {
             /*!
              * Adds the given assignment to the set of assignments.
              *
+             * @addToExisting If true the value of the assigned expression is added to a (potentially) previous assignment
+             * to the variable. If false and there is already an assignment, an exception is thrown.
              * @return True iff the assignment was added.
              */
-            bool add(Assignment const& assignment);
+            bool add(Assignment const& assignment, bool addToExisting = false);
             
             /*!
              * Removes the given assignment from this set of assignments.
@@ -140,7 +142,9 @@ namespace storm {
             bool areLinear() const;
             
             friend std::ostream& operator<<(std::ostream& stream, OrderedAssignments const& assignments);
-            
+
+            OrderedAssignments clone() const;
+
         private:
             uint64_t isReadBeforeAssignment(Variable const& var, uint64_t assignmentNumber, uint64_t start = 0) const;
             uint64_t isWrittenBeforeAssignment(Variable const& var, uint64_t assignmentNumber, uint64_t start = 0) const;

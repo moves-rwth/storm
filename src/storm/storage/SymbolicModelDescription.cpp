@@ -119,23 +119,23 @@ namespace storm {
             return result;
         }
         
-        SymbolicModelDescription SymbolicModelDescription::toJani(bool makeVariablesGlobal) const {
+        SymbolicModelDescription SymbolicModelDescription::toJani(bool makeVariablesGlobal, bool standardCompliant) const {
             if (this->isJaniModel()) {
                 return *this;
             }
             if (this->isPrismProgram()) {
-                return SymbolicModelDescription(this->asPrismProgram().toJani(makeVariablesGlobal));
+                return SymbolicModelDescription(this->asPrismProgram().toJani(makeVariablesGlobal, "", standardCompliant));
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot transform model description to the JANI format.");
             }
         }
         
-        std::pair<SymbolicModelDescription, std::map<std::string, std::string>> SymbolicModelDescription::toJaniWithLabelRenaming(bool makeVariablesGlobal) const {
+        std::pair<SymbolicModelDescription, std::map<std::string, std::string>> SymbolicModelDescription::toJaniWithLabelRenaming(bool makeVariablesGlobal, bool standardCompliant) const {
             if (this->isJaniModel()) {
                 return std::make_pair(*this, std::map<std::string, std::string>());
             }
             if (this->isPrismProgram()) {
-                auto modelAndRenaming = this->asPrismProgram().toJaniWithLabelRenaming(makeVariablesGlobal);
+                auto modelAndRenaming = this->asPrismProgram().toJaniWithLabelRenaming(makeVariablesGlobal, "", standardCompliant);
                 return std::make_pair(SymbolicModelDescription(modelAndRenaming.first), modelAndRenaming.second);
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot transform model description to the JANI format.");

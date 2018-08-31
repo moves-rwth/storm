@@ -468,11 +468,11 @@ namespace storm {
                                 nextDistribution.add(newTargetState, probability);
                             }
                         }
-                        
-                        // Create the state-action reward for the newly created choice.
-                        auto valueIt = stateActionRewards.begin();
-                        performTransientAssignments(edge.getAssignments().getTransientAssignments(), [&valueIt] (ValueType const& value) { *valueIt += value; ++valueIt; } );
                     }
+                    
+                    // Create the state-action reward for the newly created choice.
+                    auto valueIt = stateActionRewards.begin();
+                    performTransientAssignments(edge.getAssignments().getTransientAssignments(), [&valueIt] (ValueType const& value) { *valueIt += value; ++valueIt; } );
                     
                     nextDistribution.compress();
                     

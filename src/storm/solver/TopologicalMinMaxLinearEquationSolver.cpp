@@ -190,6 +190,10 @@ namespace storm {
             if (req.lowerBounds() && this->hasLowerBound()) {
                 req.clearLowerBounds();
             }
+            
+            // If all requirements of the underlying solver have been passed as requirements to the calling site, we can
+            // assume that the system has no end components if the underlying solver requires this.
+            req.clearNoEndComponents();
             STORM_LOG_THROW(!req.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + req.getEnabledRequirementsAsString() + " not checked.");
             this->sccSolver->setRequirementsChecked(true);
             

@@ -86,7 +86,7 @@ foreach(p LIB BIN INCLUDE CMAKE)
   endif()
 endforeach()
 
-message("CMAKE_INSTALL_DIR: ${CMAKE_INSTALL_DIR}")
+message(STATUS "Storm - CMake install dir: ${CMAKE_INSTALL_DIR}")
 
 # If the STORM_DEVELOPER option was turned on, by default we target a debug version, otherwise a release version.
 if (STORM_DEVELOPER)
@@ -153,15 +153,15 @@ elseif (WIN32)
 	set(STATIC_EXT ".lib")
 	set(LIB_PREFIX "")
 endif()
-message(STATUS "Assuming extension for shared libraries: ${DYNAMIC_EXT}")
-message(STATUS "Assuming extension for static libraries: ${STATIC_EXT}")
+message(STATUS "Storm - Assuming extension for shared libraries: ${DYNAMIC_EXT}")
+message(STATUS "Storm - Assuming extension for static libraries: ${STATIC_EXT}")
 
 if(BUILD_SHARED_LIBS)
     set(LIB_EXT ${DYNAMIC_EXT})
-    message(STATUS "Build dynamic libraries.")
+    message(STATUS "Storm - Build dynamic libraries.")
 else()
     set(LIB_EXT ${STATIC_EXT})
-    message(STATUS "Build static libraries.")
+    message(STATUS "Storm - Build static libraries.")
 endif()
 
 #############################################################
@@ -420,30 +420,27 @@ set(STORM_VERSION_MAJOR "${CMAKE_MATCH_1}")
 set(STORM_VERSION_MINOR "${CMAKE_MATCH_2}")
 set(STORM_VERSION_PATCH "${CMAKE_MATCH_3}")
 set(STORM_GIT_VERSION_REST "${CMAKE_MATCH_4}")
-# parse rest of the form (-label)-commitsahead-hash-appendix
+# parse rest of the form (-label)-commitsahead-hash(-appendix)
 string(REGEX MATCH "^(\\-([a-z][a-z0-9\\.]+))?\\-([0-9]+)\\-([a-z0-9]+)(\\-.*)?$" STORM_VERSION_REST_MATCH "${STORM_GIT_VERSION_REST}")
 set(STORM_VERSION_LABEL "${CMAKE_MATCH_2}") # might be empty
 set(STORM_VERSION_COMMITS_AHEAD "${CMAKE_MATCH_3}")
-set(STORM_VERSION_TAG_HASH "${CMAKE_MATCH_4}")
+set(STORM_VERSION_TAG_HASH "${CMAKE_MATCH_4}") # is not used
 set(STORM_VERSION_APPENDIX "${CMAKE_MATCH_5}") # might be empty
 
-
-set(STORM_VERSION_DIRTY boost::none)
-if (NOT "${STORM_GIT_VERSION_STRING}" STREQUAL "")
+# check whether the git version lookup failed
+if (STORM_GIT_VERSION_STRING MATCHES "NOTFOUND")
+	set(STORM_VERSION_SOURCE "VersionSource::Static")
+	set(STORM_VERSION_COMMITS_AHEAD 0)
+	set(STORM_VERSION_DIRTY boost::none)
+	include(version.cmake)
+	message(WARNING "Storm - Git version information not available, statically assuming version ${STORM_VERSION_MAJOR}.${STORM_VERSION_MINOR}.${STORM_VERSION_PATCH}.")
+else()
+	set(STORM_VERSION_SOURCE "VersionSource::Git")
 	if ("${STORM_VERSION_APPENDIX}" MATCHES "^.*dirty.*$")
 		set(STORM_VERSION_DIRTY "true")
 	else()
 		set(STORM_VERSION_DIRTY "false")
 	endif()
-endif()
-
-# now check whether the git version lookup failed
-set(STORM_VERSION_SOURCE "VersionSource::Git")
-if (STORM_GIT_VERSION_STRING MATCHES "NOTFOUND")
-	set(STORM_VERSION_SOURCE "VersionSource::Static")
-	set(STORM_VERSION_COMMITS_AHEAD "boost::none")
-	include(version.cmake)
-	message(WARNING "Storm - git version information not available, statically assuming version ${STORM_VERSION_MAJOR}.${STORM_VERSION_MINOR}.${STORM_VERSION_PATCH}.")
 endif()
 
 # check whether there is a label ('alpha', 'pre', etc.)
@@ -454,18 +451,19 @@ else()
 endif()
 
 # check for development version with commits ahead of latest tag
-set(STORM_VERSION_DEV "false")
-set(STORM_VERSION_DEV_STRING "")
 if(STORM_VERSION_COMMITS_AHEAD)
+	set(STORM_VERSION_DEV "true")
+	set(STORM_VERSION_DEV_STRING " (dev)")
 	if ("${STORM_VERSION_LABEL}" STREQUAL "")
 		# increase patch number to indicate newer version
 		MATH(EXPR STORM_VERSION_DEV_PATCH "${STORM_VERSION_PATCH}+1")
 	else()
 		set(STORM_VERSION_DEV_PATCH "${STORM_VERSION_PATCH}")
 	endif()
-	set(STORM_VERSION_DEV "true")
-	set(STORM_VERSION_DEV_STRING " (dev)")
 else()
+	set(STORM_VERSION_COMMITS_AHEAD 0)
+	set(STORM_VERSION_DEV "false")
+	set(STORM_VERSION_DEV_STRING "")
 	set(STORM_VERSION_DEV_PATCH ${STORM_VERSION_PATCH})
 endif()
 
@@ -473,7 +471,7 @@ endif()
 set(STORM_VERSION "${STORM_VERSION_MAJOR}.${STORM_VERSION_MINOR}.${STORM_VERSION_DEV_PATCH}")
 set(STORM_VERSION_STRING "${STORM_VERSION}${STORM_VERSION_LABEL_STRING}${STORM_VERSION_DEV_STRING}")
 
-message(STATUS "Storm - version is ${STORM_VERSION_STRING} (version ${STORM_VERSION_MAJOR}.${STORM_VERSION_MINOR}.${STORM_VERSION_PATCH}${STORM_VERSION_LABEL_STRING} + ${STORM_VERSION_COMMITS_AHEAD} commits), building from git: ${STORM_VERSION_GIT_HASH} (dirty: ${STORM_VERSION_DIRTY}).")
+message(STATUS "Storm - Version is ${STORM_VERSION_STRING} (version ${STORM_VERSION_MAJOR}.${STORM_VERSION_MINOR}.${STORM_VERSION_PATCH}${STORM_VERSION_LABEL_STRING} + ${STORM_VERSION_COMMITS_AHEAD} commits), building from git: ${STORM_VERSION_GIT_HASH} (dirty: ${STORM_VERSION_DIRTY}).")
 
 
 # Configure a header file to pass some of the CMake settings to the source code

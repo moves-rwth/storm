@@ -1,6 +1,7 @@
 #include "storm/logic/FragmentSpecification.h"
 
 #include <iostream>
+#include "storm/logic/RewardAccumulation.h"
 
 namespace storm {
     namespace logic {
@@ -161,6 +162,8 @@ namespace storm {
             operatorAtTopLevelRequired = false;
             multiObjectiveFormulaAtTopLevelRequired = false;
             operatorsAtTopLevelOfMultiObjectiveFormulasRequired = false;
+            
+            rewardAccumulation = false;
         }
         
         FragmentSpecification FragmentSpecification::copy() const {
@@ -563,6 +566,16 @@ namespace storm {
             operatorsAtTopLevelOfMultiObjectiveFormulasRequired = newValue;
             return *this;
         }
+        
+        bool FragmentSpecification::isRewardAccumulationAllowed() const {
+            return rewardAccumulation;
+        }
+        
+        FragmentSpecification& FragmentSpecification::setRewardAccumulationAllowed(bool newValue) {
+            rewardAccumulation = newValue;
+            return *this;
+        }
+
         
     }
 }

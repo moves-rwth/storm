@@ -10,10 +10,12 @@
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/storage/geometry/Polytope.h"
 #include "storm/storage/geometry/Hyperrectangle.h"
+#include "storm/storage/jani/Property.h"
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/MultiObjectiveSettings.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/api/storm.h"
+#include "storm-parsers/api/storm-parsers.h"
 
 #include "storm/environment/Environment.h"
 

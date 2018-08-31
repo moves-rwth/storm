@@ -1,5 +1,7 @@
 #include "storm/adapters/Z3ExpressionAdapter.h"
 
+#include <cstdint>
+
 #include "storm/storage/expressions/Expressions.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/utility/macros.h"
@@ -12,6 +14,15 @@ namespace storm {
     namespace adapters {
 
 #ifdef STORM_HAVE_Z3
+        
+#ifdef STORM_Z3_API_USES_STANDARD_INTEGERS
+            typedef int64_t Z3_SIGNED_INTEGER;
+            typedef uint64_t Z3_UNSIGNED_INTEGER;
+#else
+            typedef long long Z3_SIGNED_INTEGER;
+            typedef unsigned long long Z3_UNSIGNED_INTEGER;
+#endif
+        
             Z3ExpressionAdapter::Z3ExpressionAdapter(storm::expressions::ExpressionManager& manager, z3::context& context) : manager(manager), context(context), additionalAssertions(), variableToExpressionMapping() {
                 // Intentionally left empty.
             }
@@ -133,17 +144,17 @@ namespace storm {
                             case Z3_OP_ANUM:
                                 // Arithmetic numeral.
                                 if (expr.is_int() && expr.is_const()) {
-                                    long long value;
+                                    Z3_SIGNED_INTEGER value;
                                     if (Z3_get_numeral_int64(expr.ctx(), expr, &value)) {
                                         return manager.integer(value);
                                     } else {
                                         STORM_LOG_THROW(false, storm::exceptions::ExpressionEvaluationException, "Failed to convert Z3 expression. Expression is constant integer and value does not fit into 64-bit integer.");
                                     }
                                 } else if (expr.is_real() && expr.is_const()) {
-                                    long long num;
-                                    long long den;
+                                    Z3_SIGNED_INTEGER num;
+                                    Z3_SIGNED_INTEGER den;
                                     if (Z3_get_numeral_rational_int64(expr.ctx(), expr, &num, &den)) {
-                                        return manager.rational(storm::utility::convertNumber<storm::RationalNumber>((int_fast64_t) num) / storm::utility::convertNumber<storm::RationalNumber>((int_fast64_t) den));
+                                        return manager.rational(storm::utility::convertNumber<storm::RationalNumber>(static_cast<int_fast64_t>(num)) / storm::utility::convertNumber<storm::RationalNumber>(static_cast<int_fast64_t>(den)));
                                     } else {
                                         return manager.rational(storm::utility::convertNumber<storm::RationalNumber>(std::string(Z3_get_numeral_string(expr.ctx(), expr))));
                                     }
@@ -304,7 +315,7 @@ namespace storm {
                     return cacheIt->second;
                 }
 
-                z3::expr result = context.int_val(static_cast<long long>(expression.getValue()));
+                z3::expr result = context.int_val(static_cast<Z3_SIGNED_INTEGER>(expression.getValue()));
                 
                 expressionCache.emplace(&expression, result);
                 return result;

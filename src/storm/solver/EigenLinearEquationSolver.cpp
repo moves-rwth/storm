@@ -116,7 +116,10 @@ namespace storm {
             } else {
                 bool converged = false;
                 uint64_t numberOfIterations = 0;
-                uint64_t maxIter = env.solver().eigen().getMaximalNumberOfIterations();
+                StormEigen::Index maxIter = std::numeric_limits<StormEigen::Index>::max();
+                if (env.solver().eigen().getMaximalNumberOfIterations() < static_cast<uint64_t>(maxIter)) {
+                    maxIter = env.solver().eigen().getMaximalNumberOfIterations();
+                }
                 uint64_t restartThreshold = env.solver().eigen().getRestartThreshold();
                 ValueType precision = storm::utility::convertNumber<ValueType>(env.solver().eigen().getPrecision());
                 EigenLinearEquationSolverPreconditioner preconditioner = env.solver().eigen().getPreconditioner();

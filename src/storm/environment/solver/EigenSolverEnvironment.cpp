@@ -14,7 +14,11 @@ namespace storm {
         methodSetFromDefault = eigenSettings.isLinearEquationSystemMethodSetFromDefault();
         preconditioner = eigenSettings.getPreconditioningMethod();
         restartThreshold = eigenSettings.getRestartIterationCount();
-        maxIterationCount = eigenSettings.getMaximalIterationCount();
+        if (eigenSettings.isMaximalIterationCountSet()) {
+            maxIterationCount = eigenSettings.getMaximalIterationCount();
+        } else {
+            maxIterationCount = std::numeric_limits<uint_fast64_t>::max();
+        }
         precision = storm::utility::convertNumber<storm::RationalNumber>(eigenSettings.getPrecision());
     }
 
@@ -44,11 +48,11 @@ namespace storm {
     }
     
     uint64_t const& EigenSolverEnvironment::getRestartThreshold() const {
-        return maxIterationCount;
+        return restartThreshold;
     }
     
     void EigenSolverEnvironment::setRestartThreshold(uint64_t value) {
-        maxIterationCount = value;
+        restartThreshold = value;
     }
     
     uint64_t const& EigenSolverEnvironment::getMaximalNumberOfIterations() const {

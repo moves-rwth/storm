@@ -10,7 +10,7 @@
 
 #include <cmath>
 
-#include "storm/parser/SparseStateRewardParser.h"
+#include "storm-parsers/parser/SparseStateRewardParser.h"
 #include "storm/exceptions/FileIoException.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/exceptions/OutOfRangeException.h"

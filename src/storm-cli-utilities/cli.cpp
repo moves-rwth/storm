@@ -11,6 +11,7 @@
 
 #include <type_traits>
 #include <ctime>
+#include <boost/algorithm/string/replace.hpp>
 
 #include "storm-cli-utilities/model-handling.h"
 
@@ -48,6 +49,8 @@ namespace storm {
             storm::cli::printHeader("Storm", argc, argv);
             storm::settings::initializeAll("Storm", "storm");
 
+            storm::settings::addModule<storm::settings::modules::CounterexampleGeneratorSettings>();
+
             storm::utility::Stopwatch totalTimer(true);
             if (!storm::cli::parseOptions(argc, argv)) {
                 return -1;
@@ -63,7 +66,27 @@ namespace storm {
             storm::utility::cleanUp();
             return 0;
         }
-        
+
+        std::string shellQuoteSingleIfNecessary(const std::string& arg) {
+            // quote empty argument
+            if (arg.empty()) {
+                return "''";
+            }
+
+            if (arg.find_first_not_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_./=") != std::string::npos) {
+                // contains potentially unsafe character, needs quoting
+                if (arg.find('\'') != std::string::npos) {
+                    // contains ', we have to replace all ' with '\''
+                    std::string escaped(arg);
+                    boost::replace_all(escaped, "'", "'\\''");
+                    return "'" + escaped + "'";
+                } else {
+                    return "'" + arg + "'";
+                }
+            }
+
+            return arg;
+        }
         
         void printHeader(std::string const& name, const int argc, const char** argv) {
             STORM_PRINT(name << " " << storm::utility::StormVersion::shortVersionString() << std::endl << std::endl);
@@ -71,7 +94,7 @@ namespace storm {
             // "Compute" the command line argument string with which storm was invoked.
             std::stringstream commandStream;
             for (int i = 1; i < argc; ++i) {
-                commandStream << argv[i] << " ";
+                commandStream << " " << shellQuoteSingleIfNecessary(argv[i]);
             }
             
             std::string command = commandStream.str();
@@ -79,7 +102,7 @@ namespace storm {
             if (!command.empty()) {
                 std::time_t result = std::time(nullptr);
                 STORM_PRINT("Date: " << std::ctime(&result));
-                STORM_PRINT("Command line arguments: " << commandStream.str() << std::endl);
+                STORM_PRINT("Command line arguments:" << commandStream.str() << std::endl);
                 STORM_PRINT("Current working directory: " << storm::utility::cli::getCurrentWorkingDirectory() << std::endl << std::endl);
             }
         }

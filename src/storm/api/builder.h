@@ -1,8 +1,8 @@
 #pragma once
 
-#include "storm/parser/AutoParser.h"
-#include "storm/parser/DirectEncodingParser.h"
-#include "storm/parser/ImcaMarkovAutomatonParser.h"
+#include "storm-parsers/parser/AutoParser.h"
+#include "storm-parsers/parser/DirectEncodingParser.h"
+#include "storm-parsers/parser/ImcaMarkovAutomatonParser.h"
 
 #include "storm/storage/SymbolicModelDescription.h"
 

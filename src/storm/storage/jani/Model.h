@@ -77,9 +77,14 @@ namespace storm {
             ModelType const& getModelType() const;
             
             /*!
-             * Retrievest the name of the model.
+             * Retrieves the name of the model.
              */
             std::string const& getName() const;
+            
+            /*!
+             * Sets the name of the model.
+             */
+            void setName(std::string const& newName);
             
             /*!
              * Flatten the composition to obtain an equivalent model that contains exactly one automaton that has the
@@ -245,6 +250,19 @@ namespace storm {
              */
             std::vector<Automaton> const& getAutomata() const;
 
+            /**
+             * Replaces the automaton at index with a new automaton.
+             * @param index
+             * @param newAutomaton
+             */
+            void replaceAutomaton(uint64_t index, Automaton const& newAutomaton);
+
+            /*!
+             * Rerieves whether there exists an automaton with the given name.
+             * @param name
+             * @return
+             */
+            bool hasAutomaton(std::string const& name) const;
             /*!
              * Retrieves the automaton with the given name.
              */
@@ -274,6 +292,11 @@ namespace storm {
              * Retrieves the number of automata in this model.
              */
             std::size_t getNumberOfAutomata() const;
+
+            /*!
+             *  Retrieves the total number of edges in this model.
+             */
+            std::size_t getNumberOfEdges() const;
             
             /*!
              * Sets the system composition expression of the JANI model.

@@ -8,7 +8,7 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 
-#include "storm/parser/NondeterministicSparseTransitionParser.h"
+#include "storm-parsers/parser/NondeterministicSparseTransitionParser.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/settings/SettingMemento.h"
 

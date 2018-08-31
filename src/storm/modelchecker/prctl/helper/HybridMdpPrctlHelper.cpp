@@ -676,6 +676,13 @@ namespace storm {
                 }
             }
             
+            template<storm::dd::DdType DdType, typename ValueType>
+            std::unique_ptr<CheckResult> HybridMdpPrctlHelper<DdType, ValueType>::computeReachabilityTimes(Environment const& env, OptimizationDirection dir, storm::models::symbolic::NondeterministicModel<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, storm::dd::Bdd<DdType> const& targetStates, bool qualitative) {
+                RewardModelType rewardModel(model.getManager().getConstant(storm::utility::one<ValueType>()), boost::none, boost::none);
+                return computeReachabilityRewards(env, dir, model, transitionMatrix, rewardModel, targetStates, qualitative);
+            }
+            
+            
             template class HybridMdpPrctlHelper<storm::dd::DdType::CUDD, double>;
             template class HybridMdpPrctlHelper<storm::dd::DdType::Sylvan, double>;
 

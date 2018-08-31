@@ -10,7 +10,7 @@
 #include "storm/storage/jani/Compositions.h"
 
 #include "storm/models/symbolic/StandardRewardModel.h"
-#include "storm/parser/PrismParser.h"
+#include "storm-parsers/parser/PrismParser.h"
 #include "storm/builder/DdJaniModelBuilder.h"
 
 #include "storm/settings/SettingMemento.h"

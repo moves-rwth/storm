@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 
-#include "storm/parser/NondeterministicModelParser.h"
+#include "storm-parsers/parser/NondeterministicModelParser.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/exceptions/FileIoException.h"

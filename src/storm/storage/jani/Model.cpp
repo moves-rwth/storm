@@ -116,6 +116,10 @@ namespace storm {
             return name;
         }
         
+        void Model::setName(std::string const& newName) {
+            name = newName;
+        }
+        
         struct ConditionalMetaEdge {
             ConditionalMetaEdge() : actionIndex(0) {
                 // Intentionally left empty.
@@ -442,6 +446,10 @@ namespace storm {
                 variableRemapping.emplace(&variable, flattenedModel.addVariable(*renamedVariable));
             }
             
+            for (auto const& constant : getConstants()) {
+                flattenedModel.addConstant(constant);
+            }
+            
             std::vector<std::reference_wrapper<Automaton const>> composedAutomata;
             for (auto const& element : parallelComposition.getSubcompositions()) {
                 STORM_LOG_THROW(element->isAutomatonComposition(), storm::exceptions::WrongFormatException, "Cannot flatten recursive (not standard-compliant) composition.");
@@ -612,7 +620,15 @@ namespace storm {
         std::vector<Constant>& Model::getConstants() {
             return constants;
         }
-        
+
+        std::size_t Model::getNumberOfEdges() const {
+            size_t res = 0;
+            for (auto const& aut : getAutomata()) {
+                res += aut.getNumberOfEdges();
+            }
+            return res;
+        }
+
         Variable const& Model::addVariable(Variable const& variable) {
             if (variable.isBooleanVariable()) {
                 return addVariable(variable.asBooleanVariable());
@@ -715,7 +731,15 @@ namespace storm {
         std::vector<Automaton> const& Model::getAutomata() const {
             return automata;
         }
-        
+
+        bool Model::hasAutomaton(std::string const& name) const {
+            return automatonToIndex.find(name) != automatonToIndex.end();
+        }
+
+        void Model::replaceAutomaton(uint64_t index, Automaton const& automaton) {
+            automata[index] = automaton;
+        }
+
         Automaton& Model::getAutomaton(std::string const& name) {
             auto it = automatonToIndex.find(name);
             STORM_LOG_THROW(it != automatonToIndex.end(), storm::exceptions::InvalidOperationException, "Unable to retrieve unknown automaton '" << name << "'.");
@@ -746,11 +770,6 @@ namespace storm {
         }
         
         std::shared_ptr<Composition> Model::getStandardSystemComposition() const {
-            // If there's just one automaton, we must not use the parallel composition operator.
-            if (this->getNumberOfAutomata() == 1) {
-                return std::make_shared<AutomatonComposition>(this->getAutomata().front().getName());
-            }
-            
             // Determine the action indices used by each of the automata and create the standard subcompositions.
             std::set<uint64_t> allActionIndices;
             std::vector<std::set<uint64_t>> automatonActionIndices;
@@ -1126,6 +1145,11 @@ namespace storm {
      
         void Model::makeStandardJaniCompliant() {
             for (auto& automaton : automata) {
+                // For discrete-time models, we push the assignments to real-valued transient variables (rewards) to the
+                // edges.
+                if (this->isDiscreteTimeModel()) {
+                    automaton.pushTransientRealLocationAssignmentsToEdges();
+                }
                 automaton.pushEdgeAssignmentsToDestinations();
             }
         }

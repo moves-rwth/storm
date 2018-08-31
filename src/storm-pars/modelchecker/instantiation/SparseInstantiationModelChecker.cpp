@@ -2,6 +2,7 @@
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/models/sparse/Dtmc.h"
+#include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 
@@ -12,9 +13,8 @@ namespace storm {
         
         template <typename SparseModelType, typename ConstantType>
         SparseInstantiationModelChecker<SparseModelType, ConstantType>::SparseInstantiationModelChecker(SparseModelType const& parametricModel) : parametricModel(parametricModel), instantiationsAreGraphPreserving(false) {
-            //Intentionally left empty
+            // Intentionally left empty
         }
-        
         
         template <typename SparseModelType, typename ConstantType>
         void SparseInstantiationModelChecker<SparseModelType, ConstantType>::specifyFormula(storm::modelchecker::CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask) {
@@ -33,9 +33,11 @@ namespace storm {
         }
         
         template class SparseInstantiationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>;
+        template class SparseInstantiationModelChecker<storm::models::sparse::Ctmc<storm::RationalFunction>, double>;
         template class SparseInstantiationModelChecker<storm::models::sparse::Mdp<storm::RationalFunction>, double>;
         
         template class SparseInstantiationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, storm::RationalNumber>;
+        template class SparseInstantiationModelChecker<storm::models::sparse::Ctmc<storm::RationalFunction>, storm::RationalNumber>;
         template class SparseInstantiationModelChecker<storm::models::sparse::Mdp<storm::RationalFunction>, storm::RationalNumber>;
 
     }

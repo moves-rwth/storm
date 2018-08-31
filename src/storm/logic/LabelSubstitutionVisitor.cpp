@@ -24,14 +24,14 @@ namespace storm {
                 if (it != labelToExpressionMapping->end()) {
                     return std::static_pointer_cast<Formula>(std::make_shared<AtomicExpressionFormula>(it->second));
                 } else {
-                    return f.asSharedPointer();
+                    return std::static_pointer_cast<Formula>(std::make_shared<AtomicLabelFormula>(f.getLabel()));
                 }
             } else {
                 auto it = labelToLabelMapping->find(f.getLabel());
                 if (it != labelToLabelMapping->end()) {
                     return std::static_pointer_cast<Formula>(std::make_shared<AtomicLabelFormula>(it->second));
                 } else {
-                    return f.asSharedPointer();
+                    return std::static_pointer_cast<Formula>(std::make_shared<AtomicLabelFormula>(f.getLabel()));
                 }
             }
         }

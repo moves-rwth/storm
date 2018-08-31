@@ -7,14 +7,18 @@
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/TemplateEdge.h"
 
+#include "storm/settings/SettingsManager.h"
+
 #include "storm/utility/macros.h"
 #include "storm/exceptions/NotImplementedException.h"
 
 namespace storm {
     namespace prism {
         
-        storm::jani::Model ToJaniConverter::convert(storm::prism::Program const& program, bool allVariablesGlobal, std::string suffix) {
+        storm::jani::Model ToJaniConverter::convert(storm::prism::Program const& program, bool allVariablesGlobal, std::string suffix, bool standardCompliant) {
             std::shared_ptr<storm::expressions::ExpressionManager> manager = program.getManager().getSharedPointer();
+            
+            bool produceStateRewards = !standardCompliant || program.getModelType() == storm::prism::Program::ModelType::CTMC || program.getModelType() == storm::prism::Program::ModelType::MA;
                         
             // Start by creating an empty JANI model.
             storm::jani::ModelType modelType;
@@ -95,6 +99,14 @@ namespace storm {
                 }
             }
             
+            // Create a mapping from variables to a flag indicating whether it should be made global
+            std::map<storm::expressions::Variable, bool> variablesToMakeGlobal;
+            for (auto const& varMods : variablesToAccessingModuleIndices) {
+                assert(!varMods.second.empty());
+                // If there is exactly one module reading and writing the variable, we can make the variable local to this module.
+                variablesToMakeGlobal[varMods.first] = allVariablesGlobal || (varMods.second.size() > 1);
+            }
+            
             // Go through the labels and construct assignments to transient variables that are added to the locations.
             std::vector<storm::jani::Assignment> transientLocationAssignments;
             for (auto const& label : program.getLabels()) {
@@ -107,6 +119,24 @@ namespace storm {
                 auto newExpressionVariable = manager->declareBooleanVariable(finalLabelName);
                 storm::jani::BooleanVariable const& newTransientVariable = janiModel.addVariable(storm::jani::BooleanVariable(newExpressionVariable.getName(), newExpressionVariable, manager->boolean(false), true));
                 transientLocationAssignments.emplace_back(newTransientVariable, label.getStatePredicateExpression());
+
+                // Variables that are accessed in the label predicate expression should be made global.
+                std::set<storm::expressions::Variable> variables = label.getStatePredicateExpression().getVariables();
+                for (auto const& variable : variables) {
+                    variablesToMakeGlobal[variable] = true;
+                }
+            }
+            
+            // Create an initial state restriction if there was an initial construct in the program.
+            if (program.hasInitialConstruct()) {
+                janiModel.setInitialStatesRestriction(program.getInitialConstruct().getInitialStatesExpression());
+                // Variables in the initial state expression should be made global
+                std::set<storm::expressions::Variable> variables = program.getInitialConstruct().getInitialStatesExpression().getVariables();
+                for (auto const& variable : variables) {
+                    variablesToMakeGlobal[variable] = true;
+                }
+            } else {
+                janiModel.setInitialStatesRestriction(manager->boolean(true));
             }
             
             // Go through the reward models and construct assignments to the transient variables that are to be added to
@@ -127,6 +157,11 @@ namespace storm {
                         }
                     }
                     transientLocationAssignments.emplace_back(newTransientVariable, transientLocationExpression);
+                    // Variables that are accessed in a reward term should be made global.
+                    std::set<storm::expressions::Variable> variables = transientLocationExpression.getVariables();
+                    for (auto const& variable : variables) {
+                        variablesToMakeGlobal[variable] = true;
+                    }
                 }
                 
                 std::map<uint_fast64_t, storm::expressions::Expression> actionIndexToExpression;
@@ -148,10 +183,29 @@ namespace storm {
                         std::vector<storm::jani::Assignment> assignments = {storm::jani::Assignment(newTransientVariable, entry.second)};
                         transientEdgeAssignments.emplace(entry.first, assignments);
                     }
+                    // Variables that are accessed in a reward term should be made global.
+                    std::set<storm::expressions::Variable> variables = entry.second.getVariables();
+                    for (auto const& variable : variables) {
+                        variablesToMakeGlobal[variable] = true;
+                    }
                 }
                 STORM_LOG_THROW(!rewardModel.hasTransitionRewards(), storm::exceptions::NotImplementedException, "Transition reward translation currently not implemented.");
             }
             STORM_LOG_THROW(transientEdgeAssignments.empty() || transientLocationAssignments.empty() || !program.specifiesSystemComposition(), storm::exceptions::NotImplementedException, "Cannot translate reward models from PRISM to JANI that specify a custom system composition.");
+            
+            // If we are not allowed to produce state rewards, we need to create a mapping from action indices to transient
+            // location assignments. This is done so that all assignments are added only *once* for synchronizing actions.
+            std::map<uint_fast64_t, std::vector<storm::jani::Assignment>> transientRewardLocationAssignmentsPerAction;
+            if (!produceStateRewards) {
+                for (auto const& action : program.getActions()) {
+                    auto& list = transientRewardLocationAssignmentsPerAction[janiModel.getActionIndex(action)];
+                    for (auto const& assignment : transientLocationAssignments) {
+                        if (assignment.isTransient() && assignment.getVariable().isRealVariable()) {
+                            list.emplace_back(assignment);
+                        }
+                    }
+                }
+            }
             
             // Now create the separate JANI automata from the modules of the PRISM program. While doing so, we use the
             // previously built mapping to make variables global that are read by more than one module.
@@ -164,28 +218,24 @@ namespace storm {
                 storm::jani::Automaton automaton(module.getName(), manager->declareIntegerVariable("_loc_prism2jani_" + module.getName() + "_" + suffix));
                 for (auto const& variable : module.getIntegerVariables()) {
                     storm::jani::BoundedIntegerVariable newIntegerVariable = *storm::jani::makeBoundedIntegerVariable(variable.getName(), variable.getExpressionVariable(), variable.hasInitialValue() ? boost::make_optional(variable.getInitialValueExpression()) : boost::none, false, variable.getLowerBoundExpression(), variable.getUpperBoundExpression());
-                    std::set<uint_fast64_t> const& accessingModuleIndices = variablesToAccessingModuleIndices[variable.getExpressionVariable()];
-                    // If there is exactly one module reading and writing the variable, we can make the variable local to this module.
-                    if (!allVariablesGlobal && accessingModuleIndices.size() == 1) {
-                        storm::jani::BoundedIntegerVariable const& createdVariable = automaton.addVariable(newIntegerVariable);
+                    auto findRes = variablesToMakeGlobal.find(variable.getExpressionVariable());
+                    if (findRes != variablesToMakeGlobal.end()) {
+                        bool makeVarGlobal = findRes->second;
+                        storm::jani::BoundedIntegerVariable const& createdVariable = makeVarGlobal ? janiModel.addVariable(newIntegerVariable) : automaton.addVariable(newIntegerVariable);
                         variableToVariableMap.emplace(variable.getExpressionVariable(), createdVariable);
-                    } else if (!accessingModuleIndices.empty()) {
-                        // Otherwise, we need to make it global.
-                        storm::jani::BoundedIntegerVariable const& createdVariable = janiModel.addVariable(newIntegerVariable);
-                        variableToVariableMap.emplace(variable.getExpressionVariable(), createdVariable);
+                    } else {
+                        STORM_LOG_INFO("Variable " << variable.getName() << " is declared but never used.");
                     }
                 }
                 for (auto const& variable : module.getBooleanVariables()) {
                     storm::jani::BooleanVariable newBooleanVariable = *storm::jani::makeBooleanVariable(variable.getName(), variable.getExpressionVariable(), variable.hasInitialValue() ? boost::make_optional(variable.getInitialValueExpression()) : boost::none, false);
-                    std::set<uint_fast64_t> const& accessingModuleIndices = variablesToAccessingModuleIndices[variable.getExpressionVariable()];
-                    // If there is exactly one module reading and writing the variable, we can make the variable local to this module.
-                    if (!allVariablesGlobal && accessingModuleIndices.size() == 1) {
-                        storm::jani::BooleanVariable const& createdVariable = automaton.addVariable(newBooleanVariable);
+                    auto findRes = variablesToMakeGlobal.find(variable.getExpressionVariable());
+                    if (findRes != variablesToMakeGlobal.end()) {
+                        bool makeVarGlobal = findRes->second;
+                        storm::jani::BooleanVariable const& createdVariable = makeVarGlobal ? janiModel.addVariable(newBooleanVariable) : automaton.addVariable(newBooleanVariable);
                         variableToVariableMap.emplace(variable.getExpressionVariable(), createdVariable);
-                    } else if (!accessingModuleIndices.empty()) {
-                        // Otherwise, we need to make it global.
-                        storm::jani::BooleanVariable const& createdVariable = janiModel.addVariable(newBooleanVariable);
-                        variableToVariableMap.emplace(variable.getExpressionVariable(), createdVariable);
+                    } else {
+                        STORM_LOG_INFO("Variable " << variable.getName() << " is declared but never used.");
                     }
                 }
                 automaton.setInitialStatesRestriction(manager->boolean(true));
@@ -195,10 +245,13 @@ namespace storm {
                 automaton.addInitialLocation(onlyLocationIndex);
                 
                 // If we are translating the first module that has the action, we need to add the transient assignments to the location.
+                // However, in standard compliant JANI, there are no state rewards
                 if (firstModule) {
                     storm::jani::Location& onlyLocation = automaton.getLocation(onlyLocationIndex);
                     for (auto const& assignment : transientLocationAssignments) {
-                        onlyLocation.addTransientAssignment(assignment);
+                        if (assignment.getVariable().isBooleanVariable() || produceStateRewards) {
+                            onlyLocation.addTransientAssignment(assignment);
+                        }
                     }
                 }
                 
@@ -243,6 +296,12 @@ namespace storm {
                             templateEdge->addTransientAssignment(assignment);
                         }
                     }
+                    if (!produceStateRewards) {
+                        transientEdgeAssignmentsToAdd = transientRewardLocationAssignmentsPerAction.find(janiModel.getActionIndex(command.getActionName()));
+                        for (auto const& assignment : transientEdgeAssignmentsToAdd->second) {
+                            templateEdge->addTransientAssignment(assignment, true);
+                        }
+                    }
 
                     // Create the edge object.
                     storm::jani::Edge newEdge;
@@ -261,6 +320,11 @@ namespace storm {
                 // NOTE: This only works for the standard composition and not for any custom compositions. This case
                 // must be checked for earlier.
                 for (auto actionIndex : actionIndicesOfModule) {
+                    // Do not delete rewards dealt out on non-synchronizing edges.
+                    if (actionIndex == janiModel.getActionIndex("")) {
+                        continue;
+                    }
+                    
                     auto it = transientEdgeAssignments.find(actionIndex);
                     if (it != transientEdgeAssignments.end()) {
                         transientEdgeAssignments.erase(it);
@@ -269,13 +333,6 @@ namespace storm {
                 
                 janiModel.addAutomaton(automaton);
                 firstModule = false;
-            }
-            
-            // Create an initial state restriction if there was an initial construct in the program.
-            if (program.hasInitialConstruct()) {
-                janiModel.setInitialStatesRestriction(program.getInitialConstruct().getInitialStatesExpression());
-            } else {
-                janiModel.setInitialStatesRestriction(manager->boolean(true));
             }
             
             // Set the standard system composition. This is possible, because we reject non-standard compositions anyway.

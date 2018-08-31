@@ -192,6 +192,14 @@ namespace storm {
         bool Program::isDeterministicModel() const {
             return modelType == ModelType::DTMC || modelType == ModelType::CTMC;
         }
+
+        size_t Program::getNumberOfCommands() const {
+            size_t res = 0;
+            for (auto const& module : this->getModules()) {
+                res += module.getNumberOfCommands();
+            }
+            return res;
+        }
         
         bool Program::hasUndefinedConstants() const {
             for (auto const& constant : this->getConstants()) {
@@ -1716,16 +1724,16 @@ namespace storm {
             return Command(newCommandIndex, false, actionIndex, actionName, newGuard, newUpdates, this->getFilename(), 0);
         }
         
-        storm::jani::Model Program::toJani(bool allVariablesGlobal, std::string suffix) const {
+        storm::jani::Model Program::toJani(bool allVariablesGlobal, std::string suffix, bool standardCompliant) const {
             ToJaniConverter converter;
-            storm::jani::Model resultingModel = converter.convert(*this, allVariablesGlobal, suffix);
+            storm::jani::Model resultingModel = converter.convert(*this, allVariablesGlobal, suffix, standardCompliant);
             STORM_LOG_WARN_COND(!converter.labelsWereRenamed(), "Labels were renamed in PRISM-to-JANI conversion, but the mapping is not stored.");
             return resultingModel;
         }
 
-        std::pair<storm::jani::Model, std::map<std::string, std::string>> Program::toJaniWithLabelRenaming(bool allVariablesGlobal, std::string suffix) const {
+        std::pair<storm::jani::Model, std::map<std::string, std::string>> Program::toJaniWithLabelRenaming(bool allVariablesGlobal, std::string suffix, bool standardCompliant) const {
             ToJaniConverter converter;
-            storm::jani::Model resultingModel = converter.convert(*this, allVariablesGlobal, suffix);
+            storm::jani::Model resultingModel = converter.convert(*this, allVariablesGlobal, suffix, standardCompliant);
             return std::make_pair(resultingModel, converter.getLabelRenaming());
         }
 
