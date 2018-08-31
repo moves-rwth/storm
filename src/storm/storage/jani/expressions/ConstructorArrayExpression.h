@@ -1,6 +1,7 @@
 #pragma once
 
 #include "storm/storage/jani/expressions/ArrayExpression.h"
+#include "storm/storage/expressions/Variable.h"
 
 namespace storm {
     namespace expressions {
@@ -22,7 +23,7 @@ namespace storm {
             virtual ~ConstructorArrayExpression() = default;
 
             virtual void gatherVariables(std::set<storm::expressions::Variable>& variables) const override;
-            virtual bool containsVariables() const;
+            virtual bool containsVariables() const override;
             virtual std::shared_ptr<BaseExpression const> simplify() const override;
             virtual boost::any accept(ExpressionVisitor& visitor, boost::any const& data) const override;
             
@@ -38,7 +39,7 @@ namespace storm {
             virtual void printToStream(std::ostream& stream) const override;
             
         private:
-            std::shared_ptr<BaseExpression const> size;
+            std::shared_ptr<BaseExpression const> sizeExpression;
             storm::expressions::Variable indexVar;
             std::shared_ptr<BaseExpression const> const& elementExpression;
         };

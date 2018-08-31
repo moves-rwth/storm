@@ -1,7 +1,6 @@
 #pragma once
 
-#include "storm/storage/expressions/BaseExpression.h"
-#include "storm/storage/jani/expressions/ExpressionManager.h"
+#include "storm/storage/expressions/BinaryExpression.h"
 
 namespace storm {
     namespace expressions {

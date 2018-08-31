@@ -3,11 +3,11 @@
 namespace storm {
     namespace jani {
         
-        ArrayVariable::ArrayVariable(std::string const& name, storm::expressions::Variable const& variable) : Variable(name, variable) {
+        ArrayVariable::ArrayVariable(std::string const& name, storm::expressions::Variable const& variable,  ElementType const& elementType) : Variable(name, variable), elementType(elementType) {
             // Intentionally left empty.
         }
         
-        ArrayVariable::ArrayVariable(std::string const& name, storm::expressions::Variable const& variable, storm::expressions::Expression const& initValue) : Variable(name, variable, initValue, transient) {
+        ArrayVariable::ArrayVariable(std::string const& name, storm::expressions::Variable const& variable, ElementType const& elementType, storm::expressions::Expression const& initValue, bool transient) : Variable(name, variable, initValue, transient), elementType(elementType) {
             // Intentionally left empty.
         }
         
@@ -35,7 +35,7 @@ namespace storm {
             return maxSize.get();
         }
         
-        ElementType ArrayVariable::getElementType() const {
+        typename ArrayVariable::ElementType ArrayVariable::getElementType() const {
             return elementType;
         }
         

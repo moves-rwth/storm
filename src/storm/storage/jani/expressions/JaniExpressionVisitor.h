@@ -6,7 +6,6 @@
 
 namespace storm {
     namespace expressions {
-        template<typename MapType>
         class JaniExpressionVisitor{
         public:
             virtual boost::any visit(ValueArrayExpression const& expression, boost::any const& data) = 0;
@@ -15,5 +14,3 @@ namespace storm {
         };
     }
 }
-
-#endif /* STORM_STORAGE_EXPRESSIONS_SUBSTITUTIONVISITOR_H_ */

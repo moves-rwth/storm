@@ -1,5 +1,6 @@
 #pragma once
 #include "storm/storage/jani/Constant.h"
+#include "storm/storage/jani/LValue.h"
 #include "storm/logic/Formula.h"
 #include "storm/logic/Bound.h"
 #include "storm/logic/RewardAccumulation.h"
@@ -51,14 +52,14 @@ namespace storm {
             storm::jani::Automaton parseAutomaton(json const& automatonStructure, storm::jani::Model const& parentModel, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& globalVars, std::unordered_map<std::string, std::shared_ptr<storm::jani::Constant>> const& constants);
             struct ParsedType {
                 enum class BasicType {Bool, Int, Real};
-    
                 boost::optional<BasicType> basicType;
                 boost::optional<std::pair<storm::expressions::Expression, storm::expressions::Expression>> bounds;
-                boost::optional<ParsedType> arrayBase;
+                std::unique_ptr<ParsedType> arrayBase;
             };
-            void JaniParser::parseType(ParsedType& result, json const& typeStructure, std::string variableName, std::string const& scopeDescription, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& globalVars, std::unordered_map<std::string, std::shared_ptr<storm::jani::Constant>> const& constants,  std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& localVars);
+            void parseType(ParsedType& result, json const& typeStructure, std::string variableName, std::string const& scopeDescription, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& globalVars, std::unordered_map<std::string, std::shared_ptr<storm::jani::Constant>> const& constants,  std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& localVars);
+            storm::jani::LValue parseLValue(json const& lValueStructure, std::string const& scopeDescription, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& globalVars, std::unordered_map<std::string, std::shared_ptr<storm::jani::Constant>> const& constants,  std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& localVars = {});
             std::shared_ptr<storm::jani::Variable>  parseVariable(json const& variableStructure, bool requireInitialValues, std::string const& scopeDescription, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& globalVars, std::unordered_map<std::string, std::shared_ptr<storm::jani::Constant>> const& constants,  std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& localVars = {}, bool prefWithScope = false);
-            storm::expressions::Expression parseExpression(json const& expressionStructure, std::string const& scopeDescription, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& globalVars, std::unordered_map<std::string, std::shared_ptr<storm::jani::Constant>> const& constants,  std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& localVars = {}, bool returnNoneOnUnknownOpString = false);
+            storm::expressions::Expression parseExpression(json const& expressionStructure, std::string const& scopeDescription, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& globalVars, std::unordered_map<std::string, std::shared_ptr<storm::jani::Constant>> const& constants,  std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& localVars = {}, bool returnNoneOnUnknownOpString = false, std::unordered_map<std::string, storm::expressions::Variable> const& auxiliaryVariables = {});
             
         private:
             std::shared_ptr<storm::jani::Constant> parseConstant(json const& constantStructure,  std::unordered_map<std::string, std::shared_ptr<storm::jani::Constant>> const& constants, std::string const& scopeDescription = "global");
@@ -68,8 +69,8 @@ namespace storm {
              */
             void parseActions(json const& actionStructure, storm::jani::Model& parentModel);
             std::shared_ptr<storm::logic::Formula const> parseFormula(json const& propertyStructure,   storm::logic::FormulaContext formulaContext, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& globalVars, std::unordered_map<std::string, std::shared_ptr<storm::jani::Constant>> const& constants, std::string const& context,  boost::optional<storm::logic::Bound> bound = boost::none);
-            std::vector<storm::expressions::Expression> parseUnaryExpressionArguments(json const& expressionStructure, std::string const& opstring, std::string const& scopeDescription, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& globalVars, std::unordered_map<std::string, std::shared_ptr<storm::jani::Constant>> const& constants,  std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& localVars= {}, bool returnNoneOnUnknownOpString = false);
-            std::vector<storm::expressions::Expression> parseBinaryExpressionArguments(json const& expressionStructure, std::string const& opstring,  std::string const& scopeDescription, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& globalVars, std::unordered_map<std::string, std::shared_ptr<storm::jani::Constant>> const& constants,  std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& localVars = {}, bool returnNoneOnUnknownOpString = false);
+            std::vector<storm::expressions::Expression> parseUnaryExpressionArguments(json const& expressionStructure, std::string const& opstring, std::string const& scopeDescription, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& globalVars, std::unordered_map<std::string, std::shared_ptr<storm::jani::Constant>> const& constants,  std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& localVars= {}, bool returnNoneOnUnknownOpString = false, std::unordered_map<std::string, storm::expressions::Variable> const& auxiliaryVariables = {});
+            std::vector<storm::expressions::Expression> parseBinaryExpressionArguments(json const& expressionStructure, std::string const& opstring,  std::string const& scopeDescription, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& globalVars, std::unordered_map<std::string, std::shared_ptr<storm::jani::Constant>> const& constants,  std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& localVars = {}, bool returnNoneOnUnknownOpString = false, std::unordered_map<std::string, storm::expressions::Variable> const& auxiliaryVariables = {});
 
 
             std::vector<std::shared_ptr<storm::logic::Formula const>> parseUnaryFormulaArgument(json const& propertyStructure, storm::logic::FormulaContext formulaContext,  std::string const& opstring, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& globalVars, std::unordered_map<std::string, std::shared_ptr<storm::jani::Constant>> const& constants, std::string const& context);
@@ -79,7 +80,7 @@ namespace storm {
             
             
             std::shared_ptr<storm::jani::Composition> parseComposition(json const& compositionStructure);
-            storm::expressions::Variable getVariableOrConstantExpression(std::string const& ident, std::string const& scopeDescription, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& globalVars, std::unordered_map<std::string, std::shared_ptr<storm::jani::Constant>> const& constants,  std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& localVars = {});
+            storm::expressions::Variable getVariableOrConstantExpression(std::string const& ident, std::string const& scopeDescription, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& globalVars, std::unordered_map<std::string, std::shared_ptr<storm::jani::Constant>> const& constants,  std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& localVars = {}, std::unordered_map<std::string, storm::expressions::Variable> const& auxiliaryVariables = {});
 
 
             

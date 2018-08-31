@@ -29,6 +29,7 @@ namespace storm {
             virtual void traverse(EdgeDestination const& edgeDestination, boost::any const& data) const;
             virtual void traverse(OrderedAssignments const& orderedAssignments, boost::any const& data) const;
             virtual void traverse(Assignment const& assignment, boost::any const& data) const;
+            virtual void traverse(LValue const& lValue, boost::any const& data) const;
             virtual void traverse(storm::expressions::Expression const& expression, boost::any const& data) const;
         };
     }

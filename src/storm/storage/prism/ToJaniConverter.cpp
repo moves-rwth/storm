@@ -118,7 +118,7 @@ namespace storm {
                 }
                 auto newExpressionVariable = manager->declareBooleanVariable(finalLabelName);
                 storm::jani::BooleanVariable const& newTransientVariable = janiModel.addVariable(storm::jani::BooleanVariable(newExpressionVariable.getName(), newExpressionVariable, manager->boolean(false), true));
-                transientLocationAssignments.emplace_back(newTransientVariable, label.getStatePredicateExpression());
+                transientLocationAssignments.emplace_back(storm::jani::LValue(newTransientVariable), label.getStatePredicateExpression());
 
                 // Variables that are accessed in the label predicate expression should be made global.
                 std::set<storm::expressions::Variable> variables = label.getStatePredicateExpression().getVariables();
@@ -156,7 +156,7 @@ namespace storm {
                             transientLocationExpression = rewardTerm;
                         }
                     }
-                    transientLocationAssignments.emplace_back(newTransientVariable, transientLocationExpression);
+                    transientLocationAssignments.emplace_back(storm::jani::LValue(newTransientVariable), transientLocationExpression);
                     // Variables that are accessed in a reward term should be made global.
                     std::set<storm::expressions::Variable> variables = transientLocationExpression.getVariables();
                     for (auto const& variable : variables) {
@@ -178,9 +178,9 @@ namespace storm {
                 for (auto const& entry : actionIndexToExpression) {
                     auto it = transientEdgeAssignments.find(entry.first);
                     if (it != transientEdgeAssignments.end()) {
-                        it->second.push_back(storm::jani::Assignment(newTransientVariable, entry.second));
+                        it->second.push_back(storm::jani::Assignment(storm::jani::LValue(newTransientVariable), entry.second));
                     } else {
-                        std::vector<storm::jani::Assignment> assignments = {storm::jani::Assignment(newTransientVariable, entry.second)};
+                        std::vector<storm::jani::Assignment> assignments = {storm::jani::Assignment(storm::jani::LValue(newTransientVariable), entry.second)};
                         transientEdgeAssignments.emplace(entry.first, assignments);
                     }
                     // Variables that are accessed in a reward term should be made global.
@@ -275,7 +275,7 @@ namespace storm {
                     for (auto const& update : command.getUpdates()) {
                         std::vector<storm::jani::Assignment> assignments;
                         for (auto const& assignment : update.getAssignments()) {
-                            assignments.push_back(storm::jani::Assignment(variableToVariableMap.at(assignment.getVariable()).get(), assignment.getExpression()));
+                            assignments.push_back(storm::jani::Assignment(storm::jani::LValue(variableToVariableMap.at(assignment.getVariable()).get()), assignment.getExpression()));
                         }
                         
                         if (rateExpression) {

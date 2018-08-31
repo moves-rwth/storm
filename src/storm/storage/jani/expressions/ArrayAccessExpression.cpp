@@ -1,5 +1,8 @@
 #include "storm/storage/jani/expressions/ArrayAccessExpression.h"
+#include "storm/storage/jani/expressions/JaniExpressionVisitor.h"
 
+#include "storm/utility/macros.h"
+#include "storm/exceptions/UnexpectedException.h"
 namespace storm {
     namespace expressions {
         
@@ -11,7 +14,7 @@ namespace storm {
         }
 
         std::shared_ptr<BaseExpression const> ArrayAccessExpression::simplify() const {
-            return std::shared_ptr<BaseExpression const>(new ArrayAccessExpression(manager, type, getFirstOperand()->simplify(), getSecondOperand()->simplify()));
+            return std::shared_ptr<BaseExpression const>(new ArrayAccessExpression(getManager(), getType(), getFirstOperand()->simplify(), getSecondOperand()->simplify()));
         }
         
         boost::any ArrayAccessExpression::accept(ExpressionVisitor& visitor, boost::any const& data) const {
@@ -21,16 +24,12 @@ namespace storm {
         }
         
         void ArrayAccessExpression::printToStream(std::ostream& stream) const {
-            if (firstOperand->isVariable()) {
-                getFirstOperand()->printToStream(stream);
+            if (getFirstOperand()->isVariable()) {
+                stream << *getFirstOperand();
             } else {
-                stream << "(";
-                getFirstOperand()->printToStream(stream);
-                stream << ")";
+                stream << "(" << *getFirstOperand() << ")";
             }
-            stream << "[";
-            getSecondOperand()->printToStream(stream);
-            stream << "]";
+            stream << "[" << getSecondOperand() << "]";
         }
     }
 }

@@ -2,12 +2,12 @@
 
 #include "storm/storage/expressions/SubstitutionVisitor.h"
 #include "storm/storage/jani/expressions/JaniExpressions.h"
-
+#include "storm/storage/jani/expressions/JaniExpressionVisitor.h"
 
 namespace storm {
     namespace expressions {
         template<typename MapType>
-        class JaniExpressionSubstitutionVisitor : public SubstitutionVisitor<MapType>, public ExpressionManager {
+        class JaniExpressionSubstitutionVisitor : public SubstitutionVisitor<MapType>, public JaniExpressionVisitor {
         public:
             /*!
              * Creates a new substitution visitor that uses the given map to replace variables.
@@ -22,5 +22,3 @@ namespace storm {
         };
     }
 }
-
-#endif /* STORM_STORAGE_EXPRESSIONS_SUBSTITUTIONVISITOR_H_ */

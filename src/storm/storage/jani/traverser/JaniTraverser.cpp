@@ -129,10 +129,16 @@ namespace storm {
             traverse(assignment.getAssignedExpression(), data);
         }
             
+        void JaniTraverser::traverse(LValue const& lValue, boost::any const& data) const {
+            if (lValue.isArrayAccess()) {
+                traverse(lValue.getArrayIndex(), data);
+            }
+        }
+        
         void JaniTraverser::traverse(storm::expressions::Expression const& expression, boost::any const& data) const {
             // intentionally left empty.
         }
-                
+        
     }
 }
 

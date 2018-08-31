@@ -86,8 +86,8 @@ namespace storm {
             UnboundedIntegerVariable const& asUnboundedIntegerVariable() const;
             RealVariable& asRealVariable();
             RealVariable const& asRealVariable() const;
-            RealVariable& asArrayVariable();
-            RealVariable const& asArrayVariable() const;
+            ArrayVariable& asArrayVariable();
+            ArrayVariable const& asArrayVariable() const;
             
             /*!
              * Substitutes all variables in all expressions according to the given substitution.

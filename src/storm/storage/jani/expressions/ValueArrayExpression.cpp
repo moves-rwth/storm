@@ -1,6 +1,7 @@
 #include "storm/storage/jani/expressions/ValueArrayExpression.h"
 
 #include "storm/storage/jani/expressions/JaniExpressionVisitor.h"
+#include "storm/storage/expressions/ExpressionManager.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/UnexpectedException.h"
@@ -33,7 +34,7 @@ namespace storm {
             for (auto const& e : elements) {
                 simplifiedElements.push_back(e->simplify());
             }
-            return std::shared_ptr<BaseExpression const>(new ValueArrayExpression(manager, type, simplifiedElements));
+            return std::shared_ptr<BaseExpression const>(new ValueArrayExpression(getManager(), getType(), simplifiedElements));
         }
         
         boost::any ValueArrayExpression::accept(ExpressionVisitor& visitor, boost::any const& data) const {
@@ -46,7 +47,7 @@ namespace storm {
             stream << "array[ ";
             bool first = true;
             for (auto const& e : elements) {
-                e->printToStream(stream);
+                stream << *e;
                 if (!first) {
                     stream << " , ";
                 }
@@ -56,7 +57,7 @@ namespace storm {
         }
         
         std::shared_ptr<BaseExpression const> ValueArrayExpression::size() const {
-            return this->manager.integer(elements.size()).getBaseExpressionPointer();
+            return getManager().integer(elements.size()).getBaseExpressionPointer();
         }
         
         std::shared_ptr<BaseExpression const> ValueArrayExpression::at(uint64_t i) const {

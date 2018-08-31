@@ -6,7 +6,7 @@ namespace storm {
     namespace expressions {
         template<typename MapType>
         boost::any JaniExpressionSubstitutionVisitor<MapType>::visit(ValueArrayExpression const& expression, boost::any const& data) {
-            uint64_t size = expression.getSize()->evaluateAsInt();
+            uint64_t size = expression.size()->evaluateAsInt();
             std::vector<std::shared_ptr<BaseExpression const>> newElements;
             newElements.reserve(size);
             for (uint64_t i = 0; i < size; ++i) {
@@ -17,12 +17,12 @@ namespace storm {
     
         template<typename MapType>
         boost::any JaniExpressionSubstitutionVisitor<MapType>::visit(ConstructorArrayExpression const& expression, boost::any const& data) {
-            std::shared_ptr<BaseExpression const> newSize = boost::any_cast<std::shared_ptr<BaseExpression const>>(expression.getSize()->accept(*this, data));
+            std::shared_ptr<BaseExpression const> newSize = boost::any_cast<std::shared_ptr<BaseExpression const>>(expression.size()->accept(*this, data));
             std::shared_ptr<BaseExpression const> elementExpression = boost::any_cast<std::shared_ptr<BaseExpression const>>(expression.getElementExpression()->accept(*this, data));
             STORM_LOG_THROW(this->variableToExpressionMapping.find(expression.getIndexVar()) == this->variableToExpressionMapping.end(), storm::exceptions::InvalidArgumentException, "substitution of the index variable of a constructorArrayExpression is not possible.");
             
             // If the arguments did not change, we simply push the expression itself.
-            if (newSize.get() == expression.getSize().get() && elementExpression.get() == expression.getElementExpression().get()) {
+            if (newSize.get() == expression.size().get() && elementExpression.get() == expression.getElementExpression().get()) {
                 return expression.getSharedPointer();
             } else {
 				return std::const_pointer_cast<BaseExpression const>(std::shared_ptr<BaseExpression>(new ConstructorArrayExpression(expression.getManager(), expression.getType(), newSize, expression.getIndexVar(), elementExpression)));

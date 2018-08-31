@@ -13,12 +13,12 @@ namespace storm {
             /*!
              * Creates an Array variable
              */
-            ArrayVariable(std::string const& name, storm::expressions::Variable const& variable, ElementType elementType);
+            ArrayVariable(std::string const& name, storm::expressions::Variable const& variable, ElementType const& elementType);
             
             /*!
              * Creates an Array variable with initial value
              */
-            ArrayVariable(std::string const& name, storm::expressions::Variable const& variable, ElementType elementType, storm::expressions::Expression const& initialValue, bool transient);
+            ArrayVariable(std::string const& name, storm::expressions::Variable const& variable, ElementType const& elementType, storm::expressions::Expression const& initValue, bool transient);
             
             /*!
              * Sets/Gets bounds to the values stored in this array
