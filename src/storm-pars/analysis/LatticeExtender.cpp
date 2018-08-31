@@ -30,7 +30,7 @@ namespace storm {
         }
 
         template <typename SparseModelType>
-        storm::analysis::Lattice* LatticeExtender<SparseModelType>::toLattice(std::vector<std::shared_ptr<storm::logic::Formula const>> formulas) {
+        std::tuple<storm::analysis::Lattice*, uint_fast64_t, uint_fast64_t> LatticeExtender<SparseModelType>::toLattice(std::vector<std::shared_ptr<storm::logic::Formula const>> formulas) {
             STORM_LOG_THROW((++formulas.begin()) == formulas.end(), storm::exceptions::NotSupportedException, "Only one formula allowed for monotonicity analysis");
             STORM_LOG_THROW((*(formulas[0])).isProbabilityOperatorFormula()
                             && ((*(formulas[0])).asProbabilityOperatorFormula().getSubformula().isUntilFormula()
@@ -77,14 +77,15 @@ namespace storm {
         }
 
         template <typename SparseModelType>
-        storm::analysis::Lattice* LatticeExtender<SparseModelType>::extendLattice(storm::analysis::Lattice* lattice) {
+        std::tuple<storm::analysis::Lattice*, uint_fast64_t, uint_fast64_t> LatticeExtender<SparseModelType>::extendLattice(storm::analysis::Lattice* lattice) {
             std::shared_ptr<storm::expressions::ExpressionManager> expressionManager(new storm::expressions::ExpressionManager());
             std::set<storm::expressions::BinaryRelationExpression*> assumptions;
             return this->extendLattice(lattice, expressionManager, assumptions);
         }
 
         template <typename SparseModelType>
-        storm::analysis::Lattice* LatticeExtender<SparseModelType>::extendLattice(storm::analysis::Lattice* lattice, std::shared_ptr<storm::expressions::ExpressionManager> expressionManager, std::set<storm::expressions::BinaryRelationExpression*> assumptions) {
+        std::tuple<storm::analysis::Lattice*, uint_fast64_t, uint_fast64_t> LatticeExtender<SparseModelType>::extendLattice(storm::analysis::Lattice* lattice, std::shared_ptr<storm::expressions::ExpressionManager> expressionManager, std::set<storm::expressions::BinaryRelationExpression*> assumptions) {
+            auto numberOfStates = this->model->getNumberOfStates();
             // First handle assumptions
             for (auto itr = assumptions.begin(); itr != assumptions.end(); ++itr) {
                 storm::expressions::BinaryRelationExpression expr = *(*itr);
@@ -114,8 +115,6 @@ namespace storm {
 
             // Create a copy of the states already present in the lattice.
             storm::storage::BitVector seenStates = (lattice->getAddedStates());
-
-            auto numberOfStates = this->model->getNumberOfStates();
             storm::storage::BitVector oldStates(numberOfStates);
 
             while (oldStates != seenStates) {
@@ -155,17 +154,15 @@ namespace storm {
                             // the successors are at the same level
                             lattice->addToNode(stateNumber, lattice->getNode(successor1));
                         } else {
-                            // TODO: create critical pair
+                            return std::make_tuple(lattice, successor1, successor2);
                         }
                         seenStates.set(stateNumber);
                     }
                 }
             }
-            // TODO allow returning critical pair
-            return lattice;
+            return std::make_tuple(lattice, numberOfStates, numberOfStates);
         }
 
         template class LatticeExtender<storm::models::sparse::Model<storm::RationalFunction>>;
-//        template class LatticeExtender<storm::models::sparse::Mdp<storm::RationalFunction>>;
     }
 }

@@ -612,15 +612,27 @@ namespace storm {
                 // Transform to Lattice
                 storm::utility::Stopwatch latticeWatch(true);
                 storm::analysis::LatticeExtender<storm::models::sparse::Model<ValueType>> extender = storm::analysis::LatticeExtender<storm::models::sparse::Model<ValueType>>(sparseModel);
-                storm::analysis::Lattice* lattice = extender.toLattice(formulas);
+                std::tuple<storm::analysis::Lattice*, uint_fast64_t, uint_fast64_t> criticalPair = extender.toLattice(formulas);
 
                 // Declare variables for all states
                 std::shared_ptr<storm::expressions::ExpressionManager> expressionManager(new storm::expressions::ExpressionManager());
-                for (uint_fast64_t i = 0; i < sparseModel.get()->getNumberOfStates(); ++i) {
+                for (uint_fast64_t i = 0; i < sparseModel->getNumberOfStates(); ++i) {
                     expressionManager->declareFreshIntegerVariable();
                 }
-//                std::set<storm::expressions::BinaryRelationExpression*> assumptions;
-//                extender.extendLattice(lattice, expressionManager, assumptions);
+
+                // Make assumptions
+                std::set<storm::expressions::BinaryRelationExpression*> assumptions;
+                while (std::get<1>(criticalPair) != sparseModel->getNumberOfStates()) {
+                    storm::expressions::Variable var1 = expressionManager->getVariable("_x" + std::to_string(std::get<1>(criticalPair)));
+                    storm::expressions::Variable var2 = expressionManager->getVariable("_x" + std::to_string(std::get<2>(criticalPair)));
+                    auto assumption = new storm::expressions::BinaryRelationExpression(*expressionManager, var1.getType(),
+                            var1.getExpression().getBaseExpressionPointer(), var2.getExpression().getBaseExpressionPointer(),
+                            storm::expressions::BinaryRelationExpression::RelationType::Greater);
+                    assumptions.insert(assumption);
+                    criticalPair = extender.extendLattice(std::get<0>(criticalPair), expressionManager, assumptions);
+                }
+                auto lattice = std::get<0>(criticalPair);
+
                 latticeWatch.stop();
                 STORM_PRINT(std::endl << "Time for lattice creation: " << latticeWatch << "." << std::endl << std::endl);
 
@@ -631,7 +643,7 @@ namespace storm {
                 myfile.close();
 
                 // Monotonicity?
-                auto matrix = sparseModel.get()->getTransitionMatrix();
+                auto matrix = sparseModel->getTransitionMatrix();
                 storm::utility::Stopwatch monotonicityWatch(true);
                 std::map<carl::Variable, std::pair<bool, bool>> varsMonotone = analyseMonotonicity<ValueType>(lattice, matrix);
                 monotonicityWatch.stop();
