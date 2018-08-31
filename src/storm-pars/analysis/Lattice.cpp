@@ -61,6 +61,11 @@ namespace storm {
             below->above.insert(between);
         }
 
+        void Lattice::addRelationNodes(storm::analysis::Lattice::Node *above, storm::analysis::Lattice::Node * below) {
+            above->below.insert(below);
+            below->above.insert(above);
+        }
+
         int Lattice::compare(uint_fast64_t state1, uint_fast64_t state2) {
             Node *node1 = getNode(state1);
             Node *node2 = getNode(state2);
@@ -68,23 +73,31 @@ namespace storm {
             // TODO: Wat als above(node1, node2) en above(node2, node1), dan moeten ze samengevoegd?
             if (node1 != nullptr && node2 != nullptr) {
                 if (node1 == node2) {
-                    return 0;
+                    return SAME;
                 }
 
                 if (above(node1, node2)) {
-                    return 1;
+                    return ABOVE;
                 }
 
                 if (above(node2, node1)) {
-                    return 2;
+                    return BELOW;
                 }
             }
 
-            return -1;
+            return UNKNOWN;
         }
 
         Lattice::Node *Lattice::getNode(uint_fast64_t stateNumber) {
             return nodes.at(stateNumber);
+        }
+
+        Lattice::Node *Lattice::getTop() {
+            return top;
+        }
+
+        Lattice::Node *Lattice::getBottom() {
+            return bottom;
         }
 
         storm::storage::BitVector Lattice::getAddedStates() {

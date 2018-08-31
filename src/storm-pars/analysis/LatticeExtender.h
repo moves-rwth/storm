@@ -25,12 +25,15 @@ namespace storm {
 
             storm::analysis::Lattice* toLattice(std::vector<std::shared_ptr<storm::logic::Formula const>> formulas);
 
-            storm::analysis::Lattice* extendLattice(storm::analysis::Lattice* lattice, std::set<storm::expressions::Expression> assumptions);
+            storm::analysis::Lattice* extendLattice(storm::analysis::Lattice* lattice, std::shared_ptr<storm::expressions::ExpressionManager> expressionManager, std::set<storm::expressions::BinaryRelationExpression*> assumptions);
 
         private:
             std::shared_ptr<SparseModelType> model;
 
             std::map<uint_fast64_t, storm::storage::BitVector> stateMap;
+
+            storm::analysis::Lattice* extendLattice(storm::analysis::Lattice* lattice);
+
         };
     }
 }

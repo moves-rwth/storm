@@ -63,6 +63,8 @@ namespace storm {
                      */
                     void addRelation(Node* above, Node* between, Node* below);
 
+                    void addRelationNodes(storm::analysis::Lattice::Node *above, storm::analysis::Lattice::Node * below);
+
                     /*!
                      * Compares the level of the nodes of the states.
                      * Behaviour unknown when one or more of the states doesnot occur at any Node in the Lattice.
@@ -85,6 +87,10 @@ namespace storm {
                      */
                     Node *getNode(uint_fast64_t state);
 
+                    Node* getTop();
+
+                    Node* getBottom();
+
                     storm::storage::BitVector getAddedStates();
 
                     /*!
@@ -101,6 +107,10 @@ namespace storm {
                      */
                     void toDotFile(std::ostream &out);
 
+                    static const int UNKNOWN = -1;
+                    static const int BELOW = 2;
+                    static const int ABOVE = 1;
+                    static const int SAME = 0;
 
                 private:
                     std::vector<Node*> nodes;

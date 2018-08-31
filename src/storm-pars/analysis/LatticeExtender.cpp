@@ -36,7 +36,7 @@ namespace storm {
                             && ((*(formulas[0])).asProbabilityOperatorFormula().getSubformula().isUntilFormula()
                                 || (*(formulas[0])).asProbabilityOperatorFormula().getSubformula().isEventuallyFormula()), storm::exceptions::NotSupportedException, "Expecting until formula");
 
-            uint_fast64_t numberOfStates = this->model.get()->getNumberOfStates();
+            uint_fast64_t numberOfStates = this->model->getNumberOfStates();
 
             storm::modelchecker::SparsePropositionalModelChecker<SparseModelType> propositionalChecker(*model);
             storm::storage::BitVector phiStates;
@@ -50,7 +50,7 @@ namespace storm {
             }
 
             // Get the maybeStates
-            std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(this->model.get()->getBackwardTransitions(), phiStates, psiStates);
+            std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(this->model->getBackwardTransitions(), phiStates, psiStates);
             storm::storage::BitVector topStates = statesWithProbability01.second;
             storm::storage::BitVector bottomStates = statesWithProbability01.first;
 
@@ -58,7 +58,7 @@ namespace storm {
             STORM_LOG_THROW(bottomStates.begin() != bottomStates.end(), storm::exceptions::NotImplementedException, "Formula yields to no zero states");
 
             // Transform to Lattice
-            auto matrix = this->model.get()->getTransitionMatrix();
+            auto matrix = this->model->getTransitionMatrix();
 
             for (uint_fast64_t i = 0; i < numberOfStates; ++i) {
                 stateMap[i] = storm::storage::BitVector(numberOfStates, false);
@@ -73,17 +73,50 @@ namespace storm {
 
             // Create the Lattice
             storm::analysis::Lattice *lattice = new storm::analysis::Lattice(topStates, bottomStates, numberOfStates);
-            return this->extendLattice(lattice, std::set<storm::expressions::Expression>({}));
+            return this->extendLattice(lattice);
         }
 
         template <typename SparseModelType>
-        storm::analysis::Lattice* LatticeExtender<SparseModelType>::extendLattice(storm::analysis::Lattice* lattice, std::set<storm::expressions::Expression> assumptions) {
-            uint_fast64_t numberOfStates = this->model.get()->getNumberOfStates();
+        storm::analysis::Lattice* LatticeExtender<SparseModelType>::extendLattice(storm::analysis::Lattice* lattice) {
+            std::shared_ptr<storm::expressions::ExpressionManager> expressionManager(new storm::expressions::ExpressionManager());
+            std::set<storm::expressions::BinaryRelationExpression*> assumptions;
+            return this->extendLattice(lattice, expressionManager, assumptions);
+        }
 
-            storm::storage::BitVector oldStates(numberOfStates);
+        template <typename SparseModelType>
+        storm::analysis::Lattice* LatticeExtender<SparseModelType>::extendLattice(storm::analysis::Lattice* lattice, std::shared_ptr<storm::expressions::ExpressionManager> expressionManager, std::set<storm::expressions::BinaryRelationExpression*> assumptions) {
+            // First handle assumptions
+            for (auto itr = assumptions.begin(); itr != assumptions.end(); ++itr) {
+                storm::expressions::BinaryRelationExpression expr = *(*itr);
+                STORM_LOG_THROW(expr.getRelationType() == storm::expressions::BinaryRelationExpression::RelationType::Greater, storm::exceptions::NotImplementedException, "Only greater assumptions allowed");
+                if (expr.getFirstOperand()->isVariable() && expr.getSecondOperand()->isVariable()) {
+                    storm::expressions::Variable largest = expr.getFirstOperand()->asVariableExpression().getVariable();
+                    storm::expressions::Variable smallest = expr.getSecondOperand()->asVariableExpression().getVariable();
+
+                    if (lattice->compare(largest.getOffset(), smallest.getOffset()) != storm::analysis::Lattice::ABOVE) {
+                        storm::analysis::Lattice::Node* n1 = lattice->getNode(largest.getOffset());
+                        storm::analysis::Lattice::Node* n2 = lattice->getNode(smallest.getOffset());
+
+                        if (n1 != nullptr && n2 != nullptr) {
+                            lattice->addRelationNodes(n1, n2);
+                        } else if (n1 != nullptr) {
+                            lattice->addBetween(smallest.getOffset(), n1, lattice->getBottom());
+                        } else if (n2 != nullptr) {
+                            lattice->addBetween(largest.getOffset(), lattice->getTop(), n2);
+                        } else {
+                            lattice->add(largest.getOffset());
+                            lattice->addBetween(smallest.getOffset(), lattice->getNode(largest.getOffset()),
+                                                lattice->getBottom());
+                        }
+                    }
+                }
+            }
 
             // Create a copy of the states already present in the lattice.
             storm::storage::BitVector seenStates = (lattice->getAddedStates());
+
+            auto numberOfStates = this->model->getNumberOfStates();
+            storm::storage::BitVector oldStates(numberOfStates);
 
             while (oldStates != seenStates) {
                 // As long as new states are added to the lattice, continue.
@@ -110,15 +143,15 @@ namespace storm {
                         uint_fast64_t successor1 = successors.getNextSetIndex(0);
                         uint_fast64_t successor2 = successors.getNextSetIndex(successor1 + 1);
                         int compareResult = lattice->compare(successor1, successor2);
-                        if (compareResult == 1) {
+                        if (compareResult == storm::analysis::Lattice::ABOVE) {
                             // successor 1 is closer to top than successor 2
                             lattice->addBetween(stateNumber, lattice->getNode(successor1),
                                                 lattice->getNode(successor2));
-                        } else if (compareResult == 2) {
+                        } else if (compareResult == storm::analysis::Lattice::BELOW) {
                             // successor 2 is closer to top than successor 1
                             lattice->addBetween(stateNumber, lattice->getNode(successor2),
                                                 lattice->getNode(successor1));
-                        } else if (compareResult == 0) {
+                        } else if (compareResult == storm::analysis::Lattice::SAME) {
                             // the successors are at the same level
                             lattice->addToNode(stateNumber, lattice->getNode(successor1));
                         } else {
@@ -128,6 +161,7 @@ namespace storm {
                     }
                 }
             }
+            // TODO allow returning critical pair
             return lattice;
         }
 

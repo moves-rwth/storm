@@ -513,6 +513,7 @@ namespace storm {
                             color = "color = blue, ";
                         }
                     }
+
                     myfile << "\t" << i << " -> " << first.getColumn() << "[" << color << "label=\"" << first.getValue() << "\"];"
                            << std::endl;
                     myfile << "\t" << i << " -> " << second.getColumn() << "[" << color << "label=\"" << second.getValue() << "\"];"
@@ -610,13 +611,21 @@ namespace storm {
 
                 // Transform to Lattice
                 storm::utility::Stopwatch latticeWatch(true);
-
                 storm::analysis::LatticeExtender<storm::models::sparse::Model<ValueType>> extender = storm::analysis::LatticeExtender<storm::models::sparse::Model<ValueType>>(sparseModel);
                 storm::analysis::Lattice* lattice = extender.toLattice(formulas);
+
+                // Declare variables for all states
+                std::shared_ptr<storm::expressions::ExpressionManager> expressionManager(new storm::expressions::ExpressionManager());
+                for (uint_fast64_t i = 0; i < sparseModel.get()->getNumberOfStates(); ++i) {
+                    expressionManager->declareFreshIntegerVariable();
+                }
+//                std::set<storm::expressions::BinaryRelationExpression*> assumptions;
+//                extender.extendLattice(lattice, expressionManager, assumptions);
                 latticeWatch.stop();
                 STORM_PRINT(std::endl << "Time for lattice creation: " << latticeWatch << "." << std::endl << std::endl);
-                ofstream myfile;
 
+                // Write lattice to file
+                ofstream myfile;
                 myfile.open ("lattice.dot");
                 lattice->toDotFile(myfile);
                 myfile.close();
