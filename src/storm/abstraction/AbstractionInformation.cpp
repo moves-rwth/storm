@@ -9,7 +9,7 @@
 #include "storm/settings/modules/AbstractionSettings.h"
 #include "storm/settings/SettingsManager.h"
 
-#include "storm/parser/ExpressionParser.h"
+#include "storm-parsers/parser/ExpressionParser.h"
 
 #include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidOperationException.h"
