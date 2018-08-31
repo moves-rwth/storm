@@ -201,7 +201,7 @@ namespace storm {
                     storm::dd::Bdd<DdType> targetStates = reachableStates && this->getStates(this->getTargetStateExpression());
 
                     // In the presence of target states, we keep only states that can reach the target states.
-                    reachableStates = storm::utility::dd::computeBackwardsReachableStates(targetStates, reachableStates && !initialStates, transitionRelation, abstractionInformation.getSourceVariables(), abstractionInformation.getSuccessorVariables()) || initialStates;
+                    reachableStates = storm::utility::dd::computeBackwardsReachableStates(targetStates, reachableStates, transitionRelation, abstractionInformation.getSourceVariables(), abstractionInformation.getSuccessorVariables());
 
                     // Include all successors of reachable states, because the backward search otherwise potentially
                     // cuts probability 0 choices of these states.
