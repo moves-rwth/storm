@@ -634,6 +634,8 @@ namespace storm {
                 return addVariable(variable.asUnboundedIntegerVariable());
             } else if (variable.isRealVariable()) {
                 return addVariable(variable.asRealVariable());
+            } else if (variable.isArrayVariable()) {
+                return addVariable(variable.asArrayVariable());
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Variable has invalid type.");
             }
@@ -652,6 +654,10 @@ namespace storm {
         }
 
         RealVariable const& Model::addVariable(RealVariable const& variable) {
+            return globalVariables.addVariable(variable);
+        }
+        
+        ArrayVariable const& Model::addVariable(ArrayVariable const& variable) {
             return globalVariables.addVariable(variable);
         }
 
@@ -899,6 +905,9 @@ namespace storm {
             for (auto& variable : result.getGlobalVariables().getBoundedIntegerVariables()) {
                 variable.substitute(constantSubstitution);
             }
+            for (auto& variable : result.getGlobalVariables().getArrayVariables()) {
+                variable.substitute(constantSubstitution);
+            }
             
             // Substitute constants in initial states expression.
             result.setInitialStatesRestriction(this->getInitialStatesRestriction().substitute(constantSubstitution));
@@ -993,6 +1002,7 @@ namespace storm {
             for (auto const& variable : this->getGlobalVariables().getBoundedIntegerVariables()) {
                 result.push_back(variable.getRangeExpression());
             }
+            STORM_LOG_ASSERT(this->getGlobalVariables().getArrayVariables().empty(), "This operation is unsupported if array variables are present.");
             
             if (automata.empty()) {
                 for (auto const& automaton : this->getAutomata()) {

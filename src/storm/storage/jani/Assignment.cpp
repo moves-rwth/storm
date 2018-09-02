@@ -15,7 +15,7 @@ namespace storm  {
         }
         
         bool Assignment::operator==(Assignment const& other) const {
-            return this->isTransient() == other.isTransient() && this->getExpressionVariable() == other.getExpressionVariable() && this->getAssignedExpression().isSyntacticallyEqual(other.getAssignedExpression()) && this->getLevel() == other.getLevel();
+            return this->isTransient() == other.isTransient() && this->getLValue() == other.getLValue() && this->getAssignedExpression().isSyntacticallyEqual(other.getAssignedExpression()) && this->getLevel() == other.getLevel();
         }
         
         bool Assignment::lValueIsVariable() const {

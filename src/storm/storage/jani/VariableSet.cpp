@@ -44,6 +44,14 @@ namespace storm {
             return detail::ConstVariables<RealVariable>(realVariables.begin(), realVariables.end());
         }
         
+        detail::Variables<ArrayVariable> VariableSet::getArrayVariables() {
+            return detail::Variables<ArrayVariable>(arrayVariables.begin(), arrayVariables.end());
+        }
+        
+        detail::ConstVariables<ArrayVariable> VariableSet::getArrayVariables() const {
+            return detail::ConstVariables<ArrayVariable>(arrayVariables.begin(), arrayVariables.end());
+        }
+        
         Variable const& VariableSet::addVariable(Variable const& variable) {
             if (variable.isBooleanVariable()) {
                 return addVariable(variable.asBooleanVariable());
@@ -53,6 +61,8 @@ namespace storm {
                 return addVariable(variable.asUnboundedIntegerVariable());
             } else if (variable.isRealVariable()) {
                 return addVariable(variable.asRealVariable());
+            } else if (variable.isArrayVariable()) {
+                return addVariable(variable.asArrayVariable());
             }
             STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Cannot add variable of unknown type.");
         }
@@ -101,6 +111,19 @@ namespace storm {
             std::shared_ptr<RealVariable> newVariable = std::make_shared<RealVariable>(variable);
             variables.push_back(newVariable);
             realVariables.push_back(newVariable);
+            if (variable.isTransient()) {
+                transientVariables.push_back(newVariable);
+            }
+            nameToVariable.emplace(variable.getName(), variable.getExpressionVariable());
+            variableToVariable.emplace(variable.getExpressionVariable(), newVariable);
+            return *newVariable;
+        }
+        
+        ArrayVariable const& VariableSet::addVariable(ArrayVariable const& variable) {
+            STORM_LOG_THROW(!this->hasVariable(variable.getName()), storm::exceptions::WrongFormatException, "Cannot add variable with name '" << variable.getName() << "', because a variable with that name already exists.");
+            std::shared_ptr<ArrayVariable> newVariable = std::make_shared<ArrayVariable>(variable);
+            variables.push_back(newVariable);
+            arrayVariables.push_back(newVariable);
             if (variable.isTransient()) {
                 transientVariables.push_back(newVariable);
             }
@@ -174,6 +197,10 @@ namespace storm {
             return !realVariables.empty();
         }
         
+        bool VariableSet::containsArrayVariables() const {
+            return !arrayVariables.empty();
+        }
+        
         bool VariableSet::containsNonTransientRealVariables() const {
             for (auto const& variable : realVariables) {
                 if (!variable->isTransient()) {
@@ -193,7 +220,7 @@ namespace storm {
         }
         
         bool VariableSet::empty() const {
-            return !(containsBooleanVariable() || containsBoundedIntegerVariable() || containsUnboundedIntegerVariables());
+            return !(containsBooleanVariable() || containsBoundedIntegerVariable() || containsUnboundedIntegerVariables() || containsRealVariables() || containsArrayVariables());
         }
         
         uint_fast64_t VariableSet::getNumberOfTransientVariables() const {
@@ -249,6 +276,22 @@ namespace storm {
                 }
                 if (integerVariable.getUpperBound().containsVariable(variables)) {
                     return true;
+                }
+            }
+            for (auto const& arrayVariable : this->getArrayVariables()) {
+                if (arrayVariable.hasInitExpression()) {
+                    if (arrayVariable.getInitExpression().containsVariable(variables)) {
+                        return true;
+                    }
+                }
+                if (arrayVariable.hasElementTypeBounds()) {
+                    auto const& bounds = arrayVariable.getElementTypeBounds();
+                    if (bounds.first.containsVariable(variables)) {
+                        return true;
+                    }
+                    if (bounds.second.containsVariable(variables)) {
+                        return true;
+                    }
                 }
             }
             return false;

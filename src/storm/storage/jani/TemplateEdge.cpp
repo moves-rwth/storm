@@ -1,6 +1,7 @@
 #include "storm/storage/jani/TemplateEdge.h"
 
 #include "storm/storage/jani/Model.h"
+#include "storm/storage/jani/LValue.h"
 
 #include "storm/storage/expressions/LinearityCheckVisitor.h"
 
@@ -27,8 +28,9 @@ namespace storm {
         void TemplateEdge::finalize(Model const& containingModel) {
             for (auto const& destination : getDestinations()) {
                 for (auto const& assignment : destination.getOrderedAssignments().getAllAssignments()) {
-                    if (containingModel.getGlobalVariables().hasVariable(assignment.getExpressionVariable())) {
-                        writtenGlobalVariables.insert(assignment.getExpressionVariable());
+                    Variable const& var = assignment.getLValue().isVariable() ? assignment.getLValue().getVariable() : assignment.getLValue().getArray();
+                    if (containingModel.getGlobalVariables().hasVariable(var.getExpressionVariable())) {
+                        writtenGlobalVariables.insert(var.getExpressionVariable());
                     }
                 }
             }

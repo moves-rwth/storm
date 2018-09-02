@@ -24,7 +24,7 @@
 #include <sstream>
 #include <fstream>
 #include <boost/lexical_cast.hpp>
-#include <storm/storage/jani/ArrayVariable.h>
+#include "storm/storage/jani/ArrayVariable.h"
 
 #include "storm/utility/macros.h"
 #include "storm/utility/file.h"
@@ -1299,8 +1299,7 @@ namespace storm {
                         for (auto const& assignmentEntry : destEntry.at("assignments")) {
                             // ref
                             STORM_LOG_THROW(assignmentEntry.count("ref") == 1, storm::exceptions::InvalidJaniException, "Assignment in edge from '" << sourceLoc << "' to '" << targetLoc << "' in automaton '" << name << "'  must have one ref field");
-                            std::string refstring = getString(assignmentEntry.at("ref"), "assignment in edge from '" + sourceLoc + "' to '" + targetLoc + "' in automaton '" + name + "'");
-                            storm::jani::LValue lValue = parseLValue(refstring, "Assignment variable in edge from '" + sourceLoc + "' to '" + targetLoc + "' in automaton '" + name + "'", globalVars, constants, localVars);
+                            storm::jani::LValue lValue = parseLValue(assignmentEntry.at("ref"), "Assignment variable in edge from '" + sourceLoc + "' to '" + targetLoc + "' in automaton '" + name + "'", globalVars, constants, localVars);
                             // value
                             STORM_LOG_THROW(assignmentEntry.count("value") == 1, storm::exceptions::InvalidJaniException, "Assignment in edge from '" << sourceLoc << "' to '" << targetLoc << "' in automaton '" << name << "'  must have one value field");
                             storm::expressions::Expression assignmentExpr = parseExpression(assignmentEntry.at("value"), "assignment in edge from '" + sourceLoc + "' to '" + targetLoc + "' in automaton '" + name + "'",  globalVars, constants, localVars);

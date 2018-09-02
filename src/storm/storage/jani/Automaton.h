@@ -71,6 +71,11 @@ namespace storm {
             RealVariable const& addVariable(RealVariable const& variable);
 
             /*!
+             * Adds the given array variable to this automaton.
+             */
+            ArrayVariable const& addVariable(ArrayVariable const& variable);
+
+            /*!
              * Retrieves the variables of this automaton.
              */
             VariableSet& getVariables();

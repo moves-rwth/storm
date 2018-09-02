@@ -35,8 +35,8 @@ namespace storm {
             auto it = lowerBound(assignment, allAssignments);
             
             // Check if an assignment to this variable is already present
-            if (it != allAssignments.end() && assignment.getExpressionVariable() == (*it)->getExpressionVariable()) {
-                STORM_LOG_THROW(addToExisting && assignment.getExpressionVariable().hasNumericalType(), storm::exceptions::InvalidArgumentException, "Cannot add assignment ('" << assignment.getAssignedExpression() << "') as an assignment ('" << (*it)->getAssignedExpression()  << "') to variable '" <<  (*it)->getVariable().getName() << "' already exists.");
+            if (it != allAssignments.end() && assignment.getLValue() == (*it)->getLValue()) {
+                STORM_LOG_THROW(addToExisting && assignment.getLValue().isVariable() && assignment.getExpressionVariable().hasNumericalType(), storm::exceptions::InvalidArgumentException, "Cannot add assignment ('" << assignment.getAssignedExpression() << "') as an assignment ('" << (*it)->getAssignedExpression()  << "') to LValue '" <<  (*it)->getLValue() << "' already exists.");
                 (*it)->setAssignedExpression((*it)->getAssignedExpression() + assignment.getAssignedExpression());
             } else {
                 // Finally, insert the new element in the correct vectors.
@@ -125,18 +125,19 @@ namespace storm {
             if (first) {
                 std::vector<Assignment> newAssignments;
                 for (uint64_t i = 0; i < allAssignments.size(); ++i) {
-                    if (synchronous && !localVars.hasVariable(allAssignments.at(i)->getVariable())) {
+                    auto const& iLValue = allAssignments.at(i)->getLValue();
+                    if (synchronous && !localVars.hasVariable(iLValue.isVariable() ? iLValue.getVariable() : iLValue.getArray())) {
                         newAssignments.push_back(*(allAssignments.at(i)));
                         continue;
                     }
                     bool readBeforeWrite = true;
                     for (uint64_t j = i + 1; j < allAssignments.size(); ++j) {
                         if (allAssignments.at(j)->getAssignedExpression().containsVariable(
-                                {allAssignments.at(i)->getVariable().getExpressionVariable()})) {
+                                {iLValue.isVariable() ? iLValue.getVariable().getExpressionVariable() : iLValue.getArray().getExpressionVariable()})) {
                             // is read.
                             break;
                         }
-                        if (allAssignments.at(j)->getVariable() == allAssignments.at(i)->getVariable()) {
+                        if (iLValue == allAssignments.at(j)->getLValue()) {
                             // is written, has not been read before
                             readBeforeWrite = false;
                             break;
@@ -158,15 +159,15 @@ namespace storm {
             std::vector<Assignment> newAssignments;
             for (auto const& assignment : allAssignments) {
                 newAssignments.push_back(*assignment);
-                if (synchronous && !localVars.hasVariable(assignment->getVariable())) {
+                if (synchronous && !localVars.hasVariable(assignment->getLValue().isVariable() ? assignment->getLValue().getVariable() : assignment->getLValue().getArray())) {
                     continue;
                 }
                 if (assignment->getLevel() == 0) {
                     continue;
                 }
                 uint64_t assNr = upperBound(assignment->getLevel() - 1);
-                if (assNr == isWrittenBeforeAssignment(assignment->getVariable(), assNr)) {
-                    if (assNr == isReadBeforeAssignment(assignment->getVariable(), assNr)) {
+                if (assNr == isWrittenBeforeAssignment(assignment->getLValue(), assNr)) {
+                    if (assNr == isReadBeforeAssignment(assignment->getLValue(), assNr)) {
                         newAssignments.back().setLevel(0);
                         changed = true;
                     }
@@ -230,7 +231,10 @@ namespace storm {
             return std::lower_bound(assignments.begin(), assignments.end(), assignment, storm::jani::AssignmentPartialOrderByLevelAndLValue());
         }
 
-        uint64_t OrderedAssignments::isReadBeforeAssignment(Variable const& var, uint64_t assignmentNumber, uint64_t start) const {
+        uint64_t OrderedAssignments::isReadBeforeAssignment(LValue const& lValue, uint64_t assignmentNumber, uint64_t start) const {
+            Variable const& var = lValue.isVariable() ? lValue.getVariable() : lValue.getArray();
+            // TODO: do this more carefully
+            STORM_LOG_WARN_COND(lValue.isVariable(), "Called a method that is not optimized for arrays.");
             for (uint64_t i = start; i < assignmentNumber; i++) {
                 if (allAssignments.at(i)->getAssignedExpression().containsVariable({ var.getExpressionVariable() })) {
                     return i;
@@ -239,9 +243,9 @@ namespace storm {
             return assignmentNumber;
         }
 
-        uint64_t OrderedAssignments::isWrittenBeforeAssignment(Variable const& var, uint64_t assignmentNumber, uint64_t start) const {
+        uint64_t OrderedAssignments::isWrittenBeforeAssignment(LValue const& lValue, uint64_t assignmentNumber, uint64_t start) const {
             for (uint64_t i = start; i < assignmentNumber; i++) {
-                if (allAssignments.at(i)->getVariable() == var) {
+                if (allAssignments.at(i)->getLValue() == lValue) {
                     return i;
                 }
             }

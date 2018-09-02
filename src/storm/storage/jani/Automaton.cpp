@@ -33,6 +33,8 @@ namespace storm {
                 return addVariable(variable.asUnboundedIntegerVariable());
             } else if (variable.isRealVariable()) {
                 return addVariable(variable.asRealVariable());
+            } else if (variable.isArrayVariable()) {
+                return addVariable(variable.asArrayVariable());
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Variable has invalid type.");
             }
@@ -51,6 +53,10 @@ namespace storm {
         }
 
         RealVariable const& Automaton::addVariable(RealVariable const& variable) {
+            return variables.addVariable(variable);
+        }
+        
+        ArrayVariable const& Automaton::addVariable(ArrayVariable const& variable) {
             return variables.addVariable(variable);
         }
 

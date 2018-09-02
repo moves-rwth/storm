@@ -9,6 +9,7 @@
 #include "storm/storage/jani/UnboundedIntegerVariable.h"
 #include "storm/storage/jani/BoundedIntegerVariable.h"
 #include "storm/storage/jani/RealVariable.h"
+#include "storm/storage/jani/ArrayVariable.h"
 
 namespace storm {
     namespace jani {
@@ -67,6 +68,16 @@ namespace storm {
              * Retrieves the real variables in this set.
              */
             detail::ConstVariables<RealVariable> getRealVariables() const;
+            
+            /*!
+             * Retrieves the Array variables in this set.
+             */
+            detail::Variables<ArrayVariable> getArrayVariables();
+            
+            /*!
+             * Retrieves the Array variables in this set.
+             */
+            detail::ConstVariables<ArrayVariable> getArrayVariables() const;
 
             /*!
              * Adds the given variable to this set.
@@ -92,6 +103,11 @@ namespace storm {
              * Adds the given real variable to this set.
              */
             RealVariable const& addVariable(RealVariable const& variable);
+
+            /*!
+             * Adds the given real variable to this set.
+             */
+            ArrayVariable const& addVariable(ArrayVariable const& variable);
 
             /*!
              * Retrieves whether this variable set contains a variable with the given name.
@@ -163,6 +179,11 @@ namespace storm {
             bool containsRealVariables() const;
 
             /*!
+             * Retrieves whether the set of variables contains a Array variable.
+             */
+            bool containsArrayVariables() const;
+
+            /*!
              * Retrieves whether the set of variables contains a non-transient real variable.
              */
             bool containsNonTransientRealVariables() const;
@@ -223,6 +244,9 @@ namespace storm {
             
             /// The real variables in this set.
             std::vector<std::shared_ptr<RealVariable>> realVariables;
+            
+            /// The array variables in this set.
+            std::vector<std::shared_ptr<ArrayVariable>> arrayVariables;
             
             /// The transient variables in this set.
             std::vector<std::shared_ptr<Variable>> transientVariables;

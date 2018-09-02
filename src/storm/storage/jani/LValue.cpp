@@ -62,9 +62,9 @@ namespace storm {
                     return false;
                 }
                 STORM_LOG_ASSERT(other.isArrayAccess(), "Unhandled LValue.");
-                if (variable->getExpressionVariable() < other.getVariable().getExpressionVariable()) {
+                if (getArray().getExpressionVariable() < other.getArray().getExpressionVariable()) {
                     return true;
-                } else if (other.getVariable().getExpressionVariable() < variable->getExpressionVariable()) {
+                } else if (other.getArray().getExpressionVariable() < getArray().getExpressionVariable()) {
                     return false;
                 } else {
                     return std::less<storm::expressions::Expression>()(arrayIndex, other.getArrayIndex());

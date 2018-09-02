@@ -146,8 +146,8 @@ namespace storm {
             OrderedAssignments clone() const;
 
         private:
-            uint64_t isReadBeforeAssignment(Variable const& var, uint64_t assignmentNumber, uint64_t start = 0) const;
-            uint64_t isWrittenBeforeAssignment(Variable const& var, uint64_t assignmentNumber, uint64_t start = 0) const;
+            uint64_t isReadBeforeAssignment(LValue const& lValue, uint64_t assignmentNumber, uint64_t start = 0) const;
+            uint64_t isWrittenBeforeAssignment(LValue const& LValue, uint64_t assignmentNumber, uint64_t start = 0) const;
 
             /*!
              * Gets the number of  assignments number with an assignment not higher than index.
