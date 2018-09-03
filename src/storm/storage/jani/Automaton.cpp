@@ -3,6 +3,7 @@
 #include "storm/storage/jani/Edge.h"
 #include "storm/storage/jani/TemplateEdge.h"
 #include "storm/storage/jani/Location.h"
+#include "storm/storage/jani/expressions/JaniExpressionSubstitutionVisitor.h"
 
 #include "storm/utility/macros.h"
 #include "storm/exceptions/WrongFormatException.h"
@@ -387,7 +388,7 @@ namespace storm {
                 location.substitute(substitution);
             }
             
-            this->setInitialStatesRestriction(this->getInitialStatesRestriction().substitute(substitution));
+            this->setInitialStatesRestriction(substituteJaniExpression(this->getInitialStatesRestriction(), substitution));
             
             edges.substitute(substitution);
         }

@@ -1,5 +1,6 @@
 #include "storm/storage/jani/BoundedIntegerVariable.h"
 #include "storm/exceptions/NotImplementedException.h"
+#include "storm/storage/jani/expressions/JaniExpressionSubstitutionVisitor.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -47,8 +48,8 @@ namespace storm {
         
         void BoundedIntegerVariable::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {
             Variable::substitute(substitution);
-            this->setLowerBound(this->getLowerBound().substitute(substitution));
-            this->setUpperBound(this->getUpperBound().substitute(substitution));
+            this->setLowerBound(substituteJaniExpression(this->getLowerBound(), substitution));
+            this->setUpperBound(substituteJaniExpression(this->getUpperBound(), substitution));
         }
         
         std::shared_ptr<BoundedIntegerVariable> makeBoundedIntegerVariable(std::string const& name, storm::expressions::Variable const& variable, boost::optional<storm::expressions::Expression> initValue, bool transient, boost::optional<storm::expressions::Expression> lowerBound, boost::optional<storm::expressions::Expression> upperBound) {

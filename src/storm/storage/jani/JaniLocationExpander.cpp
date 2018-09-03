@@ -1,5 +1,7 @@
 #include "storm/storage/jani/JaniLocationExpander.h"
 
+#include "storm/storage/jani/expressions/JaniExpressionSubstitutionVisitor.h"
+
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/IllegalArgumentException.h"
@@ -83,7 +85,7 @@ namespace storm {
                     substitutionMap[eliminatedExpressionVariable] = original.getExpressionManager().integer(newValueAndLocation.first);
 
                     uint64_t newSourceIndex = newValueAndLocation.second;
-                    storm::expressions::Expression newGuard = edge.getGuard().substitute(substitutionMap).simplify();
+                    storm::expressions::Expression newGuard = substituteJaniExpression(edge.getGuard(), substitutionMap).simplify();
                     if (!newGuard.containsVariables() && !newGuard.evaluateAsBool()) {
                         continue;
                     }
@@ -105,9 +107,9 @@ namespace storm {
                         }
                         TemplateEdgeDestination ted(oa);
                         templateEdge->addDestination(ted);
-                        destinationLocationsAndProbabilities.emplace_back(locationVariableValueMap[destination.getLocationIndex()][value], destination.getProbability().substitute((substitutionMap)));
+                        destinationLocationsAndProbabilities.emplace_back(locationVariableValueMap[destination.getLocationIndex()][value], substituteJaniExpression(destination.getProbability(), substitutionMap));
                     }
-                    newAutomaton.addEdge(storm::jani::Edge(newSourceIndex, edge.getActionIndex(), edge.hasRate() ? boost::optional<storm::expressions::Expression>(edge.getRate().substitute(substitutionMap)) : boost::none, templateEdge, destinationLocationsAndProbabilities));
+                    newAutomaton.addEdge(storm::jani::Edge(newSourceIndex, edge.getActionIndex(), edge.hasRate() ? boost::optional<storm::expressions::Expression>(substituteJaniExpression(edge.getRate(), substitutionMap)) : boost::none, templateEdge, destinationLocationsAndProbabilities));
 
                 }
             }

@@ -5,6 +5,7 @@
 #include "storm/storage/jani/UnboundedIntegerVariable.h"
 #include "storm/storage/jani/RealVariable.h"
 #include "storm/storage/jani/ArrayVariable.h"
+#include "storm/storage/jani/expressions/JaniExpressionSubstitutionVisitor.h"
 
 namespace storm {
     namespace jani {
@@ -111,7 +112,7 @@ namespace storm {
         
         void Variable::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {
             if (this->hasInitExpression()) {
-                this->setInitExpression(this->getInitExpression().substitute(substitution));
+                this->setInitExpression(substituteJaniExpression(this->getInitExpression(), substitution));
             }
         }
 

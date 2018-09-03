@@ -1,6 +1,7 @@
 #include "storm/storage/jani/Assignment.h"
 
 #include "storm/storage/jani/LValue.h"
+#include "storm/storage/jani/expressions/JaniExpressionSubstitutionVisitor.h"
 
 #include "storm/storage/expressions/LinearityCheckVisitor.h"
 
@@ -51,9 +52,9 @@ namespace storm  {
         }
         
         void Assignment::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {
-            this->setAssignedExpression(this->getAssignedExpression().substitute(substitution).simplify());
+            this->setAssignedExpression(substituteJaniExpression(this->getAssignedExpression(), substitution).simplify());
             if (lValue.isArrayAccess()) {
-                lValue = LValue(LValue(lValue.getArray()), lValue.getArrayIndex().substitute(substitution).simplify());
+                lValue = LValue(LValue(lValue.getArray()), substituteJaniExpression(lValue.getArrayIndex(), substitution).simplify());
             }
         }
         

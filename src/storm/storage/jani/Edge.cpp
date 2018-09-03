@@ -1,6 +1,7 @@
 #include "storm/storage/jani/Edge.h"
 
 #include "storm/storage/jani/Model.h"
+#include "storm/storage/jani/expressions/JaniExpressionSubstitutionVisitor.h"
 
 #include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidArgumentException.h"
@@ -76,7 +77,7 @@ namespace storm {
         
         void Edge::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {
             if (this->hasRate()) {
-                this->setRate(this->getRate().substitute(substitution));
+                this->setRate(substituteJaniExpression(this->getRate(), substitution));
             }
             for (auto& destination : destinations) {
                 destination.substitute(substitution);

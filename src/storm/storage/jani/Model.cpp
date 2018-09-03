@@ -16,6 +16,8 @@
 #include "storm/storage/jani/CompositionInformationVisitor.h"
 #include "storm/storage/jani/Compositions.h"
 #include "storm/storage/jani/JSONExporter.h"
+#include "storm/storage/jani/traverser/ArrayEliminator.h"
+#include "storm/storage/jani/expressions/JaniExpressionSubstitutionVisitor.h"
 
 #include "storm/storage/expressions/LinearityCheckVisitor.h"
 
@@ -896,7 +898,7 @@ namespace storm {
             std::map<storm::expressions::Variable, storm::expressions::Expression> constantSubstitution;
             for (auto& constant : result.getConstants()) {
                 if (constant.isDefined()) {
-                    constant.define(constant.getExpression().substitute(constantSubstitution));
+                    constant.define(substituteJaniExpression(constant.getExpression(), constantSubstitution));
                     constantSubstitution[constant.getExpressionVariable()] = constant.getExpression();
                 }
             }
@@ -910,7 +912,7 @@ namespace storm {
             }
             
             // Substitute constants in initial states expression.
-            result.setInitialStatesRestriction(this->getInitialStatesRestriction().substitute(constantSubstitution));
+            result.setInitialStatesRestriction(substituteJaniExpression(this->getInitialStatesRestriction(), constantSubstitution));
             
             // Substitute constants in variables of automata and their edges.
             for (auto& automaton : result.getAutomata()) {
@@ -932,13 +934,21 @@ namespace storm {
             return result;
         }
         
-        bool Model::hasArrayVariables() const {
-            return getExpressionManager().getNumberOfArrayVariables() != 0;
+        bool Model::containsArrayVariables() const {
+            if (getGlobalVariables().containsArrayVariables()) {
+                return true;
+            }
+            for (auto const& a : getAutomata()) {
+                if (a.getVariables().containsArrayVariables()) {
+                    return true;
+                }
+            }
+            return false;
         }
         
-        Model Model::convertArrays() const {
-            std::cout << "TODO";
-            return *this;
+        void Model::eliminateArrays(bool keepNonTrivialArrayAccess) {
+            ArrayEliminator arrayEliminator;
+            arrayEliminator.eliminate(*this);
         }
         
         void Model::setInitialStatesRestriction(storm::expressions::Expression const& initialStatesRestriction) {

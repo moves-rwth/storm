@@ -4,6 +4,7 @@
 #include "storm/storage/jani/LValue.h"
 
 #include "storm/storage/expressions/LinearityCheckVisitor.h"
+#include "storm/storage/jani/expressions/JaniExpressionSubstitutionVisitor.h"
 
 namespace storm {
     namespace jani {
@@ -61,7 +62,7 @@ namespace storm {
         }
         
         void TemplateEdge::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {
-            guard = guard.substitute(substitution);
+            guard = substituteJaniExpression(guard, substitution);
 
             for (auto& assignment : assignments) {
                 assignment.substitute(substitution);

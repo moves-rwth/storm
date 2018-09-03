@@ -1,6 +1,8 @@
 #include "storm/storage/jani/EdgeDestination.h"
 
 #include "storm/utility/macros.h"
+#include "storm/storage/jani/expressions/JaniExpressionSubstitutionVisitor.h"
+
 #include "storm/exceptions/WrongFormatException.h"
 
 namespace storm {
@@ -37,7 +39,7 @@ namespace storm {
         }
         
         void EdgeDestination::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {
-            this->setProbability(this->getProbability().substitute(substitution));
+            this->setProbability(substituteJaniExpression(this->getProbability(), substitution));
         }
         
         bool EdgeDestination::hasAssignment(Assignment const& assignment) const {

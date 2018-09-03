@@ -360,12 +360,13 @@ namespace storm {
             /*!
              * Returns true if at least one array variable occurs in the model.
              */
-            bool hasArrayVariables() const;
+            bool containsArrayVariables() const;
             
             /*!
-             * Converts occurring (fixed size) arrays into multiple variables.
+             * Eliminates occurring array variables and expressions by replacing array variables by multiple basic variables.
+             * @param keepNonTrivialArrayAccess if set, array access expressions in LValues and expressions are only replaced, if the index expression is constant.
              */
-            Model convertArrays() const;
+            void eliminateArrays(bool keepNonTrivialArrayAccess = false);
             
             /*!
              * Retrieves whether there is an expression restricting the legal initial values of the global variables.

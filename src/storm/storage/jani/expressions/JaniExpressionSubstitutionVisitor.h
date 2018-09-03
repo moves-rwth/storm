@@ -5,6 +5,12 @@
 #include "storm/storage/jani/expressions/JaniExpressionVisitor.h"
 
 namespace storm {
+    
+    namespace jani {
+        storm::expressions::Expression substituteJaniExpression(storm::expressions::Expression const& expression, std::map<storm::expressions::Variable, storm::expressions::Expression> const& identifierToExpressionMap);
+        storm::expressions::Expression substituteJaniExpression(storm::expressions::Expression const& expression, std::unordered_map<storm::expressions::Variable, storm::expressions::Expression> const& identifierToExpressionMap);
+    }
+    
     namespace expressions {
         template<typename MapType>
         class JaniExpressionSubstitutionVisitor : public SubstitutionVisitor<MapType>, public JaniExpressionVisitor {
