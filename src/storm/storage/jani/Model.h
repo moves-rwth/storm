@@ -143,7 +143,7 @@ namespace storm {
             /*!
              * Adds the given constant to the model.
              */
-            uint64_t addConstant(Constant const& constant);
+            Constant const& addConstant(Constant const& constant);
             
             /*!
              * Retrieves whether the model has a constant with the given name.

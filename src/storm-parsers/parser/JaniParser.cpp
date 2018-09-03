@@ -107,24 +107,22 @@ namespace storm {
                 parseActions(parsedStructure.at("actions"), model);
             }
             size_t constantsCount = parsedStructure.count("constants");
-            std::unordered_map<std::string, std::shared_ptr<storm::jani::Constant>> constants;
+            ConstantsMap constants;
             STORM_LOG_THROW(constantsCount < 2, storm::exceptions::InvalidJaniException, "Constant-declarations can be given at most once.");
             if (constantsCount == 1) {
                 for (auto const &constStructure : parsedStructure.at("constants")) {
                     std::shared_ptr<storm::jani::Constant> constant = parseConstant(constStructure, constants, "global");
-                    constants.emplace(constant->getName(), constant);
-                    model.addConstant(*constant);
+                    constants.emplace(constant->getName(), &model.addConstant(*constant));
                 }
             }
             size_t variablesCount = parsedStructure.count("variables");
             STORM_LOG_THROW(variablesCount < 2, storm::exceptions::InvalidJaniException, "Variable-declarations can be given at most once for global variables.");
-            std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> globalVars;
+            VariablesMap globalVars;
             if (variablesCount == 1) {
                 bool requireInitialValues = parsedStructure.count("restrict-initial") == 0;
                 for (auto const& varStructure : parsedStructure.at("variables")) {
                     std::shared_ptr<storm::jani::Variable> variable = parseVariable(varStructure, requireInitialValues, "global", globalVars, constants);
-                    globalVars.emplace(variable->getName(), variable);
-                    model.addVariable(*variable);
+                    globalVars.emplace(variable->getName(), &model.addVariable(*variable));
                 }
             }
             STORM_LOG_THROW(parsedStructure.count("automata") == 1, storm::exceptions::InvalidJaniException, "Exactly one list of automata must be given");
@@ -163,19 +161,19 @@ namespace storm {
         }
 
         
-        std::vector<std::shared_ptr<storm::logic::Formula const>> JaniParser::parseUnaryFormulaArgument(json const& propertyStructure, storm::logic::FormulaContext formulaContext, std::string const& opstring, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& globalVars, std::unordered_map<std::string, std::shared_ptr<storm::jani::Constant>> const& constants, std::string const& context) {
+        std::vector<std::shared_ptr<storm::logic::Formula const>> JaniParser::parseUnaryFormulaArgument(json const& propertyStructure, storm::logic::FormulaContext formulaContext, std::string const& opstring, VariablesMap const& globalVars, ConstantsMap const& constants, std::string const& context) {
             STORM_LOG_THROW(propertyStructure.count("exp") == 1, storm::exceptions::InvalidJaniException, "Expecting operand for operator " << opstring << " in  " << context);
             return  { parseFormula(propertyStructure.at("exp"), formulaContext, globalVars, constants, "Operand of operator " + opstring) };
         }
         
         
-        std::vector<std::shared_ptr<storm::logic::Formula const>> JaniParser::parseBinaryFormulaArguments(json const& propertyStructure, storm::logic::FormulaContext formulaContext, std::string const& opstring, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& globalVars, std::unordered_map<std::string, std::shared_ptr<storm::jani::Constant>> const& constants, std::string const& context) {
+        std::vector<std::shared_ptr<storm::logic::Formula const>> JaniParser::parseBinaryFormulaArguments(json const& propertyStructure, storm::logic::FormulaContext formulaContext, std::string const& opstring, VariablesMap const& globalVars, ConstantsMap const& constants, std::string const& context) {
             STORM_LOG_THROW(propertyStructure.count("left") == 1, storm::exceptions::InvalidJaniException, "Expecting left operand for operator " << opstring << " in  " << context);
             STORM_LOG_THROW(propertyStructure.count("right") == 1, storm::exceptions::InvalidJaniException, "Expecting right operand for operator " << opstring << " in  " << context);
             return { parseFormula(propertyStructure.at("left"), formulaContext, globalVars, constants, "Operand of operator " + opstring),  parseFormula(propertyStructure.at("right"), formulaContext, globalVars, constants, "Operand of operator " + opstring)  };
         }
         
-        storm::jani::PropertyInterval JaniParser::parsePropertyInterval(json const& piStructure, std::unordered_map<std::string, std::shared_ptr<storm::jani::Constant>> const& constants) {
+        storm::jani::PropertyInterval JaniParser::parsePropertyInterval(json const& piStructure, ConstantsMap const& constants) {
             storm::jani::PropertyInterval pi;
             if (piStructure.count("lower") > 0) {
                 pi.lowerBound = parseExpression(piStructure.at("lower"), "Lower bound for property interval", {}, constants);
@@ -218,7 +216,7 @@ namespace storm {
             return storm::logic::RewardAccumulation(accSteps, accTime, accExit);
         }
         
-        std::shared_ptr<storm::logic::Formula const> JaniParser::parseFormula(json const& propertyStructure, storm::logic::FormulaContext formulaContext,std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& globalVars, std::unordered_map<std::string, std::shared_ptr<storm::jani::Constant>> const& constants, std::string const& context, boost::optional<storm::logic::Bound> bound) {
+        std::shared_ptr<storm::logic::Formula const> JaniParser::parseFormula(json const& propertyStructure, storm::logic::FormulaContext formulaContext,VariablesMap const& globalVars, ConstantsMap const& constants, std::string const& context, boost::optional<storm::logic::Bound> bound) {
             if (propertyStructure.is_boolean()) {
                 return std::make_shared<storm::logic::BooleanLiteralFormula>(propertyStructure.get<bool>());
             }
@@ -500,7 +498,7 @@ namespace storm {
             }
         }
         
-        storm::jani::Property JaniParser::parseProperty(json const& propertyStructure, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& globalVars, std::unordered_map<std::string, std::shared_ptr<storm::jani::Constant>> const& constants) {
+        storm::jani::Property JaniParser::parseProperty(json const& propertyStructure, VariablesMap const& globalVars, ConstantsMap const& constants) {
             STORM_LOG_THROW(propertyStructure.count("name") ==  1, storm::exceptions::InvalidJaniException, "Property must have a name");
             // TODO check unique name
             std::string name = getString(propertyStructure.at("name"), "property-name");
@@ -566,7 +564,7 @@ namespace storm {
             return storm::jani::Property(name, storm::jani::FilterExpression(formula, ft, statesFormula), comment);
         }
 
-        std::shared_ptr<storm::jani::Constant> JaniParser::parseConstant(json const& constantStructure, std::unordered_map<std::string, std::shared_ptr<storm::jani::Constant>> const& constants, std::string const& scopeDescription) {
+        std::shared_ptr<storm::jani::Constant> JaniParser::parseConstant(json const& constantStructure, ConstantsMap const& constants, std::string const& scopeDescription) {
             STORM_LOG_THROW(constantStructure.count("name") == 1, storm::exceptions::InvalidJaniException, "Variable (scope: " + scopeDescription + ") must have a name");
             std::string name = getString(constantStructure.at("name"), "variable-name in " + scopeDescription + "-scope");
             // TODO check existance of name.
@@ -635,7 +633,7 @@ namespace storm {
             STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Unknown type description, " << constantStructure.at("type").dump()  << " for Variable '" << name << "' (scope: " << scopeDescription << ")");
         }
         
-        void JaniParser::parseType(ParsedType& result, json const& typeStructure, std::string variableName, std::string const& scopeDescription, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& globalVars, std::unordered_map<std::string, std::shared_ptr<storm::jani::Constant>> const& constants,  std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& localVars) {
+        void JaniParser::parseType(ParsedType& result, json const& typeStructure, std::string variableName, std::string const& scopeDescription, VariablesMap const& globalVars, ConstantsMap const& constants,  VariablesMap const& localVars) {
             if (typeStructure.is_string()) {
                 if (typeStructure == "real") {
                     result.basicType = ParsedType::BasicType::Real;
@@ -679,7 +677,7 @@ namespace storm {
             }
         }
         
-        std::shared_ptr<storm::jani::Variable> JaniParser::parseVariable(json const& variableStructure, bool requireInitialValues, std::string const& scopeDescription, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& globalVars, std::unordered_map<std::string, std::shared_ptr<storm::jani::Constant>> const& constants,  std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& localVars, bool prefWithScope) {
+        std::shared_ptr<storm::jani::Variable> JaniParser::parseVariable(json const& variableStructure, bool requireInitialValues, std::string const& scopeDescription, VariablesMap const& globalVars, ConstantsMap const& constants,  VariablesMap const& localVars, bool prefWithScope) {
             STORM_LOG_THROW(variableStructure.count("name") == 1, storm::exceptions::InvalidJaniException, "Variable (scope: " + scopeDescription + ") must have a name");
             std::string pref = prefWithScope  ? scopeDescription + VARIABLE_AUTOMATON_DELIMITER : "";
             std::string name = getString(variableStructure.at("name"), "variable-name in " + scopeDescription + "-scope");
@@ -801,12 +799,12 @@ namespace storm {
             STORM_LOG_THROW(expected == actual, storm::exceptions::InvalidJaniException, "Operator " << opstring  << " expects " << expected << " arguments, but got " << actual << " in " << errorInfo << ".");
         }
 
-        std::vector<storm::expressions::Expression> JaniParser::parseUnaryExpressionArguments(json const& expressionDecl, std::string const& opstring, std::string const& scopeDescription, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& globalVars, std::unordered_map<std::string, std::shared_ptr<storm::jani::Constant>> const& constants,  std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& localVars, bool returnNoneInitializedOnUnknownOperator, std::unordered_map<std::string, storm::expressions::Variable> const& auxiliaryVariables) {
+        std::vector<storm::expressions::Expression> JaniParser::parseUnaryExpressionArguments(json const& expressionDecl, std::string const& opstring, std::string const& scopeDescription, VariablesMap const& globalVars, ConstantsMap const& constants,  VariablesMap const& localVars, bool returnNoneInitializedOnUnknownOperator, std::unordered_map<std::string, storm::expressions::Variable> const& auxiliaryVariables) {
             storm::expressions::Expression left = parseExpression(expressionDecl.at("exp"), "Argument of operator " + opstring + " in " + scopeDescription, globalVars, constants, localVars,returnNoneInitializedOnUnknownOperator, auxiliaryVariables);
             return {left};
         }
 
-        std::vector<storm::expressions::Expression> JaniParser::parseBinaryExpressionArguments(json const& expressionDecl, std::string const& opstring, std::string const& scopeDescription, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& globalVars, std::unordered_map<std::string, std::shared_ptr<storm::jani::Constant>> const& constants,  std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& localVars, bool returnNoneInitializedOnUnknownOperator, std::unordered_map<std::string, storm::expressions::Variable> const& auxiliaryVariables) {
+        std::vector<storm::expressions::Expression> JaniParser::parseBinaryExpressionArguments(json const& expressionDecl, std::string const& opstring, std::string const& scopeDescription, VariablesMap const& globalVars, ConstantsMap const& constants,  VariablesMap const& localVars, bool returnNoneInitializedOnUnknownOperator, std::unordered_map<std::string, storm::expressions::Variable> const& auxiliaryVariables) {
             storm::expressions::Expression left = parseExpression(expressionDecl.at("left"), "Left argument of operator " + opstring + " in " + scopeDescription, globalVars, constants, localVars, returnNoneInitializedOnUnknownOperator, auxiliaryVariables);
             storm::expressions::Expression right = parseExpression(expressionDecl.at("right"), "Right argument of operator " + opstring + " in " + scopeDescription,  globalVars, constants, localVars, returnNoneInitializedOnUnknownOperator, auxiliaryVariables);
             return {left, right};
@@ -839,7 +837,7 @@ namespace storm {
             STORM_LOG_THROW(expr.getType().isArrayType(), storm::exceptions::InvalidJaniException, "Operator " << opstring << " expects argument " + std::to_string(argNr) + " to be of type 'array' in " << errorInfo << ".");
         }
 
-        storm::jani::LValue JaniParser::parseLValue(json const& lValueStructure, std::string const& scopeDescription, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& globalVars, std::unordered_map<std::string, std::shared_ptr<storm::jani::Constant>> const& constants,  std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& localVars) {
+        storm::jani::LValue JaniParser::parseLValue(json const& lValueStructure, std::string const& scopeDescription, VariablesMap const& globalVars, ConstantsMap const& constants,  VariablesMap const& localVars) {
             if (lValueStructure.is_string()) {
                 std::string ident = getString(lValueStructure, scopeDescription);
                 auto localVar = localVars.find(ident);
@@ -867,7 +865,7 @@ namespace storm {
             }
         }
 
-        storm::expressions::Variable JaniParser::getVariableOrConstantExpression(std::string const& ident, std::string const& scopeDescription, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& globalVars, std::unordered_map<std::string, std::shared_ptr<storm::jani::Constant>> const& constants,  std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& localVars, std::unordered_map<std::string, storm::expressions::Variable> const& auxiliaryVariables) {
+        storm::expressions::Variable JaniParser::getVariableOrConstantExpression(std::string const& ident, std::string const& scopeDescription, VariablesMap const& globalVars, ConstantsMap const& constants,  VariablesMap const& localVars, std::unordered_map<std::string, storm::expressions::Variable> const& auxiliaryVariables) {
             {
                 auto it = auxiliaryVariables.find(ident);
                 if (it != auxiliaryVariables.end()) {
@@ -897,7 +895,7 @@ namespace storm {
             return storm::expressions::Variable();
         }
 
-        storm::expressions::Expression JaniParser::parseExpression(json const& expressionStructure, std::string const& scopeDescription, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& globalVars, std::unordered_map<std::string, std::shared_ptr<storm::jani::Constant>> const& constants,  std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& localVars, bool returnNoneInitializedOnUnknownOperator, std::unordered_map<std::string, storm::expressions::Variable> const& auxiliaryVariables) {
+        storm::expressions::Expression JaniParser::parseExpression(json const& expressionStructure, std::string const& scopeDescription, VariablesMap const& globalVars, ConstantsMap const& constants,  VariablesMap const& localVars, bool returnNoneInitializedOnUnknownOperator, std::unordered_map<std::string, storm::expressions::Variable> const& auxiliaryVariables) {
             if(expressionStructure.is_boolean()) {
                 if(expressionStructure.get<bool>()) {
                     return expressionManager->boolean(true);
@@ -1183,24 +1181,22 @@ namespace storm {
             }
         }
 
-        storm::jani::Automaton JaniParser::parseAutomaton(json const &automatonStructure, storm::jani::Model const& parentModel, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& globalVars, std::unordered_map<std::string, std::shared_ptr<storm::jani::Constant>> const& constants ) {
+        storm::jani::Automaton JaniParser::parseAutomaton(json const &automatonStructure, storm::jani::Model const& parentModel, VariablesMap const& globalVars, ConstantsMap const& constants ) {
             STORM_LOG_THROW(automatonStructure.count("name") == 1, storm::exceptions::InvalidJaniException, "Each automaton must have a name");
             std::string name = getString(automatonStructure.at("name"), " the name field for automaton");
             storm::jani::Automaton automaton(name, expressionManager->declareIntegerVariable("_loc_" + name));
 
             uint64_t varDeclCount = automatonStructure.count("variables");
             STORM_LOG_THROW(varDeclCount < 2, storm::exceptions::InvalidJaniException, "Automaton '" << name << "' has more than one list of variables");
-            std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> localVars;
+            VariablesMap localVars;
             if(varDeclCount > 0) {
                 bool requireInitialValues = automatonStructure.count("restrict-initial") == 0;
                 for(auto const& varStructure : automatonStructure.at("variables")) {
                     std::shared_ptr<storm::jani::Variable> var = parseVariable(varStructure, requireInitialValues, name, globalVars, constants, localVars, true);
                     assert(localVars.count(var->getName()) == 0);
-                    automaton.addVariable(*var);
-                    localVars.emplace(var->getName(), var);
+                    localVars.emplace(var->getName(), &automaton.addVariable(*var));
                 }
             }
-
 
             STORM_LOG_THROW(automatonStructure.count("locations") > 0, storm::exceptions::InvalidJaniException, "Automaton '" << name << "' does not have locations.");
             std::unordered_map<std::string, uint64_t> locIds;
