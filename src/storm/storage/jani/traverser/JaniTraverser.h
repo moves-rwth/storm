@@ -11,6 +11,33 @@ namespace storm {
         public:
             virtual ~JaniTraverser() = default;
             
+            virtual void traverse(Model& model, boost::any const& data) const;
+            
+            virtual void traverse(Action const& action, boost::any const& data) const;
+            virtual void traverse(Automaton& automaton, boost::any const& data) const;
+            virtual void traverse(Constant& constant, boost::any const& data) const;
+            virtual void traverse(VariableSet& variableSet, boost::any const& data) const;
+            virtual void traverse(Location& location, boost::any const& data) const;
+            virtual void traverse(BooleanVariable& variable, boost::any const& data) const;
+            virtual void traverse(BoundedIntegerVariable& variable, boost::any const& data) const;
+            virtual void traverse(UnboundedIntegerVariable& variable, boost::any const& data) const;
+            virtual void traverse(RealVariable& variable, boost::any const& data) const;
+            virtual void traverse(ArrayVariable& variable, boost::any const& data) const;
+            virtual void traverse(EdgeContainer& edgeContainer, boost::any const& data) const;
+            virtual void traverse(TemplateEdge& templateEdge, boost::any const& data) const;
+            virtual void traverse(TemplateEdgeDestination& templateEdgeDestination, boost::any const& data) const;
+            virtual void traverse(Edge& edge, boost::any const& data) const;
+            virtual void traverse(EdgeDestination& edgeDestination, boost::any const& data) const;
+            virtual void traverse(OrderedAssignments& orderedAssignments, boost::any const& data) const;
+            virtual void traverse(Assignment& assignment, boost::any const& data) const;
+            virtual void traverse(LValue& lValue, boost::any const& data) const;
+            virtual void traverse(storm::expressions::Expression const& expression, boost::any const& data) const;
+        };
+        
+        class ConstJaniTraverser {
+        public:
+            virtual ~ConstJaniTraverser() = default;
+            
             virtual void traverse(Model const& model, boost::any const& data) const;
             
             virtual void traverse(Action const& action, boost::any const& data) const;
@@ -22,6 +49,7 @@ namespace storm {
             virtual void traverse(BoundedIntegerVariable const& variable, boost::any const& data) const;
             virtual void traverse(UnboundedIntegerVariable const& variable, boost::any const& data) const;
             virtual void traverse(RealVariable const& variable, boost::any const& data) const;
+            virtual void traverse(ArrayVariable const& variable, boost::any const& data) const;
             virtual void traverse(EdgeContainer const& edgeContainer, boost::any const& data) const;
             virtual void traverse(TemplateEdge const& templateEdge, boost::any const& data) const;
             virtual void traverse(TemplateEdgeDestination const& templateEdgeDestination, boost::any const& data) const;

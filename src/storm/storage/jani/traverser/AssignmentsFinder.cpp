@@ -9,7 +9,7 @@ namespace storm {
             res.hasLocationAssignment = false;
             res.hasEdgeAssignment = false;
             res.hasEdgeDestinationAssignment = false;
-            JaniTraverser::traverse(model, std::make_pair(&variable, &res));
+            ConstJaniTraverser::traverse(model, std::make_pair(&variable, &res));
             return res;
         }
         
@@ -20,7 +20,7 @@ namespace storm {
                     resVar.second->hasLocationAssignment = true;
                 }
             }
-            JaniTraverser::traverse(location, data);
+            ConstJaniTraverser::traverse(location, data);
         }
         
         void AssignmentsFinder::traverse(TemplateEdge const& templateEdge, boost::any const& data) const {
@@ -30,7 +30,7 @@ namespace storm {
                     resVar.second->hasEdgeAssignment = true;
                 }
             }
-            JaniTraverser::traverse(templateEdge, data);
+            ConstJaniTraverser::traverse(templateEdge, data);
         }
         
         void AssignmentsFinder::traverse(TemplateEdgeDestination const& templateEdgeDestination, boost::any const& data) const {
@@ -40,7 +40,7 @@ namespace storm {
                     resVar.second->hasEdgeDestinationAssignment = true;
                 }
             }
-            JaniTraverser::traverse(templateEdgeDestination, data);
+            ConstJaniTraverser::traverse(templateEdgeDestination, data);
         }
     }
 }

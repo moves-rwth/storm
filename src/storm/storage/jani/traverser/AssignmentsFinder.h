@@ -7,7 +7,7 @@
 
 namespace storm {
     namespace jani {
-        class AssignmentsFinder : public JaniTraverser {
+        class AssignmentsFinder : public ConstJaniTraverser {
         public:
             
             struct ResultType {
