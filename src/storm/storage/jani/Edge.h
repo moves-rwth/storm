@@ -71,6 +71,11 @@ namespace storm {
             std::vector<EdgeDestination> const& getDestinations() const;
             
             /*!
+             * Retrieves the destinations of this edge.
+             */
+            std::vector<EdgeDestination>& getDestinations();
+            
+            /*!
              * Retrieves the number of destinations of this edge.
              */
             std::size_t getNumberOfDestinations() const;
@@ -103,7 +108,7 @@ namespace storm {
             /*!
              * Retrieves whether the edge uses an assignment level other than zero.
              */
-            bool usesAssignmentLevels() const;
+            bool usesAssignmentLevels(bool onlyTransient = false) const;
 
             /*!
              *
@@ -112,8 +117,20 @@ namespace storm {
             void simplifyIndexedAssignments(VariableSet const& localVars);
             
             std::shared_ptr<TemplateEdge> const& getTemplateEdge();
-
             void setTemplateEdge(std::shared_ptr<TemplateEdge> const& newTe);
+
+            /*!
+             * Retrieves the lowest assignment level occurring in each assignment.
+             * If no assignment exists, this value is the highest possible integer
+             */
+            uint64_t const& getLowestAssignmentLevel() const;
+            
+            /*!
+             * Retrieves the highest assignment level occurring in each assignment
+             * If no assignment exists, this value is always zero
+             */
+            uint64_t const& getHighestAssignmentLevel() const;
+            
 
             void assertValid() const;
             

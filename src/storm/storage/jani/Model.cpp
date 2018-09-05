@@ -948,7 +948,7 @@ namespace storm {
         
         void Model::eliminateArrays(bool keepNonTrivialArrayAccess) {
             ArrayEliminator arrayEliminator;
-            arrayEliminator.eliminate(*this);
+            arrayEliminator.eliminate(*this, keepNonTrivialArrayAccess);
         }
         
         void Model::setInitialStatesRestriction(storm::expressions::Expression const& initialStatesRestriction) {
@@ -1164,9 +1164,9 @@ namespace storm {
             }
         }
         
-        void Model::liftTransientEdgeDestinationAssignments() {
+        void Model::liftTransientEdgeDestinationAssignments(uint64_t maxLevel) {
             for (auto& automaton : this->getAutomata()) {
-                automaton.liftTransientEdgeDestinationAssignments();
+                automaton.liftTransientEdgeDestinationAssignments(maxLevel);
             }
         }
         
@@ -1179,9 +1179,9 @@ namespace storm {
             return false;
         }
         
-        bool Model::usesAssignmentLevels() const {
+        bool Model::usesAssignmentLevels(bool onlyTransient) const {
             for (auto const& automaton : this->getAutomata()) {
-                if (automaton.usesAssignmentLevels()) {
+                if (automaton.usesAssignmentLevels(onlyTransient)) {
                     return true;
                 }
             }

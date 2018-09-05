@@ -197,7 +197,15 @@ namespace storm {
              */
             ConstEdges getEdgesFromLocation(uint64_t locationIndex, uint64_t actionIndex) const;
             
+            /*!
+             * Retrieves the container of all edges of this automaton.
+             */
             EdgeContainer const& getEdgeContainer() const;
+
+            /*!
+             * Retrieves the container of all edges of this automaton.
+             */
+            EdgeContainer& getEdgeContainer();
             
             /*!
              * Adds the template edge to the list of edges
@@ -317,12 +325,12 @@ namespace storm {
             /*!
              * Lifts the common edge destination assignments to edge assignments.
              */
-            void liftTransientEdgeDestinationAssignments();
+            void liftTransientEdgeDestinationAssignments(uint64_t maxLevel = 0);
             
             /*!
              * Retrieves whether the automaton uses an assignment level other than zero.
              */
-            bool usesAssignmentLevels() const;
+            bool usesAssignmentLevels(bool onlyTransient = false) const;
 
             void simplifyIndexedAssignments();
             

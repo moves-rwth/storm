@@ -9,12 +9,12 @@
 namespace storm {
     namespace jani {
         
-        TemplateEdge::TemplateEdge(storm::expressions::Expression const& guard) : guard(guard) {
+        TemplateEdge::TemplateEdge(storm::expressions::Expression const& guard) : guard(guard), lowestAssignmentLevel(std::numeric_limits<uint64_t>::max()), highestAssignmentLevel(0) {
             // Intentionally left empty.
         }
 
         TemplateEdge::TemplateEdge(storm::expressions::Expression const& guard, OrderedAssignments const& assignments, std::vector<TemplateEdgeDestination> const& destinations)
-                : guard(guard), destinations(destinations), assignments(assignments) {
+                : guard(guard), destinations(destinations), assignments(assignments), lowestAssignmentLevel(std::numeric_limits<uint64_t>::max()), highestAssignmentLevel(0) {
             // Intentionally left empty.
         }
         
@@ -27,7 +27,18 @@ namespace storm {
         }
         
         void TemplateEdge::finalize(Model const& containingModel) {
+            if (assignments.empty()) {
+                lowestAssignmentLevel = std::numeric_limits<uint64_t>::max();
+                highestAssignmentLevel = 0;
+            } else {
+                lowestAssignmentLevel = assignments.getLowestLevel();
+                highestAssignmentLevel = assignments.getHighestLevel();
+            }
             for (auto const& destination : getDestinations()) {
+                if (!destination.getOrderedAssignments().empty()) {
+                    lowestAssignmentLevel = std::min<uint64_t>(lowestAssignmentLevel, destination.getOrderedAssignments().getLowestLevel());
+                    highestAssignmentLevel = std::max<uint64_t>(highestAssignmentLevel, destination.getOrderedAssignments().getHighestLevel());
+                }
                 for (auto const& assignment : destination.getOrderedAssignments().getAllAssignments()) {
                     Variable const& var = assignment.getLValue().isVariable() ? assignment.getLValue().getVariable() : assignment.getLValue().getArray();
                     if (containingModel.getGlobalVariables().hasVariable(var.getExpressionVariable())) {
@@ -53,11 +64,19 @@ namespace storm {
             return destinations;
         }
         
+        std::vector<TemplateEdgeDestination>& TemplateEdge::getDestinations() {
+            return destinations;
+        }
+        
         TemplateEdgeDestination const& TemplateEdge::getDestination(uint64_t index) const {
             return destinations[index];
         }
 
         OrderedAssignments const& TemplateEdge::getAssignments() const {
+            return assignments;
+        }
+
+        OrderedAssignments& TemplateEdge::getAssignments() {
             return assignments;
         }
         
@@ -80,7 +99,7 @@ namespace storm {
             assignments.changeAssignmentVariables(remapping);
         }
 
-        void TemplateEdge::liftTransientDestinationAssignments() {
+        void TemplateEdge::liftTransientDestinationAssignments(uint64_t maxLevel) {
             if (!destinations.empty()) {
                 auto const& destination = *destinations.begin();
                 
@@ -88,11 +107,13 @@ namespace storm {
                 
                 for (auto const& assignment : destination.getOrderedAssignments().getTransientAssignments()) {
                     // Check if we can lift the assignment to the edge.
-                    bool canBeLifted = true;
-                    for (auto const& destination : destinations) {
-                        if (!destination.hasAssignment(assignment)) {
-                            canBeLifted = false;
-                            break;
+                    bool canBeLifted = assignment.getLevel() <= maxLevel;
+                    if (canBeLifted) {
+                        for (auto const& destination : destinations) {
+                            if (!destination.hasAssignment(assignment)) {
+                                canBeLifted = false;
+                                break;
+                            }
                         }
                     }
                     
@@ -143,18 +164,25 @@ namespace storm {
             return false;
         }
         
-        bool TemplateEdge::usesAssignmentLevels() const {
-            if (assignments.hasMultipleLevels()) {
+        bool TemplateEdge::usesAssignmentLevels(bool onlyTransient) const {
+            if (assignments.hasMultipleLevels(onlyTransient)) {
                 return true;
             }
             for (auto const& destination : this->getDestinations()) {
-                if (destination.usesAssignmentLevels()) {
+                if (destination.usesAssignmentLevels(onlyTransient)) {
                     return true;
                 }
             }
             return false;
         }
-
+        
+        uint64_t const& TemplateEdge::getLowestAssignmentLevel() const {
+            return lowestAssignmentLevel;
+        }
+        
+        uint64_t const& TemplateEdge::getHighestAssignmentLevel() const {
+            return highestAssignmentLevel;
+        }
 
         bool TemplateEdge::hasEdgeDestinationAssignments() const {
             for (auto const& destination : destinations) {

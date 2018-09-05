@@ -110,6 +110,11 @@ namespace storm {
             ArrayVariable const& addVariable(ArrayVariable const& variable);
 
             /*!
+             * Removes all array variables in this set
+             */
+            std::vector<std::shared_ptr<ArrayVariable>> dropAllArrayVariables();
+            
+            /*!
              * Retrieves whether this variable set contains a variable with the given name.
              */
             bool hasVariable(std::string const& name) const;

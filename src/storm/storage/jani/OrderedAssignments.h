@@ -44,7 +44,7 @@ namespace storm {
              * 
              * @return True if more than one level occurs in the assignment set.
              */
-            bool hasMultipleLevels() const;
+            bool hasMultipleLevels(bool onlyTransient = false) const;
 
             /**
              * Produces a new OrderedAssignments object with simplified leveling
@@ -73,13 +73,13 @@ namespace storm {
              * Retrieves the lowest level among all assignments. Note that this may only be called if there is at least
              * one assignment.
              */
-            int_fast64_t getLowestLevel() const;
+            int_fast64_t getLowestLevel(bool onlyTransient = false) const;
 
             /*!
              * Retrieves the highest level among all assignments. Note that this may only be called if there is at least
              * one assignment.
              */
-            int_fast64_t getHighestLevel() const;
+            int_fast64_t getHighestLevel(bool onlyTransient = false) const;
 
             /*!
              * Retrieves whether the given assignment is contained in this set of assignments.
@@ -144,7 +144,12 @@ namespace storm {
             friend std::ostream& operator<<(std::ostream& stream, OrderedAssignments const& assignments);
 
             OrderedAssignments clone() const;
-
+            
+            /*!
+             * Checks whether this ordered assignment is in the correct order.
+             */
+            bool checkOrder() const;
+            
         private:
             uint64_t isReadBeforeAssignment(LValue const& lValue, uint64_t assignmentNumber, uint64_t start = 0) const;
             uint64_t isWrittenBeforeAssignment(LValue const& LValue, uint64_t assignmentNumber, uint64_t start = 0) const;

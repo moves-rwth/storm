@@ -456,8 +456,9 @@ namespace storm {
             
             /*!
              * Lifts the common edge destination assignments to edge assignments.
+             * @param maxLevel the maximum level of assignments that are to be lifted.
              */
-            void liftTransientEdgeDestinationAssignments();
+            void liftTransientEdgeDestinationAssignments(uint64_t maxLevel = 0);
             
             /*!
              * Retrieves whether there is any transient edge destination assignment in the model.
@@ -466,8 +467,9 @@ namespace storm {
             
             /*!
              * Retrieves whether the model uses an assignment level other than zero.
+             * @param onlyTransient if set, only transient assignments are considered
              */
-            bool usesAssignmentLevels() const;
+            bool usesAssignmentLevels(bool onlyTransient = false) const;
             
             /*!
              * Checks the model for linearity. A model is linear if all expressions appearing in guards and assignments

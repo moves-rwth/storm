@@ -31,9 +31,13 @@ namespace storm {
             
             /*!
              * Retrieves the lValue that is written in this assignment.
-             * @return
              */
             storm::jani::LValue const& getLValue() const;
+
+            /*!
+             * Retrieves the lValue that is written in this assignment.
+             */
+            storm::jani::LValue& getLValue();
             
             /*!
              * Retrieves the Variable that is written in this assignment.

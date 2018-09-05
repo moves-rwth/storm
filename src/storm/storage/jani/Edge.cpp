@@ -67,6 +67,10 @@ namespace storm {
             return destinations;
         }
         
+        std::vector<EdgeDestination>& Edge::getDestinations() {
+            return destinations;
+        }
+        
         std::size_t Edge::getNumberOfDestinations() const {
             return destinations.size();
         }
@@ -100,8 +104,8 @@ namespace storm {
             return templateEdge->hasTransientEdgeDestinationAssignments();
         }
         
-        bool Edge::usesAssignmentLevels() const {
-            return templateEdge->usesAssignmentLevels();
+        bool Edge::usesAssignmentLevels(bool onlyTransient) const {
+            return templateEdge->usesAssignmentLevels(onlyTransient);
         }
 
         void Edge::simplifyIndexedAssignments(VariableSet const& localVars) {
@@ -117,6 +121,14 @@ namespace storm {
             }
         }
 
+        uint64_t const& Edge::getLowestAssignmentLevel() const {
+            return templateEdge->getLowestAssignmentLevel();
+        }
+
+        uint64_t const& Edge::getHighestAssignmentLevel() const {
+            return templateEdge->getHighestAssignmentLevel();
+        }
+        
         void Edge::setTemplateEdge(std::shared_ptr<TemplateEdge> const& newTe) {
             templateEdge = newTe;
             uint64_t i = 0;

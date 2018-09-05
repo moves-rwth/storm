@@ -281,6 +281,10 @@ namespace storm {
             return edges;
         }
         
+        EdgeContainer& Automaton::getEdgeContainer() {
+            return edges;
+        }
+        
         void Automaton::addEdge(Edge const& edge) {
             STORM_LOG_THROW(edge.getSourceLocationIndex() < locations.size(), storm::exceptions::InvalidArgumentException, "Cannot add edge with unknown source location index '" << edge.getSourceLocationIndex() << "'.");
             assert(validate());
@@ -293,8 +297,6 @@ namespace storm {
             for (uint64_t locationIndex = edge.getSourceLocationIndex() + 1; locationIndex < locationToStartingIndex.size(); ++locationIndex) {
                 ++locationToStartingIndex[locationIndex];
             }
-            
-
         }
         
         std::vector<Edge>& Automaton::getEdges() {
@@ -476,8 +478,8 @@ namespace storm {
             return false;
         }
         
-        void Automaton::liftTransientEdgeDestinationAssignments() {
-            edges.liftTransientDestinationAssignments();
+        void Automaton::liftTransientEdgeDestinationAssignments(uint64_t maxLevel) {
+            edges.liftTransientDestinationAssignments(maxLevel);
         }
 
         bool Automaton::validate() const {
@@ -488,8 +490,8 @@ namespace storm {
             return true;
         }
 
-        bool Automaton::usesAssignmentLevels() const {
-            return edges.usesAssignmentLevels();
+        bool Automaton::usesAssignmentLevels(bool onlyTransient) const {
+            return edges.usesAssignmentLevels(onlyTransient);
         }
         
         bool Automaton::isLinear() const {

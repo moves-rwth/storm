@@ -27,6 +27,10 @@ namespace storm  {
             return lValue.isArrayAccess();
         }
         
+        storm::jani::LValue& Assignment::getLValue() {
+            return lValue;
+        }
+        
         storm::jani::LValue const& Assignment::getLValue() const {
             return lValue;
         }

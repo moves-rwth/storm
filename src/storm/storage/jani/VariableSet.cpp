@@ -132,6 +132,33 @@ namespace storm {
             return *newVariable;
         }
         
+        std::vector<std::shared_ptr<ArrayVariable>> VariableSet::dropAllArrayVariables() {
+            if (!arrayVariables.empty()) {
+                for (auto const& arrVar : arrayVariables) {
+                    nameToVariable.erase(arrVar->getName());
+                    variableToVariable.erase(arrVar->getExpressionVariable());
+                }
+                std::vector<std::shared_ptr<Variable>> newVariables;
+                for (auto const& v : variables) {
+                    if (!v->isArrayVariable()) {
+                        newVariables.push_back(v);
+                    }
+                }
+                variables = std::move(newVariables);
+                newVariables.clear();
+                for (auto const& v : transientVariables) {
+                    if (!v->isArrayVariable()) {
+                        newVariables.push_back(v);
+                    }
+                }
+                transientVariables = std::move(newVariables);
+            }
+            
+            std::vector<std::shared_ptr<ArrayVariable>> result = std::move(arrayVariables);
+            arrayVariables.clear();
+            return result;
+        }
+        
         bool VariableSet::hasVariable(std::string const& name) const {
             return nameToVariable.find(name) != nameToVariable.end();
         }

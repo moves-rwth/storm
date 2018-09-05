@@ -107,12 +107,12 @@ namespace storm {
             std::set<uint64_t> getActionIndices() const;
 
             void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution);
-            void liftTransientDestinationAssignments();
+            void liftTransientDestinationAssignments(uint64_t maxLevel = 0);
             void pushAssignmentsToDestinations();
             void insertEdge(Edge const& e, uint64_t locStart, uint64_t locEnd);
             void insertTemplateEdge(std::shared_ptr<TemplateEdge> const& te);
             bool isLinear() const;
-            bool usesAssignmentLevels() const;
+            bool usesAssignmentLevels(bool onlyTransient = false) const;
             void finalize(Model const& containingModel);
 
             void changeAssignmentVariables(std::map<Variable const*, std::reference_wrapper<Variable const>> const& remapping);

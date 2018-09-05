@@ -32,9 +32,11 @@ namespace storm {
 
             std::size_t getNumberOfDestinations() const;
             std::vector<TemplateEdgeDestination> const& getDestinations() const;
+            std::vector<TemplateEdgeDestination>& getDestinations();
             TemplateEdgeDestination const& getDestination(uint64_t index) const;
             
             OrderedAssignments const& getAssignments() const;
+            OrderedAssignments& getAssignments();
             
             /*!
              * Adds a transient assignment to this edge.
@@ -66,7 +68,7 @@ namespace storm {
              * assignments are no longer contained in the destination. Note that this may modify the semantics of the
              * model if assignment levels are being used somewhere in the model.
              */
-            void liftTransientDestinationAssignments();
+            void liftTransientDestinationAssignments(uint64_t maxLevel = 0);
             
             /**
              * Shifts the assingments from the edges to the destinations.
@@ -86,8 +88,20 @@ namespace storm {
             /*!
              * Retrieves whether the edge uses an assignment level other than zero.
              */
-            bool usesAssignmentLevels() const;
+            bool usesAssignmentLevels(bool onlyTransient = false) const;
 
+            /*!
+             * Retrieves the lowest assignment level occurring in each assignment.
+             * If no assignment exists, this value is the highest possible integer
+             */
+            uint64_t const& getLowestAssignmentLevel() const;
+            
+            /*!
+             * Retrieves the highest assignment level occurring in each assignment
+             * If no assignment exists, this value is always zero
+             */
+            uint64_t const& getHighestAssignmentLevel() const;
+            
             /*!
              * Checks the template edge for linearity.
              */
@@ -109,6 +123,8 @@ namespace storm {
             
             /// The assignments made when taking this edge.
             OrderedAssignments assignments;
+            
+            uint64_t lowestAssignmentLevel, highestAssignmentLevel;
             
             /// A set of global variables that is written by at least one of the edge's destinations. This set is
             /// initialized by the call to <code>finalize</code>.
