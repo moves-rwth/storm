@@ -7,11 +7,17 @@
 
 namespace storm {
     namespace jani {
+        
+        struct ArrayEliminatorData {
+            std::vector<std::shared_ptr<ArrayVariable>> eliminatedArrayVariables;
+            std::unordered_map<storm::expressions::Variable, std::vector<storm::jani::Variable const*>> replacements;
+        };
+        
         class ArrayEliminator {
         public:
             ArrayEliminator() = default;
             
-            void eliminate(Model& model);
+            ArrayEliminatorData eliminate(Model& model, bool keepNonTrivialArrayAccess = false);
 
         private:
         
