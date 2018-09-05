@@ -120,7 +120,14 @@ namespace storm {
 
                     uint_fast64_t numberOfStates;
 
-                    bool above(Node *, Node *);
+                    /**
+                     * Check if node1 lies above node2
+                     * @param node1
+                     * @param node2
+                     * @param seenNodes
+                     * @return
+                     */
+                    bool above(Node * node1, Node * node2, std::set<Node*>* seenNodes);
                 };
             }
 }

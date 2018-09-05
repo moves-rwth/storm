@@ -76,11 +76,13 @@ namespace storm {
                     return SAME;
                 }
 
-                if (above(node1, node2)) {
+                std::set<Node*>* seen1 = new std::set<Node*>({});
+                if (above(node1, node2, seen1)) {
                     return ABOVE;
                 }
 
-                if (above(node2, node1)) {
+                std::set<Node*>* seen2 = new std::set<Node*>({});
+                if (above(node2, node1, seen2)) {
                     return BELOW;
                 }
             }
@@ -108,7 +110,7 @@ namespace storm {
             std::vector<Node*> printedNodes = std::vector<Node*>({});
             for (auto itr = nodes.begin(); itr != nodes.end(); ++itr) {
 
-                if (std::find(printedNodes.begin(), printedNodes.end(), (*itr)) == printedNodes.end()) {
+                if ((*itr) != nullptr && std::find(printedNodes.begin(), printedNodes.end(), (*itr)) == printedNodes.end()) {
                     Node *node = *itr;
                     printedNodes.push_back(*itr);
                     out << "Node: {";
@@ -123,24 +125,23 @@ namespace storm {
                     out << "}" << "\n";
                     out << "  Address: " << node << "\n";
                     out << "    Above: {";
-                    for (auto itr2 = node->above.begin(); itr2 != node->above.end(); ++itr2) {
-                        Node *above = *itr2;
-                        out << "{";
-                        index = above->states.getNextSetIndex(0);
-                        while (index < numberOfStates) {
-                            out << index;
-                            index = above->states.getNextSetIndex(index + 1);
-                            if (index < numberOfStates) {
-                                out << ", ";
-                            }
-                        }
 
-                        out << "}";
-                        if ((++itr2) != node->above.end()) {
-                            out << ", ";
+                        for (auto itr2 = node->above.begin(); itr2 != node->above.end(); ++itr2) {
+                            Node *above = *itr2;
+                            index = above->states.getNextSetIndex(0);
+                            out << "{";
+                            while (index < numberOfStates) {
+                                out << index;
+                                index = above->states.getNextSetIndex(index + 1);
+                                if (index < numberOfStates) {
+                                    out << ", ";
+                                }
+                            }
+
+                            out << "}";
                         }
-                    }
-                    out << "}" << "\n";
+                        out << "}" << "\n";
+
 
                     out << "    Below: {";
                     for (auto itr2 = node->below.begin(); itr2 != node->below.end(); ++itr2) {
@@ -156,9 +157,6 @@ namespace storm {
                         }
 
                         out << "}";
-                        if ((++itr2) != node->below.end()) {
-                            out << ", ";
-                        }
                     }
                     out << "}" << "\n";
                 }
@@ -166,50 +164,53 @@ namespace storm {
         }
 
         void Lattice::toDotFile(std::ostream &out) {
-            out << "digraph \"Lattice\" {" << std::endl;
+        out << "digraph \"Lattice\" {" << std::endl;
 
-            // print all nodes
-            std::vector<Node*> printed;
-            out << "\t" << "node [shape=ellipse]" << std::endl;
-            for (auto itr = nodes.begin(); itr != nodes.end(); ++itr) {
-                if (find(printed.begin(), printed.end(), (*itr)) == printed.end()) {
-                    out << "\t\"" << (*itr) << "\" [label = \"";
-                    uint_fast64_t index = (*itr)->states.getNextSetIndex(0);
-                    while (index < numberOfStates) {
-                        out << index;
-                        index = (*itr)->states.getNextSetIndex(index + 1);
-                        if (index < numberOfStates) {
-                            out << ", ";
-                        }
+        // print all nodes
+        std::vector<Node*> printed;
+        out << "\t" << "node [shape=ellipse]" << std::endl;
+        for (auto itr = nodes.begin(); itr != nodes.end(); ++itr) {
+
+            if ((*itr) != nullptr && find(printed.begin(), printed.end(), (*itr)) == printed.end()) {
+                out << "\t\"" << (*itr) << "\" [label = \"";
+                uint_fast64_t index = (*itr)->states.getNextSetIndex(0);
+                while (index < numberOfStates) {
+                    out << index;
+                    index = (*itr)->states.getNextSetIndex(index + 1);
+                    if (index < numberOfStates) {
+                        out << ", ";
                     }
-
-                    out << "\"]" << std::endl;
-                    printed.push_back(*itr);
                 }
-            }
 
-            // print arcs
-            printed.clear();
-            for (auto itr = nodes.begin(); itr != nodes.end(); ++itr) {
-                if (find(printed.begin(), printed.end(), (*itr)) == printed.end()) {
-                    auto below = (*itr)->below;
-                    for (auto itr2 = below.begin(); itr2 != below.end(); ++itr2) {
-                        out << "\t\"" << (*itr) << "\" -> \"" << (*itr2) << "\";" << std::endl;
-                    }
-                    printed.push_back(*itr);
-                }
+                out << "\"]" << std::endl;
+                printed.push_back(*itr);
             }
-
-            out << "}" << std::endl;
         }
 
-        bool Lattice::above(Node *node1, Node *node2) {
-            bool result = !node1->below.empty() && std::find(node1->below.begin(), node1->below.end(), node2) != node1->below.end();
-
-            for (auto itr = node1->below.begin(); !result && node1->below.end() != itr; ++itr) {
-                result |= above(*itr, node2);
+        // print arcs
+        printed.clear();
+        for (auto itr = nodes.begin(); itr != nodes.end(); ++itr) {
+            if ((*itr) != nullptr && find(printed.begin(), printed.end(), (*itr)) == printed.end()) {
+                auto below = (*itr)->below;
+                for (auto itr2 = below.begin(); itr2 != below.end(); ++itr2) {
+                    out << "\t\"" << (*itr) << "\" -> \"" << (*itr2) << "\";" << std::endl;
+                }
+                printed.push_back(*itr);
             }
-            return result;
         }
+
+        out << "}" << std::endl;
     }
+
+    bool Lattice::above(Node *node1, Node *node2, std::set<Node *>* seenNodes) {
+        bool result = !node1->below.empty() && std::find(node1->below.begin(), node1->below.end(), node2) != node1->below.end();
+        for (auto itr = node1->below.begin(); !result && node1->below.end() != itr; ++itr) {
+            if (std::find(seenNodes->begin(), seenNodes->end(), (*itr)) == seenNodes->end()) {
+                seenNodes->insert(*itr);
+                result |= above(*itr, node2, seenNodes);
+            }
+        }
+        return result;
+    }
+}
 }

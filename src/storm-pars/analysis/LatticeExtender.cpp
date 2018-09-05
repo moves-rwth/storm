@@ -24,13 +24,13 @@
 namespace storm {
     namespace analysis {
 
-        template<typename SparseModelType>
-        LatticeExtender<SparseModelType>::LatticeExtender(std::shared_ptr<SparseModelType> model) : model(model) {
+        template<typename ValueType>
+        LatticeExtender<ValueType>::LatticeExtender(std::shared_ptr<storm::models::sparse::Model<ValueType>> model) : model(model) {
             // intentionally left empty
         }
 
-        template <typename SparseModelType>
-        std::tuple<storm::analysis::Lattice*, uint_fast64_t, uint_fast64_t> LatticeExtender<SparseModelType>::toLattice(std::vector<std::shared_ptr<storm::logic::Formula const>> formulas) {
+        template <typename ValueType>
+        std::tuple<storm::analysis::Lattice*, uint_fast64_t, uint_fast64_t> LatticeExtender<ValueType>::toLattice(std::vector<std::shared_ptr<storm::logic::Formula const>> formulas) {
             STORM_LOG_THROW((++formulas.begin()) == formulas.end(), storm::exceptions::NotSupportedException, "Only one formula allowed for monotonicity analysis");
             STORM_LOG_THROW((*(formulas[0])).isProbabilityOperatorFormula()
                             && ((*(formulas[0])).asProbabilityOperatorFormula().getSubformula().isUntilFormula()
@@ -38,7 +38,7 @@ namespace storm {
 
             uint_fast64_t numberOfStates = this->model->getNumberOfStates();
 
-            storm::modelchecker::SparsePropositionalModelChecker<SparseModelType> propositionalChecker(*model);
+            storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Model<ValueType>> propositionalChecker(*model);
             storm::storage::BitVector phiStates;
             storm::storage::BitVector psiStates;
             if ((*(formulas[0])).asProbabilityOperatorFormula().getSubformula().isUntilFormula()) {
@@ -76,15 +76,14 @@ namespace storm {
             return this->extendLattice(lattice);
         }
 
-        template <typename SparseModelType>
-        std::tuple<storm::analysis::Lattice*, uint_fast64_t, uint_fast64_t> LatticeExtender<SparseModelType>::extendLattice(storm::analysis::Lattice* lattice) {
-            std::shared_ptr<storm::expressions::ExpressionManager> expressionManager(new storm::expressions::ExpressionManager());
-            std::set<storm::expressions::BinaryRelationExpression*> assumptions;
-            return this->extendLattice(lattice, expressionManager, assumptions);
+        template <typename ValueType>
+        std::tuple<storm::analysis::Lattice*, uint_fast64_t, uint_fast64_t> LatticeExtender<ValueType>::extendLattice(storm::analysis::Lattice* lattice) {
+            std::set<std::shared_ptr<storm::expressions::BinaryRelationExpression>> assumptions;
+            return this->extendLattice(lattice, assumptions);
         }
 
-        template <typename SparseModelType>
-        std::tuple<storm::analysis::Lattice*, uint_fast64_t, uint_fast64_t> LatticeExtender<SparseModelType>::extendLattice(storm::analysis::Lattice* lattice, std::shared_ptr<storm::expressions::ExpressionManager> expressionManager, std::set<storm::expressions::BinaryRelationExpression*> assumptions) {
+        template <typename ValueType>
+        std::tuple<storm::analysis::Lattice*, uint_fast64_t, uint_fast64_t> LatticeExtender<ValueType>::extendLattice(storm::analysis::Lattice* lattice, std::set<std::shared_ptr<storm::expressions::BinaryRelationExpression>> assumptions) {
             auto numberOfStates = this->model->getNumberOfStates();
             // First handle assumptions
             for (auto itr = assumptions.begin(); itr != assumptions.end(); ++itr) {
@@ -93,20 +92,19 @@ namespace storm {
                 if (expr.getFirstOperand()->isVariable() && expr.getSecondOperand()->isVariable()) {
                     storm::expressions::Variable largest = expr.getFirstOperand()->asVariableExpression().getVariable();
                     storm::expressions::Variable smallest = expr.getSecondOperand()->asVariableExpression().getVariable();
-
-                    if (lattice->compare(largest.getOffset(), smallest.getOffset()) != storm::analysis::Lattice::ABOVE) {
-                        storm::analysis::Lattice::Node* n1 = lattice->getNode(largest.getOffset());
-                        storm::analysis::Lattice::Node* n2 = lattice->getNode(smallest.getOffset());
+                    if (lattice->compare(std::stoul(largest.getName(), nullptr, 0), std::stoul(smallest.getName(), nullptr, 0)) != storm::analysis::Lattice::ABOVE) {
+                        storm::analysis::Lattice::Node* n1 = lattice->getNode(std::stoul(largest.getName(), nullptr, 0));
+                        storm::analysis::Lattice::Node* n2 = lattice->getNode(std::stoul(smallest.getName(), nullptr, 0));
 
                         if (n1 != nullptr && n2 != nullptr) {
                             lattice->addRelationNodes(n1, n2);
                         } else if (n1 != nullptr) {
-                            lattice->addBetween(smallest.getOffset(), n1, lattice->getBottom());
+                            lattice->addBetween(std::stoul(smallest.getName(), nullptr, 0), n1, lattice->getBottom());
                         } else if (n2 != nullptr) {
-                            lattice->addBetween(largest.getOffset(), lattice->getTop(), n2);
+                            lattice->addBetween(std::stoul(largest.getName(), nullptr, 0), lattice->getTop(), n2);
                         } else {
-                            lattice->add(largest.getOffset());
-                            lattice->addBetween(smallest.getOffset(), lattice->getNode(largest.getOffset()),
+                            lattice->add(std::stoul(largest.getName(), nullptr, 0));
+                            lattice->addBetween(std::stoul(smallest.getName(), nullptr, 0), lattice->getNode(std::stoul(largest.getName(), nullptr, 0)),
                                                 lattice->getBottom());
                         }
                     }
@@ -141,6 +139,7 @@ namespace storm {
                         // Otherwise, check how the two states compare, and add if the comparison is possible.
                         uint_fast64_t successor1 = successors.getNextSetIndex(0);
                         uint_fast64_t successor2 = successors.getNextSetIndex(successor1 + 1);
+
                         int compareResult = lattice->compare(successor1, successor2);
                         if (compareResult == storm::analysis::Lattice::ABOVE) {
                             // successor 1 is closer to top than successor 2
@@ -163,6 +162,6 @@ namespace storm {
             return std::make_tuple(lattice, numberOfStates, numberOfStates);
         }
 
-        template class LatticeExtender<storm::models::sparse::Model<storm::RationalFunction>>;
+        template class LatticeExtender<storm::RationalFunction>;
     }
 }

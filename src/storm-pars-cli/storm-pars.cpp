@@ -1,6 +1,7 @@
 
 
 #include "storm-pars/analysis/LatticeExtender.h"
+#include "storm-pars/analysis/AssumptionMaker.h"
 #include "storm-cli-utilities/cli.h"
 #include "storm-cli-utilities/model-handling.h"
 
@@ -611,27 +612,16 @@ namespace storm {
 
                 // Transform to Lattice
                 storm::utility::Stopwatch latticeWatch(true);
-                storm::analysis::LatticeExtender<storm::models::sparse::Model<ValueType>> extender = storm::analysis::LatticeExtender<storm::models::sparse::Model<ValueType>>(sparseModel);
-                std::tuple<storm::analysis::Lattice*, uint_fast64_t, uint_fast64_t> criticalPair = extender.toLattice(formulas);
+                storm::analysis::LatticeExtender<ValueType> *extender = new storm::analysis::LatticeExtender<ValueType>(sparseModel);
+                std::tuple<storm::analysis::Lattice*, uint_fast64_t, uint_fast64_t> criticalPair = extender->toLattice(formulas);
 
-                // Declare variables for all states
-                std::shared_ptr<storm::expressions::ExpressionManager> expressionManager(new storm::expressions::ExpressionManager());
-                for (uint_fast64_t i = 0; i < sparseModel->getNumberOfStates(); ++i) {
-                    expressionManager->declareFreshIntegerVariable();
-                }
+                // TODO met assumptionmaker dingen doen
 
-                // Make assumptions
-                std::set<storm::expressions::BinaryRelationExpression*> assumptions;
-                while (std::get<1>(criticalPair) != sparseModel->getNumberOfStates()) {
-                    storm::expressions::Variable var1 = expressionManager->getVariable("_x" + std::to_string(std::get<1>(criticalPair)));
-                    storm::expressions::Variable var2 = expressionManager->getVariable("_x" + std::to_string(std::get<2>(criticalPair)));
-                    auto assumption = new storm::expressions::BinaryRelationExpression(*expressionManager, var1.getType(),
-                            var1.getExpression().getBaseExpressionPointer(), var2.getExpression().getBaseExpressionPointer(),
-                            storm::expressions::BinaryRelationExpression::RelationType::Greater);
-                    assumptions.insert(assumption);
-                    criticalPair = extender.extendLattice(std::get<0>(criticalPair), expressionManager, assumptions);
-                }
-                auto lattice = std::get<0>(criticalPair);
+
+                auto assumptionMaker = storm::analysis::AssumptionMaker<ValueType>(extender, sparseModel->getNumberOfStates());
+                std::map<storm::analysis::Lattice*, std::set<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> result = assumptionMaker.startMakingAssumptions(std::get<0>(criticalPair), std::get<1>(criticalPair), std::get<2>(criticalPair));
+
+                auto lattice = result.begin()->first;
 
                 latticeWatch.stop();
                 STORM_PRINT(std::endl << "Time for lattice creation: " << latticeWatch << "." << std::endl << std::endl);

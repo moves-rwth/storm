@@ -17,18 +17,18 @@ namespace storm {
     namespace analysis {
 
 
-        template<typename SparseModelType>
+        template<typename ValueType>
         class LatticeExtender {
 
         public:
-            LatticeExtender(std::shared_ptr<SparseModelType> model);
+            LatticeExtender(std::shared_ptr<storm::models::sparse::Model<ValueType>> model);
 
             std::tuple<storm::analysis::Lattice*, uint_fast64_t, uint_fast64_t> toLattice(std::vector<std::shared_ptr<storm::logic::Formula const>> formulas);
 
-            std::tuple<storm::analysis::Lattice*, uint_fast64_t, uint_fast64_t> extendLattice(storm::analysis::Lattice* lattice, std::shared_ptr<storm::expressions::ExpressionManager> expressionManager, std::set<storm::expressions::BinaryRelationExpression*> assumptions);
+            std::tuple<storm::analysis::Lattice*, uint_fast64_t, uint_fast64_t> extendLattice(storm::analysis::Lattice* lattice, std::set<std::shared_ptr<storm::expressions::BinaryRelationExpression>> assumptions);
 
         private:
-            std::shared_ptr<SparseModelType> model;
+            std::shared_ptr<storm::models::sparse::Model<ValueType>> model;
 
             std::map<uint_fast64_t, storm::storage::BitVector> stateMap;
 
