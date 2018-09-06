@@ -541,15 +541,12 @@ namespace storm {
                 latticeWatch.stop();
                 STORM_PRINT(std::endl << "Time for lattice creation: " << latticeWatch << "." << std::endl << std::endl);
 
-
                 // Monotonicity?
-
                 storm::utility::Stopwatch monotonicityWatch(true);
                 auto monotonicityChecker = storm::analysis::MonotonicityChecker<ValueType>();
                 monotonicityChecker.checkMonotonicity(result, sparseModel->getTransitionMatrix());
                 monotonicityWatch.stop();
                 STORM_PRINT(std::endl << "Time for monotonicity: " << monotonicityWatch << "." << std::endl << std::endl);
-
 
                 std::cout << "Bye, Jip2" << std::endl;
                 return;

@@ -208,14 +208,14 @@ namespace storm {
             Lattice* result = new Lattice(top->states, bottom->states, numberOfStates);
 
             for (auto itr = top->below.begin(); itr != top->below.end(); ++itr) {
-                result->nogBedenken(*itr, result->getTop(), storm::storage::BitVector(numberOfStates));
+                result->createLattice(*itr, result->getTop(), storm::storage::BitVector(numberOfStates));
             }
-
 
             return result;
         }
 
-        void Lattice::nogBedenken(Lattice::Node* nodeFromOld, Lattice::Node* higherNode, storm::storage::BitVector seenStates) {
+        void Lattice::createLattice(Lattice::Node* nodeFromOld, Lattice::Node* higherNode, storm::storage::BitVector seenStates) {
+            //TODO: nog niet helemaal goed
             auto index = numberOfStates;
             std::set<Node*> seenNodes = std::set<Node*>({});
             for (auto i = nodeFromOld->states.getNextSetIndex(0); i < numberOfStates; i =nodeFromOld->states.getNextSetIndex(i+1)) {
@@ -243,7 +243,7 @@ namespace storm {
             for (auto itr = nodeFromOld->below.begin(); itr != nodeFromOld->below.end(); itr++) {
 //                if (!seenStates.get((*itr)->states.getNextSetIndex(0))) {
                     for (auto itr2 = seenNodes.begin(); itr2 != seenNodes.end(); ++itr2) {
-                        nogBedenken(*itr, *itr2, seenStates);
+                        createLattice(*itr, *itr2, seenStates);
                     }
 //                }
             }
