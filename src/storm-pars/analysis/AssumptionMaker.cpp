@@ -38,7 +38,7 @@ namespace storm {
                         var1.getExpression().getBaseExpressionPointer(), var2.getExpression().getBaseExpressionPointer(),
                         storm::expressions::BinaryRelationExpression::RelationType::Greater));
                 assumptions1.insert(assumption1);
-                auto lattice1 = lattice->deepCopy();
+                auto lattice1 = new Lattice(lattice);
                 auto myMap = (runRecursive(lattice1, assumptions1));
                 result.insert(myMap.begin(), myMap.end());
 
@@ -49,7 +49,7 @@ namespace storm {
                         storm::expressions::BinaryRelationExpression::RelationType::Greater));
                 assumptions2.insert(assumption2);
 
-                auto lattice2 = lattice->deepCopy();
+                auto lattice2 = new Lattice(lattice);
                 auto myMap2 = (runRecursive(lattice2, assumptions2));
                 result.insert(myMap2.begin(), myMap2.end());
             }
@@ -72,7 +72,7 @@ namespace storm {
                                                                                     var1.getExpression().getBaseExpressionPointer(), var2.getExpression().getBaseExpressionPointer(),
                                                                                     storm::expressions::BinaryRelationExpression::RelationType::Greater));
                 assumptions1.insert(assumption1);
-                auto lattice1 = lattice->deepCopy();
+                auto lattice1 = new Lattice(lattice);
                 auto myMap = (runRecursive(lattice1, assumptions1));
                 result.insert(myMap.begin(), myMap.end());
 
@@ -82,7 +82,7 @@ namespace storm {
                                                                                     var2.getExpression().getBaseExpressionPointer(), var1.getExpression().getBaseExpressionPointer(),
                                                                                     storm::expressions::BinaryRelationExpression::RelationType::Greater))   ;
                 assumptions2.insert(assumption2);
-                auto lattice2 = lattice->deepCopy();
+                auto lattice2 = new Lattice(lattice);
                 myMap = (runRecursive(lattice2, assumptions2));
                 result.insert(myMap.begin(), myMap.end());
             }

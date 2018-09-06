@@ -31,6 +31,8 @@ namespace storm {
                     Lattice(storm::storage::BitVector topStates,
                             storm::storage::BitVector bottomStates, uint_fast64_t numberOfStates);
 
+                    Lattice(Lattice* lattice);
+
                     /*!
                      * Adds a node with the given state below node1 and above node2.
                      * @param state The given state.
@@ -88,6 +90,8 @@ namespace storm {
 
                     Node* getBottom();
 
+                    std::vector<Node*> getNodes();
+
                     storm::storage::BitVector getAddedStates();
 
                     /*!
@@ -103,8 +107,6 @@ namespace storm {
                      * @param out The stream to output to.
                      */
                     void toDotFile(std::ostream &out);
-
-                    Lattice* deepCopy();
 
                     static const int UNKNOWN = -1;
                     static const int BELOW = 2;
