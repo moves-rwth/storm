@@ -1,11 +1,13 @@
 
 
-#include "storm-pars/analysis/LatticeExtender.h"
+
 #include "storm-pars/analysis/AssumptionMaker.h"
+#include "storm-pars/analysis/Lattice.h"
+#include "storm-pars/analysis/LatticeExtender.h"
+#include "storm-pars/analysis/MonotonicityChecker.h"
+
 #include "storm-cli-utilities/cli.h"
 #include "storm-cli-utilities/model-handling.h"
-
-#include "storm-pars/analysis/Lattice.h"
 
 #include "storm-pars/api/storm-pars.h"
 #include "storm-pars/api/region.h"
@@ -456,88 +458,6 @@ namespace storm {
             storm::pars::verifyWithSparseEngine<ValueType>(model->as<storm::models::sparse::Model<ValueType>>(), input, regions, samples);
         }
 
-        template <typename ValueType>
-        std::map<carl::Variable, std::pair<bool, bool>> analyseMonotonicity(storm::analysis::Lattice* lattice, storm::storage::SparseMatrix<ValueType> matrix) {
-            //TODO: Seperate cpp file with this and criticalstatefinding/handling
-            std::map<carl::Variable, std::pair<bool, bool>> varsMonotone;
-            ofstream myfile;
-            myfile.open ("mc.dot");
-            myfile << "digraph \"MC\" {" << std::endl;
-            myfile << "\t" << "node [shape=ellipse]" << std::endl;
-            // print all nodes
-            for (uint_fast64_t i = 0; i < matrix.getColumnCount(); ++i) {
-                myfile << "\t\"" << i << "\" [label = \"" << i << "\"]" << std::endl;
-            }
-
-
-            for (uint_fast64_t i = 0; i < matrix.getColumnCount(); ++i) {
-                // go over all rows
-                auto row = matrix.getRow(i);
-
-                auto first = (*row.begin());
-                if (first.getValue() != ValueType(1)) {
-                    auto second = (*(++row.begin()));
-                    string color = "";
-                    auto val = first.getValue();
-                    auto vars = val.gatherVariables();
-                    for (auto itr = vars.begin(); itr != vars.end(); ++itr) {
-                        auto derivative = val.derivative(*itr);
-                        STORM_LOG_THROW(derivative.isConstant(), storm::exceptions::NotSupportedException, "Expecting derivative to be constant");
-
-                        if (varsMonotone.find(*itr) == varsMonotone.end()) {
-                            varsMonotone[*itr].first = true;
-                            varsMonotone[*itr].second = true;
-                        }
-
-                        auto compare = lattice->compare(first.getColumn(), second.getColumn());
-                        std::pair<bool, bool>* value = &varsMonotone.find(*itr)->second;
-                        std::pair<bool, bool> old = *value;
-                        if (compare == 1) {
-                            value->first &=derivative.constantPart() >= 0;
-                            value->second &=derivative.constantPart() <= 0;
-                        } else if (compare == 2) {
-                            value->first &=derivative.constantPart() <= 0;
-                            value->second &=derivative.constantPart() >= 0;
-                        } else if (compare == 0) {
-                            STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Don't know what is happening, something in monotonicity checking went wrong");
-                        } else {
-                            value->first = false;
-                            value->second = false;
-                        }
-                        if ((value->first != old.first) && (value->second != old.second)) {
-                            color = "color = red, ";
-                        } else if ((value->first != old.first)) {
-                            myfile << "\t edge[style=dashed];" << std::endl;
-                            color = "color = blue, ";
-                        } else if ((value->second != old.second)) {
-                            myfile << "\t edge[style=dotted];" << std::endl;
-                            color = "color = blue, ";
-                        }
-                    }
-
-                    myfile << "\t" << i << " -> " << first.getColumn() << "[" << color << "label=\"" << first.getValue() << "\"];"
-                           << std::endl;
-                    myfile << "\t" << i << " -> " << second.getColumn() << "[" << color << "label=\"" << second.getValue() << "\"];"
-                           << std::endl;
-                    myfile << "\t edge[style=\"\"];" << std::endl;
-                } else {
-                    myfile << "\t" << i << " -> " << first.getColumn() << "[label=\"" << first.getValue() << "\"];"
-                           << std::endl;
-                }
-            }
-
-            myfile << "\tsubgraph legend {" << std::endl;
-            myfile << "\t\tnode [color=white];" << std::endl;
-            myfile << "\t\tedge [style=invis];" << std::endl;
-            myfile << "\t\tt0 [label=\"incr? and decr?\", fontcolor=red];" << std::endl;
-            myfile << "\t\tt1 [label=\"incr? (dashed)\", fontcolor=blue];" << std::endl;
-            myfile << "\t\tt2 [label=\"decr? (dotted)\", fontcolor=blue];" << std::endl;
-
-            myfile << "\t}" << std::endl;
-            myfile << "}" << std::endl;
-            myfile.close();
-            return varsMonotone;
-        };
 
         template <storm::dd::DdType DdType, typename ValueType>
         void processInputWithValueTypeAndDdlib(SymbolicInput& input) {
@@ -610,47 +530,26 @@ namespace storm {
                 std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(input.properties);
                 std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel = model->as<storm::models::sparse::Model<ValueType>>();
 
-                // Transform to Lattice
+                // Transform to Lattices
                 storm::utility::Stopwatch latticeWatch(true);
                 storm::analysis::LatticeExtender<ValueType> *extender = new storm::analysis::LatticeExtender<ValueType>(sparseModel);
                 std::tuple<storm::analysis::Lattice*, uint_fast64_t, uint_fast64_t> criticalPair = extender->toLattice(formulas);
 
-                // TODO met assumptionmaker dingen doen
-
-
                 auto assumptionMaker = storm::analysis::AssumptionMaker<ValueType>(extender, sparseModel->getNumberOfStates());
                 std::map<storm::analysis::Lattice*, std::set<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> result = assumptionMaker.startMakingAssumptions(std::get<0>(criticalPair), std::get<1>(criticalPair), std::get<2>(criticalPair));
-
-                auto lattice = result.begin()->first;
 
                 latticeWatch.stop();
                 STORM_PRINT(std::endl << "Time for lattice creation: " << latticeWatch << "." << std::endl << std::endl);
 
-                // Write lattice to file
-                ofstream myfile;
-                myfile.open ("lattice.dot");
-                lattice->toDotFile(myfile);
-                myfile.close();
 
                 // Monotonicity?
-                auto matrix = sparseModel->getTransitionMatrix();
+
                 storm::utility::Stopwatch monotonicityWatch(true);
-                std::map<carl::Variable, std::pair<bool, bool>> varsMonotone = analyseMonotonicity<ValueType>(lattice, matrix);
+                auto monotonicityChecker = storm::analysis::MonotonicityChecker<ValueType>();
+                monotonicityChecker.checkMonotonicity(result, sparseModel->getTransitionMatrix());
                 monotonicityWatch.stop();
                 STORM_PRINT(std::endl << "Time for monotonicity: " << monotonicityWatch << "." << std::endl << std::endl);
 
-                for (auto itr = varsMonotone.begin(); itr != varsMonotone.end(); ++itr) {
-                    if (itr->second.first) {
-                        STORM_PRINT("Monotone increasing in: " << itr->first << std::endl);
-                    } else {
-                        STORM_PRINT("Do not know if monotone increasing in: " << itr->first << std::endl);
-                    }
-                    if (itr->second.second) {
-                        STORM_PRINT("Monotone decreasing in: " << itr->first << std::endl);
-                    } else {
-                        STORM_PRINT("Do not know if monotone decreasing in: " << itr->first << std::endl);
-                    }
-                }
 
                 std::cout << "Bye, Jip2" << std::endl;
                 return;

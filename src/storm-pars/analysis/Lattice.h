@@ -104,10 +104,17 @@ namespace storm {
                      */
                     void toDotFile(std::ostream &out);
 
+                    Lattice* deepCopy();
+
                     static const int UNKNOWN = -1;
                     static const int BELOW = 2;
                     static const int ABOVE = 1;
                     static const int SAME = 0;
+
+                protected:
+                    void addBelow(uint_fast64_t state, Node* node);
+
+                    void addAbove(uint_fast64_t state, Node* node);
 
                 private:
                     std::vector<Node*> nodes;
@@ -120,6 +127,7 @@ namespace storm {
 
                     uint_fast64_t numberOfStates;
 
+                    void nogBedenken(Node* nodeFromOld, Node* higherNode, storm::storage::BitVector seenStates);
                     /**
                      * Check if node1 lies above node2
                      * @param node1

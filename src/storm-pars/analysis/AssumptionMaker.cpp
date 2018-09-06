@@ -28,6 +28,8 @@ namespace storm {
             if (critical1 == numberOfStates || critical2 == numberOfStates) {
                 result.insert(std::pair<storm::analysis::Lattice*, std::set<std::shared_ptr<storm::expressions::BinaryRelationExpression>>>(lattice, emptySet));
             } else {
+
+                //TODO: opruimen
                 storm::expressions::Variable var1 = expressionManager->getVariable(std::to_string(critical1));
                 storm::expressions::Variable var2 = expressionManager->getVariable(std::to_string(critical2));
                 std::set<std::shared_ptr<storm::expressions::BinaryRelationExpression>> assumptions1;
@@ -36,18 +38,18 @@ namespace storm {
                         var1.getExpression().getBaseExpressionPointer(), var2.getExpression().getBaseExpressionPointer(),
                         storm::expressions::BinaryRelationExpression::RelationType::Greater));
                 assumptions1.insert(assumption1);
-                auto lattice1 = new storm::analysis::Lattice(*lattice);
+                auto lattice1 = lattice->deepCopy();
                 auto myMap = (runRecursive(lattice1, assumptions1));
                 result.insert(myMap.begin(), myMap.end());
 
                 std::set<std::shared_ptr<storm::expressions::BinaryRelationExpression>> assumptions2;
                 std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption2
-                    = std::make_shared<storm::expressions::BinaryRelationExpression>(storm::expressions::BinaryRelationExpression(*expressionManager, var1.getType(),
+                    = std::make_shared<storm::expressions::BinaryRelationExpression>(storm::expressions::BinaryRelationExpression(*expressionManager, var2.getType(),
                         var2.getExpression().getBaseExpressionPointer(), var1.getExpression().getBaseExpressionPointer(),
                         storm::expressions::BinaryRelationExpression::RelationType::Greater));
                 assumptions2.insert(assumption2);
 
-                auto lattice2 = new storm::analysis::Lattice(*lattice);
+                auto lattice2 = lattice->deepCopy();
                 auto myMap2 = (runRecursive(lattice2, assumptions2));
                 result.insert(myMap2.begin(), myMap2.end());
             }
@@ -70,7 +72,7 @@ namespace storm {
                                                                                     var1.getExpression().getBaseExpressionPointer(), var2.getExpression().getBaseExpressionPointer(),
                                                                                     storm::expressions::BinaryRelationExpression::RelationType::Greater));
                 assumptions1.insert(assumption1);
-                auto lattice1 = new storm::analysis::Lattice(*lattice);
+                auto lattice1 = lattice->deepCopy();
                 auto myMap = (runRecursive(lattice1, assumptions1));
                 result.insert(myMap.begin(), myMap.end());
 
@@ -80,7 +82,7 @@ namespace storm {
                                                                                     var2.getExpression().getBaseExpressionPointer(), var1.getExpression().getBaseExpressionPointer(),
                                                                                     storm::expressions::BinaryRelationExpression::RelationType::Greater))   ;
                 assumptions2.insert(assumption2);
-                auto lattice2 = new storm::analysis::Lattice(*lattice);
+                auto lattice2 = lattice->deepCopy();
                 myMap = (runRecursive(lattice2, assumptions2));
                 result.insert(myMap.begin(), myMap.end());
             }

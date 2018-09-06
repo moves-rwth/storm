@@ -164,6 +164,7 @@ namespace storm {
         }
 
         void Lattice::toDotFile(std::ostream &out) {
+            // TODO: op de een of andere manier ontstaan er nodes die nergens eindigen/beginnen
         out << "digraph \"Lattice\" {" << std::endl;
 
         // print all nodes
@@ -202,7 +203,54 @@ namespace storm {
         out << "}" << std::endl;
     }
 
-    bool Lattice::above(Node *node1, Node *node2, std::set<Node *>* seenNodes) {
+        Lattice* Lattice::deepCopy() {
+            // TODO zonder bottom is eigenlijk beter
+            Lattice* result = new Lattice(top->states, bottom->states, numberOfStates);
+
+            for (auto itr = top->below.begin(); itr != top->below.end(); ++itr) {
+                result->nogBedenken(*itr, result->getTop(), storm::storage::BitVector(numberOfStates));
+            }
+
+
+            return result;
+        }
+
+        void Lattice::nogBedenken(Lattice::Node* nodeFromOld, Lattice::Node* higherNode, storm::storage::BitVector seenStates) {
+            auto index = numberOfStates;
+            std::set<Node*> seenNodes = std::set<Node*>({});
+            for (auto i = nodeFromOld->states.getNextSetIndex(0); i < numberOfStates; i =nodeFromOld->states.getNextSetIndex(i+1)) {
+                Node * nodeI = getNode(i);
+                if (nodeI == nullptr && index == numberOfStates) {
+                    nodeI = new Node();
+                    nodeI->states = storm::storage::BitVector(numberOfStates);
+                    nodeI->states.set(i);
+                    higherNode->above.insert(nodeI);
+                    nodeI->below.insert(higherNode);
+                    addedStates.set(i);
+                    nodes.at(i) = nodeI;
+                } else if (nodeI == nullptr) {
+                    addToNode(i, getNode(index));
+                } else {
+                    nodeI->above.insert(higherNode);
+                    higherNode->below.insert(nodeI);
+                    addedStates.set(i);
+                }
+                seenStates.set(i);
+                index = i;
+                seenNodes.insert(nodeI);
+            }
+
+            for (auto itr = nodeFromOld->below.begin(); itr != nodeFromOld->below.end(); itr++) {
+//                if (!seenStates.get((*itr)->states.getNextSetIndex(0))) {
+                    for (auto itr2 = seenNodes.begin(); itr2 != seenNodes.end(); ++itr2) {
+                        nogBedenken(*itr, *itr2, seenStates);
+                    }
+//                }
+            }
+
+        }
+
+        bool Lattice::above(Node *node1, Node *node2, std::set<Node *>* seenNodes) {
         bool result = !node1->below.empty() && std::find(node1->below.begin(), node1->below.end(), node2) != node1->below.end();
         for (auto itr = node1->below.begin(); !result && node1->below.end() != itr; ++itr) {
             if (std::find(seenNodes->begin(), seenNodes->end(), (*itr)) == seenNodes->end()) {
