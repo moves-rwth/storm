@@ -23,6 +23,8 @@ namespace storm {
         private:
             std::map<storm::analysis::Lattice*, std::set<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> runRecursive(storm::analysis::Lattice* lattice, std::set<std::shared_ptr<storm::expressions::BinaryRelationExpression>> assumptions);
 
+            std::map<storm::analysis::Lattice*, std::set<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> createAssumptions(storm::expressions::Variable var1, storm::expressions::Variable var2, storm::analysis::Lattice* lattice,std::set<std::shared_ptr<storm::expressions::BinaryRelationExpression>> assumptions);
+
             storm::analysis::LatticeExtender<ValueType>* latticeExtender;
 
             std::shared_ptr<storm::expressions::ExpressionManager> expressionManager;

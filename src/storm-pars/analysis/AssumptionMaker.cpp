@@ -28,30 +28,15 @@ namespace storm {
             if (critical1 == numberOfStates || critical2 == numberOfStates) {
                 result.insert(std::pair<storm::analysis::Lattice*, std::set<std::shared_ptr<storm::expressions::BinaryRelationExpression>>>(lattice, emptySet));
             } else {
-
-                //TODO: opruimen
                 storm::expressions::Variable var1 = expressionManager->getVariable(std::to_string(critical1));
                 storm::expressions::Variable var2 = expressionManager->getVariable(std::to_string(critical2));
-                std::set<std::shared_ptr<storm::expressions::BinaryRelationExpression>> assumptions1;
-                std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption1
-                    = std::make_shared<storm::expressions::BinaryRelationExpression>(storm::expressions::BinaryRelationExpression(*expressionManager, var1.getType(),
-                        var1.getExpression().getBaseExpressionPointer(), var2.getExpression().getBaseExpressionPointer(),
-                        storm::expressions::BinaryRelationExpression::RelationType::Greater));
-                assumptions1.insert(assumption1);
-                auto lattice1 = new Lattice(lattice);
-                auto myMap = (runRecursive(lattice1, assumptions1));
+                std::set<std::shared_ptr<storm::expressions::BinaryRelationExpression>> assumptions;
+
+                auto myMap = createAssumptions(var1, var2, lattice, assumptions);
                 result.insert(myMap.begin(), myMap.end());
 
-                std::set<std::shared_ptr<storm::expressions::BinaryRelationExpression>> assumptions2;
-                std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption2
-                    = std::make_shared<storm::expressions::BinaryRelationExpression>(storm::expressions::BinaryRelationExpression(*expressionManager, var2.getType(),
-                        var2.getExpression().getBaseExpressionPointer(), var1.getExpression().getBaseExpressionPointer(),
-                        storm::expressions::BinaryRelationExpression::RelationType::Greater));
-                assumptions2.insert(assumption2);
-
-                auto lattice2 = new Lattice(lattice);
-                auto myMap2 = (runRecursive(lattice2, assumptions2));
-                result.insert(myMap2.begin(), myMap2.end());
+                myMap = createAssumptions(var2, var1, lattice, assumptions);
+                result.insert(myMap.begin(), myMap.end());
             }
             return result;
         }
@@ -67,29 +52,26 @@ namespace storm {
                 storm::expressions::Variable var1 = expressionManager->getVariable(std::to_string(std::get<1>(criticalPair)));
                 storm::expressions::Variable var2 = expressionManager->getVariable(std::to_string(std::get<2>(criticalPair)));
 
-                std::set<std::shared_ptr<storm::expressions::BinaryRelationExpression>> assumptions1 = std::set<std::shared_ptr<storm::expressions::BinaryRelationExpression>>(assumptions);
-                std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption1 = std::make_shared<storm::expressions::BinaryRelationExpression>(storm::expressions::BinaryRelationExpression(*expressionManager, var1.getType(),
-                                                                                    var1.getExpression().getBaseExpressionPointer(), var2.getExpression().getBaseExpressionPointer(),
-                                                                                    storm::expressions::BinaryRelationExpression::RelationType::Greater));
-                assumptions1.insert(assumption1);
-                auto lattice1 = new Lattice(lattice);
-                auto myMap = (runRecursive(lattice1, assumptions1));
+                auto myMap = createAssumptions(var1, var2, lattice, assumptions);
                 result.insert(myMap.begin(), myMap.end());
-
-
-                std::set<std::shared_ptr<storm::expressions::BinaryRelationExpression>>  assumptions2 = assumptions;
-                std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption2 = std::make_shared<storm::expressions::BinaryRelationExpression>(storm::expressions::BinaryRelationExpression(*expressionManager, var1.getType(),
-                                                                                    var2.getExpression().getBaseExpressionPointer(), var1.getExpression().getBaseExpressionPointer(),
-                                                                                    storm::expressions::BinaryRelationExpression::RelationType::Greater))   ;
-                assumptions2.insert(assumption2);
-                auto lattice2 = new Lattice(lattice);
-                myMap = (runRecursive(lattice2, assumptions2));
+                myMap = createAssumptions(var2, var1, lattice, assumptions);
                 result.insert(myMap.begin(), myMap.end());
             }
 
             return result;
         }
 
+        template <typename ValueType>
+        std::map<storm::analysis::Lattice*, std::set<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> AssumptionMaker<ValueType>::createAssumptions(storm::expressions::Variable var1, storm::expressions::Variable var2, storm::analysis::Lattice* lattice, std::set<std::shared_ptr<storm::expressions::BinaryRelationExpression>> assumptions) {
+            std::set<std::shared_ptr<storm::expressions::BinaryRelationExpression>> assumptions1 = std::set<std::shared_ptr<storm::expressions::BinaryRelationExpression>>(assumptions);
+            std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption1
+                = std::make_shared<storm::expressions::BinaryRelationExpression>(storm::expressions::BinaryRelationExpression(*expressionManager, var1.getType(),
+                        var1.getExpression().getBaseExpressionPointer(), var2.getExpression().getBaseExpressionPointer(),
+                        storm::expressions::BinaryRelationExpression::RelationType::Greater));
+            assumptions1.insert(assumption1);
+            auto lattice1 = new Lattice(lattice);
+            return (runRecursive(lattice1, assumptions1));
+        }
 
         template class AssumptionMaker<storm::RationalFunction>;
     }
