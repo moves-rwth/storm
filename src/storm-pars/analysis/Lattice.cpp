@@ -204,50 +204,32 @@ namespace storm {
     }
 
         Lattice* Lattice::deepCopy() {
-            // TODO zonder bottom is eigenlijk beter
             Lattice* result = new Lattice(top->states, bottom->states, numberOfStates);
-
-            for (auto itr = top->below.begin(); itr != top->below.end(); ++itr) {
-                result->createLattice(*itr, result->getTop(), storm::storage::BitVector(numberOfStates));
-            }
-
-            return result;
-        }
-
-        void Lattice::createLattice(Lattice::Node* nodeFromOld, Lattice::Node* higherNode, storm::storage::BitVector seenStates) {
-            //TODO: nog niet helemaal goed
-            auto index = numberOfStates;
-            std::set<Node*> seenNodes = std::set<Node*>({});
-            for (auto i = nodeFromOld->states.getNextSetIndex(0); i < numberOfStates; i =nodeFromOld->states.getNextSetIndex(i+1)) {
-                Node * nodeI = getNode(i);
-                if (nodeI == nullptr && index == numberOfStates) {
-                    nodeI = new Node();
-                    nodeI->states = storm::storage::BitVector(numberOfStates);
-                    nodeI->states.set(i);
-                    higherNode->above.insert(nodeI);
-                    nodeI->below.insert(higherNode);
-                    addedStates.set(i);
-                    nodes.at(i) = nodeI;
-                } else if (nodeI == nullptr) {
-                    addToNode(i, getNode(index));
-                } else {
-                    nodeI->above.insert(higherNode);
-                    higherNode->below.insert(nodeI);
-                    addedStates.set(i);
-                }
-                seenStates.set(i);
-                index = i;
-                seenNodes.insert(nodeI);
-            }
-
-            for (auto itr = nodeFromOld->below.begin(); itr != nodeFromOld->below.end(); itr++) {
-//                if (!seenStates.get((*itr)->states.getNextSetIndex(0))) {
-                    for (auto itr2 = seenNodes.begin(); itr2 != seenNodes.end(); ++itr2) {
-                        createLattice(*itr, *itr2, seenStates);
+            // Create all nodes
+            for (auto itr = nodes.begin(); itr != nodes.end(); ++itr) {
+                Node* oldNode = (*itr);
+                if (oldNode != nullptr) {
+                    Node *newNode = new Node();
+                    newNode->states = storm::storage::BitVector(oldNode->states);
+                    for (auto i = newNode->states.getNextSetIndex(0);
+                         i < numberOfStates; i = newNode->states.getNextSetIndex(i + 1)) {
+                        result->addedStates.set(i);
+                        result->nodes.at(i) = newNode;
                     }
-//                }
+                }
             }
 
+            // Create transitions
+            for (auto itr = nodes.begin(); itr != nodes.end(); ++itr) {
+                if (*itr != nullptr) {
+                    auto state = (*itr)->states.getNextSetIndex(0);
+                    for (auto itr2 = (*itr)->below.begin(); itr2 != (*itr)->below.end(); ++itr2) {
+                        auto stateBelow = (*itr2)->states.getNextSetIndex(0);
+                        result->addRelationNodes(result->getNode((state)), result->getNode((stateBelow)));
+                    }
+                }
+            }
+            return result;
         }
 
         bool Lattice::above(Node *node1, Node *node2, std::set<Node *>* seenNodes) {

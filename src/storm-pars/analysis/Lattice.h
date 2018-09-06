@@ -127,7 +127,6 @@ namespace storm {
 
                     uint_fast64_t numberOfStates;
 
-                    void createLattice(Node* nodeFromOld, Node* higherNode, storm::storage::BitVector seenStates);
                     /**
                      * Check if node1 lies above node2
                      * @param node1
