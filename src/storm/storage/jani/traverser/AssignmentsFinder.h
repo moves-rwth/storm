@@ -20,9 +20,9 @@ namespace storm {
             
             virtual ~AssignmentsFinder() = default;
             
-            virtual void traverse(Location const& location, boost::any const& data) const override;
-            virtual void traverse(TemplateEdge const& templateEdge, boost::any const& data) const override;
-            virtual void traverse(TemplateEdgeDestination const& templateEdgeDestination, boost::any const& data) const override;
+            virtual void traverse(Location const& location, boost::any const& data) override;
+            virtual void traverse(TemplateEdge const& templateEdge, boost::any const& data) override;
+            virtual void traverse(TemplateEdgeDestination const& templateEdgeDestination, boost::any const& data) override;
         };
     }
 }

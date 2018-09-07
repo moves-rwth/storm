@@ -5,6 +5,7 @@
 #include "storm/generator/NextStateGenerator.h"
 
 #include "storm/storage/jani/Model.h"
+#include "storm/storage/jani/ArrayEliminator.h"
 #include "storm/storage/jani/OrderedAssignments.h"
 
 namespace storm {
@@ -66,9 +67,10 @@ namespace storm {
              * @params state The state to which to apply the new values.
              * @params update The update to apply.
              * @params locationVariable The location variable that is being updated.
+             * @params assignmentLevel The assignmentLevel that is to be considered for the update.
              * @return The resulting state.
              */
-            CompressedState applyUpdate(CompressedState const& state, storm::jani::EdgeDestination const& update, storm::generator::LocationVariableInformation const& locationVariable);
+            CompressedState applyUpdate(CompressedState const& state, storm::jani::EdgeDestination const& update, storm::generator::LocationVariableInformation const& locationVariable, uint64_t assignmentlevel, storm::expressions::ExpressionEvaluator<ValueType> const& expressionEvaluator);
             
             /*!
              * Retrieves all choices possible from the given state.
@@ -137,6 +139,13 @@ namespace storm {
             
             /// A flag that stores whether at least one of the selected reward models has state-action rewards.
             bool hasStateActionRewards;
+            
+            /// Data from eliminating arrays
+            storm::jani::ArrayEliminatorData arrayEliminatorData;
+            
+            /// Maps each array variable to the index of the base variable in this->variableInformation
+            std::unordered_map<storm::expressions::Variable, std::vector<uint64_t>> arrayVariableToElementInformations;
+
         };
         
     }

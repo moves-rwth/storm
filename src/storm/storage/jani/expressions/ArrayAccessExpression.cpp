@@ -19,6 +19,7 @@ namespace storm {
         
         boost::any ArrayAccessExpression::accept(ExpressionVisitor& visitor, boost::any const& data) const {
             auto janiVisitor = dynamic_cast<JaniExpressionVisitor*>(&visitor);
+            STORM_LOG_ASSERT(janiVisitor != nullptr, "Visitor of jani expression should be of type JaniVisitor.");
             STORM_LOG_THROW(janiVisitor != nullptr, storm::exceptions::UnexpectedException, "Visitor of jani expression should be of type JaniVisitor.");
             return janiVisitor->visit(*this, data);
         }
@@ -29,7 +30,7 @@ namespace storm {
             } else {
                 stream << "(" << *getFirstOperand() << ")";
             }
-            stream << "[" << getSecondOperand() << "]";
+            stream << "[" << *getSecondOperand() << "]";
         }
     }
 }

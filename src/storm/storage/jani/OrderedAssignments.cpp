@@ -185,6 +185,9 @@ namespace storm {
             std::vector<Assignment> newAssignments;
             for (auto const& assignment : allAssignments) {
                 newAssignments.push_back(*assignment);
+                if (assignment->isTransient() && !assignment->getAssignedExpression().containsVariables()) {
+                    // Since we do not support
+                }
                 if (synchronous && !localVars.hasVariable(assignment->getLValue().isVariable() ? assignment->getLValue().getVariable() : assignment->getLValue().getArray())) {
                     continue;
                 }

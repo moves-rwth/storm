@@ -946,9 +946,13 @@ namespace storm {
             return false;
         }
         
-        void Model::eliminateArrays(bool keepNonTrivialArrayAccess) {
+        ArrayEliminatorData Model::eliminateArrays(bool keepNonTrivialArrayAccess) {
             ArrayEliminator arrayEliminator;
-            arrayEliminator.eliminate(*this, keepNonTrivialArrayAccess);
+            return arrayEliminator.eliminate(*this, keepNonTrivialArrayAccess);
+        }
+        
+        void Model::eliminateArrays() {
+            eliminateArrays(false);
         }
         
         void Model::setInitialStatesRestriction(storm::expressions::Expression const& initialStatesRestriction) {

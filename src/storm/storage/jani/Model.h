@@ -33,6 +33,7 @@ namespace storm {
         class Automaton;
         class Exporter;
         class SynchronizationVector;
+        class ArrayEliminatorData;
         
         class Model {
         public:
@@ -365,8 +366,10 @@ namespace storm {
             /*!
              * Eliminates occurring array variables and expressions by replacing array variables by multiple basic variables.
              * @param keepNonTrivialArrayAccess if set, array access expressions in LValues and expressions are only replaced, if the index expression is constant.
+             * @return data from the elimination. If non-trivial array accesses are kept, pointers to remaining array variables point to this data.
              */
-            void eliminateArrays(bool keepNonTrivialArrayAccess = false);
+            ArrayEliminatorData eliminateArrays(bool keepNonTrivialArrayAccess);
+            void eliminateArrays();
             
             /*!
              * Retrieves whether there is an expression restricting the legal initial values of the global variables.

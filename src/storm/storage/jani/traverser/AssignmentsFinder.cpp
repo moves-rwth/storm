@@ -13,7 +13,7 @@ namespace storm {
             return res;
         }
         
-        void AssignmentsFinder::traverse(Location const& location, boost::any const& data) const {
+        void AssignmentsFinder::traverse(Location const& location, boost::any const& data) {
             auto resVar = boost::any_cast<std::pair<Variable const*, ResultType*>>(data);
             for (auto const& assignment : location.getAssignments()) {
                 if (assignment.getVariable() == *resVar.first) {
@@ -23,7 +23,7 @@ namespace storm {
             ConstJaniTraverser::traverse(location, data);
         }
         
-        void AssignmentsFinder::traverse(TemplateEdge const& templateEdge, boost::any const& data) const {
+        void AssignmentsFinder::traverse(TemplateEdge const& templateEdge, boost::any const& data) {
             auto resVar = boost::any_cast<std::pair<Variable const*, ResultType*>>(data);
             for (auto const& assignment : templateEdge.getAssignments()) {
                 if (assignment.getVariable() == *resVar.first) {
@@ -33,7 +33,7 @@ namespace storm {
             ConstJaniTraverser::traverse(templateEdge, data);
         }
         
-        void AssignmentsFinder::traverse(TemplateEdgeDestination const& templateEdgeDestination, boost::any const& data) const {
+        void AssignmentsFinder::traverse(TemplateEdgeDestination const& templateEdgeDestination, boost::any const& data) {
             auto resVar = boost::any_cast<std::pair<Variable const*, ResultType*>>(data);
             for (auto const& assignment : templateEdgeDestination.getOrderedAssignments()) {
                 if (assignment.getVariable() == *resVar.first) {
