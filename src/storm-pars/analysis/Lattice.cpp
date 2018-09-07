@@ -139,7 +139,6 @@ namespace storm {
             return UNKNOWN;
         }
 
-
         Lattice::Node *Lattice::getNode(uint_fast64_t stateNumber) {
             return nodes.at(stateNumber);
         }
