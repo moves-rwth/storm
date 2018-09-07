@@ -3,6 +3,8 @@
 
 #include "storm/modelchecker/AbstractModelChecker.h"
 
+#include <boost/algorithm/string.hpp>
+
 #include "storm/storage/prism/Program.h"
 
 #include "storm/storage/dd/DdType.h"
@@ -17,6 +19,11 @@
 #include "storm/logic/Bound.h"
 
 #include "storm/settings/modules/AbstractionSettings.h"
+
+#include "storm-parsers/parser/ExpressionParser.h"
+
+#include "storm/utility/macros.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 
 #include "storm/utility/ConstantsComparator.h"
 #include "storm/utility/solver.h"
@@ -72,6 +79,16 @@ namespace storm {
             };
         }
         
+        struct GameBasedMdpModelCheckerOptions {
+            GameBasedMdpModelCheckerOptions() = default;
+            GameBasedMdpModelCheckerOptions(std::vector<storm::expressions::Expression> const& constraints, std::vector<std::vector<storm::expressions::Expression>> const& injectedRefinementPredicates) : constraints(constraints), injectedRefinementPredicates(injectedRefinementPredicates) {
+                // Intentionally left empty.
+            }
+            
+            std::vector<storm::expressions::Expression> constraints;
+            std::vector<std::vector<storm::expressions::Expression>> injectedRefinementPredicates;
+        };
+        
         template<storm::dd::DdType Type, typename ModelType>
         class GameBasedMdpModelChecker : public AbstractModelChecker<ModelType> {
         public:
@@ -82,9 +99,10 @@ namespace storm {
              * verification calls will be answererd with respect to this model.
              *
              * @param model The model description that (symbolically) specifies the model to check.
+             * @param options Additional options for the abstraction-refinement process.
              * @param smtSolverFactory A factory used to create SMT solver when necessary.
              */
-            explicit GameBasedMdpModelChecker(storm::storage::SymbolicModelDescription const& model, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>());
+            explicit GameBasedMdpModelChecker(storm::storage::SymbolicModelDescription const& model, GameBasedMdpModelCheckerOptions const& options = GameBasedMdpModelCheckerOptions(), std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>());
             
             /// Overridden methods from super class.
             virtual bool canHandle(CheckTask<storm::logic::Formula, ValueType> const& checkTask) const override;
@@ -124,6 +142,9 @@ namespace storm {
              * Retrieves the expression characterized by the formula. The formula needs to be propositional.
              */
             storm::expressions::Expression getExpression(storm::logic::Formula const& formula);
+            
+            /// The options customizing the abstraction-refinement process.
+            GameBasedMdpModelCheckerOptions options;
             
             /// The preprocessed model that contains only one module/automaton and otherwhise corresponds to the semantics
             /// of the original model description.

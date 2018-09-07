@@ -98,13 +98,23 @@ namespace storm {
         template<typename ValueType>
         class ExplicitQuantitativeResultMinMax;
 
+        struct MenuGameRefinerOptions {
+            MenuGameRefinerOptions() = default;
+            
+            MenuGameRefinerOptions(std::vector<std::vector<storm::expressions::Expression>>&& refinementPredicates) : refinementPredicates(std::move(refinementPredicates)) {
+                // Intentionally left empty.
+            }
+            
+            std::vector<std::vector<storm::expressions::Expression>> refinementPredicates;
+        };
+        
         template<storm::dd::DdType Type, typename ValueType>
         class MenuGameRefiner {
         public:
             /*!
              * Creates a refiner for the provided abstractor.
              */
-            MenuGameRefiner(MenuGameAbstractor<Type, ValueType>& abstractor, std::unique_ptr<storm::solver::SmtSolver>&& smtSolver);
+            MenuGameRefiner(MenuGameAbstractor<Type, ValueType>& abstractor, std::unique_ptr<storm::solver::SmtSolver>&& smtSolver, MenuGameRefinerOptions const& options = MenuGameRefinerOptions());
             
             /*!
              * Refines the abstractor with the given predicates.

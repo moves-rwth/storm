@@ -27,6 +27,16 @@ namespace storm {
     
     namespace abstraction {
         
+        struct AbstractionInformationOptions {
+            AbstractionInformationOptions() = default;
+            
+            AbstractionInformationOptions(std::vector<storm::expressions::Expression> const& constraints) : constraints(constraints) {
+                // Intentionally left empty.
+            }
+            
+            std::vector<storm::expressions::Expression> constraints;
+        };
+        
         template<storm::dd::DdType DdType>
         class AbstractionInformation {
         public:
@@ -38,7 +48,7 @@ namespace storm {
              * @param smtSolver An SMT solver that is used to detect equivalent predicates.
              * @param ddManager The manager responsible for the DDs.
              */
-            AbstractionInformation(storm::expressions::ExpressionManager& expressionManager, std::set<storm::expressions::Variable> const& abstractedVariables, std::unique_ptr<storm::solver::SmtSolver>&& smtSolver, std::shared_ptr<storm::dd::DdManager<DdType>> ddManager = std::make_shared<storm::dd::DdManager<DdType>>());
+            AbstractionInformation(storm::expressions::ExpressionManager& expressionManager, std::set<storm::expressions::Variable> const& abstractedVariables, std::unique_ptr<storm::solver::SmtSolver>&& smtSolver, AbstractionInformationOptions const& options = AbstractionInformationOptions(), std::shared_ptr<storm::dd::DdManager<DdType>> ddManager = std::make_shared<storm::dd::DdManager<DdType>>());
 
             /*!
              * Adds the given variable.

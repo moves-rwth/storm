@@ -66,7 +66,7 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type, typename ValueType>
-        MenuGameRefiner<Type, ValueType>::MenuGameRefiner(MenuGameAbstractor<Type, ValueType>& abstractor, std::unique_ptr<storm::solver::SmtSolver>&& smtSolver) : abstractor(abstractor), useInterpolation(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isUseInterpolationSet()), splitAll(false), splitPredicates(false), rankPredicates(false), addedAllGuardsFlag(false), pivotSelectionHeuristic(), splitter(), equivalenceChecker(std::move(smtSolver)) {
+        MenuGameRefiner<Type, ValueType>::MenuGameRefiner(MenuGameAbstractor<Type, ValueType>& abstractor, std::unique_ptr<storm::solver::SmtSolver>&& smtSolver, MenuGameRefinerOptions const& options) : abstractor(abstractor), useInterpolation(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isUseInterpolationSet()), splitAll(false), splitPredicates(false), rankPredicates(false), addedAllGuardsFlag(false), refinementPredicatesToInject(options.refinementPredicates), pivotSelectionHeuristic(), splitter(), equivalenceChecker(std::move(smtSolver)) {
             
             auto const& abstractionSettings = storm::settings::getModule<storm::settings::modules::AbstractionSettings>();
             
@@ -96,39 +96,6 @@ namespace storm {
             if (abstractionSettings.isAddAllInitialExpressionsSet()) {
                 storm::expressions::Expression initialExpression = this->abstractor.get().getInitialExpression();
                 performRefinement(createGlobalRefinement(preprocessPredicates({initialExpression}, RefinementPredicates::Source::InitialExpression)));
-            }
-            
-            if (abstractionSettings.isInjectRefinementPredicatesSet()) {
-                auto const& expressionManager = abstractor.getAbstractionInformation().getExpressionManager();
-                storm::parser::ExpressionParser expressionParser(expressionManager);
-                std::unordered_map<std::string, storm::expressions::Expression> variableMapping;
-                for (auto const& variableTypePair : expressionManager) {
-                    variableMapping[variableTypePair.first.getName()] = variableTypePair.first;
-                }
-                expressionParser.setIdentifierMapping(variableMapping);
-
-                std::string predicatesString = abstractionSettings.getInjectedRefinementPredicates();
-                std::vector<std::string> predicateGroupsAsStrings;
-                boost::split(predicateGroupsAsStrings, predicatesString, boost::is_any_of(";"));
-
-                for (auto const& predicateGroupString : predicateGroupsAsStrings) {
-                    std::vector<std::string> predicatesAsStrings;
-                    boost::split(predicatesAsStrings, predicateGroupString, boost::is_any_of(":"));
-                    
-                    refinementPredicatesToInject.emplace_back();
-                    for (auto const& predicateString : predicatesAsStrings) {
-                        storm::expressions::Expression predicate = expressionParser.parseFromString(predicateString);
-                        STORM_LOG_TRACE("Adding special (user-provided) refinement predicate " << predicateString << ".");
-                        refinementPredicatesToInject.back().emplace_back(predicate);
-                    }
-                    STORM_LOG_THROW(!refinementPredicatesToInject.back().empty(), storm::exceptions::InvalidArgumentException, "Expecting non-empty list of predicates to inject for each (mentioned) refinement step.");
-
-                    // Finally reverse the list, because we take the predicates from the back.
-                    std::reverse(refinementPredicatesToInject.back().begin(), refinementPredicatesToInject.back().end());
-                }
-
-                // Finally reverse the list, because we take the predicates from the back.
-                std::reverse(refinementPredicatesToInject.begin(), refinementPredicatesToInject.end());
             }
         }
         

@@ -46,7 +46,7 @@ namespace storm {
                  * @param program The concrete program for which to build the abstraction.
                  * @param smtSolverFactory A factory that is to be used for creating new SMT solvers.
                  */
-                PrismMenuGameAbstractor(storm::prism::Program const& program, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory);
+                PrismMenuGameAbstractor(storm::prism::Program const& program, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, MenuGameAbstractorOptions const& options = MenuGameAbstractorOptions());
                 
                 PrismMenuGameAbstractor(PrismMenuGameAbstractor const&) = default;
                 PrismMenuGameAbstractor& operator=(PrismMenuGameAbstractor const&) = default;

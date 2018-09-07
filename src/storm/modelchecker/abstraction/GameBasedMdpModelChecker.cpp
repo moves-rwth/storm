@@ -60,7 +60,7 @@ namespace storm {
         using detail::PreviousExplicitResult;
 
         template<storm::dd::DdType Type, typename ModelType>
-        GameBasedMdpModelChecker<Type, ModelType>::GameBasedMdpModelChecker(storm::storage::SymbolicModelDescription const& model, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory) : smtSolverFactory(smtSolverFactory), comparator(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getPrecision(), storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getRelativeTerminationCriterion()), reuseQualitativeResults(false), reuseQuantitativeResults(false), solveMode(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getSolveMode()), debug(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isDebugSet()) {
+        GameBasedMdpModelChecker<Type, ModelType>::GameBasedMdpModelChecker(storm::storage::SymbolicModelDescription const& model, GameBasedMdpModelCheckerOptions const& options, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory) : options(options), smtSolverFactory(smtSolverFactory), comparator(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getPrecision(), storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getRelativeTerminationCriterion()), reuseQualitativeResults(false), reuseQuantitativeResults(false), solveMode(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getSolveMode()), debug(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isDebugSet()) {
 
             if (model.hasUndefinedConstants()) {
                 auto undefinedConstants = model.getUndefinedConstants();
@@ -559,10 +559,11 @@ namespace storm {
             storm::OptimizationDirection player1Direction = getPlayer1Direction(checkTask);
             
             // Create the abstractor.
+            storm::abstraction::MenuGameAbstractorOptions abstractorOptions(std::move(options.constraints));
             if (preprocessedModel.isPrismProgram()) {
-                abstractor = std::make_shared<storm::abstraction::prism::PrismMenuGameAbstractor<Type, ValueType>>(preprocessedModel.asPrismProgram(), smtSolverFactory);
+                abstractor = std::make_shared<storm::abstraction::prism::PrismMenuGameAbstractor<Type, ValueType>>(preprocessedModel.asPrismProgram(), smtSolverFactory, abstractorOptions);
             } else {
-                abstractor = std::make_shared<storm::abstraction::jani::JaniMenuGameAbstractor<Type, ValueType>>(preprocessedModel.asJaniModel(), smtSolverFactory);
+                abstractor = std::make_shared<storm::abstraction::jani::JaniMenuGameAbstractor<Type, ValueType>>(preprocessedModel.asJaniModel(), smtSolverFactory, abstractorOptions);
             }
             if (!constraintExpression.isTrue()) {
                 abstractor->addTerminalStates(!constraintExpression);
@@ -571,7 +572,8 @@ namespace storm {
             abstractor->setTargetStates(targetStateExpression);
             
             // Create a refiner that can be used to refine the abstraction when needed.
-            storm::abstraction::MenuGameRefiner<Type, ValueType> refiner(*abstractor, smtSolverFactory->create(preprocessedModel.getManager()));
+            storm::abstraction::MenuGameRefinerOptions refinerOptions(std::move(options.injectedRefinementPredicates));
+            storm::abstraction::MenuGameRefiner<Type, ValueType> refiner(*abstractor, smtSolverFactory->create(preprocessedModel.getManager()), refinerOptions);
             refiner.refine(initialPredicates, false);
 
             storm::dd::Bdd<Type> globalConstraintStates = abstractor->getStates(constraintExpression);

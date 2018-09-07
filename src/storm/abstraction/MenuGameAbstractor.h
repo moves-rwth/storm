@@ -21,6 +21,15 @@ namespace storm {
         template <storm::dd::DdType DdType>
         class AbstractionInformation;
         
+        struct MenuGameAbstractorOptions {
+            MenuGameAbstractorOptions() = default;
+            MenuGameAbstractorOptions(std::vector<storm::expressions::Expression>&& constraints) : constraints(std::move(constraints)) {
+                // Intentionally left empty.
+            }
+            
+            std::vector<storm::expressions::Expression> constraints;
+        };
+        
         template <storm::dd::DdType DdType, typename ValueType>
         class MenuGameAbstractor {
         public:
