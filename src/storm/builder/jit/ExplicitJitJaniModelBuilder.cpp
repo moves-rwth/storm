@@ -107,6 +107,10 @@ namespace storm {
                     transientVariables.insert(variable.getExpressionVariable());
                 }
                 
+                if (this->model.containsArrayVariables()) {
+                     this->model.eliminateArrays();
+                }
+                
                 // Construct vector of the automata to be put in parallel.
                 storm::jani::Composition const& topLevelComposition = this->model.getSystemComposition();
                 if (topLevelComposition.isAutomatonComposition()) {
