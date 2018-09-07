@@ -97,6 +97,11 @@ namespace storm {
             detail::ConstAssignments getTransientAssignments() const;
 
             /*!
+             * Returns all transient assignments in this set of assignments.
+             */
+            detail::ConstAssignments getTransientAssignments(int_fast64_t assignmentLevel) const;
+
+            /*!
              * Returns all non-transient assignments in this set of assignments.
              */
             detail::ConstAssignments getNonTransientAssignments() const;

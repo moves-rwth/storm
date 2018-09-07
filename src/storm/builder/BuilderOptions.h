@@ -107,6 +107,7 @@ namespace storm {
             bool isBuildAllLabelsSet() const;
             bool isExplorationChecksSet() const;
             bool isShowProgressSet() const;
+            bool isScaleAndLiftTransitionRewardsSet() const;
             bool isAddOutOfBoundsStateSet() const;
             bool isAddOverlappingGuardLabelSet() const;
             uint64_t getShowProgressDelay() const;
@@ -157,6 +158,13 @@ namespace storm {
              * @return this
              */
             BuilderOptions& setExplorationChecks(bool newValue = true);
+            
+            /**
+             * Should extra checks be performed during exploration
+             * @param newValue The new value (default true)
+             * @return this
+             */
+            BuilderOptions& setScaleAndLiftTransitionRewards(bool newValue = true);
 
             /**
              * Should a state for out of bounds be constructed
@@ -191,16 +199,19 @@ namespace storm {
             
             /// If one of these labels/expressions evaluates to the given bool, the builder can abort the exploration.
             std::vector<std::pair<LabelOrExpression, bool>> terminalStates;
-            
+
             /// A flag indicating whether or not to build choice labels.
             bool buildChoiceLabels;
-                         
+            
             /// A flag indicating whether or not to build for each state the variable valuation from which it originates.
             bool buildStateValuations;
             
             // A flag that indicates whether or not to generate the information from which parts of the model specification
             // each choice originates.
             bool buildChoiceOrigins;
+            
+            /// A flag that stores whether potentially occurring transition rewards should be scaled and lifted to the edge
+            bool scaleAndLiftTransitionRewards;
 
             /// A flag that stores whether exploration checks are to be performed.
             bool explorationChecks;
@@ -216,6 +227,7 @@ namespace storm {
 
             /// The delay for printing progress information.
             uint64_t showProgressDelay;
+            
         };
         
     }

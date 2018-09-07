@@ -105,7 +105,7 @@ namespace storm {
              * Treats the given transient assignments by calling the callback function whenever a transient assignment
              * to one of the reward variables of this generator is performed.
              */
-            void performTransientAssignments(storm::jani::detail::ConstAssignments const& transientAssignments, std::function<void (ValueType const&)> const& callback);
+            void performTransientAssignments(storm::jani::detail::ConstAssignments const& transientAssignments, storm::expressions::ExpressionEvaluator<ValueType> const& expressionEvaluator, std::function<void (ValueType const&)> const& callback);
             
             /*!
              * Builds the information structs for the reward models.

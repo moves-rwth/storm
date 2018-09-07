@@ -42,6 +42,7 @@ namespace storm {
             STORM_LOG_THROW(!model.hasNonGlobalTransientVariable(), storm::exceptions::InvalidSettingsException, "The explicit next-state generator currently does not support automata-local transient variables.");
             STORM_LOG_THROW(!this->options.isBuildChoiceLabelsSet(), storm::exceptions::InvalidSettingsException, "JANI next-state generator cannot generate choice labels.");
 
+            // Eliminate arrays if necessary.
             if (this->model.containsArrayVariables()) {
                 arrayEliminatorData = this->model.eliminateArrays(true);
             }
@@ -50,8 +51,16 @@ namespace storm {
             uint64_t lowestAssignmentLevel = storm::jani::AssignmentLevelFinder().getLowestAssignmentLevel(this->model);
             if (this->model.hasTransientEdgeDestinationAssignments()) {
                 this->model.liftTransientEdgeDestinationAssignments(lowestAssignmentLevel);
+                if (this->model.hasTransientEdgeDestinationAssignments()) {
+                    STORM_LOG_THROW(options.isScaleAndLiftTransitionRewardsSet(), storm::exceptions::InvalidSettingsException, "The explicit next-state generator currently does not support transient edge destination assignments.");
+                } else {
+                    // There are no edge destination assignments so we turn the lifting to edges off.
+                    this->options.setScaleAndLiftTransitionRewards(false);
+                }
+            } else {
+                // There are no edge destination assignments so we turn the lifting to edges off.
+                this->options.setScaleAndLiftTransitionRewards(false);
             }
-            STORM_LOG_THROW(!this->model.hasTransientEdgeDestinationAssignments(), storm::exceptions::InvalidSettingsException, "The explicit next-state generator currently does not support transient edge destination assignments.");
             
             // Create all synchronization-related information, e.g. the automata that are put in parallel.
             this->createSynchronizationInformation();
@@ -358,7 +367,7 @@ namespace storm {
                 uint64_t currentLocationIndex = locations[automatonIndex];
                 storm::jani::Location const& location = automaton.getLocation(currentLocationIndex);
                 auto valueIt = stateRewards.begin();
-                performTransientAssignments(location.getAssignments().getTransientAssignments(), [&valueIt] (ValueType const& value) { *valueIt += value; ++valueIt; } );
+                performTransientAssignments(location.getAssignments().getTransientAssignments(), *this->evaluator, [&valueIt] (ValueType const& value) { *valueIt += value; ++valueIt; } );
                 ++automatonIndex;
             }
             result.addStateRewards(std::move(stateRewards));
@@ -446,6 +455,7 @@ namespace storm {
             }
             
             Choice<ValueType> choice(edge.getActionIndex(), static_cast<bool>(exitRate));
+            std::vector<ValueType> stateActionRewards(rewardVariables.size(), storm::utility::zero<ValueType>());
             
             // Iterate over all updates of the current command.
             ValueType probabilitySum = storm::utility::zero<ValueType>();
@@ -457,13 +467,26 @@ namespace storm {
                     // seen, we also add it to the set of states that have yet to be explored.
                     uint64_t assignmentLevel = edge.getLowestAssignmentLevel(); // Might be the largest possible integer, if there is no assignment
                     uint64_t const& highestLevel = edge.getHighestAssignmentLevel();
+                    bool hasTransientRewardAssignments = destination.hasTransientAssignment();
                     CompressedState newState = applyUpdate(state, destination, this->variableInformation.locationVariables[automatonIndex], assignmentLevel, *this->evaluator);
+                    if (hasTransientRewardAssignments) {
+                        STORM_LOG_ASSERT(this->options.isScaleAndLiftTransitionRewardsSet(), "Transition rewards are not supported and scaling to action rewards is disabled.");
+                        // Create the rewards for this destination
+                        auto valueIt = stateActionRewards.begin();
+                        performTransientAssignments(destination.getOrderedAssignments().getTransientAssignments(assignmentLevel), *this->evaluator, [&] (ValueType const& value) { *valueIt += (value * probability); ++valueIt; } );
+                    }
                     while (assignmentLevel < highestLevel) {
                         ++assignmentLevel;
-                        auto nextLevelEvaluator = storm::expressions::ExpressionEvaluator<ValueType>(model.getManager());
-                        unpackStateIntoEvaluator(newState, this->variableInformation, nextLevelEvaluator);
-                        newState = applyUpdate(newState, destination, this->variableInformation.locationVariables[automatonIndex], assignmentLevel, nextLevelEvaluator);
+                        auto currentLevelEvaluator = storm::expressions::ExpressionEvaluator<ValueType>(model.getManager());
+                        unpackStateIntoEvaluator(newState, this->variableInformation, currentLevelEvaluator);
+                        newState = applyUpdate(newState, destination, this->variableInformation.locationVariables[automatonIndex], assignmentLevel, currentLevelEvaluator);
+                        if (hasTransientRewardAssignments) {
+                            // update the rewards for this destination
+                            auto valueIt = stateActionRewards.begin();
+                            performTransientAssignments(destination.getOrderedAssignments().getTransientAssignments(assignmentLevel), currentLevelEvaluator, [&] (ValueType const& value) { *valueIt += (value * probability); ++valueIt; } );
+                        }
                     }
+                    
                     StateType stateIndex = stateToIdCallback(newState);
                     
                     // Update the choice by adding the probability/target state to it.
@@ -476,8 +499,10 @@ namespace storm {
                 }
             }
             
-            // Create the state-action reward for the newly created choice.
-            performTransientAssignments(edge.getAssignments().getTransientAssignments(), [&choice] (ValueType const& value) { choice.addReward(value); } );
+            // Create the state-action reward for the newly created choice. Note that edge assignments are all transient and we assume that no transient variables occur on the rhs of transient assignments, i.e., the assignment level does not matter here
+            auto valueIt = stateActionRewards.begin();
+            performTransientAssignments(edge.getAssignments().getTransientAssignments(), *this->evaluator, [&valueIt] (ValueType const& value) { *valueIt += value; ++valueIt; } );
+            choice.addRewards(std::move(stateActionRewards));
             
             if (this->options.isExplorationChecksSet()) {
                 // Check that the resulting distribution is in fact a distribution.
@@ -510,7 +535,7 @@ namespace storm {
             bool done = false;
             while (!done) {
                 std::vector<ValueType> stateActionRewards(rewardVariables.size(), storm::utility::zero<ValueType>());
-                
+
                 currentDistribution.add(state, storm::utility::one<ValueType>());
                 
                 EdgeIndexSet edgeIndices;
@@ -531,25 +556,30 @@ namespace storm {
                         storm::jani::Edge const& edge = *indexAndEdge.second;
                         
                         for (auto const& destination : edge.getDestinations()) {
-                            for (auto const& stateProbability : currentDistribution) {
-                                // Compute the new state under the current update and add it to the set of new target states.
-                                CompressedState newTargetState = applyUpdate(stateProbability.getState(), destination, this->variableInformation.locationVariables[edgeCombination[i].first], assignmentLevel, *this->evaluator);
-                                
-                                // If the new state was already found as a successor state, update the probability
-                                // and otherwise insert it.
-                                ValueType probability = stateProbability.getValue() * this->evaluator->asRational(destination.getProbability());
-                                if (edge.hasRate()) {
-                                    probability *= this->evaluator->asRational(edge.getRate());
+                            ValueType destinationProbability = this->evaluator->asRational(destination.getProbability());
+                            if (!storm::utility::isZero(destinationProbability)) {
+                                if (destination.hasTransientAssignment()) {
+                                    STORM_LOG_ASSERT(this->options.isScaleAndLiftTransitionRewardsSet(), "Transition rewards are not supported and scaling to action rewards is disabled.");
+                                    // add the rewards for this destination
+                                    auto valueIt = stateActionRewards.begin();
+                                    performTransientAssignments(edge.getAssignments().getTransientAssignments(), *this->evaluator, [&] (ValueType const& value) { *valueIt += (value * destinationProbability); ++valueIt; } );
                                 }
-                                if (probability != storm::utility::zero<ValueType>()) {
-                                    nextDistribution.add(newTargetState, probability);
+                                for (auto const& stateProbability : currentDistribution) {
+                                    // Compute the new state under the current update and add it to the set of new target states.
+                                    CompressedState newTargetState = applyUpdate(stateProbability.getState(), destination, this->variableInformation.locationVariables[edgeCombination[i].first], assignmentLevel, *this->evaluator);
+                                    
+                                    // If the new state was already found as a successor state, update the probability
+                                    // and insert it.
+                                    ValueType probability = destinationProbability * stateProbability.getValue();
+                                    if (edge.hasRate()) {
+                                        probability *= this->evaluator->asRational(edge.getRate());
+                                    }
+                                    if (probability != storm::utility::zero<ValueType>()) {
+                                        nextDistribution.add(newTargetState, probability);
+                                    }
                                 }
                             }
                         }
-                        
-                        // Create the state-action reward for the newly created choice.
-                        auto valueIt = stateActionRewards.begin();
-                        performTransientAssignments(edge.getAssignments().getTransientAssignments(), [&valueIt] (ValueType const& value) { *valueIt += value; ++valueIt; } );
                         
                         nextDistribution.compress();
                         
@@ -562,13 +592,18 @@ namespace storm {
                     // If there are different assignment levels, we need to expand the possible destinations which causes an exponential blowup...
                     uint64_t destinationId = 0;
                     bool lastDestinationId = false;
+                    std::vector<ValueType> destinationRewards;
+                    std::vector<storm::jani::EdgeDestination const*> destinations;
+                    std::vector<LocationVariableInformation const*> locationVars;
+                    destinations.reserve(iteratorList.size());
+                    locationVars.reserve(iteratorList.size());
+
                     do {
                         
                         // First assignment level
-                        std::vector<storm::jani::EdgeDestination const*> destinations;
-                        std::vector<LocationVariableInformation const*> locationVars;
-                        destinations.reserve(iteratorList.size());
-                        locationVars.reserve(iteratorList.size());
+                        destinations.clear();
+                        locationVars.clear();
+                        destinationRewards.assign(destinationRewards.size(), storm::utility::zero<ValueType>());
                         CompressedState successorState = state;
                         ValueType successorProbability = storm::utility::one<ValueType>();
 
@@ -591,10 +626,12 @@ namespace storm {
                             if (storm::utility::isZero(successorProbability)) {
                                 break;
                             }
-                            // Create the state-action reward for the newly created choice.
-                            auto valueIt = stateActionRewards.begin();
-                            performTransientAssignments(edge.getAssignments().getTransientAssignments(), [&valueIt] (ValueType const& value) { *valueIt += value; ++valueIt; } );
+                            
                             successorState = applyUpdate(successorState, *destinations.back(), *locationVars.back(), assignmentLevel, *this->evaluator);
+                            
+                            // add the reward for this destination to the destination rewards
+                            auto valueIt = destinationRewards.begin();
+                            performTransientAssignments(destinations.back()->getOrderedAssignments().getTransientAssignments(assignmentLevel), *this->evaluator, [&valueIt] (ValueType const& value) { *valueIt += value; ++valueIt; } );
                         }
                         
                         if (!storm::utility::isZero(successorProbability)) {
@@ -606,15 +643,25 @@ namespace storm {
                                 auto locationVarIt = locationVars.begin();
                                 for (auto const& destPtr : destinations) {
                                     successorState = applyUpdate(successorState, *destPtr, **locationVarIt, assignmentLevel, currentLevelEvaluator);
+                                    // add the reward for this destination to the destination rewards
+                                    auto valueIt = destinationRewards.begin();
+                                    performTransientAssignments(destinations.back()->getOrderedAssignments().getTransientAssignments(assignmentLevel), currentLevelEvaluator, [&valueIt] (ValueType const& value) { *valueIt += value; ++valueIt; } );
                                     ++locationVarIt;
                                 }
                             }
                             nextDistribution.add(successorState, successorProbability);
+                            storm::utility::vector::addScaledVector(stateActionRewards, destinationRewards, successorProbability);
                         }
-                        
                         ++destinationId;
                     } while (!lastDestinationId);
                     std::cout << std::endl;
+                }
+                
+                for (uint_fast64_t i = 0; i < iteratorList.size(); ++i) {
+                    storm::jani::Edge const& edge = *iteratorList[i]->second;
+                    // Add the state-action reward for the newly created choice. Note that edge assignments are all transient and we assume that no transient variables occur on the rhs of transient assignments, i.e., the assignment level does not matter here
+                    auto valueIt = stateActionRewards.begin();
+                    performTransientAssignments(edge.getAssignments().getTransientAssignments(), *this->evaluator, [&valueIt] (ValueType const& value) { *valueIt += value; ++valueIt; } );
                 }
                 
                 // At this point, we applied all commands of the current command combination and newTargetStates
@@ -792,7 +839,7 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
-        void JaniNextStateGenerator<ValueType, StateType>::performTransientAssignments(storm::jani::detail::ConstAssignments const& transientAssignments, std::function<void (ValueType const&)> const& callback) {
+        void JaniNextStateGenerator<ValueType, StateType>::performTransientAssignments(storm::jani::detail::ConstAssignments const& transientAssignments, storm::expressions::ExpressionEvaluator<ValueType> const& expressionEvaluator,  std::function<void (ValueType const&)> const& callback) {
             // If there are no reward variables, there is no need to iterate at all.
             if (rewardVariables.empty()) {
                 return;
@@ -810,7 +857,7 @@ namespace storm {
                 if (rewardVariableIt == rewardVariableIte) {
                     break;
                 } else if (*rewardVariableIt == assignment.getExpressionVariable()) {
-                    callback(ValueType(this->evaluator->asRational(assignment.getAssignedExpression())));
+                    callback(ValueType(expressionEvaluator.asRational(assignment.getAssignedExpression())));
                     ++rewardVariableIt;
                 }
             }

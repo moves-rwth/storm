@@ -1,6 +1,7 @@
 #include "storm/builder/BuilderOptions.h"
 
 #include "storm/logic/Formulas.h"
+#include "storm/logic/FragmentSpecification.h"
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/BuildSettings.h"
@@ -36,7 +37,7 @@ namespace storm {
             return boost::get<storm::expressions::Expression>(labelOrExpression);
         }
         
-        BuilderOptions::BuilderOptions(bool buildAllRewardModels, bool buildAllLabels) : buildAllRewardModels(buildAllRewardModels), buildAllLabels(buildAllLabels), buildChoiceLabels(false), buildStateValuations(false), buildChoiceOrigins(false), explorationChecks(false), addOverlappingGuardsLabel(false), addOutOfBoundsState(false), showProgress(false), showProgressDelay(0) {
+        BuilderOptions::BuilderOptions(bool buildAllRewardModels, bool buildAllLabels) : buildAllRewardModels(buildAllRewardModels), buildAllLabels(buildAllLabels), buildChoiceLabels(false), buildStateValuations(false), buildChoiceOrigins(false), scaleAndLiftTransitionRewards(true), explorationChecks(false), addOverlappingGuardsLabel(false), addOutOfBoundsState(false), showProgress(false), showProgressDelay(0) {
             // Intentionally left empty.
         }
         
@@ -85,6 +86,10 @@ namespace storm {
             for (auto const& formula : atomicExpressionFormulas) {
                 addLabel(formula->getExpression());
             }
+            
+            storm::logic::FragmentSpecification transitionRewardScalingFragment = storm::logic::csl().setRewardOperatorsAllowed(true).setReachabilityRewardFormulasAllowed(true).setLongRunAverageOperatorsAllowed(true).setMultiObjectiveFormulasAllowed(true).setTotalRewardFormulasAllowed(true).setStepBoundedCumulativeRewardFormulasAllowed(true).setTimeBoundedCumulativeRewardFormulasAllowed(true);
+            scaleAndLiftTransitionRewards = scaleAndLiftTransitionRewards && formula.isInFragment(transitionRewardScalingFragment);
+            
         }
         
         void BuilderOptions::setTerminalStatesFromFormula(storm::logic::Formula const& formula) {
@@ -158,6 +163,10 @@ namespace storm {
         
         bool BuilderOptions::isBuildAllLabelsSet() const {
             return buildAllLabels;
+        }
+
+        bool BuilderOptions::isScaleAndLiftTransitionRewardsSet() const {
+            return scaleAndLiftTransitionRewards;
         }
 
         bool BuilderOptions::isAddOutOfBoundsStateSet() const {
@@ -237,6 +246,11 @@ namespace storm {
             return *this;
         }
 
+        BuilderOptions& BuilderOptions::setScaleAndLiftTransitionRewards(bool newValue) {
+            scaleAndLiftTransitionRewards = newValue;
+            return *this;
+        }
+        
         BuilderOptions& BuilderOptions::setAddOutOfBoundsState(bool newValue) {
             addOutOfBoundsState = newValue;
             return *this;

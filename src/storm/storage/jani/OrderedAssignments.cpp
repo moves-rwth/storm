@@ -81,18 +81,10 @@ namespace storm {
         }
         
         bool OrderedAssignments::hasMultipleLevels(bool onlyTransient) const {
-            if (allAssignments.empty()) {
+            if ((onlyTransient ? transientAssignments : allAssignments).empty()) {
                 return false;
             }
-            if (onlyTransient) {
-                for (auto const& a : allAssignments) {
-                    if (a->isTransient()) {
-                        return a->getLevel() != 0 || getHighestLevel(true) != 0;
-                    }
-                }
-                return false; // no transient assignments
-            }
-            return getLowestLevel(false) != 0 || getHighestLevel(false) != 0;
+            return getLowestLevel(onlyTransient) != 0 || getHighestLevel(onlyTransient) != 0;
         }
         
         bool OrderedAssignments::empty() const {
@@ -110,31 +102,15 @@ namespace storm {
         }
         
         int_fast64_t OrderedAssignments::getLowestLevel(bool onlyTransient) const {
-            assert(!allAssignments.empty());
-            if (onlyTransient) {
-                for (auto const& a : allAssignments) {
-                    if (a->getLValue().isTransient()) {
-                        return a->getLevel();
-                    }
-                }
-                // assert that at least one transient variable is contained.
-                assert(false);
-            }
-            return allAssignments.front()->getLevel();
+            auto const& as = onlyTransient ? transientAssignments : allAssignments;
+            assert(!as.empty());
+            return as.front()->getLevel();
         }
         
         int_fast64_t OrderedAssignments::getHighestLevel(bool onlyTransient) const {
-            assert(!allAssignments.empty());
-            if (onlyTransient) {
-                for (auto aIt = allAssignments.rbegin(); aIt != allAssignments.rend(); ++aIt) {
-                    if ((*aIt)->getLValue().isTransient()) {
-                        return (*aIt)->getLevel();
-                    }
-                }
-                // assert that at least one transient variable is contained.
-                assert(false);
-            }
-            return allAssignments.back()->getLevel();
+            auto const& as = onlyTransient ? transientAssignments : allAssignments;
+            assert(!as.empty());
+            return as.back()->getLevel();
         }
         
         bool OrderedAssignments::contains(Assignment const& assignment) const {
@@ -220,6 +196,18 @@ namespace storm {
         
         detail::ConstAssignments OrderedAssignments::getNonTransientAssignments() const {
             return detail::ConstAssignments(nonTransientAssignments.begin(), nonTransientAssignments.end());
+        }
+        
+        detail::ConstAssignments OrderedAssignments::getTransientAssignments(int_fast64_t assignmentLevel) const {
+            auto begin = transientAssignments.begin();
+            while (begin != transientAssignments.end() && (*begin)->getLevel() < assignmentLevel) {
+                ++begin;
+            }
+            auto end = begin;
+            while (end != transientAssignments.end() && (*begin)->getLevel() == assignmentLevel) {
+                ++end;
+            }
+            return detail::ConstAssignments(begin, end);
         }
         
         bool OrderedAssignments::hasTransientAssignment() const {
