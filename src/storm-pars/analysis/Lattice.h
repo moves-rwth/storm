@@ -55,13 +55,10 @@ namespace storm {
                     void add(uint_fast64_t state);
 
                     /*!
-                     * Adds a new relation to the lattice
+                     * Adds a new relation between two nodes to the lattice
                      * @param above The node closest to the top Node of the Lattice.
-                     * @param between The node between above and below.
                      * @param below The node closest to the bottom Node of the Lattice.
                      */
-                    void addRelation(Node* above, Node* between, Node* below);
-
                     void addRelationNodes(storm::analysis::Lattice::Node *above, storm::analysis::Lattice::Node * below);
 
                     /*!
@@ -137,6 +134,8 @@ namespace storm {
                      * @return
                      */
                     bool above(Node * node1, Node * node2, std::set<Node*>* seenNodes);
+
+                    int compare(Node* node1, Node* node2);
                 };
             }
 }
