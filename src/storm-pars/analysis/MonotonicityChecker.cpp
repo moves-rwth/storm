@@ -91,14 +91,14 @@ namespace storm {
                         auto compare = lattice->compare(first.getColumn(), second.getColumn());
                         std::pair<bool, bool>* value = &varsMonotone.find(*itr)->second;
                         std::pair<bool, bool> old = *value;
-                        if (compare == 1) {
+                        if (compare == storm::analysis::Lattice::ABOVE) {
                             value->first &=derivative.constantPart() >= 0;
                             value->second &=derivative.constantPart() <= 0;
-                        } else if (compare == 2) {
+                        } else if (compare == storm::analysis::Lattice::BELOW) {
                             value->first &=derivative.constantPart() <= 0;
                             value->second &=derivative.constantPart() >= 0;
-                        } else if (compare == 0) {
-                            STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Don't know what is happening, something in monotonicity checking went wrong");
+                        } else if (compare == storm::analysis::Lattice::SAME) {
+                            // Behaviour doesn't matter, as they are at the same level
                         } else {
                             value->first = false;
                             value->second = false;
