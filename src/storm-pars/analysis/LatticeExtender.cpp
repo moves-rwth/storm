@@ -111,15 +111,10 @@ namespace storm {
                 }
             }
 
-            // Create a copy of the states already present in the lattice.
-            storm::storage::BitVector seenStates = (lattice->getAddedStates());
-            storm::storage::BitVector oldStates(numberOfStates);
-
-            while (oldStates != seenStates) {
-                // As long as new states are added to the lattice, continue.
-                oldStates = storm::storage::BitVector(seenStates);
-
+            auto oldNumberSet = lattice->getAddedStates().getNumberOfSetBits();
+            while (lattice->getAddedStates().getNumberOfSetBits() != numberOfStates) {
                 for (auto stateItr = stateMap.begin(); stateItr != stateMap.end(); ++stateItr) {
+                    storm::storage::BitVector seenStates = (lattice->getAddedStates());
                     // Iterate over all states
                     auto stateNumber = stateItr->first;
                     storm::storage::BitVector successors = stateItr->second;
@@ -133,7 +128,6 @@ namespace storm {
                     if (check && successors.getNumberOfSetBits() == 1) {
                         // As there is only one successor the current state and its successor must be at the same nodes.
                         lattice->addToNode(stateNumber, lattice->getNode(successors.getNextSetIndex(0)));
-                        seenStates.set(stateNumber);
                     } else if (check && successors.getNumberOfSetBits() > 1) {
                         // TODO: allow more than 2 transitions?
                         // Otherwise, check how the two states compare, and add if the comparison is possible.
@@ -155,9 +149,14 @@ namespace storm {
                         } else {
                             return std::make_tuple(lattice, successor1, successor2);
                         }
-                        seenStates.set(stateNumber);
                     }
                 }
+                // Nothing changed and not done yet
+                if (oldNumberSet == lattice->getAddedStates().getNumberOfSetBits()) {
+                    // add the first unset state to the lattice between top and bottom
+                    lattice->add(lattice->getAddedStates().getNextUnsetIndex(0));
+                }
+                oldNumberSet = lattice->getAddedStates().getNumberOfSetBits();
             }
             return std::make_tuple(lattice, numberOfStates, numberOfStates);
         }
