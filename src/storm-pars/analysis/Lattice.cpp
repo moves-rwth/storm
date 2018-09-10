@@ -50,8 +50,9 @@ namespace storm {
                 nodes.at(i) = bottom;
             }
 
+            auto oldNodes = lattice->getNodes();
             // Create all nodes
-            for (auto itr = lattice->getNodes().begin(); itr != lattice->getNodes().end(); ++itr) {
+            for (auto itr = oldNodes.begin(); itr != oldNodes.end(); ++itr) {
                 Node* oldNode = (*itr);
                 if (oldNode != nullptr) {
                     Node *newNode = new Node();
@@ -65,7 +66,7 @@ namespace storm {
             }
 
             // Create transitions
-            for (auto itr = lattice->getNodes().begin(); itr != lattice->getNodes().end(); ++itr) {
+            for (auto itr = oldNodes.begin(); itr != oldNodes.end(); ++itr) {
                 Node* oldNode = (*itr);
                 if (oldNode != nullptr) {
                     auto state = (*itr)->states.getNextSetIndex(0);
