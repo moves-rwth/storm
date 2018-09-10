@@ -86,8 +86,7 @@ namespace storm {
                     std::string color = "";
                     auto val = first.getValue();
                     auto vars = val.gatherVariables();
-                    for (auto itr = vars.begin(); itr != vars.end(); ++itr) {
-                        if (varsMonotone.find(*itr) == varsMonotone.end()) {
+                    for (auto itr = vars.begin(); itr != vars.end(); ++itr) { if (varsMonotone.find(*itr) == varsMonotone.end()) {
                             varsMonotone[*itr].first = true;
                             varsMonotone[*itr].second = true;
                         }
@@ -97,7 +96,6 @@ namespace storm {
                         for (auto itr2 = transitions.begin(); itr2 != transitions.end(); ++itr2) {
                             for (auto itr3 = transitions.begin(); itr3 != transitions.end(); ++itr3) {
                                 // TODO improve
-
                                 auto derivative2 = (*itr2).second.derivative(*itr);
                                 auto derivative3 = (*itr3).second.derivative(*itr);
                                 STORM_LOG_THROW(derivative2.isConstant() && derivative3.isConstant(), storm::exceptions::NotSupportedException, "Expecting derivative to be constant");
@@ -108,8 +106,8 @@ namespace storm {
                                     value->first &=derivative2.constantPart() >= 0;
                                     value->second &=derivative2.constantPart() <= 0;
                                 } else if (compare == storm::analysis::Lattice::BELOW) {
-                                    value->first &=derivative3.constantPart() <= 0;
-                                    value->second &=derivative3.constantPart() >= 0;
+                                    value->first &=derivative3.constantPart() >= 0;
+                                    value->second &=derivative3.constantPart() <= 0;
                                 } else if (compare == storm::analysis::Lattice::SAME) {
                                     // Behaviour doesn't matter, as they are at the same level
                                 } else {
