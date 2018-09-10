@@ -263,6 +263,14 @@ namespace storm {
             std::set<storm::expressions::Variable> getVariables() const;
 
             /*!
+             * Retrieves the set of all variables that appear in the expression. These variables are added to the given
+             * set.
+             *
+             * @param variables The set to which to add the variables.
+             */
+            void gatherVariables(std::set<storm::expressions::Variable>& variables) const;
+            
+            /*!
              * Retrieves whether the expression contains any of the given variables.
              *
              * @param variables The variables to search for.

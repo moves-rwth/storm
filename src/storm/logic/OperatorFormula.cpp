@@ -85,6 +85,10 @@ namespace storm {
             return !this->hasBound();
         }
         
+        void OperatorFormula::gatherUsedVariables(std::set<storm::expressions::Variable>& usedVariables) const {
+            this->getThreshold().gatherVariables(usedVariables);
+        }
+        
         std::ostream& OperatorFormula::writeToStream(std::ostream& out) const {
             if (hasOptimalityType()) {
                 out << (getOptimalityType() == OptimizationDirection::Minimize ? "min" : "max");

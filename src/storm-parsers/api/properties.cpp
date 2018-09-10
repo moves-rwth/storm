@@ -17,7 +17,7 @@
 namespace storm {
     namespace api {
 
-        boost::optional <std::set<std::string>> parsePropertyFilter(std::string const &propertyFilter) {
+        boost::optional<std::set<std::string>> parsePropertyFilter(std::string const& propertyFilter) {
             if (propertyFilter == "all") {
                 return boost::none;
             }
@@ -26,7 +26,7 @@ namespace storm {
             return propertyNameSet;
         }
 
-        std::vector <storm::jani::Property> parseProperties(storm::parser::FormulaParser &formulaParser, std::string const &inputString, boost::optional <std::set<std::string>> const &propertyFilter) {
+        std::vector<storm::jani::Property> parseProperties(storm::parser::FormulaParser& formulaParser, std::string const& inputString, boost::optional<std::set<std::string>> const& propertyFilter) {
             // If the given property is a file, we parse it as a file, otherwise we assume it's a property.
             std::vector <storm::jani::Property> properties;
             if (std::ifstream(inputString).good()) {
@@ -39,25 +39,25 @@ namespace storm {
             return filterProperties(properties, propertyFilter);
         }
 
-        std::vector <storm::jani::Property> parseProperties(std::string const &inputString, boost::optional <std::set<std::string>> const &propertyFilter) {
+        std::vector<storm::jani::Property> parseProperties(std::string const& inputString, boost::optional <std::set<std::string>> const& propertyFilter) {
             auto exprManager = std::make_shared<storm::expressions::ExpressionManager>();
             storm::parser::FormulaParser formulaParser(exprManager);
             return parseProperties(formulaParser, inputString, propertyFilter);
         }
 
-        std::vector <storm::jani::Property> parsePropertiesForJaniModel(std::string const &inputString, storm::jani::Model const &model, boost::optional <std::set<std::string>> const &propertyFilter) {
+        std::vector<storm::jani::Property> parsePropertiesForJaniModel(std::string const& inputString, storm::jani::Model const& model, boost::optional <std::set<std::string>> const& propertyFilter) {
             storm::parser::FormulaParser formulaParser(model.getManager().getSharedPointer());
             auto formulas = parseProperties(formulaParser, inputString, propertyFilter);
             return substituteConstantsInProperties(formulas, model.getConstantsSubstitution());
         }
 
-        std::vector <storm::jani::Property> parsePropertiesForPrismProgram(std::string const &inputString, storm::prism::Program const &program, boost::optional <std::set<std::string>> const &propertyFilter) {
+        std::vector<storm::jani::Property> parsePropertiesForPrismProgram(std::string const& inputString, storm::prism::Program const& program, boost::optional <std::set<std::string>> const& propertyFilter) {
             storm::parser::FormulaParser formulaParser(program);
             auto formulas = parseProperties(formulaParser, inputString, propertyFilter);
             return substituteConstantsInProperties(formulas, program.getConstantsSubstitution());
         }
 
-        std::vector <storm::jani::Property> parsePropertiesForSymbolicModelDescription(std::string const &inputString, storm::storage::SymbolicModelDescription const &modelDescription, boost::optional <std::set<std::string>> const &propertyFilter) {
+        std::vector<storm::jani::Property> parsePropertiesForSymbolicModelDescription(std::string const& inputString, storm::storage::SymbolicModelDescription const& modelDescription, boost::optional <std::set<std::string>> const& propertyFilter) {
             std::vector <storm::jani::Property> result;
             if (modelDescription.isPrismProgram()) {
                 result = storm::api::parsePropertiesForPrismProgram(inputString, modelDescription.asPrismProgram(), propertyFilter);

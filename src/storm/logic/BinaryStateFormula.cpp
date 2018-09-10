@@ -32,5 +32,10 @@ namespace storm {
             this->getLeftSubformula().gatherReferencedRewardModels(referencedRewardModels);
             this->getRightSubformula().gatherReferencedRewardModels(referencedRewardModels);
         }
+        
+        void BinaryStateFormula::gatherUsedVariables(std::set<storm::expressions::Variable>& usedVariables) const {
+            this->getLeftSubformula().gatherUsedVariables(usedVariables);
+            this->getRightSubformula().gatherUsedVariables(usedVariables);
+        }
     }
 }

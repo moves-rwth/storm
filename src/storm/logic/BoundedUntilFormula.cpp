@@ -84,6 +84,22 @@ namespace storm {
             }
         }
         
+        void BoundedUntilFormula::gatherUsedVariables(std::set<storm::expressions::Variable>& usedVariables) const {
+            if (hasMultiDimensionalSubformulas()) {
+                for (unsigned i = 0; i < this->getDimension(); ++i) {
+                    this->getLeftSubformula(i).gatherUsedVariables(usedVariables);
+                    this->getRightSubformula(i).gatherUsedVariables(usedVariables);
+                    this->getLowerBound(i).gatherVariables(usedVariables);
+                    this->getUpperBound(i).gatherVariables(usedVariables);
+                }
+            } else {
+                this->getLeftSubformula().gatherUsedVariables(usedVariables);
+                this->getRightSubformula().gatherUsedVariables(usedVariables);
+                this->getLowerBound().gatherVariables(usedVariables);
+                this->getUpperBound().gatherVariables(usedVariables);
+            }
+        }
+        
         bool BoundedUntilFormula::hasQualitativeResult() const {
             return false;
         }

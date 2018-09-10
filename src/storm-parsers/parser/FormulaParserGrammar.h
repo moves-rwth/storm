@@ -145,7 +145,11 @@ namespace storm {
             
             qi::rule<Iterator, std::vector<storm::jani::Property>(), Skipper> start;
             
-            qi::rule<Iterator, qi::unused_type(), qi::locals<bool>, Skipper> constantDefinition;
+            enum class ConstantDataType {
+                Bool, Integer, Rational
+            };
+            
+            qi::rule<Iterator, qi::unused_type(), qi::locals<ConstantDataType>, Skipper> constantDefinition;
             qi::rule<Iterator, std::string(), Skipper> identifier;
             qi::rule<Iterator, std::string(), Skipper> formulaName;
             
@@ -197,7 +201,7 @@ namespace storm {
             boost::spirit::qi::real_parser<double, boost::spirit::qi::strict_real_policies<double>> strict_double;
 
             bool areConstantDefinitionsAllowed() const;
-            void addConstant(std::string const& name, bool integer);
+            void addConstant(std::string const& name, ConstantDataType type, boost::optional<storm::expressions::Expression> const& expression);
             void addProperty(std::vector<storm::jani::Property>& properties, boost::optional<std::string> const& name, std::shared_ptr<storm::logic::Formula const> const& formula);
 
             std::shared_ptr<storm::logic::TimeBoundReference> createTimeBoundReference(storm::logic::TimeBoundType const& type, boost::optional<std::string> const& rewardModelName) const;
