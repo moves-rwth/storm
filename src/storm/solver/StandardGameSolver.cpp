@@ -159,14 +159,16 @@ namespace storm {
                 targetStates = storm::utility::vector::filterGreaterZero(subB);
                 zeroStates = ~storm::utility::graph::performProbGreater0(submatrix.transpose(), storm::storage::BitVector(targetStates.size(), true), targetStates);
             }
+            bool asEquationSystem = false;
             if (this->linearEquationSolverFactory->getEquationProblemFormat(environmentOfSolver) == LinearEquationSolverProblemFormat::EquationSystem) {
                 submatrix.convertToEquationSystem();
+                asEquationSystem = true;
             }
             if (!this->hasUniqueSolution()) {
                 for (auto state : zeroStates) {
                     for (auto& element : submatrix.getRow(state)) {
                         if (element.getColumn() == state) {
-                            element.setValue(storm::utility::one<ValueType>());
+                            element.setValue(asEquationSystem ? storm::utility::one<ValueType>() : storm::utility::zero<ValueType>());
                         } else {
                             element.setValue(storm::utility::zero<ValueType>());
                         }
@@ -177,7 +179,6 @@ namespace storm {
             auto submatrixSolver = linearEquationSolverFactory->create(environmentOfSolver, std::move(submatrix));
             if (this->lowerBound) {
                 submatrixSolver->setLowerBound(this->lowerBound.get());
-                
             }
             if (this->upperBound) {
                 submatrixSolver->setUpperBound(this->upperBound.get());
@@ -211,7 +212,7 @@ namespace storm {
                         for (auto state : zeroStates) {
                             for (auto& element : submatrix.getRow(state)) {
                                 if (element.getColumn() == state) {
-                                    element.setValue(storm::utility::one<ValueType>());
+                                    element.setValue(asEquationSystem ? storm::utility::one<ValueType>() : storm::utility::zero<ValueType>());
                                 } else {
                                     element.setValue(storm::utility::zero<ValueType>());
                                 }
