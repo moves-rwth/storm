@@ -21,21 +21,23 @@ namespace storm {
                 lattice->toDotFile(myfile);
                 myfile.close();
 
-                STORM_PRINT("Given assumptions: " << std::endl);
-                bool first = true;
-                for (auto itr = assumptions.begin(); itr != assumptions.end(); ++itr) {
-                    if (!first) {
-                        STORM_PRINT(" ^ ");
-                    } else {
-                        STORM_PRINT("    ");
+                if (assumptions.size() > 0) {
+                    STORM_PRINT("Given assumptions: " << std::endl);
+                    bool first = true;
+                    for (auto itr = assumptions.begin(); itr != assumptions.end(); ++itr) {
+                        if (!first) {
+                            STORM_PRINT(" ^ ");
+                        } else {
+                            STORM_PRINT("    ");
+                        }
+                        first = false;
+                        std::shared_ptr<storm::expressions::BinaryRelationExpression> expression = *itr;
+                        auto var1 = expression->getFirstOperand();
+                        auto var2 = expression->getSecondOperand();
+                        STORM_PRINT("(" << var1->getIdentifier() << " > " << var2->getIdentifier() << ")");
                     }
-                    first = false;
-                    std::shared_ptr<storm::expressions::BinaryRelationExpression> expression = *itr;
-                    auto var1 = expression->getFirstOperand();
-                    auto var2 = expression->getSecondOperand();
-                    STORM_PRINT("(" << var1->getIdentifier() << " > " << var2->getIdentifier() << ")");
+                    STORM_PRINT(std::endl);
                 }
-                STORM_PRINT(std::endl);
 
                 std::map<carl::Variable, std::pair<bool, bool>> varsMonotone = analyseMonotonicity(i, lattice, matrix);
                 for (auto itr2 = varsMonotone.begin(); itr2 != varsMonotone.end(); ++itr2) {
@@ -75,34 +77,49 @@ namespace storm {
 
                 auto first = (*row.begin());
                 if (first.getValue() != ValueType(1)) {
-                    auto second = (*(++row.begin()));
+                    std::map<uint_fast64_t, ValueType> transitions;
+
+                    for (auto itr = row.begin(); itr != row.end(); ++itr) {
+                        transitions.insert(std::pair<uint_fast64_t, ValueType>((*itr).getColumn(), (*itr).getValue()));
+                    }
+
                     std::string color = "";
                     auto val = first.getValue();
                     auto vars = val.gatherVariables();
                     for (auto itr = vars.begin(); itr != vars.end(); ++itr) {
-                        auto derivative = val.derivative(*itr);
-                        STORM_LOG_THROW(derivative.isConstant(), storm::exceptions::NotSupportedException, "Expecting derivative to be constant");
-
                         if (varsMonotone.find(*itr) == varsMonotone.end()) {
                             varsMonotone[*itr].first = true;
                             varsMonotone[*itr].second = true;
                         }
-
-                        auto compare = lattice->compare(first.getColumn(), second.getColumn());
                         std::pair<bool, bool>* value = &varsMonotone.find(*itr)->second;
                         std::pair<bool, bool> old = *value;
-                        if (compare == storm::analysis::Lattice::ABOVE) {
-                            value->first &=derivative.constantPart() >= 0;
-                            value->second &=derivative.constantPart() <= 0;
-                        } else if (compare == storm::analysis::Lattice::BELOW) {
-                            value->first &=derivative.constantPart() <= 0;
-                            value->second &=derivative.constantPart() >= 0;
-                        } else if (compare == storm::analysis::Lattice::SAME) {
-                            // Behaviour doesn't matter, as they are at the same level
-                        } else {
-                            value->first = false;
-                            value->second = false;
+
+                        for (auto itr2 = transitions.begin(); itr2 != transitions.end(); ++itr2) {
+                            for (auto itr3 = transitions.begin(); itr3 != transitions.end(); ++itr3) {
+                                // TODO improve
+
+                                auto derivative2 = (*itr2).second.derivative(*itr);
+                                auto derivative3 = (*itr3).second.derivative(*itr);
+                                STORM_LOG_THROW(derivative2.isConstant() && derivative3.isConstant(), storm::exceptions::NotSupportedException, "Expecting derivative to be constant");
+
+                                auto compare = lattice->compare((*itr2).first, (*itr3).first);
+
+                                if (compare == storm::analysis::Lattice::ABOVE) {
+                                    value->first &=derivative2.constantPart() >= 0;
+                                    value->second &=derivative2.constantPart() <= 0;
+                                } else if (compare == storm::analysis::Lattice::BELOW) {
+                                    value->first &=derivative3.constantPart() <= 0;
+                                    value->second &=derivative3.constantPart() >= 0;
+                                } else if (compare == storm::analysis::Lattice::SAME) {
+                                    // Behaviour doesn't matter, as they are at the same level
+                                } else {
+                                    value->first = false;
+                                    value->second = false;
+                                }
+                            }
                         }
+
+
                         if ((value->first != old.first) && (value->second != old.second)) {
                             color = "color = red, ";
                         } else if ((value->first != old.first)) {
@@ -114,10 +131,12 @@ namespace storm {
                         }
                     }
 
-                    myfile << "\t" << i << " -> " << first.getColumn() << "[" << color << "label=\"" << first.getValue() << "\"];"
-                           << std::endl;
-                    myfile << "\t" << i << " -> " << second.getColumn() << "[" << color << "label=\"" << second.getValue() << "\"];"
-                           << std::endl;
+                    for (auto itr = transitions.begin(); itr != transitions.end(); ++itr) {
+                        myfile << "\t" << i << " -> " << itr->first << "[" << color << "label=\"" << itr->second << "\"];"
+                               << std::endl;
+                    }
+
+
                     myfile << "\t edge[style=\"\"];" << std::endl;
                 } else {
                     myfile << "\t" << i << " -> " << first.getColumn() << "[label=\"" << first.getValue() << "\"];"

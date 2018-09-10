@@ -67,8 +67,6 @@ namespace storm {
                 for (auto rowItr = row.begin(); rowItr != row.end(); ++rowItr) {
                     stateMap[i].set(rowItr->getColumn(), true);
                 }
-                // TODO: allow more than 2 transitions? or fix this in preprocessing?
-                STORM_LOG_THROW(stateMap[i].getNumberOfSetBits() <= 2, storm::exceptions::NotSupportedException, "Only two outgoing transitions per state allowed");
             }
 
             // Create the Lattice
@@ -128,8 +126,7 @@ namespace storm {
                     if (check && successors.getNumberOfSetBits() == 1) {
                         // As there is only one successor the current state and its successor must be at the same nodes.
                         lattice->addToNode(stateNumber, lattice->getNode(successors.getNextSetIndex(0)));
-                    } else if (check && successors.getNumberOfSetBits() > 1) {
-                        // TODO: allow more than 2 transitions?
+                    } else if (check && successors.getNumberOfSetBits() == 2) {
                         // Otherwise, check how the two states compare, and add if the comparison is possible.
                         uint_fast64_t successor1 = successors.getNextSetIndex(0);
                         uint_fast64_t successor2 = successors.getNextSetIndex(successor1 + 1);
@@ -149,6 +146,8 @@ namespace storm {
                         } else {
                             return std::make_tuple(lattice, successor1, successor2);
                         }
+                    } else if (check && successors.getNumberOfSetBits() > 2) {
+                        // TODO
                     }
                 }
                 // Nothing changed and not done yet
