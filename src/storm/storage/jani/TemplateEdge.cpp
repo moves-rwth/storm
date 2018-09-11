@@ -56,6 +56,10 @@ namespace storm {
             return guard;
         }
         
+        void TemplateEdge::setGuard(storm::expressions::Expression const& newGuard) {
+            guard = newGuard;
+        }
+        
         std::size_t TemplateEdge::getNumberOfDestinations() const {
             return destinations.size();
         }

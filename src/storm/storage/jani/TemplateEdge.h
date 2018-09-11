@@ -21,6 +21,7 @@ namespace storm {
             TemplateEdge(storm::expressions::Expression const& guard, OrderedAssignments const& assignments, std::vector<TemplateEdgeDestination> const& destinations);
 
             storm::expressions::Expression const& getGuard() const;
+            void setGuard(storm::expressions::Expression const& newGuard);
 
             void addDestination(TemplateEdgeDestination const& destination);
             
