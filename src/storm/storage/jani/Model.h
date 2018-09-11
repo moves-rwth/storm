@@ -14,6 +14,7 @@
 #include "storm/storage/jani/Edge.h"
 #include "storm/storage/jani/Location.h"
 #include "storm/storage/jani/TemplateEdge.h"
+#include "storm/storage/jani/ModelFeatures.h"
 
 #include "storm/utility/solver.h"
 #include "storm/utility/vector.h"
@@ -76,6 +77,16 @@ namespace storm {
              * Retrieves the type of the model.
              */
             ModelType const& getModelType() const;
+            
+            /*!
+             * Retrieves the enabled model features
+             */
+            ModelFeatures const& getModelFeatures() const;
+            
+            /*!
+             * Retrieves the enabled model features
+             */
+            ModelFeatures& getModelFeatures();
             
             /*!
              * Retrieves the name of the model.
@@ -522,6 +533,9 @@ namespace storm {
             
             /// The JANI-version used to specify the model.
             uint64_t version;
+            
+            /// The features enabled for this model.
+            ModelFeatures modelFeatures;
             
             /// The manager responsible for the expressions in this model.
             std::shared_ptr<storm::expressions::ExpressionManager> expressionManager;

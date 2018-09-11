@@ -196,11 +196,11 @@ namespace storm {
             }
         }
         
-        modernjson::json FormulaToJaniJson::translate(storm::logic::Formula const& formula, storm::jani::Model const& model, std::set<std::string>& modelFeatures) {
+        modernjson::json FormulaToJaniJson::translate(storm::logic::Formula const& formula, storm::jani::Model const& model, storm::jani::ModelFeatures& modelFeatures) {
             FormulaToJaniJson translator(model);
             auto result = boost::any_cast<modernjson::json>(formula.accept(translator));
             if (translator.containsStateExitRewards()) {
-                modelFeatures.insert("state-exit-rewards");
+                modelFeatures.add(storm::jani::ModelFeature::StateExitRewards);
             }
             return result;
         }
@@ -971,7 +971,7 @@ namespace storm {
         }
         
         void JsonExporter::convertModel(storm::jani::Model const& janiModel, bool commentExpressions) {
-            modelFeatures = {"derived-operators"};
+            modelFeatures = janiModel.getModelFeatures();
             jsonStruct["jani-version"] = janiModel.getJaniVersion();
             jsonStruct["name"] = janiModel.getName();
             jsonStruct["type"] = to_string(janiModel.getModelType());
@@ -1011,7 +1011,7 @@ namespace storm {
             }
         }
         
-        modernjson::json convertFilterExpression(storm::jani::FilterExpression const& fe, storm::jani::Model const& model, std::set<std::string>& modelFeatures) {
+        modernjson::json convertFilterExpression(storm::jani::FilterExpression const& fe, storm::jani::Model const& model, storm::jani::ModelFeatures& modelFeatures) {
             modernjson::json propDecl;
             propDecl["states"]["op"] = "initial";
             propDecl["op"] = "filter";
@@ -1023,6 +1023,10 @@ namespace storm {
         
         void JsonExporter::convertProperties( std::vector<storm::jani::Property> const& formulas, storm::jani::Model const& model) {
             std::vector<modernjson::json> properties;
+            
+            // Unset model-features that only relate to properties. These are only set if such properties actually exist.
+            modelFeatures.remove(storm::jani::ModelFeature::StateExitRewards);
+            
             uint64_t index = 0;
             for(auto const& f : formulas) {
                 modernjson::json propDecl;

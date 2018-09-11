@@ -95,10 +95,17 @@ namespace storm {
             size_t featuresCount = parsedStructure.count("features");
             STORM_LOG_THROW(featuresCount < 2, storm::exceptions::InvalidJaniException, "features-declarations can be given at most once.");
             if (featuresCount == 1) {
-                std::unordered_set<std::string> supportedFeatures = {"derived-operators", "state-exit-rewards"};
                 for (auto const& feature : parsedStructure.at("features")) {
 					std::string featureStr = getString(feature, "Model feature");
-                    STORM_LOG_WARN_COND(supportedFeatures.find(featureStr) != supportedFeatures.end(), "Storm does not support the model feature " << featureStr << ".");
+                    if (featureStr == "arrays") {
+                        model.getModelFeatures().add(storm::jani::ModelFeature::Arrays);
+                    } else if (featureStr == "derived-operators") {
+                        model.getModelFeatures().add(storm::jani::ModelFeature::DerivedOperators);
+                    } else if (featureStr == "state-exit-rewards") {
+                        model.getModelFeatures().add(storm::jani::ModelFeature::StateExitRewards);
+                    } else {
+                        STORM_LOG_WARN("Storm does not support the model feature " << featureStr << ".");
+                    }
                 }
             }
             size_t actionCount = parsedStructure.count("actions");

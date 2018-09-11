@@ -46,7 +46,7 @@ namespace storm {
         class FormulaToJaniJson : public storm::logic::FormulaVisitor {
             
         public:
-            static modernjson::json translate(storm::logic::Formula const& formula, storm::jani::Model const& model, std::set<std::string>& modelFeatures);
+            static modernjson::json translate(storm::logic::Formula const& formula, storm::jani::Model const& model, storm::jani::ModelFeatures& modelFeatures);
             bool containsStateExitRewards() const; // Returns true iff the  previously translated formula contained state exit rewards
             virtual boost::any visit(storm::logic::AtomicExpressionFormula const& f, boost::any const& data) const;
             virtual boost::any visit(storm::logic::AtomicLabelFormula const& f, boost::any const& data) const;
@@ -96,13 +96,12 @@ namespace storm {
             void appendVariableDeclaration(storm::jani::Variable const& variable);
             
             modernjson::json finalize() {
-                std::vector<std::string> featureVector(modelFeatures.begin(), modelFeatures.end());
-                jsonStruct["features"] = featureVector;
+                jsonStruct["features"] = modelFeatures.toString();
                 return jsonStruct;
             }
             
             modernjson::json jsonStruct;
-            std::set<std::string> modelFeatures;
+            storm::jani::ModelFeatures modelFeatures;
             
         };
     }

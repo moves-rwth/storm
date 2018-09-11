@@ -114,6 +114,14 @@ namespace storm {
             return modelType;
         }
         
+        ModelFeatures const& Model::getModelFeatures() const {
+            return modelFeatures;
+        }
+        
+        ModelFeatures& Model::getModelFeatures() {
+            return modelFeatures;
+        }
+        
         std::string const& Model::getName() const {
             return name;
         }
