@@ -23,11 +23,11 @@ namespace storm {
             using storm::settings::modules::AbstractionSettings;
             
             template <storm::dd::DdType DdType, typename ValueType>
-            ModuleAbstractor<DdType, ValueType>::ModuleAbstractor(storm::prism::Module const& module, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool useDecomposition, bool debug) : smtSolverFactory(smtSolverFactory), abstractionInformation(abstractionInformation), commands(), module(module) {
+            ModuleAbstractor<DdType, ValueType>::ModuleAbstractor(storm::prism::Module const& module, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool useDecomposition, bool addPredicatesForValidBlocks, bool debug) : smtSolverFactory(smtSolverFactory), abstractionInformation(abstractionInformation), commands(), module(module) {
                 
                 // For each concrete command, we create an abstract counterpart.
                 for (auto const& command : module.getCommands()) {
-                    commands.emplace_back(command, abstractionInformation, smtSolverFactory, useDecomposition, debug);
+                    commands.emplace_back(command, abstractionInformation, smtSolverFactory, useDecomposition, addPredicatesForValidBlocks, debug);
                 }
             }
             

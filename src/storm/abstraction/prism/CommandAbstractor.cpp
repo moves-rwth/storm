@@ -13,9 +13,6 @@
 #include "storm/storage/prism/Command.h"
 #include "storm/storage/prism/Update.h"
 
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/AbstractionSettings.h"
-
 #include "storm/utility/solver.h"
 #include "storm/utility/macros.h"
 
@@ -26,7 +23,7 @@ namespace storm {
     namespace abstraction {
         namespace prism {
             template <storm::dd::DdType DdType, typename ValueType>
-            CommandAbstractor<DdType, ValueType>::CommandAbstractor(storm::prism::Command const& command, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool useDecomposition, bool debug) : smtSolver(smtSolverFactory->create(abstractionInformation.getExpressionManager())), abstractionInformation(abstractionInformation), command(command), localExpressionInformation(abstractionInformation), evaluator(abstractionInformation.getExpressionManager()), relevantPredicatesAndVariables(), cachedDd(abstractionInformation.getDdManager().getBddZero(), 0), decisionVariables(), useDecomposition(useDecomposition), addAssignmentRelatedVariablesToSourcePredicates(false), skipBottomStates(false), forceRecomputation(true), abstractGuard(abstractionInformation.getDdManager().getBddZero()), bottomStateAbstractor(abstractionInformation, {!command.getGuardExpression()}, smtSolverFactory), debug(debug) {
+            CommandAbstractor<DdType, ValueType>::CommandAbstractor(storm::prism::Command const& command, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool useDecomposition, bool addPredicatesForValidBlocks, bool debug) : smtSolver(smtSolverFactory->create(abstractionInformation.getExpressionManager())), abstractionInformation(abstractionInformation), command(command), localExpressionInformation(abstractionInformation), evaluator(abstractionInformation.getExpressionManager()), relevantPredicatesAndVariables(), cachedDd(abstractionInformation.getDdManager().getBddZero(), 0), decisionVariables(), useDecomposition(useDecomposition), addPredicatesForValidBlocks(addPredicatesForValidBlocks), skipBottomStates(false), forceRecomputation(true), abstractGuard(abstractionInformation.getDdManager().getBddZero()), bottomStateAbstractor(abstractionInformation, {!command.getGuardExpression()}, smtSolverFactory), debug(debug) {
                 
                 // Make the second component of relevant predicates have the right size.
                 relevantPredicatesAndVariables.second.resize(command.getNumberOfUpdates());
@@ -47,8 +44,10 @@ namespace storm {
                     }
                 }
                 
-                auto const& abstractionSettings = storm::settings::getModule<storm::settings::modules::AbstractionSettings>();
-                addAssignmentRelatedVariablesToSourcePredicates = abstractionSettings.getValidBlockMode() == storm::settings::modules::AbstractionSettings::ValidBlockMode::MorePredicates;
+                // Log whether or not predicates are added to ensure valid blocks.
+                if (this->addPredicatesForValidBlocks) {
+                    STORM_LOG_DEBUG("Adding more predicates to ensure valid blocks.");
+                }
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
@@ -497,7 +496,7 @@ namespace storm {
                     result.second.insert(leftHandSidePredicates.begin(), leftHandSidePredicates.end());
                     
                     // Predicates that are indirectly related to the assigned variables are relevant for the source state (if requested).
-                    if (this->addAssignmentRelatedVariablesToSourcePredicates) {
+                    if (this->addPredicatesForValidBlocks) {
                         auto const& assignedVariableBlock = localExpressionInformation.getRelatedExpressions(assignedVariable);
                         result.first.insert(assignedVariableBlock.begin(), assignedVariableBlock.end());
                     }

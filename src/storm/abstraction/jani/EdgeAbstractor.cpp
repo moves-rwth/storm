@@ -23,7 +23,7 @@ namespace storm {
     namespace abstraction {
         namespace jani {
             template <storm::dd::DdType DdType, typename ValueType>
-            EdgeAbstractor<DdType, ValueType>::EdgeAbstractor(uint64_t edgeId, storm::jani::Edge const& edge, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool useDecomposition, bool debug) : smtSolver(smtSolverFactory->create(abstractionInformation.getExpressionManager())), abstractionInformation(abstractionInformation), edgeId(edgeId), edge(edge), localExpressionInformation(abstractionInformation), evaluator(abstractionInformation.getExpressionManager()), relevantPredicatesAndVariables(), cachedDd(abstractionInformation.getDdManager().getBddZero(), 0), decisionVariables(), useDecomposition(useDecomposition), skipBottomStates(false), forceRecomputation(true), abstractGuard(abstractionInformation.getDdManager().getBddZero()), bottomStateAbstractor(abstractionInformation, {!edge.getGuard()}, smtSolverFactory), debug(debug) {
+            EdgeAbstractor<DdType, ValueType>::EdgeAbstractor(uint64_t edgeId, storm::jani::Edge const& edge, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool useDecomposition, bool addPredicatesForValidBlocks, bool debug) : smtSolver(smtSolverFactory->create(abstractionInformation.getExpressionManager())), abstractionInformation(abstractionInformation), edgeId(edgeId), edge(edge), localExpressionInformation(abstractionInformation), evaluator(abstractionInformation.getExpressionManager()), relevantPredicatesAndVariables(), cachedDd(abstractionInformation.getDdManager().getBddZero(), 0), decisionVariables(), useDecomposition(useDecomposition), addPredicatesForValidBlocks(addPredicatesForValidBlocks), skipBottomStates(false), forceRecomputation(true), abstractGuard(abstractionInformation.getDdManager().getBddZero()), bottomStateAbstractor(abstractionInformation, {!edge.getGuard()}, smtSolverFactory), debug(debug) {
                 
                 // Make the second component of relevant predicates have the right size.
                 relevantPredicatesAndVariables.second.resize(edge.getNumberOfDestinations());
@@ -42,6 +42,11 @@ namespace storm {
                     for (auto const& assignment : destination.getOrderedAssignments()) {
                         assignedVariables.insert(assignment.getExpressionVariable());
                     }
+                }
+                
+                // Log whether or not predicates are added to ensure valid blocks.
+                if (this->addPredicatesForValidBlocks) {
+                    STORM_LOG_DEBUG("Adding more predicates to ensure valid blocks.");
                 }
             }
             
@@ -489,6 +494,12 @@ namespace storm {
                     storm::expressions::Variable const& assignedVariable = assignment.getExpressionVariable();
                     auto const& leftHandSidePredicates = localExpressionInformation.getExpressionsUsingVariable(assignedVariable);
                     result.second.insert(leftHandSidePredicates.begin(), leftHandSidePredicates.end());
+                    
+                    // Predicates that are indirectly related to the assigned variables are relevant for the source state (if requested).
+                    if (this->addPredicatesForValidBlocks) {
+                        auto const& assignedVariableBlock = localExpressionInformation.getRelatedExpressions(assignedVariable);
+                        result.first.insert(assignedVariableBlock.begin(), assignedVariableBlock.end());
+                    }
                 }
                 
                 return result;

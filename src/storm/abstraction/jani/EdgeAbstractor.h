@@ -58,7 +58,7 @@ namespace storm {
                  * @param smtSolverFactory A factory that is to be used for creating new SMT solvers.
                  * @param useDecomposition A flag indicating whether to use an edge decomposition during abstraction.
                  */
-                EdgeAbstractor(uint64_t edgeId, storm::jani::Edge const& edge, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool useDecomposition, bool debug);
+                EdgeAbstractor(uint64_t edgeId, storm::jani::Edge const& edge, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool useDecomposition, bool addPredicatesForValidBlocks, bool debug);
                                
                 /*!
                  * Refines the abstract edge with the given predicates.
@@ -246,6 +246,9 @@ namespace storm {
                 
                 // A flag indicating whether to use the decomposition when abstracting.
                 bool useDecomposition;
+                
+                // Whether or not to add predicates indirectly related to assignment variables to relevant source predicates.
+                bool addPredicatesForValidBlocks;
 
                 // A flag indicating whether the computation of bottom states can be skipped (for example, if the bottom
                 // states become empty at some point).

@@ -35,7 +35,7 @@ namespace storm {
             using storm::settings::modules::AbstractionSettings;
             
             template <storm::dd::DdType DdType, typename ValueType>
-            JaniMenuGameAbstractor<DdType, ValueType>::JaniMenuGameAbstractor(storm::jani::Model const& model, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, MenuGameAbstractorOptions const& options) : model(model), smtSolverFactory(smtSolverFactory), abstractionInformation(model.getManager(), model.getAllExpressionVariables(), smtSolverFactory->create(model.getManager()), AbstractionInformationOptions(options.constraints)), automata(), initialStateAbstractor(abstractionInformation, {model.getInitialStatesExpression()}, this->smtSolverFactory), validBlockAbstractor(abstractionInformation, smtSolverFactory), currentGame(nullptr), refinementPerformed(true) {
+            JaniMenuGameAbstractor<DdType, ValueType>::JaniMenuGameAbstractor(storm::jani::Model const& model, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, MenuGameAbstractorOptions const& options) : model(model), smtSolverFactory(smtSolverFactory), abstractionInformation(model.getManager(), model.getAllExpressionVariables(), smtSolverFactory->create(model.getManager()), AbstractionInformationOptions(options.constraints)), automata(), initialStateAbstractor(abstractionInformation, {model.getInitialStatesExpression()}, this->smtSolverFactory), restrictToValidBlocks(false), validBlockAbstractor(abstractionInformation, smtSolverFactory), currentGame(nullptr), refinementPerformed(true) {
                 
                 // Check whether the model is linear as the abstraction requires this.
                 STORM_LOG_WARN_COND(model.isLinear(), "The model appears to contain non-linear expressions, which may cause malfunctioning of the abstraction.");
@@ -70,9 +70,11 @@ namespace storm {
                 // For each module of the concrete program, we create an abstract counterpart.
                 auto const& settings = storm::settings::getModule<storm::settings::modules::AbstractionSettings>();
                 bool useDecomposition = settings.isUseDecompositionSet();
+                restrictToValidBlocks = settings.getValidBlockMode() == storm::settings::modules::AbstractionSettings::ValidBlockMode::BlockEnumeration;
+                bool addPredicatesForValidBlocks = !restrictToValidBlocks;
                 bool debug = settings.isDebugSet();
                 for (auto const& automaton : model.getAutomata()) {
-                    automata.emplace_back(automaton, abstractionInformation, this->smtSolverFactory, useDecomposition, debug);
+                    automata.emplace_back(automaton, abstractionInformation, this->smtSolverFactory, useDecomposition, addPredicatesForValidBlocks, debug);
                 }
                 
                 // Retrieve global BDDs/ADDs so we can multiply them in the abstraction process.
@@ -97,8 +99,10 @@ namespace storm {
                 // Refine initial state abstractor.
                 initialStateAbstractor.refine(predicateIndices);
                 
-                // Refine the valid blocks.
-                validBlockAbstractor.refine(predicateIndices);
+                if (this->restrictToValidBlocks) {
+                    // Refine the valid blocks.
+                    validBlockAbstractor.refine(predicateIndices);
+                }
 
                 refinementPerformed |= !command.getPredicates().empty();
             }
@@ -183,15 +187,22 @@ namespace storm {
                 }
                 relevantStatesWatch.stop();
 
-                storm::dd::Bdd<DdType> validBlocks = validBlockAbstractor.getValidBlocks();
+                storm::dd::Bdd<DdType> extendedTransitionRelation = nonTerminalStates && game.bdd;
+                storm::dd::Bdd<DdType> initialStates = initialLocationsBdd && initialStateAbstractor.getAbstractStates();
+                if (this->restrictToValidBlocks) {
+                    STORM_LOG_DEBUG("Restricting to valid blocks.");
+                    storm::dd::Bdd<DdType> validBlocks = validBlockAbstractor.getValidBlocks();
 
-                // Compute the choices with only valid successors so we can restrict the game to these.
-                auto choicesWithOnlyValidSuccessors = !game.bdd.andExists(!validBlocks.swapVariables(abstractionInformation.getSourceSuccessorVariablePairs()), successorAndAuxVariables) && game.bdd.existsAbstract(successorAndAuxVariables);
+                    // Compute the choices with only valid successors so we can restrict the game to these.
+                    auto choicesWithOnlyValidSuccessors = !game.bdd.andExists(!validBlocks.swapVariables(abstractionInformation.getSourceSuccessorVariablePairs()), successorAndAuxVariables) && game.bdd.existsAbstract(successorAndAuxVariables);
+                    
+                    // Restrict the proper parts.
+                    extendedTransitionRelation &= validBlocks && choicesWithOnlyValidSuccessors;
+                    initialStates &= validBlocks;
+                }
 
                 // Do a reachability analysis on the raw transition relation.
-                storm::dd::Bdd<DdType> extendedTransitionRelation = validBlocks && nonTerminalStates && game.bdd && choicesWithOnlyValidSuccessors;
                 storm::dd::Bdd<DdType> transitionRelation = extendedTransitionRelation.existsAbstract(variablesToAbstract);
-                storm::dd::Bdd<DdType> initialStates = initialLocationsBdd && initialStateAbstractor.getAbstractStates() && validBlocks;
                 initialStates.addMetaVariables(abstractionInformation.getSourcePredicateVariables());
                 storm::dd::Bdd<DdType> reachableStates = storm::utility::dd::computeReachableStates(initialStates, transitionRelation, abstractionInformation.getSourceVariables(), abstractionInformation.getSuccessorVariables());
                 

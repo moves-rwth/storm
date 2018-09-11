@@ -56,7 +56,7 @@ namespace storm {
                  * @param smtSolverFactory A factory that is to be used for creating new SMT solvers.
                  * @param useDecomposition A flag indicating whether to use the decomposition during abstraction.
                  */
-                CommandAbstractor(storm::prism::Command const& command, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool useDecomposition, bool debug);
+                CommandAbstractor(storm::prism::Command const& command, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool useDecomposition, bool addPredicatesForValidBlocks, bool debug);
                                
                 /*!
                  * Refines the abstract command with the given predicates.
@@ -248,7 +248,7 @@ namespace storm {
                 bool useDecomposition;
                 
                 // Whether or not to add predicates indirectly related to assignment variables to relevant source predicates.
-                bool addAssignmentRelatedVariablesToSourcePredicates;
+                bool addPredicatesForValidBlocks;
                 
                 // A flag indicating whether the guard of the command was added as a predicate. If this is true, there
                 // is no need to compute bottom states.

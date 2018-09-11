@@ -67,9 +67,10 @@ namespace storm {
                 auto const& settings = storm::settings::getModule<storm::settings::modules::AbstractionSettings>();
                 bool useDecomposition = settings.isUseDecompositionSet();
                 restrictToValidBlocks = settings.getValidBlockMode() == storm::settings::modules::AbstractionSettings::ValidBlockMode::BlockEnumeration;
+                bool addPredicatesForValidBlocks = !restrictToValidBlocks;
                 bool debug = settings.isDebugSet();
                 for (auto const& module : program.getModules()) {
-                    this->modules.emplace_back(module, abstractionInformation, this->smtSolverFactory, useDecomposition, debug);
+                    this->modules.emplace_back(module, abstractionInformation, this->smtSolverFactory, useDecomposition, addPredicatesForValidBlocks, debug);
                 }
                 
                 // Retrieve the command-update probability ADD, so we can multiply it with the abstraction BDD later.
@@ -181,6 +182,7 @@ namespace storm {
                 storm::dd::Bdd<DdType> extendedTransitionRelation = nonTerminalStates && game.bdd;
                 storm::dd::Bdd<DdType> initialStates = initialStateAbstractor.getAbstractStates();
                 if (restrictToValidBlocks) {
+                    STORM_LOG_DEBUG("Restricting to valid blocks.");
                     storm::dd::Bdd<DdType> validBlocks = validBlockAbstractor.getValidBlocks();
 
                     // Compute the choices with only valid successors so we can restrict the game to these.
