@@ -159,6 +159,9 @@ namespace storm {
                 // A state-set abstractor used to determine the initial states of the abstraction.
                 StateSetAbstractor<DdType, ValueType> initialStateAbstractor;
                 
+                // A flag indicating whether the valid blocks need to be computed and the game restricted to these.
+                bool restrictToValidBlocks;
+                
                 // An object that is used to compute the valid blocks.
                 ValidBlockAbstractor<DdType> validBlockAbstractor;
                                 

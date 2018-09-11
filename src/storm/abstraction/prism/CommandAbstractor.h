@@ -247,6 +247,9 @@ namespace storm {
                 // A flag indicating whether to use the decomposition when abstracting.
                 bool useDecomposition;
                 
+                // Whether or not to add predicates indirectly related to assignment variables to relevant source predicates.
+                bool addAssignmentRelatedVariablesToSourcePredicates;
+                
                 // A flag indicating whether the guard of the command was added as a predicate. If this is true, there
                 // is no need to compute bottom states.
                 bool skipBottomStates;

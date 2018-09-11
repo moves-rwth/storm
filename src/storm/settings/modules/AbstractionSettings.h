@@ -31,6 +31,10 @@ namespace storm {
                     Dd, Sparse
                 };
                 
+                enum class ValidBlockMode {
+                    MorePredicates, BlockEnumeration
+                };
+                
                 /*!
                  * Creates a new set of abstraction settings.
                  */
@@ -186,6 +190,11 @@ namespace storm {
                  */
                 bool isFixPlayer2StrategySet() const;
 
+                /*!
+                 * Retrieves the selected mode to guarantee valid blocks.
+                 */
+                ValidBlockMode getValidBlockMode() const;
+                
                 const static std::string moduleName;
                 
             private:
@@ -209,6 +218,7 @@ namespace storm {
                 const static std::string injectRefinementPredicatesOptionName;
                 const static std::string fixPlayer1StrategyOptionName;
                 const static std::string fixPlayer2StrategyOptionName;
+                const static std::string validBlockModeOptionName;
             };
             
         }

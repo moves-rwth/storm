@@ -33,6 +33,7 @@ namespace storm {
             const std::string AbstractionSettings::injectRefinementPredicatesOptionName = "injectref";
             const std::string AbstractionSettings::fixPlayer1StrategyOptionName = "fixpl1strat";
             const std::string AbstractionSettings::fixPlayer2StrategyOptionName = "fixpl2strat";
+            const std::string AbstractionSettings::validBlockModeOptionName = "validmode";
             
             AbstractionSettings::AbstractionSettings() : ModuleSettings(moduleName) {
                 std::vector<std::string> methods = {"games", "bisimulation", "bisim"};
@@ -132,6 +133,13 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("value", "The value of the flag.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(onOff))
                                              .setDefaultValueString("off").build())
                                 .build());
+                
+                std::vector<std::string> validModes = {"morepreds", "blockenum"};
+                this->addOption(storm::settings::OptionBuilder(moduleName, validBlockModeOptionName, true, "Sets the mode to guarantee valid blocks only.")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("mode", "The mode to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(validModes))
+                                             .setDefaultValueString("morepreds").build())
+                                .build());
+
             }
             
             AbstractionSettings::Method AbstractionSettings::getAbstractionRefinementMethod() const {
@@ -264,6 +272,16 @@ namespace storm {
             
             bool AbstractionSettings::isFixPlayer2StrategySet() const {
                 return this->getOption(fixPlayer2StrategyOptionName).getArgumentByName("value").getValueAsString() == "on";
+            }
+            
+            AbstractionSettings::ValidBlockMode AbstractionSettings::getValidBlockMode() const {
+                std::string modeAsString = this->getOption(validBlockModeOptionName).getArgumentByName("mode").getValueAsString();
+                if (modeAsString == "morepreds") {
+                    return ValidBlockMode::MorePredicates;
+                } else if (modeAsString == "blockenum") {
+                    return ValidBlockMode::BlockEnumeration;
+                }
+                return ValidBlockMode::MorePredicates;
             }
             
         }

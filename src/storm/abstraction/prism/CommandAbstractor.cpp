@@ -13,6 +13,9 @@
 #include "storm/storage/prism/Command.h"
 #include "storm/storage/prism/Update.h"
 
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/AbstractionSettings.h"
+
 #include "storm/utility/solver.h"
 #include "storm/utility/macros.h"
 
@@ -23,7 +26,7 @@ namespace storm {
     namespace abstraction {
         namespace prism {
             template <storm::dd::DdType DdType, typename ValueType>
-            CommandAbstractor<DdType, ValueType>::CommandAbstractor(storm::prism::Command const& command, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool useDecomposition, bool debug) : smtSolver(smtSolverFactory->create(abstractionInformation.getExpressionManager())), abstractionInformation(abstractionInformation), command(command), localExpressionInformation(abstractionInformation), evaluator(abstractionInformation.getExpressionManager()), relevantPredicatesAndVariables(), cachedDd(abstractionInformation.getDdManager().getBddZero(), 0), decisionVariables(), useDecomposition(useDecomposition), skipBottomStates(false), forceRecomputation(true), abstractGuard(abstractionInformation.getDdManager().getBddZero()), bottomStateAbstractor(abstractionInformation, {!command.getGuardExpression()}, smtSolverFactory), debug(debug) {
+            CommandAbstractor<DdType, ValueType>::CommandAbstractor(storm::prism::Command const& command, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool useDecomposition, bool debug) : smtSolver(smtSolverFactory->create(abstractionInformation.getExpressionManager())), abstractionInformation(abstractionInformation), command(command), localExpressionInformation(abstractionInformation), evaluator(abstractionInformation.getExpressionManager()), relevantPredicatesAndVariables(), cachedDd(abstractionInformation.getDdManager().getBddZero(), 0), decisionVariables(), useDecomposition(useDecomposition), addAssignmentRelatedVariablesToSourcePredicates(false), skipBottomStates(false), forceRecomputation(true), abstractGuard(abstractionInformation.getDdManager().getBddZero()), bottomStateAbstractor(abstractionInformation, {!command.getGuardExpression()}, smtSolverFactory), debug(debug) {
                 
                 // Make the second component of relevant predicates have the right size.
                 relevantPredicatesAndVariables.second.resize(command.getNumberOfUpdates());
@@ -43,6 +46,9 @@ namespace storm {
                         assignedVariables.insert(assignment.getVariable());
                     }
                 }
+                
+                auto const& abstractionSettings = storm::settings::getModule<storm::settings::modules::AbstractionSettings>();
+                addAssignmentRelatedVariablesToSourcePredicates = abstractionSettings.getValidBlockMode() == storm::settings::modules::AbstractionSettings::ValidBlockMode::MorePredicates;
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
@@ -283,7 +289,7 @@ namespace storm {
                     }
                 }
                 
-                // Then enumerate the solutions for each of the blocks of the decomposition
+                // Then enumerate the solutions for each of the blocks of the decomposition.
                 uint64_t usedNondeterminismVariables = 0;
                 uint64_t blockCounter = 0;
                 std::vector<storm::dd::Bdd<DdType>> blockBdds;
@@ -489,6 +495,12 @@ namespace storm {
                     storm::expressions::Variable const& assignedVariable = assignment.getVariable();
                     auto const& leftHandSidePredicates = localExpressionInformation.getExpressionsUsingVariable(assignedVariable);
                     result.second.insert(leftHandSidePredicates.begin(), leftHandSidePredicates.end());
+                    
+                    // Predicates that are indirectly related to the assigned variables are relevant for the source state (if requested).
+                    if (this->addAssignmentRelatedVariablesToSourcePredicates) {
+                        auto const& assignedVariableBlock = localExpressionInformation.getRelatedExpressions(assignedVariable);
+                        result.first.insert(assignedVariableBlock.begin(), assignedVariableBlock.end());
+                    }
                 }
                 
                 return result;
@@ -507,6 +519,18 @@ namespace storm {
                     result.first.insert(relevantUpdatePredicates.first.begin(), relevantUpdatePredicates.first.end());
                     result.second.push_back(relevantUpdatePredicates.second);
                 }
+                
+//                std::cout << "relevant predicates for command " << command.get().getGlobalIndex() << std::endl;
+//                std::cout << "source predicates" << std::endl;
+//                for (auto const& i : result.first) {
+//                    std::cout << this->getAbstractionInformation().getPredicateByIndex(i) << std::endl;
+//                }
+//                for (uint64_t i = 0; i < result.second.size(); ++i) {
+//                    std::cout << "destination " << i << std::endl;
+//                    for (auto const& j : result.second[i]) {
+//                        std::cout << this->getAbstractionInformation().getPredicateByIndex(j) << std::endl;
+//                    }
+//                }
                 
                 return result;
             }

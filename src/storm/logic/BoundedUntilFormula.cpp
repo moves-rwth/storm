@@ -99,10 +99,10 @@ namespace storm {
             } else {
                 this->getLeftSubformula().gatherUsedVariables(usedVariables);
                 this->getRightSubformula().gatherUsedVariables(usedVariables);
-                if (this->hasLowerBound()) {
+                if (this->hasLowerBound(0)) {
                     this->getLowerBound().gatherVariables(usedVariables);
                 }
-                if (this->hasUpperBound()) {
+                if (this->hasUpperBound(0)) {
                     this->getUpperBound().gatherVariables(usedVariables);
                 }
             }
@@ -189,7 +189,7 @@ namespace storm {
         }
 
         bool BoundedUntilFormula::hasUpperBound() const {
-            for(auto const& ub : upperBound) {
+            for (auto const& ub : upperBound) {
                 if (static_cast<bool>(ub)) {
                     return true;
                 }

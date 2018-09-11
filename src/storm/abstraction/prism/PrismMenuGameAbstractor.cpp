@@ -66,6 +66,7 @@ namespace storm {
                 // For each module of the concrete program, we create an abstract counterpart.
                 auto const& settings = storm::settings::getModule<storm::settings::modules::AbstractionSettings>();
                 bool useDecomposition = settings.isUseDecompositionSet();
+                restrictToValidBlocks = settings.getValidBlockMode() == storm::settings::modules::AbstractionSettings::ValidBlockMode::BlockEnumeration;
                 bool debug = settings.isDebugSet();
                 for (auto const& module : program.getModules()) {
                     this->modules.emplace_back(module, abstractionInformation, this->smtSolverFactory, useDecomposition, debug);
@@ -92,8 +93,10 @@ namespace storm {
                 // Refine initial state abstractor.
                 initialStateAbstractor.refine(predicateIndices);
                 
-                // Refine the valid blocks.
-                validBlockAbstractor.refine(predicateIndices);
+                if (restrictToValidBlocks) {
+                    // Refine the valid blocks.
+                    validBlockAbstractor.refine(predicateIndices);
+                }
 
                 refinementPerformed |= !command.getPredicates().empty();
             }
@@ -175,15 +178,21 @@ namespace storm {
                 }
                 relevantStatesWatch.stop();
                 
-                storm::dd::Bdd<DdType> validBlocks = validBlockAbstractor.getValidBlocks();
+                storm::dd::Bdd<DdType> extendedTransitionRelation = nonTerminalStates && game.bdd;
+                storm::dd::Bdd<DdType> initialStates = initialStateAbstractor.getAbstractStates();
+                if (restrictToValidBlocks) {
+                    storm::dd::Bdd<DdType> validBlocks = validBlockAbstractor.getValidBlocks();
 
-                // Compute the choices with only valid successors so we can restrict the game to these.
-                auto choicesWithOnlyValidSuccessors = !game.bdd.andExists(!validBlocks.swapVariables(abstractionInformation.getSourceSuccessorVariablePairs()), successorAndAuxVariables) && game.bdd.existsAbstract(successorAndAuxVariables);
+                    // Compute the choices with only valid successors so we can restrict the game to these.
+                    auto choicesWithOnlyValidSuccessors = !game.bdd.andExists(!validBlocks.swapVariables(abstractionInformation.getSourceSuccessorVariablePairs()), successorAndAuxVariables) && game.bdd.existsAbstract(successorAndAuxVariables);
+                    
+                    // Restrict the proper parts.
+                    extendedTransitionRelation &= validBlocks && choicesWithOnlyValidSuccessors;
+                    initialStates &= validBlocks;
+                }
                 
                 // Do a reachability analysis on the raw transition relation.
-                storm::dd::Bdd<DdType> extendedTransitionRelation = validBlocks && nonTerminalStates && game.bdd && choicesWithOnlyValidSuccessors;
                 storm::dd::Bdd<DdType> transitionRelation = extendedTransitionRelation.existsAbstract(variablesToAbstract);
-                storm::dd::Bdd<DdType> initialStates = initialStateAbstractor.getAbstractStates() && validBlocks;
                 initialStates.addMetaVariables(abstractionInformation.getSourcePredicateVariables());
                 storm::dd::Bdd<DdType> reachableStates = storm::utility::dd::computeReachableStates(initialStates, transitionRelation, abstractionInformation.getSourceVariables(), abstractionInformation.getSuccessorVariables());
 
