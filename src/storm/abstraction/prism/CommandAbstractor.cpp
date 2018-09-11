@@ -98,7 +98,7 @@ namespace storm {
             
             template <storm::dd::DdType DdType, typename ValueType>
             void CommandAbstractor<DdType, ValueType>::recomputeCachedBddWithDecomposition() {
-                STORM_LOG_TRACE("Recomputing BDD for command with index " << command.get().getGlobalIndex() << " (" << command.get() << ") using the decomposition.");
+                STORM_LOG_TRACE("Recomputing BDD for command " << command.get() << " [with index " << command.get().getGlobalIndex() << "] using the decomposition.");
                 auto start = std::chrono::high_resolution_clock::now();
                 
                 // compute a decomposition of the command
