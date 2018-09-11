@@ -693,6 +693,35 @@ namespace storm {
             return modernjson::json(expression.getValueAsDouble());
         }
         
+        boost::any ExpressionToJson::visit(storm::expressions::ValueArrayExpression const& expression, boost::any const& data) {
+            modernjson::json opDecl;
+            opDecl["op"] = "av";
+            std::vector<modernjson::json> elements;
+            uint64_t size = expression.size()->evaluateAsInt();
+            for (uint64_t i = 0; i < size; ++i) {
+                elements.push_back(boost::any_cast<modernjson::json>(expression.at(i)->accept(*this, data)));
+            }
+            opDecl["elements"] = elements;
+            return opDecl;
+        }
+        
+        boost::any ExpressionToJson::visit(storm::expressions::ConstructorArrayExpression const& expression, boost::any const& data) {
+            modernjson::json opDecl;
+            opDecl["op"] = "ac";
+            opDecl["var"] = expression.getIndexVar().getName();
+            opDecl["length"] = boost::any_cast<modernjson::json>(expression.size()->accept(*this, data));
+            opDecl["exp"] = boost::any_cast<modernjson::json>(expression.getElementExpression()->accept(*this, data));
+            return opDecl;
+        }
+        
+        boost::any ExpressionToJson::visit(storm::expressions::ArrayAccessExpression const& expression, boost::any const& data) {
+            modernjson::json opDecl;
+            opDecl["op"] = "aa";
+            opDecl["exp"] = boost::any_cast<modernjson::json>(expression.getOperand(0)->accept(*this, data));
+            opDecl["index"] = boost::any_cast<modernjson::json>(expression.getOperand(1)->accept(*this, data));
+            return opDecl;
+        }
+        
         void JsonExporter::toFile(storm::jani::Model const& janiModel, std::vector<storm::jani::Property> const& formulas, std::string const& filepath, bool checkValid, bool compact) {
             std::ofstream stream;
             storm::utility::openFile(filepath, stream);
@@ -759,6 +788,7 @@ namespace storm {
             return modernjson::json(constantDeclarations);
         }
         
+        
         modernjson::json buildVariablesArray(storm::jani::VariableSet const& varSet, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables = VariableSet()) {
             std::vector<modernjson::json> variableDeclarations;
             for(auto const& variable : varSet) {
@@ -770,18 +800,40 @@ namespace storm {
                 modernjson::json typeDesc;
                 if(variable.isBooleanVariable()) {
                     typeDesc = "bool";
-                } else if(variable.isRealVariable()) {
+                } else if (variable.isRealVariable()) {
                     typeDesc = "real";
-                } else if(variable.isUnboundedIntegerVariable()) {
+                } else if (variable.isUnboundedIntegerVariable()) {
                     typeDesc = "int";
-                } else {
-                    assert(variable.isBoundedIntegerVariable());
+                } else if (variable.isBoundedIntegerVariable()) {
                     typeDesc["kind"] = "bounded";
                     typeDesc["base"] = "int";
                     typeDesc["lower-bound"] = buildExpression(variable.asBoundedIntegerVariable().getLowerBound(), constants, globalVariables, localVariables);
                     typeDesc["upper-bound"] = buildExpression(variable.asBoundedIntegerVariable().getUpperBound(), constants, globalVariables, localVariables);
+                } else {
+                    assert(variable.isArrayVariable());
+                    typeDesc["kind"] = "array";
+                    switch (variable.asArrayVariable().getElementType()) {
+                        case storm::jani::ArrayVariable::ElementType::Bool:
+                            typeDesc["base"] = "bool";
+                            break;
+                        case storm::jani::ArrayVariable::ElementType::Real:
+                            typeDesc["base"] = "real";
+                            break;
+                        case storm::jani::ArrayVariable::ElementType::Int:
+                            if (variable.asArrayVariable().hasElementTypeBounds()) {
+                                modernjson::json baseTypeDescr;
+                                baseTypeDescr["kind"] = "bounded";
+                                baseTypeDescr["base "] = "int";
+                                baseTypeDescr["lower-bound"] = buildExpression(variable.asArrayVariable().getElementTypeBounds().first, constants, globalVariables, localVariables);
+                                baseTypeDescr["upper-bound"] = buildExpression(variable.asArrayVariable().getElementTypeBounds().second, constants, globalVariables, localVariables);
+                                typeDesc["base"] = baseTypeDescr;
+                            } else {
+                                typeDesc["base"] = "int";
+                            }
+                            break;
+                    }
+                    typeDesc["base"] = "int";
                 }
-                
                 varEntry["type"] = typeDesc;
                 if(variable.hasInitExpression()) {
                     varEntry["initial-value"] = buildExpression(variable.getInitExpression(), constants, globalVariables, localVariables);
@@ -797,7 +849,16 @@ namespace storm {
             bool addIndex = orderedAssignments.hasMultipleLevels();
             for(auto const& assignment : orderedAssignments) {
                 modernjson::json assignmentEntry;
-                assignmentEntry["ref"] = assignment.getVariable().getName();
+                if (assignment.getLValue().isVariable()) {
+                    assignmentEntry["ref"] = assignment.getVariable().getName();
+                } else {
+                    STORM_LOG_ASSERT(assignment.getLValue().isArrayAccess(), "Unhandled LValue " << assignment.getLValue());
+                    modernjson::json arrayAccess;
+                    arrayAccess["op"] = "aa";
+                    arrayAccess["exp"] = assignment.getLValue().getArray().getName();
+                    arrayAccess["index"] = buildExpression(assignment.getLValue().getArrayIndex(), constants, globalVariables, localVariables);
+                    assignmentEntry["ref"] = std::move(arrayAccess);
+                }
                 assignmentEntry["value"] = buildExpression(assignment.getAssignedExpression(), constants, globalVariables, localVariables);
                 if(addIndex) {
                     assignmentEntry["index"] = assignment.getLevel();

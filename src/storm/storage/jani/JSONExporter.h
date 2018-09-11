@@ -2,6 +2,7 @@
 
 
 #include "storm/storage/expressions/ExpressionVisitor.h"
+#include "storm/storage/jani/expressions/JaniExpressionVisitor.h"
 #include "storm/logic/FormulaVisitor.h"
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/Property.h"
@@ -15,7 +16,7 @@ namespace modernjson {
 namespace storm {
     namespace jani {
         
-        class ExpressionToJson : public storm::expressions::ExpressionVisitor {
+        class ExpressionToJson : public storm::expressions::ExpressionVisitor, public storm::expressions::JaniExpressionVisitor {
             
         public:
             static modernjson::json translate(storm::expressions::Expression const& expr, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables);
@@ -30,6 +31,10 @@ namespace storm {
             virtual boost::any visit(storm::expressions::BooleanLiteralExpression const& expression, boost::any const& data);
             virtual boost::any visit(storm::expressions::IntegerLiteralExpression const& expression, boost::any const& data);
             virtual boost::any visit(storm::expressions::RationalLiteralExpression const& expression, boost::any const& data);
+            virtual boost::any visit(storm::expressions::ValueArrayExpression const& expression, boost::any const& data);
+            virtual boost::any visit(storm::expressions::ConstructorArrayExpression const& expression, boost::any const& data);
+            virtual boost::any visit(storm::expressions::ArrayAccessExpression const& expression, boost::any const& data);
+
         private:
 
             ExpressionToJson(std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables) : constants(constants), globalVariables(globalVariables), localVariables(localVariables) {}
