@@ -86,7 +86,10 @@ namespace storm {
         }
         
         void OperatorFormula::gatherUsedVariables(std::set<storm::expressions::Variable>& usedVariables) const {
-            this->getThreshold().gatherVariables(usedVariables);
+            UnaryStateFormula::gatherUsedVariables(usedVariables);
+            if (this->hasBound()) {
+                this->getThreshold().gatherVariables(usedVariables);
+            }
         }
         
         std::ostream& OperatorFormula::writeToStream(std::ostream& out) const {

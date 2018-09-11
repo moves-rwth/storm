@@ -131,6 +131,19 @@ namespace storm {
                 }
             }
             
+            // Make sure there are no undefined constants remaining in any property.
+            for (auto const& property : output.properties) {
+                std::set<storm::expressions::Variable> usedUndefinedConstants = property.getUndefinedConstants();
+                if (!usedUndefinedConstants.empty()) {
+                    std::vector<std::string> undefinedConstantsNames;
+                    for (auto const& constant : usedUndefinedConstants) {
+                        undefinedConstantsNames.emplace_back(constant.getName());
+                    }
+
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The property '" << property << " still refers to the undefined constants " << boost::algorithm::join(undefinedConstantsNames, ",") << ".");
+                }
+            }
+            
             // Check whether conversion for PRISM to JANI is requested or necessary.
             if (input.model && input.model.get().isPrismProgram()) {
                 bool transformToJani = ioSettings.isPrismToJaniSet();
@@ -567,6 +580,10 @@ namespace storm {
             expressionParser.setIdentifierMapping(variableMapping);
             
             for (auto const& constraintString : constraintsAsStrings) {
+                if (constraintString.empty()) {
+                    continue;
+                }
+
                 storm::expressions::Expression constraint = expressionParser.parseFromString(constraintString);
                 STORM_LOG_TRACE("Adding special (user-provided) constraint " << constraint << ".");
                 constraints.emplace_back(constraint);
@@ -588,24 +605,33 @@ namespace storm {
             std::vector<std::string> predicateGroupsAsStrings;
             boost::split(predicateGroupsAsStrings, refinementPredicatesString, boost::is_any_of(";"));
             
-            for (auto const& predicateGroupString : predicateGroupsAsStrings) {
-                std::vector<std::string> predicatesAsStrings;
-                boost::split(predicatesAsStrings, predicateGroupString, boost::is_any_of(":"));
-                
-                injectedRefinementPredicates.emplace_back();
-                for (auto const& predicateString : predicatesAsStrings) {
-                    storm::expressions::Expression predicate = expressionParser.parseFromString(predicateString);
-                    STORM_LOG_TRACE("Adding special (user-provided) refinement predicate " << predicateString << ".");
-                    injectedRefinementPredicates.back().emplace_back(predicate);
+            if (!predicateGroupsAsStrings.empty()) {
+                for (auto const& predicateGroupString : predicateGroupsAsStrings) {
+                    if (predicateGroupString.empty()) {
+                        continue;
+                    }
+                    
+                    std::vector<std::string> predicatesAsStrings;
+                    boost::split(predicatesAsStrings, predicateGroupString, boost::is_any_of(":"));
+                    
+                    if (!predicatesAsStrings.empty()) {
+                        injectedRefinementPredicates.emplace_back();
+                        for (auto const& predicateString : predicatesAsStrings) {
+                            storm::expressions::Expression predicate = expressionParser.parseFromString(predicateString);
+                            STORM_LOG_TRACE("Adding special (user-provided) refinement predicate " << predicateString << ".");
+                            injectedRefinementPredicates.back().emplace_back(predicate);
+                        }
+                        
+                        STORM_LOG_THROW(!injectedRefinementPredicates.back().empty(), storm::exceptions::InvalidArgumentException, "Expecting non-empty list of predicates to inject for each (mentioned) refinement step.");
+                        
+                        // Finally reverse the list, because we take the predicates from the back.
+                        std::reverse(injectedRefinementPredicates.back().begin(), injectedRefinementPredicates.back().end());
+                    }
                 }
-                STORM_LOG_THROW(!injectedRefinementPredicates.back().empty(), storm::exceptions::InvalidArgumentException, "Expecting non-empty list of predicates to inject for each (mentioned) refinement step.");
                 
                 // Finally reverse the list, because we take the predicates from the back.
-                std::reverse(injectedRefinementPredicates.back().begin(), injectedRefinementPredicates.back().end());
+                std::reverse(injectedRefinementPredicates.begin(), injectedRefinementPredicates.end());
             }
-            
-            // Finally reverse the list, because we take the predicates from the back.
-            std::reverse(injectedRefinementPredicates.begin(), injectedRefinementPredicates.end());
             
             return injectedRefinementPredicates;
         }

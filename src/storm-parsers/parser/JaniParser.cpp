@@ -560,7 +560,7 @@ namespace storm {
             STORM_LOG_THROW(statesFormula, storm::exceptions::NotImplementedException, "Could not derive states formula.");
             STORM_LOG_THROW(expressionStructure.count("values") == 1, storm::exceptions::InvalidJaniException, "Values as input for a filter must be given");
             auto formula = parseFormula(expressionStructure.at("values"), storm::logic::FormulaContext::Undefined, globalVars, constants, "Values of property " + name);
-            return storm::jani::Property(name, storm::jani::FilterExpression(formula, ft, statesFormula), comment);
+            return storm::jani::Property(name, storm::jani::FilterExpression(formula, ft, statesFormula), {}, comment);
         }
 
         std::shared_ptr<storm::jani::Constant> JaniParser::parseConstant(json const& constantStructure, std::unordered_map<std::string, std::shared_ptr<storm::jani::Constant>> const& constants, std::string const& scopeDescription) {

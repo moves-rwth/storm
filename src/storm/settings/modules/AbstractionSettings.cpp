@@ -111,11 +111,11 @@ namespace storm {
                                 .build());
 
                 this->addOption(storm::settings::OptionBuilder(moduleName, constraintsOptionName, true, "Specifies additional constraints used by the abstraction.")
-                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("constraints", "The constraints to use.").build())
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("constraints", "The constraints to use.").setDefaultValueString("").build())
                                 .build());
 
                 this->addOption(storm::settings::OptionBuilder(moduleName, injectRefinementPredicatesOptionName, true, "Specifies predicates used by the refinement instead of the derived predicates.")
-                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("predicates", "The (semicolon-separated) refinement predicates to use.").build())
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("predicates", "The (semicolon-separated) refinement predicates to use.").setDefaultValueString("").build())
                                 .build());
                 
                 this->addOption(storm::settings::OptionBuilder(moduleName, fixPlayer1StrategyOptionName, true, "Sets whether to fix player 1 strategies.")

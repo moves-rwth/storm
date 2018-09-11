@@ -89,14 +89,22 @@ namespace storm {
                 for (unsigned i = 0; i < this->getDimension(); ++i) {
                     this->getLeftSubformula(i).gatherUsedVariables(usedVariables);
                     this->getRightSubformula(i).gatherUsedVariables(usedVariables);
-                    this->getLowerBound(i).gatherVariables(usedVariables);
-                    this->getUpperBound(i).gatherVariables(usedVariables);
+                    if (this->hasLowerBound(i)) {
+                        this->getLowerBound(i).gatherVariables(usedVariables);
+                    }
+                    if (this->hasUpperBound(i)) {
+                        this->getUpperBound(i).gatherVariables(usedVariables);
+                    }
                 }
             } else {
                 this->getLeftSubformula().gatherUsedVariables(usedVariables);
                 this->getRightSubformula().gatherUsedVariables(usedVariables);
-                this->getLowerBound().gatherVariables(usedVariables);
-                this->getUpperBound().gatherVariables(usedVariables);
+                if (this->hasLowerBound()) {
+                    this->getLowerBound().gatherVariables(usedVariables);
+                }
+                if (this->hasUpperBound()) {
+                    this->getUpperBound().gatherVariables(usedVariables);
+                }
             }
         }
         

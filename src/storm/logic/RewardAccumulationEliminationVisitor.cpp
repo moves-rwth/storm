@@ -25,7 +25,7 @@ namespace storm {
                 auto formula = eliminateRewardAccumulations(*p.getFilter().getFormula());
                 auto states = eliminateRewardAccumulations(*p.getFilter().getStatesFormula());
                 storm::jani::FilterExpression fe(formula, p.getFilter().getFilterType(), states);
-                p = storm::jani::Property(p.getName(), storm::jani::FilterExpression(formula, p.getFilter().getFilterType(), states), p.getComment());
+                p = storm::jani::Property(p.getName(), storm::jani::FilterExpression(formula, p.getFilter().getFilterType(), states), p.getUndefinedConstants(), p.getComment());
             }
         }
         

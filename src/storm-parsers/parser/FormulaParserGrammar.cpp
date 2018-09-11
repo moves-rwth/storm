@@ -224,6 +224,7 @@ namespace storm {
             if (expression) {
                 addIdentifierExpression(name, expression.get());
             } else {
+                undefinedConstants.insert(newVariable);
                 addIdentifierExpression(name, newVariable);
             }
         }
@@ -417,24 +418,31 @@ namespace storm {
                 return std::shared_ptr<storm::logic::Formula const>(new storm::logic::MultiObjectiveFormula(subformulas));
             }
         }
-                                               
+        
+        std::set<storm::expressions::Variable> FormulaParserGrammar::getUndefinedConstants(std::shared_ptr<storm::logic::Formula const> const& formula) const {
+            std::set<storm::expressions::Variable> result;
+            std::set<storm::expressions::Variable> usedVariables = formula->getUsedVariables();
+            std::set_intersection(usedVariables.begin(), usedVariables.end(), undefinedConstants.begin(), undefinedConstants.end(), std::inserter(result, result.begin()));
+            return result;
+        }
+        
         storm::jani::Property FormulaParserGrammar::createProperty(boost::optional<std::string> const& propertyName, storm::modelchecker::FilterType const& filterType, std::shared_ptr<storm::logic::Formula const> const& formula, std::shared_ptr<storm::logic::Formula const> const& states) {
             storm::jani::FilterExpression filterExpression(formula, filterType, states);
             
             ++propertyCount;
             if (propertyName) {
-                return storm::jani::Property(propertyName.get(), filterExpression);
+                return storm::jani::Property(propertyName.get(), filterExpression, this->getUndefinedConstants(formula));
             } else {
-                return storm::jani::Property(std::to_string(propertyCount -1 ), filterExpression);
+                return storm::jani::Property(std::to_string(propertyCount - 1), filterExpression, this->getUndefinedConstants(formula));
             }
         }
                                                
         storm::jani::Property FormulaParserGrammar::createPropertyWithDefaultFilterTypeAndStates(boost::optional<std::string> const& propertyName, std::shared_ptr<storm::logic::Formula const> const& formula) {
             ++propertyCount;
             if (propertyName) {
-                return storm::jani::Property(propertyName.get(), formula);
+                return storm::jani::Property(propertyName.get(), formula, this->getUndefinedConstants(formula));
             } else {
-                return storm::jani::Property(std::to_string(propertyCount), formula);
+                return storm::jani::Property(std::to_string(propertyCount), formula, this->getUndefinedConstants(formula));
             }
         }
 
