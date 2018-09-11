@@ -4,6 +4,7 @@
 #include "storm/storage/jani/Model.h"
 
 #include "storm/storage/jani/Automaton.h"
+#include "storm/storage/jani/ArrayEliminator.h"
 #include "storm/storage/jani/AutomatonComposition.h"
 #include "storm/storage/jani/ParallelComposition.h"
 #include "storm/storage/expressions/ExpressionManager.h"
@@ -107,6 +108,51 @@ namespace storm {
             }
                         
             sortVariables();
+        }
+        
+        void VariableInformation::registerArrayVariableReplacements(storm::jani::ArrayEliminatorData const& arrayEliminatorData) {
+            arrayVariableToElementInformations.clear();
+            // Find for each replaced array variable the corresponding references in this variable information
+            for (auto const& arrayReplacements : arrayEliminatorData.replacements) {
+                std::vector<uint64_t> varInfoIndices;
+                for (auto const& replacedVar : arrayReplacements.second) {
+                    if (replacedVar->getExpressionVariable().hasIntegerType()) {
+                        uint64_t index = 0;
+                        for (auto const& intInfo : integerVariables) {
+                            if (intInfo.variable == replacedVar->getExpressionVariable()) {
+                                varInfoIndices.push_back(index);
+                                break;
+                            }
+                            ++index;
+                        }
+                    } else if (replacedVar->getExpressionVariable().hasBooleanType()) {
+                        uint64_t index = 0;
+                        for (auto const& boolInfo : booleanVariables) {
+                            if (boolInfo.variable == replacedVar->getExpressionVariable()) {
+                                varInfoIndices.push_back(index);
+                                break;
+                            }
+                            ++index;
+                        }
+                    } else {
+                        STORM_LOG_ASSERT(false, "Unhandled type of base variable.");
+                    }
+                }
+                STORM_LOG_ASSERT(arrayReplacements.second.size() == varInfoIndices.size(), "Could not find a basic variable for every array variable replacement.");
+                this->arrayVariableToElementInformations.emplace(arrayReplacements.first, std::move(varInfoIndices));
+            }
+        }
+        
+        BooleanVariableInformation const& VariableInformation::getBooleanArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, uint64_t arrayIndex) {
+            std::vector<uint64_t> const& boolInfoIndices = arrayVariableToElementInformations.at(arrayVariable);
+            STORM_LOG_THROW(arrayIndex < boolInfoIndices.size(), storm::exceptions::WrongFormatException, "Array access at array " << arrayVariable.getName() << " evaluates to array index " << arrayIndex << " which is out of bounds as the array size is " << boolInfoIndices.size());
+            return booleanVariables[boolInfoIndices[arrayIndex]];
+        }
+        
+        IntegerVariableInformation const& VariableInformation::getIntegerArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, uint64_t arrayIndex) {
+            std::vector<uint64_t> const& intInfoIndices = arrayVariableToElementInformations.at(arrayVariable);
+            STORM_LOG_THROW(arrayIndex < intInfoIndices.size(), storm::exceptions::WrongFormatException, "Array access at array " << arrayVariable.getName() << " evaluates to array index " << arrayIndex << " which is out of bounds as the array size is " << intInfoIndices.size());
+            return integerVariables[intInfoIndices[arrayIndex]];
         }
         
         void VariableInformation::createVariablesForAutomaton(storm::jani::Automaton const& automaton) {

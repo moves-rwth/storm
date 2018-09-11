@@ -2,6 +2,7 @@
 #define STORM_GENERATOR_VARIABLEINFORMATION_H_
 
 #include <vector>
+#include <unordered_map>
 #include <boost/container/flat_map.hpp>
 #include <boost/optional/optional.hpp>
 
@@ -15,6 +16,7 @@ namespace storm {
     namespace jani {
         class Model;
         class Automaton;
+        class ArrayEliminatorData;
     }
     
     namespace generator {
@@ -81,6 +83,10 @@ namespace storm {
             VariableInformation() = default;
             uint_fast64_t getTotalBitOffset(bool roundTo64Bit = false) const;
             
+            void registerArrayVariableReplacements(storm::jani::ArrayEliminatorData const& arrayEliminatorData);
+            BooleanVariableInformation const& getBooleanArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, uint64_t index);
+            IntegerVariableInformation const& getIntegerArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, uint64_t index);
+
             /// The total bit offset over all variables.
             uint_fast64_t totalBitOffset;
             
@@ -92,6 +98,9 @@ namespace storm {
             
             /// The integer variables.
             std::vector<IntegerVariableInformation> integerVariables;
+            
+            /// Replacements for each array variable
+            std::unordered_map<storm::expressions::Variable, std::vector<uint64_t>> arrayVariableToElementInformations;
 
             bool hasOutOfBoundsBit() const;
 

@@ -68,34 +68,7 @@ namespace storm {
             // Now we are ready to initialize the variable information.
             this->checkValid();
             this->variableInformation = VariableInformation(model, this->parallelAutomata, options.isAddOutOfBoundsStateSet());
-            
-            // Find for each replaced array variable the corresponding references in the variable information
-            for (auto const& arrayReplacements : arrayEliminatorData.replacements) {
-                std::vector<uint64_t> varInfoIndices;
-                for (auto const& replacedVar : arrayReplacements.second) {
-                    if (replacedVar->getExpressionVariable().hasIntegerType()) {
-                        uint64_t index = 0;
-                        for (auto const& intInfo : this->variableInformation.integerVariables) {
-                            if (intInfo.variable == replacedVar->getExpressionVariable()) {
-                                varInfoIndices.push_back(index);
-                                break;
-                            }
-                            ++index;
-                        }
-                    } else if (replacedVar->getExpressionVariable().hasBooleanType()) {
-                        uint64_t index = 0;
-                        for (auto const& boolInfo : this->variableInformation.booleanVariables) {
-                            if (boolInfo.variable == replacedVar->getExpressionVariable()) {
-                                varInfoIndices.push_back(index);
-                            }
-                            ++index;
-                        }
-                    } else {
-                        STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unhandled type of base variable.");
-                    }
-                }
-                arrayVariableToElementInformations.emplace(arrayReplacements.first, std::move(varInfoIndices));
-            }
+            this->variableInformation.registerArrayVariableReplacements(arrayEliminatorData);
             
             // Create a proper evalator.
             this->evaluator = std::make_unique<storm::expressions::ExpressionEvaluator<ValueType>>(model.getManager());
@@ -321,9 +294,7 @@ namespace storm {
             for (; assignmentIt != assignmentIte && assignmentIt->getLValue().isArrayAccess() && assignmentIt->getLevel() == assignmentLevel; ++assignmentIt) {
                 int_fast64_t arrayIndex = expressionEvaluator.asInt(assignmentIt->getLValue().getArrayIndex());
                 if (assignmentIt->getAssignedExpression().hasIntegerType()) {
-                    std::vector<uint64_t> const& intInfoIndices = arrayVariableToElementInformations.at(assignmentIt->getLValue().getArray().getExpressionVariable());
-                    STORM_LOG_THROW(arrayIndex < intInfoIndices.size(), storm::exceptions::WrongFormatException, "Array access " << assignmentIt->getLValue() << " evaluates to array index " << arrayIndex << " which is out of bounds as the array size is " << intInfoIndices.size());
-                    IntegerVariableInformation const& intInfo = this->variableInformation.integerVariables[intInfoIndices[arrayIndex]];
+                    IntegerVariableInformation const& intInfo = this->variableInformation.getIntegerArrayVariableReplacement(assignmentIt->getLValue().getArray().getExpressionVariable(), arrayIndex);
                     int_fast64_t assignedValue = expressionEvaluator.asInt(assignmentIt->getAssignedExpression());
                     if (this->options.isAddOutOfBoundsStateSet()) {
                         if (assignedValue < intInfo.lowerBound || assignedValue > intInfo.upperBound) {
@@ -336,9 +307,7 @@ namespace storm {
                     newState.setFromInt(intInfo.bitOffset, intInfo.bitWidth, assignedValue - intInfo.lowerBound);
                     STORM_LOG_ASSERT(static_cast<int_fast64_t>(newState.getAsInt(intInfo.bitOffset, intInfo.bitWidth)) + intInfo.lowerBound == assignedValue, "Writing to the bit vector bucket failed (read " << newState.getAsInt(intInfo.bitOffset, intInfo.bitWidth) << " but wrote " << assignedValue << ").");
                 } else if (assignmentIt->getAssignedExpression().hasBooleanType()) {
-                    std::vector<uint64_t> const& boolInfoIndices = arrayVariableToElementInformations.at(assignmentIt->getLValue().getArray().getExpressionVariable());
-                    STORM_LOG_THROW(arrayIndex < boolInfoIndices.size(), storm::exceptions::WrongFormatException, "Array access " << assignmentIt->getLValue() << " evaluates to array index " << arrayIndex << " which is out of bounds as the array size is " << boolInfoIndices.size());
-                    BooleanVariableInformation const& boolInfo = this->variableInformation.booleanVariables[boolInfoIndices[arrayIndex]];
+                    BooleanVariableInformation const& boolInfo = this->variableInformation.getBooleanArrayVariableReplacement(assignmentIt->getLValue().getArray().getExpressionVariable(), arrayIndex);
                     newState.set(boolInfo.bitOffset, expressionEvaluator.asBool(assignmentIt->getAssignedExpression()));
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unhandled type of base variable.");
@@ -612,6 +581,7 @@ namespace storm {
                             storm::jani::Edge const& edge = *iteratorList[i]->second;
                             destinations.push_back(&edge.getDestination(destinationIndex % edge.getNumberOfDestinations()));
                             locationVars.push_back(&this->variableInformation.locationVariables[edgeCombination[i].first]);
+                            STORM_LOG_ASSERT(edge.getNumberOfDestinations() > 0, "Found an edge with zero destinations. This is not expected.");
                             std::cout << destinationIndex % edge.getNumberOfDestinations();
                             if (i == iteratorList.size() - 1 && (destinationIndex % edge.getNumberOfDestinations()) == edge.getNumberOfDestinations() - 1) {
                                 lastDestinationId = true;
@@ -653,6 +623,7 @@ namespace storm {
                             storm::utility::vector::addScaledVector(stateActionRewards, destinationRewards, successorProbability);
                         }
                         ++destinationId;
+                        std::cout << "\t";
                     } while (!lastDestinationId);
                     std::cout << std::endl;
                 }

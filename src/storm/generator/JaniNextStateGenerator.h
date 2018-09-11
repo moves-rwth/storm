@@ -140,11 +140,8 @@ namespace storm {
             /// A flag that stores whether at least one of the selected reward models has state-action rewards.
             bool hasStateActionRewards;
             
-            /// Data from eliminating arrays
+            /// Data from eliminated array expressions. These are required to keep references to array variables in LValues alive.
             storm::jani::ArrayEliminatorData arrayEliminatorData;
-            
-            /// Maps each array variable to the index of the base variable in this->variableInformation
-            std::unordered_map<storm::expressions::Variable, std::vector<uint64_t>> arrayVariableToElementInformations;
 
         };
         
