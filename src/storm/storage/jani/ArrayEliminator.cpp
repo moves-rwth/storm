@@ -569,6 +569,15 @@ namespace storm {
             };
         } // namespace detail
         
+        storm::expressions::Expression ArrayEliminatorData::transformExpression(storm::expressions::Expression const& arrayExpression) const {
+            std::unordered_map<storm::expressions::Variable, std::size_t> arraySizes;
+            for (auto const& r : replacements) {
+                arraySizes.emplace(r.first, r.second.size());
+            }
+            detail::ArrayExpressionEliminationVisitor eliminator(replacements, arraySizes);
+            return eliminator.eliminate(arrayExpression);
+        }
+        
         ArrayEliminatorData ArrayEliminator::eliminate(Model& model, bool keepNonTrivialArrayAccess) {
             auto sizes = detail::MaxArraySizeDeterminer().getMaxSizes(model);
             ArrayEliminatorData result = detail::ArrayVariableReplacer(model.getExpressionManager(), keepNonTrivialArrayAccess, sizes).replace(model);
@@ -577,6 +586,7 @@ namespace storm {
             STORM_LOG_ASSERT(!containsArrayExpression(model), "the model still contains array expressions.");
             return result;
         }
+        
     }
 }
 

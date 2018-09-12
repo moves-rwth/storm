@@ -46,7 +46,7 @@ namespace storm {
             if (this->model.containsArrayVariables()) {
                 arrayEliminatorData = this->model.eliminateArrays(true);
             }
-            
+
             // Lift the transient edge destinations of the first assignment level.
             uint64_t lowestAssignmentLevel = storm::jani::AssignmentLevelFinder().getLowestAssignmentLevel(this->model);
             if (this->model.hasTransientEdgeDestinationAssignments()) {
@@ -67,7 +67,7 @@ namespace storm {
 
             // Now we are ready to initialize the variable information.
             this->checkValid();
-            this->variableInformation = VariableInformation(model, this->parallelAutomata, options.isAddOutOfBoundsStateSet());
+            this->variableInformation = VariableInformation(this->model, this->parallelAutomata, options.isAddOutOfBoundsStateSet());
             this->variableInformation.registerArrayVariableReplacements(arrayEliminatorData);
             
             // Create a proper evalator.
@@ -504,8 +504,9 @@ namespace storm {
             bool done = false;
             while (!done) {
                 std::vector<ValueType> stateActionRewards(rewardVariables.size(), storm::utility::zero<ValueType>());
-
+                currentDistribution.clear();
                 currentDistribution.add(state, storm::utility::one<ValueType>());
+                nextDistribution.clear();
                 
                 EdgeIndexSet edgeIndices;
                 uint64_t assignmentLevel = std::numeric_limits<uint64_t>::max();
@@ -549,12 +550,12 @@ namespace storm {
                                 }
                             }
                         }
-                        
                         nextDistribution.compress();
-                        
+
                         // If there is one more command to come, shift the target states one time step back.
                         if (i < iteratorList.size() - 1) {
                             currentDistribution = std::move(nextDistribution);
+                            nextDistribution.clear();
                         }
                     }
                 } else {
@@ -582,7 +583,6 @@ namespace storm {
                             destinations.push_back(&edge.getDestination(destinationIndex % edge.getNumberOfDestinations()));
                             locationVars.push_back(&this->variableInformation.locationVariables[edgeCombination[i].first]);
                             STORM_LOG_ASSERT(edge.getNumberOfDestinations() > 0, "Found an edge with zero destinations. This is not expected.");
-                            std::cout << destinationIndex % edge.getNumberOfDestinations();
                             if (i == iteratorList.size() - 1 && (destinationIndex % edge.getNumberOfDestinations()) == edge.getNumberOfDestinations() - 1) {
                                 lastDestinationId = true;
                             }
@@ -623,10 +623,9 @@ namespace storm {
                             storm::utility::vector::addScaledVector(stateActionRewards, destinationRewards, successorProbability);
                         }
                         ++destinationId;
-                        std::cout << "\t";
                     } while (!lastDestinationId);
-                    std::cout << std::endl;
                 }
+                nextDistribution.compress();
                 
                 for (uint_fast64_t i = 0; i < iteratorList.size(); ++i) {
                     storm::jani::Edge const& edge = *iteratorList[i]->second;
@@ -793,10 +792,15 @@ namespace storm {
             // As in JANI we can use transient boolean variable assignments in locations to identify states, we need to
             // create a list of boolean transient variables and the expressions that define them.
             std::unordered_map<storm::expressions::Variable, storm::expressions::Expression> transientVariableToExpressionMap;
+            bool translateArrays = !this->arrayEliminatorData.replacements.empty();
             for (auto const& variable : model.getGlobalVariables().getTransientVariables()) {
                 if (variable.isBooleanVariable()) {
                     if (this->options.isBuildAllLabelsSet() || this->options.getLabelNames().find(variable.getName()) != this->options.getLabelNames().end()) {
-                        transientVariableToExpressionMap[variable.getExpressionVariable()] = model.getLabelExpression(variable.asBooleanVariable(), this->parallelAutomata);
+                        storm::expressions::Expression labelExpression = model.getLabelExpression(variable.asBooleanVariable(), this->parallelAutomata);
+                        if (translateArrays) {
+                            labelExpression = this->arrayEliminatorData.transformExpression(labelExpression);
+                        }
+                        transientVariableToExpressionMap[variable.getExpressionVariable()] = std::move(labelExpression);
                     }
                 }
             }

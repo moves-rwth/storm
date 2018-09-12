@@ -788,12 +788,17 @@ namespace storm {
                 if (setInitValFromDefault) {
                     initVal = storm::expressions::ValueArrayExpression(*expressionManager, exprVariableType, {}).toExpression();
                 }
+                std::shared_ptr<storm::jani::ArrayVariable> result;
                 if (initVal) {
                     STORM_LOG_THROW(initVal->getType().isArrayType(), storm::exceptions::InvalidJaniException, "Initial value for array variable " + name + "(scope " + scopeDescription + ") should be an Array");
-                    return std::make_shared<storm::jani::ArrayVariable>(name, expressionManager->declareArrayVariable(exprManagerName, exprVariableType.getElementType()), elementType, initVal.get(), transientVar);
+                    result = std::make_shared<storm::jani::ArrayVariable>(name, expressionManager->declareArrayVariable(exprManagerName, exprVariableType.getElementType()), elementType, initVal.get(), transientVar);
                 } else {
-                    return std::make_shared<storm::jani::ArrayVariable>(name, expressionManager->declareArrayVariable(exprManagerName, exprVariableType.getElementType()), elementType);
+                    result = std::make_shared<storm::jani::ArrayVariable>(name, expressionManager->declareArrayVariable(exprManagerName, exprVariableType.getElementType()), elementType);
                 }
+                if (type.arrayBase->bounds) {
+                    result->setElementTypeBounds(type.arrayBase->bounds->first, type.arrayBase->bounds->second);
+                }
+                return result;
             }
             
             STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Unknown type description, " << variableStructure.at("type").dump()  << " for variable '" << name << "' (scope: " << scopeDescription << ")");

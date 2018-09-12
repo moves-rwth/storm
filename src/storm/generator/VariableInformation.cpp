@@ -125,6 +125,7 @@ namespace storm {
                             }
                             ++index;
                         }
+                        STORM_LOG_ASSERT(!varInfoIndices.empty() && varInfoIndices.back() == index, "Could not find a basic variable for replacement of array variable " << replacedVar->getExpressionVariable().getName() << " .");
                     } else if (replacedVar->getExpressionVariable().hasBooleanType()) {
                         uint64_t index = 0;
                         for (auto const& boolInfo : booleanVariables) {
@@ -134,11 +135,11 @@ namespace storm {
                             }
                             ++index;
                         }
+                        STORM_LOG_ASSERT(!varInfoIndices.empty() && varInfoIndices.back() == index, "Could not find a basic variable for replacement of array variable " << replacedVar->getExpressionVariable().getName() << " .");
                     } else {
                         STORM_LOG_ASSERT(false, "Unhandled type of base variable.");
                     }
                 }
-                STORM_LOG_ASSERT(arrayReplacements.second.size() == varInfoIndices.size(), "Could not find a basic variable for every array variable replacement.");
                 this->arrayVariableToElementInformations.emplace(arrayReplacements.first, std::move(varInfoIndices));
             }
         }
