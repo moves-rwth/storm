@@ -3,7 +3,6 @@
 #include "storm/models/sparse/StateLabeling.h"
 
 #include "storm/storage/expressions/SimpleValuation.h"
-
 #include "storm/solver/SmtSolver.h"
 
 #include "storm/storage/jani/Edge.h"
@@ -15,6 +14,7 @@
 #include "storm/storage/jani/ParallelComposition.h"
 #include "storm/storage/jani/CompositionInformationVisitor.h"
 #include "storm/storage/jani/traverser/AssignmentLevelFinder.h"
+#include "storm/storage/jani/traverser/ArrayExpressionFinder.h"
 
 #include "storm/storage/sparse/JaniChoiceOrigins.h"
 
@@ -42,10 +42,15 @@ namespace storm {
             STORM_LOG_THROW(!model.hasNonGlobalTransientVariable(), storm::exceptions::InvalidSettingsException, "The explicit next-state generator currently does not support automata-local transient variables.");
             STORM_LOG_THROW(!this->options.isBuildChoiceLabelsSet(), storm::exceptions::InvalidSettingsException, "JANI next-state generator cannot generate choice labels.");
 
+            auto features = model.getModelFeatures();
+            features.remove(storm::jani::ModelFeature::DerivedOperators);
             // Eliminate arrays if necessary.
-            if (this->model.containsArrayVariables()) {
+            if (features.hasArrays()) {
                 arrayEliminatorData = this->model.eliminateArrays(true);
+                this->options.substituteExpressions([this](storm::expressions::Expression const& exp) {return arrayEliminatorData.transformExpression(exp);});
+                features.remove(storm::jani::ModelFeature::Arrays);
             }
+            STORM_LOG_THROW(features.empty(), storm::exceptions::InvalidSettingsException, "The explicit next-state generator does not support the following model feature(s): " << features.toString() << ".");
 
             // Lift the transient edge destinations of the first assignment level.
             uint64_t lowestAssignmentLevel = storm::jani::AssignmentLevelFinder().getLowestAssignmentLevel(this->model);
@@ -809,7 +814,6 @@ namespace storm {
             for (auto const& element : transientVariableToExpressionMap) {
                 transientVariableExpressions.push_back(std::make_pair(element.first.getName(), element.second));
             }
-            
             return NextStateGenerator<ValueType, StateType>::label(stateStorage, initialStateIndices, deadlockStateIndices, transientVariableExpressions);
         }
         

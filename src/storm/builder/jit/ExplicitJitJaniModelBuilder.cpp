@@ -107,10 +107,6 @@ namespace storm {
                     transientVariables.insert(variable.getExpressionVariable());
                 }
                 
-                if (this->model.containsArrayVariables()) {
-                     this->model.eliminateArrays();
-                }
-                
                 // Construct vector of the automata to be put in parallel.
                 storm::jani::Composition const& topLevelComposition = this->model.getSystemComposition();
                 if (topLevelComposition.isAutomatonComposition()) {
@@ -151,6 +147,10 @@ namespace storm {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The input model contains undefined constants that influence the graph structure of the underlying model, which is not allowed.");
                 }
 #endif
+                auto features = model.getModelFeatures();
+                features.remove(storm::jani::ModelFeature::DerivedOperators);
+                STORM_LOG_THROW(features.empty(), storm::exceptions::InvalidArgumentException, "The jit model builder does not support the following model feature(s): " << features.toString() << ".");
+                
                 //STORM_LOG_THROW(!model.reusesActionsInComposition(), storm::exceptions::InvalidArgumentException, "The jit JANI model builder currently does not support reusing actions in parallel composition");
 
                 // Comment this in to print the JANI model for debugging purposes.
@@ -1562,11 +1562,12 @@ namespace storm {
                 }
 
                 std::set<std::string> expressionLabelStrings;
-                for (auto const& expression : this->options.getExpressionLabels()) {
+                for (auto const& expressionLabel : this->options.getExpressionLabels()) {
                     cpptempl::data_map label;
-                    std::string expressionLabelString = expression.toString();
+                    std::string const& expressionLabelString = expressionLabel.first;
+                    auto const& expression = expressionLabel.second;
                     if(expressionLabelStrings.count(expressionLabelString) == 0) {
-                        label["name"] = expression.toString();
+                        label["name"] = expressionLabelString;
                         label["predicate"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(expression), storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName, storm::expressions::ToCppTranslationMode::CastDouble));
                         labels.push_back(label);
                         expressionLabelStrings.insert(expressionLabelString);

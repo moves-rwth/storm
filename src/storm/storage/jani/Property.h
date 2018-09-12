@@ -1,5 +1,7 @@
 #pragma once
 
+#include <functional>
+
 #include "storm/modelchecker/results/FilterType.h"
 #include "storm/logic/Formulas.h"
 #include "storm/logic/FragmentSpecification.h"
@@ -54,10 +56,14 @@ namespace storm {
                 return FilterExpression(formula->substitute(substitution), ft, statesFormula->substitute(substitution));
             }
             
+            FilterExpression substitute(std::function<storm::expressions::Expression(storm::expressions::Expression const&)> const& substitutionFunction) const {
+                return FilterExpression(formula->substitute(substitutionFunction), ft, statesFormula->substitute(substitutionFunction));
+            }
+            
             FilterExpression substituteLabels(std::map<std::string, std::string> const& labelSubstitution) const {
                 return FilterExpression(formula->substitute(labelSubstitution), ft, statesFormula->substitute(labelSubstitution));
             }
-
+            
         private:
             // For now, we assume that the states are always the initial states.
             std::shared_ptr<storm::logic::Formula const> formula;
@@ -103,6 +109,7 @@ namespace storm {
             std::string const& getComment() const;
             
             Property substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const;
+            Property substitute(std::function<storm::expressions::Expression(storm::expressions::Expression const&)> const& substitutionFunction) const;
             Property substituteLabels(std::map<std::string, std::string> const& labelSubstitution) const;
             
             FilterExpression const& getFilter() const;

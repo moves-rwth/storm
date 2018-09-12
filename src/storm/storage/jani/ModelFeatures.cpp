@@ -44,6 +44,10 @@ namespace storm {
             return features.count(ModelFeature::StateExitRewards) > 0;
         }
         
+        bool ModelFeatures::empty() const {
+            return features.empty();
+        }
+        
         void ModelFeatures::add(ModelFeature const& modelFeature) {
             features.insert(modelFeature);
         }

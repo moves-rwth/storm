@@ -67,11 +67,7 @@ namespace storm {
         template<typename ValueType, typename StateType>
         storm::models::sparse::StateLabeling NextStateGenerator<ValueType, StateType>::label(storm::storage::sparse::StateStorage<StateType> const& stateStorage, std::vector<StateType> const& initialStateIndices, std::vector<StateType> const& deadlockStateIndices, std::vector<std::pair<std::string, storm::expressions::Expression>> labelsAndExpressions) {
             
-            for (auto const& expression : this->options.getExpressionLabels()) {
-                std::stringstream stream;
-                stream << expression;
-                labelsAndExpressions.push_back(std::make_pair(stream.str(), expression));
-            }
+            labelsAndExpressions.insert(labelsAndExpressions.end(), this->options.getExpressionLabels().begin(), this->options.getExpressionLabels().end());
             
             // Make the labels unique.
             std::sort(labelsAndExpressions.begin(), labelsAndExpressions.end(), [] (std::pair<std::string, storm::expressions::Expression> const& a, std::pair<std::string, storm::expressions::Expression> const& b) { return a.first < b.first; } );

@@ -4,6 +4,7 @@
 
 #include "storm-counterexamples/api/counterexamples.h"
 #include "storm-parsers/api/storm-parsers.h"
+#include "storm-conv/api/storm-conv.h"
 
 #include "storm/utility/resources.h"
 #include "storm/utility/file.h"
@@ -154,6 +155,15 @@ namespace storm {
                 }
             }
             
+            if (output.model && output.model.get().isJaniModel()) {
+                storm::converter::JaniConversionOptions options;
+                options.allowFunctions = false;
+                options.allowArrays = coreSettings.getEngine() == storm::settings::modules::CoreSettings::Engine::Sparse && !buildSettings.isJitSet();
+                options.standardCompliant = false;
+                options.flatten = false;
+                output.preprocessedProperties = output.properties;
+                storm::api::transformJani(output.model.get().asJaniModel(), output.preprocessedProperties.get(), options);
+            }
             return output;
         }
         

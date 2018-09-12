@@ -129,7 +129,7 @@ namespace storm {
             return labelNames;
         }
         
-        std::vector<storm::expressions::Expression> const& BuilderOptions::getExpressionLabels() const {
+        std::vector<std::pair<std::string, storm::expressions::Expression>> const& BuilderOptions::getExpressionLabels() const {
             return expressionLabels;
         }
         
@@ -211,7 +211,9 @@ namespace storm {
         }
         
         BuilderOptions& BuilderOptions::addLabel(storm::expressions::Expression const& expression) {
-            expressionLabels.emplace_back(expression);
+            std::stringstream stream;
+            stream << expression;
+            expressionLabels.emplace_back(stream.str(), expression);
             return *this;
         }
         
@@ -261,5 +263,19 @@ namespace storm {
             return *this;
         }
 
+        BuilderOptions& BuilderOptions::substituteExpressions(std::function<storm::expressions::Expression(storm::expressions::Expression const&)> const& substitutionFunction) {
+            for (auto& e : expressionLabels) {
+                e.second = substitutionFunction(e.second);
+            }
+            
+            for (auto& t : terminalStates) {
+                if (t.first.isExpression()) {
+                    t.first = LabelOrExpression(substitutionFunction(t.first.getExpression()));
+                }
+            }
+            return *this;
+        }
+
+        
     }
 }

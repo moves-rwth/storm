@@ -30,6 +30,10 @@ namespace storm {
             return Property(name, filterExpression.substitute(substitution), comment);
         }
         
+        Property Property::substitute(std::function<storm::expressions::Expression(storm::expressions::Expression const&)> const& substitutionFunction) const {
+            return Property(name, filterExpression.substitute(substitutionFunction), comment);
+        }
+        
         Property Property::substituteLabels(std::map<std::string, std::string> const& substitution) const {
             return Property(name, filterExpression.substituteLabels(substitution), comment);
         }

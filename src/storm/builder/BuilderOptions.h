@@ -96,7 +96,7 @@ namespace storm {
              * Which expression labels are built
              * @return
              */
-            std::vector<storm::expressions::Expression> const& getExpressionLabels() const;
+            std::vector<std::pair<std::string, storm::expressions::Expression>> const& getExpressionLabels() const;
             std::vector<std::pair<LabelOrExpression, bool>> const& getTerminalStates() const;
             bool hasTerminalStates() const;
             void clearTerminalStates();
@@ -179,7 +179,11 @@ namespace storm {
              */
             BuilderOptions& setAddOverlappingGuardsLabel(bool newValue = true);
 
-
+            /**
+             * Substitutes all expressions occurring in these options.
+             */
+            BuilderOptions& substituteExpressions(std::function<storm::expressions::Expression(storm::expressions::Expression const&)> const& substitutionFunction);
+            
         private:
             /// A flag that indicates whether all reward models are to be built. In this case, the reward model names are
             /// to be ignored.
@@ -195,7 +199,7 @@ namespace storm {
             std::set<std::string> labelNames;
             
             /// The expression that are to be used for creating the state labeling.
-            std::vector<storm::expressions::Expression> expressionLabels;
+            std::vector<std::pair<std::string, storm::expressions::Expression>> expressionLabels;
             
             /// If one of these labels/expressions evaluates to the given bool, the builder can abort the exploration.
             std::vector<std::pair<LabelOrExpression, bool>> terminalStates;

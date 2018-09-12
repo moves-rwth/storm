@@ -578,15 +578,20 @@ namespace storm {
             return eliminator.eliminate(arrayExpression);
         }
         
+        void ArrayEliminatorData::transformProperty(storm::jani::Property& property) const {
+            property = property.substitute([this](storm::expressions::Expression const& exp) {return transformExpression(exp);});
+        }
+        
         ArrayEliminatorData ArrayEliminator::eliminate(Model& model, bool keepNonTrivialArrayAccess) {
             auto sizes = detail::MaxArraySizeDeterminer().getMaxSizes(model);
             ArrayEliminatorData result = detail::ArrayVariableReplacer(model.getExpressionManager(), keepNonTrivialArrayAccess, sizes).replace(model);
-            
+            if (!keepNonTrivialArrayAccess) {
+                model.getModelFeatures().remove(ModelFeature::Arrays);
+            }
             model.finalize();
             STORM_LOG_ASSERT(!containsArrayExpression(model), "the model still contains array expressions.");
             return result;
         }
-        
     }
 }
 

@@ -3,7 +3,8 @@
 
 #include "storm/logic/FragmentChecker.h"
 #include "storm/logic/FormulaInformationVisitor.h"
-#include "storm/logic/VariableSubstitutionVisitor.h"
+#include "storm/storage/jani/expressions/JaniExpressionSubstitutionVisitor.h"
+#include "storm/logic/ExpressionSubstitutionVisitor.h"
 #include "storm/logic/LabelSubstitutionVisitor.h"
 #include "storm/logic/ToExpressionVisitor.h"
 
@@ -438,8 +439,13 @@ namespace storm {
         }
         
         std::shared_ptr<Formula> Formula::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
-            VariableSubstitutionVisitor visitor(substitution);
-            return visitor.substitute(*this);
+            storm::expressions::JaniExpressionSubstitutionVisitor<std::map<storm::expressions::Variable, storm::expressions::Expression>> v(substitution);
+            return substitute([&v](storm::expressions::Expression const& exp) {return v.substitute(exp);});
+        }
+        
+        std::shared_ptr<Formula> Formula::substitute(std::function<storm::expressions::Expression(storm::expressions::Expression const&)> const& expressionSubstitution) const {
+            ExpressionSubstitutionVisitor visitor;
+            return visitor.substitute(*this, expressionSubstitution);
         }
         
         std::shared_ptr<Formula> Formula::substitute(std::map<std::string, storm::expressions::Expression> const& labelSubstitution) const {

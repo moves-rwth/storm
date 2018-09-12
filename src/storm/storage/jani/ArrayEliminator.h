@@ -4,6 +4,7 @@
 #include <boost/any.hpp>
 
 #include "storm/storage/jani/traverser/JaniTraverser.h"
+#include "storm/storage/jani/Property.h"
 
 namespace storm {
     namespace jani {
@@ -14,6 +15,8 @@ namespace storm {
             
             // Transforms the given expression (which might contain array expressions) to an equivalent expression without array variables.
             storm::expressions::Expression transformExpression(storm::expressions::Expression const& arrayExpression) const;
+            // Transforms the given property (which might contain array expressions) to an equivalent property without array variables.
+            void transformProperty(storm::jani::Property& property) const;
         };
         
         class ArrayEliminator {

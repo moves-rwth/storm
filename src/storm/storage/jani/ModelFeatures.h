@@ -19,6 +19,9 @@ namespace storm {
             bool hasDerivedOperators() const;
             bool hasStateExitRewards() const;
             
+            // Returns true, if no model feature is enabled.
+            bool empty() const;
+            
             void add(ModelFeature const& modelFeature);
             void remove(ModelFeature const& modelFeature);
 

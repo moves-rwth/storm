@@ -198,6 +198,7 @@ namespace storm {
             std::shared_ptr<Formula const> asSharedPointer() const;
             
             std::shared_ptr<Formula> substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const;
+            std::shared_ptr<Formula> substitute(std::function<storm::expressions::Expression(storm::expressions::Expression const&)> const& expressionSubstitution) const;
             std::shared_ptr<Formula> substitute(std::map<std::string, storm::expressions::Expression> const& labelSubstitution) const;
             std::shared_ptr<Formula> substitute(std::map<std::string, std::string> const& labelSubstitution) const;
 

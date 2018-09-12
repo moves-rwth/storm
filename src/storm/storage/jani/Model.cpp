@@ -16,7 +16,7 @@
 #include "storm/storage/jani/CompositionInformationVisitor.h"
 #include "storm/storage/jani/Compositions.h"
 #include "storm/storage/jani/JSONExporter.h"
-#include "storm/storage/jani/traverser/ArrayEliminator.h"
+#include "storm/storage/jani/ArrayEliminator.h"
 #include "storm/storage/jani/expressions/JaniExpressionSubstitutionVisitor.h"
 
 #include "storm/storage/expressions/LinearityCheckVisitor.h"
@@ -69,6 +69,7 @@ namespace storm {
             if (this != &other) {
                 this->name = other.name;
                 this->modelType = other.modelType;
+                this->modelFeatures = other.modelFeatures;
                 this->version = other.version;
                 this->expressionManager = other.expressionManager;
                 this->actions = other.actions;
