@@ -52,6 +52,7 @@ namespace storm {
             options.suffix = "";
             options.janiOptions = storm::converter::JaniConversionOptions(jani);
             
+            // Get the name of the output file
             std::string outputFilename = "";
             if (output.isJaniOutputFilenameSet()) {
                 outputFilename = output.getJaniOutputFilename();
@@ -71,6 +72,8 @@ namespace storm {
                 suffix = suffix + ".jani";
                 outputFilename += suffix;
             }
+            
+            // Find a good model name
             auto startOfFilename = outputFilename.rfind("/");
             if (startOfFilename == std::string::npos) {
                 startOfFilename = 0;
@@ -83,6 +86,7 @@ namespace storm {
             }
             options.janiOptions.modelName = outputFilename.substr(startOfFilename, endOfFilename - startOfFilename);
 
+            
             auto janiModelProperties = storm::api::convertPrismToJani(prismProg, properties, options);
             
             if (outputFilename != "") {
@@ -124,6 +128,53 @@ namespace storm {
             }
         }
         
+        void processJaniInputJaniOutput(storm::jani::Model const& janiModel, std::vector<storm::jani::Property> const& properties) {
+            auto const& output = storm::settings::getModule<storm::settings::modules::ConversionOutputSettings>();
+            auto const& input = storm::settings::getModule<storm::settings::modules::ConversionInputSettings>();
+            auto const& jani = storm::settings::getModule<storm::settings::modules::JaniExportSettings>();
+            
+            storm::converter::JaniConversionOptions options(jani);
+            
+            // Get the name of the output file
+            std::string outputFilename = "";
+            if (output.isJaniOutputFilenameSet()) {
+                outputFilename = output.getJaniOutputFilename();
+            } else if (input.isJaniInputSet() && !output.isStdOutOutputEnabled()) {
+                outputFilename = input.getJaniInputFilename();
+                // Remove extension if present
+                auto dotPos = outputFilename.rfind('.');
+                if (dotPos != std::string::npos) {
+                    outputFilename.erase(dotPos);
+                }
+                outputFilename += "_converted.jani";
+            }
+            
+            // Get a good model name from the output filename
+            auto startOfFilename = outputFilename.rfind("/");
+            if (startOfFilename == std::string::npos) {
+                startOfFilename = 0;
+            } else {
+                ++startOfFilename;
+            }
+            auto endOfFilename = outputFilename.rfind(".");
+            if (endOfFilename == std::string::npos) {
+                endOfFilename = outputFilename.size();
+            }
+            options.modelName = outputFilename.substr(startOfFilename, endOfFilename - startOfFilename);
+
+            auto transformedJaniModel = janiModel;
+            auto transformedProperties = properties;
+            storm::api::transformJani(transformedJaniModel, transformedProperties, options);
+            
+            if (outputFilename != "") {
+                storm::api::exportJaniToFile(transformedJaniModel, transformedProperties, outputFilename, jani.isCompactJsonSet());
+            }
+            
+            if (output.isStdOutOutputEnabled()) {
+                storm::api::printJaniToStream(transformedJaniModel, transformedProperties, std::cout, jani.isCompactJsonSet());
+            }
+        }
+        
         void processJaniInput() {
             auto const& input = storm::settings::getModule<storm::settings::modules::ConversionInputSettings>();
 
@@ -150,7 +201,7 @@ namespace storm {
             // Branch on the type of output
             auto const& output = storm::settings::getModule<storm::settings::modules::ConversionOutputSettings>();
             if (output.isJaniOutputSet()) {
-//                processJaniInputJaniOutput(janiModel.asJaniModel(), properties);
+                processJaniInputJaniOutput(janiModel.asJaniModel(), properties);
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "There is either no outputformat specified or the provided combination of input and output format is not compatible.");
             }
