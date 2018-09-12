@@ -35,6 +35,7 @@ namespace storm {
         class Exporter;
         class SynchronizationVector;
         class ArrayEliminatorData;
+        class Property;
         
         class Model {
         public:
@@ -380,7 +381,12 @@ namespace storm {
              * @return data from the elimination. If non-trivial array accesses are kept, pointers to remaining array variables point to this data.
              */
             ArrayEliminatorData eliminateArrays(bool keepNonTrivialArrayAccess);
-            void eliminateArrays();
+
+            /*!
+             * Eliminates occurring array variables and expressions by replacing array variables by multiple basic variables.
+             * @param properties also eliminates array expressions in the given properties
+             */
+            void eliminateArrays(std::vector<Property>& properties);
             
             /*!
              * Retrieves whether there is an expression restricting the legal initial values of the global variables.

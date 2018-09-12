@@ -11,7 +11,7 @@
 namespace storm {
     namespace api {
         
-        void postprocessJani(storm::jani::Model& janiModel, storm::converter::JaniConversionOptions options) {
+        void transformJani(storm::jani::Model& janiModel, std::vector<storm::jani::Property>& properties, storm::converter::JaniConversionOptions const& options) {
         
             if (!options.locationVariables.empty()) {
                 for (auto const& pair : options.locationVariables) {
@@ -21,7 +21,7 @@ namespace storm {
                 }
             }
 
-            if (options.exportFlattened) {
+            if (options.flatten) {
                 std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory;
                 if (storm::settings::hasModule<storm::settings::modules::CoreSettings>()) {
                     smtSolverFactory = std::make_shared<storm::utility::solver::SmtSolverFactory>();
@@ -34,6 +34,14 @@ namespace storm {
             if (options.standardCompliant) {
                 janiModel.makeStandardJaniCompliant();
             }
+            
+            if (!options.allowArrays && janiModel.getModelFeatures().hasArrays()) {
+                janiModel.eliminateArrays(properties);
+            }
+            
+            //if (!options.allowFunctions && janiModel.getModelFeatures().hasFunctions()) {
+                //janiModel = janiModel.substituteFunctions();
+            //}
             
             if (options.modelName) {
                 janiModel.setName(options.modelName.get());
@@ -53,7 +61,7 @@ namespace storm {
             }
             
             // Postprocess Jani model based on the options
-            postprocessJani(res.first, options.janiOptions);
+            transformJani(res.first, res.second, options.janiOptions);
             
             return res;
         }

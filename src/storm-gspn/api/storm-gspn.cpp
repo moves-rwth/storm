@@ -66,12 +66,13 @@ namespace storm {
                 storm::builder::JaniGSPNBuilder builder(gspn);
                 storm::jani::Model* model = builder.build("gspn_automaton", exportSettings.isAddJaniPropertiesSet());
 
-                storm::api::postprocessJani(*model, options);
-                
                 auto properties = janiProperyGetter(builder);
                 if (exportSettings.isAddJaniPropertiesSet()) {
                     properties.insert(properties.end(), builder.getStandardProperties().begin(), builder.getStandardProperties().end());
                 }
+                
+                storm::api::transformJani(*model, properties, options);
+                
                 storm::api::exportJaniToFile(*model, properties, exportSettings.getWriteToJaniFilename(), jani.isCompactJsonSet());
                 delete model;
             }

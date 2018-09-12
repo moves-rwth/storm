@@ -124,14 +124,49 @@ namespace storm {
             }
         }
         
+        void processJaniInput() {
+            auto const& input = storm::settings::getModule<storm::settings::modules::ConversionInputSettings>();
+
+            // Parse the jani model
+            auto janiModelProperties = storm::api::parseJaniModel(input.getJaniInputFilename());
+            storm::storage::SymbolicModelDescription janiModel(janiModelProperties.first);
+            // Parse properties (if available, otherwise take the ones from the jani file)
+            std::vector<storm::jani::Property> properties;
+            if (input.isPropertyInputSet()) {
+                boost::optional<std::set<std::string>> propertyFilter = storm::api::parsePropertyFilter(input.getPropertyInputFilter());
+                properties = storm::api::parsePropertiesForSymbolicModelDescription(input.getPropertyInput(), janiModel, propertyFilter);
+            } else {
+                properties.insert(properties.end(), janiModelProperties.second.begin(), janiModelProperties.second.end());
+            }
+            
+            // Substitute constant definitions in program and properties.
+            std::string constantDefinitionString = input.getConstantDefinitionString();
+            auto constantDefinitions = janiModel.parseConstantDefinitions(constantDefinitionString);
+            janiModel = janiModel.preprocess(constantDefinitions);
+            if (!properties.empty()) {
+                properties = storm::api::substituteConstantsInProperties(properties, constantDefinitions);
+            }
+            
+            // Branch on the type of output
+            auto const& output = storm::settings::getModule<storm::settings::modules::ConversionOutputSettings>();
+            if (output.isJaniOutputSet()) {
+//                processJaniInputJaniOutput(janiModel.asJaniModel(), properties);
+            } else {
+                STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "There is either no outputformat specified or the provided combination of input and output format is not compatible.");
+            }
+        }
+        
         void processOptions() {
             // Start by setting some urgent options (log levels, etc.)
             setUrgentOptions();
             
             // Branch on the type of input
             auto const& input = storm::settings::getModule<storm::settings::modules::ConversionInputSettings>();
+            STORM_LOG_THROW(!(input.isPrismInputSet() && input.isJaniInputSet()), storm::exceptions::InvalidSettingsException, "Multiple input options were set.");
             if (input.isPrismInputSet()) {
                 processPrismInput();
+            } else if (input.isJaniInputSet()) {
+                processJaniInput();
             }
         }
     }

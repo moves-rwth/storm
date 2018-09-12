@@ -959,8 +959,11 @@ namespace storm {
             return arrayEliminator.eliminate(*this, keepNonTrivialArrayAccess);
         }
         
-        void Model::eliminateArrays() {
-            eliminateArrays(false);
+        void Model::eliminateArrays(std::vector<Property>& properties) {
+            auto data = eliminateArrays(false);
+            for (auto& p : properties) {
+                data.transformProperty(p);
+            }
         }
         
         void Model::setInitialStatesRestriction(storm::expressions::Expression const& initialStatesRestriction) {

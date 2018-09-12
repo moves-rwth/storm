@@ -21,10 +21,16 @@ namespace storm {
             bool standardCompliant;
             
             /// If set, the model is transformed into a single automaton
-            bool exportFlattened;
+            bool flatten;
             
             /// If given, the model will get this name
             boost::optional<std::string> modelName;
+            
+            /// If not set, arrays in the model are eliminated
+            bool allowArrays;
+            
+            /// if not set, functions in the model are eliminated
+            bool allowFunctions;
             
         };
     }
