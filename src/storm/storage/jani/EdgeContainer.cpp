@@ -86,7 +86,7 @@ namespace storm {
             edges.clear();
         }
 
-        void EdgeContainer::liftTransientDestinationAssignments(uint64_t maxLevel) {
+        void EdgeContainer::liftTransientDestinationAssignments(int64_t maxLevel) {
             for (auto& templateEdge : templates) {
                 templateEdge->liftTransientDestinationAssignments(maxLevel);
             }

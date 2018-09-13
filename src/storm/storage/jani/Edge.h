@@ -123,13 +123,13 @@ namespace storm {
              * Retrieves the lowest assignment level occurring in each assignment.
              * If no assignment exists, this value is the highest possible integer
              */
-            uint64_t const& getLowestAssignmentLevel() const;
+            int64_t const& getLowestAssignmentLevel() const;
             
             /*!
              * Retrieves the highest assignment level occurring in each assignment
              * If no assignment exists, this value is always zero
              */
-            uint64_t const& getHighestAssignmentLevel() const;
+            int64_t const& getHighestAssignmentLevel() const;
             
 
             void assertValid() const;

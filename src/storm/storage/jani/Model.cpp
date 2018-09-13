@@ -1180,7 +1180,7 @@ namespace storm {
             }
         }
         
-        void Model::liftTransientEdgeDestinationAssignments(uint64_t maxLevel) {
+        void Model::liftTransientEdgeDestinationAssignments(int64_t maxLevel) {
             for (auto& automaton : this->getAutomata()) {
                 automaton.liftTransientEdgeDestinationAssignments(maxLevel);
             }

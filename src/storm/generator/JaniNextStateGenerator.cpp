@@ -53,7 +53,7 @@ namespace storm {
             STORM_LOG_THROW(features.empty(), storm::exceptions::InvalidSettingsException, "The explicit next-state generator does not support the following model feature(s): " << features.toString() << ".");
 
             // Lift the transient edge destinations of the first assignment level.
-            uint64_t lowestAssignmentLevel = storm::jani::AssignmentLevelFinder().getLowestAssignmentLevel(this->model);
+            int64_t lowestAssignmentLevel = storm::jani::AssignmentLevelFinder().getLowestAssignmentLevel(this->model);
             if (this->model.hasTransientEdgeDestinationAssignments()) {
                 this->model.liftTransientEdgeDestinationAssignments(lowestAssignmentLevel);
                 if (this->model.hasTransientEdgeDestinationAssignments()) {
@@ -251,25 +251,20 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
-        CompressedState JaniNextStateGenerator<ValueType, StateType>::applyUpdate(CompressedState const& state, storm::jani::EdgeDestination const& destination, storm::generator::LocationVariableInformation const& locationVariable, uint64_t assignmentLevel, storm::expressions::ExpressionEvaluator<ValueType> const& expressionEvaluator) {
+        CompressedState JaniNextStateGenerator<ValueType, StateType>::applyUpdate(CompressedState const& state, storm::jani::EdgeDestination const& destination, storm::generator::LocationVariableInformation const& locationVariable, int64_t assignmentLevel, storm::expressions::ExpressionEvaluator<ValueType> const& expressionEvaluator) {
             CompressedState newState(state);
             
             // Update the location of the state.
             setLocation(newState, locationVariable, destination.getLocationIndex());
             
             // Then perform the assignments.
-            auto assignmentIt = destination.getOrderedAssignments().getNonTransientAssignments().begin();
-            auto assignmentIte = destination.getOrderedAssignments().getNonTransientAssignments().end();
-            
-            if (assignmentLevel > 0) {
-                while (assignmentIt != assignmentIte && assignmentIt->getLevel() < assignmentLevel) {
-                    ++assignmentIt;
-                }
-            }
+            auto const& assignments = destination.getOrderedAssignments().getNonTransientAssignments(assignmentLevel);
+            auto assignmentIt = assignments.begin();
+            auto assignmentIte = assignments.end();
             
             // Iterate over all boolean assignments and carry them out.
             auto boolIt = this->variableInformation.booleanVariables.begin();
-            for (; assignmentIt != assignmentIte && assignmentIt->getAssignedExpression().hasBooleanType() && assignmentIt->getLevel() == assignmentLevel && assignmentIt->getLValue().isVariable(); ++assignmentIt) {
+            for (; assignmentIt != assignmentIte && assignmentIt->getAssignedExpression().hasBooleanType() && assignmentIt->getLValue().isVariable(); ++assignmentIt) {
                 while (assignmentIt->getExpressionVariable() != boolIt->variable) {
                     ++boolIt;
                 }
@@ -278,7 +273,7 @@ namespace storm {
             
             // Iterate over all integer assignments and carry them out.
             auto integerIt = this->variableInformation.integerVariables.begin();
-            for (; assignmentIt != assignmentIte && assignmentIt->getAssignedExpression().hasIntegerType() && assignmentIt->getLevel() == assignmentLevel && assignmentIt->getLValue().isVariable(); ++assignmentIt) {
+            for (; assignmentIt != assignmentIte && assignmentIt->getAssignedExpression().hasIntegerType() && assignmentIt->getLValue().isVariable(); ++assignmentIt) {
                 while (assignmentIt->getExpressionVariable() != integerIt->variable) {
                     ++integerIt;
                 }
@@ -296,7 +291,7 @@ namespace storm {
                 STORM_LOG_ASSERT(static_cast<int_fast64_t>(newState.getAsInt(integerIt->bitOffset, integerIt->bitWidth)) + integerIt->lowerBound == assignedValue, "Writing to the bit vector bucket failed (read " << newState.getAsInt(integerIt->bitOffset, integerIt->bitWidth) << " but wrote " << assignedValue << ").");
             }
             // Iterate over all array access assignments and carry them out.
-            for (; assignmentIt != assignmentIte && assignmentIt->getLValue().isArrayAccess() && assignmentIt->getLevel() == assignmentLevel; ++assignmentIt) {
+            for (; assignmentIt != assignmentIte && assignmentIt->getLValue().isArrayAccess(); ++assignmentIt) {
                 int_fast64_t arrayIndex = expressionEvaluator.asInt(assignmentIt->getLValue().getArrayIndex());
                 if (assignmentIt->getAssignedExpression().hasIntegerType()) {
                     IntegerVariableInformation const& intInfo = this->variableInformation.getIntegerArrayVariableReplacement(assignmentIt->getLValue().getArray().getExpressionVariable(), arrayIndex);
@@ -320,7 +315,7 @@ namespace storm {
             }
             
             // Check that we processed all assignments.
-            STORM_LOG_ASSERT(assignmentIt == assignmentIte || assignmentIt->getLevel() > assignmentLevel, "Not all assignments were consumed.");
+            STORM_LOG_ASSERT(assignmentIt == assignmentIte, "Not all assignments were consumed.");
             return newState;
         }
         
@@ -439,8 +434,8 @@ namespace storm {
                 if (probability != storm::utility::zero<ValueType>()) {
                     // Obtain target state index and add it to the list of known states. If it has not yet been
                     // seen, we also add it to the set of states that have yet to be explored.
-                    uint64_t assignmentLevel = edge.getLowestAssignmentLevel(); // Might be the largest possible integer, if there is no assignment
-                    uint64_t const& highestLevel = edge.getHighestAssignmentLevel();
+                    int64_t assignmentLevel = edge.getLowestAssignmentLevel(); // Might be the largest possible integer, if there is no assignment
+                    int64_t const& highestLevel = edge.getHighestAssignmentLevel();
                     bool hasTransientRewardAssignments = destination.hasTransientAssignment();
                     CompressedState newState = applyUpdate(state, destination, this->variableInformation.locationVariables[automatonIndex], assignmentLevel, *this->evaluator);
                     if (hasTransientRewardAssignments) {
@@ -514,8 +509,8 @@ namespace storm {
                 nextDistribution.clear();
                 
                 EdgeIndexSet edgeIndices;
-                uint64_t assignmentLevel = std::numeric_limits<uint64_t>::max();
-                uint64_t highestLevel = 0;
+                int64_t assignmentLevel = std::numeric_limits<uint64_t>::max();
+                int64_t highestLevel = std::numeric_limits<uint64_t>::min();
                 for (uint_fast64_t i = 0; i < iteratorList.size(); ++i) {
                     if (this->getOptions().isBuildChoiceOriginsSet()) {
                         edgeIndices.insert(model.encodeAutomatonAndEdgeIndices(edgeCombination[i].first, iteratorList[i]->first));

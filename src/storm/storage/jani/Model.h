@@ -478,7 +478,7 @@ namespace storm {
              * Lifts the common edge destination assignments to edge assignments.
              * @param maxLevel the maximum level of assignments that are to be lifted.
              */
-            void liftTransientEdgeDestinationAssignments(uint64_t maxLevel = 0);
+            void liftTransientEdgeDestinationAssignments(int64_t maxLevel = 0);
             
             /*!
              * Retrieves whether there is any transient edge destination assignment in the model.

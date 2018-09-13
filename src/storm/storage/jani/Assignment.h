@@ -13,7 +13,7 @@ namespace storm {
             /*!
              * Creates an assignment of the given expression to the given LValue.
              */
-            Assignment(storm::jani::LValue const& lValue, storm::expressions::Expression const& expression, uint64_t index = 0);
+            Assignment(storm::jani::LValue const& lValue, storm::expressions::Expression const& expression, int64_t level = 0);
 
             Assignment(Assignment const&) = default;
             bool operator==(Assignment const& other) const;
@@ -96,7 +96,7 @@ namespace storm {
             storm::expressions::Expression expression;
             
             // The level of the assignment.
-            uint64_t level;
+            int64_t level;
         };
         
         /*!

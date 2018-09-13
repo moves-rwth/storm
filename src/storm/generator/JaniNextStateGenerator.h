@@ -70,7 +70,7 @@ namespace storm {
              * @params assignmentLevel The assignmentLevel that is to be considered for the update.
              * @return The resulting state.
              */
-            CompressedState applyUpdate(CompressedState const& state, storm::jani::EdgeDestination const& update, storm::generator::LocationVariableInformation const& locationVariable, uint64_t assignmentlevel, storm::expressions::ExpressionEvaluator<ValueType> const& expressionEvaluator);
+            CompressedState applyUpdate(CompressedState const& state, storm::jani::EdgeDestination const& update, storm::generator::LocationVariableInformation const& locationVariable, int64_t assignmentlevel, storm::expressions::ExpressionEvaluator<ValueType> const& expressionEvaluator);
             
             /*!
              * Retrieves all choices possible from the given state.

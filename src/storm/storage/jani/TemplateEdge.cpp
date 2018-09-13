@@ -9,12 +9,12 @@
 namespace storm {
     namespace jani {
         
-        TemplateEdge::TemplateEdge(storm::expressions::Expression const& guard) : guard(guard), lowestAssignmentLevel(std::numeric_limits<uint64_t>::max()), highestAssignmentLevel(0) {
+        TemplateEdge::TemplateEdge(storm::expressions::Expression const& guard) : guard(guard), lowestAssignmentLevel(std::numeric_limits<int64_t>::max()), highestAssignmentLevel(std::numeric_limits<int64_t>::min()) {
             // Intentionally left empty.
         }
 
         TemplateEdge::TemplateEdge(storm::expressions::Expression const& guard, OrderedAssignments const& assignments, std::vector<TemplateEdgeDestination> const& destinations)
-                : guard(guard), destinations(destinations), assignments(assignments), lowestAssignmentLevel(std::numeric_limits<uint64_t>::max()), highestAssignmentLevel(0) {
+                : guard(guard), destinations(destinations), assignments(assignments), lowestAssignmentLevel(std::numeric_limits<int64_t>::max()), highestAssignmentLevel(std::numeric_limits<int64_t>::min()) {
             // Intentionally left empty.
         }
         
@@ -28,16 +28,16 @@ namespace storm {
         
         void TemplateEdge::finalize(Model const& containingModel) {
             if (assignments.empty()) {
-                lowestAssignmentLevel = std::numeric_limits<uint64_t>::max();
-                highestAssignmentLevel = 0;
+                lowestAssignmentLevel = std::numeric_limits<int64_t>::max();
+                highestAssignmentLevel = std::numeric_limits<int64_t>::min();
             } else {
                 lowestAssignmentLevel = assignments.getLowestLevel();
                 highestAssignmentLevel = assignments.getHighestLevel();
             }
             for (auto const& destination : getDestinations()) {
                 if (!destination.getOrderedAssignments().empty()) {
-                    lowestAssignmentLevel = std::min<uint64_t>(lowestAssignmentLevel, destination.getOrderedAssignments().getLowestLevel());
-                    highestAssignmentLevel = std::max<uint64_t>(highestAssignmentLevel, destination.getOrderedAssignments().getHighestLevel());
+                    lowestAssignmentLevel = std::min(lowestAssignmentLevel, destination.getOrderedAssignments().getLowestLevel());
+                    highestAssignmentLevel = std::max(highestAssignmentLevel, destination.getOrderedAssignments().getHighestLevel());
                 }
                 for (auto const& assignment : destination.getOrderedAssignments().getAllAssignments()) {
                     Variable const& var = assignment.getLValue().isVariable() ? assignment.getLValue().getVariable() : assignment.getLValue().getArray();
@@ -103,7 +103,7 @@ namespace storm {
             assignments.changeAssignmentVariables(remapping);
         }
 
-        void TemplateEdge::liftTransientDestinationAssignments(uint64_t maxLevel) {
+        void TemplateEdge::liftTransientDestinationAssignments(int64_t maxLevel) {
             if (!destinations.empty()) {
                 auto const& destination = *destinations.begin();
                 
@@ -180,11 +180,11 @@ namespace storm {
             return false;
         }
         
-        uint64_t const& TemplateEdge::getLowestAssignmentLevel() const {
+        int64_t const& TemplateEdge::getLowestAssignmentLevel() const {
             return lowestAssignmentLevel;
         }
         
-        uint64_t const& TemplateEdge::getHighestAssignmentLevel() const {
+        int64_t const& TemplateEdge::getHighestAssignmentLevel() const {
             return highestAssignmentLevel;
         }
 

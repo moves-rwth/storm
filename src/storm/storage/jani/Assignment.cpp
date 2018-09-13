@@ -11,7 +11,7 @@
 namespace storm  {
     namespace jani {
         
-        Assignment::Assignment(storm::jani::LValue const& lValue, storm::expressions::Expression const& expression, uint64_t level) : lValue(lValue), expression(expression), level(level) {
+        Assignment::Assignment(storm::jani::LValue const& lValue, storm::expressions::Expression const& expression, int64_t level) : lValue(lValue), expression(expression), level(level) {
             // Intentionally left empty
         }
         

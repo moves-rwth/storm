@@ -325,7 +325,7 @@ namespace storm {
             /*!
              * Lifts the common edge destination assignments to edge assignments.
              */
-            void liftTransientEdgeDestinationAssignments(uint64_t maxLevel = 0);
+            void liftTransientEdgeDestinationAssignments(int64_t maxLevel = 0);
             
             /*!
              * Retrieves whether the automaton uses an assignment level other than zero.

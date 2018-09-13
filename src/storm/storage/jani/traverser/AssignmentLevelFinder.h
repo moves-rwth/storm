@@ -10,7 +10,7 @@ namespace storm {
             AssignmentLevelFinder() = default;
             virtual ~AssignmentLevelFinder() = default;
             
-            uint64_t getLowestAssignmentLevel(Model const& model);
+            int64_t getLowestAssignmentLevel(Model const& model);
             
             virtual void traverse(Assignment const& assignment, boost::any const& data) override;
         };

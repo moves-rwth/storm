@@ -101,13 +101,13 @@ namespace storm {
             return allAssignments.size();
         }
         
-        int_fast64_t OrderedAssignments::getLowestLevel(bool onlyTransient) const {
+        int64_t OrderedAssignments::getLowestLevel(bool onlyTransient) const {
             auto const& as = onlyTransient ? transientAssignments : allAssignments;
             assert(!as.empty());
             return as.front()->getLevel();
         }
         
-        int_fast64_t OrderedAssignments::getHighestLevel(bool onlyTransient) const {
+        int64_t OrderedAssignments::getHighestLevel(bool onlyTransient) const {
             auto const& as = onlyTransient ? transientAssignments : allAssignments;
             assert(!as.empty());
             return as.back()->getLevel();
@@ -198,15 +198,24 @@ namespace storm {
             return detail::ConstAssignments(nonTransientAssignments.begin(), nonTransientAssignments.end());
         }
         
-        detail::ConstAssignments OrderedAssignments::getTransientAssignments(int_fast64_t assignmentLevel) const {
-            auto begin = transientAssignments.begin();
-            while (begin != transientAssignments.end() && (*begin)->getLevel() < assignmentLevel) {
-                ++begin;
+        struct AssignmentLevelToLevelComparator {
+            bool operator()(std::shared_ptr<Assignment> const& left, int64_t const& right) const {
+                return left->getLevel() < right;
             }
-            auto end = begin;
-            while (end != transientAssignments.end() && (*begin)->getLevel() == assignmentLevel) {
-                ++end;
+            bool operator()(int64_t const& left, std::shared_ptr<Assignment> const& right) const {
+                return left < right->getLevel();
             }
+        };
+        
+        detail::ConstAssignments OrderedAssignments::getTransientAssignments(int64_t assignmentLevel) const {
+            auto begin = std::lower_bound(transientAssignments.begin(), transientAssignments.end(), assignmentLevel, AssignmentLevelToLevelComparator());
+            auto end = std::upper_bound(begin, transientAssignments.end(), assignmentLevel, AssignmentLevelToLevelComparator());
+            return detail::ConstAssignments(begin, end);
+        }
+        
+        detail::ConstAssignments OrderedAssignments::getNonTransientAssignments(int64_t assignmentLevel) const {
+            auto begin = std::lower_bound(nonTransientAssignments.begin(), nonTransientAssignments.end(), assignmentLevel, AssignmentLevelToLevelComparator());
+            auto end = std::upper_bound(begin, nonTransientAssignments.end(), assignmentLevel, AssignmentLevelToLevelComparator());
             return detail::ConstAssignments(begin, end);
         }
         
@@ -247,7 +256,7 @@ namespace storm {
         std::vector<std::shared_ptr<Assignment>>::const_iterator OrderedAssignments::lowerBound(Assignment const& assignment, std::vector<std::shared_ptr<Assignment>> const& assignments) {
             return std::lower_bound(assignments.begin(), assignments.end(), assignment, storm::jani::AssignmentPartialOrderByLevelAndLValue());
         }
-
+        
         uint64_t OrderedAssignments::isReadBeforeAssignment(LValue const& lValue, uint64_t assignmentNumber, uint64_t start) const {
             Variable const& var = lValue.isVariable() ? lValue.getVariable() : lValue.getArray();
             // TODO: do this more carefully

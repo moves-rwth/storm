@@ -121,11 +121,11 @@ namespace storm {
             }
         }
 
-        uint64_t const& Edge::getLowestAssignmentLevel() const {
+        int64_t const& Edge::getLowestAssignmentLevel() const {
             return templateEdge->getLowestAssignmentLevel();
         }
 
-        uint64_t const& Edge::getHighestAssignmentLevel() const {
+        int64_t const& Edge::getHighestAssignmentLevel() const {
             return templateEdge->getHighestAssignmentLevel();
         }
         

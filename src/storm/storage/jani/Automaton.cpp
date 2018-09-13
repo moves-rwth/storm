@@ -478,7 +478,7 @@ namespace storm {
             return false;
         }
         
-        void Automaton::liftTransientEdgeDestinationAssignments(uint64_t maxLevel) {
+        void Automaton::liftTransientEdgeDestinationAssignments(int64_t maxLevel) {
             edges.liftTransientDestinationAssignments(maxLevel);
         }
 

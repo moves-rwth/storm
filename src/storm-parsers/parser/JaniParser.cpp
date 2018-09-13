@@ -61,6 +61,12 @@ namespace storm {
             return static_cast<uint64_t>(num);
         }
 
+        int64_t getSignedInt(json const& structure, std::string const& errorInfo) {
+            STORM_LOG_THROW(structure.is_number(), storm::exceptions::InvalidJaniException, "Expected a number in " << errorInfo << ", got '" << structure.dump() << "'");
+            int num = structure.front();
+            return static_cast<int64_t>(num);
+        }
+
 
         std::pair<storm::jani::Model, std::map<std::string, storm::jani::Property>> JaniParser::parse(std::string const& path) {
             JaniParser parser;
@@ -1313,9 +1319,9 @@ namespace storm {
                             storm::expressions::Expression assignmentExpr = parseExpression(assignmentEntry.at("value"), "assignment in edge from '" + sourceLoc + "' to '" + targetLoc + "' in automaton '" + name + "'",  globalVars, constants, localVars);
                             // TODO check types
                             // index
-                            uint64_t assignmentIndex = 0; // default.
+                            int64_t assignmentIndex = 0; // default.
                             if(assignmentEntry.count("index") > 0) {
-                                assignmentIndex = getUnsignedInt(assignmentEntry.at("index"), "assignment index in edge from '" + sourceLoc + "' to '" + targetLoc + "' in automaton '" + name + "'");
+                                assignmentIndex = getSignedInt(assignmentEntry.at("index"), "assignment index in edge from '" + sourceLoc + "' to '" + targetLoc + "' in automaton '" + name + "'");
                             }
                             assignments.emplace_back(lValue, assignmentExpr, assignmentIndex);
                         }
