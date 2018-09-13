@@ -34,7 +34,7 @@ namespace storm {
             STORM_LOG_THROW((++formulas.begin()) == formulas.end(), storm::exceptions::NotSupportedException, "Only one formula allowed for monotonicity analysis");
             STORM_LOG_THROW((*(formulas[0])).isProbabilityOperatorFormula()
                             && ((*(formulas[0])).asProbabilityOperatorFormula().getSubformula().isUntilFormula()
-                                || (*(formulas[0])).asProbabilityOperatorFormula().getSubformula().isEventuallyFormula()), storm::exceptions::NotSupportedException, "Expecting until formula");
+                                || (*(formulas[0])).asProbabilityOperatorFormula().getSubformula().isEventuallyFormula()), storm::exceptions::NotSupportedException, "Expecting until or eventually formula");
 
             uint_fast64_t numberOfStates = this->model->getNumberOfStates();
 
@@ -86,7 +86,7 @@ namespace storm {
             // First handle assumptions
             for (auto itr = assumptions.begin(); itr != assumptions.end(); ++itr) {
                 storm::expressions::BinaryRelationExpression expr = *(*itr);
-                STORM_LOG_THROW(expr.getRelationType() == storm::expressions::BinaryRelationExpression::RelationType::Greater, storm::exceptions::NotImplementedException, "Only greater assumptions allowed");
+                STORM_LOG_THROW(expr.getRelationType() == storm::expressions::BinaryRelationExpression::RelationType::GreaterOrEqual, storm::exceptions::NotImplementedException, "Only greater assumptions allowed");
                 if (expr.getFirstOperand()->isVariable() && expr.getSecondOperand()->isVariable()) {
                     storm::expressions::Variable largest = expr.getFirstOperand()->asVariableExpression().getVariable();
                     storm::expressions::Variable smallest = expr.getSecondOperand()->asVariableExpression().getVariable();

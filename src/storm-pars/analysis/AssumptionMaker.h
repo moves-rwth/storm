@@ -6,8 +6,11 @@
 #define STORM_ASSUMPTIONMAKER_H
 
 #include "Lattice.h"
+#include "AssumptionChecker.h"
 #include "storm/storage/expressions/BinaryRelationExpression.h"
 #include "LatticeExtender.h"
+#include "storm-pars/utility/ModelInstantiator.h"
+
 
 namespace storm {
     namespace analysis {
@@ -15,7 +18,7 @@ namespace storm {
         template<typename ValueType>
         class AssumptionMaker {
         public:
-            AssumptionMaker(storm::analysis::LatticeExtender<ValueType>* latticeExtender, uint_fast64_t numberOfStates);
+            AssumptionMaker(storm::analysis::LatticeExtender<ValueType>* latticeExtender, storm::analysis::AssumptionChecker<ValueType>* checker, uint_fast64_t numberOfStates);
 
             std::map<storm::analysis::Lattice*, std::set<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> startMakingAssumptions(storm::analysis::Lattice* lattice, uint_fast64_t critical1, uint_fast64_t critical2);
 
@@ -29,6 +32,8 @@ namespace storm {
             std::shared_ptr<storm::expressions::ExpressionManager> expressionManager;
 
             uint_fast64_t numberOfStates;
+
+            storm::analysis::AssumptionChecker<ValueType>* assumptionChecker;
         };
     }
 }

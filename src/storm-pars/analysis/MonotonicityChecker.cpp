@@ -156,6 +156,4 @@ namespace storm {
         };
         template class MonotonicityChecker<storm::RationalFunction>;
     }
-
 }
-

@@ -543,6 +543,12 @@ namespace storm {
                 storm::utility::Stopwatch latticeWatch(true);
                 storm::analysis::LatticeExtender<ValueType> *extender = new storm::analysis::LatticeExtender<ValueType>(sparseModel);
                 std::tuple<storm::analysis::Lattice*, uint_fast64_t, uint_fast64_t> criticalPair = extender->toLattice(formulas);
+                // TODO check not mdp
+                auto dtmcModel = model->as<storm::models::sparse::Dtmc<ValueType>>();
+                // TODO check formula type
+                auto assumptionChecker = storm::analysis::AssumptionChecker<ValueType>(formulas[0], dtmcModel, 3);
+                auto assumptionMaker = storm::analysis::AssumptionMaker<ValueType>(extender, &assumptionChecker, sparseModel->getNumberOfStates());
+
                 std::map<storm::analysis::Lattice*, std::set<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> result = assumptionMaker.startMakingAssumptions(std::get<0>(criticalPair), std::get<1>(criticalPair), std::get<2>(criticalPair));
 
 
