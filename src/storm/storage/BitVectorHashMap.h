@@ -234,13 +234,6 @@ namespace storm {
             // Functor object that are used to perform the actual hashing.
             Hash hasher;
             
-#ifndef NDEBUG
-            // Some performance metrics.
-            mutable uint64_t numberOfInsertions;
-            mutable uint64_t numberOfInsertionProbingSteps;
-            mutable uint64_t numberOfFinds;
-            mutable uint64_t numberOfFindProbingSteps;
-#endif
         };
 
     }
