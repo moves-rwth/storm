@@ -102,7 +102,7 @@ namespace storm {
         std::pair<ValueType, uint64_t> BitVectorHashMap<ValueType, Hash>::findOrAddAndGetBucket(storm::storage::BitVector const& key, ValueType const& value) {
             checkIncreaseSize();
             
-            std::pair<bool, uint64_t> flagAndBucket = this->findBucketToInsert(key);
+            std::pair<bool, uint64_t> flagAndBucket = this->findBucket(key);
             if (flagAndBucket.first) {
                 return std::make_pair(values[flagAndBucket.second], flagAndBucket.second);
             } else {
@@ -161,23 +161,6 @@ namespace storm {
         std::pair<bool, uint64_t> BitVectorHashMap<ValueType, Hash>::findBucket(storm::storage::BitVector const& key) const {
             uint64_t bucket = hasher(key) >> this->getCurrentShiftWidth();
             
-            while (isBucketOccupied(bucket)) {
-                if (buckets.matches(bucket * bucketSize, key)) {
-                    return std::make_pair(true, bucket);
-                }
-                ++bucket;
-                if (bucket == (1ull << currentSize)) {
-                    bucket = 0;
-                }
-            }
-
-            return std::make_pair(false, bucket);
-        }
-        
-        template<class ValueType, class Hash>
-        std::pair<bool, uint64_t> BitVectorHashMap<ValueType, Hash>::findBucketToInsert(storm::storage::BitVector const& key) {
-            uint64_t bucket = hasher(key) >> this->getCurrentShiftWidth();
-
             while (isBucketOccupied(bucket)) {
                 if (buckets.matches(bucket * bucketSize, key)) {
                     return std::make_pair(true, bucket);
