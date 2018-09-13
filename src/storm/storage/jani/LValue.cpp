@@ -77,7 +77,7 @@ namespace storm {
                 return other.isVariable() && getVariable().getExpressionVariable() == other.getVariable().getExpressionVariable();
             } else {
                 STORM_LOG_ASSERT(isArrayAccess(), "Unhandled LValue.");
-                return other.isArrayAccess() && getVariable().getExpressionVariable() == other.getVariable().getExpressionVariable() && getArrayIndex().isSyntacticallyEqual(other.getArrayIndex());
+                return other.isArrayAccess() && getArray().getExpressionVariable() == other.getArray().getExpressionVariable() && getArrayIndex().isSyntacticallyEqual(other.getArrayIndex());
             }
         }
         
