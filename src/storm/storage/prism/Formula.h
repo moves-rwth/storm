@@ -15,12 +15,12 @@ namespace storm {
             /*!
              * Creates a formula with the given name and expression.
              *
-             * @param name The name of the formula.
+             * @param placeholder The placeholder variable that is used in expressions to represent this formula.
              * @param expression The expression associated with this formula.
              * @param filename The filename in which the transition reward is defined.
              * @param lineNumber The line number in which the transition reward is defined.
              */
-            Formula(std::string const& name, storm::expressions::Expression const& expression, std::string const& filename = "", uint_fast64_t lineNumber = 0);
+            Formula(storm::expressions::Variable const& variable, storm::expressions::Expression const& expression, std::string const& filename = "", uint_fast64_t lineNumber = 0);
             
             // Create default implementations of constructors/assignment.
             Formula() = default;
@@ -35,6 +35,13 @@ namespace storm {
              * @return The name that is associated with this formula.
              */
             std::string const& getName() const;
+            
+            /*!
+             * Retrieves the placeholder variable that is used in expressions to represent this formula.
+             *
+             * @return The placeholder variable that is used in expressions to represent this formula.
+             */
+            storm::expressions::Variable const& getExpressionVariable() const;
             
             /*!
              * Retrieves the expression that is associated with this formula.
@@ -62,7 +69,7 @@ namespace storm {
             
         private:
             // The name of the formula.
-            std::string name;
+            storm::expressions::Variable variable;
             
             // A predicate that needs to be satisfied by states for the label to be attached.
             storm::expressions::Expression expression;

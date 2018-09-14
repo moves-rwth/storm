@@ -787,63 +787,79 @@ namespace storm {
         }
         
         Program Program::substituteConstants() const {
+            return substituteConstantsFormulas(true, false);
+        }
+        
+        Program Program::substituteFormulas() const {
+            return substituteConstantsFormulas(false, true);
+        }
+        
+        Program Program::substituteConstantsFormulas(bool substituteConstants, bool substituteFormulas) const {
+            
             // We start by creating the appropriate substitution.
-            std::map<storm::expressions::Variable, storm::expressions::Expression> constantSubstitution;
-            std::vector<Constant> newConstants(this->getConstants());
-            for (uint_fast64_t constantIndex = 0; constantIndex < newConstants.size(); ++constantIndex) {
-                auto const& constant = newConstants[constantIndex];
+            std::map<storm::expressions::Variable, storm::expressions::Expression> substitution;
+            
+            // Start with substituting constants. In a sane model, constant definitions do not contain formulas.
+            std::vector<Constant> newConstants;
+            newConstants.reserve(this->getNumberOfConstants());
+            for (auto const& oldConstant : this->getConstants()) {
+                // apply the substitutions gathered so far to the constant definition *before* adding it to the substitution.
+                newConstants.push_back(oldConstant.substitute(substitution));
                 
-                // Put the corresponding expression in the substitution.
-                if (constant.isDefined()) {
-                    constantSubstitution.emplace(constant.getExpressionVariable(), constant.getExpression().simplify());
-                    
-                    // If there is at least one more constant to come, we substitute the constants we have so far.
-                    if (constantIndex + 1 < newConstants.size()) {
-                        newConstants[constantIndex + 1] = newConstants[constantIndex + 1].substitute(constantSubstitution);
-                    }
+                // Put the corresponding expression in the substitution (if requested).
+                auto const& constant = newConstants.back();
+                if (substituteConstants && constant.isDefined()) {
+                    substitution.emplace(constant.getExpressionVariable(), constant.getExpression().simplify());
                 }
             }
             
-            // Now we can substitute the constants in all expressions appearing in the program.
+            // Secondly, handle the formulas. These might contain constants
+            std::vector<Formula> newFormulas;
+            newFormulas.reserve(this->getNumberOfFormulas());
+            for (auto const& oldFormula : this->getFormulas()) {
+                // apply the currently gathered substitutions on the formula definition *before* adding it to the substitution.
+                newFormulas.emplace_back(oldFormula.substitute(substitution));
+                // Put the corresponding expression in the substitution (if requested).
+                auto const& formula = newFormulas.back();
+                if (substituteFormulas) {
+                    substitution.emplace(formula.getExpressionVariable(), formula.getExpression().simplify());
+                }
+            }
+            
+            // Now we can substitute the constants/formulas in all expressions appearing in the program.
             std::vector<BooleanVariable> newBooleanVariables;
             newBooleanVariables.reserve(this->getNumberOfGlobalBooleanVariables());
             for (auto const& booleanVariable : this->getGlobalBooleanVariables()) {
-                newBooleanVariables.emplace_back(booleanVariable.substitute(constantSubstitution));
+                newBooleanVariables.emplace_back(booleanVariable.substitute(substitution));
             }
             
             std::vector<IntegerVariable> newIntegerVariables;
             newBooleanVariables.reserve(this->getNumberOfGlobalIntegerVariables());
             for (auto const& integerVariable : this->getGlobalIntegerVariables()) {
-                newIntegerVariables.emplace_back(integerVariable.substitute(constantSubstitution));
-            }
-            
-            std::vector<Formula> newFormulas;
-            newFormulas.reserve(this->getNumberOfFormulas());
-            for (auto const& formula : this->getFormulas()) {
-                newFormulas.emplace_back(formula.substitute(constantSubstitution));
+                newIntegerVariables.emplace_back(integerVariable.substitute(substitution));
             }
             
             std::vector<Module> newModules;
             newModules.reserve(this->getNumberOfModules());
             for (auto const& module : this->getModules()) {
-                newModules.emplace_back(module.substitute(constantSubstitution));
+                newModules.emplace_back(module.substitute(substitution));
             }
             
             std::vector<RewardModel> newRewardModels;
             newRewardModels.reserve(this->getNumberOfRewardModels());
             for (auto const& rewardModel : this->getRewardModels()) {
-                newRewardModels.emplace_back(rewardModel.substitute(constantSubstitution));
+                newRewardModels.emplace_back(rewardModel.substitute(substitution));
             }
             
             boost::optional<storm::prism::InitialConstruct> newInitialConstruct;
             if (this->hasInitialConstruct()) {
-                newInitialConstruct = this->getInitialConstruct().substitute(constantSubstitution);
+                newInitialConstruct = this->getInitialConstruct().substitute(substitution);
             }
             
             std::vector<Label> newLabels;
             newLabels.reserve(this->getNumberOfLabels());
             for (auto const& label : this->getLabels()) {
-                newLabels.emplace_back(label.substitute(constantSubstitution));
+                newLabels.emplace_back(label.substitute(substitution));
             }
             
             return Program(this->manager, this->getModelType(), newConstants, newBooleanVariables, newIntegerVariables, newFormulas, newModules, this->getActionNameToIndexMapping(), newRewardModels, newLabels, newInitialConstruct, this->getOptionalSystemCompositionConstruct(), prismCompatibility);

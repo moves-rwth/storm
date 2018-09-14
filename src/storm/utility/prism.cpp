@@ -43,7 +43,6 @@ namespace storm {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Program still contains these undefined constants: " + stream.str());
                 }
             }
-            
         }
     }
 }

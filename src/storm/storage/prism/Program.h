@@ -566,9 +566,24 @@ namespace storm {
              * Substitutes all constants appearing in the expressions of the program by their defining expressions. For
              * this to work, all constants need to be defined prior to calling this.
              *
-             * @return The resulting program that only contains expressions over variables of the program.
+             * @return The resulting program that only contains expressions over variables of the program (and maybe formulas).
              */
             Program substituteConstants() const;
+            
+            /*!
+             * Substitutes all formulas appearing in the expressions of the program by their defining expressions.
+             *
+             * @return The resulting program that only contains expressions over variables of the program (and maybe constants).
+             */
+            Program substituteFormulas() const;
+            
+            /*!
+             * Substitutes all constants and/or formulas appearing in the expressions of the program by their defining expressions. For
+             * this to work, all constants need to be defined prior to calling this.
+             *
+             * @return The resulting program that only contains expressions over variables of the program.
+             */
+            Program substituteConstantsFormulas(bool substituteConstants = true, bool substituteFormulas = true) const;
             
             /**
              * Entry point for static analysis for simplify. As we use the same expression manager, we recommend to not use the original program any further. 
