@@ -147,7 +147,25 @@ namespace storm {
                             return std::make_tuple(lattice, successor1, successor2);
                         }
                     } else if (check && successors.getNumberOfSetBits() > 2) {
-                        // TODO
+                        for (auto i = successors.getNextSetIndex(0); i < successors.size(); i = successors.getNextSetIndex(i+1)) {
+                            for (auto j = successors.getNextSetIndex(i+1); j < successors.size(); j = successors.getNextSetIndex(j+1)) {
+                                if (lattice->compare(i,j) == storm::analysis::Lattice::UNKNOWN) {
+                                    return std::make_tuple(lattice, i, j);
+                                }
+                            }
+                        }
+
+                        auto highest = successors.getNextSetIndex(0);
+                        auto lowest = highest;
+                        for (auto i = successors.getNextSetIndex(highest+1); i < successors.size(); i = successors.getNextSetIndex(i+1)) {
+                            if (lattice->compare(i, highest) == storm::analysis::Lattice::ABOVE) {
+                                highest = i;
+                            }
+                            if (lattice->compare(lowest, i) == storm::analysis::Lattice::ABOVE) {
+                                lowest = i;
+                            }
+                        }
+                        lattice->addBetween(stateNumber, lattice->getNode(highest), lattice->getNode(lowest));
                     }
                 }
                 // Nothing changed and not done yet
