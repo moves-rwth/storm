@@ -13,7 +13,7 @@ namespace storm {
             this->assumptionChecker = assumptionChecker;
             this->expressionManager = std::make_shared<storm::expressions::ExpressionManager>(storm::expressions::ExpressionManager());
             for (uint_fast64_t i = 0; i < this->numberOfStates; ++i) {
-                expressionManager->declareIntegerVariable(std::to_string(i));
+                expressionManager->declareRationalVariable(std::to_string(i));
             }
         }
 
@@ -29,19 +29,14 @@ namespace storm {
                 storm::expressions::Variable var1 = expressionManager->getVariable(std::to_string(critical1));
                 storm::expressions::Variable var2 = expressionManager->getVariable(std::to_string(critical2));
 
-                if (assumptionChecker->checkOnSamples(critical1, critical2)) {
-                    auto latticeCopy = new Lattice(lattice);
-                    std::set<std::shared_ptr<storm::expressions::BinaryRelationExpression>> assumptions;
-                    auto myMap = createAssumptions(var1, var2, latticeCopy, assumptions);
-                    result.insert(myMap.begin(), myMap.end());
-                }
-                if (assumptionChecker->checkOnSamples(critical2, critical1)) {
-                    std::set<std::shared_ptr<storm::expressions::BinaryRelationExpression>> assumptions;
-                    auto myMap = createAssumptions(var2, var1, lattice, assumptions);
-                    result.insert(myMap.begin(), myMap.end());
-                } else {
-                    delete lattice;
-                }
+                auto latticeCopy = new Lattice(lattice);
+                std::set<std::shared_ptr<storm::expressions::BinaryRelationExpression>> assumptions;
+                auto myMap = createAssumptions(var1, var2, latticeCopy, assumptions);
+                result.insert(myMap.begin(), myMap.end());
+
+                std::set<std::shared_ptr<storm::expressions::BinaryRelationExpression>> assumptions2;
+                myMap = createAssumptions(var2, var1, lattice, assumptions2);
+                result.insert(myMap.begin(), myMap.end());
             }
             return result;
         }
@@ -59,31 +54,34 @@ namespace storm {
                 storm::expressions::Variable var1 = expressionManager->getVariable(std::to_string(val1));
                 storm::expressions::Variable var2 = expressionManager->getVariable(std::to_string(val2));
 
-                if (assumptionChecker->checkOnSamples(val1, val2)) {
-                    auto latticeCopy = new Lattice(lattice);
-                    std::set<std::shared_ptr<storm::expressions::BinaryRelationExpression>> assumptionsCopy = std::set<std::shared_ptr<storm::expressions::BinaryRelationExpression>>(assumptions);
-                    auto myMap = createAssumptions(var1, var2, latticeCopy, assumptionsCopy);
-                    result.insert(myMap.begin(), myMap.end());
-                }
+                auto latticeCopy = new Lattice(lattice);
+                std::set<std::shared_ptr<storm::expressions::BinaryRelationExpression>> assumptionsCopy = std::set<std::shared_ptr<storm::expressions::BinaryRelationExpression>>(
+                        assumptions);
+                auto myMap = createAssumptions(var1, var2, latticeCopy, assumptionsCopy);
+                result.insert(myMap.begin(), myMap.end());
 
-                if (assumptionChecker->checkOnSamples(val2, val1)) {
-                    auto myMap = createAssumptions(var2, var1, lattice, assumptions);
-                    result.insert(myMap.begin(), myMap.end());
-                } else {
-                    delete lattice;
-                }
+                myMap = createAssumptions(var2, var1, lattice, assumptions);
+                result.insert(myMap.begin(), myMap.end());
             }
             return result;
         }
 
         template <typename ValueType>
         std::map<storm::analysis::Lattice*, std::set<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> AssumptionMaker<ValueType>::createAssumptions(storm::expressions::Variable var1, storm::expressions::Variable var2, storm::analysis::Lattice* lattice, std::set<std::shared_ptr<storm::expressions::BinaryRelationExpression>> assumptions) {
-            std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption1
-                = std::make_shared<storm::expressions::BinaryRelationExpression>(storm::expressions::BinaryRelationExpression(*expressionManager, var1.getType(),
+            std::map<storm::analysis::Lattice*, std::set<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> result;
+
+            std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption
+                = std::make_shared<storm::expressions::BinaryRelationExpression>(storm::expressions::BinaryRelationExpression(*expressionManager, expressionManager->getBooleanType(),
                         var1.getExpression().getBaseExpressionPointer(), var2.getExpression().getBaseExpressionPointer(),
                         storm::expressions::BinaryRelationExpression::RelationType::GreaterOrEqual));
-            assumptions.insert(assumption1);
-            return (runRecursive(lattice, assumptions));
+            if (assumptionChecker->checkOnSamples(assumption)) {
+                assumptions.insert(assumption);
+                result = (runRecursive(lattice, assumptions));
+            } else {
+                delete lattice;
+            }
+
+            return result;
         }
 
 

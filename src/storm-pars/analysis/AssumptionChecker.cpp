@@ -2,15 +2,16 @@
 // Created by Jip Spel on 12.09.18.
 //
 
-#include <storm-pars/utility/ModelInstantiator.h>
-#include <storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h>
-#include <storm/exceptions/NotSupportedException.h>
+#include "storm-pars/utility/ModelInstantiator.h"
+#include "storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
+#include "storm/exceptions/NotSupportedException.h"
 #include "AssumptionChecker.h"
 #include "storm/modelchecker/CheckTask.h"
 #include "storm/environment/Environment.h"
 #include "storm/modelchecker/results/CheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
-
+#include "storm/storage/expressions/SimpleValuation.h"
+#include "storm/storage/expressions/ExpressionManager.h"
 
 
 
@@ -23,8 +24,6 @@ namespace storm {
             auto instantiator = storm::utility::ModelInstantiator<storm::models::sparse::Dtmc<ValueType>, storm::models::sparse::Dtmc<double>>(*model.get());
             auto matrix = model->getTransitionMatrix();
             std::set<storm::RationalFunctionVariable> variables =  storm::models::sparse::getProbabilityParameters(*model);
-
-
             for (auto i = 0; i < numberOfSamples; ++i) {
                 auto valuation = storm::utility::parametric::Valuation<ValueType>();
                 for (auto itr = variables.begin(); itr != variables.end(); ++itr) {
@@ -52,8 +51,8 @@ namespace storm {
                 std::vector<double> values = quantitativeResult.getValueVector();
                 results.push_back(values);
             }
-            this->numberOfStates = model->getNumberOfStates();
-            this->initialStates = model->getInitialStates();
+//            this->numberOfStates = model->getNumberOfStates();
+//            this->initialStates = model->getInitialStates();
         }
 
         template <typename ValueType>
@@ -63,6 +62,25 @@ namespace storm {
                 // TODO: als expressie
                 auto values = (*itr);
                 result &= (values[val1] >= values[val2]);
+            }
+            return result;
+        }
+
+        template <typename ValueType>
+        bool AssumptionChecker<ValueType>::checkOnSamples(std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption) {
+            bool result = true;
+            std::set<storm::expressions::Variable> vars = std::set<storm::expressions::Variable>({});
+            assumption->gatherVariables(vars);
+            for (auto itr = results.begin(); result && itr != results.end(); ++itr) {
+                std::shared_ptr<storm::expressions::ExpressionManager const> manager = assumption->getManager().getSharedPointer();
+                auto valuation = storm::expressions::SimpleValuation(manager);
+                auto values = (*itr);
+                for (auto var = vars.begin(); result && var != vars.end(); ++var) {
+                    storm::expressions::Variable par = *var;
+                    auto index = std::stoi(par.getName());
+                    valuation.setRationalValue(par, values[index]);
+                }
+                result &= assumption->evaluateAsBool(&valuation);
             }
             return result;
         }
