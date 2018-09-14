@@ -85,6 +85,20 @@ namespace storm {
             return variables.hasTransientVariable();
         }
         
+        FunctionDefinition const& Automaton::addFunctionDefinition(FunctionDefinition const& functionDefinition) {
+            auto insertionRes = functionDefinitions.emplace(functionDefinition.getName(), functionDefinition);
+            STORM_LOG_THROW(insertionRes.second, storm::exceptions::InvalidArgumentException, " a function with the name " << functionDefinition.getName() << " already exists in this automaton (" << this->getName() << ")");
+            return insertionRes.first->second;
+        }
+        
+        std::unordered_map<std::string, FunctionDefinition> const& Automaton::getFunctionDefinitions() const {
+            return functionDefinitions;
+        }
+        
+        std::unordered_map<std::string, FunctionDefinition> Automaton::getFunctionDefinitions() {
+            return functionDefinitions;
+        }
+        
         bool Automaton::hasLocation(std::string const& name) const {
             return locationToIndex.find(name) != locationToIndex.end();
         }
@@ -383,6 +397,9 @@ namespace storm {
         
         void Automaton::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {
             for (auto& variable : this->getVariables().getBoundedIntegerVariables()) {
+                variable.substitute(substitution);
+            }
+            for (auto& variable : this->getVariables().getArrayVariables()) {
                 variable.substitute(substitution);
             }
             

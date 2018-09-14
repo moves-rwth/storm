@@ -82,6 +82,7 @@ namespace storm {
                 this->automatonToIndex = other.automatonToIndex;
                 this->composition = other.composition;
                 this->initialStatesRestriction = other.initialStatesRestriction;
+                this->globalFunctions = other.globalFunctions;
                 
                 // Now that we have copied all the data, we need to fix all assignments as they contain references to the old model.
                 std::map<Variable const*, std::reference_wrapper<Variable const>> remapping;
@@ -723,6 +724,20 @@ namespace storm {
                 }
             }
             return false;
+        }
+        
+        FunctionDefinition const& Model::addFunctionDefinition(FunctionDefinition const& functionDefinition) {
+            auto insertionRes = globalFunctions.emplace(functionDefinition.getName(), functionDefinition);
+            STORM_LOG_THROW(insertionRes.second, storm::exceptions::InvalidOperationException, " a function with the name " << functionDefinition.getName() << " already exists in this model.");
+            return insertionRes.first->second;
+        }
+        
+        std::unordered_map<std::string, FunctionDefinition> const& Model::getGlobalFunctionDefinitions() const {
+            return globalFunctions;
+        }
+        
+        std::unordered_map<std::string, FunctionDefinition> Model::getGlobalFunctionDefinitions() {
+            return globalFunctions;
         }
         
         storm::expressions::ExpressionManager& Model::getExpressionManager() const {

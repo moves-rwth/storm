@@ -60,6 +60,15 @@ namespace storm {
             }
         }
 
+        template<typename MapType>
+        boost::any JaniExpressionSubstitutionVisitor<MapType>::visit(FunctionCallExpression const& expression, boost::any const& data) {
+            std::vector<std::shared_ptr<BaseExpression const>> newArguments;
+            newArguments.reserve(expression.getNumberOfArguments());
+            for (uint64_t i = 0; i < expression.getNumberOfArguments(); ++i) {
+                newArguments.push_back(boost::any_cast<std::shared_ptr<BaseExpression const>>(expression.getArgument(i)->accept(*this, data)));
+            }
+            return std::const_pointer_cast<BaseExpression const>(std::shared_ptr<BaseExpression>(new FunctionCallExpression(expression.getManager(), expression.getType(), expression.getIdentifier(), newArguments)));
+        }
 
         // Explicitly instantiate the class with map and unordered_map.
 		template class JaniExpressionSubstitutionVisitor<std::map<Variable, Expression>>;

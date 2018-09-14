@@ -12,6 +12,7 @@
 #include "storm/storage/jani/Constant.h"
 #include "storm/storage/jani/Composition.h"
 #include "storm/storage/jani/Edge.h"
+#include "storm/storage/jani/FunctionDefinition.h"
 #include "storm/storage/jani/Location.h"
 #include "storm/storage/jani/TemplateEdge.h"
 #include "storm/storage/jani/ModelFeatures.h"
@@ -247,6 +248,21 @@ namespace storm {
              * Retrieves whether this model has a non-global transient variable.
              */
             bool hasNonGlobalTransientVariable() const;
+            
+            /*!
+             * Adds the given function definition
+             */
+            FunctionDefinition const& addFunctionDefinition(FunctionDefinition const& functionDefinition);
+            
+            /*!
+             * Retrieves all global function definitions
+             */
+            std::unordered_map<std::string, FunctionDefinition> const& getGlobalFunctionDefinitions() const;
+            
+            /*!
+             * Retrieves all global function definitions
+             */
+            std::unordered_map<std::string, FunctionDefinition> getGlobalFunctionDefinitions();
             
             /*!
              * Retrieves the manager responsible for the expressions in the JANI model.
@@ -563,6 +579,9 @@ namespace storm {
             
             /// The global variables of the model.
             VariableSet globalVariables;
+            
+            /// A mapping from names to function definitions
+            std::unordered_map<std::string, FunctionDefinition> globalFunctions;
             
             /// The list of automata.
             std::vector<Automaton> automata;

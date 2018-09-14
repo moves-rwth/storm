@@ -9,7 +9,7 @@
 #include "storm/storage/jani/VariableSet.h"
 #include "storm/storage/jani/TemplateEdgeContainer.h"
 #include "storm/storage/jani/EdgeContainer.h"
-
+#include "storm/storage/jani/FunctionDefinition.h"
 
 namespace storm {
     namespace jani {
@@ -99,6 +99,21 @@ namespace storm {
              */
             bool hasTransientVariable() const;
             
+            /*!
+             * Adds the given function definition
+             */
+            FunctionDefinition const& addFunctionDefinition(FunctionDefinition const& functionDefinition);
+            
+            /*!
+             * Retrieves all function definitions of this automaton
+             */
+            std::unordered_map<std::string, FunctionDefinition> const& getFunctionDefinitions() const;
+            
+            /*!
+             * Retrieves all function definitions of this automaton
+             */
+            std::unordered_map<std::string, FunctionDefinition> getFunctionDefinitions();
+
             /*!
              * Retrieves whether the automaton has a location with the given name.
              */
@@ -355,6 +370,9 @@ namespace storm {
 
             /// The set of variables of this automaton.
             VariableSet variables;
+            
+            /// A mapping from names to function definitions
+            std::unordered_map<std::string, FunctionDefinition> functionDefinitions;
             
             /// The locations of the automaton.
             std::vector<Location> locations;

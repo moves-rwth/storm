@@ -11,6 +11,8 @@ namespace storm {
                     return "arrays";
                 case ModelFeature::DerivedOperators:
                     return "derived-operators";
+                case ModelFeature::Functions:
+                    return "functions";
                 case ModelFeature::StateExitRewards:
                     return "state-exit-rewards";
             }
@@ -38,6 +40,10 @@ namespace storm {
         
         bool ModelFeatures::hasDerivedOperators() const {
             return features.count(ModelFeature::DerivedOperators) > 0;
+        }
+        
+        bool ModelFeatures::hasFunctions() const {
+            return features.count(ModelFeature::Functions) > 0;
         }
         
         bool ModelFeatures::hasStateExitRewards() const {

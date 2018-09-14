@@ -71,6 +71,15 @@ namespace storm {
                 virtual boost::any visit(storm::expressions::ArrayAccessExpression const& expression, boost::any const& data) override {
                     return true;
                 }
+                
+                virtual boost::any visit(storm::expressions::FunctionCallExpression const& expression, boost::any const& data) override {
+                    for (uint64_t i = 0; i < expression.getNumberOfArguments(); ++i) {
+                        if (boost::any_cast<bool>(expression.getArgument(i)->accept(*this, data))) {
+                            return true;
+                        }
+                    }
+                    return false;
+                }
             };
             
             class ArrayExpressionFinderTraverser : public ConstJaniTraverser {

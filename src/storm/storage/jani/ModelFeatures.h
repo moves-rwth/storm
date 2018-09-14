@@ -6,7 +6,7 @@
 namespace storm {
     namespace jani {
 
-        enum class ModelFeature {Arrays, DerivedOperators, StateExitRewards};
+        enum class ModelFeature {Arrays, DerivedOperators, Functions, StateExitRewards};
 
         std::string toString(ModelFeature const& modelFeature);
         
@@ -16,6 +16,7 @@ namespace storm {
             std::string toString() const;
             
             bool hasArrays() const;
+            bool hasFunctions() const;
             bool hasDerivedOperators() const;
             bool hasStateExitRewards() const;
             
