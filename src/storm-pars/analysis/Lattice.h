@@ -75,20 +75,41 @@ namespace storm {
 
                     /*!
                      * Retrieves the pointer to a Node at which the state occurs.
-                     * Behaviour unknown when state does not exists at any Node in the Lattice.
                      *
                      * @param state The number of the state.
                      *
-                     * @return The pointer to the node of the state, nullptr if the node does not exist
+                     * @return The pointer to the node of the state, nullptr if the node does not exist.
                      */
                     Node *getNode(uint_fast64_t state);
 
+                    /*!
+                     * Retrieves the top node of the lattice.
+                     *
+                     * @return The top node.
+                     */
                     Node* getTop();
 
+                    /*!
+                     * Retrieves the bottom node of the lattice.
+                     *
+                     * @return The bottom node.
+                     */
                     Node* getBottom();
 
+                    /*!
+                     * Returns the vector with the nodes of the lattice.
+                     * Each index in the vector refers to a state.
+                     * When the state is not yet added at a node, it will contain the nullptr.
+                     *
+                     * @return The vector with nodes of the lattice.
+                     */
                     std::vector<Node*> getNodes();
 
+                    /*!
+                     * Returns a BitVector in which all added states are set.
+                     *
+                     * @return The BitVector with all added states.
+                     */
                     storm::storage::BitVector getAddedStates();
 
                     /*!
@@ -105,6 +126,9 @@ namespace storm {
                      */
                     void toDotFile(std::ostream &out);
 
+                    /*!
+                     * Constants for comparison of nodes/states
+                     */
                     static const int UNKNOWN = -1;
                     static const int BELOW = 2;
                     static const int ABOVE = 1;
@@ -126,13 +150,6 @@ namespace storm {
 
                     uint_fast64_t numberOfStates;
 
-                    /**
-                     * Check if node1 lies above node2
-                     * @param node1
-                     * @param node2
-                     * @param seenNodes
-                     * @return
-                     */
                     bool above(Node * node1, Node * node2, std::set<Node*>* seenNodes);
 
                     int compare(Node* node1, Node* node2);
