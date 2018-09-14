@@ -29,6 +29,7 @@ namespace storm {
             std::string const& getFunctionIdentifier() const;
             uint64_t getNumberOfArguments() const;
             std::shared_ptr<BaseExpression const> getArgument(uint64_t i) const;
+            std::vector<std::shared_ptr<BaseExpression const>> const& getArguments() const;
 
 
         protected:

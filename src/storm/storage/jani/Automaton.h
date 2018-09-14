@@ -112,7 +112,7 @@ namespace storm {
             /*!
              * Retrieves all function definitions of this automaton
              */
-            std::unordered_map<std::string, FunctionDefinition> getFunctionDefinitions();
+            std::unordered_map<std::string, FunctionDefinition>& getFunctionDefinitions();
 
             /*!
              * Retrieves whether the automaton has a location with the given name.

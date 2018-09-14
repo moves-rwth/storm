@@ -16,6 +16,7 @@ namespace storm {
             virtual void traverse(Action const& action, boost::any const& data);
             virtual void traverse(Automaton& automaton, boost::any const& data);
             virtual void traverse(Constant& constant, boost::any const& data);
+            virtual void traverse(FunctionDefinition& functionDefinition, boost::any const& data);
             virtual void traverse(VariableSet& variableSet, boost::any const& data);
             virtual void traverse(Location& location, boost::any const& data);
             virtual void traverse(BooleanVariable& variable, boost::any const& data);
@@ -43,6 +44,7 @@ namespace storm {
             virtual void traverse(Action const& action, boost::any const& data);
             virtual void traverse(Automaton const& automaton, boost::any const& data);
             virtual void traverse(Constant const& constant, boost::any const& data);
+            virtual void traverse(FunctionDefinition const& functionDefinition, boost::any const& data);
             virtual void traverse(VariableSet const& variableSet, boost::any const& data);
             virtual void traverse(Location const& location, boost::any const& data);
             virtual void traverse(BooleanVariable const& variable, boost::any const& data);

@@ -71,5 +71,10 @@ namespace storm {
             STORM_LOG_THROW(i < arguments.size(), storm::exceptions::InvalidArgumentException, "Tried to access the argument with index " << i << " of a function call with " << arguments.size() << " arguments.");
             return arguments[i];
         }
+
+        std::vector<std::shared_ptr<BaseExpression const>> const& FunctionCallExpression::getArguments() const {
+            return arguments;
+        }
+        
     }
 }

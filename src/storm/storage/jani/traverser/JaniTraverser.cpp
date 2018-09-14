@@ -11,6 +11,9 @@ namespace storm {
             for (auto& c : model.getConstants()) {
                 traverse(c, data);
             }
+            for (auto& f : model.getGlobalFunctionDefinitions()) {
+                traverse(f.second, data);
+            }
             traverse(model.getGlobalVariables(), data);
             for (auto& aut : model.getAutomata()) {
                 traverse(aut, data);
@@ -26,6 +29,9 @@ namespace storm {
         
         void JaniTraverser::traverse(Automaton& automaton, boost::any const& data) {
             traverse(automaton.getVariables(), data);
+            for (auto& f : automaton.getFunctionDefinitions()) {
+                traverse(f.second, data);
+            }
             for (auto& loc : automaton.getLocations()) {
                 traverse(loc, data);
             }
@@ -39,6 +45,10 @@ namespace storm {
             if (constant.isDefined()) {
                 traverse(constant.getExpression(), data);
             }
+        }
+        
+        void JaniTraverser::traverse(FunctionDefinition& functionDefinition, boost::any const& data) {
+            traverse(functionDefinition.getFunctionBody(), data);
         }
         
         void JaniTraverser::traverse(VariableSet& variableSet, boost::any const& data) {
@@ -162,6 +172,9 @@ namespace storm {
             for (auto const& c : model.getConstants()) {
                 traverse(c, data);
             }
+            for (auto const& f : model.getGlobalFunctionDefinitions()) {
+                traverse(f.second, data);
+            }
             traverse(model.getGlobalVariables(), data);
             for (auto const& aut : model.getAutomata()) {
                 traverse(aut, data);
@@ -177,6 +190,9 @@ namespace storm {
         
         void ConstJaniTraverser::traverse(Automaton const& automaton, boost::any const& data) {
             traverse(automaton.getVariables(), data);
+            for (auto const& f : automaton.getFunctionDefinitions()) {
+                traverse(f.second, data);
+            }
             for (auto const& loc : automaton.getLocations()) {
                 traverse(loc, data);
             }
@@ -190,6 +206,10 @@ namespace storm {
             if (constant.isDefined()) {
                 traverse(constant.getExpression(), data);
             }
+        }
+        
+        void ConstJaniTraverser::traverse(FunctionDefinition const& functionDefinition, boost::any const& data) {
+            traverse(functionDefinition.getFunctionBody(), data);
         }
         
         void ConstJaniTraverser::traverse(VariableSet const& variableSet, boost::any const& data) {

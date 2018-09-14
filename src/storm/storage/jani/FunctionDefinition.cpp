@@ -1,4 +1,9 @@
 #include "storm/storage/jani/FunctionDefinition.h"
+#include "storm/storage/jani/expressions/JaniExpressionSubstitutionVisitor.h"
+
+
+#include "storm/utility/macros.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 
 namespace storm {
     namespace jani {
@@ -23,6 +28,20 @@ namespace storm {
             return functionBody;
         }
         
+        storm::expressions::Expression FunctionDefinition::call(std::vector<std::shared_ptr<storm::expressions::BaseExpression const>> const& arguments ) const {
+            // substitute the parameters in the function body
+            STORM_LOG_THROW(arguments.size() == parameters.size(), storm::exceptions::InvalidArgumentException, "The number of arguments does not match the number of parameters.");
+            std::unordered_map<storm::expressions::Variable, storm::expressions::Expression> parameterSubstitution;
+            for (uint64_t i = 0; i < arguments.size(); ++i) {
+                parameterSubstitution.emplace(parameters[i], arguments[i]);
+            }
+            return substituteJaniExpression(functionBody, parameterSubstitution);
+        }
+        
+        void FunctionDefinition::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {
+            this->setFunctionBody(substituteJaniExpression(this->getFunctionBody(), substitution));
+        }
+
         void FunctionDefinition::setFunctionBody(storm::expressions::Expression const& body) {
             functionBody = body;
         }

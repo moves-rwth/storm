@@ -39,9 +39,9 @@ namespace storm {
                 janiModel.eliminateArrays(properties);
             }
             
-            //if (!options.allowFunctions && janiModel.getModelFeatures().hasFunctions()) {
-                //janiModel = janiModel.substituteFunctions();
-            //}
+            if (!options.allowFunctions && janiModel.getModelFeatures().hasFunctions()) {
+                janiModel = janiModel.substituteFunctions(properties);
+            }
             
             if (options.modelName) {
                 janiModel.setName(options.modelName.get());

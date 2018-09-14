@@ -154,11 +154,23 @@ namespace storm {
                 }
             }
             
+            // Check whether transformations on the jani model are required
             if (output.model && output.model.get().isJaniModel()) {
-                // Check if arrays need to be eliminated
-                if (coreSettings.getEngine() != storm::settings::modules::CoreSettings::Engine::Sparse || buildSettings.isJitSet()) {
-                    output.preprocessedProperties = output.properties;
-                    output.model.get().asJaniModel().eliminateArrays(output.preprocessedProperties.get());
+                auto& janiModel = output.model.get().asJaniModel();
+                // Check if functions need to be eliminated
+                if (janiModel.getModelFeatures().hasFunctions()) {
+                    if (!output.preprocessedProperties) {
+                        output.preprocessedProperties = output.properties;
+                    }
+                    janiModel.substituteFunctions(output.preprocessedProperties.get());
+                }
+                
+                // Check if arrays need to be eliminated. This should be done after! eliminating the functions
+                if (janiModel.getModelFeatures().hasArrays() && (coreSettings.getEngine() != storm::settings::modules::CoreSettings::Engine::Sparse || buildSettings.isJitSet())) {
+                    if (!output.preprocessedProperties) {
+                        output.preprocessedProperties = output.properties;
+                    }
+                    janiModel.eliminateArrays(output.preprocessedProperties.get());
                 }
             }
             return output;

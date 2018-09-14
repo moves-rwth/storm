@@ -35,8 +35,13 @@ namespace storm {
         }
         
         storm::expressions::Expression const& LValue::getArrayIndex() const {
-            STORM_LOG_ASSERT(isArrayAccess(), "Tried to get the array index of an LValue, that is not an array access.");
+            STORM_LOG_ASSERT(isArrayAccess(), "Tried to get the array index of an LValue that is not an array access.");
             return arrayIndex;
+        }
+        
+        void LValue::setArrayIndex(storm::expressions::Expression const& newIndex) {
+            STORM_LOG_ASSERT(isArrayAccess(), "Tried to set the array index of an LValue that is not an array access.");
+            arrayIndex = newIndex;
         }
         
         bool LValue::isTransient() const {

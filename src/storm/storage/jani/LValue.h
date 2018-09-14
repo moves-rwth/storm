@@ -20,6 +20,7 @@ namespace storm {
             bool isArrayAccess() const;
             storm::jani::ArrayVariable const& getArray() const;
             storm::expressions::Expression const& getArrayIndex() const;
+            void setArrayIndex(storm::expressions::Expression const& newIndex);
             
             bool isTransient() const;
             bool operator< (LValue const& other) const;

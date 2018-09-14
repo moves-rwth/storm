@@ -262,7 +262,7 @@ namespace storm {
             /*!
              * Retrieves all global function definitions
              */
-            std::unordered_map<std::string, FunctionDefinition> getGlobalFunctionDefinitions();
+            std::unordered_map<std::string, FunctionDefinition>& getGlobalFunctionDefinitions();
             
             /*!
              * Retrieves the manager responsible for the expressions in the JANI model.
@@ -387,6 +387,13 @@ namespace storm {
             std::map<storm::expressions::Variable, storm::expressions::Expression> getConstantsSubstitution() const;
             
             /*!
+             * Substitutes all function calls with the corresponding function definition
+             * @param properties also eliminates function call expressions in the given properties
+             */
+            void substituteFunctions();
+            void substituteFunctions(std::vector<Property>& properties);
+            
+            /*!
              * Returns true if at least one array variable occurs in the model.
              */
             bool containsArrayVariables() const;
@@ -396,7 +403,7 @@ namespace storm {
              * @param keepNonTrivialArrayAccess if set, array access expressions in LValues and expressions are only replaced, if the index expression is constant.
              * @return data from the elimination. If non-trivial array accesses are kept, pointers to remaining array variables point to this data.
              */
-            ArrayEliminatorData eliminateArrays(bool keepNonTrivialArrayAccess);
+            ArrayEliminatorData eliminateArrays(bool keepNonTrivialArrayAccess = false);
 
             /*!
              * Eliminates occurring array variables and expressions by replacing array variables by multiple basic variables.

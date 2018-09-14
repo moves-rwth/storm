@@ -95,7 +95,7 @@ namespace storm {
             return functionDefinitions;
         }
         
-        std::unordered_map<std::string, FunctionDefinition> Automaton::getFunctionDefinitions() {
+        std::unordered_map<std::string, FunctionDefinition>& Automaton::getFunctionDefinitions() {
             return functionDefinitions;
         }
         
@@ -396,6 +396,9 @@ namespace storm {
         }
         
         void Automaton::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {
+            for (auto& functionDefinition : this->getFunctionDefinitions()) {
+                functionDefinition.second.substitute(substitution);
+            }
             for (auto& variable : this->getVariables().getBoundedIntegerVariables()) {
                 variable.substitute(substitution);
             }

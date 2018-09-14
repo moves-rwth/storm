@@ -43,6 +43,14 @@ namespace storm {
              */
             void setFunctionBody(storm::expressions::Expression const& body);
             
+            /*!
+             * Calls the function with the given arguments
+             */
+            storm::expressions::Expression call(std::vector<std::shared_ptr<storm::expressions::BaseExpression const>> const& arguments ) const;
+
+            void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution);
+
+        
         private:
             // The name of the function.
             std::string name;

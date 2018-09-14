@@ -17,6 +17,7 @@
 #include "storm/storage/jani/Compositions.h"
 #include "storm/storage/jani/JSONExporter.h"
 #include "storm/storage/jani/ArrayEliminator.h"
+#include "storm/storage/jani/FunctionEliminator.h"
 #include "storm/storage/jani/expressions/JaniExpressionSubstitutionVisitor.h"
 
 #include "storm/storage/expressions/LinearityCheckVisitor.h"
@@ -736,7 +737,7 @@ namespace storm {
             return globalFunctions;
         }
         
-        std::unordered_map<std::string, FunctionDefinition> Model::getGlobalFunctionDefinitions() {
+        std::unordered_map<std::string, FunctionDefinition>& Model::getGlobalFunctionDefinitions() {
             return globalFunctions;
         }
         
@@ -927,6 +928,10 @@ namespace storm {
                 }
             }
             
+            for (auto& functionDefinition : result.getGlobalFunctionDefinitions()) {
+                functionDefinition.second.substitute(constantSubstitution);
+            }
+            
             // Substitute constants in all global variables.
             for (auto& variable : result.getGlobalVariables().getBoundedIntegerVariables()) {
                 variable.substitute(constantSubstitution);
@@ -956,6 +961,15 @@ namespace storm {
             }
             
             return result;
+        }
+        
+        void Model::substituteFunctions() {
+            std::vector<Property> emptyPropertyVector;
+            substituteFunctions(emptyPropertyVector);
+        }
+        
+        void Model::substituteFunctions(std::vector<Property>& properties) {
+            eliminateFunctions(*this, properties);
         }
         
         bool Model::containsArrayVariables() const {
