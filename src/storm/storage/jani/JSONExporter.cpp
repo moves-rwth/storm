@@ -1094,6 +1094,10 @@ namespace storm {
             jsonStruct["properties"] = properties;
         }
         
-        
+        modernjson::json JsonExporter::finalize() {
+            jsonStruct["features"] = modernjson::json::parse(modelFeatures.toString());
+            return jsonStruct;
+        }
+
     }
 }

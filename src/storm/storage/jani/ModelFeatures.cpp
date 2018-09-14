@@ -21,15 +21,16 @@ namespace storm {
         }
         
         std::string ModelFeatures::toString() const {
-            std::string res;
+            std::string res = "[";
             bool first = true;
             for (auto const& f : features) {
                 if (!first) {
                     res += ", ";
                 }
-                res += storm::jani::toString(f);
+                res += "\"" + storm::jani::toString(f) + "\"";
                 first = false;
             }
+            res += "]";
             return res;
         }
         

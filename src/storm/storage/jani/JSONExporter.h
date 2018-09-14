@@ -97,10 +97,7 @@ namespace storm {
             void convertProperties(std::vector<storm::jani::Property> const& formulas, storm::jani::Model const& model);
             void appendVariableDeclaration(storm::jani::Variable const& variable);
             
-            modernjson::json finalize() {
-                jsonStruct["features"] = modelFeatures.toString();
-                return jsonStruct;
-            }
+            modernjson::json finalize();
             
             modernjson::json jsonStruct;
             storm::jani::ModelFeatures modelFeatures;
