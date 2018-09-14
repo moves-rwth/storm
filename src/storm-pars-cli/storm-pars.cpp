@@ -549,7 +549,8 @@ namespace storm {
                 auto assumptionChecker = storm::analysis::AssumptionChecker<ValueType>(formulas[0], dtmcModel, 3);
                 auto assumptionMaker = storm::analysis::AssumptionMaker<ValueType>(extender, &assumptionChecker, sparseModel->getNumberOfStates());
 
-                std::map<storm::analysis::Lattice*, std::set<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> result = assumptionMaker.startMakingAssumptions(std::get<0>(criticalPair), std::get<1>(criticalPair), std::get<2>(criticalPair));
+                std::map<storm::analysis::Lattice*, std::set<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> result = assumptionMaker.makeAssumptions(
+                        std::get<0>(criticalPair), std::get<1>(criticalPair), std::get<2>(criticalPair));
 
 
                 latticeWatch.stop();

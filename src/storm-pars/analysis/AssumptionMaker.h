@@ -5,10 +5,10 @@
 #ifndef STORM_ASSUMPTIONMAKER_H
 #define STORM_ASSUMPTIONMAKER_H
 
-#include "Lattice.h"
 #include "AssumptionChecker.h"
-#include "storm/storage/expressions/BinaryRelationExpression.h"
+#include "Lattice.h"
 #include "LatticeExtender.h"
+#include "storm/storage/expressions/BinaryRelationExpression.h"
 #include "storm-pars/utility/ModelInstantiator.h"
 
 
@@ -18,9 +18,25 @@ namespace storm {
         template<typename ValueType>
         class AssumptionMaker {
         public:
+            /*!
+             * Constructs AssumptionMaker based on the lattice extender, the assumption checker and number of states of the model.
+             *
+             * @param latticeExtender The LatticeExtender which needs the assumptions made by the AssumptionMaker.
+             * @param checker The AssumptionChecker which checks the assumptions at sample points.
+             * @param numberOfStates The number of states of the model.
+             */
             AssumptionMaker(storm::analysis::LatticeExtender<ValueType>* latticeExtender, storm::analysis::AssumptionChecker<ValueType>* checker, uint_fast64_t numberOfStates);
 
-            std::map<storm::analysis::Lattice*, std::set<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> startMakingAssumptions(storm::analysis::Lattice* lattice, uint_fast64_t critical1, uint_fast64_t critical2);
+            /*!
+             * Make the assumptions given a lattice and two states which could not be added to the lattice. Returns when no more assumptions can be made.
+             *
+             * @param lattice The lattice on which assumptions are needed to allow further extension.
+             * @param critical1 State number
+             * @param critical2 State number
+             * @return A mapping from pointers to different lattices and assumptions made to create the specific lattice.
+             */
+            std::map<storm::analysis::Lattice*, std::set<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> makeAssumptions(
+                    storm::analysis::Lattice *lattice, uint_fast64_t critical1, uint_fast64_t critical2);
 
         private:
             std::map<storm::analysis::Lattice*, std::set<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> runRecursive(storm::analysis::Lattice* lattice, std::set<std::shared_ptr<storm::expressions::BinaryRelationExpression>> assumptions);

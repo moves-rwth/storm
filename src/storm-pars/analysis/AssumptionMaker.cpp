@@ -19,7 +19,8 @@ namespace storm {
 
         template<typename ValueType>
         std::map<storm::analysis::Lattice*, std::set<std::shared_ptr<storm::expressions::BinaryRelationExpression>>>
-                AssumptionMaker<ValueType>::startMakingAssumptions(storm::analysis::Lattice* lattice, uint_fast64_t critical1, uint_fast64_t critical2) {
+                AssumptionMaker<ValueType>::makeAssumptions(storm::analysis::Lattice *lattice, uint_fast64_t critical1,
+                                                            uint_fast64_t critical2) {
             std::map<storm::analysis::Lattice*, std::set<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> result;
 
             std::set<std::shared_ptr<storm::expressions::BinaryRelationExpression>> emptySet;
