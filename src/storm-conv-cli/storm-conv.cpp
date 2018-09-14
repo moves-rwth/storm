@@ -187,7 +187,9 @@ namespace storm {
                 boost::optional<std::set<std::string>> propertyFilter = storm::api::parsePropertyFilter(input.getPropertyInputFilter());
                 properties = storm::api::parsePropertiesForSymbolicModelDescription(input.getPropertyInput(), janiModel, propertyFilter);
             } else {
-                properties.insert(properties.end(), janiModelProperties.second.begin(), janiModelProperties.second.end());
+                for (auto const& p : janiModelProperties.second) {
+                    properties.push_back(p.second);
+                }
             }
             
             // Substitute constant definitions in program and properties.

@@ -40,7 +40,7 @@ namespace storm {
             }
             
             if (!options.allowFunctions && janiModel.getModelFeatures().hasFunctions()) {
-                janiModel = janiModel.substituteFunctions(properties);
+                janiModel.substituteFunctions(properties);
             }
             
             if (options.modelName) {
