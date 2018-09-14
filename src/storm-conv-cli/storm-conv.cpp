@@ -114,7 +114,7 @@ namespace storm {
             // Substitute constant definitions in program and properties.
             std::string constantDefinitionString = input.getConstantDefinitionString();
             auto constantDefinitions = prismProg.parseConstantDefinitions(constantDefinitionString);
-            prismProg = prismProg.preprocess(constantDefinitions);
+            prismProg = storm::storage::SymbolicModelDescription(prismProg.asPrismProgram().defineUndefinedConstants(constantDefinitions).substituteConstants());
             if (!properties.empty()) {
                 properties = storm::api::substituteConstantsInProperties(properties, constantDefinitions);
             }

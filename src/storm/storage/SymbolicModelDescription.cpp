@@ -152,7 +152,7 @@ namespace storm {
                 storm::jani::Model preparedModel = this->asJaniModel().defineUndefinedConstants(constantDefinitions).substituteConstants();
                 return SymbolicModelDescription(preparedModel);
             } else if (this->isPrismProgram()) {
-                return SymbolicModelDescription(this->asPrismProgram().defineUndefinedConstants(constantDefinitions).substituteConstants());
+                return SymbolicModelDescription(this->asPrismProgram().defineUndefinedConstants(constantDefinitions).substituteConstantsFormulas());
             }
             return *this;
         }

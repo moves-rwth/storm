@@ -316,7 +316,7 @@ TEST(GraphTest, SymbolicProb01StochasticGameDieSmall) {
 
 TEST(GraphTest, SymbolicProb01StochasticGameTwoDice) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/two_dice.nm");
-    program = program.substituteConstants();
+    program = program.substituteConstantsFormulas();
     program = program.flattenModules(std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>());
     
     std::vector<storm::expressions::Expression> initialPredicates;
@@ -420,7 +420,7 @@ TEST(GraphTest, SymbolicProb01StochasticGameTwoDice) {
 
 TEST(GraphTest, SymbolicProb01StochasticGameWlan) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/wlan0-2-4.nm");
-    program = program.substituteConstants();
+    program = program.substituteConstantsFormulas();
     program = program.flattenModules(std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>());
     
     std::vector<storm::expressions::Expression> initialPredicates;
