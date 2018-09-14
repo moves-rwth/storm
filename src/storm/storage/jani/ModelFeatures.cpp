@@ -21,7 +21,7 @@ namespace storm {
         }
         
         std::string ModelFeatures::toString() const {
-            std::string res = "[";
+            std::string res;
             bool first = true;
             for (auto const& f : features) {
                 if (!first) {
@@ -30,7 +30,6 @@ namespace storm {
                 res += storm::jani::toString(f);
                 first = false;
             }
-            res += "]";
             return res;
         }
         
