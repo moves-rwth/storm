@@ -10,29 +10,35 @@
 #include "storm/environment/Environment.h"
 #include "storm/storage/expressions/BinaryRelationExpression.h"
 
-
 namespace storm {
     namespace analysis {
         template<typename ValueType>
         class AssumptionChecker {
         public:
+            /*!
+             * Constructs an AssumptionChecker based on the number of samples, for the given formula and model.
+             *
+             * @param formula The formula to check.
+             * @param model The model to check the formula on.
+             * @param numberOfSamples Number of sample points.
+             */
             AssumptionChecker(std::shared_ptr<storm::logic::Formula const> formula, std::shared_ptr<storm::models::sparse::Dtmc<ValueType>> model, uint_fast64_t numberOfSamples);
 
-            bool checkOnSamples(uint_fast64_t val1, uint_fast64_t val2);
+            /*!
+             * Checks if the assumption holds at the sample points of the AssumptionChecker.
+             *
+             * @param assumption The assumption to check.
+             * @return true if the assumption holds at the sample points
+             */
             bool checkOnSamples(std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption);
+
         private:
             std::shared_ptr<storm::logic::Formula const> formula;
 
-//            std::vector<storm::models::sparse::Dtmc<double>> sampleModels;
-
             std::vector<std::vector<double>> results;
 
-//            uint_fast64_t numberOfStates;
-//
-//            storm::storage::BitVector initialStates;
         };
     }
 }
-
 
 #endif //STORM_ASSUMPTIONCHECKER_H

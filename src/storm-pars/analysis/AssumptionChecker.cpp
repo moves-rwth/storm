@@ -1,19 +1,18 @@
 //
 // Created by Jip Spel on 12.09.18.
 //
+#include "AssumptionChecker.h"
 
 #include "storm-pars/utility/ModelInstantiator.h"
-#include "storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
-#include "storm/exceptions/NotSupportedException.h"
-#include "AssumptionChecker.h"
-#include "storm/modelchecker/CheckTask.h"
+
 #include "storm/environment/Environment.h"
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/modelchecker/CheckTask.h"
+#include "storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "storm/modelchecker/results/CheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/storage/expressions/SimpleValuation.h"
 #include "storm/storage/expressions/ExpressionManager.h"
-
-
 
 namespace storm {
     namespace analysis {
@@ -21,6 +20,7 @@ namespace storm {
         AssumptionChecker<ValueType>::AssumptionChecker(std::shared_ptr<storm::logic::Formula const> formula, std::shared_ptr<storm::models::sparse::Dtmc<ValueType>> model, uint_fast64_t numberOfSamples) {
             this->formula = formula;
 
+            // Create sample points
             auto instantiator = storm::utility::ModelInstantiator<storm::models::sparse::Dtmc<ValueType>, storm::models::sparse::Dtmc<double>>(*model.get());
             auto matrix = model->getTransitionMatrix();
             std::set<storm::RationalFunctionVariable> variables =  storm::models::sparse::getProbabilityParameters(*model);
@@ -51,19 +51,6 @@ namespace storm {
                 std::vector<double> values = quantitativeResult.getValueVector();
                 results.push_back(values);
             }
-//            this->numberOfStates = model->getNumberOfStates();
-//            this->initialStates = model->getInitialStates();
-        }
-
-        template <typename ValueType>
-        bool AssumptionChecker<ValueType>::checkOnSamples(uint_fast64_t val1, uint_fast64_t val2) {
-            bool result = true;
-            for (auto itr = results.begin(); result && itr != results.end(); ++itr) {
-                // TODO: als expressie
-                auto values = (*itr);
-                result &= (values[val1] >= values[val2]);
-            }
-            return result;
         }
 
         template <typename ValueType>
@@ -80,6 +67,7 @@ namespace storm {
                     auto index = std::stoi(par.getName());
                     valuation.setRationalValue(par, values[index]);
                 }
+                assert(assumption->hasBooleanType());
                 result &= assumption->evaluateAsBool(&valuation);
             }
             return result;
