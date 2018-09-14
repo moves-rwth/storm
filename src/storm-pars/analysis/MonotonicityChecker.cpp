@@ -93,7 +93,6 @@ namespace storm {
 
                         for (auto itr2 = transitions.begin(); itr2 != transitions.end(); ++itr2) {
                             for (auto itr3 = transitions.begin(); itr3 != transitions.end(); ++itr3) {
-                                // TODO improve
                                 auto derivative2 = (*itr2).second.derivative(*itr);
                                 auto derivative3 = (*itr3).second.derivative(*itr);
                                 STORM_LOG_THROW(derivative2.isConstant() && derivative3.isConstant(), storm::exceptions::NotSupportedException, "Expecting derivative to be constant");
@@ -101,14 +100,17 @@ namespace storm {
                                 auto compare = lattice->compare((*itr2).first, (*itr3).first);
 
                                 if (compare == storm::analysis::Lattice::ABOVE) {
+                                    // As the first state (itr2) is above the second state (itr3) it is sufficient to look at the derivative of itr2.
                                     value->first &=derivative2.constantPart() >= 0;
                                     value->second &=derivative2.constantPart() <= 0;
                                 } else if (compare == storm::analysis::Lattice::BELOW) {
+                                    // As the second state (itr3) is above the first state (itr2) it is sufficient to look at the derivative of itr3.
                                     value->first &=derivative3.constantPart() >= 0;
                                     value->second &=derivative3.constantPart() <= 0;
                                 } else if (compare == storm::analysis::Lattice::SAME) {
-                                    // Behaviour doesn't matter, as they are at the same level
+                                    // Behaviour doesn't matter, as the states are at the same level.
                                 } else {
+                                    // As the relation between the states is unknown, we can't claim anything about the monotonicity.
                                     value->first = false;
                                     value->second = false;
                                 }
