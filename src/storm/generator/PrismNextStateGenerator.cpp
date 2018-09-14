@@ -150,7 +150,7 @@ namespace storm {
             std::vector<StateType> initialStateIndices;
             while (solver->check() == storm::solver::SmtSolver::CheckResult::Sat) {
                 // Create fresh state.
-                CompressedState initialState(this->variableInformation.getTotalBitOffset());
+                CompressedState initialState(this->variableInformation.getTotalBitOffset(true));
                 
                 // Read variable assignment from the solution of the solver. Also, create an expression we can use to
                 // prevent the variable assignment from being enumerated again.
