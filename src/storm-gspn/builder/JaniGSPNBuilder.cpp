@@ -25,6 +25,8 @@ namespace storm {
             if (buildStandardProperties) {
                 buildProperties(model);
             }
+            model->getModelFeatures().add(storm::jani::ModelFeature::DerivedOperators);
+            model->finalize();
             return model;
         }
         
