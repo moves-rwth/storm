@@ -3,14 +3,13 @@
 //
 
 #include "MonotonicityChecker.h"
-#include "storm/exceptions/UnexpectedException.h"
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/UnexpectedException.h"   
 
 namespace storm {
     namespace analysis {
         template <typename ValueType>
         void MonotonicityChecker<ValueType>::checkMonotonicity(std::map<storm::analysis::Lattice*, std::set<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> map, storm::storage::SparseMatrix<ValueType> matrix) {
-
             auto i = 0;
             for (auto itr = map.begin(); itr != map.end(); ++itr) {
                 auto lattice = itr->first;
@@ -52,7 +51,6 @@ namespace storm {
                         STORM_PRINT("  - Do not know if monotone decreasing in: " << itr2->first << std::endl);
                     }
                 }
-
                 ++i;
             }
         }
@@ -65,11 +63,11 @@ namespace storm {
             myfile.open (filename);
             myfile << "digraph \"MC\" {" << std::endl;
             myfile << "\t" << "node [shape=ellipse]" << std::endl;
+
             // print all nodes
             for (uint_fast64_t i = 0; i < matrix.getColumnCount(); ++i) {
                 myfile << "\t\"" << i << "\" [label = \"" << i << "\"]" << std::endl;
             }
-
 
             for (uint_fast64_t i = 0; i < matrix.getColumnCount(); ++i) {
                 // go over all rows
@@ -134,7 +132,6 @@ namespace storm {
                                << std::endl;
                     }
 
-
                     myfile << "\t edge[style=\"\"];" << std::endl;
                 } else {
                     myfile << "\t" << i << " -> " << first.getColumn() << "[label=\"" << first.getValue() << "\"];"
@@ -153,7 +150,8 @@ namespace storm {
             myfile << "}" << std::endl;
             myfile.close();
             return varsMonotone;
-        };
+        }
+
         template class MonotonicityChecker<storm::RationalFunction>;
     }
 }

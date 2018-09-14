@@ -18,6 +18,12 @@ namespace storm {
         class MonotonicityChecker {
 
         public:
+            /*!
+             * Checks for all lattices in the map if they are monotone increasing or monotone decreasing.
+             *
+             * @param map The map with lattices and the assumptions made to create the lattices.
+             * @param matrix The transition matrix.
+             */
             void checkMonotonicity(std::map<storm::analysis::Lattice*, std::set<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> map, storm::storage::SparseMatrix<ValueType> matrix);
 
         private:
