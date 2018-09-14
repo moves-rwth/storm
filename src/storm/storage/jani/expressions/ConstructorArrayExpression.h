@@ -41,7 +41,7 @@ namespace storm {
         private:
             std::shared_ptr<BaseExpression const> sizeExpression;
             storm::expressions::Variable indexVar;
-            std::shared_ptr<BaseExpression const> const& elementExpression;
+            std::shared_ptr<BaseExpression const> elementExpression;
         };
     }
 }

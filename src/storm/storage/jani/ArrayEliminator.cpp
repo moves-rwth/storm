@@ -23,7 +23,7 @@ namespace storm {
                 MaxArraySizeExpressionVisitor() = default;
                 virtual ~MaxArraySizeExpressionVisitor() = default;
     
-                std::size_t getMaxSize(storm::expressions::Expression const& expression, std::unordered_map<storm::expressions::Variable, std::size_t> arrayVariableSizeMap) {
+                std::size_t getMaxSize(storm::expressions::Expression const& expression, std::unordered_map<storm::expressions::Variable, std::size_t> const& arrayVariableSizeMap) {
                     return boost::any_cast<std::size_t>(expression.accept(*this, &arrayVariableSizeMap));
                 }
      
@@ -51,7 +51,7 @@ namespace storm {
                 }
                 
                 virtual boost::any visit(storm::expressions::VariableExpression const& expression, boost::any const& data) override {
-                    std::unordered_map<storm::expressions::Variable, std::size_t>* arrayVariableSizeMap = boost::any_cast<std::unordered_map<storm::expressions::Variable, std::size_t>*>(data);
+                    std::unordered_map<storm::expressions::Variable, std::size_t> const* arrayVariableSizeMap = boost::any_cast<std::unordered_map<storm::expressions::Variable, std::size_t> const*>(data);
                     if (expression.getType().isArrayType()) {
                         auto varIt = arrayVariableSizeMap->find(expression.getVariable());
                         if (varIt != arrayVariableSizeMap->end()) {
@@ -90,7 +90,7 @@ namespace storm {
                     if (!expression.size()->containsVariables()) {
                         return static_cast<std::size_t>(expression.size()->evaluateAsInt());
                     } else {
-                        auto vars = expression.toExpression().getVariables();
+                        auto vars = expression.size()->toExpression().getVariables();
                         std::string variables = "";
                         for (auto const& v : vars) {
                             if (variables != "") {
@@ -99,11 +99,11 @@ namespace storm {
                             variables += v.getName();
                         }
                         if (vars.size() == 1) {
-                            variables = "variable ";
+                            variables = "variable " + variables;
                         } else {
-                            variables = "variables ";
+                            variables = "variables " + variables;
                         }
-                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Unable to get determine array size: Size of ConstructorArrayExpression still contains the " << variables << ".");
+                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Unable to  determine array size: Size of ConstructorArrayExpression '" << expression << "' still contains the " << variables << ".");
                     }
                 }
                 
@@ -111,6 +111,12 @@ namespace storm {
                     STORM_LOG_WARN("Found Array access expression within an array expression. This is not expected since nested arrays are currently not supported.");
                     return 0;
                 }
+                
+                virtual boost::any visit(storm::expressions::FunctionCallExpression const& expression, boost::any const& data) override {
+                    STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Found Function call expression within an array expression. This is not expected since functions are expected to be eliminated at this point.");
+                    return 0;
+                }
+                
             };
             
             class ArrayExpressionEliminationVisitor : public storm::expressions::ExpressionVisitor, public storm::expressions::JaniExpressionVisitor {
@@ -122,6 +128,7 @@ namespace storm {
     
                 storm::expressions::Expression eliminate(storm::expressions::Expression const& expression) {
                     // here, data is the accessed index of the most recent array access expression. Initially, there is none.
+                    std::cout << "Eliminating arrays in expression " << expression << std::endl;
                     auto res = storm::expressions::Expression(boost::any_cast<BaseExprPtr>(expression.accept(*this, boost::any())));
                     STORM_LOG_ASSERT(!containsArrayExpression(res), "Expression still contains array expressions. Before: " << std::endl << expression << std::endl << "After:" << std::endl << res);
                     return res.simplify();
@@ -189,6 +196,7 @@ namespace storm {
                         STORM_LOG_ASSERT(index < arrayVarReplacements.size(), "No replacement for array variable, since index " << index << " is out of bounds.");
                         return arrayVarReplacements[index]->getExpressionVariable().getExpression().getBaseExpressionPointer();
                     } else {
+                        STORM_LOG_ASSERT(data.empty(), "VariableExpression of non-array variable should not be a subexpressions of array access expressions. However, the expression " << expression << " is.");
                         return expression.getSharedPointer();
                     }
                 }
@@ -235,7 +243,7 @@ namespace storm {
                     uint64_t index = boost::any_cast<uint64_t>(data);
                     STORM_LOG_ASSERT(expression.size()->isIntegerLiteralExpression(), "unexpected kind of size expression of ValueArrayExpression (" << expression.size()->toExpression() << ").");
                     STORM_LOG_THROW(index < static_cast<uint64_t>(expression.size()->evaluateAsInt()), storm::exceptions::UnexpectedException, "Out of bounds array access occured while accessing index " << index << " of expression " << expression);
-                    return expression.at(index);
+                    return boost::any_cast<BaseExprPtr>(expression.at(index)->accept(*this, boost::any()));
                 }
                 
                 virtual boost::any visit(storm::expressions::ConstructorArrayExpression const& expression, boost::any const& data) override {
@@ -246,7 +254,7 @@ namespace storm {
                     } else {
                         STORM_LOG_THROW(index < static_cast<uint64_t>(expression.size()->evaluateAsInt()), storm::exceptions::UnexpectedException, "Out of bounds array access occured while accessing index " << index << " of expression " << expression);
                     }
-                    return expression.at(index);
+                    return boost::any_cast<BaseExprPtr>(expression.at(index)->accept(*this, boost::any()));
                 }
                 
                 virtual boost::any visit(storm::expressions::ArrayAccessExpression const& expression, boost::any const& data) override {
@@ -269,6 +277,11 @@ namespace storm {
                         auto result = boost::any_cast<BaseExprPtr>(expression.getFirstOperand()->accept(*this, index));
                         return result;
                     }
+                }
+                
+                virtual boost::any visit(storm::expressions::FunctionCallExpression const& expression, boost::any const& data) override {
+                    STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Found Function call expression while eliminating array expressions. This is not expected since functions are expected to be eliminated at this point.");
+                    return false;
                 }
                 
             private:
