@@ -963,6 +963,35 @@ namespace storm {
             return result;
         }
         
+        void Model::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {
+            // substitute in all defining expressions of constants
+            for (auto& constant : this->getConstants()) {
+                if (constant.isDefined()) {
+                    constant.define(substituteJaniExpression(constant.getExpression(), substitution));
+                }
+            }
+            
+            for (auto& functionDefinition : this->getGlobalFunctionDefinitions()) {
+                functionDefinition.second.substitute(substitution);
+            }
+            
+            // Substitute in all global variables.
+            for (auto& variable : this->getGlobalVariables().getBoundedIntegerVariables()) {
+                variable.substitute(substitution);
+            }
+            for (auto& variable : this->getGlobalVariables().getArrayVariables()) {
+                variable.substitute(substitution);
+            }
+            
+            // Substitute in initial states expression.
+            this->setInitialStatesRestriction(substituteJaniExpression(this->getInitialStatesRestriction(), substitution));
+            
+            // Substitute in variables of automata and their edges.
+            for (auto& automaton : this->getAutomata()) {
+                automaton.substitute(substitution);
+            }
+        }
+        
         void Model::substituteFunctions() {
             std::vector<Property> emptyPropertyVector;
             substituteFunctions(emptyPropertyVector);

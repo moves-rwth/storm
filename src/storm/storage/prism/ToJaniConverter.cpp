@@ -6,6 +6,7 @@
 #include "storm/storage/prism/CompositionToJaniVisitor.h"
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/TemplateEdge.h"
+#include "storm/storage/jani/expressions/FunctionCallExpression.h"
 
 #include "storm/settings/SettingsManager.h"
 
@@ -37,9 +38,20 @@ namespace storm {
             }
             storm::jani::Model janiModel("jani_from_prism", modelType, 1, manager);
             
+            janiModel.getModelFeatures().add(storm::jani::ModelFeature::DerivedOperators);
+            
             // Add all constants of the PRISM program to the JANI model.
             for (auto const& constant : program.getConstants()) {
                 janiModel.addConstant(storm::jani::Constant(constant.getName(), constant.getExpressionVariable(), constant.isDefined() ? boost::optional<storm::expressions::Expression>(constant.getExpression()) : boost::none));
+            }
+            
+            // Add all formulas of the PRISM program to the JANI model.
+            // Also collect a set of variables that occurr in a formula expressions as these need to be made global.
+            std::set<storm::expressions::Variable> formulaExpressionVariables;
+            for (auto const& formula : program.getFormulas()) {
+                storm::jani::FunctionDefinition funDef(formula.getName(), formula.getType(), {}, formula.getExpression());
+                janiModel.addFunctionDefinition(funDef);
+                formula.getExpression().getBaseExpression().gatherVariables(formulaExpressionVariables);
             }
             
             // Maintain a mapping from expression variables to JANI variables so we can fill in the correct objects when
@@ -104,7 +116,7 @@ namespace storm {
             for (auto const& varMods : variablesToAccessingModuleIndices) {
                 assert(!varMods.second.empty());
                 // If there is exactly one module reading and writing the variable, we can make the variable local to this module.
-                variablesToMakeGlobal[varMods.first] = allVariablesGlobal || (varMods.second.size() > 1);
+                variablesToMakeGlobal[varMods.first] = allVariablesGlobal || (varMods.second.size() > 1) || formulaExpressionVariables.count(varMods.first) > 0;
             }
             
             // Go through the labels and construct assignments to transient variables that are added to the locations.
@@ -341,6 +353,17 @@ namespace storm {
                 janiModel.setSystemComposition(visitor.toJani(program.getSystemCompositionConstruct().getSystemComposition(), janiModel));
             } else {
                 janiModel.setSystemComposition(janiModel.getStandardSystemComposition());
+            }
+            
+            // if there are formulas, replace the placeholder variables by actual function calls in all expressions
+            if (program.getNumberOfFormulas() > 0) {
+                janiModel.getModelFeatures().add(storm::jani::ModelFeature::Functions);
+                std::map<storm::expressions::Variable, storm::expressions::Expression> substitution;
+                for (auto const& formula : program.getFormulas()) {
+                    storm::expressions::Expression functionCallExpr = std::make_shared<storm::expressions::FunctionCallExpression>(*manager, formula.getType(), formula.getName(), std::vector<std::shared_ptr<storm::expressions::BaseExpression const>>())->toExpression();
+                    substitution.emplace(formula.getExpressionVariable(), functionCallExpr);
+                }
+                janiModel.substitute(substitution);
             }
             
             janiModel.finalize();

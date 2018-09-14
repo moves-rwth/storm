@@ -387,6 +387,12 @@ namespace storm {
             std::map<storm::expressions::Variable, storm::expressions::Expression> getConstantsSubstitution() const;
             
             /*!
+             * Substitutes all expression variables in all expressions of the model. The original model is not modified, but
+             * instead a new model is created.
+             */
+            void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution);
+            
+            /*!
              * Substitutes all function calls with the corresponding function definition
              * @param properties also eliminates function call expressions in the given properties
              */
