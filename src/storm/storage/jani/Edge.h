@@ -4,6 +4,7 @@
 
 #include <boost/optional.hpp>
 #include <boost/container/flat_set.hpp>
+#include <iostream>
 
 #include "storm/storage/jani/EdgeDestination.h"
 #include "storm/storage/jani/OrderedAssignments.h"
@@ -151,6 +152,9 @@ namespace storm {
             /// The concrete destination objects.
             std::vector<EdgeDestination> destinations;
         };
+        
+        std::ostream& operator<<(std::ostream& stream, Edge const& edge);
+
         
     }
 }

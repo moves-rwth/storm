@@ -301,8 +301,8 @@ namespace storm {
                             return this->outOfBoundsState;
                         }
                     } else if (this->options.isExplorationChecksSet()) {
-                        STORM_LOG_THROW(assignedValue >= intInfo.lowerBound, storm::exceptions::WrongFormatException, "The update " << assignmentIt->getExpressionVariable().getName() << " := " << assignmentIt->getAssignedExpression() << " leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << assignmentIt->getExpressionVariable().getName() << "'.");
-                        STORM_LOG_THROW(assignedValue <= intInfo.upperBound, storm::exceptions::WrongFormatException, "The update " << assignmentIt->getExpressionVariable().getName() << " := " << assignmentIt->getAssignedExpression() << " leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << assignmentIt->getExpressionVariable().getName() << "'.");
+                        STORM_LOG_THROW(assignedValue >= intInfo.lowerBound, storm::exceptions::WrongFormatException, "The update " << assignmentIt->getLValue() << " := " << assignmentIt->getAssignedExpression() << " leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << assignmentIt->getExpressionVariable().getName() << "'.");
+                        STORM_LOG_THROW(assignedValue <= intInfo.upperBound, storm::exceptions::WrongFormatException, "The update " << assignmentIt->getLValue() << " := " << assignmentIt->getAssignedExpression() << " leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << assignmentIt->getExpressionVariable().getName() << "'.");
                     }
                     newState.setFromInt(intInfo.bitOffset, intInfo.bitWidth, assignedValue - intInfo.lowerBound);
                     STORM_LOG_ASSERT(static_cast<int_fast64_t>(newState.getAsInt(intInfo.bitOffset, intInfo.bitWidth)) + intInfo.lowerBound == assignedValue, "Writing to the bit vector bucket failed (read " << newState.getAsInt(intInfo.bitOffset, intInfo.bitWidth) << " but wrote " << assignedValue << ").");
@@ -444,16 +444,19 @@ namespace storm {
                         auto valueIt = stateActionRewards.begin();
                         performTransientAssignments(destination.getOrderedAssignments().getTransientAssignments(assignmentLevel), *this->evaluator, [&] (ValueType const& value) { *valueIt += (value * probability); ++valueIt; } );
                     }
-                    while (assignmentLevel < highestLevel) {
-                        ++assignmentLevel;
-                        auto currentLevelEvaluator = storm::expressions::ExpressionEvaluator<ValueType>(model.getManager());
-                        unpackStateIntoEvaluator(newState, this->variableInformation, currentLevelEvaluator);
-                        newState = applyUpdate(newState, destination, this->variableInformation.locationVariables[automatonIndex], assignmentLevel, currentLevelEvaluator);
-                        if (hasTransientRewardAssignments) {
-                            // update the rewards for this destination
-                            auto valueIt = stateActionRewards.begin();
-                            performTransientAssignments(destination.getOrderedAssignments().getTransientAssignments(assignmentLevel), currentLevelEvaluator, [&] (ValueType const& value) { *valueIt += (value * probability); ++valueIt; } );
+                    if (assignmentLevel < highestLevel) {
+                        while (assignmentLevel < highestLevel) {
+                            ++assignmentLevel;
+                            unpackStateIntoEvaluator(newState, this->variableInformation, *this->evaluator);
+                            newState = applyUpdate(newState, destination, this->variableInformation.locationVariables[automatonIndex], assignmentLevel, *this->evaluator);
+                            if (hasTransientRewardAssignments) {
+                                // update the rewards for this destination
+                                auto valueIt = stateActionRewards.begin();
+                                performTransientAssignments(destination.getOrderedAssignments().getTransientAssignments(assignmentLevel), *this->evaluator, [&] (ValueType const& value) { *valueIt += (value * probability); ++valueIt; } );
+                            }
                         }
+                        // Restore the old state information
+                        unpackStateIntoEvaluator(state, this->variableInformation, *this->evaluator);
                     }
                     
                     StateType stateIndex = stateToIdCallback(newState);
@@ -509,17 +512,17 @@ namespace storm {
                 nextDistribution.clear();
                 
                 EdgeIndexSet edgeIndices;
-                int64_t assignmentLevel = std::numeric_limits<uint64_t>::max();
-                int64_t highestLevel = std::numeric_limits<uint64_t>::min();
+                int64_t lowestLevel = std::numeric_limits<int64_t>::max();
+                int64_t highestLevel = std::numeric_limits<int64_t>::min();
                 for (uint_fast64_t i = 0; i < iteratorList.size(); ++i) {
                     if (this->getOptions().isBuildChoiceOriginsSet()) {
                         edgeIndices.insert(model.encodeAutomatonAndEdgeIndices(edgeCombination[i].first, iteratorList[i]->first));
                     }
-                    assignmentLevel = std::min(assignmentLevel, iteratorList[i]->second->getLowestAssignmentLevel());
+                    lowestLevel = std::min(lowestLevel, iteratorList[i]->second->getLowestAssignmentLevel());
                     highestLevel = std::max(highestLevel, iteratorList[i]->second->getHighestAssignmentLevel());
                 }
                 
-                if (assignmentLevel >= highestLevel) {
+                if (lowestLevel >= highestLevel) {
                     // When all assignments have the same level, we can perform the assignments of the different automata sequentially
                     for (uint_fast64_t i = 0; i < iteratorList.size(); ++i) {
                         auto const& indexAndEdge = *iteratorList[i];
@@ -536,7 +539,7 @@ namespace storm {
                                 }
                                 for (auto const& stateProbability : currentDistribution) {
                                     // Compute the new state under the current update and add it to the set of new target states.
-                                    CompressedState newTargetState = applyUpdate(stateProbability.getState(), destination, this->variableInformation.locationVariables[edgeCombination[i].first], assignmentLevel, *this->evaluator);
+                                    CompressedState newTargetState = applyUpdate(stateProbability.getState(), destination, this->variableInformation.locationVariables[edgeCombination[i].first], lowestLevel, *this->evaluator);
                                     
                                     // If the new state was already found as a successor state, update the probability
                                     // and insert it.
@@ -597,30 +600,32 @@ namespace storm {
                                 break;
                             }
                             
-                            successorState = applyUpdate(successorState, *destinations.back(), *locationVars.back(), assignmentLevel, *this->evaluator);
+                            successorState = applyUpdate(successorState, *destinations.back(), *locationVars.back(), lowestLevel, *this->evaluator);
                             
                             // add the reward for this destination to the destination rewards
                             auto valueIt = destinationRewards.begin();
-                            performTransientAssignments(destinations.back()->getOrderedAssignments().getTransientAssignments(assignmentLevel), *this->evaluator, [&valueIt] (ValueType const& value) { *valueIt += value; ++valueIt; } );
+                            performTransientAssignments(destinations.back()->getOrderedAssignments().getTransientAssignments(lowestLevel), *this->evaluator, [&valueIt] (ValueType const& value) { *valueIt += value; ++valueIt; } );
                         }
                         
                         if (!storm::utility::isZero(successorProbability)) {
+                            int64_t assignmentLevel = lowestLevel;
                             // remaining assignment levels
                             while (assignmentLevel < highestLevel) {
                                 ++assignmentLevel;
-                                auto currentLevelEvaluator = storm::expressions::ExpressionEvaluator<ValueType>(model.getManager());
-                                unpackStateIntoEvaluator(successorState, this->variableInformation, currentLevelEvaluator);
+                                unpackStateIntoEvaluator(successorState, this->variableInformation, *this->evaluator);
                                 auto locationVarIt = locationVars.begin();
                                 for (auto const& destPtr : destinations) {
-                                    successorState = applyUpdate(successorState, *destPtr, **locationVarIt, assignmentLevel, currentLevelEvaluator);
+                                    successorState = applyUpdate(successorState, *destPtr, **locationVarIt, assignmentLevel, *this->evaluator);
                                     // add the reward for this destination to the destination rewards
                                     auto valueIt = destinationRewards.begin();
-                                    performTransientAssignments(destinations.back()->getOrderedAssignments().getTransientAssignments(assignmentLevel), currentLevelEvaluator, [&valueIt] (ValueType const& value) { *valueIt += value; ++valueIt; } );
+                                    performTransientAssignments(destinations.back()->getOrderedAssignments().getTransientAssignments(assignmentLevel), *this->evaluator, [&valueIt] (ValueType const& value) { *valueIt += value; ++valueIt; } );
                                     ++locationVarIt;
                                 }
                             }
                             nextDistribution.add(successorState, successorProbability);
                             storm::utility::vector::addScaledVector(stateActionRewards, destinationRewards, successorProbability);
+                            // Restore the old state information
+                            unpackStateIntoEvaluator(state, this->variableInformation, *this->evaluator);
                         }
                         ++destinationId;
                     } while (!lastDestinationId);

@@ -1,13 +1,17 @@
 #pragma once
 
 
-#include <boost/any.hpp>
-
-#include "storm/storage/jani/traverser/JaniTraverser.h"
-#include "storm/storage/jani/Property.h"
+#include "storm/storage/jani/Variable.h"
+#include "storm/storage/expressions/Variable.h"
 
 namespace storm {
+    namespace expressions {
+        class Expression;
+    }
+    
     namespace jani {
+        class Model;
+        class Property;
         
         struct ArrayEliminatorData {
             std::vector<std::shared_ptr<ArrayVariable>> eliminatedArrayVariables;
@@ -29,9 +33,6 @@ namespace storm {
             
             ArrayEliminatorData eliminate(Model& model, bool keepNonTrivialArrayAccess = false);
 
-        private:
-        
-        
         };
     }
 }

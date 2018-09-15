@@ -5,6 +5,9 @@
 #include "storm/storage/expressions/ExpressionVisitor.h"
 #include "storm/storage/jani/expressions/JaniExpressionVisitor.h"
 #include "storm/storage/jani/Variable.h"
+#include "storm/storage/jani/Model.h"
+#include "storm/storage/jani/Property.h"
+#include "storm/storage/jani/traverser/JaniTraverser.h"
 #include "storm/storage/jani/traverser/ArrayExpressionFinder.h"
 
 #include "storm/storage/expressions/Expressions.h"
@@ -13,8 +16,12 @@
 
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/UnexpectedException.h"
+#include "storm/exceptions/OutOfRangeException.h"
 
 namespace storm {
+    
+    
+    
     namespace jani {
         namespace detail {
             
@@ -128,17 +135,42 @@ namespace storm {
     
                 storm::expressions::Expression eliminate(storm::expressions::Expression const& expression) {
                     // here, data is the accessed index of the most recent array access expression. Initially, there is none.
-                    std::cout << "Eliminating arrays in expression " << expression << std::endl;
                     auto res = storm::expressions::Expression(boost::any_cast<BaseExprPtr>(expression.accept(*this, boost::any())));
                     STORM_LOG_ASSERT(!containsArrayExpression(res), "Expression still contains array expressions. Before: " << std::endl << expression << std::endl << "After:" << std::endl << res);
                     return res.simplify();
                 }
                 
                 virtual boost::any visit(storm::expressions::IfThenElseExpression const& expression, boost::any const& data) override {
+                    BaseExprPtr thenExpression, elseExpression;
+                    
+                    // We need to handle expressions of the kind '42<size : A[42] : 0', where size is a variable.
+                    // If an out of range exception occurrs in the 'then' or the 'else' branch, we assume that the this expression represents the other branch.
+                    // TODO: Make this more reliable
+                    bool thenOutOfRange(false), elseOutOfRange(false);
+                    try {
+                        thenExpression = boost::any_cast<BaseExprPtr>(expression.getThenExpression()->accept(*this, data));
+                    } catch (storm::exceptions::OutOfRangeException const&) {
+                        thenOutOfRange = true;
+                    }
+                    try {
+                        elseExpression = boost::any_cast<BaseExprPtr>(expression.getElseExpression()->accept(*this, data));
+                    } catch (storm::exceptions::OutOfRangeException const& e) {
+                        if (thenOutOfRange) {
+                            throw e;
+                        } else {
+                            elseOutOfRange = true;
+                        }
+                    }
+                    
+                    if (thenOutOfRange) {
+                        assert(!elseOutOfRange);
+                        return elseExpression;
+                    } else if (elseOutOfRange) {
+                        return thenExpression;
+                    }
+        
                     // for the condition expression, outer array accesses should not matter.
                     BaseExprPtr conditionExpression = boost::any_cast<BaseExprPtr>(expression.getCondition()->accept(*this, boost::any()));
-                    BaseExprPtr thenExpression = boost::any_cast<BaseExprPtr>(expression.getThenExpression()->accept(*this, data));
-                    BaseExprPtr elseExpression = boost::any_cast<BaseExprPtr>(expression.getElseExpression()->accept(*this, data));
         
                     // If the arguments did not change, we simply push the expression itself.
                     if (conditionExpression.get() == expression.getCondition().get() && thenExpression.get() == expression.getThenExpression().get() && elseExpression.get() == expression.getElseExpression().get()) {
@@ -193,7 +225,8 @@ namespace storm {
                         uint64_t index = boost::any_cast<uint64_t>(data);
                         STORM_LOG_ASSERT(replacements.find(expression.getVariable()) != replacements.end(), "Unable to find array variable " << expression << " in array replacements.");
                         auto const& arrayVarReplacements = replacements.at(expression.getVariable());
-                        STORM_LOG_ASSERT(index < arrayVarReplacements.size(), "No replacement for array variable, since index " << index << " is out of bounds.");
+                        if (index >= arrayVarReplacements.size()) throw storm::exceptions::OutOfRangeException();
+                        //STORM_LOG_THROW(index < arrayVarReplacements.size(), storm::exceptions::OutOfRangeException, "Array index " << index << " for variable " << expression << " is out of bounds.");
                         return arrayVarReplacements[index]->getExpressionVariable().getExpression().getBaseExpressionPointer();
                     } else {
                         STORM_LOG_ASSERT(data.empty(), "VariableExpression of non-array variable should not be a subexpressions of array access expressions. However, the expression " << expression << " is.");
@@ -242,7 +275,8 @@ namespace storm {
                     STORM_LOG_THROW(!data.empty(), storm::exceptions::NotSupportedException, "Unable to translate ValueArrayExpression to element expression since it does not seem to be within an array access expression.");
                     uint64_t index = boost::any_cast<uint64_t>(data);
                     STORM_LOG_ASSERT(expression.size()->isIntegerLiteralExpression(), "unexpected kind of size expression of ValueArrayExpression (" << expression.size()->toExpression() << ").");
-                    STORM_LOG_THROW(index < static_cast<uint64_t>(expression.size()->evaluateAsInt()), storm::exceptions::UnexpectedException, "Out of bounds array access occured while accessing index " << index << " of expression " << expression);
+                    if (index >= static_cast<uint64_t>(expression.size()->evaluateAsInt())) throw storm::exceptions::OutOfRangeException();
+                    // STORM_LOG_THROW(index < static_cast<uint64_t>(expression.size()->evaluateAsInt()), storm::exceptions::OutOfRangeException, "Out of bounds array access occured while accessing index " << index << " of expression " << expression);
                     return boost::any_cast<BaseExprPtr>(expression.at(index)->accept(*this, boost::any()));
                 }
                 
@@ -252,7 +286,8 @@ namespace storm {
                     if (expression.size()->containsVariables()) {
                         STORM_LOG_WARN("Ignoring length of constructorArrayExpression " << expression << " as it still contains variables.");
                     } else {
-                        STORM_LOG_THROW(index < static_cast<uint64_t>(expression.size()->evaluateAsInt()), storm::exceptions::UnexpectedException, "Out of bounds array access occured while accessing index " << index << " of expression " << expression);
+                        if (index >= static_cast<uint64_t>(expression.size()->evaluateAsInt())) throw storm::exceptions::OutOfRangeException();
+                        // STORM_LOG_THROW(index < static_cast<uint64_t>(expression.size()->evaluateAsInt()), storm::exceptions::OutOfRangeException, "Out of bounds array access occured while accessing index " << index << " of expression " << expression);
                     }
                     return boost::any_cast<BaseExprPtr>(expression.at(index)->accept(*this, boost::any()));
                 }
@@ -450,7 +485,6 @@ namespace storm {
                                 if (!insertionRes.second) {
                                     insertionRes.first->second.push_back(&assignment);
                                 }
-                                continue;
                             } else {
                                 // Keeping array access LValue
                                 LValue newLValue(LValue(assignment.getLValue().getArray()), arrayExprEliminator->eliminate(assignment.getLValue().getArrayIndex()));

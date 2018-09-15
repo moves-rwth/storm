@@ -147,6 +147,33 @@ namespace storm {
             return templateEdge;
         }
 
-
+        std::ostream& operator<<(std::ostream& stream, Edge const& edge) {
+            stream << "[" << (edge.hasSilentAction() ? "" : ("action_id: " + std::to_string(edge.getActionIndex()))) << "]";
+            stream << "guard: '" << edge.getGuard() << "'\t from_location_id: " << edge.getSourceLocationIndex();
+            if (edge.hasRate()) {
+                stream << " with rate '" << edge.getRate() << "'";
+            }
+            if (edge.getDestinations().empty()) {
+                stream << "without any destination";
+            } else {
+                stream << " to ... [" << std::endl;
+                for (auto const& dest : edge.getDestinations()) {
+                    stream << "\tlocation_id: " << dest.getLocationIndex() << " with probability '" << dest.getProbability() << "' and updates: ";
+                    if (dest.getOrderedAssignments().empty()) {
+                        stream << "none" << std::endl;
+                    }
+                    bool first = true;
+                    for (auto const& a : dest.getOrderedAssignments()) {
+                        if (first) {
+                            first = false;
+                            stream << a;
+                        }
+                        stream << ",  " << a;
+                    }
+                }
+                stream << "]";
+            }
+            return stream;
+        }
     }
 }

@@ -104,7 +104,7 @@ namespace storm {
         
         bool containsArrayExpression(storm::expressions::Expression const& expression) {
             detail::ArrayExpressionFinderExpressionVisitor v;
-            return boost::any_cast<bool>(expression.accept(v, boost::none));
+            return boost::any_cast<bool>(expression.accept(v, boost::any()));
         }
     }
 }
