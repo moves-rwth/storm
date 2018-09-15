@@ -590,7 +590,7 @@ namespace storm {
                 case OpType::Power:
                     return "pow";
                 case OpType::Modulo:
-                    return "mod";
+                    return "%";
                 case OpType::Equal:
                     return "=";
                 case OpType::NotEqual:
