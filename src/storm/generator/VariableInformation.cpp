@@ -30,14 +30,12 @@ namespace storm {
         }
         
         VariableInformation::VariableInformation(storm::prism::Program const& program, bool outOfBoundsState) : totalBitOffset(0) {
-            if(outOfBoundsState) {
+            if (outOfBoundsState) {
                 outOfBoundsBit = 0;
                 ++totalBitOffset;
             } else {
                 outOfBoundsBit = boost::none;
             }
-
-
 
             for (auto const& booleanVariable : program.getGlobalBooleanVariables()) {
                 booleanVariables.emplace_back(booleanVariable.getExpressionVariable(), totalBitOffset, true);
@@ -77,15 +75,13 @@ namespace storm {
                 STORM_LOG_THROW(!automaton.getVariables().containsNonTransientUnboundedIntegerVariables(), storm::exceptions::InvalidArgumentException, "Cannot build model from JANI model that contains non-transient unbounded integer variables in automaton '" << automaton.getName() << "'.");
                 STORM_LOG_THROW(!automaton.getVariables().containsNonTransientRealVariables(), storm::exceptions::InvalidArgumentException, "Cannot build model from JANI model that contains non-transient real variables in automaton '" << automaton.getName() << "'.");
             }
-            if(outOfBoundsState) {
+            if (outOfBoundsState) {
                 outOfBoundsBit = 0;
                 ++totalBitOffset;
             } else {
                 outOfBoundsBit = boost::none;
             }
 
-
-            
             for (auto const& variable : model.getGlobalVariables().getBooleanVariables()) {
                 if (!variable.isTransient()) {
                     booleanVariables.emplace_back(variable.getExpressionVariable(), totalBitOffset, true);
