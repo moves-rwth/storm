@@ -468,7 +468,7 @@ namespace storm {
 
                     // Replace array occurrences in LValues and assigned expressions.
                     std::vector<Assignment> newAssignments;
-                    uint64_t level = 0;
+                    int64_t level = orderedAssignments.getLowestLevel();
                     std::unordered_map<storm::expressions::Variable, std::vector<Assignment const*>> collectedArrayAccessAssignments;
                     for (Assignment const& assignment : orderedAssignments) {
                         if (assignment.getLevel() != level) {
@@ -563,7 +563,7 @@ namespace storm {
                     return nullptr;
                 }
                 
-                void insertLValueArrayAccessReplacements(std::vector<Assignment const*> const& arrayAccesses, std::vector<storm::jani::Variable const*> const& arrayVariableReplacements, uint64_t level, std::vector<Assignment>& newAssignments) const {
+                void insertLValueArrayAccessReplacements(std::vector<Assignment const*> const& arrayAccesses, std::vector<storm::jani::Variable const*> const& arrayVariableReplacements, int64_t level, std::vector<Assignment>& newAssignments) const {
                     storm::expressions::Variable const& arrayVariable = arrayAccesses.front()->getLValue().getArray().getExpressionVariable();
                     bool onlyConstantIndices = true;
                     for (auto const& aa : arrayAccesses) {
