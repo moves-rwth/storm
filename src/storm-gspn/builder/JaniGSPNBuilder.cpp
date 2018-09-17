@@ -108,7 +108,7 @@ namespace storm {
                     for (auto const& inPlaceEntry : trans.getInputPlaces()) {
                         destguard = destguard && (vars[inPlaceEntry.first]->getExpressionVariable() >= inPlaceEntry.second);
                         if (trans.getOutputPlaces().count(inPlaceEntry.first) == 0) {
-                            assignments.emplace_back( *vars[inPlaceEntry.first], (vars[inPlaceEntry.first])->getExpressionVariable() - inPlaceEntry.second);
+                            assignments.emplace_back(storm::jani::LValue(*vars[inPlaceEntry.first]), (vars[inPlaceEntry.first])->getExpressionVariable() - inPlaceEntry.second);
                         }
                     }
                     for (auto const& inhibPlaceEntry : trans.getInhibitionPlaces()) {
@@ -116,9 +116,9 @@ namespace storm {
                     }
                     for (auto const& outputPlaceEntry : trans.getOutputPlaces()) {
                         if (trans.getInputPlaces().count(outputPlaceEntry.first) == 0) {
-                            assignments.emplace_back( *vars[outputPlaceEntry.first], (vars[outputPlaceEntry.first])->getExpressionVariable() + outputPlaceEntry.second );
+                            assignments.emplace_back(storm::jani::LValue(*vars[outputPlaceEntry.first]), (vars[outputPlaceEntry.first])->getExpressionVariable() + outputPlaceEntry.second );
                         } else {
-                            assignments.emplace_back( *vars[outputPlaceEntry.first], (vars[outputPlaceEntry.first])->getExpressionVariable() + outputPlaceEntry.second -  trans.getInputPlaces().at(outputPlaceEntry.first));
+                            assignments.emplace_back(storm::jani::LValue(*vars[outputPlaceEntry.first]), (vars[outputPlaceEntry.first])->getExpressionVariable() + outputPlaceEntry.second -  trans.getInputPlaces().at(outputPlaceEntry.first));
                         }
                     }
                     destguard = destguard.simplify();
@@ -147,7 +147,7 @@ namespace storm {
                 for (auto const& inPlaceEntry : trans.getInputPlaces()) {
                     guard = guard && (vars[inPlaceEntry.first]->getExpressionVariable() >= inPlaceEntry.second);
                     if (trans.getOutputPlaces().count(inPlaceEntry.first) == 0) {
-                        assignments.emplace_back( *vars[inPlaceEntry.first], (vars[inPlaceEntry.first])->getExpressionVariable() - inPlaceEntry.second);
+                        assignments.emplace_back(storm::jani::LValue(*vars[inPlaceEntry.first]), (vars[inPlaceEntry.first])->getExpressionVariable() - inPlaceEntry.second);
                     }
                 }
                 for (auto const& inhibPlaceEntry : trans.getInhibitionPlaces()) {
@@ -155,9 +155,9 @@ namespace storm {
                 }
                 for (auto const& outputPlaceEntry : trans.getOutputPlaces()) {
                     if (trans.getInputPlaces().count(outputPlaceEntry.first) == 0) {
-                        assignments.emplace_back( *vars[outputPlaceEntry.first], (vars[outputPlaceEntry.first])->getExpressionVariable() + outputPlaceEntry.second );
+                        assignments.emplace_back(storm::jani::LValue(*vars[outputPlaceEntry.first]), (vars[outputPlaceEntry.first])->getExpressionVariable() + outputPlaceEntry.second );
                     } else {
-                        assignments.emplace_back( *vars[outputPlaceEntry.first], (vars[outputPlaceEntry.first])->getExpressionVariable() + outputPlaceEntry.second -  trans.getInputPlaces().at(outputPlaceEntry.first));
+                        assignments.emplace_back(storm::jani::LValue(*vars[outputPlaceEntry.first]), (vars[outputPlaceEntry.first])->getExpressionVariable() + outputPlaceEntry.second -  trans.getInputPlaces().at(outputPlaceEntry.first));
                     }
                 }
 
@@ -257,7 +257,7 @@ namespace storm {
             
             auto exprVar = expressionManager->declareBooleanVariable(name);
             auto const& janiVar = model->addVariable(*storm::jani::makeBooleanVariable(name, exprVar, expressionManager->boolean(false), true));
-            storm::jani::Assignment assignment(janiVar, transientValue);
+            storm::jani::Assignment assignment(storm::jani::LValue(janiVar), transientValue);
             model->getAutomata().front().getLocations().front().addTransientAssignment(assignment);
             return janiVar;
         }
