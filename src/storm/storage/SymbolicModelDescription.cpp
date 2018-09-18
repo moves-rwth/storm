@@ -149,7 +149,7 @@ namespace storm {
         
         SymbolicModelDescription SymbolicModelDescription::preprocess(std::map<storm::expressions::Variable, storm::expressions::Expression> const& constantDefinitions) const {
             if (this->isJaniModel()) {
-                storm::jani::Model preparedModel = this->asJaniModel().defineUndefinedConstants(constantDefinitions).substituteConstants();
+                storm::jani::Model preparedModel = this->asJaniModel().defineUndefinedConstants(constantDefinitions).substituteConstantsFunctions();
                 return SymbolicModelDescription(preparedModel);
             } else if (this->isPrismProgram()) {
                 return SymbolicModelDescription(this->asPrismProgram().defineUndefinedConstants(constantDefinitions).substituteConstantsFormulas());

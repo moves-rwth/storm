@@ -400,6 +400,12 @@ namespace storm {
             void substituteFunctions(std::vector<Property>& properties);
             
             /*!
+             * Substitutes all constants in all expressions of the model. The original model is not modified, but
+             * instead a new model is created. Afterwards, all function calls are substituted with the defining expression.
+             */
+            Model substituteConstantsFunctions() const;
+
+            /*!
              * Returns true if at least one array variable occurs in the model.
              */
             bool containsArrayVariables() const;

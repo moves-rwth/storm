@@ -951,6 +951,12 @@ namespace storm {
             return result;
         }
         
+        Model Model::substituteConstantsFunctions() const {
+            auto result = substituteConstants();
+            result.substituteFunctions();
+            return result;
+        }
+        
         std::map<storm::expressions::Variable, storm::expressions::Expression> Model::getConstantsSubstitution() const {
             std::map<storm::expressions::Variable, storm::expressions::Expression> result;
             
