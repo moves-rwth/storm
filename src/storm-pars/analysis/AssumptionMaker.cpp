@@ -31,14 +31,19 @@ namespace storm {
                 storm::expressions::Variable var1 = expressionManager->getVariable(std::to_string(critical1));
                 storm::expressions::Variable var2 = expressionManager->getVariable(std::to_string(critical2));
 
-                auto latticeCopy = new Lattice(lattice);
                 std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>> assumptions;
-                auto myMap = createAssumptions(var1, var2, latticeCopy, assumptions);
+                auto myMap = createAssumptions(var1, var2, new Lattice(lattice), assumptions);
                 result.insert(myMap.begin(), myMap.end());
 
                 std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>> assumptions2;
-                myMap = createAssumptions(var2, var1, lattice, assumptions2);
+                myMap = createAssumptions(var2, var1, new Lattice(lattice), assumptions2);
                 result.insert(myMap.begin(), myMap.end());
+                if (result.size() == 0) {
+                    // No assumptions could be made, all not valid based on sampling, therefore returning original lattice
+                    result.insert(std::pair<storm::analysis::Lattice*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>>(lattice, emptySet));
+                } else {
+                    delete lattice;
+                }
             }
             return result;
         }
