@@ -241,7 +241,7 @@ namespace storm {
             virtual bool isArrayType() const override;
 
         private:
-            static const uint64_t mask = (1ull << 60);
+            static const uint64_t mask = (1ull << 59);
             
             // The type of the array elements (can again be of type array).
             Type elementType;
