@@ -9,7 +9,7 @@
 namespace storm {
     namespace analysis {
         template <typename ValueType>
-        void MonotonicityChecker<ValueType>::checkMonotonicity(std::map<storm::analysis::Lattice*, std::vector<std::pair<std::shared_ptr<storm::expressions::BinaryRelationExpression>, bool>>> map, storm::storage::SparseMatrix<ValueType> matrix) {
+        void MonotonicityChecker<ValueType>::checkMonotonicity(std::map<storm::analysis::Lattice*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> map, storm::storage::SparseMatrix<ValueType> matrix) {
             auto i = 0;
             for (auto itr = map.begin(); itr != map.end(); ++itr) {
                 auto lattice = itr->first;
@@ -31,7 +31,7 @@ namespace storm {
                             first = false;
                         }
 
-                        std::shared_ptr<storm::expressions::BinaryRelationExpression> expression = itr2->first;
+                        std::shared_ptr<storm::expressions::BinaryRelationExpression> expression = *itr2;
                         auto var1 = expression->getFirstOperand();
                         auto var2 = expression->getSecondOperand();
                         STORM_PRINT(*expression);

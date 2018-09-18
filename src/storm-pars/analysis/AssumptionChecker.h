@@ -42,12 +42,15 @@ namespace storm {
              */
             bool validateAssumption(std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption, storm::analysis::Lattice* lattice);
 
+            bool validated(std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption);
         private:
             std::shared_ptr<storm::logic::Formula const> formula;
 
             storm::storage::SparseMatrix<ValueType> matrix;
 
             std::vector<std::vector<double>> results;
+
+            std::set<std::shared_ptr<storm::expressions::BinaryRelationExpression>> validatedAssumptions;
 
         };
     }

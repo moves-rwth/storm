@@ -78,57 +78,70 @@ namespace storm {
 
         template <typename ValueType>
         bool AssumptionChecker<ValueType>::validateAssumption(std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption, storm::analysis::Lattice* lattice) {
-            bool result = false;
-            std::set<storm::expressions::Variable> vars = std::set<storm::expressions::Variable>({});
-            assumption->gatherVariables(vars);
-
-            STORM_LOG_THROW(assumption->getRelationType() == storm::expressions::BinaryRelationExpression::RelationType::GreaterOrEqual, storm::exceptions::NotSupportedException, "Only Greater Or Equal assumptions supported");
-
-            auto val1 = std::stoi(assumption->getFirstOperand()->asVariableExpression().getVariableName());
-            auto val2 = std::stoi(assumption->getSecondOperand()->asVariableExpression().getVariableName());
-            auto row1 = matrix.getRow(val1);
-            auto row2 = matrix.getRow(val2);
-            if (row1.getNumberOfEntries() != 2 && row2.getNumberOfEntries() != 2) {
-                assert (false);
-            }
-
-            auto succ11 = row1.begin();
-            auto succ12 = (++row1.begin());
-            auto succ21 = row2.begin();
-            auto succ22 = (++row2.begin());
-
-            if (succ12->getColumn() == succ21->getColumn() && succ11->getColumn() == succ22->getColumn()) {
-                auto temp = succ12;
-                succ12 = succ11;
-                succ11 = temp;
-            }
-
-            if (succ11->getColumn() == succ21->getColumn() && succ12->getColumn() == succ22->getColumn()) {
-                ValueType prob;
-                auto comp = lattice->compare(succ11->getColumn(), succ12->getColumn());
-                if (comp == storm::analysis::Lattice::ABOVE) {
-                    prob = succ11->getValue() - succ21->getValue();
-                } else if (comp == storm::analysis::Lattice::BELOW) {
-                    prob = succ12->getValue() - succ22->getValue();
-                }
-                auto vars = prob.gatherVariables();
-                // TODO: Type
-                std::map<storm::RationalFunctionVariable, storm::RationalFunctionCoefficient> substitutions;
-                for (auto var:vars) {
-                    auto derivative = prob.derivative(var);
-                    assert(derivative.isConstant());
-                    if (derivative.constantPart() >=0) {
-                        substitutions[var] = 0;
-                    } else if(derivative.constantPart() <= 0) {
-                        substitutions[var] = 1;
-                    }
-                }
-                result = prob.evaluate(substitutions) >= 0;
-            }
+            bool result = validated(assumption);
             if (!result) {
-                STORM_PRINT("Could not validate: " << *assumption << std::endl);
+                std::set<storm::expressions::Variable> vars = std::set<storm::expressions::Variable>({});
+                assumption->gatherVariables(vars);
+
+                STORM_LOG_THROW(assumption->getRelationType() ==
+                                storm::expressions::BinaryRelationExpression::RelationType::GreaterOrEqual,
+                                storm::exceptions::NotSupportedException,
+                                "Only Greater Or Equal assumptions supported");
+
+                auto val1 = std::stoi(assumption->getFirstOperand()->asVariableExpression().getVariableName());
+                auto val2 = std::stoi(assumption->getSecondOperand()->asVariableExpression().getVariableName());
+                auto row1 = matrix.getRow(val1);
+                auto row2 = matrix.getRow(val2);
+                if (row1.getNumberOfEntries() != 2 && row2.getNumberOfEntries() != 2) {
+                    assert (false);
+                }
+
+                auto succ11 = row1.begin();
+                auto succ12 = (++row1.begin());
+                auto succ21 = row2.begin();
+                auto succ22 = (++row2.begin());
+
+                if (succ12->getColumn() == succ21->getColumn() && succ11->getColumn() == succ22->getColumn()) {
+                    auto temp = succ12;
+                    succ12 = succ11;
+                    succ11 = temp;
+                }
+
+                if (succ11->getColumn() == succ21->getColumn() && succ12->getColumn() == succ22->getColumn()) {
+                    ValueType prob;
+                    auto comp = lattice->compare(succ11->getColumn(), succ12->getColumn());
+                    if (comp == storm::analysis::Lattice::ABOVE) {
+                        prob = succ11->getValue() - succ21->getValue();
+                    } else if (comp == storm::analysis::Lattice::BELOW) {
+                        prob = succ12->getValue() - succ22->getValue();
+                    }
+                    auto vars = prob.gatherVariables();
+                    // TODO: Type
+                    std::map<storm::RationalFunctionVariable, storm::RationalFunctionCoefficient> substitutions;
+                    for (auto var:vars) {
+                        auto derivative = prob.derivative(var);
+                        assert(derivative.isConstant());
+                        if (derivative.constantPart() >= 0) {
+                            substitutions[var] = 0;
+                        } else if (derivative.constantPart() <= 0) {
+                            substitutions[var] = 1;
+                        }
+                    }
+                    result = prob.evaluate(substitutions) >= 0;
+                }
+                if (result) {
+                    validatedAssumptions.insert(assumption);
+                } else {
+                    STORM_PRINT("Could not validate: " << *assumption << std::endl);
+                }
             }
+
             return result;
+        }
+
+        template <typename ValueType>
+        bool AssumptionChecker<ValueType>::validated(std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption) {
+            return find(validatedAssumptions.begin(), validatedAssumptions.end(), assumption) != validatedAssumptions.end();
         }
 
         template class AssumptionChecker<storm::RationalFunction>;
