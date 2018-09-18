@@ -22,11 +22,15 @@ namespace storm {
         
         void RewardAccumulationEliminationVisitor::eliminateRewardAccumulations(std::vector<storm::jani::Property>& properties) const {
             for (auto& p : properties) {
-                auto formula = eliminateRewardAccumulations(*p.getFilter().getFormula());
-                auto states = eliminateRewardAccumulations(*p.getFilter().getStatesFormula());
-                storm::jani::FilterExpression fe(formula, p.getFilter().getFilterType(), states);
-                p = storm::jani::Property(p.getName(), storm::jani::FilterExpression(formula, p.getFilter().getFilterType(), states), p.getComment());
+                eliminateRewardAccumulations(p);
             }
+        }
+        
+        void RewardAccumulationEliminationVisitor::eliminateRewardAccumulations(storm::jani::Property& property) const {
+            auto formula = eliminateRewardAccumulations(*property.getFilter().getFormula());
+            auto states = eliminateRewardAccumulations(*property.getFilter().getStatesFormula());
+            storm::jani::FilterExpression fe(formula, property.getFilter().getFilterType(), states);
+            property = storm::jani::Property(property.getName(), storm::jani::FilterExpression(formula, property.getFilter().getFilterType(), states), property.getComment());
         }
         
         boost::any RewardAccumulationEliminationVisitor::visit(BoundedUntilFormula const& f, boost::any const& data) const {

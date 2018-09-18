@@ -3,8 +3,9 @@
 #include "storm-parsers/parser/FormulaParser.h"
 #include "storm/api/properties.h"
 
-
 #include "storm/storage/SymbolicModelDescription.h"
+#include "storm/logic/RewardAccumulationEliminationVisitor.h"
+
 #include "storm/storage/prism/Program.h"
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/Property.h"
@@ -48,6 +49,9 @@ namespace storm {
         std::vector <storm::jani::Property> parsePropertiesForJaniModel(std::string const &inputString, storm::jani::Model const &model, boost::optional <std::set<std::string>> const &propertyFilter) {
             storm::parser::FormulaParser formulaParser(model.getManager().getSharedPointer());
             auto formulas = parseProperties(formulaParser, inputString, propertyFilter);
+            // Eliminate reward accumulations if possible
+            storm::logic::RewardAccumulationEliminationVisitor v(model);
+            v.eliminateRewardAccumulations(formulas);
             return substituteConstantsInProperties(formulas, model.getConstantsSubstitution());
         }
 

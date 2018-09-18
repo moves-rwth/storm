@@ -21,6 +21,7 @@ namespace storm {
             std::shared_ptr<Formula> eliminateRewardAccumulations(Formula const& f) const;
             
             void eliminateRewardAccumulations(std::vector<storm::jani::Property>& properties) const;
+            void eliminateRewardAccumulations(storm::jani::Property& property) const;
            
             virtual boost::any visit(BoundedUntilFormula const& f, boost::any const& data) const override;
             virtual boost::any visit(CumulativeRewardFormula const& f, boost::any const& data) const override;

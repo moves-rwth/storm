@@ -177,6 +177,10 @@ namespace storm {
             STORM_LOG_THROW(parsedStructure.count("system") == 1, storm::exceptions::InvalidJaniException, "Exactly one system description must be given");
             std::shared_ptr<storm::jani::Composition> composition = parseComposition(parsedStructure.at("system"));
             model.setSystemComposition(composition);
+            model.finalize();
+            
+            // Parse properties
+            storm::logic::RewardAccumulationEliminationVisitor rewAccEliminator(model);
             STORM_LOG_THROW(parsedStructure.count("properties") <= 1, storm::exceptions::InvalidJaniException, "At most one list of properties can be given");
             std::map<std::string, storm::jani::Property> properties;
             if (parseProperties && parsedStructure.count("properties") == 1) {
@@ -184,6 +188,8 @@ namespace storm {
                 for(auto const& propertyEntry : parsedStructure.at("properties")) {
                     try {
                         auto prop = this->parseProperty(propertyEntry, scope.refine("property[" + std::to_string(properties.size()) + "]"));
+                        // Eliminate reward accumulations as much as possible
+                        rewAccEliminator.eliminateRewardAccumulations(prop);
                         properties.emplace(prop.getName(), prop);
                     } catch (storm::exceptions::NotSupportedException const& ex) {
                         STORM_LOG_WARN("Cannot handle property: " << ex.what());
