@@ -191,15 +191,17 @@ namespace storm {
                 }
             }
             
+            storm::storage::SymbolicModelDescription symbDescr(janiModelProperties.first);
+            
             // Substitute constant definitions in model and properties.
             std::string constantDefinitionString = input.getConstantDefinitionString();
-            auto constantDefinitions = janiModelProperties.first.parseConstantDefinitions(constantDefinitionString);
-            auto janiModel = janiModelProperties.first..defineUndefinedConstants(constantDefinitions).substituteConstants();
+            auto constantDefinitions = symbDescr.parseConstantDefinitions(constantDefinitionString);
+            auto janiModel = janiModelProperties.first.defineUndefinedConstants(constantDefinitions).substituteConstants();
             if (!properties.empty()) {
                 properties = storm::api::substituteConstantsInProperties(properties, constantDefinitions);
             }
-            
             // Branch on the type of output
+            
             auto const& output = storm::settings::getModule<storm::settings::modules::ConversionOutputSettings>();
             if (output.isJaniOutputSet()) {
                 processJaniInputJaniOutput(janiModel, properties);
