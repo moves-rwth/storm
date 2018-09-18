@@ -731,7 +731,7 @@ namespace storm {
         boost::any ExpressionToJson::visit(storm::expressions::FunctionCallExpression const& expression, boost::any const& data) {
             modernjson::json opDecl;
             opDecl["op"] = "call";
-            opDecl["function"] = expression.getIdentifier();
+            opDecl["function"] = expression.getFunctionIdentifier();
             std::vector<modernjson::json> arguments;
             for (uint64_t i = 0; i < expression.getNumberOfArguments(); ++i) {
                 arguments.push_back(boost::any_cast<modernjson::json>(expression.getArgument(i)->accept(*this, data)));

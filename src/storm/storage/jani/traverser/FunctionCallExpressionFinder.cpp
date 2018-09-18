@@ -85,7 +85,7 @@ namespace storm {
                 
                 virtual boost::any visit(storm::expressions::FunctionCallExpression const& expression, boost::any const& data) override {
                     auto& set = *boost::any_cast<std::unordered_set<std::string>*>(data);
-                    set.insert(expression.getIdentifier());
+                    set.insert(expression.getFunctionIdentifier());
                     for (uint64_t i = 0; i < expression.getNumberOfArguments(); ++i) {
                         expression.getArgument(i)->accept(*this, data);
                     }
