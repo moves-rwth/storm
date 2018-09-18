@@ -31,7 +31,7 @@
 namespace storm {
     namespace api {
         
-        storm::jani::ModelFeatures getSupportedJaniFeatures(storm::builder::BuilderType const& builderType) {
+        inline storm::jani::ModelFeatures getSupportedJaniFeatures(storm::builder::BuilderType const& builderType) {
             storm::jani::ModelFeatures features;
             features.add(storm::jani::ModelFeature::DerivedOperators);
             features.add(storm::jani::ModelFeature::StateExitRewards);
