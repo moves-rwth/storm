@@ -7,10 +7,11 @@
 namespace storm {
     namespace analysis {
         template<typename ValueType>
-        AssumptionMaker<ValueType>::AssumptionMaker(storm::analysis::LatticeExtender<ValueType>* latticeExtender, storm::analysis::AssumptionChecker<ValueType>* assumptionChecker, uint_fast64_t numberOfStates) {
+        AssumptionMaker<ValueType>::AssumptionMaker(storm::analysis::LatticeExtender<ValueType>* latticeExtender, storm::analysis::AssumptionChecker<ValueType>* assumptionChecker, uint_fast64_t numberOfStates, bool validate) {
             this->latticeExtender = latticeExtender;
             this->numberOfStates = numberOfStates;
             this->assumptionChecker = assumptionChecker;
+            this->validate = validate;
             this->expressionManager = std::make_shared<storm::expressions::ExpressionManager>(storm::expressions::ExpressionManager());
             for (uint_fast64_t i = 0; i < this->numberOfStates; ++i) {
                 expressionManager->declareRationalVariable(std::to_string(i));
@@ -48,7 +49,7 @@ namespace storm {
             // only the last assumption is new
             std::tuple<storm::analysis::Lattice*, uint_fast64_t, uint_fast64_t> criticalTriple = this->latticeExtender->extendLattice(lattice, assumptions.back());
 
-            if (assumptionChecker->validated(assumptions.back())) {
+            if (validate && assumptionChecker->validated(assumptions.back())) {
                 assumptions.pop_back();
             }
 
@@ -81,8 +82,9 @@ namespace storm {
                         var1.getExpression().getBaseExpressionPointer(), var2.getExpression().getBaseExpressionPointer(),
                         storm::expressions::BinaryRelationExpression::RelationType::GreaterOrEqual));
             if (assumptionChecker->checkOnSamples(assumption)) {
-                // TODO: only if validation on
-                assumptionChecker->validateAssumption(assumption, lattice);
+                if (validate) {
+                    assumptionChecker->validateAssumption(assumption, lattice);
+                }
                 assumptions.push_back(std::shared_ptr<storm::expressions::BinaryRelationExpression>(assumption));
                 result = (runRecursive(lattice, assumptions));
             } else {

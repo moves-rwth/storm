@@ -65,7 +65,9 @@ namespace storm {
                 bool isSampleExactSet() const;
 
                 bool isMonotonicityAnalysisSet() const;
-                
+
+                bool isValidateAssumptionsSet() const;
+
                 const static std::string moduleName;
                 
             private:

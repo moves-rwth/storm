@@ -25,7 +25,7 @@ namespace storm {
              * @param checker The AssumptionChecker which checks the assumptions at sample points.
              * @param numberOfStates The number of states of the model.
              */
-            AssumptionMaker(storm::analysis::LatticeExtender<ValueType>* latticeExtender, storm::analysis::AssumptionChecker<ValueType>* checker, uint_fast64_t numberOfStates);
+            AssumptionMaker(storm::analysis::LatticeExtender<ValueType>* latticeExtender, storm::analysis::AssumptionChecker<ValueType>* checker, uint_fast64_t numberOfStates, bool validate);
 
             /*!
              * Make the assumptions given a lattice and two states which could not be added to the lattice. Returns when no more assumptions can be made.
@@ -45,11 +45,15 @@ namespace storm {
 
             storm::analysis::LatticeExtender<ValueType>* latticeExtender;
 
+            storm::analysis::AssumptionChecker<ValueType>* assumptionChecker;
+
             std::shared_ptr<storm::expressions::ExpressionManager> expressionManager;
 
             uint_fast64_t numberOfStates;
 
-            storm::analysis::AssumptionChecker<ValueType>* assumptionChecker;
+            bool validate;
+
+
         };
     }
 }

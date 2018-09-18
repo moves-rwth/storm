@@ -70,6 +70,11 @@ namespace storm {
                 // TODO: Make this dependent on the input.
                 return true;
             }
+
+            bool ParametricSettings::isValidateAssumptionsSet() const {
+                // TODO: Make this dependent on the input.
+                return true;
+            }
         } // namespace modules
     } // namespace settings
 } // namespace storm
