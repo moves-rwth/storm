@@ -431,8 +431,8 @@ namespace storm {
             // Only register formula in second run.
             // This is necessary because the resulting type of the formula is only known in the second run.
             // This prevents the parser from accepting formulas that depend on future formulas.
-            storm::expressions::Variable variable;
             if (this->secondRun) {
+                storm::expressions::Variable variable;
                 try {
                     if (expression.hasIntegerType()) {
                          variable = manager->declareIntegerVariable(formulaName);
@@ -450,8 +450,10 @@ namespace storm {
                         STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": illegal identifier '" << formulaName << "'.");
                     }
                 }
+                return storm::prism::Formula(variable, expression, this->getFilename());
+            } else {
+                return storm::prism::Formula(formulaName, expression, this->getFilename());
             }
-            return storm::prism::Formula(variable, expression, this->getFilename());
         }
         
         storm::prism::Label PrismParser::createLabel(std::string const& labelName, storm::expressions::Expression expression) const {

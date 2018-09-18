@@ -2,6 +2,7 @@
 #define STORM_STORAGE_PRISM_FORMULA_H_
 
 #include <map>
+#include <boost/optional.hpp>
 
 #include "storm/storage/prism/LocatedInformation.h"
 #include "storm/storage/expressions/Expression.h"
@@ -13,14 +14,24 @@ namespace storm {
         class Formula : public LocatedInformation {
         public:
             /*!
-             * Creates a formula with the given name and expression.
+             * Creates a formula with the given placeholder variable and expression.
              *
-             * @param placeholder The placeholder variable that is used in expressions to represent this formula.
+             * @param variable The placeholder variable that is used in expressions to represent this formula.
              * @param expression The expression associated with this formula.
              * @param filename The filename in which the transition reward is defined.
              * @param lineNumber The line number in which the transition reward is defined.
              */
             Formula(storm::expressions::Variable const& variable, storm::expressions::Expression const& expression, std::string const& filename = "", uint_fast64_t lineNumber = 0);
+
+            /*!
+             * Creates a formula with the given name
+             *
+             * @param name the name of the formula.
+             * @param expression The expression associated with this formula.
+             * @param filename The filename in which the transition reward is defined.
+             * @param lineNumber The line number in which the transition reward is defined.
+             */
+            Formula(std::string const& name, storm::expressions::Expression const& expression, std::string const& filename = "", uint_fast64_t lineNumber = 0);
             
             // Create default implementations of constructors/assignment.
             Formula() = default;
@@ -35,6 +46,12 @@ namespace storm {
              * @return The name that is associated with this formula.
              */
             std::string const& getName() const;
+            
+            /*!
+             * Retrieves wheter a placeholder variable is used in expressions to represent this formula.
+             *
+             */
+            bool hasExpressionVariable() const;
             
             /*!
              * Retrieves the placeholder variable that is used in expressions to represent this formula.
@@ -69,7 +86,10 @@ namespace storm {
             
         private:
             // The name of the formula.
-            storm::expressions::Variable variable;
+            std::string name;
+            
+            // Expression variable that is used as a placeholder for this formula
+            boost::optional<storm::expressions::Variable> variable;
             
             // A predicate that needs to be satisfied by states for the label to be attached.
             storm::expressions::Expression expression;

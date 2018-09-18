@@ -1048,6 +1048,17 @@ namespace storm {
             std::set<storm::expressions::Variable> variablesAndConstants;
             std::set_union(variables.begin(), variables.end(), constants.begin(), constants.end(), std::inserter(variablesAndConstants, variablesAndConstants.begin()));
             
+            // Collect the formula placeholders and check formulas
+            for (auto const& formula : this->getFormulas()) {
+                std::set<storm::expressions::Variable> containedVariables = formula.getExpression().getVariables();
+                bool isValid = std::includes(variablesAndConstants.begin(), variablesAndConstants.end(), containedVariables.begin(), containedVariables.end());
+                STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << formula.getFilename() << ", line " << formula.getLineNumber() << ": formula expression refers to unknown identifiers.");
+                if (formula.hasExpressionVariable()) {
+                    all.insert(formula.getExpressionVariable());
+                    variablesAndConstants.insert(formula.getExpressionVariable());
+                }
+            }
+            
             // Check the commands of the modules.
             bool hasProbabilisticCommand = false;
             bool hasMarkovianCommand = false;
@@ -1215,13 +1226,6 @@ namespace storm {
                 bool isValid = std::includes(variablesAndConstants.begin(), variablesAndConstants.end(), containedVariables.begin(), containedVariables.end());
                 STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << label.getFilename() << ", line " << label.getLineNumber() << ": label expression refers to unknown identifiers.");
                 STORM_LOG_THROW(label.getStatePredicateExpression().hasBooleanType(), storm::exceptions::WrongFormatException, "Error in " << label.getFilename() << ", line " << label.getLineNumber() << ": label predicate must evaluate to type 'bool'.");
-            }
-            
-            // Check the formulas.
-            for (auto const& formula : this->getFormulas()) {
-                std::set<storm::expressions::Variable> containedVariables = formula.getExpression().getVariables();
-                bool isValid = std::includes(variablesAndConstants.begin(), variablesAndConstants.end(), containedVariables.begin(), containedVariables.end());
-                STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << formula.getFilename() << ", line " << formula.getLineNumber() << ": formula expression refers to unknown identifiers.");
             }
             
             if(lvl >= Program::ValidityCheckLevel::READYFORPROCESSING) {
