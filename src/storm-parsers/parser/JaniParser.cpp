@@ -156,7 +156,7 @@ namespace storm {
                 for (auto const& funStructure : parsedStructure.at("functions")) {
                     storm::jani::FunctionDefinition funDef = parseFunctionDefinition(funStructure, scope.refine("functions[" + std::to_string(globalFuns.size()) + "] of model " + name));
                     assert(globalFuns.count(funDef.getName()) == 0);
-                    //TODO globalFuns.emplace(funDef.getName(), &model.addFunction(funDef));
+                    globalFuns.emplace(funDef.getName(), &model.addFunctionDefinition(funDef));
                 }
             }
             
@@ -198,7 +198,6 @@ namespace storm {
                     }
                 }
             }
-            model.finalize();
             return {model, properties};
         }
 
@@ -860,19 +859,16 @@ namespace storm {
             } else if (type.arrayBase) {
                 STORM_LOG_THROW(type.arrayBase->basicType, storm::exceptions::InvalidJaniException, "Array base type for variable " + name + "(scope " + scope.description + ") should be a BasicType or a BoundedType.");
                 storm::jani::ArrayVariable::ElementType elementType;
-                storm::expressions::Type exprVariableType;
+                storm::expressions::Type exprVariableType = type.expressionType;
                 switch (type.arrayBase->basicType.get()) {
                     case ParsedType::BasicType::Real:
                         elementType = storm::jani::ArrayVariable::ElementType::Real;
-                        exprVariableType = expressionManager->getArrayType(expressionManager->getRationalType());
                         break;
                     case ParsedType::BasicType::Bool:
                         elementType = storm::jani::ArrayVariable::ElementType::Bool;
-                        exprVariableType = expressionManager->getArrayType(expressionManager->getBooleanType());
                         break;
                     case ParsedType::BasicType::Int:
                         elementType = storm::jani::ArrayVariable::ElementType::Int;
-                        exprVariableType = expressionManager->getArrayType(expressionManager->getIntegerType());
                         break;
                     default:
                         STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Unsupported type");
@@ -917,7 +913,7 @@ namespace storm {
          * Helper for parse expression.
          */
         void ensureBooleanType(storm::expressions::Expression const& expr, std::string const& opstring, unsigned argNr, std::string const& errorInfo) {
-            STORM_LOG_THROW(expr.hasBooleanType(), storm::exceptions::InvalidJaniException, "Operator " << opstring << " expects argument " + std::to_string(argNr) + " to be Boolean in " << errorInfo << ".");
+            STORM_LOG_THROW(expr.hasBooleanType(), storm::exceptions::InvalidJaniException, "Operator " << opstring << " expects argument[" << argNr << "]: '" << expr << "' to be Boolean in " << errorInfo << ".");
         }
 
         /**
