@@ -5,6 +5,7 @@
 #include "storm/storage/prism/Program.h"
 #include "storm/storage/prism/CompositionToJaniVisitor.h"
 #include "storm/storage/jani/Model.h"
+#include "storm/storage/jani/Property.h"
 #include "storm/storage/jani/TemplateEdge.h"
 #include "storm/storage/jani/expressions/FunctionCallExpression.h"
 
@@ -17,6 +18,9 @@ namespace storm {
     namespace prism {
         
         storm::jani::Model ToJaniConverter::convert(storm::prism::Program const& program, bool allVariablesGlobal, std::string suffix, bool standardCompliant) {
+            labelRenaming.clear();
+            rewardModelRenaming.clear();
+            
             std::shared_ptr<storm::expressions::ExpressionManager> manager = program.getManager().getSharedPointer();
             
             bool produceStateRewards = !standardCompliant || program.getModelType() == storm::prism::Program::ModelType::CTMC || program.getModelType() == storm::prism::Program::ModelType::MA;
@@ -125,7 +129,7 @@ namespace storm {
                 bool renameLabel = manager->hasVariable(label.getName()) || program.hasRewardModel(label.getName());
                 std::string finalLabelName = renameLabel ? "label_" + label.getName() + suffix : label.getName();
                 if (renameLabel) {
-                    STORM_LOG_WARN_COND(!renameLabel, "Label '" << label.getName() << "' was renamed to '" << finalLabelName << "' in PRISM-to-JANI conversion, as another variable with that name already exists.");
+                    STORM_LOG_INFO("Label '" << label.getName() << "' was renamed to '" << finalLabelName << "' in PRISM-to-JANI conversion, as another variable with that name already exists.");
                     labelRenaming[label.getName()] = finalLabelName;
                 }
                 auto newExpressionVariable = manager->declareBooleanVariable(finalLabelName);
@@ -155,8 +159,22 @@ namespace storm {
             // edges and transient assignments that are added to the locations.
             std::map<uint_fast64_t, std::vector<storm::jani::Assignment>> transientEdgeAssignments;
             for (auto const& rewardModel : program.getRewardModels()) {
-                auto newExpressionVariable = manager->declareRationalVariable(rewardModel.getName().empty() ? "default_reward_model" : rewardModel.getName());
-                storm::jani::RealVariable const& newTransientVariable = janiModel.addVariable(storm::jani::RealVariable(rewardModel.getName().empty() ? "default" : rewardModel.getName(), newExpressionVariable, manager->rational(0.0), true));
+                std::string finalRewardModelName;
+                if (rewardModel.getName().empty()) {
+                    finalRewardModelName = "default_reward_model";
+                } else {
+                    if (manager->hasVariable(rewardModel.getName())) {
+                        // Rename
+                        finalRewardModelName = "rewardmodel_" + rewardModel.getName() + suffix;
+                        STORM_LOG_INFO("Rewardmodel '" << rewardModel.getName() << "' was renamed to '" << finalRewardModelName << "' in PRISM-to-JANI conversion, as another variable with that name already exists.");
+                        rewardModelRenaming[rewardModel.getName()] = finalRewardModelName;
+                    } else {
+                        finalRewardModelName = rewardModel.getName();
+                    }
+                }
+                
+                auto newExpressionVariable = manager->declareRationalVariable(finalRewardModelName);
+                storm::jani::RealVariable const& newTransientVariable = janiModel.addVariable(storm::jani::RealVariable(finalRewardModelName, newExpressionVariable, manager->rational(0.0), true));
                 
                 if (rewardModel.hasStateRewards()) {
                     storm::expressions::Expression transientLocationExpression;
@@ -375,9 +393,40 @@ namespace storm {
             return !labelRenaming.empty();
         }
         
+        bool ToJaniConverter::rewardModelsWereRenamed() const {
+            return !rewardModelRenaming.empty();
+        }
+        
         std::map<std::string, std::string> const& ToJaniConverter::getLabelRenaming() const {
             return labelRenaming;
         }
         
+        std::map<std::string, std::string> const& ToJaniConverter::getRewardModelRenaming() const {
+            return rewardModelRenaming;
+        }
+        
+        storm::jani::Property ToJaniConverter::applyRenaming(storm::jani::Property const& property) const {
+            if (rewardModelsWereRenamed()) {
+                auto res = property.substituteRewardModelNames(getRewardModelRenaming());
+                if (labelsWereRenamed()) {
+                    res = res.substituteLabels(getLabelRenaming());
+                }
+                return res;
+            } else {
+                if (labelsWereRenamed()) {
+                    return property.substituteLabels(getLabelRenaming());
+                } else {
+                    return property.clone();
+                }
+            }
+        }
+        
+        std::vector<storm::jani::Property> ToJaniConverter::applyRenaming(std::vector<storm::jani::Property> const& properties) const {
+            std::vector<storm::jani::Property> result;
+            for (auto const& p : properties) {
+                result.push_back(applyRenaming(p));
+            }
+            return result;
+        }
     }
 }

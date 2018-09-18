@@ -39,7 +39,16 @@ namespace storm {
             std::vector<std::string> getParameterNames() const;
             
             SymbolicModelDescription toJani(bool makeVariablesGlobal = true, bool standardCompliant = false) const;
-            std::pair<SymbolicModelDescription, std::map<std::string, std::string>> toJaniWithLabelRenaming(bool makeVariablesGlobal = true, bool standardCompliant = false) const;
+            
+            /*!
+             * Ensures that this model is a JANI model by, e.g., converting prism to jani.
+             * If labels or reward models had to be converted during conversion, the renamings are applied to the given properties
+             *
+             * @return The jani model of this and either the new set of properties or an empty vector if no renamings were necessary
+             *
+             * @note The returned property vector might be empty in case no renaming is necessary.
+             */
+            std::pair<SymbolicModelDescription, std::vector<storm::jani::Property>> toJani(std::vector<storm::jani::Property> const& properties, bool makeVariablesGlobal, bool standardCompliant) const;
             
             SymbolicModelDescription preprocess(std::string const& constantDefinitionString = "") const;
             SymbolicModelDescription preprocess(std::map<storm::expressions::Variable, storm::expressions::Expression> const& constantDefinitions) const;

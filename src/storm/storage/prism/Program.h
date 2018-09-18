@@ -626,10 +626,11 @@ namespace storm {
             storm::jani::Model toJani(bool allVariablesGlobal = true, std::string suffix = "", bool standardCompliant = false) const;
             
             /*!
-             * Converts the PRISM model into an equivalent JANI model and retrieves possible label renamings that had
-             * to be performed in the process.
+             * Converts the PRISM model into an equivalent JANI model and if labels or reward models had
+             * to be renamed in the process, the renamings are applied to the given properties
+             * @return The jani model of this and either the new set of properties or an empty vector if no renamings were necessary
              */
-            std::pair<storm::jani::Model, std::map<std::string, std::string>> toJaniWithLabelRenaming(bool allVariablesGlobal = true, std::string suffix = "", bool standardCompliant = false) const;
+            std::pair<storm::jani::Model, std::vector<storm::jani::Property>> toJani(std::vector<storm::jani::Property> const& properties, bool allVariablesGlobal = true, std::string suffix = "", bool standardCompliant = false) const;
             
         private:
             /*!

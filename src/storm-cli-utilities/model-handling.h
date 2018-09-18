@@ -136,16 +136,11 @@ namespace storm {
                 
                 if (transformToJani) {
                     storm::prism::Program const& model = output.model.get().asPrismProgram();
-                    auto modelAndRenaming = model.toJaniWithLabelRenaming(true, "", false);
-                    output.model = modelAndRenaming.first;
+                    auto modelAndProperties = model.toJani(output.properties, true, "", false);
+                    output.model = modelAndProperties.first;
                     
-                    if (!modelAndRenaming.second.empty()) {
-                        std::map<std::string, std::string> const& labelRenaming = modelAndRenaming.second;
-                        std::vector<storm::jani::Property> amendedProperties;
-                        for (auto const& property : output.properties) {
-                            amendedProperties.emplace_back(property.substituteLabels(labelRenaming));
-                        }
-                        output.preprocessedProperties = std::move(amendedProperties);
+                    if (!modelAndProperties.second.empty()) {
+                        output.preprocessedProperties = std::move(modelAndProperties.second);
                     }
                 }
             }

@@ -5,6 +5,7 @@
 #include "storm/utility/jani.h"
 
 #include "storm/storage/jani/Model.h"
+#include "storm/storage/jani/Property.h"
 #include "storm/storage/jani/Automaton.h"
 
 
@@ -130,13 +131,13 @@ namespace storm {
             }
         }
         
-        std::pair<SymbolicModelDescription, std::map<std::string, std::string>> SymbolicModelDescription::toJaniWithLabelRenaming(bool makeVariablesGlobal, bool standardCompliant) const {
+        std::pair<SymbolicModelDescription, std::vector<storm::jani::Property>> SymbolicModelDescription::toJani(std::vector<storm::jani::Property> const& properties, bool makeVariablesGlobal, bool standardCompliant) const {
             if (this->isJaniModel()) {
-                return std::make_pair(*this, std::map<std::string, std::string>());
+                return std::make_pair(*this, std::vector<storm::jani::Property>());
             }
             if (this->isPrismProgram()) {
-                auto modelAndRenaming = this->asPrismProgram().toJaniWithLabelRenaming(makeVariablesGlobal, "", standardCompliant);
-                return std::make_pair(SymbolicModelDescription(modelAndRenaming.first), modelAndRenaming.second);
+                auto modelProperties = this->asPrismProgram().toJani(properties, makeVariablesGlobal, "", standardCompliant);
+                return std::make_pair(SymbolicModelDescription(modelProperties.first), modelProperties.second);
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot transform model description to the JANI format.");
             }

@@ -36,7 +36,7 @@ namespace storm {
             }
             
             auto uneliminatedFeatures = janiModel.restrictToFeatures(options.allowedModelFeatures);
-            STORM_LOG_WARN(uneliminatedFeatures.empty(), "The following model features could not be eliminated: " << uneliminatedFeatures.toString());
+            STORM_LOG_WARN_COND(uneliminatedFeatures.empty(), "The following model features could not be eliminated: " << uneliminatedFeatures.toString());
             
             if (options.modelName) {
                 janiModel.setName(options.modelName.get());
@@ -44,15 +44,15 @@ namespace storm {
         }
         
         std::pair<storm::jani::Model, std::vector<storm::jani::Property>> convertPrismToJani(storm::prism::Program const& program, std::vector<storm::jani::Property> const& properties, storm::converter::PrismToJaniConverterOptions options) {
-            std::pair<storm::jani::Model, std::vector<storm::jani::Property>> res;
         
             // Perform conversion
-            auto modelAndRenaming = program.toJaniWithLabelRenaming(options.allVariablesGlobal, options.suffix, options.janiOptions.standardCompliant);
-            res.first = std::move(modelAndRenaming.first);
-        
-            // Amend properties to potentially changed labels
-            for (auto const& property : properties) {
-                res.second.emplace_back(property.substituteLabels(modelAndRenaming.second));
+            auto res = program.toJani(properties, true, "", false);
+            if (res.second.empty()) {
+                std::vector<storm::jani::Property> clondedProperties;
+                for (auto const& p : properties) {
+                    clondedProperties.push_back(p.clone());
+                }
+                res.second = std::move(clondedProperties);
             }
             
             // Postprocess Jani model based on the options
