@@ -79,6 +79,8 @@ namespace storm {
                 const static std::string samplesOptionName;
                 const static std::string samplesGraphPreservingOptionName;
                 const static std::string sampleExactOptionName;
+                const static std::string monotonicityAnalysis;
+                const static std::string validateAssumptions;
             };
             
         } // namespace modules

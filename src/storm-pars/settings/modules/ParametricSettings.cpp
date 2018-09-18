@@ -21,6 +21,8 @@ namespace storm {
             const std::string ParametricSettings::samplesOptionName = "samples";
             const std::string ParametricSettings::samplesGraphPreservingOptionName = "samples-graph-preserving";
             const std::string ParametricSettings::sampleExactOptionName = "sample-exact";
+            const std::string ParametricSettings::monotonicityAnalysis = "monotonicity-analysis";
+            const std::string ParametricSettings::validateAssumptions = "validate-assumptions";
 
             ParametricSettings::ParametricSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportResultOptionName, false, "A path to a file where the parametric result should be saved.")
@@ -32,6 +34,8 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("samples", "The samples are semicolon-separated entries of the form 'Var1=Val1:Val2:...:Valk,Var2=... that span the sample spaces.").setDefaultValueString("").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, samplesGraphPreservingOptionName, false, "Sets whether it can be assumed that the samples are graph-preserving.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, sampleExactOptionName, false, "Sets whether to sample using exact arithmetic.").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, monotonicityAnalysis, false, "Sets whether monotonicity analysis is done").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, validateAssumptions, false, "Sets whether assumptions made in monotonicity analysis are validated").build());
             }
             
             bool ParametricSettings::exportResultToFile() const {
@@ -67,13 +71,11 @@ namespace storm {
             }
 
             bool ParametricSettings::isMonotonicityAnalysisSet() const {
-                // TODO: Make this dependent on the input.
-                return true;
+                return this->getOption(monotonicityAnalysis).getHasOptionBeenSet();
             }
 
             bool ParametricSettings::isValidateAssumptionsSet() const {
-                // TODO: Make this dependent on the input.
-                return true;
+                return this->getOption(validateAssumptions).getHasOptionBeenSet();
             }
         } // namespace modules
     } // namespace settings
