@@ -171,59 +171,118 @@ namespace storm {
         
         template<typename ValueType, typename StateType>
         std::vector<StateType> JaniNextStateGenerator<ValueType, StateType>::getInitialStates(StateToIdCallback const& stateToIdCallback) {
-            // Prepare an SMT solver to enumerate all initial states.
-            storm::utility::solver::SmtSolverFactory factory;
-            std::unique_ptr<storm::solver::SmtSolver> solver = factory.create(model.getExpressionManager());
-            
-            std::vector<storm::expressions::Expression> rangeExpressions = model.getAllRangeExpressions(this->parallelAutomata);
-            for (auto const& expression : rangeExpressions) {
-                solver->add(expression);
-            }
-            solver->add(model.getInitialStatesExpression(this->parallelAutomata));
-            
-            // Proceed as long as the solver can still enumerate initial states.
             std::vector<StateType> initialStateIndices;
-            while (solver->check() == storm::solver::SmtSolver::CheckResult::Sat) {
-                // Create fresh state.
+
+            if (this->model.hasNonTrivialInitialStatesRestriction()) {
+                // Prepare an SMT solver to enumerate all initial states.
+                storm::utility::solver::SmtSolverFactory factory;
+                std::unique_ptr<storm::solver::SmtSolver> solver = factory.create(model.getExpressionManager());
+                
+                std::vector<storm::expressions::Expression> rangeExpressions = model.getAllRangeExpressions(this->parallelAutomata);
+                for (auto const& expression : rangeExpressions) {
+                    solver->add(expression);
+                }
+                solver->add(model.getInitialStatesExpression(this->parallelAutomata));
+                
+                // Proceed as long as the solver can still enumerate initial states.
+                while (solver->check() == storm::solver::SmtSolver::CheckResult::Sat) {
+                    // Create fresh state.
+                    CompressedState initialState(this->variableInformation.getTotalBitOffset(true));
+                    
+                    // Read variable assignment from the solution of the solver. Also, create an expression we can use to
+                    // prevent the variable assignment from being enumerated again.
+                    storm::expressions::Expression blockingExpression;
+                    std::shared_ptr<storm::solver::SmtSolver::ModelReference> model = solver->getModel();
+                    for (auto const& booleanVariable : this->variableInformation.booleanVariables) {
+                        bool variableValue = model->getBooleanValue(booleanVariable.variable);
+                        storm::expressions::Expression localBlockingExpression = variableValue ? !booleanVariable.variable : booleanVariable.variable;
+                        blockingExpression = blockingExpression.isInitialized() ? blockingExpression || localBlockingExpression : localBlockingExpression;
+                        initialState.set(booleanVariable.bitOffset, variableValue);
+                    }
+                    for (auto const& integerVariable : this->variableInformation.integerVariables) {
+                        int_fast64_t variableValue = model->getIntegerValue(integerVariable.variable);
+                        storm::expressions::Expression localBlockingExpression = integerVariable.variable != model->getManager().integer(variableValue);
+                        blockingExpression = blockingExpression.isInitialized() ? blockingExpression || localBlockingExpression : localBlockingExpression;
+                        initialState.setFromInt(integerVariable.bitOffset, integerVariable.bitWidth, static_cast<uint_fast64_t>(variableValue - integerVariable.lowerBound));
+                    }
+                    
+                    // Gather iterators to the initial locations of all the automata.
+                    std::vector<std::set<uint64_t>::const_iterator> initialLocationsIts;
+                    std::vector<std::set<uint64_t>::const_iterator> initialLocationsItes;
+                    for (auto const& automatonRef : this->parallelAutomata) {
+                        auto const& automaton = automatonRef.get();
+                        initialLocationsIts.push_back(automaton.getInitialLocationIndices().cbegin());
+                        initialLocationsItes.push_back(automaton.getInitialLocationIndices().cend());
+                    }
+                    storm::utility::combinatorics::forEach(initialLocationsIts, initialLocationsItes, [this,&initialState] (uint64_t index, uint64_t value) { setLocation(initialState, this->variableInformation.locationVariables[index], value); }, [&stateToIdCallback,&initialStateIndices,&initialState] () {
+                        // Register initial state.
+                        StateType id = stateToIdCallback(initialState);
+                        initialStateIndices.push_back(id);
+                        return true;
+                    });
+                    
+                    // Block the current initial state to search for the next one.
+                    if (!blockingExpression.isInitialized()) {
+                        break;
+                    }
+                    solver->add(blockingExpression);
+                }
+                
+                STORM_LOG_DEBUG("Enumerated " << initialStateIndices.size() << " initial states using SMT solving.");
+            } else {
                 CompressedState initialState(this->variableInformation.getTotalBitOffset(true));
                 
-                // Read variable assignment from the solution of the solver. Also, create an expression we can use to
-                // prevent the variable assignment from being enumerated again.
-                storm::expressions::Expression blockingExpression;
-                std::shared_ptr<storm::solver::SmtSolver::ModelReference> model = solver->getModel();
-                for (auto const& booleanVariable : this->variableInformation.booleanVariables) {
-                    bool variableValue = model->getBooleanValue(booleanVariable.variable);
-                    storm::expressions::Expression localBlockingExpression = variableValue ? !booleanVariable.variable : booleanVariable.variable;
-                    blockingExpression = blockingExpression.isInitialized() ? blockingExpression || localBlockingExpression : localBlockingExpression;
-                    initialState.set(booleanVariable.bitOffset, variableValue);
-                }
-                for (auto const& integerVariable : this->variableInformation.integerVariables) {
-                    int_fast64_t variableValue = model->getIntegerValue(integerVariable.variable);
-                    storm::expressions::Expression localBlockingExpression = integerVariable.variable != model->getManager().integer(variableValue);
-                    blockingExpression = blockingExpression.isInitialized() ? blockingExpression || localBlockingExpression : localBlockingExpression;
-                    initialState.setFromInt(integerVariable.bitOffset, integerVariable.bitWidth, static_cast<uint_fast64_t>(variableValue - integerVariable.lowerBound));
+                std::vector<int_fast64_t> currentIntegerValues;
+                currentIntegerValues.reserve(this->variableInformation.integerVariables.size());
+                for (auto const& variable : this->variableInformation.integerVariables) {
+                    STORM_LOG_THROW(variable.lowerBound <= variable.upperBound, storm::exceptions::InvalidArgumentException, "Expecting variable with non-empty set of possible values.");
+                    currentIntegerValues.emplace_back(0);
+                    initialState.setFromInt(variable.bitOffset, variable.bitWidth, 0);
                 }
                 
-                // Gather iterators to the initial locations of all the automata.
-                std::vector<std::set<uint64_t>::const_iterator> initialLocationsIts;
-                std::vector<std::set<uint64_t>::const_iterator> initialLocationsItes;
-                for (auto const& automatonRef : this->parallelAutomata) {
-                    auto const& automaton = automatonRef.get();
-                    initialLocationsIts.push_back(automaton.getInitialLocationIndices().cbegin());
-                    initialLocationsItes.push_back(automaton.getInitialLocationIndices().cend());
-                }
-                storm::utility::combinatorics::forEach(initialLocationsIts, initialLocationsItes, [this,&initialState] (uint64_t index, uint64_t value) { setLocation(initialState, this->variableInformation.locationVariables[index], value); }, [&stateToIdCallback,&initialStateIndices,&initialState] () {
-                    // Register initial state.
-                    StateType id = stateToIdCallback(initialState);
-                    initialStateIndices.push_back(id);
-                    return true;
-                });
+                initialStateIndices.emplace_back(stateToIdCallback(initialState));
                 
-                // Block the current initial state to search for the next one.
-                if (!blockingExpression.isInitialized()) {
-                    break;
+                bool done = false;
+                while (!done) {
+                    bool changedBooleanVariable = false;
+                    for (auto const& booleanVariable : this->variableInformation.booleanVariables) {
+                        if (initialState.get(booleanVariable.bitOffset)) {
+                            initialState.set(booleanVariable.bitOffset);
+                            changedBooleanVariable = true;
+                            break;
+                        } else {
+                            initialState.set(booleanVariable.bitOffset, false);
+                        }
+                    }
+                    
+                    bool changedIntegerVariable = false;
+                    if (changedBooleanVariable) {
+                        initialStateIndices.emplace_back(stateToIdCallback(initialState));
+                    } else {
+                        for (uint64_t integerVariableIndex = 0; integerVariableIndex < this->variableInformation.integerVariables.size(); ++integerVariableIndex) {
+                            auto const& integerVariable = this->variableInformation.integerVariables[integerVariableIndex];
+                            if (currentIntegerValues[integerVariableIndex] < integerVariable.upperBound - integerVariable.lowerBound) {
+                                ++currentIntegerValues[integerVariableIndex];
+                                changedIntegerVariable = true;
+                            } else {
+                                currentIntegerValues[integerVariableIndex] = integerVariable.lowerBound;
+                            }
+                            initialState.setFromInt(integerVariable.bitOffset, integerVariable.bitWidth, currentIntegerValues[integerVariableIndex]);
+                            
+                            if (changedIntegerVariable) {
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if (changedIntegerVariable) {
+                        initialStateIndices.emplace_back(stateToIdCallback(initialState));
+                    }
+                    
+                    done = !changedBooleanVariable && !changedIntegerVariable;
                 }
-                solver->add(blockingExpression);
+                
+                STORM_LOG_DEBUG("Enumerated " << initialStateIndices.size() << " initial states using brute force enumeration.");
             }
             
             return initialStateIndices;

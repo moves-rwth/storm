@@ -242,6 +242,11 @@ namespace storm {
             bool hasInitialStatesRestriction() const;
             
             /*!
+             * Retrieves whether there is a non-trivial initial states restriction.
+             */
+            bool hasNonTrivialInitialStatesRestriction() const;
+            
+            /*!
              * Gets the expression restricting the legal initial values of the automaton's variables.
              */
             storm::expressions::Expression const& getInitialStatesRestriction() const;

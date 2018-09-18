@@ -939,6 +939,20 @@ namespace storm {
             return initialStatesRestriction;
         }
         
+        bool Model::hasNonTrivialInitialStatesRestriction() const {
+            if (this->hasInitialStatesRestriction() && !this->getInitialStatesRestriction().isTrue()) {
+                return true;
+            } else {
+                for (auto const& automaton : this->automata) {
+                    if (automaton.hasInitialStatesRestriction() && !automaton.getInitialStatesRestriction().isTrue()) {
+                        return true;
+                    }
+                }
+            }
+            
+            return false;
+        }
+        
         storm::expressions::Expression Model::getInitialStatesExpression() const {
             std::vector<std::reference_wrapper<storm::jani::Automaton const>> allAutomata;
             for (auto const& automaton : this->getAutomata()) {

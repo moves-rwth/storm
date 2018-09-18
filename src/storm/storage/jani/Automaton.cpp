@@ -286,8 +286,6 @@ namespace storm {
             for (uint64_t locationIndex = edge.getSourceLocationIndex() + 1; locationIndex < locationToStartingIndex.size(); ++locationIndex) {
                 ++locationToStartingIndex[locationIndex];
             }
-            
-
         }
         
         std::vector<Edge>& Automaton::getEdges() {
@@ -323,6 +321,10 @@ namespace storm {
 
         bool Automaton::hasInitialStatesRestriction() const {
             return initialStatesRestriction.isInitialized();
+        }
+        
+        bool Automaton::hasNonTrivialInitialStatesRestriction() const {
+            return this->hasInitialStatesRestriction() && !this->getInitialStatesRestriction().isTrue();
         }
         
         storm::expressions::Expression const& Automaton::getInitialStatesRestriction() const {
