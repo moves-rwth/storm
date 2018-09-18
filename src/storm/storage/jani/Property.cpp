@@ -38,6 +38,16 @@ namespace storm {
             return Property(name, filterExpression.substituteLabels(substitution), comment);
         }
         
+        Property Property::substituteRewardModelNames(std::map<std::string, std::string> const& rewardModelNameSubstitution) const {
+            return Property(name, filterExpression.substituteRewardModelNames(rewardModelNameSubstitution), comment);
+        }
+        
+        Property Property::clone() const {
+            return Property(name, filterExpression.clone(), comment);
+        }
+        
+
+        
         FilterExpression const& Property::getFilter() const {
             return this->filterExpression;
         }

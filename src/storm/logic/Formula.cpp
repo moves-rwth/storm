@@ -6,6 +6,7 @@
 #include "storm/storage/jani/expressions/JaniExpressionSubstitutionVisitor.h"
 #include "storm/logic/ExpressionSubstitutionVisitor.h"
 #include "storm/logic/LabelSubstitutionVisitor.h"
+#include "storm/logic/RewardModelNameSubstitutionVisitor.h"
 #include "storm/logic/ToExpressionVisitor.h"
 
 namespace storm {
@@ -455,6 +456,11 @@ namespace storm {
         
         std::shared_ptr<Formula> Formula::substitute(std::map<std::string, std::string> const& labelSubstitution) const {
             LabelSubstitutionVisitor visitor(labelSubstitution);
+            return visitor.substitute(*this);
+        }
+        
+        std::shared_ptr<Formula> Formula::substituteRewardModelNames(std::map<std::string, std::string> const& rewardModelNameSubstitution) const {
+            RewardModelNameSubstitutionVisitor visitor(rewardModelNameSubstitution);
             return visitor.substitute(*this);
         }
         

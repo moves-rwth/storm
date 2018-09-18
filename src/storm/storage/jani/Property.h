@@ -5,6 +5,7 @@
 #include "storm/modelchecker/results/FilterType.h"
 #include "storm/logic/Formulas.h"
 #include "storm/logic/FragmentSpecification.h"
+#include "storm/logic/CloneVisitor.h"
 
 #include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidArgumentException.h"
@@ -64,6 +65,15 @@ namespace storm {
                 return FilterExpression(formula->substitute(labelSubstitution), ft, statesFormula->substitute(labelSubstitution));
             }
             
+            FilterExpression substituteRewardModelNames(std::map<std::string, std::string> const& rewardModelNameSubstitution) const {
+                return FilterExpression(formula->substituteRewardModelNames(rewardModelNameSubstitution), ft, statesFormula->substituteRewardModelNames(rewardModelNameSubstitution));
+            }
+            
+            FilterExpression clone() const {
+                storm::logic::CloneVisitor cv;
+                return FilterExpression(cv.clone(*formula), ft, cv.clone(*statesFormula));
+            }
+            
         private:
             // For now, we assume that the states are always the initial states.
             std::shared_ptr<storm::logic::Formula const> formula;
@@ -111,6 +121,8 @@ namespace storm {
             Property substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const;
             Property substitute(std::function<storm::expressions::Expression(storm::expressions::Expression const&)> const& substitutionFunction) const;
             Property substituteLabels(std::map<std::string, std::string> const& labelSubstitution) const;
+            Property substituteRewardModelNames(std::map<std::string, std::string> const& rewardModelNameSubstitution) const;
+            Property clone() const;
             
             FilterExpression const& getFilter() const;
             

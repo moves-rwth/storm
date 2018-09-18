@@ -201,6 +201,7 @@ namespace storm {
             std::shared_ptr<Formula> substitute(std::function<storm::expressions::Expression(storm::expressions::Expression const&)> const& expressionSubstitution) const;
             std::shared_ptr<Formula> substitute(std::map<std::string, storm::expressions::Expression> const& labelSubstitution) const;
             std::shared_ptr<Formula> substitute(std::map<std::string, std::string> const& labelSubstitution) const;
+            std::shared_ptr<Formula> substituteRewardModelNames(std::map<std::string, std::string> const& rewardModelNameSubstitution) const;
 
             /*!
              * Takes the formula and converts it to an equivalent expression. The formula may contain atomic labels, but
