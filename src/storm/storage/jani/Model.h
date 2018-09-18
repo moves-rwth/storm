@@ -424,6 +424,18 @@ namespace storm {
             void eliminateArrays(std::vector<Property>& properties);
             
             /*!
+             * Attempts to eliminate all features of this model that are not in the given set of features.
+             * @return The model features that could not be eliminated.
+             */
+            ModelFeatures restrictToFeatures(ModelFeatures const& modelFeatures);
+            
+            /*!
+             * Attempts to eliminate all features of this model and the given properties that are not in the given set of features.
+             * @return The model features that could not be eliminated.
+             */
+            ModelFeatures restrictToFeatures(ModelFeatures const& modelFeatures, std::vector<Property>& properties);
+            
+            /*!
              * Retrieves whether there is an expression restricting the legal initial values of the global variables.
              */
             bool hasInitialStatesRestriction() const;

@@ -18,7 +18,8 @@
 
 #include "storm/storage/SymbolicModelDescription.h"
 #include "storm/storage/jani/Property.h"
-#include "storm/logic/RewardAccumulationEliminationVisitor.h"
+
+#include "storm/builder/BuilderType.h"
 
 #include "storm/models/ModelBase.h"
 
@@ -57,12 +58,13 @@ namespace storm {
             boost::optional<std::vector<storm::jani::Property>> preprocessedProperties;
         };
         
-        void parseSymbolicModelDescription(storm::settings::modules::IOSettings const& ioSettings, SymbolicInput& input) {
+        void parseSymbolicModelDescription(storm::settings::modules::IOSettings const& ioSettings, SymbolicInput& input, storm::builder::BuilderType const& builderType) {
             if (ioSettings.isPrismOrJaniInputSet()) {
                 if (ioSettings.isPrismInputSet()) {
                     input.model = storm::api::parseProgram(ioSettings.getPrismInputFilename(), storm::settings::getModule<storm::settings::modules::BuildSettings>().isPrismCompatibilityEnabled());
                 } else {
-                    auto janiInput = storm::api::parseJaniModel(ioSettings.getJaniInputFilename());
+                    storm::jani::ModelFeatures supportedFeatures = storm::api::getSupportedJaniFeatures(builderType);
+                    auto janiInput = storm::api::parseJaniModel(ioSettings.getJaniInputFilename(), supportedFeatures);
                     input.model = janiInput.first;
                     auto const& janiPropertyInput = janiInput.second;
                     
@@ -96,23 +98,21 @@ namespace storm {
             }
         }
         
-        SymbolicInput parseSymbolicInput() {
+        SymbolicInput parseSymbolicInput(storm::builder::BuilderType const& builderType) {
             auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
             
             // Parse the property filter, if any is given.
             boost::optional<std::set<std::string>> propertyFilter = storm::api::parsePropertyFilter(ioSettings.getPropertyFilter());
             
             SymbolicInput input;
-            parseSymbolicModelDescription(ioSettings, input);
+            parseSymbolicModelDescription(ioSettings, input, builderType);
             parseProperties(ioSettings, input, propertyFilter);
             
             return input;
         }
         
-        SymbolicInput preprocessSymbolicInput(SymbolicInput const& input) {
+        SymbolicInput preprocessSymbolicInput(SymbolicInput const& input, storm::builder::BuilderType const& builderType) {
             auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
-            auto buildSettings = storm::settings::getModule<storm::settings::modules::BuildSettings>();
-            auto coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
             
             SymbolicInput output = input;
             
@@ -125,16 +125,12 @@ namespace storm {
             }
             if (!output.properties.empty()) {
                 output.properties = storm::api::substituteConstantsInProperties(output.properties, constantDefinitions);
-                if (output.model.is_initialized() && output.model->isJaniModel()) {
-                    storm::logic::RewardAccumulationEliminationVisitor v(output.model->asJaniModel());
-                    v.eliminateRewardAccumulations(output.properties);
-                }
             }
             
             // Check whether conversion for PRISM to JANI is requested or necessary.
             if (input.model && input.model.get().isPrismProgram()) {
                 bool transformToJani = ioSettings.isPrismToJaniSet();
-                bool transformToJaniForJit = coreSettings.getEngine() == storm::settings::modules::CoreSettings::Engine::Sparse && buildSettings.isJitSet();
+                bool transformToJaniForJit = builderType == storm::builder::BuilderType::Jit;
                 STORM_LOG_WARN_COND(transformToJani || !transformToJaniForJit, "The JIT-based model builder is only available for JANI models, automatically converting the PRISM input model.");
                 transformToJani |= transformToJaniForJit;
                 
@@ -154,25 +150,6 @@ namespace storm {
                 }
             }
             
-            // Check whether transformations on the jani model are required
-            if (output.model && output.model.get().isJaniModel()) {
-                auto& janiModel = output.model.get().asJaniModel();
-                // Check if functions need to be eliminated
-                if (janiModel.getModelFeatures().hasFunctions()) {
-                    if (!output.preprocessedProperties) {
-                        output.preprocessedProperties = output.properties;
-                    }
-                    janiModel.substituteFunctions(output.preprocessedProperties.get());
-                }
-                
-                // Check if arrays need to be eliminated. This should be done after! eliminating the functions
-                if (janiModel.getModelFeatures().hasArrays() && (coreSettings.getEngine() != storm::settings::modules::CoreSettings::Engine::Sparse || buildSettings.isJitSet())) {
-                    if (!output.preprocessedProperties) {
-                        output.preprocessedProperties = output.properties;
-                    }
-                    janiModel.eliminateArrays(output.preprocessedProperties.get());
-                }
-            }
             return output;
         }
         
@@ -186,9 +163,29 @@ namespace storm {
             }
         }
         
+        storm::builder::BuilderType getBuilderType(storm::settings::modules::CoreSettings::Engine const& engine, bool useJit) {
+            if (engine == storm::settings::modules::CoreSettings::Engine::Dd || engine == storm::settings::modules::CoreSettings::Engine::Hybrid || engine == storm::settings::modules::CoreSettings::Engine::DdSparse || engine == storm::settings::modules::CoreSettings::Engine::AbstractionRefinement) {
+                return storm::builder::BuilderType::Dd;
+            } else if (engine == storm::settings::modules::CoreSettings::Engine::Sparse) {
+                if (useJit) {
+                    return storm::builder::BuilderType::Jit;
+                } else {
+                    return storm::builder::BuilderType::Explicit;
+                }
+            } else if (engine == storm::settings::modules::CoreSettings::Engine::Exploration) {
+                return storm::builder::BuilderType::Explicit;
+            }
+            STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unable to determine the model builder type.");
+        }
+        
         SymbolicInput parseAndPreprocessSymbolicInput() {
-            SymbolicInput input = parseSymbolicInput();
-            input = preprocessSymbolicInput(input);
+            // Get the used builder type to handle cases where preprocessing depends on it
+            auto buildSettings = storm::settings::getModule<storm::settings::modules::BuildSettings>();
+            auto coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
+            auto builderType = getBuilderType(coreSettings.getEngine(), buildSettings.isJitSet());
+            
+            SymbolicInput input = parseSymbolicInput(builderType);
+            input = preprocessSymbolicInput(input, builderType);
             exportSymbolicInput(input);
             return input;
         }
@@ -251,9 +248,10 @@ namespace storm {
             auto buildSettings = storm::settings::getModule<storm::settings::modules::BuildSettings>();
             std::shared_ptr<storm::models::ModelBase> result;
             if (input.model) {
-                if (engine == storm::settings::modules::CoreSettings::Engine::Dd || engine == storm::settings::modules::CoreSettings::Engine::Hybrid || engine == storm::settings::modules::CoreSettings::Engine::DdSparse || engine == storm::settings::modules::CoreSettings::Engine::AbstractionRefinement) {
+                auto builderType = getBuilderType(engine, buildSettings.isJitSet());
+                if (builderType == storm::builder::BuilderType::Dd) {
                     result = buildModelDd<DdType, ValueType>(input);
-                } else if (engine == storm::settings::modules::CoreSettings::Engine::Sparse) {
+                } else if (builderType == storm::builder::BuilderType::Explicit || builderType == storm::builder::BuilderType::Jit) {
                     result = buildModelSparse<ValueType>(input, buildSettings);
                 }
             } else if (ioSettings.isExplicitSet() || ioSettings.isExplicitDRNSet() || ioSettings.isExplicitIMCASet()) {

@@ -1031,6 +1031,39 @@ namespace storm {
             }
         }
         
+        ModelFeatures Model::restrictToFeatures(ModelFeatures const& modelFeatures) {
+            std::vector<Property> emptyPropertyVector;
+            return restrictToFeatures(modelFeatures, emptyPropertyVector);
+        }
+        
+        ModelFeatures Model::restrictToFeatures(ModelFeatures const& features, std::vector<Property>& properties) {
+
+            ModelFeatures uncheckedFeatures = getModelFeatures();
+            // Check if functions need to be eliminated.
+            if (uncheckedFeatures.hasFunctions() && !features.hasFunctions()) {
+                substituteFunctions(properties);
+            }
+            uncheckedFeatures.remove(ModelFeature::Functions);
+            
+            // Check if arrays need to be eliminated. This should be done after! eliminating the functions
+            if (uncheckedFeatures.hasArrays() && !features.hasArrays()) {
+                eliminateArrays(properties);
+            }
+            uncheckedFeatures.remove(ModelFeature::Arrays);
+
+            // There is no elimination for state exit rewards
+            if (features.hasStateExitRewards()) {
+                uncheckedFeatures.remove(ModelFeature::StateExitRewards);
+            }
+            
+            // There is no elimination of derived operators
+            if (features.hasDerivedOperators()) {
+                uncheckedFeatures.remove(ModelFeature::DerivedOperators);
+            }
+    
+            return uncheckedFeatures;
+        }
+        
         void Model::setInitialStatesRestriction(storm::expressions::Expression const& initialStatesRestriction) {
             this->initialStatesRestriction = initialStatesRestriction;
         }
