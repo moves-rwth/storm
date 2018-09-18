@@ -358,10 +358,9 @@ namespace storm {
             bool hasInitialStatesRestriction() const;
             
             /*!
-             * Retrieves whether there is a non-trivial initial states restriction in the model or any of the contained
-             * automata.
+             * Retrieves whether there are non-trivial initial states in the model or any of the contained automata.
              */
-            bool hasNonTrivialInitialStatesRestriction() const;
+            bool hasNonTrivialInitialStates() const;
             
             /*!
              * Sets the expression restricting the legal initial values of the global variables.

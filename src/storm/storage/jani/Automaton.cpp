@@ -323,8 +323,18 @@ namespace storm {
             return initialStatesRestriction.isInitialized();
         }
         
-        bool Automaton::hasNonTrivialInitialStatesRestriction() const {
-            return this->hasInitialStatesRestriction() && !this->getInitialStatesRestriction().isTrue();
+        bool Automaton::hasNonTrivialInitialStates() const {
+            if (this->hasInitialStatesRestriction() && !this->getInitialStatesRestriction().isTrue()) {
+                return true;
+            }
+            
+            for (auto const& variable : this->getVariables()) {
+                if (variable.hasInitExpression() && !variable.isTransient()) {
+                    return true;
+                }
+            }
+            
+            return false;
         }
         
         storm::expressions::Expression const& Automaton::getInitialStatesRestriction() const {

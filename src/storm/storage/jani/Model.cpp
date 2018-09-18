@@ -939,12 +939,18 @@ namespace storm {
             return initialStatesRestriction;
         }
         
-        bool Model::hasNonTrivialInitialStatesRestriction() const {
+        bool Model::hasNonTrivialInitialStates() const {
             if (this->hasInitialStatesRestriction() && !this->getInitialStatesRestriction().isTrue()) {
                 return true;
             } else {
+                for (auto const& variable : this->getGlobalVariables()) {
+                    if (variable.hasInitExpression() && !variable.isTransient()) {
+                        return true;
+                    }
+                }
+                
                 for (auto const& automaton : this->automata) {
-                    if (automaton.hasInitialStatesRestriction() && !automaton.getInitialStatesRestriction().isTrue()) {
+                    if (automaton.hasNonTrivialInitialStates()) {
                         return true;
                     }
                 }

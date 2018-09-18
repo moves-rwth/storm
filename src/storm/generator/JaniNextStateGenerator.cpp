@@ -173,7 +173,7 @@ namespace storm {
         std::vector<StateType> JaniNextStateGenerator<ValueType, StateType>::getInitialStates(StateToIdCallback const& stateToIdCallback) {
             std::vector<StateType> initialStateIndices;
 
-            if (this->model.hasNonTrivialInitialStatesRestriction()) {
+            if (this->model.hasNonTrivialInitialStates()) {
                 // Prepare an SMT solver to enumerate all initial states.
                 storm::utility::solver::SmtSolverFactory factory;
                 std::unique_ptr<storm::solver::SmtSolver> solver = factory.create(model.getExpressionManager());
@@ -474,6 +474,33 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
+        void JaniNextStateGenerator<ValueType, StateType>::generateSynchronizedDistribution(storm::storage::BitVector const& state, ValueType const& probability, uint64_t position, AutomataEdgeSets const& edgeCombination, std::vector<EdgeSetWithIndices::const_iterator> const& iteratorList, storm::builder::jit::Distribution<StateType, ValueType>& distribution, std::vector<ValueType>& stateActionRewards, EdgeIndexSet& edgeIndices, StateToIdCallback stateToIdCallback) {
+            
+            if (storm::utility::isZero<ValueType>(probability)) {
+                return;
+            }
+            
+            if (position >= iteratorList.size()) {
+                StateType id = stateToIdCallback(state);
+                distribution.add(id, probability);
+            } else {
+                auto const& indexAndEdge = *iteratorList[position];
+                auto const& edge = *indexAndEdge.second;
+
+                for (auto const& destination : edge.getDestinations()) {
+                    generateSynchronizedDistribution(applyUpdate(state, destination, this->variableInformation.locationVariables[edgeCombination[position].first]), probability * this->evaluator->asRational(destination.getProbability()), position + 1, edgeCombination, iteratorList, distribution, stateActionRewards, edgeIndices, stateToIdCallback);
+                }
+                
+                if (this->getOptions().isBuildChoiceOriginsSet()) {
+                    edgeIndices.insert(model.encodeAutomatonAndEdgeIndices(edgeCombination[position].first, indexAndEdge.first));
+                }
+                
+                auto valueIt = stateActionRewards.begin();
+                performTransientAssignments(edge.getAssignments().getTransientAssignments(), [&valueIt] (ValueType const& value) { *valueIt += value; ++valueIt; } );
+            }
+        }
+        
+        template<typename ValueType, typename StateType>
         std::vector<Choice<ValueType>> JaniNextStateGenerator<ValueType, StateType>::expandSynchronizingEdgeCombination(AutomataEdgeSets const& edgeCombination, uint64_t outputActionIndex, CompressedState const& state, StateToIdCallback stateToIdCallback) {
             std::vector<Choice<ValueType>> result;
             
@@ -489,57 +516,17 @@ namespace storm {
                 iteratorList[i] = edgeCombination[i].second.cbegin();
             }
             
-            storm::builder::jit::Distribution<CompressedState, ValueType> currentDistribution;
-            storm::builder::jit::Distribution<CompressedState, ValueType> nextDistribution;
+            storm::builder::jit::Distribution<StateType, ValueType> distribution;
 
             // As long as there is one feasible combination of commands, keep on expanding it.
             bool done = false;
             while (!done) {
-                currentDistribution.clear();
-                nextDistribution.clear();
-                
-                std::vector<ValueType> stateActionRewards(rewardVariables.size(), storm::utility::zero<ValueType>());
-                
-                currentDistribution.add(state, storm::utility::one<ValueType>());
+                distribution.clear();
                 
                 EdgeIndexSet edgeIndices;
-                for (uint_fast64_t i = 0; i < iteratorList.size(); ++i) {
-                    auto const& indexAndEdge = *iteratorList[i];
-                    
-                    if (this->getOptions().isBuildChoiceOriginsSet()) {
-                        edgeIndices.insert(model.encodeAutomatonAndEdgeIndices(edgeCombination[i].first, indexAndEdge.first));
-                    }
-                    
-                    storm::jani::Edge const& edge = *indexAndEdge.second;
-                    
-                    for (auto const& destination : edge.getDestinations()) {
-                        for (auto const& stateProbability : currentDistribution) {
-                            // Compute the new state under the current update and add it to the set of new target states.
-                            CompressedState newTargetState = applyUpdate(stateProbability.getState(), destination, this->variableInformation.locationVariables[edgeCombination[i].first]);
-                            
-                            // If the new state was already found as a successor state, update the probability
-                            // and otherwise insert it.
-                            ValueType probability = stateProbability.getValue() * this->evaluator->asRational(destination.getProbability());
-                            if (edge.hasRate()) {
-                                probability *= this->evaluator->asRational(edge.getRate());
-                            }
-                            if (probability != storm::utility::zero<ValueType>()) {
-                                nextDistribution.add(newTargetState, probability);
-                            }
-                        }
-                    }
-                    
-                    // Create the state-action reward for the newly created choice.
-                    auto valueIt = stateActionRewards.begin();
-                    performTransientAssignments(edge.getAssignments().getTransientAssignments(), [&valueIt] (ValueType const& value) { *valueIt += value; ++valueIt; } );
-                    
-                    nextDistribution.compress();
-                    
-                    // If there is one more command to come, shift the target states one time step back.
-                    if (i < iteratorList.size() - 1) {
-                        currentDistribution = std::move(nextDistribution);
-                    }
-                }
+                std::vector<ValueType> stateActionRewards(rewardVariables.size(), storm::utility::zero<ValueType>());
+                generateSynchronizedDistribution(state, storm::utility::one<ValueType>(), 0, edgeCombination, iteratorList, distribution, stateActionRewards, edgeIndices, stateToIdCallback);
+                distribution.compress();
                 
                 // At this point, we applied all commands of the current command combination and newTargetStates
                 // contains all target states and their respective probabilities. That means we are now ready to
@@ -559,9 +546,8 @@ namespace storm {
                 
                 // Add the probabilities/rates to the newly created choice.
                 ValueType probabilitySum = storm::utility::zero<ValueType>();
-                for (auto const& stateProbability : nextDistribution) {
-                    StateType actualIndex = stateToIdCallback(stateProbability.getState());
-                    choice.addProbability(actualIndex, stateProbability.getValue());
+                for (auto const& stateProbability : distribution) {
+                    choice.addProbability(stateProbability.getState(), stateProbability.getValue());
                     
                     if (this->options.isExplorationChecksSet()) {
                         probabilitySum += stateProbability.getValue();
