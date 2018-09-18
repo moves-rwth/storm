@@ -35,13 +35,8 @@ namespace storm {
                 janiModel.makeStandardJaniCompliant();
             }
             
-            if (!options.allowArrays && janiModel.getModelFeatures().hasArrays()) {
-                janiModel.eliminateArrays(properties);
-            }
-            
-            if (!options.allowFunctions && janiModel.getModelFeatures().hasFunctions()) {
-                janiModel.substituteFunctions(properties);
-            }
+            auto uneliminatedFeatures = janiModel.restrictToFeatures(options.allowedModelFeatures);
+            STORM_LOG_WARN(uneliminatedFeatures.empty(), "The following model features could not be eliminated: " << uneliminatedFeatures.toString());
             
             if (options.modelName) {
                 janiModel.setName(options.modelName.get());

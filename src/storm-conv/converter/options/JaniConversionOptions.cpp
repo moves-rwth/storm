@@ -3,12 +3,17 @@
 namespace storm {
     namespace converter {
 
-        JaniConversionOptions::JaniConversionOptions() : standardCompliant(false), flatten(false), allowArrays(true), allowFunctions(true) {
+        JaniConversionOptions::JaniConversionOptions() : standardCompliant(false), flatten(false), allowedModelFeatures(storm::jani::getAllKnownModelFeatures()) {
             // Intentionally left empty
         };
 
-        JaniConversionOptions::JaniConversionOptions(storm::settings::modules::JaniExportSettings const& settings) : locationVariables(settings.getLocationVariables()), standardCompliant(settings.isExportAsStandardJaniSet()), flatten(settings.isExportFlattenedSet()), allowArrays(!settings.isEliminateArraysSet()), allowFunctions(!settings.isEliminateFunctionsSet()) {
-            // Intentionally left empty
+        JaniConversionOptions::JaniConversionOptions(storm::settings::modules::JaniExportSettings const& settings) : locationVariables(settings.getLocationVariables()), standardCompliant(settings.isExportAsStandardJaniSet()), flatten(settings.isExportFlattenedSet()), allowedModelFeatures(storm::jani::getAllKnownModelFeatures()) {
+            if (settings.isEliminateFunctionsSet()) {
+                allowedModelFeatures.remove(storm::jani::ModelFeature::Functions);
+            }
+            if (settings.isEliminateArraysSet()) {
+                allowedModelFeatures.remove(storm::jani::ModelFeature::Arrays);
+            }
         };
     }
 }

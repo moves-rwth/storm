@@ -5,6 +5,7 @@
 #include <boost/optional.hpp>
 
 #include "storm-conv/settings/modules/JaniExportSettings.h"
+#include "storm/storage/jani/ModelFeatures.h"
 
 namespace storm {
     namespace converter {
@@ -26,11 +27,8 @@ namespace storm {
             /// If given, the model will get this name
             boost::optional<std::string> modelName;
             
-            /// If not set, arrays in the model are eliminated
-            bool allowArrays;
-            
-            /// if not set, functions in the model are eliminated
-            bool allowFunctions;
+            /// Only these model features are allowed in the output
+            storm::jani::ModelFeatures allowedModelFeatures;
             
         };
     }
