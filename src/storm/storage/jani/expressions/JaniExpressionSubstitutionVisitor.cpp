@@ -67,7 +67,7 @@ namespace storm {
             for (uint64_t i = 0; i < expression.getNumberOfArguments(); ++i) {
                 newArguments.push_back(boost::any_cast<std::shared_ptr<BaseExpression const>>(expression.getArgument(i)->accept(*this, data)));
             }
-            return std::const_pointer_cast<BaseExpression const>(std::shared_ptr<BaseExpression>(new FunctionCallExpression(expression.getManager(), expression.getType(), expression.getIdentifier(), newArguments)));
+            return std::const_pointer_cast<BaseExpression const>(std::shared_ptr<BaseExpression>(new FunctionCallExpression(expression.getManager(), expression.getType(), expression.getFunctionIdentifier(), newArguments)));
         }
 
         // Explicitly instantiate the class with map and unordered_map.

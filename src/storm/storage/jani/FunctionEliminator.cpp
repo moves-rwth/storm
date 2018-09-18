@@ -176,13 +176,13 @@ namespace storm {
                     // Find the associated function definition
                     FunctionDefinition const* funDef = nullptr;
                     if (localFunctions != nullptr) {
-                        auto funDefIt = localFunctions->find(expression.getIdentifier());
+                        auto funDefIt = localFunctions->find(expression.getFunctionIdentifier());
                         if (funDefIt != localFunctions->end()) {
                             funDef = &(funDefIt->second);
                         }
                     }
                     if (globalFunctions != nullptr) {
-                        auto funDefIt = globalFunctions->find(expression.getIdentifier());
+                        auto funDefIt = globalFunctions->find(expression.getFunctionIdentifier());
                         if (funDefIt != globalFunctions->end()) {
                             funDef = &(funDefIt->second);
                         }
