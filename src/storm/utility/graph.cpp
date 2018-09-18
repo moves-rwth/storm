@@ -30,7 +30,7 @@ namespace storm {
         namespace graph {
             
             template<typename T>
-            storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, bool useStepBound, uint_fast64_t maximalSteps) {
+            storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, bool useStepBound, uint_fast64_t maximalSteps, boost::optional<storm::storage::BitVector> const& choiceFilter) {
                 storm::storage::BitVector reachableStates(initialStates);
                 
                 uint_fast64_t numberOfStates = transitionMatrix.getRowGroupCount();
@@ -64,25 +64,37 @@ namespace storm {
                             continue;
                         }
                     }
-                
-                    for (auto const& successor : transitionMatrix.getRowGroup(currentState)) {
-                        // Only explore the state if the transition was actually there and the successor has not yet
-                        // been visited.
-                        if (!storm::utility::isZero(successor.getValue()) && (!reachableStates.get(successor.getColumn()) || (useStepBound && remainingSteps[successor.getColumn()] < currentStepBound - 1))) {
-                            // If the successor is one of the target states, we need to include it, but must not explore
-                            // it further.
-                            if (targetStates.get(successor.getColumn())) {
-                                reachableStates.set(successor.getColumn());
-                            } else if (constraintStates.get(successor.getColumn())) {
-                                // However, if the state is in the constrained set of states, we potentially need to follow it.
-                                if (useStepBound) {
-                                    // As there is at least one more step to go, we need to push the state and the new number of steps.
-                                    remainingSteps[successor.getColumn()] = currentStepBound - 1;
-                                    stepStack.push_back(currentStepBound - 1);
+                    
+                    
+                    uint64_t row = transitionMatrix.getRowGroupIndices()[currentState];
+                    if (choiceFilter) {
+                        row = choiceFilter->getNextSetIndex(row);
+                    }
+                    uint64_t const rowGroupEnd = transitionMatrix.getRowGroupIndices()[currentState + 1];
+                    while (row < rowGroupEnd) {
+                        for (auto const& successor : transitionMatrix.getRow(row)) {
+                            // Only explore the state if the transition was actually there and the successor has not yet
+                            // been visited.
+                            if (!storm::utility::isZero(successor.getValue()) && (!reachableStates.get(successor.getColumn()) || (useStepBound && remainingSteps[successor.getColumn()] < currentStepBound - 1))) {
+                                // If the successor is one of the target states, we need to include it, but must not explore
+                                // it further.
+                                if (targetStates.get(successor.getColumn())) {
+                                    reachableStates.set(successor.getColumn());
+                                } else if (constraintStates.get(successor.getColumn())) {
+                                    // However, if the state is in the constrained set of states, we potentially need to follow it.
+                                    if (useStepBound) {
+                                        // As there is at least one more step to go, we need to push the state and the new number of steps.
+                                        remainingSteps[successor.getColumn()] = currentStepBound - 1;
+                                        stepStack.push_back(currentStepBound - 1);
+                                    }
+                                    reachableStates.set(successor.getColumn());
+                                    stack.push_back(successor.getColumn());
                                 }
-                                reachableStates.set(successor.getColumn());
-                                stack.push_back(successor.getColumn());
                             }
+                        }
+                        ++row;
+                        if (choiceFilter) {
+                            row = choiceFilter->getNextSetIndex(row);
                         }
                     }
                 }
@@ -1357,7 +1369,7 @@ namespace storm {
             }
 
 
-            template storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<double> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, bool useStepBound, uint_fast64_t maximalSteps);
+            template storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<double> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, bool useStepBound, uint_fast64_t maximalSteps, boost::optional<storm::storage::BitVector> const& choiceFilter);
             
             template storm::storage::BitVector getBsccCover(storm::storage::SparseMatrix<double> const& transitionMatrix);
            
@@ -1428,7 +1440,7 @@ namespace storm {
             
             // Instantiations for storm::RationalNumber.
 #ifdef STORM_HAVE_CARL
-            template storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, bool useStepBound, uint_fast64_t maximalSteps);
+            template storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, bool useStepBound, uint_fast64_t maximalSteps, boost::optional<storm::storage::BitVector> const& choiceFilter);
             
             template storm::storage::BitVector getBsccCover(storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix);
            
@@ -1479,7 +1491,7 @@ namespace storm {
             template std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<storm::RationalNumber> const& matrix);
             // End of instantiations for storm::RationalNumber.
             
-            template storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<storm::RationalFunction> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, bool useStepBound, uint_fast64_t maximalSteps);
+            template storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<storm::RationalFunction> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, bool useStepBound, uint_fast64_t maximalSteps, boost::optional<storm::storage::BitVector> const& choiceFilter);
             
             template storm::storage::BitVector getBsccCover(storm::storage::SparseMatrix<storm::RationalFunction> const& transitionMatrix);
             

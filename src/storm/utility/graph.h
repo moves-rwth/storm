@@ -62,9 +62,10 @@ namespace storm {
              * @param targetStates The target states that may not be passed.
              * @param useStepBound A flag that indicates whether or not to use the given number of maximal steps for the search.
              * @param maximalSteps The maximal number of steps to reach the psi states.
+             * @param choiceFilter If given, only choices for which the bitvector is true are considered.
              */
             template<typename T>
-            storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, bool useStepBound = false, uint_fast64_t maximalSteps = 0);
+            storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, bool useStepBound = false, uint_fast64_t maximalSteps = 0, boost::optional<storm::storage::BitVector> const& choiceFilter = boost::none);
 
             /*!
              * Retrieves a set of states that covers als BSCCs of the system in the sense that for every BSCC exactly
