@@ -9,14 +9,15 @@
 #include "storm/storage/jani/Property.h"
 #include "storm/storage/jani/AutomatonComposition.h"
 #include "storm/storage/jani/ParallelComposition.h"
+#include "storm/storage/jani/ModelType.h"
 #include "storm/storage/jani/CompositionInformationVisitor.h"
 #include "storm/storage/jani/expressions/JaniExpressions.h"
+#include "storm/logic/RewardAccumulationEliminationVisitor.h"
+
 #include "storm/exceptions/FileIoException.h"
 #include "storm/exceptions/InvalidJaniException.h"
-
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/NotImplementedException.h"
-#include "storm/storage/jani/ModelType.h"
 
 #include "storm/modelchecker/results/FilterType.h"
 
@@ -100,19 +101,18 @@ namespace storm {
             size_t featuresCount = parsedStructure.count("features");
             STORM_LOG_THROW(featuresCount < 2, storm::exceptions::InvalidJaniException, "features-declarations can be given at most once.");
             if (featuresCount == 1) {
+                auto allKnownModelFeatures = storm::jani::getAllKnownModelFeatures();
                 for (auto const& feature : parsedStructure.at("features")) {
 					std::string featureStr = getString(feature, "Model feature");
-                    if (featureStr == "arrays") {
-                        model.getModelFeatures().add(storm::jani::ModelFeature::Arrays);
-                    } else if (featureStr == "derived-operators") {
-                        model.getModelFeatures().add(storm::jani::ModelFeature::DerivedOperators);
-                    } else if (featureStr == "functions") {
-                        model.getModelFeatures().add(storm::jani::ModelFeature::Functions);
-                    } else if (featureStr == "state-exit-rewards") {
-                        model.getModelFeatures().add(storm::jani::ModelFeature::StateExitRewards);
-                    } else {
-                        STORM_LOG_WARN("Storm does not support the model feature " << featureStr << ".");
+                    bool found = false;
+                    for (auto const& knownFeature : allKnownModelFeatures.asSet()) {
+                        if (featureStr == storm::jani::toString(knownFeature)) {
+                            model.getModelFeatures().add(knownFeature);
+                            found = true;
+                            break;
+                        }
                     }
+                    STORM_LOG_THROW(found, storm::exceptions::NotSupportedException, "Storm does not support the model feature " << featureStr);
                 }
             }
             size_t actionCount = parsedStructure.count("actions");

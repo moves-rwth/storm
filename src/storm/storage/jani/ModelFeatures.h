@@ -22,12 +22,16 @@ namespace storm {
             
             // Returns true, if no model feature is enabled.
             bool empty() const;
+            std::set<ModelFeature> const& asSet() const;
             
-            void add(ModelFeature const& modelFeature);
+            ModelFeatures& add(ModelFeature const& modelFeature);
             void remove(ModelFeature const& modelFeature);
 
         private:
             std::set<ModelFeature> features;
         };
+        
+        ModelFeatures getAllKnownModelFeatures();
+        
     }
 }

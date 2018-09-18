@@ -50,17 +50,25 @@ namespace storm {
             return features.count(ModelFeature::StateExitRewards) > 0;
         }
         
+        std::set<ModelFeature> const& ModelFeatures::asSet() const {
+            return features;
+        }
+
         bool ModelFeatures::empty() const {
             return features.empty();
         }
         
-        void ModelFeatures::add(ModelFeature const& modelFeature) {
+        ModelFeatures& ModelFeatures::add(ModelFeature const& modelFeature) {
             features.insert(modelFeature);
+            return *this;
         }
         
         void ModelFeatures::remove(ModelFeature const& modelFeature) {
             features.erase(modelFeature);
         }
         
+        ModelFeatures getAllKnownModelFeatures() {
+            return ModelFeatures().add(ModelFeature::Arrays).add(ModelFeature::DerivedOperators).add(ModelFeature::Functions).add(ModelFeature::StateExitRewards);
+        }
     }
 }
