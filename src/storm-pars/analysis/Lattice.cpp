@@ -121,7 +121,7 @@ namespace storm {
                 if (node1 == node2) {
                     return SAME;
                 }
-
+                // TODO: Uberhaupt niet mogelijk?
                 bool isAbove = above(node1, node2, new std::set<Node*>({}));
                 bool isBelow = above(node2, node1, new std::set<Node*>({}));
                 if (isAbove && isBelow) {

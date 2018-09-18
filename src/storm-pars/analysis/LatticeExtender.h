@@ -39,23 +39,20 @@ namespace storm {
             std::tuple<storm::analysis::Lattice*, uint_fast64_t, uint_fast64_t> toLattice(std::vector<std::shared_ptr<storm::logic::Formula const>> formulas);
 
             /*!
-             * Extends the lattice based on the given assumptions.
+             * Extends the lattice based on the given assumption.
              *
              * @param lattice The lattice.
-             * @param assumptions The assumptions on states.
+             * @param assumption The assumption on states.
              * @return A triple with a pointer to the lattice and two states of which the current place in the lattice
              *         is unknown but needed. When the states have as number the number of states, no states are
              *         unplaced but needed.
              */
-            std::tuple<storm::analysis::Lattice*, uint_fast64_t, uint_fast64_t> extendLattice(storm::analysis::Lattice* lattice, std::set<std::shared_ptr<storm::expressions::BinaryRelationExpression>> assumptions);
+            std::tuple<storm::analysis::Lattice*, uint_fast64_t, uint_fast64_t> extendLattice(storm::analysis::Lattice* lattice, std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption = nullptr);
 
         private:
             std::shared_ptr<storm::models::sparse::Model<ValueType>> model;
 
             std::map<uint_fast64_t, storm::storage::BitVector> stateMap;
-
-            std::tuple<storm::analysis::Lattice*, uint_fast64_t, uint_fast64_t> extendLattice(storm::analysis::Lattice* lattice);
-
         };
     }
 }

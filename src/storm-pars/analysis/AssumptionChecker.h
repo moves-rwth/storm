@@ -9,6 +9,7 @@
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/environment/Environment.h"
 #include "storm/storage/expressions/BinaryRelationExpression.h"
+#include "Lattice.h"
 
 namespace storm {
     namespace analysis {
@@ -32,8 +33,19 @@ namespace storm {
              */
             bool checkOnSamples(std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption);
 
+            /*!
+             * Checks if an assumption can be validated based on the lattice and underlying transition matrix.
+             *
+             * @param assumption The assumption to validate.
+             * @param lattice The lattice.
+             * @return true if the assumption is validated and holds, false otherwise
+             */
+            bool validateAssumption(std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption, storm::analysis::Lattice* lattice);
+
         private:
             std::shared_ptr<storm::logic::Formula const> formula;
+
+            storm::storage::SparseMatrix<ValueType> matrix;
 
             std::vector<std::vector<double>> results;
 

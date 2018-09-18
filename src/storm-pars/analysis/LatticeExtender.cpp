@@ -75,24 +75,24 @@ namespace storm {
         }
 
         template <typename ValueType>
-        std::tuple<storm::analysis::Lattice*, uint_fast64_t, uint_fast64_t> LatticeExtender<ValueType>::extendLattice(storm::analysis::Lattice* lattice) {
-            std::set<std::shared_ptr<storm::expressions::BinaryRelationExpression>> assumptions;
-            return this->extendLattice(lattice, assumptions);
-        }
-
-        template <typename ValueType>
-        std::tuple<storm::analysis::Lattice*, uint_fast64_t, uint_fast64_t> LatticeExtender<ValueType>::extendLattice(storm::analysis::Lattice* lattice, std::set<std::shared_ptr<storm::expressions::BinaryRelationExpression>> assumptions) {
+        std::tuple<storm::analysis::Lattice*, uint_fast64_t, uint_fast64_t> LatticeExtender<ValueType>::extendLattice(storm::analysis::Lattice* lattice, std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption) {
             auto numberOfStates = this->model->getNumberOfStates();
-            // First handle assumptions
-            for (auto itr = assumptions.begin(); itr != assumptions.end(); ++itr) {
-                storm::expressions::BinaryRelationExpression expr = *(*itr);
-                STORM_LOG_THROW(expr.getRelationType() == storm::expressions::BinaryRelationExpression::RelationType::GreaterOrEqual, storm::exceptions::NotImplementedException, "Only greater assumptions allowed");
+            // First handle assumption
+            if (assumption != nullptr) {
+                storm::expressions::BinaryRelationExpression expr = *assumption;
+                STORM_LOG_THROW(expr.getRelationType() ==
+                                storm::expressions::BinaryRelationExpression::RelationType::GreaterOrEqual,
+                                storm::exceptions::NotImplementedException, "Only GreaterOrEqual assumptions allowed");
                 if (expr.getFirstOperand()->isVariable() && expr.getSecondOperand()->isVariable()) {
                     storm::expressions::Variable largest = expr.getFirstOperand()->asVariableExpression().getVariable();
                     storm::expressions::Variable smallest = expr.getSecondOperand()->asVariableExpression().getVariable();
-                    if (lattice->compare(std::stoul(largest.getName(), nullptr, 0), std::stoul(smallest.getName(), nullptr, 0)) != storm::analysis::Lattice::ABOVE) {
-                        storm::analysis::Lattice::Node* n1 = lattice->getNode(std::stoul(largest.getName(), nullptr, 0));
-                        storm::analysis::Lattice::Node* n2 = lattice->getNode(std::stoul(smallest.getName(), nullptr, 0));
+                    if (lattice->compare(std::stoul(largest.getName(), nullptr, 0),
+                                         std::stoul(smallest.getName(), nullptr, 0)) !=
+                        storm::analysis::Lattice::ABOVE) {
+                        storm::analysis::Lattice::Node *n1 = lattice->getNode(
+                                std::stoul(largest.getName(), nullptr, 0));
+                        storm::analysis::Lattice::Node *n2 = lattice->getNode(
+                                std::stoul(smallest.getName(), nullptr, 0));
 
                         if (n1 != nullptr && n2 != nullptr) {
                             lattice->addRelationNodes(n1, n2);
@@ -102,7 +102,8 @@ namespace storm {
                             lattice->addBetween(std::stoul(largest.getName(), nullptr, 0), lattice->getTop(), n2);
                         } else {
                             lattice->add(std::stoul(largest.getName(), nullptr, 0));
-                            lattice->addBetween(std::stoul(smallest.getName(), nullptr, 0), lattice->getNode(std::stoul(largest.getName(), nullptr, 0)),
+                            lattice->addBetween(std::stoul(smallest.getName(), nullptr, 0),
+                                                lattice->getNode(std::stoul(largest.getName(), nullptr, 0)),
                                                 lattice->getBottom());
                         }
                     }

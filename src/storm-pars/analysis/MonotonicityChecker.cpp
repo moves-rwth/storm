@@ -9,7 +9,7 @@
 namespace storm {
     namespace analysis {
         template <typename ValueType>
-        void MonotonicityChecker<ValueType>::checkMonotonicity(std::map<storm::analysis::Lattice*, std::set<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> map, storm::storage::SparseMatrix<ValueType> matrix) {
+        void MonotonicityChecker<ValueType>::checkMonotonicity(std::map<storm::analysis::Lattice*, std::vector<std::pair<std::shared_ptr<storm::expressions::BinaryRelationExpression>, bool>>> map, storm::storage::SparseMatrix<ValueType> matrix) {
             auto i = 0;
             for (auto itr = map.begin(); itr != map.end(); ++itr) {
                 auto lattice = itr->first;
@@ -23,17 +23,18 @@ namespace storm {
                 if (assumptions.size() > 0) {
                     STORM_PRINT("Given assumptions: " << std::endl);
                     bool first = true;
-                    for (auto itr = assumptions.begin(); itr != assumptions.end(); ++itr) {
+                    for (auto itr2 = assumptions.begin(); itr2 != assumptions.end(); ++itr2) {
                         if (!first) {
                             STORM_PRINT(" ^ ");
                         } else {
                             STORM_PRINT("    ");
+                            first = false;
                         }
-                        first = false;
-                        std::shared_ptr<storm::expressions::BinaryRelationExpression> expression = *itr;
+
+                        std::shared_ptr<storm::expressions::BinaryRelationExpression> expression = itr2->first;
                         auto var1 = expression->getFirstOperand();
                         auto var2 = expression->getSecondOperand();
-                        STORM_PRINT("(" << var1->getIdentifier() << " > " << var2->getIdentifier() << ")");
+                        STORM_PRINT(*expression);
                     }
                     STORM_PRINT(std::endl);
                 }
