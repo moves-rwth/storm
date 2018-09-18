@@ -42,7 +42,14 @@ namespace storm {
              */
             bool validateAssumption(std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption, storm::analysis::Lattice* lattice);
 
+            /*!
+             * Looks up if assumption has been validated and holds.
+             *
+             * @param assumption The assumption.
+             * @return true if the assumption has been validated and holds, false otherwise
+             */
             bool validated(std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption);
+            
         private:
             std::shared_ptr<storm::logic::Formula const> formula;
 
