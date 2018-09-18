@@ -394,7 +394,10 @@ namespace storm {
         
         
         void eliminateFunctions(Model& model, std::vector<Property>& properties) {
-            detail::FunctionEliminatorTraverser().eliminate(model, properties);
+            // Only perform actions if there actually are functions.
+            if (model.getModelFeatures().hasFunctions()) {
+                detail::FunctionEliminatorTraverser().eliminate(model, properties);
+            }
             STORM_LOG_ASSERT(!containsFunctionCallExpression(model), "The model still seems to contain function calls.");
         }
         

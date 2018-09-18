@@ -668,12 +668,16 @@ namespace storm {
         }
         
         ArrayEliminatorData ArrayEliminator::eliminate(Model& model, bool keepNonTrivialArrayAccess) {
-            auto sizes = detail::MaxArraySizeDeterminer().getMaxSizes(model);
-            ArrayEliminatorData result = detail::ArrayVariableReplacer(model.getExpressionManager(), keepNonTrivialArrayAccess, sizes).replace(model);
-            if (!keepNonTrivialArrayAccess) {
-                model.getModelFeatures().remove(ModelFeature::Arrays);
+            ArrayEliminatorData result;
+            // Only perform actions if there actually are arrays.
+            if (model.getModelFeatures().hasArrays()) {
+                auto sizes = detail::MaxArraySizeDeterminer().getMaxSizes(model);
+                result = detail::ArrayVariableReplacer(model.getExpressionManager(), keepNonTrivialArrayAccess, sizes).replace(model);
+                if (!keepNonTrivialArrayAccess) {
+                    model.getModelFeatures().remove(ModelFeature::Arrays);
+                }
+                model.finalize();
             }
-            model.finalize();
             STORM_LOG_ASSERT(!containsArrayExpression(model), "the model still contains array expressions.");
             return result;
         }
