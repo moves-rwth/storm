@@ -56,7 +56,7 @@ namespace storm {
 #endif
             
             template <typename ValueType, typename RewardModelType>
-            ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::ExplicitJitJaniModelBuilder(storm::jani::Model const& model, storm::builder::BuilderOptions const& options) : options(options), model(model.substituteConstants()), modelComponentsBuilder(model.getModelType()) {
+            ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::ExplicitJitJaniModelBuilder(storm::jani::Model const& model, storm::builder::BuilderOptions const& options) : options(options), model(model.substituteConstantsFunctions()), modelComponentsBuilder(model.getModelType()) {
                 
                 // Load all options from the settings module.
                 storm::settings::modules::JitBuilderSettings const& settings = storm::settings::getModule<storm::settings::modules::JitBuilderSettings>();

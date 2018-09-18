@@ -33,7 +33,7 @@ namespace storm {
     namespace generator {
         
         template<typename ValueType, typename StateType>
-        JaniNextStateGenerator<ValueType, StateType>::JaniNextStateGenerator(storm::jani::Model const& model, NextStateGeneratorOptions const& options) : JaniNextStateGenerator(model.substituteConstants(), options, false) {
+        JaniNextStateGenerator<ValueType, StateType>::JaniNextStateGenerator(storm::jani::Model const& model, NextStateGeneratorOptions const& options) : JaniNextStateGenerator(model.substituteConstantsFunctions(), options, false) {
             // Intentionally left empty.
         }
         
@@ -765,6 +765,8 @@ namespace storm {
         
         template<typename ValueType, typename StateType>
         void JaniNextStateGenerator<ValueType, StateType>::checkGlobalVariableWritesValid(AutomataEdgeSets const& enabledEdges) const {
+            // Todo: this also throws if the writes are on different assignment level
+            // Todo: this also throws if the writes are on different elements of the same array
             std::map<storm::expressions::Variable, uint64_t> writtenGlobalVariables;
             for (auto edgeSetIt = enabledEdges.begin(), edgeSetIte = enabledEdges.end(); edgeSetIt != edgeSetIte; ++edgeSetIt) {
                 for (auto const& indexAndEdge : edgeSetIt->second) {
