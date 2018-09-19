@@ -5,6 +5,7 @@
 #include <iostream>
 #include <fstream>
 #include "Lattice.h"
+
 namespace storm {
     namespace analysis {
         Lattice::Lattice(storm::storage::BitVector topStates,
@@ -21,13 +22,15 @@ namespace storm {
                 nodes.at(i) = top;
 
             }
+
             for (auto i = bottomStates.getNextSetIndex(0); i < numberOfStates; i = bottomStates.getNextSetIndex(i+1)) {
                 nodes.at(i) = bottom;
             }
+
             this->numberOfStates = numberOfStates;
             this->addedStates = storm::storage::BitVector(numberOfStates);
-            this->addedStates.operator|=(topStates);
-            this->addedStates.operator|=(bottomStates);
+            this->addedStates |= (topStates);
+            this->addedStates |= (bottomStates);
         }
 
         Lattice::Lattice(Lattice* lattice) {
@@ -43,7 +46,6 @@ namespace storm {
 
             for (auto i = top->states.getNextSetIndex(0); i < numberOfStates; i = top->states.getNextSetIndex(i+1)) {
                 nodes.at(i) = top;
-
             }
 
             for (auto i =  bottom->states.getNextSetIndex(0); i < numberOfStates; i =  bottom->states.getNextSetIndex(i+1)) {
@@ -51,7 +53,7 @@ namespace storm {
             }
 
             auto oldNodes = lattice->getNodes();
-            // Create all nodes
+            // Create nodes
             for (auto itr = oldNodes.begin(); itr != oldNodes.end(); ++itr) {
                 Node* oldNode = (*itr);
                 if (oldNode != nullptr) {
@@ -79,6 +81,8 @@ namespace storm {
         }
 
         void Lattice::addBetween(uint_fast64_t state, Node *above, Node *below) {
+            assert(!addedStates[state]);
+            assert(compare(above, below) == ABOVE);
             Node *newNode = new Node();
             newNode->states = storm::storage::BitVector(numberOfStates);
             newNode->states.set(state);
@@ -93,6 +97,7 @@ namespace storm {
         }
 
         void Lattice::addToNode(uint_fast64_t state, Node *node) {
+            assert(!addedStates[state]);
             node->states.set(state);
             nodes.at(state) = node;
             addedStates.set(state);
@@ -103,17 +108,13 @@ namespace storm {
         }
 
         void Lattice::addRelationNodes(storm::analysis::Lattice::Node *above, storm::analysis::Lattice::Node * below) {
-            if (above != below) {
-                above->below.insert(below);
-                below->above.insert(above);
-            }
+            assert(compare(above, below) == UNKNOWN);
+            above->below.insert(below);
+            below->above.insert(above);
         }
 
         int Lattice::compare(uint_fast64_t state1, uint_fast64_t state2) {
-            Node *node1 = getNode(state1);
-            Node *node2 = getNode(state2);
-
-            return compare(node1, node2);
+            return compare(getNode(state1), getNode(state2));
         }
 
         int Lattice::compare(Node* node1, Node* node2) {
@@ -121,22 +122,16 @@ namespace storm {
                 if (node1 == node2) {
                     return SAME;
                 }
-                // TODO: Uberhaupt niet mogelijk?
-                bool isAbove = above(node1, node2, new std::set<Node*>({}));
-                bool isBelow = above(node2, node1, new std::set<Node*>({}));
-                if (isAbove && isBelow) {
-                    return SAME;
-                }
 
-                if (isAbove) {
+                if (above(node1, node2, new std::set<Node*>({}))) {
+                    assert(!above(node2, node1, new std::set<Node*>({})));
                     return ABOVE;
                 }
 
-                if (isBelow) {
+                if (above(node2, node1, new std::set<Node*>({}))) {
                     return BELOW;
                 }
             }
-
             return UNKNOWN;
         }
 
