@@ -108,7 +108,7 @@ namespace storm {
         }
 
         void Lattice::addRelationNodes(storm::analysis::Lattice::Node *above, storm::analysis::Lattice::Node * below) {
-            assert(compare(above, below) == UNKNOWN);
+            assert(compare(above, below) == UNKNOWN || compare(above, below) == ABOVE);
             above->below.insert(below);
             below->above.insert(above);
         }
