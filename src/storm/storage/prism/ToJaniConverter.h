@@ -3,6 +3,9 @@
 #include <map>
 #include <string>
 
+#include "storm/storage/expressions/Variable.h"
+#include "storm/storage/expressions/Expression.h"
+
 namespace storm {
     namespace jani {
         class Model;
@@ -28,6 +31,7 @@ namespace storm {
         private:
             std::map<std::string, std::string> labelRenaming;
             std::map<std::string, std::string> rewardModelRenaming;
+            std::map<storm::expressions::Variable, storm::expressions::Expression> formulaToFunctionCallMap;
         };
         
     }

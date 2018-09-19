@@ -7,6 +7,7 @@
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/Property.h"
 #include "storm/storage/jani/TemplateEdge.h"
+#include "storm/storage/jani/expressions/JaniExpressionSubstitutionVisitor.h"
 #include "storm/storage/jani/expressions/FunctionCallExpression.h"
 
 #include "storm/settings/SettingsManager.h"
@@ -20,7 +21,8 @@ namespace storm {
         storm::jani::Model ToJaniConverter::convert(storm::prism::Program const& program, bool allVariablesGlobal, std::string suffix, bool standardCompliant) {
             labelRenaming.clear();
             rewardModelRenaming.clear();
-            
+            formulaToFunctionCallMap.clear();
+
             std::shared_ptr<storm::expressions::ExpressionManager> manager = program.getManager().getSharedPointer();
             
             bool produceStateRewards = !standardCompliant || program.getModelType() == storm::prism::Program::ModelType::CTMC || program.getModelType() == storm::prism::Program::ModelType::MA;
@@ -50,12 +52,41 @@ namespace storm {
             }
             
             // Add all formulas of the PRISM program to the JANI model.
-            // Also collect a set of variables that occurr in a formula expressions as these need to be made global.
-            std::set<storm::expressions::Variable> formulaExpressionVariables;
+            // Also collect a substitution of formula placeholder variables to function call expressions.
             for (auto const& formula : program.getFormulas()) {
-                storm::jani::FunctionDefinition funDef(formula.getName(), formula.getType(), {}, formula.getExpression());
+                // First find all variables that occurr in the formula definition (including the ones used in called formulae) and the called formulae
+                std::set<storm::expressions::Variable> variablesInFormula, placeholdersInFormula;
+                for (auto const& var : formula.getExpression().getVariables()) {
+                    // Check whether var is an actual variable/constant or another formula
+                    auto functionCallIt = formulaToFunctionCallMap.find(var);
+                    if (functionCallIt == formulaToFunctionCallMap.end()) {
+                        variablesInFormula.insert(var);
+                    } else {
+                        storm::expressions::FunctionCallExpression const& innerFunctionCall = dynamic_cast<storm::expressions::FunctionCallExpression const&>(functionCallIt->second.getBaseExpression());
+                        for (auto const& innerFunctionArg : innerFunctionCall.getArguments()) {
+                            variablesInFormula.insert(innerFunctionArg->asVariableExpression().getVariable());
+                        }
+                        placeholdersInFormula.insert(var);
+                    }
+                }
+                
+                // Add a function argument and parameter for each occurring variable and prepare the substitution for the function body
+                std::map<storm::expressions::Variable, storm::expressions::Expression> functionBodySubstitution;
+                std::vector<storm::expressions::Variable> functionParameters;
+                std::vector<std::shared_ptr<storm::expressions::BaseExpression const>> functionArguments;
+                for (auto const& var : variablesInFormula) {
+                    functionArguments.push_back(var.getExpression().getBaseExpressionPointer());
+                    functionParameters.push_back(manager->declareVariable(formula.getName() + "__param__" + var.getName() + suffix, var.getType()));
+                    functionBodySubstitution[var] = functionParameters.back().getExpression();
+                }
+                for (auto const& formulaVar : placeholdersInFormula) {
+                    functionBodySubstitution[formulaVar] = storm::jani::substituteJaniExpression(formulaToFunctionCallMap[formulaVar], functionBodySubstitution);
+                }
+                
+                storm::jani::FunctionDefinition funDef(formula.getName(), formula.getType(), functionParameters, storm::jani::substituteJaniExpression(formula.getExpression(), functionBodySubstitution));
                 janiModel.addFunctionDefinition(funDef);
-                formula.getExpression().getBaseExpression().gatherVariables(formulaExpressionVariables);
+                auto functionCallExpression = std::make_shared<storm::expressions::FunctionCallExpression>(*manager, formula.getType(), formula.getName(), functionArguments);
+                formulaToFunctionCallMap[formula.getExpressionVariable()] = functionCallExpression->toExpression();
             }
             
             // Maintain a mapping from expression variables to JANI variables so we can fill in the correct objects when
@@ -120,7 +151,7 @@ namespace storm {
             for (auto const& varMods : variablesToAccessingModuleIndices) {
                 assert(!varMods.second.empty());
                 // If there is exactly one module reading and writing the variable, we can make the variable local to this module.
-                variablesToMakeGlobal[varMods.first] = allVariablesGlobal || (varMods.second.size() > 1) || formulaExpressionVariables.count(varMods.first) > 0;
+                variablesToMakeGlobal[varMods.first] = allVariablesGlobal || (varMods.second.size() > 1);
             }
             
             // Go through the labels and construct assignments to transient variables that are added to the locations.
@@ -361,6 +392,24 @@ namespace storm {
                     }
                 }
                 
+                // if there are formulas and if the current module was renamed, we need to apply the renaming to the resulting function calls before replacing the formula placeholders.
+                // Note that the formula placeholders of non-renamed modules are replaced later.
+                if (program.getNumberOfFormulas() > 0 && module.isRenamedFromModule()) {
+                    auto renaming = program.getFinalRenamingOfModule(module);
+                    std::map<storm::expressions::Variable, storm::expressions::Expression> renamingAsSubstitution;
+                    for (auto const& renamingPair : renaming) {
+                        if (manager->hasVariable(renamingPair.first)) {
+                            assert(manager->hasVariable(renamingPair.second));
+                            renamingAsSubstitution.emplace(manager->getVariable(renamingPair.first), manager->getVariableExpression(renamingPair.second));
+                        }
+                    }
+                    std::map<storm::expressions::Variable, storm::expressions::Expression> renamedFormulaToFunctionCallMap;
+                    for (auto const& formulaToFunctionCall : formulaToFunctionCallMap) {
+                        renamedFormulaToFunctionCallMap[formulaToFunctionCall.first] = storm::jani::substituteJaniExpression(formulaToFunctionCall.second, renamedFormulaToFunctionCallMap);
+                    }
+                    automaton.substitute(renamedFormulaToFunctionCallMap);
+                }
+                
                 janiModel.addAutomaton(automaton);
                 firstModule = false;
             }
@@ -373,15 +422,10 @@ namespace storm {
                 janiModel.setSystemComposition(janiModel.getStandardSystemComposition());
             }
             
-            // if there are formulas, replace the placeholder variables by actual function calls in all expressions
+            // if there are formulas, replace the remaining placeholder variables by actual function calls in all expressions
             if (program.getNumberOfFormulas() > 0) {
                 janiModel.getModelFeatures().add(storm::jani::ModelFeature::Functions);
-                std::map<storm::expressions::Variable, storm::expressions::Expression> substitution;
-                for (auto const& formula : program.getFormulas()) {
-                    storm::expressions::Expression functionCallExpr = std::make_shared<storm::expressions::FunctionCallExpression>(*manager, formula.getType(), formula.getName(), std::vector<std::shared_ptr<storm::expressions::BaseExpression const>>())->toExpression();
-                    substitution.emplace(formula.getExpressionVariable(), functionCallExpr);
-                }
-                janiModel.substitute(substitution);
+                janiModel.substitute(formulaToFunctionCallMap);
             }
             
             janiModel.finalize();
@@ -406,19 +450,27 @@ namespace storm {
         }
         
         storm::jani::Property ToJaniConverter::applyRenaming(storm::jani::Property const& property) const {
+            storm::jani::Property result;
+            bool initialized = false;
+            
             if (rewardModelsWereRenamed()) {
-                auto res = property.substituteRewardModelNames(getRewardModelRenaming());
-                if (labelsWereRenamed()) {
-                    res = res.substituteLabels(getLabelRenaming());
-                }
-                return res;
-            } else {
-                if (labelsWereRenamed()) {
-                    return property.substituteLabels(getLabelRenaming());
-                } else {
-                    return property.clone();
-                }
+                result = property.substituteRewardModelNames(getRewardModelRenaming());
+                initialized = true;
             }
+            if (labelsWereRenamed()) {
+                storm::jani::Property const& currProperty = initialized ? result : property;
+                result = currProperty.substituteLabels(getLabelRenaming());
+                initialized = true;
+            }
+            if (!formulaToFunctionCallMap.empty()) {
+                storm::jani::Property const& currProperty = initialized ? result : property;
+                result = currProperty.substitute(formulaToFunctionCallMap);
+                initialized = true;
+            }
+            if (!initialized) {
+                result = property.clone();
+            }
+            return result;
         }
         
         std::vector<storm::jani::Property> ToJaniConverter::applyRenaming(std::vector<storm::jani::Property> const& properties) const {
