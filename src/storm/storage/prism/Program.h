@@ -139,6 +139,13 @@ namespace storm {
             std::map<storm::expressions::Variable, storm::expressions::Expression> getConstantsSubstitution() const;
             
             /*!
+             * Retrieves a mapping of all defined constants and formula variables to their defining expressions
+             *
+             * @return A mapping from constants and formulas to their expressions.
+             */
+            std::map<storm::expressions::Variable, storm::expressions::Expression> getConstantsFormulasSubstitution() const;
+            
+            /*!
              * Retrieves all constants defined in the program.
              *
              * @return The constants defined in the program.

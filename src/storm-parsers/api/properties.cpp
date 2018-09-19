@@ -58,7 +58,7 @@ namespace storm {
         std::vector <storm::jani::Property> parsePropertiesForPrismProgram(std::string const &inputString, storm::prism::Program const &program, boost::optional <std::set<std::string>> const &propertyFilter) {
             storm::parser::FormulaParser formulaParser(program);
             auto formulas = parseProperties(formulaParser, inputString, propertyFilter);
-            return substituteConstantsInProperties(formulas, program.getConstantsSubstitution());
+            return substituteConstantsInProperties(formulas, program.getConstantsFormulasSubstitution());
         }
 
         std::vector <storm::jani::Property> parsePropertiesForSymbolicModelDescription(std::string const &inputString, storm::storage::SymbolicModelDescription const &modelDescription, boost::optional <std::set<std::string>> const &propertyFilter) {

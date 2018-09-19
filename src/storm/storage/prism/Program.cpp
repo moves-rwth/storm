@@ -333,6 +333,14 @@ namespace storm {
             return constantsSubstitution;
         }
         
+        std::map<storm::expressions::Variable, storm::expressions::Expression> Program::getConstantsFormulasSubstitution() const {
+            auto result = getConstantsSubstitution();
+            for (auto const& formula : this->getFormulas()) {
+                result.emplace(formula.getExpressionVariable(), formula.getExpression());
+            }
+            return result;
+        }
+        
         std::size_t Program::getNumberOfConstants() const {
             return this->getConstants().size();
         }
