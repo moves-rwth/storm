@@ -360,7 +360,6 @@ namespace storm {
             
             std::map<storm::expressions::Variable, storm::expressions::Expression> newSubstitution;
             for (auto const& substVarExpr : substitution) {
-                STORM_LOG_ASSERT(renamingAsSubstitution.count(substVarExpr.first) == 0, "Conflict: The substitution substitutes the renamed variable " << substVarExpr.first.getName() << ".");
                 newSubstitution.emplace(substVarExpr.first, substVarExpr.second.substitute(renamingAsSubstitution));
             }
             return newSubstitution;
@@ -893,8 +892,9 @@ namespace storm {
                     // The renaming needs to be applied to the substitution as well.
                     auto renamedSubstitution = getSubstitutionForRenamedModule(module, substitution);
                     newModules.emplace_back(module.substitute(renamedSubstitution));
+                } else {
+                    newModules.emplace_back(module.substitute(substitution));
                 }
-                newModules.emplace_back(module.substitute(substitution));
             }
             
             std::vector<RewardModel> newRewardModels;
