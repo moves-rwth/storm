@@ -324,22 +324,77 @@ namespace storm {
         }
         
         std::map<storm::expressions::Variable, storm::expressions::Expression> Program::getConstantsSubstitution() const {
-            std::map<storm::expressions::Variable, storm::expressions::Expression> constantsSubstitution;
-            for (auto const& constant : this->getConstants()) {
-                if (constant.isDefined()) {
-                    constantsSubstitution.emplace(constant.getExpressionVariable(), constant.getExpression());
-                }
-            }
-            return constantsSubstitution;
+            return getConstantsFormulasSubstitution(true, false);
         }
         
-        std::map<storm::expressions::Variable, storm::expressions::Expression> Program::getConstantsFormulasSubstitution() const {
-            auto result = getConstantsSubstitution();
-            for (auto const& formula : this->getFormulas()) {
-                result.emplace(formula.getExpressionVariable(), formula.getExpression());
+        std::map<storm::expressions::Variable, storm::expressions::Expression> Program::getFormulasSubstitution() const {
+            return getConstantsFormulasSubstitution(false, true);
+        }
+        
+        std::map<storm::expressions::Variable, storm::expressions::Expression> Program::getConstantsFormulasSubstitution(bool getConstantsSubstitution, bool getFormulasSubstitution) const {
+            std::map<storm::expressions::Variable, storm::expressions::Expression> result;
+            if (getConstantsSubstitution) {
+                for (auto const& constant : this->getConstants()) {
+                    if (constant.isDefined()) {
+                        result.emplace(constant.getExpressionVariable(), constant.getExpression().substitute(result));
+                    }
+                }
+            }
+            if (getFormulasSubstitution) {
+                for (auto const& formula : this->getFormulas()) {
+                    result.emplace(formula.getExpressionVariable(), formula.getExpression().substitute(result));
+                }
             }
             return result;
         }
+        
+        std::map<storm::expressions::Variable, storm::expressions::Expression> Program::getSubstitutionForRenamedModule(Module const& renamedModule, std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
+            auto renaming = getFinalRenamingOfModule(renamedModule);
+            std::map<storm::expressions::Variable, storm::expressions::Expression> renamingAsSubstitution;
+            for (auto const& renamingPair : renaming) {
+                if (getManager().hasVariable(renamingPair.first)) {
+                    assert(getManager().hasVariable(renamingPair.second));
+                    renamingAsSubstitution.emplace(getManager().getVariable(renamingPair.first), getManager().getVariableExpression(renamingPair.second));
+                }
+            }
+            
+            std::map<storm::expressions::Variable, storm::expressions::Expression> newSubstitution;
+            for (auto const& substVarExpr : substitution) {
+                STORM_LOG_ASSERT(renamingAsSubstitution.count(substVarExpr.first) == 0, "Conflict: The substitution substitutes the renamed variable " << substVarExpr.first.getName() << ".");
+                newSubstitution.emplace(substVarExpr.first, substVarExpr.second.substitute(renamingAsSubstitution));
+            }
+            return newSubstitution;
+        }
+
+        std::map<std::string, std::string> Program::getFinalRenamingOfModule(Module const& renamedModule) const {
+            std::vector<Module const*> moduleStack = {&renamedModule};
+            while (moduleStack.back()->isRenamedFromModule()) {
+                moduleStack.push_back(&getModule(moduleStack.back()->getBaseModule()));
+            }
+            
+            assert(!moduleStack.back()->isRenamedFromModule());
+            moduleStack.pop_back();
+            assert(moduleStack.empty() || moduleStack.back()->isRenamedFromModule());
+            std::map<std::string, std::string> currentRenaming;
+            while (!moduleStack.empty()) {
+                Module const& currentModule = *moduleStack.back();
+                moduleStack.pop_back();
+                assert(currentModule.isRenamedFromModule());
+                std::map<std::string, std::string> newRenaming = currentModule.getRenaming();
+                for (auto const& renaimingPair : newRenaming) {
+                    auto findRes = currentRenaming.find(renaimingPair.second);
+                    if (findRes != currentRenaming.end()) {
+                        newRenaming[renaimingPair.second] = findRes->second;
+                        currentRenaming.erase(findRes);
+                    }
+                }
+                newRenaming.insert(currentRenaming.begin(), currentRenaming.end());
+                currentRenaming = std::move(newRenaming);
+            }
+            return currentRenaming;
+        }
+
+        
         
         std::size_t Program::getNumberOfConstants() const {
             return this->getConstants().size();
@@ -805,36 +860,20 @@ namespace storm {
         Program Program::substituteConstantsFormulas(bool substituteConstants, bool substituteFormulas) const {
             
             // We start by creating the appropriate substitution.
-            std::map<storm::expressions::Variable, storm::expressions::Expression> substitution;
+            std::map<storm::expressions::Variable, storm::expressions::Expression> substitution = getConstantsFormulasSubstitution(substituteConstants, substituteFormulas);
             
-            // Start with substituting constants. In a sane model, constant definitions do not contain formulas.
             std::vector<Constant> newConstants;
             newConstants.reserve(this->getNumberOfConstants());
             for (auto const& oldConstant : this->getConstants()) {
-                // apply the substitutions gathered so far to the constant definition *before* adding it to the substitution.
                 newConstants.push_back(oldConstant.substitute(substitution));
-                
-                // Put the corresponding expression in the substitution (if requested).
-                auto const& constant = newConstants.back();
-                if (substituteConstants && constant.isDefined()) {
-                    substitution.emplace(constant.getExpressionVariable(), constant.getExpression().simplify());
-                }
             }
             
-            // Secondly, handle the formulas. These might contain constants
             std::vector<Formula> newFormulas;
             newFormulas.reserve(this->getNumberOfFormulas());
             for (auto const& oldFormula : this->getFormulas()) {
-                // apply the currently gathered substitutions on the formula definition *before* adding it to the substitution.
                 newFormulas.emplace_back(oldFormula.substitute(substitution));
-                // Put the corresponding expression in the substitution (if requested).
-                auto const& formula = newFormulas.back();
-                if (substituteFormulas) {
-                    substitution.emplace(formula.getExpressionVariable(), formula.getExpression().simplify());
-                }
             }
             
-            // Now we can substitute the constants/formulas in all expressions appearing in the program.
             std::vector<BooleanVariable> newBooleanVariables;
             newBooleanVariables.reserve(this->getNumberOfGlobalBooleanVariables());
             for (auto const& booleanVariable : this->getGlobalBooleanVariables()) {
@@ -850,6 +889,11 @@ namespace storm {
             std::vector<Module> newModules;
             newModules.reserve(this->getNumberOfModules());
             for (auto const& module : this->getModules()) {
+                if (module.isRenamedFromModule()) {
+                    // The renaming needs to be applied to the substitution as well.
+                    auto renamedSubstitution = getSubstitutionForRenamedModule(module, substitution);
+                    newModules.emplace_back(module.substitute(renamedSubstitution));
+                }
                 newModules.emplace_back(module.substitute(substitution));
             }
             

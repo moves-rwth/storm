@@ -139,12 +139,30 @@ namespace storm {
             std::map<storm::expressions::Variable, storm::expressions::Expression> getConstantsSubstitution() const;
             
             /*!
+             * Retrieves a mapping of all formula variables to their defining expressions.
+             *
+             * @return A mapping from constants to their 'values'.
+             */
+            std::map<storm::expressions::Variable, storm::expressions::Expression> getFormulasSubstitution() const;
+            
+            /*!
              * Retrieves a mapping of all defined constants and formula variables to their defining expressions
              *
              * @return A mapping from constants and formulas to their expressions.
              */
-            std::map<storm::expressions::Variable, storm::expressions::Expression> getConstantsFormulasSubstitution() const;
+            std::map<storm::expressions::Variable, storm::expressions::Expression> getConstantsFormulasSubstitution(bool getConstantsSubstitution = true, bool getFormulasSubstitution = true) const;
             
+            /*!
+             * Applies the renaming of a renamed module to the given substitution.
+             */
+            std::map<storm::expressions::Variable, storm::expressions::Expression> getSubstitutionForRenamedModule(Module const& renamedModule, std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const;
+            
+            /*!
+             * Gets the renaming of a module after flattening all renamings.
+             * Note that the base of a renamed module might again be a renamed module.
+             */
+            std::map<std::string, std::string> getFinalRenamingOfModule(Module const& renamedModule) const;
+
             /*!
              * Retrieves all constants defined in the program.
              *
@@ -580,6 +598,7 @@ namespace storm {
             /*!
              * Substitutes all formulas appearing in the expressions of the program by their defining expressions.
              *
+             * The resulting program still contains the function definition, but does not apply them.
              * @return The resulting program that only contains expressions over variables of the program (and maybe constants).
              */
             Program substituteFormulas() const;
