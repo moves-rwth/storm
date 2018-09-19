@@ -31,6 +31,7 @@
 #include "storm/storage/jani/ParallelComposition.h"
 #include "storm/storage/jani/Property.h"
 #include "storm/storage/jani/traverser/AssignmentsFinder.h"
+#include "storm/storage/jani/expressions/JaniReduceNestingExpressionVisitor.h"
 
 namespace storm {
     namespace jani {
@@ -619,8 +620,7 @@ namespace storm {
         modernjson::json ExpressionToJson::translate(storm::expressions::Expression const& expr, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables, std::unordered_set<std::string> const& auxiliaryVariables) {
             
             // Simplify the expression first and reduce the nesting
-            auto simplifiedExpr = expr.simplify().reduceNesting();
-            
+            auto simplifiedExpr = storm::jani::reduceNestingInJaniExpression(expr.simplify());
             
             ExpressionToJson visitor(constants, globalVariables, localVariables, auxiliaryVariables);
             return boost::any_cast<modernjson::json>(simplifiedExpr.accept(visitor, boost::none));
