@@ -58,7 +58,7 @@ namespace storm {
                 
                 // Flatten the modules if there is more than one.
                 if (originalProgram.getNumberOfModules() > 1) {
-                    preprocessedModel = originalProgram.flattenModules(this->smtSolverFactory);
+                    preprocessedModel = originalProgram.substituteFormulas().flattenModules(this->smtSolverFactory);
                 } else {
                     preprocessedModel = originalProgram;
                 }
