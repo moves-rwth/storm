@@ -7,6 +7,7 @@
 
 #include "storm/logic/Formula.h"
 #include "storm/models/sparse/Dtmc.h"
+#include "storm/models/sparse/Mdp.h"
 #include "storm/environment/Environment.h"
 #include "storm/storage/expressions/BinaryRelationExpression.h"
 #include "Lattice.h"
@@ -20,10 +21,19 @@ namespace storm {
              * Constructs an AssumptionChecker based on the number of samples, for the given formula and model.
              *
              * @param formula The formula to check.
-             * @param model The model to check the formula on.
+             * @param model The dtmc model to check the formula on.
              * @param numberOfSamples Number of sample points.
              */
             AssumptionChecker(std::shared_ptr<storm::logic::Formula const> formula, std::shared_ptr<storm::models::sparse::Dtmc<ValueType>> model, uint_fast64_t numberOfSamples);
+
+            /*!
+             * Constructs an AssumptionChecker based on the number of samples, for the given formula and model.
+             *
+             * @param formula The formula to check.
+             * @param model The mdp model to check the formula on.
+             * @param numberOfSamples Number of sample points.
+             */
+            AssumptionChecker(std::shared_ptr<storm::logic::Formula const> formula, std::shared_ptr<storm::models::sparse::Mdp<ValueType>> model, uint_fast64_t numberOfSamples);
 
             /*!
              * Checks if the assumption holds at the sample points of the AssumptionChecker.
