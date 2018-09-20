@@ -742,7 +742,7 @@ namespace storm {
         
         void JsonExporter::toFile(storm::jani::Model const& janiModel, std::vector<storm::jani::Property> const& formulas, std::string const& filepath, bool checkValid, bool compact) {
             std::ofstream stream;
-            storm::utility::openFile(filepath, stream);
+            storm::utility::openFile(filepath, stream, true);
             toStream(janiModel, formulas, stream, checkValid, compact);
             storm::utility::closeFile(stream);
         }
@@ -1015,6 +1015,9 @@ namespace storm {
                 modernjson::json autoEntry;
                 autoEntry["name"] = automaton.getName();
                 autoEntry["variables"] = buildVariablesArray(automaton.getVariables(), constants, globalVariables, automaton.getVariables());
+                if (!automaton.getFunctionDefinitions().empty()) {
+                    autoEntry["functions"] = buildFunctionsArray(automaton.getFunctionDefinitions(), constants, globalVariables, automaton.getVariables());
+                }
                 if(automaton.hasRestrictedInitialStates()) {
                     autoEntry["restrict-initial"]["exp"] = buildExpression(automaton.getInitialStatesRestriction(), constants, globalVariables, automaton.getVariables());
                 }
@@ -1034,6 +1037,9 @@ namespace storm {
             jsonStruct["actions"] = buildActionArray(janiModel.getActions());
             jsonStruct["constants"] = buildConstantsArray(janiModel.getConstants());
             jsonStruct["variables"] = buildVariablesArray(janiModel.getGlobalVariables(), janiModel.getConstants(), janiModel.getGlobalVariables());
+            if (!janiModel.getGlobalFunctionDefinitions().empty()) {
+                jsonStruct["functions"] = buildFunctionsArray(janiModel.getGlobalFunctionDefinitions(), janiModel.getConstants(), janiModel.getGlobalVariables());
+            }
             jsonStruct["restrict-initial"]["exp"] = buildExpression(janiModel.getInitialStatesRestriction(), janiModel.getConstants(), janiModel.getGlobalVariables());
             jsonStruct["automata"] = buildAutomataArray(janiModel.getAutomata(), janiModel.getActionIndexToNameMap(), janiModel.getConstants(), janiModel.getGlobalVariables(), commentExpressions);
             jsonStruct["system"] = CompositionJsonExporter::translate(janiModel.getSystemComposition());

@@ -15,14 +15,16 @@ namespace storm {
          * @param filestream Contains the file handler afterwards.
          * @param append If true, the new content is appended instead of clearing the existing content.
          */
-        inline void openFile(std::string const& filepath, std::ofstream& filestream, bool append = false) {
+        inline void openFile(std::string const& filepath, std::ofstream& filestream, bool append = false, bool silent = false) {
             if (append) {
                 filestream.open(filepath, std::ios::app);
             } else {
                 filestream.open(filepath);
             }
             STORM_LOG_THROW(filestream, storm::exceptions::FileIoException , "Could not open file " << filepath << ".");
-            STORM_PRINT_AND_LOG("Write to file " << filepath << "." << std::endl);
+            if (!silent) {
+                STORM_PRINT_AND_LOG("Write to file " << filepath << "." << std::endl);
+            }
         }
 
         /*!
