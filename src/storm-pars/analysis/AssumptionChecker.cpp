@@ -133,48 +133,54 @@ namespace storm {
 
                 // Only implemented for two successors
                 if (row1.getNumberOfEntries() == 2 && row2.getNumberOfEntries() == 2) {
-                    auto succ1State1 = row1.begin();
-                    auto succ2State1 = (++row1.begin());
-                    auto succ1State2 = row2.begin();
-                    auto succ2State2 = (++row2.begin());
+                    result = validateAssumptionOnFunction(lattice, row1, row2);
+                }
+            }
+            if (result) {
+                validatedAssumptions.insert(assumption);
+            } else {
+                STORM_LOG_DEBUG("Could not validate: " << *assumption << std::endl);
+            }
+            return result;
+        }
 
-                    if (succ1State1->getColumn() == succ2State2->getColumn()
-                            && succ1State2->getColumn() == succ2State1->getColumn()) {
-                        // swap them
-                        auto temp = succ2State1;
-                        succ2State1 = succ1State1;
-                        succ1State1 = temp;
-                    }
+        template <typename ValueType>
+        bool AssumptionChecker<ValueType>::validateAssumptionOnFunction(storm::analysis::Lattice* lattice, typename storm::storage::SparseMatrix<ValueType>::rows row1, typename storm::storage::SparseMatrix<ValueType>::rows row2) {
+            bool result = false;
+            auto succ1State1 = row1.begin();
+            auto succ2State1 = (++row1.begin());
+            auto succ1State2 = row2.begin();
+            auto succ2State2 = (++row2.begin());
 
-                    if (succ1State1->getColumn() == succ1State2->getColumn() && succ2State1->getColumn() == succ2State2->getColumn()) {
-                        ValueType prob;
-                        auto comp = lattice->compare(succ1State1->getColumn(), succ2State1->getColumn());
-                        if (comp == storm::analysis::Lattice::ABOVE) {
-                            prob = succ1State1->getValue() - succ1State2->getValue();
-                        } else if (comp == storm::analysis::Lattice::BELOW) {
-                            prob = succ2State1->getValue() - succ2State2->getValue();
-                        }
-                        auto vars = prob.gatherVariables();
-                        // TODO: Type
-                        std::map<storm::RationalFunctionVariable, storm::RationalFunctionCoefficient> substitutions;
-                        for (auto var:vars) {
-                            auto derivative = prob.derivative(var);
-                            assert(derivative.isConstant());
-                            if (derivative.constantPart() >= 0) {
-                                substitutions[var] = 0;
-                            } else if (derivative.constantPart() <= 0) {
-                                substitutions[var] = 1;
-                            }
-                        }
-                        result = prob.evaluate(substitutions) >= 0;
-                    }
+            if (succ1State1->getColumn() == succ2State2->getColumn()
+                    && succ1State2->getColumn() == succ2State1->getColumn()) {
+                // swap them
+                auto temp = succ2State1;
+                succ2State1 = succ1State1;
+                succ1State1 = temp;
+            }
 
-                    if (result) {
-                        validatedAssumptions.insert(assumption);
-                    } else {
-                        STORM_LOG_DEBUG("Could not validate: " << *assumption << std::endl);
+            if (succ1State1->getColumn() == succ1State2->getColumn() && succ2State1->getColumn() == succ2State2->getColumn()) {
+                ValueType prob;
+                auto comp = lattice->compare(succ1State1->getColumn(), succ2State1->getColumn());
+                if (comp == storm::analysis::Lattice::ABOVE) {
+                    prob = succ1State1->getValue() - succ1State2->getValue();
+                } else if (comp == storm::analysis::Lattice::BELOW) {
+                    prob = succ2State1->getValue() - succ2State2->getValue();
+                }
+                auto vars = prob.gatherVariables();
+                // TODO: Type
+                std::map<storm::RationalFunctionVariable, storm::RationalFunctionCoefficient> substitutions;
+                for (auto var:vars) {
+                    auto derivative = prob.derivative(var);
+                    assert(derivative.isConstant());
+                    if (derivative.constantPart() >= 0) {
+                        substitutions[var] = 0;
+                    } else if (derivative.constantPart() <= 0) {
+                        substitutions[var] = 1;
                     }
                 }
+                result = prob.evaluate(substitutions) >= 0;
             }
             return result;
         }
