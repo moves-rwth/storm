@@ -111,6 +111,8 @@ namespace storm {
                     STORM_LOG_ASSERT(foundTransientVariable, "Expected to find a fitting transient variable.");
                 }
             }
+            // Sort the reward variables to match the assignments order.
+            std::sort(rewardVariables.begin(), rewardVariables.end());
             
             // Build the information structs for the reward models.
             buildRewardModelInformation();
