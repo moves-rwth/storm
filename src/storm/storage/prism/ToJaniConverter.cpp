@@ -126,20 +126,38 @@ namespace storm {
             for (uint_fast64_t index = 0; index < program.getNumberOfModules(); ++index) {
                 storm::prism::Module const& module = program.getModule(index);
                 
+                // Gather all variables occurring in this module
+                std::set<storm::expressions::Variable> variables;
                 for (auto const& command : module.getCommands()) {
-                    std::set<storm::expressions::Variable> variables = command.getGuardExpression().getVariables();
-                    for (auto const& variable : variables) {
-                        variablesToAccessingModuleIndices[variable].insert(index);
-                    }
-                    
+                    command.getGuardExpression().getBaseExpression().gatherVariables(variables);
                     for (auto const& update : command.getUpdates()) {
                         for (auto const& assignment : update.getAssignments()) {
-                            variables = assignment.getExpression().getVariables();
-                            for (auto const& variable : variables) {
-                                variablesToAccessingModuleIndices[variable].insert(index);
-                            }
-                            variablesToAccessingModuleIndices[assignment.getVariable()].insert(index);
+                            assignment.getExpression().getBaseExpression().gatherVariables(variables);
+                            variables.insert(assignment.getVariable());
                         }
+                    }
+                }
+                
+                // insert the accessing module index for each accessed variable
+                std::map<storm::expressions::Variable, storm::expressions::Expression> renamedFormulaToFunctionCallMap;
+                if (module.isRenamedFromModule()) {
+                    renamedFormulaToFunctionCallMap = program.getSubstitutionForRenamedModule(module, formulaToFunctionCallMap);
+                }
+                    
+                for (auto const& variable : variables) {
+                    // Check whether the variable actually is a formula
+                    if (formulaToFunctionCallMap.count(variable) > 0) {
+                        std::set<storm::expressions::Variable> variablesInFunctionCall;
+                        if (module.isRenamedFromModule()) {
+                            variablesInFunctionCall = renamedFormulaToFunctionCallMap[variable].getVariables();
+                        } else {
+                            variablesInFunctionCall = formulaToFunctionCallMap[variable].getVariables();
+                        }
+                        for (auto const& funVar : variablesInFunctionCall) {
+                            variablesToAccessingModuleIndices[funVar].insert(index);
+                        }
+                    } else {
+                        variablesToAccessingModuleIndices[variable].insert(index);
                     }
                 }
             }
@@ -168,7 +186,13 @@ namespace storm {
                 // Variables that are accessed in the label predicate expression should be made global.
                 std::set<storm::expressions::Variable> variables = label.getStatePredicateExpression().getVariables();
                 for (auto const& variable : variables) {
-                    variablesToMakeGlobal[variable] = true;
+                    if (formulaToFunctionCallMap.count(variable) > 0) {
+                        for (auto const& funVar : formulaToFunctionCallMap[variable].getVariables()) {
+                            variablesToMakeGlobal[funVar] = true;
+                        }
+                    } else {
+                        variablesToMakeGlobal[variable] = true;
+                    }
                 }
             }
             
@@ -178,7 +202,13 @@ namespace storm {
                 // Variables in the initial state expression should be made global
                 std::set<storm::expressions::Variable> variables = program.getInitialConstruct().getInitialStatesExpression().getVariables();
                 for (auto const& variable : variables) {
-                    variablesToMakeGlobal[variable] = true;
+                    if (formulaToFunctionCallMap.count(variable) > 0) {
+                        for (auto const& funVar : formulaToFunctionCallMap[variable].getVariables()) {
+                            variablesToMakeGlobal[funVar] = true;
+                        }
+                    } else {
+                        variablesToMakeGlobal[variable] = true;
+                    }
                 }
             } else {
                 janiModel.setInitialStatesRestriction(manager->boolean(true));
@@ -219,7 +249,13 @@ namespace storm {
                     // Variables that are accessed in a reward term should be made global.
                     std::set<storm::expressions::Variable> variables = transientLocationExpression.getVariables();
                     for (auto const& variable : variables) {
-                        variablesToMakeGlobal[variable] = true;
+                        if (formulaToFunctionCallMap.count(variable) > 0) {
+                            for (auto const& funVar : formulaToFunctionCallMap[variable].getVariables()) {
+                                variablesToMakeGlobal[funVar] = true;
+                            }
+                        } else {
+                            variablesToMakeGlobal[variable] = true;
+                        }
                     }
                 }
                 
@@ -371,18 +407,7 @@ namespace storm {
                 // if there are formulas and if the current module was renamed, we need to apply the renaming to the resulting function calls before replacing the formula placeholders.
                 // Note that the formula placeholders of non-renamed modules are replaced later.
                 if (program.getNumberOfFormulas() > 0 && module.isRenamedFromModule()) {
-                    auto renaming = program.getFinalRenamingOfModule(module);
-                    std::map<storm::expressions::Variable, storm::expressions::Expression> renamingAsSubstitution;
-                    for (auto const& renamingPair : renaming) {
-                        if (manager->hasVariable(renamingPair.first)) {
-                            assert(manager->hasVariable(renamingPair.second));
-                            renamingAsSubstitution.emplace(manager->getVariable(renamingPair.first), manager->getVariableExpression(renamingPair.second));
-                        }
-                    }
-                    std::map<storm::expressions::Variable, storm::expressions::Expression> renamedFormulaToFunctionCallMap;
-                    for (auto const& formulaToFunctionCall : formulaToFunctionCallMap) {
-                        renamedFormulaToFunctionCallMap[formulaToFunctionCall.first] = storm::jani::substituteJaniExpression(formulaToFunctionCall.second, renamingAsSubstitution);
-                    }
+                    auto renamedFormulaToFunctionCallMap = program.getSubstitutionForRenamedModule(module, formulaToFunctionCallMap);
                     automaton.substitute(renamedFormulaToFunctionCallMap);
                 }
                 

@@ -17,6 +17,7 @@
 #include "storm/exceptions/InvalidTypeException.h"
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/solver/SmtSolver.h"
+#include "storm/storage/jani/expressions/JaniExpressionSubstitutionVisitor.h"
 
 #include "storm/storage/prism/CompositionVisitor.h"
 #include "storm/storage/prism/Compositions.h"
@@ -360,7 +361,7 @@ namespace storm {
             
             std::map<storm::expressions::Variable, storm::expressions::Expression> newSubstitution;
             for (auto const& substVarExpr : substitution) {
-                newSubstitution.emplace(substVarExpr.first, substVarExpr.second.substitute(renamingAsSubstitution));
+                newSubstitution.emplace(substVarExpr.first, storm::jani::substituteJaniExpression(substVarExpr.second, renamingAsSubstitution));
             }
             return newSubstitution;
         }
