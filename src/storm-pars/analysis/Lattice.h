@@ -129,15 +129,12 @@ namespace storm {
                     /*!
                      * Constants for comparison of nodes/states
                      */
-                    static const int UNKNOWN = -1;
-                    static const int BELOW = 2;
-                    static const int ABOVE = 1;
-                    static const int SAME = 0;
-
-                protected:
-                    void addBelow(uint_fast64_t state, Node* node);
-
-                    void addAbove(uint_fast64_t state, Node* node);
+                     enum {
+                         UNKNOWN = -1,
+                         BELOW = 2,
+                         ABOVE = 1,
+                         SAME = 0,
+                     };
 
                 private:
                     std::vector<Node*> nodes;
