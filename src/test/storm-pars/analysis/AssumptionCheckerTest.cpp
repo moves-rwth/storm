@@ -27,10 +27,10 @@
 
 #include "storm-parsers/api/storm-parsers.h"
 
-// TODO: extend
+// TODO: extend for cases in which checkOnSamples and validateAssumption return true
 TEST(AssumptionCheckerTest, Brp) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/brp16_2.pm";
-    std::string formulaAsString = "P<=0.84 [F s=5 ]";
+    std::string formulaAsString = "P=? [F s=4 & i=N ]";
     std::string constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
 
     // Program and formula
@@ -40,8 +40,7 @@ TEST(AssumptionCheckerTest, Brp) {
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*dtmc);
-
-    ASSERT_TRUE(simplifier.simplify(*(formulas[0]))); // TODO: verwacht path formula?
+    ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
     model = simplifier.getSimplifiedModel();
 
     dtmc = model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
@@ -61,7 +60,7 @@ TEST(AssumptionCheckerTest, Brp) {
                                                          expressionManager->getVariable("7").getExpression().getBaseExpressionPointer(),
                                                          expressionManager->getVariable("5").getExpression().getBaseExpressionPointer(),
                                                          storm::expressions::BinaryRelationExpression::RelationType::GreaterOrEqual));
-    EXPECT_FALSE(checker.checkOnSamples(assumption));
+    EXPECT_TRUE(checker.checkOnSamples(assumption));
 
     auto emptyLattice = new storm::analysis::Lattice(storm::storage::BitVector(8), storm::storage::BitVector(8), 8);
     // Validate assumptions
