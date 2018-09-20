@@ -157,7 +157,7 @@ namespace storm {
             /*!
              * Adds the given constant to the model.
              */
-            Constant const& addConstant(Constant const& constant);
+            void addConstant(Constant const& constant);
             
             /*!
              * Retrieves whether the model has a constant with the given name.
@@ -176,6 +176,7 @@ namespace storm {
 
             /*!
              * Retrieves the constant with the given name (if any).
+             * @note the reference to the constant is invalidated whenever a new constant is added.
              */
             Constant const& getConstant(std::string const& name) const;
             

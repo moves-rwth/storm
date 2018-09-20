@@ -604,12 +604,12 @@ namespace storm {
             return nonsilentActionIndices;
         }
         
-        Constant const& Model::addConstant(Constant const& constant) {
+        void Model::addConstant(Constant const& constant) {
             auto it = constantToIndex.find(constant.getName());
             STORM_LOG_THROW(it == constantToIndex.end(), storm::exceptions::WrongFormatException, "Cannot add constant with name '" << constant.getName() << "', because a constant with that name already exists.");
             constantToIndex.emplace(constant.getName(), constants.size());
             constants.push_back(constant);
-            return constants.back();
+            // Note that we should not return a reference to the inserted constant as it might get invalidated when more constants are added.
         }
         
         bool Model::hasConstant(std::string const& name) const {
