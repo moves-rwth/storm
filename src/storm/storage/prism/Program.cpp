@@ -857,6 +857,10 @@ namespace storm {
         }
         
         Program Program::substituteConstantsFormulas(bool substituteConstants, bool substituteFormulas) const {
+            // Formulas need to be substituted first. otherwise, constants appearing in formula expressions can not be handled properly
+            if (substituteConstants && substituteFormulas) {
+                return this->substituteFormulas().substituteConstants();
+            }
             
             // We start by creating the appropriate substitution.
             std::map<storm::expressions::Variable, storm::expressions::Expression> substitution = getConstantsFormulasSubstitution(substituteConstants, substituteFormulas);
@@ -1316,7 +1320,7 @@ namespace storm {
         
         Program Program::simplify() {
             // Start by substituting the constants, because this will potentially erase some commands or even actions.
-            Program substitutedProgram = this->substituteConstants();
+            Program substitutedProgram = this->substituteConstantsFormulas();
             
             // As we possibly delete some commands and some actions might be dropped from modules altogether, we need to
             // maintain a list of actions that we need to remove in other modules. For example, if module A loses all [a]
