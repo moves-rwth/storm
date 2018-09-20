@@ -742,7 +742,7 @@ namespace storm {
         
         void JsonExporter::toFile(storm::jani::Model const& janiModel, std::vector<storm::jani::Property> const& formulas, std::string const& filepath, bool checkValid, bool compact) {
             std::ofstream stream;
-            storm::utility::openFile(filepath, stream, true);
+            storm::utility::openFile(filepath, stream, false, true);
             toStream(janiModel, formulas, stream, checkValid, compact);
             storm::utility::closeFile(stream);
         }
@@ -1036,6 +1036,9 @@ namespace storm {
             jsonStruct["type"] = to_string(janiModel.getModelType());
             jsonStruct["actions"] = buildActionArray(janiModel.getActions());
             jsonStruct["constants"] = buildConstantsArray(janiModel.getConstants());
+            for (auto const& v : janiModel.getGlobalVariables()) {
+                std::cout << "global var " << v.getName() << std::endl;
+            }
             jsonStruct["variables"] = buildVariablesArray(janiModel.getGlobalVariables(), janiModel.getConstants(), janiModel.getGlobalVariables());
             if (!janiModel.getGlobalFunctionDefinitions().empty()) {
                 jsonStruct["functions"] = buildFunctionsArray(janiModel.getGlobalFunctionDefinitions(), janiModel.getConstants(), janiModel.getGlobalVariables());
