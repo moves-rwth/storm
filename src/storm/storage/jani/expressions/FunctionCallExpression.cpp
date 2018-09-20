@@ -49,11 +49,11 @@ namespace storm {
                 stream << "(";
                 bool first = true;
                 for (auto const& a : arguments) {
-                    stream << *a;
                     if (!first) {
                         stream << ", ";
                     }
                     first = false;
+                    stream << *a;
                 }
                 stream << ")";
             }
