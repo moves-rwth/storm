@@ -1036,9 +1036,6 @@ namespace storm {
             jsonStruct["type"] = to_string(janiModel.getModelType());
             jsonStruct["actions"] = buildActionArray(janiModel.getActions());
             jsonStruct["constants"] = buildConstantsArray(janiModel.getConstants());
-            for (auto const& v : janiModel.getGlobalVariables()) {
-                std::cout << "global var " << v.getName() << std::endl;
-            }
             jsonStruct["variables"] = buildVariablesArray(janiModel.getGlobalVariables(), janiModel.getConstants(), janiModel.getGlobalVariables());
             if (!janiModel.getGlobalFunctionDefinitions().empty()) {
                 jsonStruct["functions"] = buildFunctionsArray(janiModel.getGlobalFunctionDefinitions(), janiModel.getConstants(), janiModel.getGlobalVariables());
