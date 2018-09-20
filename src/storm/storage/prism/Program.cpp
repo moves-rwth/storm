@@ -1795,17 +1795,17 @@ namespace storm {
             return Command(newCommandIndex, false, actionIndex, actionName, newGuard, newUpdates, this->getFilename(), 0);
         }
         
-        storm::jani::Model Program::toJani(bool allVariablesGlobal, std::string suffix, bool standardCompliant) const {
+        storm::jani::Model Program::toJani(bool allVariablesGlobal, std::string suffix) const {
             ToJaniConverter converter;
-            auto janiModel = converter.convert(*this, allVariablesGlobal, suffix, standardCompliant);
+            auto janiModel = converter.convert(*this, allVariablesGlobal, suffix);
             STORM_LOG_WARN_COND(!converter.labelsWereRenamed(), "Labels were renamed in PRISM-to-JANI conversion, but the mapping is not stored.");
             STORM_LOG_WARN_COND(!converter.rewardModelsWereRenamed(), "Rewardmodels were renamed in PRISM-to-JANI conversion, but the mapping is not stored.");
             return janiModel;
         }
 
-        std::pair<storm::jani::Model, std::vector<storm::jani::Property>> Program::toJani(std::vector<storm::jani::Property> const& properties, bool allVariablesGlobal, std::string suffix, bool standardCompliant) const {
+        std::pair<storm::jani::Model, std::vector<storm::jani::Property>> Program::toJani(std::vector<storm::jani::Property> const& properties, bool allVariablesGlobal, std::string suffix) const {
             ToJaniConverter converter;
-            auto janiModel = converter.convert(*this, allVariablesGlobal, suffix, standardCompliant);
+            auto janiModel = converter.convert(*this, allVariablesGlobal, suffix);
             std::vector<storm::jani::Property> newProperties;
             if (converter.labelsWereRenamed() || converter.rewardModelsWereRenamed()) {
                 newProperties = converter.applyRenaming(properties);

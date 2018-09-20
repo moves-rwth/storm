@@ -546,6 +546,9 @@ namespace storm {
             
             void makeStandardJaniCompliant();
 
+            // Pushes all edge assignments to their destination
+            void pushEdgeAssignmentsToDestinations();
+            
             /*!
              * Checks whether in the composition, actions are reused: That is, if the model is put in parallel composition and the same action potentially leads to multiple edges from the same state.
              * @return
@@ -612,6 +615,7 @@ namespace storm {
             VariableSet globalVariables;
             
             /// A mapping from names to function definitions
+            /// Since we use an unordered_map, references to function definitions will not get invalidated when more function definitions are added
             std::unordered_map<std::string, FunctionDefinition> globalFunctions;
             
             /// The list of automata.

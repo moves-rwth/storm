@@ -18,15 +18,13 @@
 namespace storm {
     namespace prism {
         
-        storm::jani::Model ToJaniConverter::convert(storm::prism::Program const& program, bool allVariablesGlobal, std::string suffix, bool standardCompliant) {
+        storm::jani::Model ToJaniConverter::convert(storm::prism::Program const& program, bool allVariablesGlobal, std::string suffix) {
             labelRenaming.clear();
             rewardModelRenaming.clear();
             formulaToFunctionCallMap.clear();
 
             std::shared_ptr<storm::expressions::ExpressionManager> manager = program.getManager().getSharedPointer();
             
-            bool produceStateRewards = !standardCompliant || program.getModelType() == storm::prism::Program::ModelType::CTMC || program.getModelType() == storm::prism::Program::ModelType::MA;
-                        
             // Start by creating an empty JANI model.
             storm::jani::ModelType modelType;
             switch (program.getModelType()) {
@@ -254,20 +252,6 @@ namespace storm {
             }
             STORM_LOG_THROW(transientEdgeAssignments.empty() || transientLocationAssignments.empty() || !program.specifiesSystemComposition(), storm::exceptions::NotImplementedException, "Cannot translate reward models from PRISM to JANI that specify a custom system composition.");
             
-            // If we are not allowed to produce state rewards, we need to create a mapping from action indices to transient
-            // location assignments. This is done so that all assignments are added only *once* for synchronizing actions.
-            std::map<uint_fast64_t, std::vector<storm::jani::Assignment>> transientRewardLocationAssignmentsPerAction;
-            if (!produceStateRewards) {
-                for (auto const& action : program.getActions()) {
-                    auto& list = transientRewardLocationAssignmentsPerAction[janiModel.getActionIndex(action)];
-                    for (auto const& assignment : transientLocationAssignments) {
-                        if (assignment.isTransient() && assignment.getVariable().isRealVariable()) {
-                            list.emplace_back(assignment);
-                        }
-                    }
-                }
-            }
-            
             // Now create the separate JANI automata from the modules of the PRISM program. While doing so, we use the
             // previously built mapping to make variables global that are read by more than one module.
             std::set<uint64_t> firstModules;
@@ -310,9 +294,7 @@ namespace storm {
                 if (firstModule) {
                     storm::jani::Location& onlyLocation = automaton.getLocation(onlyLocationIndex);
                     for (auto const& assignment : transientLocationAssignments) {
-                        if (assignment.getVariable().isBooleanVariable() || produceStateRewards) {
-                            onlyLocation.addTransientAssignment(assignment);
-                        }
+                        onlyLocation.addTransientAssignment(assignment);
                     }
                 }
                 
@@ -355,12 +337,6 @@ namespace storm {
                     if (transientEdgeAssignmentsToAdd != transientEdgeAssignments.end()) {
                         for (auto const& assignment : transientEdgeAssignmentsToAdd->second) {
                             templateEdge->addTransientAssignment(assignment);
-                        }
-                    }
-                    if (!produceStateRewards) {
-                        transientEdgeAssignmentsToAdd = transientRewardLocationAssignmentsPerAction.find(janiModel.getActionIndex(command.getActionName()));
-                        for (auto const& assignment : transientEdgeAssignmentsToAdd->second) {
-                            templateEdge->addTransientAssignment(assignment, true);
                         }
                     }
 

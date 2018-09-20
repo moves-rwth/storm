@@ -35,8 +35,8 @@ namespace storm {
                 janiModel = janiModel.flattenComposition(smtSolverFactory);
             }
 
-            if (options.standardCompliant) {
-                janiModel.makeStandardJaniCompliant();
+            if (!options.edgeAssignments) {
+                janiModel.pushEdgeAssignmentsToDestinations();
             }
             
             auto uneliminatedFeatures = janiModel.restrictToFeatures(options.allowedModelFeatures);
@@ -50,7 +50,7 @@ namespace storm {
         std::pair<storm::jani::Model, std::vector<storm::jani::Property>> convertPrismToJani(storm::prism::Program const& program, std::vector<storm::jani::Property> const& properties, storm::converter::PrismToJaniConverterOptions options) {
         
             // Perform conversion
-            auto res = program.toJani(properties, true, "", false);
+            auto res = program.toJani(properties, options.allVariablesGlobal);
             if (res.second.empty()) {
                 std::vector<storm::jani::Property> clondedProperties;
                 for (auto const& p : properties) {

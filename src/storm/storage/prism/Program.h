@@ -649,14 +649,14 @@ namespace storm {
             /*!
              * Converts the PRISM model into an equivalent JANI model.
              */
-            storm::jani::Model toJani(bool allVariablesGlobal = true, std::string suffix = "", bool standardCompliant = false) const;
+            storm::jani::Model toJani(bool allVariablesGlobal = true, std::string suffix = "") const;
             
             /*!
              * Converts the PRISM model into an equivalent JANI model and if labels or reward models had
              * to be renamed in the process, the renamings are applied to the given properties
              * @return The jani model of this and either the new set of properties or an empty vector if no renamings were necessary
              */
-            std::pair<storm::jani::Model, std::vector<storm::jani::Property>> toJani(std::vector<storm::jani::Property> const& properties, bool allVariablesGlobal = true, std::string suffix = "", bool standardCompliant = false) const;
+            std::pair<storm::jani::Model, std::vector<storm::jani::Property>> toJani(std::vector<storm::jani::Property> const& properties, bool allVariablesGlobal = true, std::string suffix = "") const;
             
         private:
             /*!

@@ -14,7 +14,7 @@ namespace storm {
                  */
                 JaniExportSettings();
                 
-                bool isExportAsStandardJaniSet() const;
+                bool isAllowEdgeAssignmentsSet() const;
 
                 bool isExportFlattenedSet() const;
 
@@ -36,8 +36,7 @@ namespace storm {
                 static const std::string moduleName;
                 
             private:
-                static const std::string standardCompliantOptionName;
-                static const std::string standardCompliantOptionShortName;
+                static const std::string edgeAssignmentsOptionName;
                 static const std::string exportFlattenOptionName;
                 static const std::string locationVariablesOptionName;
                 static const std::string globalVariablesOptionName;

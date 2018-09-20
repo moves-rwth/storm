@@ -1276,6 +1276,12 @@ namespace storm {
                 automaton.pushEdgeAssignmentsToDestinations();
             }
         }
+     
+        void Model::pushEdgeAssignmentsToDestinations() {
+            for (auto& automaton : automata) {
+                automaton.pushEdgeAssignmentsToDestinations();
+            }
+        }
         
         void Model::liftTransientEdgeDestinationAssignments(int64_t maxLevel) {
             for (auto& automaton : this->getAutomata()) {
