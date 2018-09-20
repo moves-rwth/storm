@@ -153,10 +153,24 @@ namespace storm {
             FunctionsMap globalFuns;
             scope.globalFunctions = &globalFuns;
             if (funDeclCount > 0) {
+                // We require two passes through the function definitions array to allow referring to functions before they were defined.
+                std::vector<storm::jani::FunctionDefinition> dummyFunctionDefinitions;
                 for (auto const& funStructure : parsedStructure.at("functions")) {
-                    storm::jani::FunctionDefinition funDef = parseFunctionDefinition(funStructure, scope.refine("functions[" + std::to_string(globalFuns.size()) + "] of model " + name));
-                    assert(globalFuns.count(funDef.getName()) == 0);
-                    globalFuns.emplace(funDef.getName(), &model.addFunctionDefinition(funDef));
+                    // Skip parsing of function body
+                    dummyFunctionDefinitions.push_back(parseFunctionDefinition(funStructure, scope.refine("functions[" + std::to_string(globalFuns.size()) + "] of model " + name),
+                                                                                     true));
+                }
+                // Store references to the dummy function definitions. This needs to happen in a separate loop since otherwise, references to FunDefs can be invalidated after calling dummyFunctionDefinitions.push_back
+                for (auto const& funDef : dummyFunctionDefinitions) {
+                    bool unused = globalFuns.emplace(funDef.getName(), &funDef).second;
+                        STORM_LOG_THROW(unused, storm::exceptions::InvalidJaniException, "Multiple definitions of functions with the name " << funDef.getName() << " in " << scope.description);
+                }
+                for (auto const& funStructure : parsedStructure.at("functions")) {
+                    // Actually parse the function body
+                    storm::jani::FunctionDefinition funDef = parseFunctionDefinition(funStructure, scope.refine("functions[" + std::to_string(globalFuns.size()) + "] of model " + name),
+                                                                                     false);
+                    assert(globalFuns.count(funDef.getName()) == 1);
+                    globalFuns[funDef.getName()] = &model.addFunctionDefinition(funDef);
                 }
             }
             
@@ -742,17 +756,16 @@ namespace storm {
             }
         }
         
-        storm::jani::FunctionDefinition JaniParser::parseFunctionDefinition(json const& functionDefinitionStructure, Scope const& scope, std::string const& parameterNamePrefix) {
+        storm::jani::FunctionDefinition JaniParser::parseFunctionDefinition(json const& functionDefinitionStructure, Scope const& scope, bool firstPass, std::string const& parameterNamePrefix) {
             STORM_LOG_THROW(functionDefinitionStructure.count("name") == 1, storm::exceptions::InvalidJaniException, "Function definition (scope: " + scope.description + ") must have a name");
             std::string functionName = getString(functionDefinitionStructure.at("name"), "function-name in " + scope.description);
-            // TODO check existence of name.
             STORM_LOG_THROW(functionDefinitionStructure.count("type") == 1, storm::exceptions::InvalidJaniException, "Function definition '" + functionName + "' (scope: " + scope.description + ") must have a (single) type-declaration.");
             ParsedType type;
             parseType(type, functionDefinitionStructure.at("type"), functionName, scope);
             
             std::unordered_map<std::string, storm::expressions::Variable> parameterNameToVariableMap;
             std::vector<storm::expressions::Variable> parameters;
-            if (functionDefinitionStructure.count("parameters")) {
+            if (!firstPass && functionDefinitionStructure.count("parameters") > 0) {
                 STORM_LOG_THROW(functionDefinitionStructure.count("parameters") == 1, storm::exceptions::InvalidJaniException, "Function definition '" + functionName + "' (scope: " + scope.description + ") must have exactly one list of parameters.");
                 for (auto const& parameterStructure : functionDefinitionStructure.at("parameters")) {
                     STORM_LOG_THROW(parameterStructure.count("name") == 1, storm::exceptions::InvalidJaniException, "Parameter declaration of parameter " + std::to_string(parameters.size()) + " of Function definition '" + functionName + "' (scope: " + scope.description + ") must have a name");
@@ -769,9 +782,11 @@ namespace storm {
             }
             
             STORM_LOG_THROW(functionDefinitionStructure.count("body") == 1, storm::exceptions::InvalidJaniException, "Function definition '" + functionName + "' (scope: " + scope.description + ") must have a (single) body.");
-            storm::expressions::Expression functionBody = parseExpression(functionDefinitionStructure.at("body"), scope.refine("body of function definition " + functionName), false, parameterNameToVariableMap);
-            STORM_LOG_WARN_COND(functionBody.getType() == type.expressionType, "Type of body of function " + functionName + "' (scope: " + scope.description + ") has type " << functionBody.getType() << " although the function type is given as " << type.expressionType);
-            
+            storm::expressions::Expression functionBody;
+            if (!firstPass) {
+                functionBody = parseExpression(functionDefinitionStructure.at("body"), scope.refine("body of function definition " + functionName), false, parameterNameToVariableMap);
+                STORM_LOG_WARN_COND(functionBody.getType() == type.expressionType, "Type of body of function " + functionName + "' (scope: " + scope.description + ") has type " << functionBody.getType() << " although the function type is given as " << type.expressionType);
+            }
             return storm::jani::FunctionDefinition(functionName, type.expressionType, parameters, functionBody);
         }
 
@@ -1330,10 +1345,23 @@ namespace storm {
             FunctionsMap localFuns;
             scope.localFunctions = &localFuns;
             if (funDeclCount > 0) {
+                // We require two passes through the function definitions array to allow referring to functions before they were defined.
+                std::vector<storm::jani::FunctionDefinition> dummyFunctionDefinitions;
                 for (auto const& funStructure : automatonStructure.at("functions")) {
-                    storm::jani::FunctionDefinition funDef = parseFunctionDefinition(funStructure, scope.refine("functions[" + std::to_string(localFuns.size()) + "] of automaton " + name),  name + VARIABLE_AUTOMATON_DELIMITER);
-                    assert(localFuns.count(funDef.getName()) == 0);
-                    //TODO localVars.emplace(funDef.getName(), &automaton.addFunction(funDef));
+                    // Skip parsing of function body
+                    dummyFunctionDefinitions.push_back(parseFunctionDefinition(funStructure, scope.refine("functions[" + std::to_string(localFuns.size()) + "] of automaton " + name), true));
+                }
+                // Store references to the dummy function definitions. This needs to happen in a separate loop since otherwise, references to FunDefs can be invalidated after calling dummyFunctionDefinitions.push_back
+                for (auto const& funDef : dummyFunctionDefinitions) {
+                    bool unused = localFuns.emplace(funDef.getName(), &funDef).second;
+                        STORM_LOG_THROW(unused, storm::exceptions::InvalidJaniException, "Multiple definitions of functions with the name " << funDef.getName() << " in " << scope.description);
+                }
+                for (auto const& funStructure : automatonStructure.at("functions")) {
+                    // Actually parse the function body
+                    storm::jani::FunctionDefinition funDef = parseFunctionDefinition(funStructure, scope.refine("functions[" + std::to_string(localFuns.size()) + "] of automaton " + name),
+                                                                                     false, name + VARIABLE_AUTOMATON_DELIMITER);
+                    assert(localFuns.count(funDef.getName()) == 1);
+                    localFuns[funDef.getName()] = &automaton.addFunctionDefinition(funDef);
                 }
             }
             

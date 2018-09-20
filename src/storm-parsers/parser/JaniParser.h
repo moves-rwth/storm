@@ -91,7 +91,7 @@ namespace storm {
             
         private:
             std::shared_ptr<storm::jani::Constant> parseConstant(json const& constantStructure, Scope const& scope);
-            storm::jani::FunctionDefinition parseFunctionDefinition(json const& functionDefinitionStructure, Scope const& scope, std::string const& parameterNamePrefix = "");
+            storm::jani::FunctionDefinition parseFunctionDefinition(json const& functionDefinitionStructure, Scope const& scope, bool firstPass, std::string const& parameterNamePrefix = "");
 
             /**
              * Helper for parsing the actions of a model.

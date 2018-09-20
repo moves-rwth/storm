@@ -372,6 +372,7 @@ namespace storm {
             VariableSet variables;
             
             /// A mapping from names to function definitions
+            /// Since we use an unordered_map, references to function definitions will not get invalidated when more function definitions are added
             std::unordered_map<std::string, FunctionDefinition> functionDefinitions;
             
             /// The locations of the automaton.
