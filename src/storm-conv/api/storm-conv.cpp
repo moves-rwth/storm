@@ -13,6 +13,10 @@ namespace storm {
         
         void transformJani(storm::jani::Model& janiModel, std::vector<storm::jani::Property>& properties, storm::converter::JaniConversionOptions const& options) {
         
+            if (options.substituteConstants) {
+                janiModel = janiModel.substituteConstants();
+            }
+            
             if (!options.locationVariables.empty()) {
                 for (auto const& pair : options.locationVariables) {
                     storm::jani::JaniLocationExpander expander(janiModel);

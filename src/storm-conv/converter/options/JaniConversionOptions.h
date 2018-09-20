@@ -24,6 +24,9 @@ namespace storm {
             /// If set, the model is transformed into a single automaton
             bool flatten;
             
+            /// If set, constants in expressions are substituted with their definition
+            bool substituteConstants;
+            
             /// If given, the model will get this name
             boost::optional<std::string> modelName;
             

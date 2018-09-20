@@ -11,6 +11,7 @@
 #include "storm-parsers/api/storm-parsers.h"
 #include "storm/utility/initialize.h"
 #include "storm/utility/macros.h"
+#include "storm/utility/Stopwatch.h"
 
 #include "storm/storage/SymbolicModelDescription.h"
 #include "storm/storage/jani/Model.h"
@@ -42,15 +43,28 @@ namespace storm {
             }
         }
         
+        storm::utility::Stopwatch startStopwatch(std::string const& message) {
+            STORM_PRINT_AND_LOG(message);
+            return storm::utility::Stopwatch(true);
+        }
+        
+        void stopStopwatch(storm::utility::Stopwatch& stopWatch) {
+            stopWatch.stop();
+            STORM_PRINT_AND_LOG(" done. (" << stopWatch << " seconds)." << std::endl);
+        }
+        
         void processPrismInputJaniOutput(storm::prism::Program const& prismProg, std::vector<storm::jani::Property> const& properties) {
             auto const& output = storm::settings::getModule<storm::settings::modules::ConversionOutputSettings>();
             auto const& input = storm::settings::getModule<storm::settings::modules::ConversionInputSettings>();
             auto const& jani = storm::settings::getModule<storm::settings::modules::JaniExportSettings>();
             
+            auto conversionTime = startStopwatch("Converting PRISM Program to JANI model ... " );
+
             storm::converter::PrismToJaniConverterOptions options;
             options.allVariablesGlobal = jani.isGlobalVarsSet();
             options.suffix = "";
             options.janiOptions = storm::converter::JaniConversionOptions(jani);
+            options.janiOptions.substituteConstants = true;
             
             // Get the name of the output file
             std::string outputFilename = "";
@@ -89,20 +103,27 @@ namespace storm {
             
             auto janiModelProperties = storm::api::convertPrismToJani(prismProg, properties, options);
             
+            stopStopwatch(conversionTime);
+            auto exportingTime = startStopwatch("Exporting JANI model ... ");
+            
             if (outputFilename != "") {
                 storm::api::exportJaniToFile(janiModelProperties.first, janiModelProperties.second, outputFilename, jani.isCompactJsonSet());
+                STORM_PRINT_AND_LOG("Stored to file '" << outputFilename << "'");
             }
             
             if (output.isStdOutOutputEnabled()) {
                 storm::api::printJaniToStream(janiModelProperties.first, janiModelProperties.second, std::cout, jani.isCompactJsonSet());
             }
+            stopStopwatch(exportingTime);
         }
         
         void processPrismInput() {
+            auto parsingTime = startStopwatch("Parsing PRISM input ... " );
+
             auto const& input = storm::settings::getModule<storm::settings::modules::ConversionInputSettings>();
 
             // Parse the prism program
-            storm::storage::SymbolicModelDescription prismProg = storm::api::parseProgram(input.getPrismInputFilename(), input.isPrismCompatibilityEnabled());
+            storm::storage::SymbolicModelDescription prismProg = storm::api::parseProgram(input.getPrismInputFilename(), input.isPrismCompatibilityEnabled(), false);
 
             // Parse properties (if available)
             std::vector<storm::jani::Property> properties;
@@ -111,13 +132,14 @@ namespace storm {
                 properties = storm::api::parsePropertiesForSymbolicModelDescription(input.getPropertyInput(), prismProg, propertyFilter);
             }
             
-            // Substitute constant definitions in program and properties.
+            // Set constant definitions in program
             std::string constantDefinitionString = input.getConstantDefinitionString();
             auto constantDefinitions = prismProg.parseConstantDefinitions(constantDefinitionString);
-            prismProg = storm::storage::SymbolicModelDescription(prismProg.asPrismProgram().defineUndefinedConstants(constantDefinitions).substituteConstants());
-            if (!properties.empty()) {
-                properties = storm::api::substituteConstantsInProperties(properties, constantDefinitions);
-            }
+            prismProg = storm::storage::SymbolicModelDescription(prismProg.asPrismProgram().defineUndefinedConstants(constantDefinitions));
+            // Substitution of constants can only be done after conversion in order to preserve formula definitions in which
+            // constants appear that are renamed in some modules...
+            
+            stopStopwatch(parsingTime);
             
             // Branch on the type of output
             auto const& output = storm::settings::getModule<storm::settings::modules::ConversionOutputSettings>();
@@ -129,6 +151,8 @@ namespace storm {
         }
         
         void processJaniInputJaniOutput(storm::jani::Model const& janiModel, std::vector<storm::jani::Property> const& properties) {
+            auto conversionTime = startStopwatch("Performing transformations on JANI model ... " );
+
             auto const& output = storm::settings::getModule<storm::settings::modules::ConversionOutputSettings>();
             auto const& input = storm::settings::getModule<storm::settings::modules::ConversionInputSettings>();
             auto const& jani = storm::settings::getModule<storm::settings::modules::JaniExportSettings>();
@@ -166,16 +190,23 @@ namespace storm {
             auto transformedProperties = properties;
             storm::api::transformJani(transformedJaniModel, transformedProperties, options);
             
+            stopStopwatch(conversionTime);
+            auto exportingTime = startStopwatch("Exporting JANI model ... ");
+            
             if (outputFilename != "") {
                 storm::api::exportJaniToFile(transformedJaniModel, transformedProperties, outputFilename, jani.isCompactJsonSet());
+                STORM_PRINT_AND_LOG("Stored to file '" << outputFilename << "'");
             }
             
             if (output.isStdOutOutputEnabled()) {
                 storm::api::printJaniToStream(transformedJaniModel, transformedProperties, std::cout, jani.isCompactJsonSet());
             }
+            stopStopwatch(exportingTime);
         }
         
         void processJaniInput() {
+            auto parsingTime = startStopwatch("Parsing JANI input ... " );
+
             auto const& input = storm::settings::getModule<storm::settings::modules::ConversionInputSettings>();
 
             // Parse the jani model
@@ -200,8 +231,9 @@ namespace storm {
             if (!properties.empty()) {
                 properties = storm::api::substituteConstantsInProperties(properties, constantDefinitions);
             }
+            stopStopwatch(parsingTime);
+
             // Branch on the type of output
-            
             auto const& output = storm::settings::getModule<storm::settings::modules::ConversionOutputSettings>();
             if (output.isJaniOutputSet()) {
                 processJaniInputJaniOutput(janiModel, properties);

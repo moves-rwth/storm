@@ -13,8 +13,11 @@
 namespace storm {
     namespace api {
         
-        storm::prism::Program parseProgram(std::string const& filename, bool prismCompatibility) {
-            storm::prism::Program program = storm::parser::PrismParser::parse(filename, prismCompatibility).simplify().simplify();
+        storm::prism::Program parseProgram(std::string const& filename, bool prismCompatibility, bool simplify) {
+            storm::prism::Program program = storm::parser::PrismParser::parse(filename, prismCompatibility);
+            if (simplify) {
+                program = program.simplify().simplify();
+            }
             program.checkValidity();
             return program;
         }
