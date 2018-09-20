@@ -756,9 +756,9 @@ namespace storm {
                 STORM_LOG_THROW(functionDefinitionStructure.count("parameters") == 1, storm::exceptions::InvalidJaniException, "Function definition '" + functionName + "' (scope: " + scope.description + ") must have exactly one list of parameters.");
                 for (auto const& parameterStructure : functionDefinitionStructure.at("parameters")) {
                     STORM_LOG_THROW(parameterStructure.count("name") == 1, storm::exceptions::InvalidJaniException, "Parameter declaration of parameter " + std::to_string(parameters.size()) + " of Function definition '" + functionName + "' (scope: " + scope.description + ") must have a name");
-                    std::string parameterName = getString(functionDefinitionStructure.at("name"), "parameter-name of parameter " + std::to_string(parameters.size()) + " of Function definition '" + functionName + "' (scope: " + scope.description + ")");
+                    std::string parameterName = getString(parameterStructure.at("name"), "parameter-name of parameter " + std::to_string(parameters.size()) + " of Function definition '" + functionName + "' (scope: " + scope.description + ")");
                     ParsedType parameterType;
-                    STORM_LOG_THROW(functionDefinitionStructure.count("type") == 1, storm::exceptions::InvalidJaniException, "Parameter declaration of parameter " + std::to_string(parameters.size()) + " of Function definition '" + functionName + "' (scope: " + scope.description + ") must have exactly one type.");
+                    STORM_LOG_THROW(parameterStructure.count("type") == 1, storm::exceptions::InvalidJaniException, "Parameter declaration of parameter " + std::to_string(parameters.size()) + " of Function definition '" + functionName + "' (scope: " + scope.description + ") must have exactly one type.");
                     parseType(parameterType, parameterStructure.at("type"), parameterName, scope.refine("parameter declaration of parameter " + std::to_string(parameters.size()) + " of function definition " + functionName));
                     STORM_LOG_WARN_COND(!parameterType.bounds.is_initialized(), "Bounds on parameter" + parameterName + " of function definition " + functionName + " will be ignored.");
                     
