@@ -149,6 +149,7 @@ namespace storm {
 #endif
                 auto features = model.getModelFeatures();
                 features.remove(storm::jani::ModelFeature::DerivedOperators);
+                features.remove(storm::jani::ModelFeature::StateExitRewards);
                 STORM_LOG_THROW(features.empty(), storm::exceptions::InvalidArgumentException, "The jit model builder does not support the following model feature(s): " << features.toString() << ".");
                 
                 //STORM_LOG_THROW(!model.reusesActionsInComposition(), storm::exceptions::InvalidArgumentException, "The jit JANI model builder currently does not support reusing actions in parallel composition");

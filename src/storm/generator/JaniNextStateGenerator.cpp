@@ -44,6 +44,7 @@ namespace storm {
 
             auto features = model.getModelFeatures();
             features.remove(storm::jani::ModelFeature::DerivedOperators);
+            features.remove(storm::jani::ModelFeature::StateExitRewards);
             // Eliminate arrays if necessary.
             if (features.hasArrays()) {
                 arrayEliminatorData = this->model.eliminateArrays(true);

@@ -1988,6 +1988,7 @@ namespace storm {
             STORM_LOG_THROW(!model.usesAssignmentLevels(), storm::exceptions::WrongFormatException, "The symbolic JANI model builder currently does not support assignment levels.");
             auto features = model.getModelFeatures();
             features.remove(storm::jani::ModelFeature::DerivedOperators);
+            features.remove(storm::jani::ModelFeature::StateExitRewards);
             STORM_LOG_THROW(features.empty(), storm::exceptions::InvalidSettingsException, "The dd jani model builder does not support the following model feature(s): " << features.toString() << ".");
 
             storm::jani::Model preparedModel = model;
