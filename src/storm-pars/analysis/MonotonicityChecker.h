@@ -24,7 +24,7 @@ namespace storm {
              * @param map The map with lattices and the assumptions made to create the lattices.
              * @param matrix The transition matrix.
              */
-            void checkMonotonicity(std::map<storm::analysis::Lattice*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> map, storm::storage::SparseMatrix<ValueType> matrix);
+            std::map<storm::analysis::Lattice*, std::map<carl::Variable, std::pair<bool, bool>>> checkMonotonicity(std::map<storm::analysis::Lattice*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> map, storm::storage::SparseMatrix<ValueType> matrix);
 
         private:
             std::map<carl::Variable, std::pair<bool, bool>> analyseMonotonicity(uint_fast64_t i, storm::analysis::Lattice* lattice, storm::storage::SparseMatrix<ValueType> matrix) ;

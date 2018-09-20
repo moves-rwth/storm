@@ -9,8 +9,9 @@
 namespace storm {
     namespace analysis {
         template <typename ValueType>
-        void MonotonicityChecker<ValueType>::checkMonotonicity(std::map<storm::analysis::Lattice*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> map, storm::storage::SparseMatrix<ValueType> matrix) {
+        std::map<storm::analysis::Lattice*, std::map<carl::Variable, std::pair<bool, bool>>> MonotonicityChecker<ValueType>::checkMonotonicity(std::map<storm::analysis::Lattice*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> map, storm::storage::SparseMatrix<ValueType> matrix) {
             auto i = 0;
+            std::map<storm::analysis::Lattice*, std::map<carl::Variable, std::pair<bool, bool>>> result;
             for (auto itr = map.begin(); itr != map.end(); ++itr) {
                 auto lattice = itr->first;
                 auto assumptions = itr->second;
@@ -53,7 +54,9 @@ namespace storm {
                     }
                 }
                 ++i;
+                result.insert(std::pair<storm::analysis::Lattice*, std::map<carl::Variable, std::pair<bool, bool>>>(lattice, varsMonotone));
             }
+            return result;
         }
 
         template <typename ValueType>
