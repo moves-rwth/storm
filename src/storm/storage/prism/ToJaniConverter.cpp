@@ -405,7 +405,7 @@ namespace storm {
                     }
                     std::map<storm::expressions::Variable, storm::expressions::Expression> renamedFormulaToFunctionCallMap;
                     for (auto const& formulaToFunctionCall : formulaToFunctionCallMap) {
-                        renamedFormulaToFunctionCallMap[formulaToFunctionCall.first] = storm::jani::substituteJaniExpression(formulaToFunctionCall.second, renamedFormulaToFunctionCallMap);
+                        renamedFormulaToFunctionCallMap[formulaToFunctionCall.first] = storm::jani::substituteJaniExpression(formulaToFunctionCall.second, renamingAsSubstitution);
                     }
                     automaton.substitute(renamedFormulaToFunctionCallMap);
                 }
