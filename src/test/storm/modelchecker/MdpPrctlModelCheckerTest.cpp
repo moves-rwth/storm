@@ -501,4 +501,26 @@ namespace {
             EXPECT_NEAR(this->parseNumber("1"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
         }
     }
+    
+    TYPED_TEST(MdpPrctlModelCheckerTest, Team) {
+        std::string formulasString = "R{\"w_1_total\"}max=? [ C ]";
+        auto modelFormulas = this->buildModelFormulas(STORM_TEST_RESOURCES_DIR "/mdp/multiobj_team3.nm", formulasString);
+        auto model = std::move(modelFormulas.first);
+        auto tasks = this->getTasks(modelFormulas.second);
+        EXPECT_EQ(12475ul, model->getNumberOfStates());
+        EXPECT_EQ(15228ul, model->getNumberOfTransitions());
+        ASSERT_EQ(model->getType(), storm::models::ModelType::Mdp);
+        auto checker = this->createModelChecker(model);
+        std::unique_ptr<storm::modelchecker::CheckResult> result;
+        
+        // This example considers a zero-reward end component that does not reach the target
+        // For some methods this requires end-component elimination which is (currently) not supported in the Dd engine
+
+        if (TypeParam::engine == storm::settings::modules::CoreSettings::Engine::Sparse) {
+            result = checker->check(this->env(), tasks[0]);
+            EXPECT_NEAR(this->parseNumber("114/49"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        } else {
+            EXPECT_FALSE(checker->canHandle(tasks[0]));
+        }
+    }
 }
