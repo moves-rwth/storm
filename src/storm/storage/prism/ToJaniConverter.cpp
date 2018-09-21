@@ -49,42 +49,73 @@ namespace storm {
                 janiModel.addConstant(storm::jani::Constant(constant.getName(), constant.getExpressionVariable(), constant.isDefined() ? boost::optional<storm::expressions::Expression>(constant.getExpression()) : boost::none));
             }
             
-            // Add all formulas of the PRISM program to the JANI model.
-            // Also collect a substitution of formula placeholder variables to function call expressions.
-            for (auto const& formula : program.getFormulas()) {
-                // First find all variables that occurr in the formula definition (including the ones used in called formulae) and the called formulae
-                std::set<storm::expressions::Variable> variablesInFormula, placeholdersInFormula;
-                for (auto const& var : formula.getExpression().getVariables()) {
-                    // Check whether var is an actual variable/constant or another formula
-                    auto functionCallIt = formulaToFunctionCallMap.find(var);
-                    if (functionCallIt == formulaToFunctionCallMap.end()) {
-                        variablesInFormula.insert(var);
-                    } else {
-                        storm::expressions::FunctionCallExpression const& innerFunctionCall = dynamic_cast<storm::expressions::FunctionCallExpression const&>(functionCallIt->second.getBaseExpression());
-                        for (auto const& innerFunctionArg : innerFunctionCall.getArguments()) {
-                            variablesInFormula.insert(innerFunctionArg->asVariableExpression().getVariable());
+            // Maintain a mapping of each variable to a flag that is true if the variable will be made global.
+            std::map<storm::expressions::Variable, bool> variablesToMakeGlobal;
+            
+            // Get the set of variables that appeare in a renaimng of a renamed module
+            if (program.getNumberOfFormulas() > 0) {
+                std::set<storm::expressions::Variable> renamedVariables;
+                for (auto const& module : program.getModules()) {
+                    if (module.isRenamedFromModule()) {
+                        for (auto const& renaimingPair : module.getRenaming()) {
+                            if (manager->hasVariable(renaimingPair.first)) {
+                                renamedVariables.insert(manager->getVariable(renaimingPair.first));
+                            }
+                            if (manager->hasVariable(renaimingPair.second)) {
+                                renamedVariables.insert(manager->getVariable(renaimingPair.second));
+                            }
                         }
-                        placeholdersInFormula.insert(var);
                     }
                 }
                 
-                // Add a function argument and parameter for each occurring variable and prepare the substitution for the function body
-                std::map<storm::expressions::Variable, storm::expressions::Expression> functionBodySubstitution;
-                std::vector<storm::expressions::Variable> functionParameters;
-                std::vector<std::shared_ptr<storm::expressions::BaseExpression const>> functionArguments;
-                for (auto const& var : variablesInFormula) {
-                    functionArguments.push_back(var.getExpression().getBaseExpressionPointer());
-                    functionParameters.push_back(manager->declareVariable(formula.getName() + "__param__" + var.getName() + suffix, var.getType()));
-                    functionBodySubstitution[var] = functionParameters.back().getExpression();
+                // Add all formulas of the PRISM program to the JANI model.
+                // Also collect a substitution of formula placeholder variables to function call expressions.
+                for (auto const& formula : program.getFormulas()) {
+                    // First find 1. all variables that occurr in the formula definition (including the ones used in called formulae) and 2. the called formulae
+                    // Variables that occurr in a renaming need to become a parameter of the function.
+                    // Others need to be made global.
+                    std::set<storm::expressions::Variable> variablesInFormula, placeholdersInFormula;
+                    for (auto const& var : formula.getExpression().getVariables()) {
+                        // Check whether var is an actual variable/constant or another formula
+                        auto functionCallIt = formulaToFunctionCallMap.find(var);
+                        if (functionCallIt == formulaToFunctionCallMap.end()) {
+                            if (renamedVariables.count(var) > 0) {
+                                variablesInFormula.insert(var);
+                            } else {
+                                variablesToMakeGlobal.emplace(var, true);
+                            }
+                        } else {
+                            storm::expressions::FunctionCallExpression const& innerFunctionCall = dynamic_cast<storm::expressions::FunctionCallExpression const&>(functionCallIt->second.getBaseExpression());
+                            for (auto const& innerFunctionArg : innerFunctionCall.getArguments()) {
+                                auto const& argVar = innerFunctionArg->asVariableExpression().getVariable();
+                                if (renamedVariables.count(argVar) > 0) {
+                                    variablesInFormula.insert(argVar);
+                                } else {
+                                    variablesToMakeGlobal.emplace(argVar, true);
+                                }
+                            }
+                            placeholdersInFormula.insert(var);
+                        }
+                    }
+    
+                    // Add a function argument and parameter for each occurring variable and prepare the substitution for the function body
+                    std::map<storm::expressions::Variable, storm::expressions::Expression> functionBodySubstitution;
+                    std::vector<storm::expressions::Variable> functionParameters;
+                    std::vector<std::shared_ptr<storm::expressions::BaseExpression const>> functionArguments;
+                    for (auto const& var : variablesInFormula) {
+                        functionArguments.push_back(var.getExpression().getBaseExpressionPointer());
+                        functionParameters.push_back(manager->declareVariable(formula.getName() + "__param__" + var.getName() + suffix, var.getType()));
+                        functionBodySubstitution[var] = functionParameters.back().getExpression();
+                    }
+                    for (auto const& formulaVar : placeholdersInFormula) {
+                        functionBodySubstitution[formulaVar] = storm::jani::substituteJaniExpression(formulaToFunctionCallMap[formulaVar], functionBodySubstitution);
+                    }
+                    
+                    storm::jani::FunctionDefinition funDef(formula.getName(), formula.getType(), functionParameters, storm::jani::substituteJaniExpression(formula.getExpression(), functionBodySubstitution));
+                    janiModel.addFunctionDefinition(funDef);
+                    auto functionCallExpression = std::make_shared<storm::expressions::FunctionCallExpression>(*manager, formula.getType(), formula.getName(), functionArguments);
+                    formulaToFunctionCallMap[formula.getExpressionVariable()] = functionCallExpression->toExpression();
                 }
-                for (auto const& formulaVar : placeholdersInFormula) {
-                    functionBodySubstitution[formulaVar] = storm::jani::substituteJaniExpression(formulaToFunctionCallMap[formulaVar], functionBodySubstitution);
-                }
-                
-                storm::jani::FunctionDefinition funDef(formula.getName(), formula.getType(), functionParameters, storm::jani::substituteJaniExpression(formula.getExpression(), functionBodySubstitution));
-                janiModel.addFunctionDefinition(funDef);
-                auto functionCallExpression = std::make_shared<storm::expressions::FunctionCallExpression>(*manager, formula.getType(), formula.getName(), functionArguments);
-                formulaToFunctionCallMap[formula.getExpressionVariable()] = functionCallExpression->toExpression();
             }
             
             // Maintain a mapping from expression variables to JANI variables so we can fill in the correct objects when
@@ -120,7 +151,6 @@ namespace storm {
             }
             
             // Because of the rules of JANI, we have to make all variables of modules global that are read by other modules.
-            
             // Create a mapping from variables to the indices of module indices that write/read the variable.
             std::map<storm::expressions::Variable, std::set<uint_fast64_t>> variablesToAccessingModuleIndices;
             for (uint_fast64_t index = 0; index < program.getNumberOfModules(); ++index) {
@@ -163,11 +193,15 @@ namespace storm {
             }
             
             // Create a mapping from variables to a flag indicating whether it should be made global
-            std::map<storm::expressions::Variable, bool> variablesToMakeGlobal;
             for (auto const& varMods : variablesToAccessingModuleIndices) {
                 assert(!varMods.second.empty());
+                auto varIt = variablesToMakeGlobal.find(varMods.first);
                 // If there is exactly one module reading and writing the variable, we can make the variable local to this module.
-                variablesToMakeGlobal[varMods.first] = allVariablesGlobal || (varMods.second.size() > 1);
+                if (varIt == variablesToMakeGlobal.end()) {
+                    variablesToMakeGlobal.emplace(varMods.first, allVariablesGlobal || (varMods.second.size() > 1));
+                } else {
+                    varIt->second = varIt->second || allVariablesGlobal || (varMods.second.size() > 1);
+                }
             }
             
             // Go through the labels and construct assignments to transient variables that are added to the locations.
