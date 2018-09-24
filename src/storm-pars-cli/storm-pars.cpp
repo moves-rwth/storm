@@ -542,18 +542,18 @@ namespace storm {
                 // Transform to Lattices
                 storm::utility::Stopwatch latticeWatch(true);
                 storm::analysis::LatticeExtender<ValueType> *extender = new storm::analysis::LatticeExtender<ValueType>(sparseModel);
-                std::tuple<storm::analysis::Lattice*, uint_fast64_t, uint_fast64_t> criticalPair = extender->toLattice(formulas);
+                std::tuple<storm::analysis::Lattice*, uint_fast64_t, uint_fast64_t> criticalTuple = extender->toLattice(formulas);
                 std::map<storm::analysis::Lattice*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> result;
                 if (model->isOfType(storm::models::ModelType::Dtmc)) {
                     auto dtmcModel = model->as<storm::models::sparse::Dtmc<ValueType>>();
                     auto assumptionChecker = storm::analysis::AssumptionChecker<ValueType>(formulas[0], dtmcModel, 3);
                     auto assumptionMaker = storm::analysis::AssumptionMaker<ValueType>(extender, &assumptionChecker, sparseModel->getNumberOfStates(), parSettings.isValidateAssumptionsSet());
-                    result = assumptionMaker.makeAssumptions(std::get<0>(criticalPair), std::get<1>(criticalPair), std::get<2>(criticalPair));
+                    result = assumptionMaker.makeAssumptions(std::get<0>(criticalTuple), std::get<1>(criticalTuple), std::get<2>(criticalTuple));
                 } else if (model->isOfType(storm::models::ModelType::Dtmc)) {
                     auto mdpModel = model->as<storm::models::sparse::Mdp<ValueType>>();
                     auto assumptionChecker = storm::analysis::AssumptionChecker<ValueType>(formulas[0], mdpModel, 3);
                     auto assumptionMaker = storm::analysis::AssumptionMaker<ValueType>(extender, &assumptionChecker, sparseModel->getNumberOfStates(), parSettings.isValidateAssumptionsSet());
-                    result = assumptionMaker.makeAssumptions(std::get<0>(criticalPair), std::get<1>(criticalPair), std::get<2>(criticalPair));
+                    result = assumptionMaker.makeAssumptions(std::get<0>(criticalTuple), std::get<1>(criticalTuple), std::get<2>(criticalTuple));
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Unable to perform monotonicity analysis on the provided model type.");
                 }
