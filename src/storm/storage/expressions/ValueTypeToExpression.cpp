@@ -24,14 +24,8 @@ namespace storm {
                 auto varsManager = manager->getVariables();
                 bool found = find_if(varsManager.begin(), varsManager.end(),
                                      [&](auto val) -> bool {
-                                         return val.getName() == var.name();
+                                        return val.getName() == var.name();
                                      }) != varsManager.end();
-//                bool found = false;
-                // TODO kan dit niet anders
-                for (auto itr = varsManager.begin(); !found && itr != varsManager.end(); ++itr) {
-                    found = (*itr).getName().compare(var.name()) == 0;
-                }
-
                 if (!found) {
                     manager->declareIntegerVariable(var.name());
                 }
@@ -52,14 +46,12 @@ namespace storm {
                 for (auto itr = nominator.begin(); itr != nominator.end(); ++itr) {
                     varsFunction.clear();
                     (*itr).gatherVariables(varsFunction);
-                    // TODO: beter maken
+                    // TODO: improve transformation from coefficient to expression
                     storm::expressions::Expression nominatorPartExpr = manager->integer(
                             std::stoi(storm::utility::to_string((*itr).coeff())));
                     for (auto var : varsFunction) {
-                        if (!(*itr).derivative(var).isConstant()) {
-                            STORM_LOG_DEBUG("Expecting partial derivatives of nominator parts to be constant");
-                        }
-                        nominatorPartExpr = nominatorPartExpr * manager->getVariable(var.name());
+                        auto degree = nominator.degree(var);
+                        nominatorPartExpr = nominatorPartExpr * (manager->getVariable(var.name())^manager->integer(degree));
                     }
                     if (varsFunction.size() >= 1) {
                         result = result + nominatorPartExpr;
