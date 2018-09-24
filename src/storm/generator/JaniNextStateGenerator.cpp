@@ -578,23 +578,23 @@ namespace storm {
             
             int64_t lowestLevel = std::numeric_limits<int64_t>::max();
             int64_t highestLevel = std::numeric_limits<int64_t>::min();
+            uint64_t numDestinations = 1;
             for (uint_fast64_t i = 0; i < iteratorList.size(); ++i) {
                 if (this->getOptions().isBuildChoiceOriginsSet()) {
                     edgeIndices.insert(model.encodeAutomatonAndEdgeIndices(edgeCombination[i].first, iteratorList[i]->first));
                 }
-                lowestLevel = std::min(lowestLevel, iteratorList[i]->second->getLowestAssignmentLevel());
-                highestLevel = std::max(highestLevel, iteratorList[i]->second->getHighestAssignmentLevel());
+                storm::jani::Edge const& edge = *iteratorList[i]->second;
+                lowestLevel = std::min(lowestLevel, edge.getLowestAssignmentLevel());
+                highestLevel = std::max(highestLevel, edge.getHighestAssignmentLevel());
+                numDestinations *= edge.getNumberOfDestinations();
             }
-            
             std::vector<ValueType> destinationRewards;
             std::vector<storm::jani::EdgeDestination const*> destinations;
             std::vector<LocationVariableInformation const*> locationVars;
             destinations.reserve(iteratorList.size());
             locationVars.reserve(iteratorList.size());
 
-            bool lastDestinationId = false;
-            uint64_t destinationId = 0;
-            do {
+            for (uint64_t destinationId = 0; destinationId < numDestinations; ++destinationId) {
                 // First assignment level
                 destinations.clear();
                 locationVars.clear();
@@ -609,9 +609,6 @@ namespace storm {
                     uint64_t localDestinationIndex = destinationIndex % edge.getNumberOfDestinations();
                     destinations.push_back(&edge.getDestination(localDestinationIndex));
                     locationVars.push_back(&this->variableInformation.locationVariables[edgeCombination[i].first]);
-                    if (i == iteratorList.size() - 1 && localDestinationIndex == edge.getNumberOfDestinations() - 1) {
-                        lastDestinationId = true;
-                    }
                     destinationIndex /= edge.getNumberOfDestinations();
                     ValueType probability = this->evaluator->asRational(destinations.back()->getProbability());
                     if (edge.hasRate()) {
@@ -631,29 +628,29 @@ namespace storm {
                 }
                 
                 if (!storm::utility::isZero(successorProbability)) {
-                    int64_t assignmentLevel = lowestLevel;
-                    // remaining assignment levels
-                    while (assignmentLevel < highestLevel) {
-                        ++assignmentLevel;
-                        unpackStateIntoEvaluator(successorState, this->variableInformation, *this->evaluator);
-                        auto locationVarIt = locationVars.begin();
-                        for (auto const& destPtr : destinations) {
-                            successorState = applyUpdate(successorState, *destPtr, **locationVarIt, assignmentLevel, *this->evaluator);
-                            // add the reward for this destination to the destination rewards
-                            auto valueIt = destinationRewards.begin();
-                            performTransientAssignments(destinations.back()->getOrderedAssignments().getTransientAssignments(assignmentLevel), *this->evaluator, [&valueIt] (ValueType const& value) { *valueIt += value; ++valueIt; } );
-                            ++locationVarIt;
+                    if (lowestLevel < highestLevel) {
+                        int64_t assignmentLevel = lowestLevel;
+                        // remaining assignment levels
+                        while (assignmentLevel < highestLevel) {
+                            ++assignmentLevel;
+                            unpackStateIntoEvaluator(successorState, this->variableInformation, *this->evaluator);
+                            auto locationVarIt = locationVars.begin();
+                            for (auto const& destPtr : destinations) {
+                                successorState = applyUpdate(successorState, *destPtr, **locationVarIt, assignmentLevel, *this->evaluator);
+                                // add the reward for this destination to the destination rewards
+                                auto valueIt = destinationRewards.begin();
+                                performTransientAssignments(destinations.back()->getOrderedAssignments().getTransientAssignments(assignmentLevel), *this->evaluator, [&valueIt] (ValueType const& value) { *valueIt += value; ++valueIt; } );
+                                ++locationVarIt;
+                            }
                         }
+                        // Restore the old state information
+                        unpackStateIntoEvaluator(state, this->variableInformation, *this->evaluator);
                     }
-                    StateType id = stateToIdCallback(state);
+                    StateType id = stateToIdCallback(successorState);
                     distribution.add(id, successorProbability);
                     storm::utility::vector::addScaledVector(stateActionRewards, destinationRewards, successorProbability);
-
-                    // Restore the old state information
-                    unpackStateIntoEvaluator(state, this->variableInformation, *this->evaluator);
                 }
-                ++destinationId;
-            } while (!lastDestinationId);
+            }
             
             for (uint_fast64_t i = 0; i < iteratorList.size(); ++i) {
                 storm::jani::Edge const& edge = *iteratorList[i]->second;
@@ -684,7 +681,8 @@ namespace storm {
             // As long as there is one feasible combination of commands, keep on expanding it.
             bool done = false;
             while (!done) {
-                
+                distribution.clear();
+
                 EdgeIndexSet edgeIndices;
                 std::vector<ValueType> stateActionRewards(rewardVariables.size(), storm::utility::zero<ValueType>());
                 // old version without assignment levels generateSynchronizedDistribution(state, storm::utility::one<ValueType>(), 0, edgeCombination, iteratorList, distribution, stateActionRewards, edgeIndices, stateToIdCallback);
