@@ -192,6 +192,7 @@ namespace storm {
             
             std::vector<std::shared_ptr<AtomicExpressionFormula const>> getAtomicExpressionFormulas() const;
             std::vector<std::shared_ptr<AtomicLabelFormula const>> getAtomicLabelFormulas() const;
+            std::set<storm::expressions::Variable> getUsedVariables() const;
             std::set<std::string> getReferencedRewardModels() const;
             
             std::shared_ptr<Formula const> asSharedPointer();
@@ -220,7 +221,8 @@ namespace storm {
             virtual void gatherAtomicExpressionFormulas(std::vector<std::shared_ptr<AtomicExpressionFormula const>>& atomicExpressionFormulas) const;
             virtual void gatherAtomicLabelFormulas(std::vector<std::shared_ptr<AtomicLabelFormula const>>& atomicLabelFormulas) const;
             virtual void gatherReferencedRewardModels(std::set<std::string>& referencedRewardModels) const;
-            
+            virtual void gatherUsedVariables(std::set<storm::expressions::Variable>& usedVariables) const;
+
         private:
             // Currently empty.
         };

@@ -348,6 +348,20 @@ namespace storm {
             return initialStatesRestriction.isInitialized();
         }
         
+        bool Automaton::hasNonTrivialInitialStates() const {
+            if (this->hasInitialStatesRestriction() && !this->getInitialStatesRestriction().isTrue()) {
+                return true;
+            }
+            
+            for (auto const& variable : this->getVariables()) {
+                if (variable.hasInitExpression() && !variable.isTransient()) {
+                    return true;
+                }
+            }
+            
+            return false;
+        }
+        
         storm::expressions::Expression const& Automaton::getInitialStatesRestriction() const {
             return initialStatesRestriction;
         }
@@ -360,7 +374,7 @@ namespace storm {
             storm::expressions::Expression result;
             
             // Add initial state restriction if there is one.
-            if (this->hasInitialStatesRestriction()) {
+            if (this->hasInitialStatesRestriction() && !this->getInitialStatesRestriction().isTrue()) {
                 result = this->getInitialStatesRestriction();
             }
             
@@ -377,6 +391,27 @@ namespace storm {
                     } else {
                         result = newInitExpression;
                     }
+                }
+            }
+            
+            return result;
+        }
+        
+        bool Automaton::hasTrivialInitialStatesExpression() const {
+            if (this->hasInitialStatesRestriction()) {
+                return false;
+            }
+            
+            bool result = true;
+            for (auto const& variable : this->getVariables()) {
+                if (variable.isTransient()) {
+                    continue;
+                }
+                
+                result &= variable.hasInitExpression();
+                
+                if (!result) {
+                    break;
                 }
             }
             
@@ -521,9 +556,9 @@ namespace storm {
                 result &= location.isLinear();
             }
             if (result) {
-                return edges.isLinear();
+                result &= edges.isLinear();
             }
-            return false;
+            return result;
         }
 
         void Automaton::restrictToEdges(boost::container::flat_set<uint_fast64_t> const& edgeIndices) {

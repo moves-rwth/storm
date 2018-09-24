@@ -116,9 +116,20 @@ namespace storm {
                 gmm::mult(gmmMatrix, x, result);
             }
         }
+
+        template<typename ValueType>
+        void GmmxxMultiplier<ValueType>::multAddReduceHelper(OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType> const& x, std::vector<ValueType> const* b, std::vector<ValueType>& result, std::vector<uint64_t>* choices) const {
+            if (dir == storm::OptimizationDirection::Minimize) {
+                multAddReduceHelper<storm::utility::ElementLess<ValueType>>(rowGroupIndices, x, b, result, choices);
+            } else {
+                multAddReduceHelper<storm::utility::ElementGreater<ValueType>>(rowGroupIndices, x, b, result, choices);
+            }
+        }
         
         template<typename ValueType>
-        void GmmxxMultiplier<ValueType>::multAddReduceHelper(storm::solver::OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType> const& x, std::vector<ValueType> const* b, std::vector<ValueType>& result, std::vector<uint64_t>* choices) const {
+        template<typename Compare>
+        void GmmxxMultiplier<ValueType>::multAddReduceHelper(std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType> const& x, std::vector<ValueType> const* b, std::vector<ValueType>& result, std::vector<uint64_t>* choices) const {
+            Compare compare;
             typedef std::vector<ValueType> VectorType;
             typedef gmm::csr_matrix<ValueType> MatrixType;
             
@@ -133,13 +144,13 @@ namespace storm {
             if (choices) {
                 choice_it = choices->end() - 1;
             }
-            
-            uint64_t choice;
-            for (auto row_group_it = rowGroupIndices.end() - 2, row_group_ite = rowGroupIndices.begin() - 1; row_group_it != row_group_ite; --row_group_it, --choice_it, --target_it) {
-                if (choices) {
-                    *choice_it = 0;
-                }
 
+            // Variables for correctly tracking choices (only update if new choice is strictly better).
+            ValueType oldSelectedChoiceValue;
+            uint64_t selectedChoice;
+
+            uint64_t currentRow = gmmMatrix.nrows() - 1;
+            for (auto row_group_it = rowGroupIndices.end() - 2, row_group_ite = rowGroupIndices.begin() - 1; row_group_it != row_group_ite; --row_group_it, --choice_it, --target_it) {
                 ValueType currentValue = storm::utility::zero<ValueType>();
                 
                 // Only multiply and reduce if the row group is not empty.
@@ -150,40 +161,45 @@ namespace storm {
                     }
                     
                     currentValue += vect_sp(gmm::linalg_traits<MatrixType>::row(itr), x);
-                    
+
                     if (choices) {
-                        choice = *(row_group_it + 1) - 1 - *row_group_it;
-                        *choice_it = choice;
+                        selectedChoice = currentRow - *row_group_it;
+                        if (*choice_it == selectedChoice) {
+                            oldSelectedChoiceValue = currentValue;
+                        }
                     }
-                    
+
                     --itr;
+                    --currentRow;
                     
-                    for (uint64_t row = *row_group_it + 1, rowEnd = *(row_group_it + 1); row < rowEnd; ++row, --itr, --add_it) {
+                    for (uint64_t row = *row_group_it + 1, rowEnd = *(row_group_it + 1); row < rowEnd; ++row, --currentRow, --itr, --add_it) {
                         ValueType newValue = b ? *add_it : storm::utility::zero<ValueType>();
                         newValue += vect_sp(gmm::linalg_traits<MatrixType>::row(itr), x);
                         
-                        if (choices) {
-                            --choice;
+                        if (choices && currentRow == *choice_it + *row_group_it) {
+                            oldSelectedChoiceValue = newValue;
                         }
-                        
-                        if ((dir == OptimizationDirection::Minimize && newValue < currentValue) || (dir == OptimizationDirection::Maximize && newValue > currentValue)) {
+
+                        if (compare(newValue, currentValue)) {
                             currentValue = newValue;
                             if (choices) {
-                                *choice_it = choice;
+                                selectedChoice = currentRow - *row_group_it;
                             }
                         }
                     }
-                } else if (choices) {
-                    *choice_it = 0;
+                    
+                    // Finally write value to target vector.
+                    *target_it = currentValue;
+                    if (choices && compare(currentValue, oldSelectedChoiceValue)) {
+                        *choice_it = selectedChoice;
+                    }
                 }
-                
-                // Write back final value.
-                *target_it = currentValue;
             }
         }
         
         template<>
-        void GmmxxMultiplier<storm::RationalFunction>::multAddReduceHelper(storm::solver::OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<storm::RationalFunction> const& x, std::vector<storm::RationalFunction> const* b, std::vector<storm::RationalFunction>& result, std::vector<uint64_t>* choices) const {
+        template<typename Compare>
+        void GmmxxMultiplier<storm::RationalFunction>::multAddReduceHelper(std::vector<uint64_t> const& rowGroupIndices, std::vector<storm::RationalFunction> const& x, std::vector<storm::RationalFunction> const* b, std::vector<storm::RationalFunction>& result, std::vector<uint64_t>* choices) const {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported for this data type.");
         }
         
@@ -202,10 +218,10 @@ namespace storm {
         }
         
 #ifdef STORM_HAVE_INTELTBB
-        template<typename ValueType>
+        template<typename ValueType, typename Compare>
         class TbbMultAddReduceFunctor {
         public:
-            TbbMultAddReduceFunctor(storm::solver::OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, gmm::csr_matrix<ValueType> const& matrix, std::vector<ValueType> const& x, std::vector<ValueType> const* b, std::vector<ValueType>& result, std::vector<uint64_t>* choices) : dir(dir), rowGroupIndices(rowGroupIndices), matrix(matrix), x(x), b(b), result(result), choices(choices) {
+            TbbMultAddReduceFunctor(std::vector<uint64_t> const& rowGroupIndices, gmm::csr_matrix<ValueType> const& matrix, std::vector<ValueType> const& x, std::vector<ValueType> const* b, std::vector<ValueType>& result, std::vector<uint64_t>* choices) : dir(dir), rowGroupIndices(rowGroupIndices), matrix(matrix), x(x), b(b), result(result), choices(choices) {
                 // Intentionally left empty.
             }
             
@@ -260,7 +276,7 @@ namespace storm {
                             ValueType newValue = b ? *bIt : storm::utility::zero<ValueType>();
                             newValue += vect_sp(gmm::linalg_traits<MatrixType>::row(itr), x);
                             
-                            if (min ? newValue < currentValue : newValue > currentValue) {
+                            if (compare(newValue, currentValue)) {
                                 currentValue = newValue;
                                 if (choices) {
                                     selectedChoice = currentRow - *groupIt;
@@ -271,14 +287,14 @@ namespace storm {
                     
                     // Finally write value to target vector.
                     *resultIt = currentValue;
-                    if (choices && (min ? currentValue < oldSelectedChoiceValue : currentValue > oldSelectedChoiceValue)) {
+                    if (choices && compare(currentValue, oldSelectedChoiceValue)) {
                         *choiceIt = selectedChoice;
                     }
                 }
             }
             
         private:
-            storm::solver::OptimizationDirection dir;
+            Compare compare;
             std::vector<uint64_t> const& rowGroupIndices;
             gmm::csr_matrix<ValueType> const& matrix;
             std::vector<ValueType> const& x;
@@ -291,7 +307,11 @@ namespace storm {
         template<typename ValueType>
         void GmmxxMultiplier<ValueType>::multAddReduceParallel(storm::solver::OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType> const& x, std::vector<ValueType> const* b, std::vector<ValueType>& result, std::vector<uint64_t>* choices) const {
 #ifdef STORM_HAVE_INTELTBB
-            tbb::parallel_for(tbb::blocked_range<unsigned long>(0, rowGroupIndices.size() - 1, 10), TbbMultAddReduceFunctor<ValueType>(dir, rowGroupIndices, this->gmmMatrix, x, b, result, choices));
+            if (dir == storm::OptimizationDirection::Minimize) {
+                tbb::parallel_for(tbb::blocked_range<unsigned long>(0, rowGroupIndices.size() - 1, 100), TbbMultAddReduceFunctor<ValueType, storm::utility::ElementLess<ValueType>>(rowGroupIndices, this->gmmMatrix, x, b, result, choices));
+            } else {
+                tbb::parallel_for(tbb::blocked_range<unsigned long>(0, rowGroupIndices.size() - 1, 100), TbbMultAddReduceFunctor<ValueType storm::utility::ElementGreater<ValueType>>(rowGroupIndices, this->gmmMatrix, x, b, result, choices));
+            }
 #else
             STORM_LOG_WARN("Storm was built without support for Intel TBB, defaulting to sequential version.");
             multAddReduceHelper(dir, rowGroupIndices, x, b, result, choices);

@@ -30,7 +30,7 @@ namespace storm {
             auto formula = eliminateRewardAccumulations(*property.getFilter().getFormula());
             auto states = eliminateRewardAccumulations(*property.getFilter().getStatesFormula());
             storm::jani::FilterExpression fe(formula, property.getFilter().getFilterType(), states);
-            property = storm::jani::Property(property.getName(), storm::jani::FilterExpression(formula, property.getFilter().getFilterType(), states), property.getComment());
+            property = storm::jani::Property(property.getName(), storm::jani::FilterExpression(formula, property.getFilter().getFilterType(), states), property.getUndefinedConstants(), property.getComment());
         }
         
         boost::any RewardAccumulationEliminationVisitor::visit(BoundedUntilFormula const& f, boost::any const& data) const {

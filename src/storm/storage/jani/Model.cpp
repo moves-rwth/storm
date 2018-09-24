@@ -483,7 +483,11 @@ namespace storm {
             // Assert the values of the constants.
             for (auto const& constant : this->getConstants()) {
                 if (constant.isDefined()) {
-                    solver->add(constant.getExpressionVariable() == constant.getExpression());
+                    if (constant.isBooleanConstant()) {
+                        solver->add(storm::expressions::iff(constant.getExpressionVariable(), constant.getExpression()));
+                    } else {
+                        solver->add(constant.getExpressionVariable() == constant.getExpression());
+                    }
                 }
             }
             // Assert the bounds of the global variables.
@@ -1076,12 +1080,47 @@ namespace storm {
             return initialStatesRestriction;
         }
         
+        bool Model::hasNonTrivialInitialStates() const {
+            if (this->hasInitialStatesRestriction() && !this->getInitialStatesRestriction().isTrue()) {
+                return true;
+            } else {
+                for (auto const& variable : this->getGlobalVariables()) {
+                    if (variable.hasInitExpression() && !variable.isTransient()) {
+                        return true;
+                    }
+                }
+                
+                for (auto const& automaton : this->automata) {
+                    if (automaton.hasNonTrivialInitialStates()) {
+                        return true;
+                    }
+                }
+            }
+            
+            return false;
+        }
+        
         storm::expressions::Expression Model::getInitialStatesExpression() const {
             std::vector<std::reference_wrapper<storm::jani::Automaton const>> allAutomata;
             for (auto const& automaton : this->getAutomata()) {
                 allAutomata.push_back(automaton);
             }
             return getInitialStatesExpression(allAutomata);
+        }
+        
+        bool Model::hasTrivialInitialStatesExpression() const {
+            if (this->hasInitialStatesRestriction() && !this->getInitialStatesRestriction().isTrue()) {
+                return false;
+            }
+            
+            bool result = true;
+            for (auto const& automaton : this->getAutomata()) {
+                result &= automaton.hasTrivialInitialStatesExpression();
+                if (!result) {
+                    break;
+                }
+            }
+            return result;
         }
         
         storm::expressions::Expression Model::getInitialStatesExpression(std::vector<std::reference_wrapper<storm::jani::Automaton const>> const& automata) const {

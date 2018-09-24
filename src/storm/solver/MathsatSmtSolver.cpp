@@ -139,7 +139,13 @@ namespace storm {
 		void MathsatSmtSolver::add(storm::expressions::Expression const& e)
 		{
 #ifdef STORM_HAVE_MSAT
-			msat_assert_formula(env, expressionAdapter->translateExpression(e));
+            msat_term expression = expressionAdapter->translateExpression(e);
+			msat_assert_formula(env, expression);
+            if (expressionAdapter->hasAdditionalConstraints()) {
+                for (auto const& constraint : expressionAdapter->getAdditionalConstraints()) {
+                    msat_assert_formula(env, constraint);
+                }
+            }
 #else
 			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without MathSAT support.");
 #endif

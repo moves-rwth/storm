@@ -1466,7 +1466,11 @@ namespace storm {
             // Assert the values of the constants.
             for (auto const& constant : this->getConstants()) {
                 if (constant.isDefined()) {
-                    solver->add(constant.getExpressionVariable() == constant.getExpression());
+                    if (constant.getType().isBooleanType()) {
+                        solver->add(storm::expressions::iff(constant.getExpressionVariable(),constant.getExpression()));
+                    } else {
+                        solver->add(constant.getExpressionVariable() == constant.getExpression());
+                    }
                 }
             }
             
@@ -1635,6 +1639,7 @@ namespace storm {
             
             // Finally, we can create the module and the program and return it.
             storm::prism::Module singleModule(newModuleName.str(), allBooleanVariables, allIntegerVariables, newCommands, this->getFilename(), 0);
+            
             return Program(manager, this->getModelType(), this->getConstants(), std::vector<storm::prism::BooleanVariable>(), std::vector<storm::prism::IntegerVariable>(), this->getFormulas(), {singleModule}, actionToIndexMap, this->getRewardModels(), this->getLabels(), this->getOptionalInitialConstruct(), this->getOptionalSystemCompositionConstruct(), prismCompatibility, this->getFilename(), 0, true);
         }
 

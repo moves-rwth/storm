@@ -127,6 +127,19 @@ namespace storm {
                 output.properties = storm::api::substituteConstantsInProperties(output.properties, constantDefinitions);
             }
             
+            // Make sure there are no undefined constants remaining in any property.
+            for (auto const& property : output.properties) {
+                std::set<storm::expressions::Variable> usedUndefinedConstants = property.getUndefinedConstants();
+                if (!usedUndefinedConstants.empty()) {
+                    std::vector<std::string> undefinedConstantsNames;
+                    for (auto const& constant : usedUndefinedConstants) {
+                        undefinedConstantsNames.emplace_back(constant.getName());
+                    }
+
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The property '" << property << " still refers to the undefined constants " << boost::algorithm::join(undefinedConstantsNames, ",") << ".");
+                }
+            }
+            
             // Check whether conversion for PRISM to JANI is requested or necessary.
             if (input.model && input.model.get().isPrismProgram()) {
                 bool transformToJani = ioSettings.isPrismToJaniSet();
@@ -565,12 +578,85 @@ namespace storm {
             }
         }
         
+        std::vector<storm::expressions::Expression> parseConstraints(storm::expressions::ExpressionManager const& expressionManager, std::string const& constraintsString) {
+            std::vector<storm::expressions::Expression> constraints;
+            
+            std::vector<std::string> constraintsAsStrings;
+            boost::split(constraintsAsStrings, constraintsString, boost::is_any_of(","));
+            
+            storm::parser::ExpressionParser expressionParser(expressionManager);
+            std::unordered_map<std::string, storm::expressions::Expression> variableMapping;
+            for (auto const& variableTypePair : expressionManager) {
+                variableMapping[variableTypePair.first.getName()] = variableTypePair.first;
+            }
+            expressionParser.setIdentifierMapping(variableMapping);
+            
+            for (auto const& constraintString : constraintsAsStrings) {
+                if (constraintString.empty()) {
+                    continue;
+                }
+
+                storm::expressions::Expression constraint = expressionParser.parseFromString(constraintString);
+                STORM_LOG_TRACE("Adding special (user-provided) constraint " << constraint << ".");
+                constraints.emplace_back(constraint);
+            }
+            
+            return constraints;
+        }
+        
+        std::vector<std::vector<storm::expressions::Expression>> parseInjectedRefinementPredicates(storm::expressions::ExpressionManager const& expressionManager, std::string const& refinementPredicatesString) {
+            std::vector<std::vector<storm::expressions::Expression>> injectedRefinementPredicates;
+            
+            storm::parser::ExpressionParser expressionParser(expressionManager);
+            std::unordered_map<std::string, storm::expressions::Expression> variableMapping;
+            for (auto const& variableTypePair : expressionManager) {
+                variableMapping[variableTypePair.first.getName()] = variableTypePair.first;
+            }
+            expressionParser.setIdentifierMapping(variableMapping);
+            
+            std::vector<std::string> predicateGroupsAsStrings;
+            boost::split(predicateGroupsAsStrings, refinementPredicatesString, boost::is_any_of(";"));
+            
+            if (!predicateGroupsAsStrings.empty()) {
+                for (auto const& predicateGroupString : predicateGroupsAsStrings) {
+                    if (predicateGroupString.empty()) {
+                        continue;
+                    }
+                    
+                    std::vector<std::string> predicatesAsStrings;
+                    boost::split(predicatesAsStrings, predicateGroupString, boost::is_any_of(":"));
+                    
+                    if (!predicatesAsStrings.empty()) {
+                        injectedRefinementPredicates.emplace_back();
+                        for (auto const& predicateString : predicatesAsStrings) {
+                            storm::expressions::Expression predicate = expressionParser.parseFromString(predicateString);
+                            STORM_LOG_TRACE("Adding special (user-provided) refinement predicate " << predicateString << ".");
+                            injectedRefinementPredicates.back().emplace_back(predicate);
+                        }
+                        
+                        STORM_LOG_THROW(!injectedRefinementPredicates.back().empty(), storm::exceptions::InvalidArgumentException, "Expecting non-empty list of predicates to inject for each (mentioned) refinement step.");
+                        
+                        // Finally reverse the list, because we take the predicates from the back.
+                        std::reverse(injectedRefinementPredicates.back().begin(), injectedRefinementPredicates.back().end());
+                    }
+                }
+                
+                // Finally reverse the list, because we take the predicates from the back.
+                std::reverse(injectedRefinementPredicates.begin(), injectedRefinementPredicates.end());
+            }
+            
+            return injectedRefinementPredicates;
+        }
+        
         template <storm::dd::DdType DdType, typename ValueType>
         void verifyWithAbstractionRefinementEngine(SymbolicInput const& input) {
             STORM_LOG_ASSERT(input.model, "Expected symbolic model description.");
-            verifyProperties<ValueType>(input, [&input] (std::shared_ptr<storm::logic::Formula const> const& formula, std::shared_ptr<storm::logic::Formula const> const& states) {
+            storm::settings::modules::AbstractionSettings const& abstractionSettings = storm::settings::getModule<storm::settings::modules::AbstractionSettings>();
+            storm::api::AbstractionRefinementOptions options(parseConstraints(input.model->getManager(), abstractionSettings.getConstraintString()), parseInjectedRefinementPredicates(input.model->getManager(), abstractionSettings.getInjectedRefinementPredicates()));
+
+            verifyProperties<ValueType>(input, [&input,&options] (std::shared_ptr<storm::logic::Formula const> const& formula, std::shared_ptr<storm::logic::Formula const> const& states) {
                 STORM_LOG_THROW(states->isInitialFormula(), storm::exceptions::NotSupportedException, "Abstraction-refinement can only filter initial states.");
-                return storm::api::verifyWithAbstractionRefinementEngine<DdType, ValueType>(input.model.get(), storm::api::createTask<ValueType>(formula, true));
+                return storm::api::verifyWithAbstractionRefinementEngine<DdType, ValueType>(input.model.get(), storm::api::createTask<ValueType>(formula, true), options);
             });
         }
         

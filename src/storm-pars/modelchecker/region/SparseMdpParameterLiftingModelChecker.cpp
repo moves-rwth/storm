@@ -275,8 +275,8 @@ namespace storm {
             }
             
             // Invoke the solver
-            if(stepBound) {
-                assert(*stepBound > 0);
+            if (stepBound) {
+                STORM_LOG_ASSERT(*stepBound > 0, "Expected positive step bound.");
                 solver->repeatedMultiply(env, this->currentCheckTask->getOptimizationDirection(), dirForParameters, x, &parameterLifter->getVector(), *stepBound);
             } else {
                 solver->solveGame(env, this->currentCheckTask->getOptimizationDirection(), dirForParameters, x, parameterLifter->getVector());
@@ -293,7 +293,7 @@ namespace storm {
             // Get the result for the complete model (including maybestates)
             std::vector<ConstantType> result = resultsForNonMaybeStates;
             auto maybeStateResIt = x.begin();
-            for(auto const& maybeState : maybeStates) {
+            for (auto const& maybeState : maybeStates) {
                 result[maybeState] = *maybeStateResIt;
                 ++maybeStateResIt;
             }

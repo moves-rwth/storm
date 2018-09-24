@@ -56,6 +56,8 @@ namespace storm {
             std::map<storm::expressions::Variable, storm::expressions::Expression> parseConstantDefinitions(std::string const& constantDefinitionString) const;
             
             void requireNoUndefinedConstants() const;
+            bool hasUndefinedConstants() const;
+            std::vector<storm::expressions::Variable> getUndefinedConstants() const;
             
         private:
             boost::optional<boost::variant<storm::jani::Model, storm::prism::Program>> modelDescription;

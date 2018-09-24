@@ -639,7 +639,7 @@ namespace storm {
             STORM_LOG_THROW(statesFormula, storm::exceptions::NotImplementedException, "Could not derive states formula.");
             STORM_LOG_THROW(expressionStructure.count("values") == 1, storm::exceptions::InvalidJaniException, "Values as input for a filter must be given");
             auto formula = parseFormula(expressionStructure.at("values"), storm::logic::FormulaContext::Undefined, scope.refine("Values of property " + name));
-            return storm::jani::Property(name, storm::jani::FilterExpression(formula, ft, statesFormula), comment);
+            return storm::jani::Property(name, storm::jani::FilterExpression(formula, ft, statesFormula), {}, comment);
         }
 
         std::shared_ptr<storm::jani::Constant> JaniParser::parseConstant(json const& constantStructure, Scope const& scope) {
@@ -722,6 +722,10 @@ namespace storm {
                 } else if (typeStructure == "int") {
                     result.basicType = ParsedType::BasicType::Int;
                     result.expressionType = expressionManager->getIntegerType();
+                } else if(typeStructure == "clock") {
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Unsupported type 'clock' for variable '" << variableName << "' (scope: " << scope.description << ")");
+                } else if(typeStructure == "continuous") {
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Unsupported type 'continuous' for variable ''" << variableName << "' (scope: " << scope.description << ")");
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Unsupported type " << typeStructure.dump() << " for variable '" << variableName << "' (scope: " << scope.description << ")");
                 }
@@ -729,18 +733,21 @@ namespace storm {
                 STORM_LOG_THROW(typeStructure.count("kind") == 1, storm::exceptions::InvalidJaniException, "For complex type as in variable " << variableName << "(scope: " << scope.description << ")  kind must be given");
                 std::string kind = getString(typeStructure.at("kind"), "kind for complex type as in variable " + variableName  + "(scope: " + scope.description + ") ");
                 if (kind == "bounded") {
-                    STORM_LOG_THROW(typeStructure.count("lower-bound") == 1, storm::exceptions::InvalidJaniException, "For bounded type as in variable " << variableName << "(scope: " << scope.description << ") lower-bound must be given");
-                    storm::expressions::Expression lowerboundExpr = parseExpression(typeStructure.at("lower-bound"), scope.refine("Lower bound for variable " + variableName));
-                    assert(lowerboundExpr.isInitialized());
-                    STORM_LOG_THROW(typeStructure.count("upper-bound") == 1, storm::exceptions::InvalidJaniException, "For bounded type as in variable " << variableName << "(scope: " << scope.description << ") upper-bound must be given");
-                    storm::expressions::Expression upperboundExpr = parseExpression(typeStructure.at("upper-bound"), scope.refine("Upper bound for variable "+ variableName));
-                    assert(upperboundExpr.isInitialized());
+                    STORM_LOG_THROW(typeStructure.count("lower-bound") + typeStructure.count("upper-bound") > 0, storm::exceptions::InvalidJaniException, "For bounded type as in variable " << variableName << "(scope: " << scope.description << ") lower-bound or upper-bound must be given");
+                    storm::expressions::Expression lowerboundExpr;
+                    if (typeStructure.count("lower-bound") > 0) {
+                        lowerboundExpr = parseExpression(typeStructure.at("lower-bound"), scope.refine("Lower bound for variable " + variableName));
+                    }
+                    storm::expressions::Expression upperboundExpr;
+                    if (typeStructure.count("upper-bound") > 0) {
+                        upperboundExpr = parseExpression(typeStructure.at("upper-bound"), scope.refine("Upper bound for variable "+ variableName));
+                    }
                     STORM_LOG_THROW(typeStructure.count("base") == 1, storm::exceptions::InvalidJaniException, "For bounded type as in variable " << variableName << "(scope: " << scope.description << ") base must be given");
                     std::string basictype = getString(typeStructure.at("base"), "base for bounded type as in variable " + variableName  + "(scope: " + scope.description + ") ");
                     if (basictype == "int") {
-                        STORM_LOG_THROW(lowerboundExpr.hasIntegerType(), storm::exceptions::InvalidJaniException, "Lower bound for bounded integer variable " << variableName << "(scope: " << scope.description << ") must be integer-typed");
-                        STORM_LOG_THROW(upperboundExpr.hasIntegerType(), storm::exceptions::InvalidJaniException, "Upper bound for bounded integer variable " << variableName << "(scope: " << scope.description << ") must be integer-typed");
-                        if (!lowerboundExpr.containsVariables() && !upperboundExpr.containsVariables()) {
+                        STORM_LOG_THROW(!lowerboundExpr.isInitialized() || lowerboundExpr.hasIntegerType(), storm::exceptions::InvalidJaniException, "Lower bound for bounded integer variable " << variableName << "(scope: " << scope.description << ") must be integer-typed");
+                        STORM_LOG_THROW(!upperboundExpr.isInitialized() || upperboundExpr.hasIntegerType(), storm::exceptions::InvalidJaniException, "Upper bound for bounded integer variable " << variableName << "(scope: " << scope.description << ") must be integer-typed");
+                        if (lowerboundExpr.isInitialized() && upperboundExpr.isInitialized() && !lowerboundExpr.containsVariables() && !upperboundExpr.containsVariables()) {
                             STORM_LOG_THROW(lowerboundExpr.evaluateAsInt() <= upperboundExpr.evaluateAsInt(), storm::exceptions::InvalidJaniException, "Lower bound must not be larger than upper bound for bounded integer variable "  << variableName << "(scope: " << scope.description << ")");
                         }
                         result.basicType = ParsedType::BasicType::Int;
@@ -1151,7 +1158,7 @@ namespace storm {
                         ensureNumericalType(arguments[0], opstring, 0, scope.description);
                         ensureNumericalType(arguments[1], opstring, 1, scope.description);
                         return arguments[0] + arguments[1];
-                    } else if (opstring == "-") {
+                    } else if (opstring == "-" && expressionStructure.count("left") > 0) {
                         arguments = parseBinaryExpressionArguments(expressionStructure, opstring, scope, returnNoneInitializedOnUnknownOperator, auxiliaryVariables);
                         assert(arguments.size() == 2);
                         ensureNumericalType(arguments[0], opstring, 0, scope.description);

@@ -433,6 +433,12 @@ namespace storm {
             return result;
         }
         
+        std::set<storm::expressions::Variable> Formula::getUsedVariables() const {
+            std::set<storm::expressions::Variable> usedVariables;
+            this->gatherUsedVariables(usedVariables);
+            return usedVariables;
+        }
+        
         std::set<std::string> Formula::getReferencedRewardModels() const {
             std::set<std::string> referencedRewardModels;
             this->gatherReferencedRewardModels(referencedRewardModels);
@@ -492,7 +498,11 @@ namespace storm {
         void Formula::gatherReferencedRewardModels(std::set<std::string>&) const {
             return;
         }
-                
+        
+        void Formula::gatherUsedVariables(std::set<storm::expressions::Variable>& usedVariables) const {
+            return;
+        }
+        
         std::string Formula::toString() const {
             std::stringstream str2;
             writeToStream(str2);

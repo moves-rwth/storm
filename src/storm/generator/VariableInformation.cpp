@@ -31,14 +31,12 @@ namespace storm {
         }
         
         VariableInformation::VariableInformation(storm::prism::Program const& program, bool outOfBoundsState) : totalBitOffset(0) {
-            if(outOfBoundsState) {
+            if (outOfBoundsState) {
                 outOfBoundsBit = 0;
                 ++totalBitOffset;
             } else {
                 outOfBoundsBit = boost::none;
             }
-
-
 
             for (auto const& booleanVariable : program.getGlobalBooleanVariables()) {
                 booleanVariables.emplace_back(booleanVariable.getExpressionVariable(), totalBitOffset, true);
@@ -78,15 +76,13 @@ namespace storm {
                 STORM_LOG_THROW(!automaton.getVariables().containsNonTransientUnboundedIntegerVariables(), storm::exceptions::InvalidArgumentException, "Cannot build model from JANI model that contains non-transient unbounded integer variables in automaton '" << automaton.getName() << "'.");
                 STORM_LOG_THROW(!automaton.getVariables().containsNonTransientRealVariables(), storm::exceptions::InvalidArgumentException, "Cannot build model from JANI model that contains non-transient real variables in automaton '" << automaton.getName() << "'.");
             }
-            if(outOfBoundsState) {
+            if (outOfBoundsState) {
                 outOfBoundsBit = 0;
                 ++totalBitOffset;
             } else {
                 outOfBoundsBit = boost::none;
             }
 
-
-            
             for (auto const& variable : model.getGlobalVariables().getBooleanVariables()) {
                 if (!variable.isTransient()) {
                     booleanVariables.emplace_back(variable.getExpressionVariable(), totalBitOffset, true);
@@ -95,6 +91,7 @@ namespace storm {
             }
             for (auto const& variable : model.getGlobalVariables().getBoundedIntegerVariables()) {
                 if (!variable.isTransient()) {
+                    STORM_LOG_THROW(variable.hasLowerBound() && variable.hasUpperBound(), storm::exceptions::WrongFormatException, "Bounded integer variables with infinite range are not supported.");
                     int_fast64_t lowerBound = variable.getLowerBound().evaluateAsInt();
                     int_fast64_t upperBound = variable.getUpperBound().evaluateAsInt();
                     uint_fast64_t bitwidth = static_cast<uint_fast64_t>(std::ceil(std::log2(upperBound - lowerBound + 1)));

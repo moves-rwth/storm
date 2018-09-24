@@ -442,6 +442,11 @@ namespace storm {
             bool hasInitialStatesRestriction() const;
             
             /*!
+             * Retrieves whether there are non-trivial initial states in the model or any of the contained automata.
+             */
+            bool hasNonTrivialInitialStates() const;
+            
+            /*!
              * Sets the expression restricting the legal initial values of the global variables.
              */
             void setInitialStatesRestriction(storm::expressions::Expression const& initialStatesRestriction);
@@ -456,6 +461,12 @@ namespace storm {
              */
             storm::expressions::Expression getInitialStatesExpression() const;
 
+            /*!
+             * Retrieves whether the initial states expression is trivial in the sense that no automaton has an initial
+             * states restriction and all variables have initial values.
+             */
+            bool hasTrivialInitialStatesExpression() const;
+            
             /*!
              * Retrieves the expression defining the legal initial values of the variables.
              *

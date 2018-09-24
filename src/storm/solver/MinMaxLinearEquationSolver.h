@@ -170,7 +170,7 @@ namespace storm {
             boost::optional<std::vector<uint_fast64_t>> initialScheduler;
             
         private:
-            // Whether the solver can assume that the min-max equation system has a unique solution
+            /// Whether the solver can assume that the min-max equation system has a unique solution
             bool uniqueSolution;
             
             /// Whether some of the generated data during solver calls should be cached.

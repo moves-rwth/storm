@@ -195,59 +195,118 @@ namespace storm {
         
         template<typename ValueType, typename StateType>
         std::vector<StateType> JaniNextStateGenerator<ValueType, StateType>::getInitialStates(StateToIdCallback const& stateToIdCallback) {
-            // Prepare an SMT solver to enumerate all initial states.
-            storm::utility::solver::SmtSolverFactory factory;
-            std::unique_ptr<storm::solver::SmtSolver> solver = factory.create(model.getExpressionManager());
-            
-            std::vector<storm::expressions::Expression> rangeExpressions = model.getAllRangeExpressions(this->parallelAutomata);
-            for (auto const& expression : rangeExpressions) {
-                solver->add(expression);
-            }
-            solver->add(model.getInitialStatesExpression(this->parallelAutomata));
-            
-            // Proceed as long as the solver can still enumerate initial states.
             std::vector<StateType> initialStateIndices;
-            while (solver->check() == storm::solver::SmtSolver::CheckResult::Sat) {
-                // Create fresh state.
-                CompressedState initialState(this->variableInformation.getTotalBitOffset());
+
+            if (this->model.hasNonTrivialInitialStates()) {
+                // Prepare an SMT solver to enumerate all initial states.
+                storm::utility::solver::SmtSolverFactory factory;
+                std::unique_ptr<storm::solver::SmtSolver> solver = factory.create(model.getExpressionManager());
                 
-                // Read variable assignment from the solution of the solver. Also, create an expression we can use to
-                // prevent the variable assignment from being enumerated again.
-                storm::expressions::Expression blockingExpression;
-                std::shared_ptr<storm::solver::SmtSolver::ModelReference> model = solver->getModel();
-                for (auto const& booleanVariable : this->variableInformation.booleanVariables) {
-                    bool variableValue = model->getBooleanValue(booleanVariable.variable);
-                    storm::expressions::Expression localBlockingExpression = variableValue ? !booleanVariable.variable : booleanVariable.variable;
-                    blockingExpression = blockingExpression.isInitialized() ? blockingExpression || localBlockingExpression : localBlockingExpression;
-                    initialState.set(booleanVariable.bitOffset, variableValue);
+                std::vector<storm::expressions::Expression> rangeExpressions = model.getAllRangeExpressions(this->parallelAutomata);
+                for (auto const& expression : rangeExpressions) {
+                    solver->add(expression);
                 }
-                for (auto const& integerVariable : this->variableInformation.integerVariables) {
-                    int_fast64_t variableValue = model->getIntegerValue(integerVariable.variable);
-                    storm::expressions::Expression localBlockingExpression = integerVariable.variable != model->getManager().integer(variableValue);
-                    blockingExpression = blockingExpression.isInitialized() ? blockingExpression || localBlockingExpression : localBlockingExpression;
-                    initialState.setFromInt(integerVariable.bitOffset, integerVariable.bitWidth, static_cast<uint_fast64_t>(variableValue - integerVariable.lowerBound));
+                solver->add(model.getInitialStatesExpression(this->parallelAutomata));
+                
+                // Proceed as long as the solver can still enumerate initial states.
+                while (solver->check() == storm::solver::SmtSolver::CheckResult::Sat) {
+                    // Create fresh state.
+                    CompressedState initialState(this->variableInformation.getTotalBitOffset(true));
+                    
+                    // Read variable assignment from the solution of the solver. Also, create an expression we can use to
+                    // prevent the variable assignment from being enumerated again.
+                    storm::expressions::Expression blockingExpression;
+                    std::shared_ptr<storm::solver::SmtSolver::ModelReference> model = solver->getModel();
+                    for (auto const& booleanVariable : this->variableInformation.booleanVariables) {
+                        bool variableValue = model->getBooleanValue(booleanVariable.variable);
+                        storm::expressions::Expression localBlockingExpression = variableValue ? !booleanVariable.variable : booleanVariable.variable;
+                        blockingExpression = blockingExpression.isInitialized() ? blockingExpression || localBlockingExpression : localBlockingExpression;
+                        initialState.set(booleanVariable.bitOffset, variableValue);
+                    }
+                    for (auto const& integerVariable : this->variableInformation.integerVariables) {
+                        int_fast64_t variableValue = model->getIntegerValue(integerVariable.variable);
+                        storm::expressions::Expression localBlockingExpression = integerVariable.variable != model->getManager().integer(variableValue);
+                        blockingExpression = blockingExpression.isInitialized() ? blockingExpression || localBlockingExpression : localBlockingExpression;
+                        initialState.setFromInt(integerVariable.bitOffset, integerVariable.bitWidth, static_cast<uint_fast64_t>(variableValue - integerVariable.lowerBound));
+                    }
+                    
+                    // Gather iterators to the initial locations of all the automata.
+                    std::vector<std::set<uint64_t>::const_iterator> initialLocationsIts;
+                    std::vector<std::set<uint64_t>::const_iterator> initialLocationsItes;
+                    for (auto const& automatonRef : this->parallelAutomata) {
+                        auto const& automaton = automatonRef.get();
+                        initialLocationsIts.push_back(automaton.getInitialLocationIndices().cbegin());
+                        initialLocationsItes.push_back(automaton.getInitialLocationIndices().cend());
+                    }
+                    storm::utility::combinatorics::forEach(initialLocationsIts, initialLocationsItes, [this,&initialState] (uint64_t index, uint64_t value) { setLocation(initialState, this->variableInformation.locationVariables[index], value); }, [&stateToIdCallback,&initialStateIndices,&initialState] () {
+                        // Register initial state.
+                        StateType id = stateToIdCallback(initialState);
+                        initialStateIndices.push_back(id);
+                        return true;
+                    });
+                    
+                    // Block the current initial state to search for the next one.
+                    if (!blockingExpression.isInitialized()) {
+                        break;
+                    }
+                    solver->add(blockingExpression);
                 }
                 
-                // Gather iterators to the initial locations of all the automata.
-                std::vector<std::set<uint64_t>::const_iterator> initialLocationsIts;
-                std::vector<std::set<uint64_t>::const_iterator> initialLocationsItes;
-                for (auto const& automatonRef : this->parallelAutomata) {
-                    auto const& automaton = automatonRef.get();
-                    initialLocationsIts.push_back(automaton.getInitialLocationIndices().cbegin());
-                    initialLocationsItes.push_back(automaton.getInitialLocationIndices().cend());
-                }
-                storm::utility::combinatorics::forEach(initialLocationsIts, initialLocationsItes, [this,&initialState] (uint64_t index, uint64_t value) { setLocation(initialState, this->variableInformation.locationVariables[index], value); }, [&stateToIdCallback,&initialStateIndices,&initialState] () {
-                    // Register initial state.
-                    StateType id = stateToIdCallback(initialState);
-                    initialStateIndices.push_back(id);
-                    return true;
-                });
+                STORM_LOG_DEBUG("Enumerated " << initialStateIndices.size() << " initial states using SMT solving.");
+            } else {
+                CompressedState initialState(this->variableInformation.getTotalBitOffset(true));
                 
-                // Block the current initial state to search for the next one.
-                if (!blockingExpression.isInitialized()) {
-                    break;
+                std::vector<int_fast64_t> currentIntegerValues;
+                currentIntegerValues.reserve(this->variableInformation.integerVariables.size());
+                for (auto const& variable : this->variableInformation.integerVariables) {
+                    STORM_LOG_THROW(variable.lowerBound <= variable.upperBound, storm::exceptions::InvalidArgumentException, "Expecting variable with non-empty set of possible values.");
+                    currentIntegerValues.emplace_back(0);
+                    initialState.setFromInt(variable.bitOffset, variable.bitWidth, 0);
                 }
-                solver->add(blockingExpression);
+                
+                initialStateIndices.emplace_back(stateToIdCallback(initialState));
+                
+                bool done = false;
+                while (!done) {
+                    bool changedBooleanVariable = false;
+                    for (auto const& booleanVariable : this->variableInformation.booleanVariables) {
+                        if (initialState.get(booleanVariable.bitOffset)) {
+                            initialState.set(booleanVariable.bitOffset);
+                            changedBooleanVariable = true;
+                            break;
+                        } else {
+                            initialState.set(booleanVariable.bitOffset, false);
+                        }
+                    }
+                    
+                    bool changedIntegerVariable = false;
+                    if (changedBooleanVariable) {
+                        initialStateIndices.emplace_back(stateToIdCallback(initialState));
+                    } else {
+                        for (uint64_t integerVariableIndex = 0; integerVariableIndex < this->variableInformation.integerVariables.size(); ++integerVariableIndex) {
+                            auto const& integerVariable = this->variableInformation.integerVariables[integerVariableIndex];
+                            if (currentIntegerValues[integerVariableIndex] < integerVariable.upperBound - integerVariable.lowerBound) {
+                                ++currentIntegerValues[integerVariableIndex];
+                                changedIntegerVariable = true;
+                            } else {
+                                currentIntegerValues[integerVariableIndex] = integerVariable.lowerBound;
+                            }
+                            initialState.setFromInt(integerVariable.bitOffset, integerVariable.bitWidth, currentIntegerValues[integerVariableIndex]);
+                            
+                            if (changedIntegerVariable) {
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if (changedIntegerVariable) {
+                        initialStateIndices.emplace_back(stateToIdCallback(initialState));
+                    }
+                    
+                    done = !changedBooleanVariable && !changedIntegerVariable;
+                }
+                
+                STORM_LOG_DEBUG("Enumerated " << initialStateIndices.size() << " initial states using brute force enumeration.");
             }
             
             return initialStateIndices;
@@ -488,6 +547,123 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
+        void JaniNextStateGenerator<ValueType, StateType>::generateSynchronizedDistribution(storm::storage::BitVector const& state, ValueType const& probability, uint64_t position, AutomataEdgeSets const& edgeCombination, std::vector<EdgeSetWithIndices::const_iterator> const& iteratorList, storm::builder::jit::Distribution<StateType, ValueType>& distribution, std::vector<ValueType>& stateActionRewards, EdgeIndexSet& edgeIndices, StateToIdCallback stateToIdCallback) {
+            
+            if (storm::utility::isZero<ValueType>(probability)) {
+                return;
+            }
+            
+            if (position >= iteratorList.size()) {
+                StateType id = stateToIdCallback(state);
+                distribution.add(id, probability);
+            } else {
+                auto const& indexAndEdge = *iteratorList[position];
+                auto const& edge = *indexAndEdge.second;
+
+                for (auto const& destination : edge.getDestinations()) {
+                    generateSynchronizedDistribution(applyUpdate(state, destination, this->variableInformation.locationVariables[edgeCombination[position].first], 0, *this->evaluator), probability * this->evaluator->asRational(destination.getProbability()), position + 1, edgeCombination, iteratorList, distribution, stateActionRewards, edgeIndices, stateToIdCallback);
+                }
+                
+                if (this->getOptions().isBuildChoiceOriginsSet()) {
+                    edgeIndices.insert(model.encodeAutomatonAndEdgeIndices(edgeCombination[position].first, indexAndEdge.first));
+                }
+                
+                auto valueIt = stateActionRewards.begin();
+                performTransientAssignments(edge.getAssignments().getTransientAssignments(), *this->evaluator, [&valueIt] (ValueType const& value) { *valueIt += value; ++valueIt; } );
+            }
+        }
+        
+        template<typename ValueType, typename StateType>
+        void JaniNextStateGenerator<ValueType, StateType>::generateSynchronizedDistribution(storm::storage::BitVector const& state, AutomataEdgeSets const& edgeCombination, std::vector<EdgeSetWithIndices::const_iterator> const& iteratorList, storm::builder::jit::Distribution<StateType, ValueType>& distribution, std::vector<ValueType>& stateActionRewards, EdgeIndexSet& edgeIndices, StateToIdCallback stateToIdCallback) {
+            
+            int64_t lowestLevel = std::numeric_limits<int64_t>::max();
+            int64_t highestLevel = std::numeric_limits<int64_t>::min();
+            for (uint_fast64_t i = 0; i < iteratorList.size(); ++i) {
+                if (this->getOptions().isBuildChoiceOriginsSet()) {
+                    edgeIndices.insert(model.encodeAutomatonAndEdgeIndices(edgeCombination[i].first, iteratorList[i]->first));
+                }
+                lowestLevel = std::min(lowestLevel, iteratorList[i]->second->getLowestAssignmentLevel());
+                highestLevel = std::max(highestLevel, iteratorList[i]->second->getHighestAssignmentLevel());
+            }
+            
+            std::vector<ValueType> destinationRewards;
+            std::vector<storm::jani::EdgeDestination const*> destinations;
+            std::vector<LocationVariableInformation const*> locationVars;
+            destinations.reserve(iteratorList.size());
+            locationVars.reserve(iteratorList.size());
+
+            bool lastDestinationId = false;
+            uint64_t destinationId = 0;
+            do {
+                // First assignment level
+                destinations.clear();
+                locationVars.clear();
+                destinationRewards.assign(rewardVariables.size(), storm::utility::zero<ValueType>());
+                CompressedState successorState = state;
+                ValueType successorProbability = storm::utility::one<ValueType>();
+
+                uint64_t destinationIndex = destinationId;
+                for (uint64_t i = 0; i < iteratorList.size(); ++i) {
+                    storm::jani::Edge const& edge = *iteratorList[i]->second;
+                    STORM_LOG_ASSERT(edge.getNumberOfDestinations() > 0, "Found an edge with zero destinations. This is not expected.");
+                    uint64_t localDestinationIndex = destinationIndex % edge.getNumberOfDestinations();
+                    destinations.push_back(&edge.getDestination(localDestinationIndex));
+                    locationVars.push_back(&this->variableInformation.locationVariables[edgeCombination[i].first]);
+                    if (i == iteratorList.size() - 1 && localDestinationIndex == edge.getNumberOfDestinations() - 1) {
+                        lastDestinationId = true;
+                    }
+                    destinationIndex /= edge.getNumberOfDestinations();
+                    ValueType probability = this->evaluator->asRational(destinations.back()->getProbability());
+                    if (edge.hasRate()) {
+                        successorProbability *= probability * this->evaluator->asRational(edge.getRate());
+                    } else {
+                        successorProbability *= probability;
+                    }
+                    if (storm::utility::isZero(successorProbability)) {
+                        break;
+                    }
+                    
+                    successorState = applyUpdate(successorState, *destinations.back(), *locationVars.back(), lowestLevel, *this->evaluator);
+                    
+                    // add the reward for this destination to the destination rewards
+                    auto valueIt = destinationRewards.begin();
+                    performTransientAssignments(destinations.back()->getOrderedAssignments().getTransientAssignments(lowestLevel), *this->evaluator, [&valueIt] (ValueType const& value) { *valueIt += value; ++valueIt; } );
+                }
+                
+                if (!storm::utility::isZero(successorProbability)) {
+                    int64_t assignmentLevel = lowestLevel;
+                    // remaining assignment levels
+                    while (assignmentLevel < highestLevel) {
+                        ++assignmentLevel;
+                        unpackStateIntoEvaluator(successorState, this->variableInformation, *this->evaluator);
+                        auto locationVarIt = locationVars.begin();
+                        for (auto const& destPtr : destinations) {
+                            successorState = applyUpdate(successorState, *destPtr, **locationVarIt, assignmentLevel, *this->evaluator);
+                            // add the reward for this destination to the destination rewards
+                            auto valueIt = destinationRewards.begin();
+                            performTransientAssignments(destinations.back()->getOrderedAssignments().getTransientAssignments(assignmentLevel), *this->evaluator, [&valueIt] (ValueType const& value) { *valueIt += value; ++valueIt; } );
+                            ++locationVarIt;
+                        }
+                    }
+                    StateType id = stateToIdCallback(state);
+                    distribution.add(id, successorProbability);
+                    storm::utility::vector::addScaledVector(stateActionRewards, destinationRewards, successorProbability);
+
+                    // Restore the old state information
+                    unpackStateIntoEvaluator(state, this->variableInformation, *this->evaluator);
+                }
+                ++destinationId;
+            } while (!lastDestinationId);
+            
+            for (uint_fast64_t i = 0; i < iteratorList.size(); ++i) {
+                storm::jani::Edge const& edge = *iteratorList[i]->second;
+                // Add the state-action reward for the newly created choice. Note that edge assignments are all transient and we assume that no transient variables occur on the rhs of transient assignments, i.e., the assignment level does not matter here
+                auto valueIt = stateActionRewards.begin();
+                performTransientAssignments(edge.getAssignments().getTransientAssignments(), *this->evaluator, [&valueIt] (ValueType const& value) { *valueIt += value; ++valueIt; } );
+            }
+        }
+        
+        template<typename ValueType, typename StateType>
         std::vector<Choice<ValueType>> JaniNextStateGenerator<ValueType, StateType>::expandSynchronizingEdgeCombination(AutomataEdgeSets const& edgeCombination, uint64_t outputActionIndex, CompressedState const& state, StateToIdCallback stateToIdCallback) {
             std::vector<Choice<ValueType>> result;
             
@@ -503,144 +679,17 @@ namespace storm {
                 iteratorList[i] = edgeCombination[i].second.cbegin();
             }
             
-            storm::builder::jit::Distribution<CompressedState, ValueType> currentDistribution;
-            storm::builder::jit::Distribution<CompressedState, ValueType> nextDistribution;
+            storm::builder::jit::Distribution<StateType, ValueType> distribution;
 
             // As long as there is one feasible combination of commands, keep on expanding it.
             bool done = false;
             while (!done) {
-                std::vector<ValueType> stateActionRewards(rewardVariables.size(), storm::utility::zero<ValueType>());
-                currentDistribution.clear();
-                currentDistribution.add(state, storm::utility::one<ValueType>());
-                nextDistribution.clear();
                 
                 EdgeIndexSet edgeIndices;
-                int64_t lowestLevel = std::numeric_limits<int64_t>::max();
-                int64_t highestLevel = std::numeric_limits<int64_t>::min();
-                for (uint_fast64_t i = 0; i < iteratorList.size(); ++i) {
-                    if (this->getOptions().isBuildChoiceOriginsSet()) {
-                        edgeIndices.insert(model.encodeAutomatonAndEdgeIndices(edgeCombination[i].first, iteratorList[i]->first));
-                    }
-                    lowestLevel = std::min(lowestLevel, iteratorList[i]->second->getLowestAssignmentLevel());
-                    highestLevel = std::max(highestLevel, iteratorList[i]->second->getHighestAssignmentLevel());
-                }
-                
-                if (lowestLevel >= highestLevel) {
-                    // When all assignments have the same level, we can perform the assignments of the different automata sequentially
-                    for (uint_fast64_t i = 0; i < iteratorList.size(); ++i) {
-                        auto const& indexAndEdge = *iteratorList[i];
-                        storm::jani::Edge const& edge = *indexAndEdge.second;
-                        
-                        for (auto const& destination : edge.getDestinations()) {
-                            ValueType destinationProbability = this->evaluator->asRational(destination.getProbability());
-                            if (!storm::utility::isZero(destinationProbability)) {
-                                if (destination.hasTransientAssignment()) {
-                                    STORM_LOG_ASSERT(this->options.isScaleAndLiftTransitionRewardsSet(), "Transition rewards are not supported and scaling to action rewards is disabled.");
-                                    // add the rewards for this destination
-                                    auto valueIt = stateActionRewards.begin();
-                                    performTransientAssignments(edge.getAssignments().getTransientAssignments(), *this->evaluator, [&] (ValueType const& value) { *valueIt += (value * destinationProbability); ++valueIt; } );
-                                }
-                                for (auto const& stateProbability : currentDistribution) {
-                                    // Compute the new state under the current update and add it to the set of new target states.
-                                    CompressedState newTargetState = applyUpdate(stateProbability.getState(), destination, this->variableInformation.locationVariables[edgeCombination[i].first], lowestLevel, *this->evaluator);
-                                    
-                                    // If the new state was already found as a successor state, update the probability
-                                    // and insert it.
-                                    ValueType probability = destinationProbability * stateProbability.getValue();
-                                    if (edge.hasRate()) {
-                                        probability *= this->evaluator->asRational(edge.getRate());
-                                    }
-                                    if (probability != storm::utility::zero<ValueType>()) {
-                                        nextDistribution.add(newTargetState, probability);
-                                    }
-                                }
-                            }
-                        }
-                        nextDistribution.compress();
-
-                        // If there is one more command to come, shift the target states one time step back.
-                        if (i < iteratorList.size() - 1) {
-                            currentDistribution = std::move(nextDistribution);
-                            nextDistribution.clear();
-                        }
-                    }
-                } else {
-                    // If there are different assignment levels, we need to expand the possible destinations which causes an exponential blowup...
-                    uint64_t destinationId = 0;
-                    bool lastDestinationId = false;
-                    std::vector<ValueType> destinationRewards;
-                    std::vector<storm::jani::EdgeDestination const*> destinations;
-                    std::vector<LocationVariableInformation const*> locationVars;
-                    destinations.reserve(iteratorList.size());
-                    locationVars.reserve(iteratorList.size());
-
-                    do {
-                        
-                        // First assignment level
-                        destinations.clear();
-                        locationVars.clear();
-                        destinationRewards.assign(destinationRewards.size(), storm::utility::zero<ValueType>());
-                        CompressedState successorState = state;
-                        ValueType successorProbability = storm::utility::one<ValueType>();
-
-                        uint64_t destinationIndex = destinationId;
-                        for (uint_fast64_t i = 0; i < iteratorList.size(); ++i) {
-                            storm::jani::Edge const& edge = *iteratorList[i]->second;
-                            destinations.push_back(&edge.getDestination(destinationIndex % edge.getNumberOfDestinations()));
-                            locationVars.push_back(&this->variableInformation.locationVariables[edgeCombination[i].first]);
-                            STORM_LOG_ASSERT(edge.getNumberOfDestinations() > 0, "Found an edge with zero destinations. This is not expected.");
-                            if (i == iteratorList.size() - 1 && (destinationIndex % edge.getNumberOfDestinations()) == edge.getNumberOfDestinations() - 1) {
-                                lastDestinationId = true;
-                            }
-                            destinationIndex /= edge.getNumberOfDestinations();
-                            ValueType probability = this->evaluator->asRational(destinations.back()->getProbability());
-                            if (edge.hasRate()) {
-                                successorProbability *= probability * this->evaluator->asRational(edge.getRate());
-                            } else {
-                                successorProbability *= probability;
-                            }
-                            if (storm::utility::isZero(successorProbability)) {
-                                break;
-                            }
-                            
-                            successorState = applyUpdate(successorState, *destinations.back(), *locationVars.back(), lowestLevel, *this->evaluator);
-                            
-                            // add the reward for this destination to the destination rewards
-                            auto valueIt = destinationRewards.begin();
-                            performTransientAssignments(destinations.back()->getOrderedAssignments().getTransientAssignments(lowestLevel), *this->evaluator, [&valueIt] (ValueType const& value) { *valueIt += value; ++valueIt; } );
-                        }
-                        
-                        if (!storm::utility::isZero(successorProbability)) {
-                            int64_t assignmentLevel = lowestLevel;
-                            // remaining assignment levels
-                            while (assignmentLevel < highestLevel) {
-                                ++assignmentLevel;
-                                unpackStateIntoEvaluator(successorState, this->variableInformation, *this->evaluator);
-                                auto locationVarIt = locationVars.begin();
-                                for (auto const& destPtr : destinations) {
-                                    successorState = applyUpdate(successorState, *destPtr, **locationVarIt, assignmentLevel, *this->evaluator);
-                                    // add the reward for this destination to the destination rewards
-                                    auto valueIt = destinationRewards.begin();
-                                    performTransientAssignments(destinations.back()->getOrderedAssignments().getTransientAssignments(assignmentLevel), *this->evaluator, [&valueIt] (ValueType const& value) { *valueIt += value; ++valueIt; } );
-                                    ++locationVarIt;
-                                }
-                            }
-                            nextDistribution.add(successorState, successorProbability);
-                            storm::utility::vector::addScaledVector(stateActionRewards, destinationRewards, successorProbability);
-                            // Restore the old state information
-                            unpackStateIntoEvaluator(state, this->variableInformation, *this->evaluator);
-                        }
-                        ++destinationId;
-                    } while (!lastDestinationId);
-                }
-                nextDistribution.compress();
-                
-                for (uint_fast64_t i = 0; i < iteratorList.size(); ++i) {
-                    storm::jani::Edge const& edge = *iteratorList[i]->second;
-                    // Add the state-action reward for the newly created choice. Note that edge assignments are all transient and we assume that no transient variables occur on the rhs of transient assignments, i.e., the assignment level does not matter here
-                    auto valueIt = stateActionRewards.begin();
-                    performTransientAssignments(edge.getAssignments().getTransientAssignments(), *this->evaluator, [&valueIt] (ValueType const& value) { *valueIt += value; ++valueIt; } );
-                }
+                std::vector<ValueType> stateActionRewards(rewardVariables.size(), storm::utility::zero<ValueType>());
+                // old version without assignment levels generateSynchronizedDistribution(state, storm::utility::one<ValueType>(), 0, edgeCombination, iteratorList, distribution, stateActionRewards, edgeIndices, stateToIdCallback);
+                generateSynchronizedDistribution(state, edgeCombination, iteratorList, distribution, stateActionRewards, edgeIndices, stateToIdCallback);
+                distribution.compress();
                 
                 // At this point, we applied all commands of the current command combination and newTargetStates
                 // contains all target states and their respective probabilities. That means we are now ready to
@@ -660,9 +709,8 @@ namespace storm {
                 
                 // Add the probabilities/rates to the newly created choice.
                 ValueType probabilitySum = storm::utility::zero<ValueType>();
-                for (auto const& stateProbability : nextDistribution) {
-                    StateType actualIndex = stateToIdCallback(stateProbability.getState());
-                    choice.addProbability(actualIndex, stateProbability.getValue());
+                for (auto const& stateProbability : distribution) {
+                    choice.addProbability(stateProbability.getState(), stateProbability.getValue());
                     
                     if (this->options.isExplorationChecksSet()) {
                         probabilitySum += stateProbability.getValue();
@@ -671,7 +719,7 @@ namespace storm {
                 
                 if (this->options.isExplorationChecksSet()) {
                     // Check that the resulting distribution is in fact a distribution.
-                    STORM_LOG_THROW(!this->isDiscreteTimeModel() || !this->comparator.isConstant(probabilitySum) || this->comparator.isOne(probabilitySum), storm::exceptions::WrongFormatException, "Sum of update probabilities do not sum to one for some command (actually sum to " << probabilitySum << ").");
+                    STORM_LOG_THROW(!this->isDiscreteTimeModel() || !this->comparator.isConstant(probabilitySum) || this->comparator.isOne(probabilitySum), storm::exceptions::WrongFormatException, "Sum of update probabilities do not sum to one for some edge (actually sum to " << probabilitySum << ").");
                 }
                 
                 // Now, check whether there is one more command combination to consider.

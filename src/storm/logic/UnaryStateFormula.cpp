@@ -27,6 +27,10 @@ namespace storm {
         void UnaryStateFormula::gatherReferencedRewardModels(std::set<std::string>& referencedRewardModels) const {
             this->getSubformula().gatherReferencedRewardModels(referencedRewardModels);
         }
+        
+        void UnaryStateFormula::gatherUsedVariables(std::set<storm::expressions::Variable>& usedVariables) const {
+            this->getSubformula().gatherUsedVariables(usedVariables);
+        }
 
     }
 }

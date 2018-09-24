@@ -43,7 +43,7 @@ namespace storm {
                 return this->getOption(pgclToJaniOptionName).getHasOptionBeenSet();
             }
             
-            std::string const& PGCLSettings::getWriteToJaniFilename() const {
+            std::string PGCLSettings::getWriteToJaniFilename() const {
                 return this->getOption(pgclToJaniOptionName).getArgumentByName("filename").getValueAsString();
             }
 

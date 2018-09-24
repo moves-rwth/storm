@@ -32,7 +32,7 @@ namespace storm {
                 /**
                  * returns the file name where jani output should be stored.
                  */
-                std::string const& getWriteToJaniFilename() const;
+                std::string getWriteToJaniFilename() const;
                 
                 /**
                  * Whether the program graph should be drawn (dot output)

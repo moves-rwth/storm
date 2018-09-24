@@ -58,11 +58,13 @@ namespace storm {
              * @return An equivalent term for MathSAT.
              */
 			msat_term translateExpression(storm::expressions::Expression const& expression) {
+                additionalConstraints.clear();
                 msat_term result = boost::any_cast<msat_term>(expression.getBaseExpression().accept(*this, boost::none));
                 if (MSAT_ERROR_TERM(result)) {
                     std::string errorMessage(msat_last_error_message(env));
                     STORM_LOG_THROW(!MSAT_ERROR_TERM(result), storm::exceptions::ExpressionEvaluationException, "Could not translate expression to MathSAT's format. (Message: " << errorMessage << ")");
                 }
+                
 				return result;
 			}
             
@@ -80,6 +82,17 @@ namespace storm {
                     return msat_make_constant(env, createVariable(variable));
                 }
                 return msat_make_constant(env, variableExpressionPair->second);
+            }
+            
+            bool hasAdditionalConstraints() const {
+                return !additionalConstraints.empty();
+            }
+            
+            /*!
+             * Retrieves additional constraints that were created because of encodings using auxiliary variables.
+             */
+            std::vector<msat_term> const& getAdditionalConstraints() const {
+                return additionalConstraints;
             }
             
             /*!
@@ -118,6 +131,12 @@ namespace storm {
 
                 msat_term result = leftResult;
                 int_fast64_t exponent;
+                int_fast64_t modulus;
+                storm::expressions::Variable freshAuxiliaryVariable;
+                msat_term modVariable;
+                msat_term lower;
+                msat_term upper;
+                typename storm::NumberTraits<storm::GmpRationalNumber>::IntegerType gmpModulus;
 				switch (expression.getOperatorType()) {
 					case storm::expressions::BinaryNumericalFunctionExpression::OperatorType::Plus:
 						return msat_make_plus(env, leftResult, rightResult);
@@ -141,6 +160,23 @@ namespace storm {
                             }
                         }
                         return result;
+                    case storm::expressions::BinaryNumericalFunctionExpression::OperatorType::Modulo:
+                        modulus = expression.getSecondOperand()->evaluateAsInt();
+                        STORM_LOG_THROW(modulus > 0, storm::exceptions::ExpressionEvaluationException, "Cannot evaluate expression with negative modulus.");
+                        
+                        freshAuxiliaryVariable = manager.declareFreshVariable(manager.getIntegerType(), true);
+                        modVariable = msat_make_constant(env, createVariable(freshAuxiliaryVariable));
+                        
+                        gmpModulus = typename storm::NumberTraits<storm::GmpRationalNumber>::IntegerType(static_cast<unsigned>(modulus));
+                        
+                        // Create the constraint that fixes the value of the fresh variable.
+                        additionalConstraints.push_back(msat_make_int_modular_congruence(env, gmpModulus.get_mpz_t(), modVariable, leftResult));
+
+                        // Create the constraint that limits the value of the modulo operation to 0 <= val <= modulus-1.
+                        lower = msat_make_number(env, "-1");
+                        upper = msat_make_number(env, std::to_string(modulus - 1).c_str());
+                        additionalConstraints.push_back(msat_make_and(env, msat_make_not(env, msat_make_leq(env, modVariable, lower)), msat_make_leq(env, modVariable, upper)));
+                        return modVariable;
 					default:
                         STORM_LOG_THROW(false, storm::exceptions::ExpressionEvaluationException, "Cannot evaluate expression: unknown numerical binary operator '" << static_cast<uint_fast64_t>(expression.getOperatorType()) << "' in expression " << expression << ".");
 				}
@@ -273,7 +309,9 @@ namespace storm {
 					} else if (msat_is_rational_type(env, msat_term_get_type(term))) {
                         return manager.rational(storm::utility::convertNumber<storm::RationalNumber>(termString));
 					}
-				}
+                } else if (msat_term_is_term_ite(env, term)) {
+                    return storm::expressions::ite(translateExpression(msat_term_get_arg(term, 0)), translateExpression(msat_term_get_arg(term, 1)), translateExpression(msat_term_get_arg(term, 2)));
+                }
                 
                 // If all other cases did not apply, we cannot represent the term in our expression framework.
                 char* termAsCString = msat_term_repr(term);
@@ -311,11 +349,15 @@ namespace storm {
 
             // The MathSAT environment used.
 			msat_env& env;
+            
+            // A vector of constraints that need to be kept separate, because they were only implicitly part of an
+            // assertion that was added.
+            std::vector<msat_term> additionalConstraints;
 
             // A mapping of variable names to their declaration in the MathSAT environment.
             std::unordered_map<storm::expressions::Variable, msat_decl> variableToDeclarationMapping;
 
-            // A mapping from MathSAT variable declaration to our variables.
+            // A mapping from MathSAT variable declarations to our variables.
             std::unordered_map<msat_decl, storm::expressions::Variable> declarationToVariableMapping;
 		};
 #endif

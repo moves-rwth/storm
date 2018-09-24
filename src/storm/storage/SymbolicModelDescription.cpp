@@ -174,6 +174,30 @@ namespace storm {
             }
         }
         
+        bool SymbolicModelDescription::hasUndefinedConstants() const {
+            if (this->isPrismProgram()) {
+                return this->asPrismProgram().hasUndefinedConstants();
+            } else {
+                return this->asJaniModel().hasUndefinedConstants();
+            }
+        }
+        
+        std::vector<storm::expressions::Variable> SymbolicModelDescription::getUndefinedConstants() const {
+            std::vector<storm::expressions::Variable> result;
+            if (this->isPrismProgram()) {
+                std::vector<std::reference_wrapper<storm::prism::Constant const>> constants = this->asPrismProgram().getUndefinedConstants();
+                for (auto const& constant : constants) {
+                    result.emplace_back(constant.get().getExpressionVariable());
+                }
+            } else {
+                std::vector<std::reference_wrapper<storm::jani::Constant const>> constants = this->asJaniModel().getUndefinedConstants();
+                for (auto const& constant : constants) {
+                    result.emplace_back(constant.get().getExpressionVariable());
+                }
+            }
+            return result;
+        }
+        
         std::ostream& operator<<(std::ostream& out, SymbolicModelDescription const& model) {
             if (model.isPrismProgram()) {
                 out << model.asPrismProgram();

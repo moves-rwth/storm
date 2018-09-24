@@ -270,6 +270,11 @@ namespace storm {
             bool hasInitialStatesRestriction() const;
             
             /*!
+             * Retrieves whether this automaton has non-trivial initial states.
+             */
+            bool hasNonTrivialInitialStates() const;
+            
+            /*!
              * Gets the expression restricting the legal initial values of the automaton's variables.
              */
             storm::expressions::Expression const& getInitialStatesRestriction() const;
@@ -283,6 +288,12 @@ namespace storm {
              * Retrieves the expression defining the legal initial values of the automaton's variables.
              */
             storm::expressions::Expression getInitialStatesExpression() const;
+            
+            /*!
+             * Retrieves whether the initial states expression is trivial in the sense that the automaton has no initial
+             * states restriction and all non-transient variables have initial values.
+             */
+            bool hasTrivialInitialStatesExpression() const;
             
             /*!
              * Retrieves whether there is an edge labeled with the action with the given index in this automaton.

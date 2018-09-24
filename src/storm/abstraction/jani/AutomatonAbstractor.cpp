@@ -1,8 +1,8 @@
 #include "storm/abstraction/jani/AutomatonAbstractor.h"
 
 #include "storm/abstraction/BottomStateResult.h"
-#include "storm/abstraction/GameBddResult.h"
 #include "storm/abstraction/AbstractionInformation.h"
+#include "storm/abstraction/GameBddResult.h"
 
 #include "storm/storage/dd/DdManager.h"
 #include "storm/storage/dd/Add.h"
@@ -24,12 +24,12 @@ namespace storm {
             using storm::settings::modules::AbstractionSettings;
             
             template <storm::dd::DdType DdType, typename ValueType>
-            AutomatonAbstractor<DdType, ValueType>::AutomatonAbstractor(storm::jani::Automaton const& automaton, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool useDecomposition) : smtSolverFactory(smtSolverFactory), abstractionInformation(abstractionInformation), edges(), automaton(automaton) {
+            AutomatonAbstractor<DdType, ValueType>::AutomatonAbstractor(storm::jani::Automaton const& automaton, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool useDecomposition, bool addPredicatesForValidBlocks, bool debug) : smtSolverFactory(smtSolverFactory), abstractionInformation(abstractionInformation), edges(), automaton(automaton) {
                 
                 // For each concrete command, we create an abstract counterpart.
                 uint64_t edgeId = 0;
                 for (auto const& edge : automaton.getEdges()) {
-                    edges.emplace_back(edgeId, edge, abstractionInformation, smtSolverFactory, useDecomposition);
+                    edges.emplace_back(edgeId, edge, abstractionInformation, smtSolverFactory, useDecomposition, addPredicatesForValidBlocks, debug);
                     ++edgeId;
                 }
                 
@@ -52,8 +52,18 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
+            uint64_t AutomatonAbstractor<DdType, ValueType>::getNumberOfUpdates(uint64_t player1Choice) const {
+                return edges[player1Choice].getNumberOfUpdates(player1Choice);
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
             std::map<storm::expressions::Variable, storm::expressions::Expression> AutomatonAbstractor<DdType, ValueType>::getVariableUpdates(uint64_t player1Choice, uint64_t auxiliaryChoice) const {
                 return edges[player1Choice].getVariableUpdates(auxiliaryChoice);
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
+            std::set<storm::expressions::Variable> const& AutomatonAbstractor<DdType, ValueType>::getAssignedVariables(uint64_t player1Choice) const {
+                return edges[player1Choice].getAssignedVariables();
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
@@ -131,10 +141,17 @@ namespace storm {
                 return abstractionInformation.get();
             }
             
+            template <storm::dd::DdType DdType, typename ValueType>
+            void AutomatonAbstractor<DdType, ValueType>::notifyGuardsArePredicates() {
+                for (auto& edge : edges) {
+                    edge.notifyGuardIsPredicate();
+                }
+            }
+            
             template class AutomatonAbstractor<storm::dd::DdType::CUDD, double>;
             template class AutomatonAbstractor<storm::dd::DdType::Sylvan, double>;
 #ifdef STORM_HAVE_CARL
-			template class AutomatonAbstractor<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+			template class AutomatonAbstractor<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 #endif
         }
     }

@@ -21,6 +21,15 @@ namespace storm {
         template <storm::dd::DdType DdType>
         class AbstractionInformation;
         
+        struct MenuGameAbstractorOptions {
+            MenuGameAbstractorOptions() = default;
+            MenuGameAbstractorOptions(std::vector<storm::expressions::Expression>&& constraints) : constraints(std::move(constraints)) {
+                // Intentionally left empty.
+            }
+            
+            std::vector<storm::expressions::Expression> constraints;
+        };
+        
         template <storm::dd::DdType DdType, typename ValueType>
         class MenuGameAbstractor {
         public:
@@ -34,7 +43,10 @@ namespace storm {
             virtual AbstractionInformation<DdType> const& getAbstractionInformation() const = 0;
             virtual storm::expressions::Expression const& getGuard(uint64_t player1Choice) const = 0;
             virtual std::pair<uint64_t, uint64_t> getPlayer1ChoiceRange() const = 0;
+            virtual uint64_t getNumberOfUpdates(uint64_t player1Choice) const = 0;
+            std::vector<std::map<storm::expressions::Variable, storm::expressions::Expression>> getVariableUpdates(uint64_t player1Choice) const;
             virtual std::map<storm::expressions::Variable, storm::expressions::Expression> getVariableUpdates(uint64_t player1Choice, uint64_t auxiliaryChoice) const = 0;
+            virtual std::set<storm::expressions::Variable> const& getAssignedVariables(uint64_t player1Choice) const = 0;
             virtual storm::expressions::Expression getInitialExpression() const = 0;
             
             /*!
@@ -68,6 +80,12 @@ namespace storm {
             storm::expressions::Expression const& getTargetStateExpression() const;
             bool hasTargetStateExpression() const;
             
+            /*!
+             * Notifies the abstractor that the guards are predicates, which may be used to improve the bottom state
+             * computation.
+             */
+            virtual void notifyGuardsArePredicates() = 0;
+                        
         protected:
             bool isRestrictToRelevantStatesSet() const;
             

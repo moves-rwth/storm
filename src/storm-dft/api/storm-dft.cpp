@@ -57,7 +57,7 @@ namespace storm {
 
                     auto evFormula = std::make_shared<storm::logic::EventuallyFormula>(evtlFormula, storm::logic::FormulaContext::Time);
                     auto rewFormula = std::make_shared<storm::logic::TimeOperatorFormula>(evFormula, storm::logic::OperatorInformation(), storm::logic::RewardMeasureType::Expectation);
-                    std::vector<storm::jani::Property> res({storm::jani::Property("time-bounded", tbUntil), storm::jani::Property("mttf", rewFormula)});
+                    std::vector<storm::jani::Property> res({storm::jani::Property("time-bounded", tbUntil, {}), storm::jani::Property("mttf", rewFormula, {})});
                     return res;
                 }
             );

@@ -94,9 +94,10 @@ namespace storm {
              * Constructs the property
              * @param name the name
              * @param formula the formula representation
+             * @param undefinedConstants the undefined constants used in the property
              * @param comment An optional comment
              */
-            Property(std::string const& name, std::shared_ptr<storm::logic::Formula const> const& formula, std::string const& comment = "");
+            Property(std::string const& name, std::shared_ptr<storm::logic::Formula const> const& formula, std::set<storm::expressions::Variable> const& undefinedConstants, std::string const& comment = "");
             
             /**
              * Constructs the property
@@ -104,7 +105,7 @@ namespace storm {
              * @param formula the formula representation
              * @param comment An optional comment
              */
-            Property(std::string const& name, FilterExpression const& fe, std::string const& comment = "");
+            Property(std::string const& name, FilterExpression const& fe, std::set<storm::expressions::Variable> const& undefinedConstants, std::string const& comment = "");
             
             /**
              * Get the provided name
@@ -126,11 +127,15 @@ namespace storm {
             
             FilterExpression const& getFilter() const;
             
+            std::set<storm::expressions::Variable> const& getUndefinedConstants() const;
+            bool containsUndefinedConstants() const;
+            
             std::shared_ptr<storm::logic::Formula const> getRawFormula() const;
         private:
             std::string name;
             std::string comment;
             FilterExpression filterExpression;
+            std::set<storm::expressions::Variable> undefinedConstants;
         };
         
         

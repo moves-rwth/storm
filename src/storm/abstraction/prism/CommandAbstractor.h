@@ -56,7 +56,7 @@ namespace storm {
                  * @param smtSolverFactory A factory that is to be used for creating new SMT solvers.
                  * @param useDecomposition A flag indicating whether to use the decomposition during abstraction.
                  */
-                CommandAbstractor(storm::prism::Command const& command, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool useDecomposition);
+                CommandAbstractor(storm::prism::Command const& command, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool useDecomposition, bool addPredicatesForValidBlocks, bool debug);
                                
                 /*!
                  * Refines the abstract command with the given predicates.
@@ -71,10 +71,20 @@ namespace storm {
                 storm::expressions::Expression const& getGuard() const;
                 
                 /*!
+                 * Retrieves the number of updates of this command.
+                 */
+                uint64_t getNumberOfUpdates(uint64_t player1Choice) const;
+                
+                /*!
                  * Retrieves a mapping from variables to expressions that define their updates wrt. to the given
                  * auxiliary choice.
                  */
                 std::map<storm::expressions::Variable, storm::expressions::Expression> getVariableUpdates(uint64_t auxiliaryChoice) const;
+                
+                /*!
+                 * Retrieves the assigned variables.
+                 */
+                std::set<storm::expressions::Variable> const& getAssignedVariables() const;
                 
                 /*!
                  * Computes the abstraction of the command wrt. to the current set of predicates.
@@ -106,6 +116,8 @@ namespace storm {
                  * @return The concrete command.
                  */
                 storm::prism::Command const& getConcreteCommand() const;
+                
+                void notifyGuardIsPredicate();
                 
             private:
                 /*!
@@ -201,14 +213,6 @@ namespace storm {
                  */
                 AbstractionInformation<DdType>& getAbstractionInformation();
                 
-                /*!
-                 * Computes the globally missing state identities.
-                 *
-                 * @return A BDD that represents the global state identities for predicates that are irrelevant for the
-                 * source and successor states.
-                 */
-                storm::dd::Bdd<DdType> computeMissingGlobalIdentities() const;
-                
                 // An SMT responsible for this abstract command.
                 std::unique_ptr<storm::solver::SmtSolver> smtSolver;
 
@@ -217,6 +221,9 @@ namespace storm {
                 
                 // The concrete command this abstract command refers to.
                 std::reference_wrapper<storm::prism::Command const> command;
+                
+                // The variables to which this command assigns expressions.
+                std::set<storm::expressions::Variable> assignedVariables;
                 
                 // The local expression-related information.
                 LocalExpressionInformation<DdType> localExpressionInformation;
@@ -240,6 +247,9 @@ namespace storm {
                 // A flag indicating whether to use the decomposition when abstracting.
                 bool useDecomposition;
                 
+                // Whether or not to add predicates indirectly related to assignment variables to relevant source predicates.
+                bool addPredicatesForValidBlocks;
+                
                 // A flag indicating whether the guard of the command was added as a predicate. If this is true, there
                 // is no need to compute bottom states.
                 bool skipBottomStates;
@@ -253,6 +263,9 @@ namespace storm {
                 
                 // A state-set abstractor used to determine the bottom states if not all guards were added.
                 StateSetAbstractor<DdType, ValueType> bottomStateAbstractor;
+                
+                // A flag that indicates whether or not debug mode is enabled.
+                bool debug;
             };
         }
     }

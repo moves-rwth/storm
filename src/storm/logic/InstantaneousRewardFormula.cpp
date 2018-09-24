@@ -60,6 +60,10 @@ namespace storm {
             return value;
         }
         
+        void InstantaneousRewardFormula::gatherUsedVariables(std::set<storm::expressions::Variable>& usedVariables) const {
+            this->getBound().gatherVariables(usedVariables);
+        }
+        
         void InstantaneousRewardFormula::checkNoVariablesInBound(storm::expressions::Expression const& bound) {
             STORM_LOG_THROW(!bound.containsVariables(), storm::exceptions::InvalidOperationException, "Cannot evaluate time-instant '" << bound << "' as it contains undefined constants.");
         }
