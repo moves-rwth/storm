@@ -1,6 +1,7 @@
 //
 // Created by Jip Spel on 12.09.18.
 //
+#include <storm/solver/Z3SmtSolver.h>
 #include "AssumptionChecker.h"
 
 #include "storm-pars/utility/ModelInstantiator.h"
@@ -15,6 +16,8 @@
 #include "storm/storage/expressions/SimpleValuation.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/VariableExpression.h"
+#include "storm/utility/constants.h"
+#include "storm/storage/expressions/ValueTypeToExpression.h"
 
 namespace storm {
     namespace analysis {
@@ -133,9 +136,13 @@ namespace storm {
 
                 // Only implemented for two successors
                 if (row1.getNumberOfEntries() == 2 && row2.getNumberOfEntries() == 2) {
-                    result = validateAssumptionOnFunction(lattice, row1, row2);
+                    result = validateAssumptionFunction(lattice, row1, row2);
+                    if (!result) {
+                        result = validateAssumptionSMTSolver(lattice, row1, row2);
+                    }
                 }
             }
+
             if (result) {
                 validatedAssumptions.insert(assumption);
             } else {
@@ -145,28 +152,28 @@ namespace storm {
         }
 
         template <typename ValueType>
-        bool AssumptionChecker<ValueType>::validateAssumptionOnFunction(storm::analysis::Lattice* lattice, typename storm::storage::SparseMatrix<ValueType>::rows row1, typename storm::storage::SparseMatrix<ValueType>::rows row2) {
+        bool AssumptionChecker<ValueType>::validateAssumptionFunction(storm::analysis::Lattice* lattice, typename storm::storage::SparseMatrix<ValueType>::rows row1, typename storm::storage::SparseMatrix<ValueType>::rows row2) {
             bool result = false;
-            auto succ1State1 = row1.begin();
-            auto succ2State1 = (++row1.begin());
-            auto succ1State2 = row2.begin();
-            auto succ2State2 = (++row2.begin());
+            auto state1succ1 = row1.begin();
+            auto state1succ2 = (++row1.begin());
+            auto state2succ1 = row2.begin();
+            auto state2succ2 = (++row2.begin());
 
-            if (succ1State1->getColumn() == succ2State2->getColumn()
-                    && succ1State2->getColumn() == succ2State1->getColumn()) {
+            if (state1succ1->getColumn() == state2succ2->getColumn()
+                    && state2succ1->getColumn() == state1succ2->getColumn()) {
                 // swap them
-                auto temp = succ2State1;
-                succ2State1 = succ1State1;
-                succ1State1 = temp;
+                auto temp = state1succ2;
+                state1succ2 = state1succ1;
+                state1succ1 = temp;
             }
 
-            if (succ1State1->getColumn() == succ1State2->getColumn() && succ2State1->getColumn() == succ2State2->getColumn()) {
+            if (state1succ1->getColumn() == state2succ1->getColumn() && state1succ2->getColumn() == state2succ2->getColumn()) {
                 ValueType prob;
-                auto comp = lattice->compare(succ1State1->getColumn(), succ2State1->getColumn());
+                auto comp = lattice->compare(state1succ1->getColumn(), state1succ2->getColumn());
                 if (comp == storm::analysis::Lattice::ABOVE) {
-                    prob = succ1State1->getValue() - succ1State2->getValue();
+                    prob = state1succ1->getValue() - state2succ1->getValue();
                 } else if (comp == storm::analysis::Lattice::BELOW) {
-                    prob = succ2State1->getValue() - succ2State2->getValue();
+                    prob = state1succ2->getValue() - state2succ2->getValue();
                 }
                 auto vars = prob.gatherVariables();
                 // TODO: Type
@@ -181,6 +188,59 @@ namespace storm {
                     }
                 }
                 result = prob.evaluate(substitutions) >= 0;
+            }
+            return result;
+        }
+
+        template <typename ValueType>
+        bool AssumptionChecker<ValueType>::validateAssumptionSMTSolver(storm::analysis::Lattice* lattice, typename storm::storage::SparseMatrix<ValueType>::rows row1, typename storm::storage::SparseMatrix<ValueType>::rows row2) {
+            bool result = false;
+            auto state1succ1 = row1.begin();
+            auto state1succ2 = (++row1.begin());
+            auto state2succ1 = row2.begin();
+            auto state2succ2 = (++row2.begin());
+
+            if (state1succ1->getColumn() == state2succ2->getColumn()
+                && state2succ1->getColumn() == state1succ2->getColumn()) {
+                std::swap(state1succ1, state1succ2);
+            }
+
+            if (state1succ1->getColumn() == state2succ1->getColumn() && state1succ2->getColumn() == state2succ2->getColumn()) {
+                std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
+                std::shared_ptr<storm::expressions::ExpressionManager> manager(
+                        new storm::expressions::ExpressionManager());
+
+                storm::solver::Z3SmtSolver s(*manager);
+                storm::solver::SmtSolver::CheckResult smtResult = storm::solver::SmtSolver::CheckResult::Unknown;
+                storm::expressions::Variable succ1 = manager->declareRationalVariable(std::to_string(state1succ1->getColumn()));
+                storm::expressions::Variable succ2 = manager->declareRationalVariable(std::to_string(state1succ2->getColumn()));
+                auto comp = lattice->compare(state1succ1->getColumn(), state1succ2->getColumn());
+                if (comp == storm::analysis::Lattice::ABOVE || comp == storm::analysis::Lattice::BELOW) {
+                    if (comp == storm::analysis::Lattice::BELOW) {
+                        std::swap(succ1, succ2);
+                    }
+                    storm::expressions::Expression exprGiven = succ1 >= succ2;
+
+                    auto valueTypeToExpression = storm::expressions::ValueTypeToExpression<ValueType>(manager);
+                    storm::expressions::Expression exprToCheck =
+                            (valueTypeToExpression.toExpression(state1succ1->getValue())*succ1
+                                + valueTypeToExpression.toExpression(state2succ1->getValue())*succ2
+                                >= valueTypeToExpression.toExpression(state1succ2->getValue())*succ1
+                                + valueTypeToExpression.toExpression(state1succ1->getValue())*succ2);
+
+                    storm::expressions::Expression exprBounds = manager->boolean(true);
+                    auto variables = manager->getVariables();
+                    for (auto var : variables) {
+                        exprBounds = exprBounds && var >= 0 && var <= 1;
+                    }
+
+                    s.add(exprGiven);
+                    s.add(exprToCheck);
+                    s.add(exprBounds);
+                    smtResult = s.check();
+                }
+
+                result = smtResult == storm::solver::SmtSolver::CheckResult::Sat;
             }
             return result;
         }
