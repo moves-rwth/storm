@@ -847,8 +847,17 @@ namespace storm {
                     case ParsedType::BasicType::Int:
                         if (setInitValFromDefault) {
                             if (type.bounds) {
-                                initVal = storm::expressions::ite(type.bounds->first < 0 && type.bounds->second > 0, expressionManager->integer(defaultIntegerInitialValue), type.bounds->first);
-                                // TODO as soon as we support half-open intervals, we have to change this.
+                                storm::expressions::Expression takeDefaultCondition;
+                                if (type.bounds->first.isInitialized()) {
+                                    takeDefaultCondition = type.bounds->first < defaultIntegerInitialValue;
+                                    if (type.bounds->second.isInitialized()) {
+                                        takeDefaultCondition = takeDefaultCondition && type.bounds->second >= defaultIntegerInitialValue;
+                                    }
+                                } else {
+                                    STORM_LOG_ASSERT(type.bounds->second.isInitialized(), "Expected to have either a lower or an upper bound");
+                                    takeDefaultCondition = type.bounds->second >= defaultIntegerInitialValue;
+                                }
+                                initVal = storm::expressions::ite(takeDefaultCondition, expressionManager->integer(defaultIntegerInitialValue), type.bounds->first);
                             } else {
                                 initVal = expressionManager->integer(defaultIntegerInitialValue);
                             }
@@ -910,7 +919,13 @@ namespace storm {
                     result = std::make_shared<storm::jani::ArrayVariable>(name, expressionManager->declareArrayVariable(exprManagerName, exprVariableType.getElementType()), elementType);
                 }
                 if (type.arrayBase->bounds) {
-                    result->setElementTypeBounds(type.arrayBase->bounds->first, type.arrayBase->bounds->second);
+                    auto const& bounds = type.arrayBase->bounds.get();
+                    if (bounds.first.isInitialized()) {
+                        result->setLowerElementTypeBound(bounds.first);
+                    }
+                    if (bounds.second.isInitialized()) {
+                        result->setUpperElementTypeBound(bounds.second);
+                    }
                 }
                 return result;
             }

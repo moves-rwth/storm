@@ -311,12 +311,13 @@ namespace storm {
                         return true;
                     }
                 }
-                if (arrayVariable.hasElementTypeBounds()) {
-                    auto const& bounds = arrayVariable.getElementTypeBounds();
-                    if (bounds.first.containsVariable(variables)) {
+                if (arrayVariable.hasLowerElementTypeBound()) {
+                    if (arrayVariable.getLowerElementTypeBound().containsVariable(variables)) {
                         return true;
                     }
-                    if (bounds.second.containsVariable(variables)) {
+                }
+                if (arrayVariable.hasUpperElementTypeBound()) {
+                    if (arrayVariable.getUpperElementTypeBound().containsVariable(variables)) {
                         return true;
                     }
                 }

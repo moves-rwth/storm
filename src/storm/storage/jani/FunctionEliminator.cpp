@@ -344,8 +344,11 @@ namespace storm {
                     if (variable.hasInitExpression()) {
                         variable.setInitExpression(functionEliminationVisitor->eliminate(variable.getInitExpression()));
                     }
-                    if (variable.hasElementTypeBounds()) {
-                        variable.setElementTypeBounds(functionEliminationVisitor->eliminate(variable.getElementTypeBounds().first), functionEliminationVisitor->eliminate(variable.getElementTypeBounds().second));
+                    if (variable.hasLowerElementTypeBound()) {
+                        variable.setLowerElementTypeBound(functionEliminationVisitor->eliminate(variable.getLowerElementTypeBound()));
+                    }
+                    if (variable.hasUpperElementTypeBound()) {
+                        variable.setUpperElementTypeBound(functionEliminationVisitor->eliminate(variable.getUpperElementTypeBound()));
                     }
                 }
                 

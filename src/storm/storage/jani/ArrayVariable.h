@@ -21,18 +21,42 @@ namespace storm {
             ArrayVariable(std::string const& name, storm::expressions::Variable const& variable, ElementType const& elementType, storm::expressions::Expression const& initValue, bool transient);
             
             /*!
-             * Sets/Gets bounds to the values stored in this array
+             * Sets the lower bound to the values stored in this array
              */
-            void setElementTypeBounds(storm::expressions::Expression lowerBound, storm::expressions::Expression upperBound);
-            bool hasElementTypeBounds() const;
-            std::pair<storm::expressions::Expression, storm::expressions::Expression> const& getElementTypeBounds() const;
+            void setLowerElementTypeBound(storm::expressions::Expression const& lowerBound);
+            
+             /*!
+             * Sets the upper bound to the values stored in this array
+             */
+            void setUpperElementTypeBound(storm::expressions::Expression const& upperBound);
+           
+            /*!
+             * Returns true if there is either an upper bound or a lower bound
+             */
+            bool hasElementTypeBound() const;
             
             /*!
-             * Sets/Gets the maximum size of the array
+             * Returns true if there is an upper element type bound
              */
-            void setMaxSize(uint64_t size);
-            bool hasMaxSize() const;
-            uint64_t getMaxSize() const;
+            bool hasUpperElementTypeBound() const;
+            
+            /*!
+             * Returns true if there is a lower element type bound
+             */
+            bool hasLowerElementTypeBound() const;
+            
+            /*!
+             * Returns the upper element type bound. The returned expression might not be initialized if there is no such bound.
+             */
+            storm::expressions::Expression const& getUpperElementTypeBound() const;
+            
+            /*!
+             * Returns the lower element type bound. The returned expression might not be initialized if there is no such bound.
+             */
+            storm::expressions::Expression const& getLowerElementTypeBound() const;
+
+            std::pair<storm::expressions::Expression, storm::expressions::Expression> const& getElementTypeBounds() const;
+            
             
             ElementType getElementType() const;
             
@@ -43,8 +67,7 @@ namespace storm {
 
         private:
             ElementType elementType;
-            boost::optional<std::pair<storm::expressions::Expression, storm::expressions::Expression>> elementTypeBounds;
-            boost::optional<uint64_t> maxSize;
+            storm::expressions::Expression lowerElementTypeBound, upperElementTypeBound;
         };
         
         

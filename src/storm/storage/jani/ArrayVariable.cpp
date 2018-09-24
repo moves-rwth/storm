@@ -1,5 +1,7 @@
 #include "storm/storage/jani/ArrayVariable.h"
 
+#include "storm/storage/jani/expressions/JaniExpressionSubstitutionVisitor.h"
+
 namespace storm {
     namespace jani {
         
@@ -11,28 +13,32 @@ namespace storm {
             // Intentionally left empty.
         }
         
-        void ArrayVariable::setElementTypeBounds(storm::expressions::Expression lowerBound, storm::expressions::Expression upperBound) {
-            elementTypeBounds = std::make_pair(lowerBound, upperBound);
+        void ArrayVariable::setLowerElementTypeBound(storm::expressions::Expression const& lowerBound) {
+            lowerElementTypeBound = lowerBound;
         }
         
-        bool ArrayVariable::hasElementTypeBounds() const {
-            return elementTypeBounds.is_initialized();
+        void ArrayVariable::setUpperElementTypeBound(storm::expressions::Expression const& upperBound) {
+            upperElementTypeBound = upperBound;
+        }
+       
+        bool ArrayVariable::hasElementTypeBound() const {
+            return hasLowerElementTypeBound() || hasUpperElementTypeBound();
         }
         
-        std::pair<storm::expressions::Expression, storm::expressions::Expression> const& ArrayVariable::getElementTypeBounds() const {
-            return elementTypeBounds.get();
+        bool ArrayVariable::hasLowerElementTypeBound() const {
+            return lowerElementTypeBound.isInitialized();
         }
         
-        void ArrayVariable::setMaxSize(uint64_t size) {
-            maxSize = size;
+        bool ArrayVariable::hasUpperElementTypeBound() const {
+            return upperElementTypeBound.isInitialized();
         }
         
-        bool ArrayVariable::hasMaxSize() const {
-            return maxSize.is_initialized();
+        storm::expressions::Expression const& ArrayVariable::getLowerElementTypeBound() const {
+            return lowerElementTypeBound;
         }
         
-        uint64_t ArrayVariable::getMaxSize() const {
-            return maxSize.get();
+        storm::expressions::Expression const& ArrayVariable::getUpperElementTypeBound() const {
+            return upperElementTypeBound;
         }
         
         typename ArrayVariable::ElementType ArrayVariable::getElementType() const {
@@ -49,8 +55,11 @@ namespace storm {
         
         void ArrayVariable::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {
             Variable::substitute(substitution);
-            if (hasElementTypeBounds()) {
-                setElementTypeBounds(elementTypeBounds->first.substitute(substitution), elementTypeBounds->second.substitute(substitution));
+            if (hasLowerElementTypeBound()) {
+                setLowerElementTypeBound(substituteJaniExpression(getLowerElementTypeBound(), substitution));
+            }
+            if (hasUpperElementTypeBound()) {
+                setUpperElementTypeBound(substituteJaniExpression(getUpperElementTypeBound(), substitution));
             }
         }
     }

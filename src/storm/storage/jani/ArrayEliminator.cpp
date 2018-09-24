@@ -569,11 +569,11 @@ namespace storm {
                     }
                     if (arrayVariable.getElementType() == ArrayVariable::ElementType::Int) {
                         storm::expressions::Variable exprVariable = expressionManager.declareIntegerVariable(name);
-                        if (arrayVariable.hasElementTypeBounds()) {
+                        if (arrayVariable.hasElementTypeBound()) {
                             if (initValue.isInitialized()) {
-                                return std::make_shared<BoundedIntegerVariable>(name, exprVariable, initValue, arrayVariable.isTransient(), arrayVariable.getElementTypeBounds().first, arrayVariable.getElementTypeBounds().second);
+                                return std::make_shared<BoundedIntegerVariable>(name, exprVariable, initValue, arrayVariable.isTransient(), arrayVariable.getLowerElementTypeBound(), arrayVariable.getUpperElementTypeBound());
                             } else {
-                                return std::make_shared<BoundedIntegerVariable>(name, exprVariable, arrayVariable.getElementTypeBounds().first, arrayVariable.getElementTypeBounds().second);
+                                return std::make_shared<BoundedIntegerVariable>(name, exprVariable, arrayVariable.getLowerElementTypeBound(), arrayVariable.getUpperElementTypeBound());
                             }
                         } else {
                             if (initValue.isInitialized()) {

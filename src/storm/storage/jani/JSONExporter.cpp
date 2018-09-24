@@ -847,12 +847,16 @@ namespace storm {
                             typeDesc["base"] = "real";
                             break;
                         case storm::jani::ArrayVariable::ElementType::Int:
-                            if (variable.asArrayVariable().hasElementTypeBounds()) {
+                            if (variable.asArrayVariable().hasElementTypeBound()) {
                                 modernjson::json baseTypeDescr;
                                 baseTypeDescr["kind"] = "bounded";
                                 baseTypeDescr["base "] = "int";
-                                baseTypeDescr["lower-bound"] = buildExpression(variable.asArrayVariable().getElementTypeBounds().first, constants, globalVariables, localVariables);
-                                baseTypeDescr["upper-bound"] = buildExpression(variable.asArrayVariable().getElementTypeBounds().second, constants, globalVariables, localVariables);
+                                if (variable.asArrayVariable().hasLowerElementTypeBound()) {
+                                    baseTypeDescr["lower-bound"] = buildExpression(variable.asArrayVariable().getLowerElementTypeBound(), constants, globalVariables, localVariables);
+                                }
+                                if (variable.asArrayVariable().hasUpperElementTypeBound()) {
+                                    baseTypeDescr["upper-bound"] = buildExpression(variable.asArrayVariable().getUpperElementTypeBound(), constants, globalVariables, localVariables);
+                                }
                                 typeDesc["base"] = baseTypeDescr;
                             } else {
                                 typeDesc["base"] = "int";

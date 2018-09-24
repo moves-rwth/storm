@@ -103,9 +103,11 @@ namespace storm {
             if (variable.hasInitExpression()) {
                 traverse(variable.getInitExpression(), data);
             }
-            if (variable.hasElementTypeBounds()) {
-                traverse(variable.getElementTypeBounds().first, data);
-                traverse(variable.getElementTypeBounds().second, data);
+            if (variable.hasLowerElementTypeBound()) {
+                traverse(variable.getLowerElementTypeBound(), data);
+            }
+            if (variable.hasUpperElementTypeBound()) {
+                traverse(variable.getUpperElementTypeBound(), data);
             }
         }
         
@@ -264,9 +266,11 @@ namespace storm {
             if (variable.hasInitExpression()) {
                 traverse(variable.getInitExpression(), data);
             }
-            if (variable.hasElementTypeBounds()) {
-                traverse(variable.getElementTypeBounds().first, data);
-                traverse(variable.getElementTypeBounds().second, data);
+            if (variable.hasLowerElementTypeBound()) {
+                traverse(variable.getLowerElementTypeBound(), data);
+            }
+            if (variable.hasUpperElementTypeBound()) {
+                traverse(variable.getUpperElementTypeBound(), data);
             }
         }
         
