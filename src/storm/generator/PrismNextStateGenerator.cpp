@@ -386,7 +386,7 @@ namespace storm {
                     if (assignedValue < integerIt->lowerBound || assignedValue > integerIt->upperBound) {
                         return this->outOfBoundsState;
                     }
-                } else if (this->options.isExplorationChecksSet()) {
+                } else if (integerIt->forceOutOfBoundsCheck || this->options.isExplorationChecksSet()) {
                     STORM_LOG_THROW(assignedValue >= integerIt->lowerBound, storm::exceptions::WrongFormatException, "The update " << update << " leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << assignmentIt->getVariableName() << "'.");
                     STORM_LOG_THROW(assignedValue <= integerIt->upperBound, storm::exceptions::WrongFormatException, "The update " << update << " leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << assignmentIt->getVariableName() << "'.");
                 }

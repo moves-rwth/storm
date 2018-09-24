@@ -37,7 +37,7 @@ namespace storm {
             return boost::get<storm::expressions::Expression>(labelOrExpression);
         }
         
-        BuilderOptions::BuilderOptions(bool buildAllRewardModels, bool buildAllLabels) : buildAllRewardModels(buildAllRewardModels), buildAllLabels(buildAllLabels), buildChoiceLabels(false), buildStateValuations(false), buildChoiceOrigins(false), scaleAndLiftTransitionRewards(true), explorationChecks(false), addOverlappingGuardsLabel(false), addOutOfBoundsState(false), showProgress(false), showProgressDelay(0) {
+        BuilderOptions::BuilderOptions(bool buildAllRewardModels, bool buildAllLabels) : buildAllRewardModels(buildAllRewardModels), buildAllLabels(buildAllLabels), buildChoiceLabels(false), buildStateValuations(false), buildChoiceOrigins(false), scaleAndLiftTransitionRewards(true), explorationChecks(false), addOverlappingGuardsLabel(false), addOutOfBoundsState(false), reservedBitsForUnboundedVariables(32), showProgress(false), showProgressDelay(0) {
             // Intentionally left empty.
         }
         
@@ -59,6 +59,7 @@ namespace storm {
             auto const& buildSettings = storm::settings::getModule<storm::settings::modules::BuildSettings>();
             auto const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
             explorationChecks = buildSettings.isExplorationChecksSet();
+            reservedBitsForUnboundedVariables = buildSettings.getBitsForUnboundedVariables();
             showProgress = generalSettings.isVerboseSet();
             showProgressDelay = generalSettings.getShowProgressDelay();
         }
@@ -172,6 +173,10 @@ namespace storm {
         bool BuilderOptions::isAddOutOfBoundsStateSet() const {
             return addOutOfBoundsState;
         }
+        
+        uint64_t BuilderOptions::getReservedBitsForUnboundedVariables() const {
+            return reservedBitsForUnboundedVariables;
+        }
 
         bool BuilderOptions::isAddOverlappingGuardLabelSet() const {
             return addOverlappingGuardsLabel;
@@ -255,6 +260,11 @@ namespace storm {
         
         BuilderOptions& BuilderOptions::setAddOutOfBoundsState(bool newValue) {
             addOutOfBoundsState = newValue;
+            return *this;
+        }
+        
+        BuilderOptions& BuilderOptions::setReservedBitsForUnboundedVariables(uint64_t newValue) {
+            reservedBitsForUnboundedVariables = newValue;
             return *this;
         }
 

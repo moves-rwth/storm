@@ -37,7 +37,7 @@ namespace storm {
         
         // A structure storing information about the integer variables of the model.
         struct IntegerVariableInformation {
-            IntegerVariableInformation(storm::expressions::Variable const& variable, int_fast64_t lowerBound, int_fast64_t upperBound, uint_fast64_t bitOffset, uint_fast64_t bitWidth, bool global = false);
+            IntegerVariableInformation(storm::expressions::Variable const& variable, int_fast64_t lowerBound, int_fast64_t upperBound, uint_fast64_t bitOffset, uint_fast64_t bitWidth, bool global = false, bool forceOutOfBoundsCheck = false);
             
             // The integer variable.
             storm::expressions::Variable variable;
@@ -56,6 +56,9 @@ namespace storm {
             
             // A flag indicating whether the variable is a global one.
             bool global;
+            
+            // A flag indicating whether an out of bounds check is enforced for this variable.
+            bool forceOutOfBoundsCheck;
         };
         
         // A structure storing information about the location variables of the model.
@@ -78,7 +81,7 @@ namespace storm {
         // A structure storing information about the used variables of the program.
         struct VariableInformation {
             VariableInformation(storm::prism::Program const& program, bool outOfBoundsState = false);
-            VariableInformation(storm::jani::Model const& model, std::vector<std::reference_wrapper<storm::jani::Automaton const>> const& parallelAutomata, bool outOfBoundsState = false);
+            VariableInformation(storm::jani::Model const& model, std::vector<std::reference_wrapper<storm::jani::Automaton const>> const& parallelAutomata, uint64_t reservedBitsForUnboundedVariables, bool outOfBoundsState);
             
             VariableInformation() = default;
             uint_fast64_t getTotalBitOffset(bool roundTo64Bit = false) const;

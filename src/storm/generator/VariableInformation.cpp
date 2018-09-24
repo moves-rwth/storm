@@ -22,7 +22,7 @@ namespace storm {
             // Intentionally left empty.
         }
         
-        IntegerVariableInformation::IntegerVariableInformation(storm::expressions::Variable const& variable, int_fast64_t lowerBound, int_fast64_t upperBound, uint_fast64_t bitOffset, uint_fast64_t bitWidth, bool global) : variable(variable), lowerBound(lowerBound), upperBound(upperBound), bitOffset(bitOffset), bitWidth(bitWidth), global(global) {
+        IntegerVariableInformation::IntegerVariableInformation(storm::expressions::Variable const& variable, int_fast64_t lowerBound, int_fast64_t upperBound, uint_fast64_t bitOffset, uint_fast64_t bitWidth, bool global, bool forceOutOfBoundsCheck) : variable(variable), lowerBound(lowerBound), upperBound(upperBound), bitOffset(bitOffset), bitWidth(bitWidth), global(global), forceOutOfBoundsCheck(forceOutOfBoundsCheck) {
             // Intentionally left empty.
         }
         
@@ -68,7 +68,7 @@ namespace storm {
             sortVariables();
         }
         
-        VariableInformation::VariableInformation(storm::jani::Model const& model, std::vector<std::reference_wrapper<storm::jani::Automaton const>> const& parallelAutomata, bool outOfBoundsState) : totalBitOffset(0) {
+        VariableInformation::VariableInformation(storm::jani::Model const& model, std::vector<std::reference_wrapper<storm::jani::Automaton const>> const& parallelAutomata, uint64_t reservedBitsForUnboundedVariables, bool outOfBoundsState) : totalBitOffset(0) {
             // Check that the model does not contain non-transient unbounded integer or non-transient real variables.
             STORM_LOG_THROW(!model.getGlobalVariables().containsNonTransientRealVariables(), storm::exceptions::InvalidArgumentException, "Cannot build model from JANI model that contains global non-transient real variables.");
             STORM_LOG_THROW(!model.getGlobalVariables().containsNonTransientUnboundedIntegerVariables(), storm::exceptions::InvalidArgumentException, "Cannot build model from JANI model that contains non-transient unbounded integer variables.");
@@ -82,7 +82,7 @@ namespace storm {
             } else {
                 outOfBoundsBit = boost::none;
             }
-
+            
             for (auto const& variable : model.getGlobalVariables().getBooleanVariables()) {
                 if (!variable.isTransient()) {
                     booleanVariables.emplace_back(variable.getExpressionVariable(), totalBitOffset, true);
@@ -91,12 +91,31 @@ namespace storm {
             }
             for (auto const& variable : model.getGlobalVariables().getBoundedIntegerVariables()) {
                 if (!variable.isTransient()) {
-                    STORM_LOG_THROW(variable.hasLowerBound() && variable.hasUpperBound(), storm::exceptions::WrongFormatException, "Bounded integer variables with infinite range are not supported.");
-                    int_fast64_t lowerBound = variable.getLowerBound().evaluateAsInt();
-                    int_fast64_t upperBound = variable.getUpperBound().evaluateAsInt();
+                    int64_t lowerBound;
+                    int64_t upperBound;
+                    if (variable.hasLowerBound()) {
+                        lowerBound = variable.getLowerBound().evaluateAsInt();
+                        if (variable.hasUpperBound()) {
+                            upperBound = variable.getUpperBound().evaluateAsInt();
+                        } else {
+                            upperBound = lowerBound + ((1u << reservedBitsForUnboundedVariables) - 1);
+                        }
+                    } else {
+                        STORM_LOG_THROW(variable.hasUpperBound(), storm::exceptions::WrongFormatException, "Bounded integer variable has neither a lower nor an upper bound.");
+                        upperBound = variable.getUpperBound().evaluateAsInt();
+                        lowerBound = upperBound - ((1u << reservedBitsForUnboundedVariables) - 1);
+                    }
                     uint_fast64_t bitwidth = static_cast<uint_fast64_t>(std::ceil(std::log2(upperBound - lowerBound + 1)));
-                    integerVariables.emplace_back(variable.getExpressionVariable(), lowerBound, upperBound, totalBitOffset, bitwidth, true);
+                    integerVariables.emplace_back(variable.getExpressionVariable(), lowerBound, upperBound, totalBitOffset, bitwidth, true, !variable.hasLowerBound() || !variable.hasUpperBound());
                     totalBitOffset += bitwidth;
+                }
+            }
+            for (auto const& variable : model.getGlobalVariables().getUnboundedIntegerVariables()) {
+                if (!variable.isTransient()) {
+                    int64_t lowerBound = - (1u << (reservedBitsForUnboundedVariables - 1));
+                    int64_t upperBound = (1u << (reservedBitsForUnboundedVariables - 1)) - 1;
+                    integerVariables.emplace_back(variable.getExpressionVariable(), lowerBound, upperBound, totalBitOffset, reservedBitsForUnboundedVariables, true, true);
+                    totalBitOffset += reservedBitsForUnboundedVariables;
                 }
             }
             

@@ -73,7 +73,7 @@ namespace storm {
 
             // Now we are ready to initialize the variable information.
             this->checkValid();
-            this->variableInformation = VariableInformation(this->model, this->parallelAutomata, options.isAddOutOfBoundsStateSet());
+            this->variableInformation = VariableInformation(this->model, this->parallelAutomata, options.getReservedBitsForUnboundedVariables(), options.isAddOutOfBoundsStateSet());
             this->variableInformation.registerArrayVariableReplacements(arrayEliminatorData);
             
             // Create a proper evalator.
@@ -344,7 +344,7 @@ namespace storm {
                     if (assignedValue < integerIt->lowerBound || assignedValue > integerIt->upperBound) {
                         return this->outOfBoundsState;
                     }
-                } else if (this->options.isExplorationChecksSet()) {
+                } else if (integerIt->forceOutOfBoundsCheck || this->options.isExplorationChecksSet()) {
                     STORM_LOG_THROW(assignedValue >= integerIt->lowerBound, storm::exceptions::WrongFormatException, "The update " << assignmentIt->getExpressionVariable().getName() << " := " << assignmentIt->getAssignedExpression() << " leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << assignmentIt->getExpressionVariable().getName() << "'.");
                     STORM_LOG_THROW(assignedValue <= integerIt->upperBound, storm::exceptions::WrongFormatException, "The update " << assignmentIt->getExpressionVariable().getName() << " := " << assignmentIt->getAssignedExpression() << " leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << assignmentIt->getExpressionVariable().getName() << "'.");
                 }

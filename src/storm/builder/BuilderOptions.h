@@ -109,6 +109,7 @@ namespace storm {
             bool isShowProgressSet() const;
             bool isScaleAndLiftTransitionRewardsSet() const;
             bool isAddOutOfBoundsStateSet() const;
+            uint64_t getReservedBitsForUnboundedVariables() const;
             bool isAddOverlappingGuardLabelSet() const;
             uint64_t getShowProgressDelay() const;
 
@@ -180,6 +181,11 @@ namespace storm {
             BuilderOptions& setAddOverlappingGuardsLabel(bool newValue = true);
 
             /**
+             * Sets the number of bits that will be reserved for unbounded integer variables.
+             */
+            BuilderOptions& setReservedBitsForUnboundedVariables(uint64_t value);
+            
+            /**
              * Substitutes all expressions occurring in these options.
              */
             BuilderOptions& substituteExpressions(std::function<storm::expressions::Expression(storm::expressions::Expression const&)> const& substitutionFunction);
@@ -226,6 +232,9 @@ namespace storm {
             /// A flag indicating that the an additional state for out of bounds should be created.
             bool addOutOfBoundsState;
 
+            /// Indicates the number of bits that are reserved for the storage of unbounded integer variables.
+            uint64_t reservedBitsForUnboundedVariables;
+            
             /// A flag that stores whether the progress of exploration is to be printed.
             bool showProgress;
 
