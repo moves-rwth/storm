@@ -1771,12 +1771,11 @@ namespace storm {
             typedef typename storm::storage::SparseMatrix<ValueType>::value_type value_type;
             typedef typename storm::storage::SparseMatrix<ValueType>::const_iterator const_iterator;
             
-            TbbMultAddReduceFunctor(std::vector<uint64_t> const& rowGroupIndices, std::vector<MatrixEntry<index_type, value_type>> const& columnsAndEntries, std::vector<uint64_t> const& rowIndications, std::vector<ValueType> const& x, std::vector<ValueType>& result, std::vector<value_type> const* summand, std::vector<uint_fast64_t>* choices) : dir(dir), rowGroupIndices(rowGroupIndices), columnsAndEntries(columnsAndEntries), rowIndications(rowIndications), x(x), result(result), summand(summand), choices(choices) {
+            TbbMultAddReduceFunctor(std::vector<uint64_t> const& rowGroupIndices, std::vector<MatrixEntry<index_type, value_type>> const& columnsAndEntries, std::vector<uint64_t> const& rowIndications, std::vector<ValueType> const& x, std::vector<ValueType>& result, std::vector<value_type> const* summand, std::vector<uint_fast64_t>* choices) : rowGroupIndices(rowGroupIndices), columnsAndEntries(columnsAndEntries), rowIndications(rowIndications), x(x), result(result), summand(summand), choices(choices) {
                 // Intentionally left empty.
             }
             
             void operator()(tbb::blocked_range<index_type> const& range) const {
-                bool min = dir == storm::OptimizationDirection::Minimize;
 
                 auto groupIt = rowGroupIndices.begin() + range.begin();
                 auto groupIte = rowGroupIndices.begin() + range.end();
@@ -1843,7 +1842,7 @@ namespace storm {
                         
                         // Finally write value to target vector.
                         *resultIt = currentValue;
-                        if (choices && compare(currentValue, oldSelectedValue)) {
+                        if (choices && compare(currentValue, oldSelectedChoiceValue)) {
                             *choiceIt = selectedChoice;
                         }
                     }

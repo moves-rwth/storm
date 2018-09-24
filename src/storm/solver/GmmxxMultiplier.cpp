@@ -221,7 +221,7 @@ namespace storm {
         template<typename ValueType, typename Compare>
         class TbbMultAddReduceFunctor {
         public:
-            TbbMultAddReduceFunctor(std::vector<uint64_t> const& rowGroupIndices, gmm::csr_matrix<ValueType> const& matrix, std::vector<ValueType> const& x, std::vector<ValueType> const* b, std::vector<ValueType>& result, std::vector<uint64_t>* choices) : dir(dir), rowGroupIndices(rowGroupIndices), matrix(matrix), x(x), b(b), result(result), choices(choices) {
+            TbbMultAddReduceFunctor(std::vector<uint64_t> const& rowGroupIndices, gmm::csr_matrix<ValueType> const& matrix, std::vector<ValueType> const& x, std::vector<ValueType> const* b, std::vector<ValueType>& result, std::vector<uint64_t>* choices) : rowGroupIndices(rowGroupIndices), matrix(matrix), x(x), b(b), result(result), choices(choices) {
                 // Intentionally left empty.
             }
             
@@ -229,7 +229,6 @@ namespace storm {
                 typedef std::vector<ValueType> VectorType;
                 typedef gmm::csr_matrix<ValueType> MatrixType;
 
-                bool min = dir == OptimizationDirection::Minimize;
                 auto groupIt = rowGroupIndices.begin() + range.begin();
                 auto groupIte = rowGroupIndices.begin() + range.end();
                 
@@ -310,7 +309,7 @@ namespace storm {
             if (dir == storm::OptimizationDirection::Minimize) {
                 tbb::parallel_for(tbb::blocked_range<unsigned long>(0, rowGroupIndices.size() - 1, 100), TbbMultAddReduceFunctor<ValueType, storm::utility::ElementLess<ValueType>>(rowGroupIndices, this->gmmMatrix, x, b, result, choices));
             } else {
-                tbb::parallel_for(tbb::blocked_range<unsigned long>(0, rowGroupIndices.size() - 1, 100), TbbMultAddReduceFunctor<ValueType storm::utility::ElementGreater<ValueType>>(rowGroupIndices, this->gmmMatrix, x, b, result, choices));
+                tbb::parallel_for(tbb::blocked_range<unsigned long>(0, rowGroupIndices.size() - 1, 100), TbbMultAddReduceFunctor<ValueType, storm::utility::ElementGreater<ValueType>>(rowGroupIndices, this->gmmMatrix, x, b, result, choices));
             }
 #else
             STORM_LOG_WARN("Storm was built without support for Intel TBB, defaulting to sequential version.");
