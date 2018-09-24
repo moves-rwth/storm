@@ -69,11 +69,18 @@ namespace storm {
 
             std::set<std::shared_ptr<storm::expressions::BinaryRelationExpression>> validatedAssumptions;
 
-            bool validateAssumptionFunction(storm::analysis::Lattice* lattice, typename storm::storage::SparseMatrix<ValueType>::rows row1, typename storm::storage::SparseMatrix<ValueType>::rows row2);
+            bool validateAssumptionFunction(storm::analysis::Lattice* lattice,
+                    typename storm::storage::SparseMatrix<ValueType>::iterator state1succ1,
+                    typename storm::storage::SparseMatrix<ValueType>::iterator state1succ2,
+                    typename storm::storage::SparseMatrix<ValueType>::iterator state2succ1,
+                    typename storm::storage::SparseMatrix<ValueType>::iterator state2succ2);
 
-            bool validateAssumptionSMTSolver(storm::analysis::Lattice* lattice, typename storm::storage::SparseMatrix<ValueType>::rows row1, typename storm::storage::SparseMatrix<ValueType>::rows row2);
+            bool validateAssumptionSMTSolver(storm::analysis::Lattice* lattice,
+                    typename storm::storage::SparseMatrix<ValueType>::iterator state1succ1,
+                    typename storm::storage::SparseMatrix<ValueType>::iterator state1succ2,
+                    typename storm::storage::SparseMatrix<ValueType>::iterator state2succ1,
+                    typename storm::storage::SparseMatrix<ValueType>::iterator state2succ2);
         };
     }
 }
-
 #endif //STORM_ASSUMPTIONCHECKER_H
