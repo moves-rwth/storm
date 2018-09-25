@@ -6,7 +6,13 @@
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/LinearityCheckVisitor.h"
 #include "storm/storage/expressions/SimpleValuation.h"
+#include "storm/storage/expressions/ExpressionEvaluator.h"
+#include "storm/storage/expressions/ValueTypeToExpression.h"
 #include "storm/exceptions/InvalidTypeException.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm-parsers/parser/ValueParser.h"
+#include "storm/storage/expressions/ToRationalFunctionVisitor.h"
+
 
 TEST(Expression, FactoryMethodTest) {
     std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
@@ -368,4 +374,32 @@ TEST(Expression, VisitorTest) {
     storm::expressions::Expression tempExpression = intVarExpression + rationalVarExpression * threeExpression;
     storm::expressions::LinearityCheckVisitor visitor;
     EXPECT_TRUE(visitor.check(tempExpression));
+}
+
+TEST(Expression, ValueTypeToExpressionTest) {
+    storm::parser::ValueParser<storm::RationalFunction> parser;
+    parser.addParameter("p");
+    parser.addParameter("q");
+    auto rationalFunction = parser.parseValue("((5*p^(3))+(q*p*7)+2)/2");
+
+    std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
+    auto transformer = storm::expressions::ValueTypeToExpression<storm::RationalFunction>(manager);
+
+    storm::expressions::Expression expr;
+    EXPECT_NO_THROW(expr = transformer.toExpression(rationalFunction));
+    auto base = storm::expressions::ExpressionEvaluator<storm::RationalFunction>(*manager);
+    storm::expressions::ToRationalFunctionVisitor<storm::RationalFunction> visitor(base);
+    ASSERT_NO_THROW(rationalFunction.simplify());
+    storm::RationalFunction result;
+    ASSERT_NO_THROW(result = visitor.toRationalFunction(expr));
+    ASSERT_NO_THROW(result.simplify());
+    EXPECT_EQ(rationalFunction.toString(), result.toString());
+
+    rationalFunction = parser.parseValue("(5*((p^(3))+(q*p)))/2");
+    transformer = storm::expressions::ValueTypeToExpression<storm::RationalFunction>(manager);
+    EXPECT_NO_THROW(expr = transformer.toExpression(rationalFunction));
+    ASSERT_NO_THROW(rationalFunction.simplify());
+    ASSERT_NO_THROW(result = visitor.toRationalFunction(expr));
+    ASSERT_NO_THROW(result.simplify());
+    EXPECT_EQ(rationalFunction.toString(), result.toString());
 }
