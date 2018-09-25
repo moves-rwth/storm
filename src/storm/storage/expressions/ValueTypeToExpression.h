@@ -13,11 +13,6 @@ namespace storm {
         template<typename ValueType>
         class ValueTypeToExpression {
         public:
-            /*!
-             *
-             *
-             * @param manager The manager of the variables.
-             */
             ValueTypeToExpression(std::shared_ptr<ExpressionManager> manager);
 
             /*!
@@ -28,10 +23,10 @@ namespace storm {
             std::shared_ptr<ExpressionManager> getManager();
 
             /*!
+             * Transforms the function into an expression.
              *
-             * @param function
-             * @param manager
-             * @return
+             * @param function The function to transform
+             * @return The created expression.
              */
             Expression toExpression(ValueType function);
 
@@ -41,6 +36,5 @@ namespace storm {
         };
     }
 }
-
 
 #endif //STORM_VALUETYPETOEXPRESSION_H
