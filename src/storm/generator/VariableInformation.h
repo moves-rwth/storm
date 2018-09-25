@@ -17,6 +17,7 @@ namespace storm {
         class Model;
         class Automaton;
         class ArrayEliminatorData;
+        class VariableSet;
     }
     
     namespace generator {
@@ -120,7 +121,12 @@ namespace storm {
             /*!
              * Creates all necessary variables for a JANI automaton.
              */
-            void createVariablesForAutomaton(storm::jani::Automaton const& automaton);
+            void createVariablesForAutomaton(storm::jani::Automaton const& automaton, uint64_t reservedBitsForUnboundedVariables);
+            
+            /*!
+             * Creates all non-transient variables from the given set
+             */
+            void createVariablesForVariableSet(storm::jani::VariableSet const& variableSet, uint64_t reservedBitsForUnboundedVariables, bool global);
         };
         
     }
