@@ -171,6 +171,7 @@ namespace storm {
                 typename storm::storage::SparseMatrix<ValueType>::iterator state1succ2,
                 typename storm::storage::SparseMatrix<ValueType>::iterator state2succ1,
                 typename storm::storage::SparseMatrix<ValueType>::iterator state2succ2) {
+            bool result = true;
 
             ValueType prob;
             auto comp = lattice->compare(state1succ1->getColumn(), state1succ2->getColumn());
@@ -183,16 +184,19 @@ namespace storm {
             
             // TODO: Type
             std::map<storm::RationalFunctionVariable, typename ValueType::CoeffType> substitutions;
-            for (auto var:vars) {
+            for (auto var : vars) {
                 auto derivative = prob.derivative(var);
-                assert(derivative.isConstant());
-                if (derivative.constantPart() >= 0) {
-                    substitutions[var] = 0;
-                } else if (derivative.constantPart() <= 0) {
-                    substitutions[var] = 1;
+                if(derivative.isConstant()) {
+                    if (derivative.constantPart() >= 0) {
+                        substitutions[var] = 0;
+                    } else if (derivative.constantPart() <= 0) {
+                        substitutions[var] = 1;
+                    }
+                } else {
+                    result = false;
                 }
             }
-            return prob.evaluate(substitutions) >= 0;
+            return result && prob.evaluate(substitutions) >= 0;
         }
 
         template <typename ValueType>
