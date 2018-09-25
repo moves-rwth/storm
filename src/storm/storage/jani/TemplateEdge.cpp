@@ -27,13 +27,8 @@ namespace storm {
         }
         
         void TemplateEdge::finalize(Model const& containingModel) {
-            if (assignments.empty()) {
-                lowestAssignmentLevel = std::numeric_limits<int64_t>::max();
-                highestAssignmentLevel = std::numeric_limits<int64_t>::min();
-            } else {
-                lowestAssignmentLevel = assignments.getLowestLevel();
-                highestAssignmentLevel = assignments.getHighestLevel();
-            }
+            lowestAssignmentLevel = std::numeric_limits<int64_t>::max();
+            highestAssignmentLevel = std::numeric_limits<int64_t>::min();
             for (auto const& destination : getDestinations()) {
                 if (!destination.getOrderedAssignments().empty()) {
                     lowestAssignmentLevel = std::min(lowestAssignmentLevel, destination.getOrderedAssignments().getLowestLevel());

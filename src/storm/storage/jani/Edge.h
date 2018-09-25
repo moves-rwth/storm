@@ -121,13 +121,13 @@ namespace storm {
             void setTemplateEdge(std::shared_ptr<TemplateEdge> const& newTe);
 
             /*!
-             * Retrieves the lowest assignment level occurring in each assignment.
+             * Retrieves the lowest assignment level occurring in a destination assignment.
              * If no assignment exists, this value is the highest possible integer
              */
             int64_t const& getLowestAssignmentLevel() const;
             
             /*!
-             * Retrieves the highest assignment level occurring in each assignment
+             * Retrieves the highest assignment level occurring in a destination assignment
              * If no assignment exists, this value is always zero
              */
             int64_t const& getHighestAssignmentLevel() const;
