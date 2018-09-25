@@ -75,6 +75,8 @@ namespace storm {
             this->checkValid();
             this->variableInformation = VariableInformation(this->model, this->parallelAutomata, options.getReservedBitsForUnboundedVariables(), options.isAddOutOfBoundsStateSet());
             this->variableInformation.registerArrayVariableReplacements(arrayEliminatorData);
+            this->transientVariableInformation = TransientVariableInformation<ValueType>(this->model, this->parallelAutomata);
+            this->transientVariableInformation.registerArrayVariableReplacements(arrayEliminatorData);
             
             // Create a proper evalator.
             this->evaluator = std::make_unique<storm::expressions::ExpressionEvaluator<ValueType>>(model.getManager());
@@ -326,7 +328,7 @@ namespace storm {
             
             // Iterate over all boolean assignments and carry them out.
             auto boolIt = this->variableInformation.booleanVariables.begin();
-            for (; assignmentIt != assignmentIte && assignmentIt->getAssignedExpression().hasBooleanType() && assignmentIt->getLValue().isVariable(); ++assignmentIt) {
+            for (; assignmentIt != assignmentIte && assignmentIt->lValueIsVariable() && assignmentIt->getExpressionVariable().hasBooleanType(); ++assignmentIt) {
                 while (assignmentIt->getExpressionVariable() != boolIt->variable) {
                     ++boolIt;
                 }
@@ -335,7 +337,7 @@ namespace storm {
             
             // Iterate over all integer assignments and carry them out.
             auto integerIt = this->variableInformation.integerVariables.begin();
-            for (; assignmentIt != assignmentIte && assignmentIt->getAssignedExpression().hasIntegerType() && assignmentIt->getLValue().isVariable(); ++assignmentIt) {
+            for (; assignmentIt != assignmentIte && assignmentIt->lValueIsVariable() && assignmentIt->getExpressionVariable().hasIntegerType(); ++assignmentIt) {
                 while (assignmentIt->getExpressionVariable() != integerIt->variable) {
                     ++integerIt;
                 }
@@ -348,12 +350,11 @@ namespace storm {
                     STORM_LOG_THROW(assignedValue >= integerIt->lowerBound, storm::exceptions::WrongFormatException, "The update " << assignmentIt->getExpressionVariable().getName() << " := " << assignmentIt->getAssignedExpression() << " leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << assignmentIt->getExpressionVariable().getName() << "'.");
                     STORM_LOG_THROW(assignedValue <= integerIt->upperBound, storm::exceptions::WrongFormatException, "The update " << assignmentIt->getExpressionVariable().getName() << " := " << assignmentIt->getAssignedExpression() << " leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << assignmentIt->getExpressionVariable().getName() << "'.");
                 }
-
                 newState.setFromInt(integerIt->bitOffset, integerIt->bitWidth, assignedValue - integerIt->lowerBound);
                 STORM_LOG_ASSERT(static_cast<int_fast64_t>(newState.getAsInt(integerIt->bitOffset, integerIt->bitWidth)) + integerIt->lowerBound == assignedValue, "Writing to the bit vector bucket failed (read " << newState.getAsInt(integerIt->bitOffset, integerIt->bitWidth) << " but wrote " << assignedValue << ").");
             }
             // Iterate over all array access assignments and carry them out.
-            for (; assignmentIt != assignmentIte && assignmentIt->getLValue().isArrayAccess(); ++assignmentIt) {
+            for (; assignmentIt != assignmentIte && assignmentIt->lValueIsArrayAccess(); ++assignmentIt) {
                 int_fast64_t arrayIndex = expressionEvaluator.asInt(assignmentIt->getLValue().getArrayIndex());
                 if (assignmentIt->getAssignedExpression().hasIntegerType()) {
                     IntegerVariableInformation const& intInfo = this->variableInformation.getIntegerArrayVariableReplacement(assignmentIt->getLValue().getArray().getExpressionVariable(), arrayIndex);
@@ -379,6 +380,71 @@ namespace storm {
             // Check that we processed all assignments.
             STORM_LOG_ASSERT(assignmentIt == assignmentIte, "Not all assignments were consumed.");
             return newState;
+        }
+        
+        template<typename ValueType, typename StateType>
+        void JaniNextStateGenerator<ValueType, StateType>::applyTransientUpdate(TransientVariableValuation<ValueType>& transientValuation, storm::jani::EdgeDestination const& destination, int64_t assignmentLevel, storm::expressions::ExpressionEvaluator<ValueType> const& expressionEvaluator) {
+            
+            // Perform the assignments.
+            auto const& assignments = destination.getOrderedAssignments().getTransientAssignments(assignmentLevel);
+            auto assignmentIt = assignments.begin();
+            auto assignmentIte = assignments.end();
+            
+            // Iterate over all boolean assignments and carry them out.
+            auto boolIt = this->transientVariableInformation.booleanVariableInformation.begin();
+            for (; assignmentIt != assignmentIte && assignmentIt->lValueIsVariable() && assignmentIt->getExpressionVariable().hasBooleanType(); ++assignmentIt) {
+                while (assignmentIt->getExpressionVariable() != boolIt->variable) {
+                    ++boolIt;
+                }
+                transientValuation.booleanValues.emplace_back(&(*boolIt), expressionEvaluator.asBool(assignmentIt->getAssignedExpression()));
+            }
+            // Iterate over all integer assignments and carry them out.
+            auto integerIt = this->transientVariableInformation.integerVariableInformation.begin();
+            for (; assignmentIt != assignmentIte && assignmentIt->lValueIsVariable() && assignmentIt->getExpressionVariable().hasIntegerType(); ++assignmentIt) {
+                while (assignmentIt->getExpressionVariable() != integerIt->variable) {
+                    ++integerIt;
+                }
+                int64_t assignedValue = expressionEvaluator.asInt(assignmentIt->getAssignedExpression());
+                if (this->options.isExplorationChecksSet()) {
+                    STORM_LOG_THROW(assignedValue >= integerIt->lowerBound, storm::exceptions::WrongFormatException, "The update " << assignmentIt->getExpressionVariable().getName() << " := " << assignmentIt->getAssignedExpression() << " leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << assignmentIt->getExpressionVariable().getName() << "'.");
+                    STORM_LOG_THROW(assignedValue <= integerIt->upperBound, storm::exceptions::WrongFormatException, "The update " << assignmentIt->getExpressionVariable().getName() << " := " << assignmentIt->getAssignedExpression() << " leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << assignmentIt->getExpressionVariable().getName() << "'.");
+                }
+                transientValuation.integerValues.emplace_back(&(*integerIt), assignedValue);
+            }
+            // Iterate over all rational assignments and carry them out.
+            auto rationalIt = this->transientVariableInformation.rationalVariableInformation.begin();
+            for (; assignmentIt != assignmentIte && assignmentIt->lValueIsVariable() && assignmentIt->getExpressionVariable().hasRationalType(); ++assignmentIt) {
+                while (assignmentIt->getExpressionVariable() != rationalIt->variable) {
+                    ++rationalIt;
+                }
+                transientValuation.rationalValues.emplace_back(&(*rationalIt), expressionEvaluator.asRational(assignmentIt->getAssignedExpression()));
+            }
+            
+            // Iterate over all array access assignments and carry them out.
+            for (; assignmentIt != assignmentIte && assignmentIt->lValueIsArrayAccess(); ++assignmentIt) {
+                int_fast64_t arrayIndex = expressionEvaluator.asInt(assignmentIt->getLValue().getArrayIndex());
+                storm::expressions::Type const& baseType = assignmentIt->getLValue().getArray().getExpressionVariable().getType();
+                if (baseType.isIntegerType()) {
+                    auto const& intInfo = this->transientVariableInformation.getIntegerArrayVariableReplacement(assignmentIt->getLValue().getArray().getExpressionVariable(), arrayIndex);
+                    int64_t assignedValue = expressionEvaluator.asInt(assignmentIt->getAssignedExpression());
+                    if (this->options.isExplorationChecksSet()) {
+                        STORM_LOG_THROW(assignedValue >= intInfo.lowerBound, storm::exceptions::WrongFormatException, "The update " << assignmentIt->getLValue() << " := " << assignmentIt->getAssignedExpression() << " leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << assignmentIt->getExpressionVariable().getName() << "'.");
+                        STORM_LOG_THROW(assignedValue <= intInfo.upperBound, storm::exceptions::WrongFormatException, "The update " << assignmentIt->getLValue() << " := " << assignmentIt->getAssignedExpression() << " leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << assignmentIt->getExpressionVariable().getName() << "'.");
+                    }
+                    transientValuation.integerValues.emplace_back(&intInfo, assignedValue);
+                } else if (baseType.isBooleanType()) {
+                    auto const& boolInfo = this->transientVariableInformation.getBooleanArrayVariableReplacement(assignmentIt->getLValue().getArray().getExpressionVariable(), arrayIndex);
+                    transientValuation.booleanValues.emplace_back(&boolInfo, expressionEvaluator.asBool(assignmentIt->getAssignedExpression()));
+                } else if (baseType.isRationalType()) {
+                    auto const& rationalInfo = this->transientVariableInformation.getRationalArrayVariableReplacement(assignmentIt->getLValue().getArray().getExpressionVariable(), arrayIndex);
+                    transientValuation.rationalValues.emplace_back(&rationalInfo, expressionEvaluator.asRational(assignmentIt->getAssignedExpression()));
+                } else {
+                    STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unhandled type of base variable.");
+                }
+            }
+            
+            // Check that we processed all assignments.
+            STORM_LOG_ASSERT(assignmentIt == assignmentIte, "Not all assignments were consumed.");
         }
         
         template<typename ValueType, typename StateType>
@@ -486,6 +552,7 @@ namespace storm {
             }
             
             Choice<ValueType> choice(edge.getActionIndex(), static_cast<bool>(exitRate));
+            TransientVariableValuation<ValueType> transientVariableValuation;
             std::vector<ValueType> stateActionRewards(rewardVariables.size(), storm::utility::zero<ValueType>());
             
             // Iterate over all updates of the current command.
@@ -498,10 +565,12 @@ namespace storm {
                     // seen, we also add it to the set of states that have yet to be explored.
                     int64_t assignmentLevel = edge.getLowestAssignmentLevel(); // Might be the largest possible integer, if there is no assignment
                     int64_t const& highestLevel = edge.getHighestAssignmentLevel();
-                    bool hasTransientRewardAssignments = destination.hasTransientAssignment();
+                    bool hasTransientAssignments = destination.hasTransientAssignment();
                     CompressedState newState = applyUpdate(state, destination, this->variableInformation.locationVariables[automatonIndex], assignmentLevel, *this->evaluator);
-                    if (hasTransientRewardAssignments) {
+                    if (hasTransientAssignments) {
+                        transientVariableValuation.clear();
                         STORM_LOG_ASSERT(this->options.isScaleAndLiftTransitionRewardsSet(), "Transition rewards are not supported and scaling to action rewards is disabled.");
+                        applyTransientUpdate(transientVariableValuation, destination, assignmentLevel, *this->evaluator);
                         // Create the rewards for this destination
                         auto valueIt = stateActionRewards.begin();
                         performTransientAssignments(destination.getOrderedAssignments().getTransientAssignments(assignmentLevel), *this->evaluator, [&] (ValueType const& value) { *valueIt += (value * probability); ++valueIt; } );
@@ -510,15 +579,21 @@ namespace storm {
                         while (assignmentLevel < highestLevel) {
                             ++assignmentLevel;
                             unpackStateIntoEvaluator(newState, this->variableInformation, *this->evaluator);
+                            transientVariableValuation.setInEvaluator(*this->evaluator, this->getOptions().isExplorationChecksSet());
+                            transientVariableValuation.clear();
                             newState = applyUpdate(newState, destination, this->variableInformation.locationVariables[automatonIndex], assignmentLevel, *this->evaluator);
-                            if (hasTransientRewardAssignments) {
+                            if (hasTransientAssignments) {
+                                applyTransientUpdate(transientVariableValuation, destination, assignmentLevel, *this->evaluator);
                                 // update the rewards for this destination
                                 auto valueIt = stateActionRewards.begin();
                                 performTransientAssignments(destination.getOrderedAssignments().getTransientAssignments(assignmentLevel), *this->evaluator, [&] (ValueType const& value) { *valueIt += (value * probability); ++valueIt; } );
                             }
                         }
-                        // Restore the old state information
+                        // Restore the old information
                         unpackStateIntoEvaluator(state, this->variableInformation, *this->evaluator);
+                        if (hasTransientAssignments) {
+                            this->transientVariableInformation.setDefaultValuesInEvaluator(*this->evaluator);
+                        }
                     }
                     
                     StateType stateIndex = stateToIdCallback(newState);
@@ -589,6 +664,7 @@ namespace storm {
                 numDestinations *= edge.getNumberOfDestinations();
             }
             std::vector<ValueType> destinationRewards;
+            TransientVariableValuation<ValueType> transientVariableValuation;
             std::vector<storm::jani::EdgeDestination const*> destinations;
             std::vector<LocationVariableInformation const*> locationVars;
             destinations.reserve(iteratorList.size());
@@ -599,6 +675,7 @@ namespace storm {
                 destinations.clear();
                 locationVars.clear();
                 destinationRewards.assign(rewardVariables.size(), storm::utility::zero<ValueType>());
+                transientVariableValuation.clear();
                 CompressedState successorState = state;
                 ValueType successorProbability = storm::utility::one<ValueType>();
 
@@ -621,7 +698,8 @@ namespace storm {
                     }
                     
                     successorState = applyUpdate(successorState, *destinations.back(), *locationVars.back(), lowestLevel, *this->evaluator);
-                    
+                    applyTransientUpdate(transientVariableValuation, *destinations.back(), lowestLevel, *this->evaluator);
+
                     // add the reward for this destination to the destination rewards
                     auto valueIt = destinationRewards.begin();
                     performTransientAssignments(destinations.back()->getOrderedAssignments().getTransientAssignments(lowestLevel), *this->evaluator, [&valueIt] (ValueType const& value) { *valueIt += value; ++valueIt; } );
@@ -634,9 +712,13 @@ namespace storm {
                         while (assignmentLevel < highestLevel) {
                             ++assignmentLevel;
                             unpackStateIntoEvaluator(successorState, this->variableInformation, *this->evaluator);
+                            transientVariableValuation.setInEvaluator(*this->evaluator, this->getOptions().isExplorationChecksSet());
+                            transientVariableValuation.clear();
+
                             auto locationVarIt = locationVars.begin();
                             for (auto const& destPtr : destinations) {
                                 successorState = applyUpdate(successorState, *destPtr, **locationVarIt, assignmentLevel, *this->evaluator);
+                                applyTransientUpdate(transientVariableValuation, *destinations.back(), lowestLevel, *this->evaluator);
                                 // add the reward for this destination to the destination rewards
                                 auto valueIt = destinationRewards.begin();
                                 performTransientAssignments(destinations.back()->getOrderedAssignments().getTransientAssignments(assignmentLevel), *this->evaluator, [&valueIt] (ValueType const& value) { *valueIt += value; ++valueIt; } );
@@ -645,6 +727,7 @@ namespace storm {
                         }
                         // Restore the old state information
                         unpackStateIntoEvaluator(state, this->variableInformation, *this->evaluator);
+                        this->transientVariableInformation.setDefaultValuesInEvaluator(*this->evaluator);
                     }
                     StateType id = stateToIdCallback(successorState);
                     distribution.add(id, successorProbability);

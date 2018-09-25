@@ -3,6 +3,7 @@
 #include <boost/container/flat_set.hpp>
 
 #include "storm/generator/NextStateGenerator.h"
+#include "storm/generator/TransientVariableInformation.h"
 
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/ArrayEliminator.h"
@@ -72,12 +73,23 @@ namespace storm {
              * Applies an update to the state currently loaded into the evaluator and applies the resulting values to
              * the given compressed state.
              * @params state The state to which to apply the new values.
-             * @params update The update to apply.
+             * @params destination The update to apply.
              * @params locationVariable The location variable that is being updated.
              * @params assignmentLevel The assignmentLevel that is to be considered for the update.
              * @return The resulting state.
              */
-            CompressedState applyUpdate(CompressedState const& state, storm::jani::EdgeDestination const& update, storm::generator::LocationVariableInformation const& locationVariable, int64_t assignmentlevel, storm::expressions::ExpressionEvaluator<ValueType> const& expressionEvaluator);
+            CompressedState applyUpdate(CompressedState const& state, storm::jani::EdgeDestination const& destination, storm::generator::LocationVariableInformation const& locationVariable, int64_t assignmentlevel, storm::expressions::ExpressionEvaluator<ValueType> const& expressionEvaluator);
+            
+            /*!
+             * Applies an update to the state currently loaded into the evaluator and applies the resulting values to
+             * the given compressed state.
+             * @params state The state to which to apply the new values.
+             * @params destination The update to apply.
+             * @params locationVariable The location variable that is being updated.
+             * @params assignmentLevel The assignmentLevel that is to be considered for the update.
+             * @return The resulting state.
+             */
+            void applyTransientUpdate(TransientVariableValuation<ValueType>& transientValuation, storm::jani::EdgeDestination const& destination, int64_t assignmentlevel, storm::expressions::ExpressionEvaluator<ValueType> const& expressionEvaluator);
             
             /*!
              * Retrieves all choices possible from the given state.
@@ -151,7 +163,9 @@ namespace storm {
             
             /// Data from eliminated array expressions. These are required to keep references to array variables in LValues alive.
             storm::jani::ArrayEliminatorData arrayEliminatorData;
-
+            
+            /// Information about the transient variables of the model.
+            TransientVariableInformation<ValueType> transientVariableInformation;
         };
         
     }
