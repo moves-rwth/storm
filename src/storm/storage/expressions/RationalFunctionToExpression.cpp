@@ -2,23 +2,23 @@
 // Created by Jip Spel on 24.09.18.
 //
 
-#include "ValueTypeToExpression.h"
+#include "RationalFunctionToExpression.h"
 #include "storm/utility/constants.h"
 
 namespace storm {
     namespace expressions {
         template <typename ValueType>
-        ValueTypeToExpression<ValueType>::ValueTypeToExpression(std::shared_ptr<ExpressionManager> manager) : manager(manager) {
+        RationalFunctionToExpression<ValueType>::RationalFunctionToExpression(std::shared_ptr<ExpressionManager> manager) : manager(manager) {
             // Intentionally left empty.
         }
 
         template <typename ValueType>
-        std::shared_ptr<ExpressionManager> ValueTypeToExpression<ValueType>::getManager()  {
+        std::shared_ptr<ExpressionManager> RationalFunctionToExpression<ValueType>::getManager()  {
             return manager;
         }
 
         template <typename ValueType>
-        Expression ValueTypeToExpression<ValueType>::toExpression(ValueType function) {
+        Expression RationalFunctionToExpression<ValueType>::toExpression(ValueType function) {
             function.simplify();
             auto varsFunction = function.gatherVariables();
             for (auto var : varsFunction) {
@@ -62,6 +62,6 @@ namespace storm {
             }
             return result;
         }
-        template class ValueTypeToExpression<storm::RationalFunction>;
+        template class RationalFunctionToExpression<storm::RationalFunction>;
     }
 }

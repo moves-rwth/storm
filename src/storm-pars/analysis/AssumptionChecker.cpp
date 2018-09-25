@@ -17,7 +17,7 @@
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/VariableExpression.h"
 #include "storm/utility/constants.h"
-#include "storm/storage/expressions/ValueTypeToExpression.h"
+#include "storm/storage/expressions/RationalFunctionToExpression.h"
 
 namespace storm {
     namespace analysis {
@@ -217,7 +217,7 @@ namespace storm {
                 }
                 storm::expressions::Expression exprGiven = succ1 >= succ2;
 
-                auto valueTypeToExpression = storm::expressions::ValueTypeToExpression<ValueType>(manager);
+                auto valueTypeToExpression = storm::expressions::RationalFunctionToExpression<ValueType>(manager);
                 storm::expressions::Expression exprToCheck =
                         (valueTypeToExpression.toExpression(state1succ1->getValue())*succ1
                             + valueTypeToExpression.toExpression(state2succ1->getValue())*succ2

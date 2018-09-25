@@ -2,8 +2,8 @@
 // Created by Jip Spel on 24.09.18.
 //
 
-#ifndef STORM_VALUETYPETOEXPRESSION_H
-#define STORM_VALUETYPETOEXPRESSION_H
+#ifndef STORM_RATIONALFUNCTIONTOEXPRESSION_H
+#define STORM_RATIONALFUNCTIONTOEXPRESSION_H
 
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/Expression.h"
@@ -11,9 +11,9 @@
 namespace storm {
     namespace expressions {
         template<typename ValueType>
-        class ValueTypeToExpression {
+        class RationalFunctionToExpression {
         public:
-            ValueTypeToExpression(std::shared_ptr<ExpressionManager> manager);
+            RationalFunctionToExpression(std::shared_ptr<ExpressionManager> manager);
 
             /*!
             * Retrieves the manager responsible for the variables of this valuation.
@@ -37,4 +37,4 @@ namespace storm {
     }
 }
 
-#endif //STORM_VALUETYPETOEXPRESSION_H
+#endif //STORM_RATIONALFUNCTIONTOEXPRESSION_H
