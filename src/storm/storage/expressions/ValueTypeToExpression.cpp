@@ -19,6 +19,7 @@ namespace storm {
 
         template <typename ValueType>
         Expression ValueTypeToExpression<ValueType>::toExpression(ValueType function) {
+            function.simplify();
             auto varsFunction = function.gatherVariables();
             for (auto var : varsFunction) {
                 auto varsManager = manager->getVariables();
@@ -36,7 +37,7 @@ namespace storm {
                 STORM_LOG_DEBUG("Expecting the denominator to be constant");
             }
 
-            storm::expressions::Expression denominatorVal = manager->integer(std::stoi(storm::utility::to_string(denominator.constantPart())));
+            storm::expressions::Expression denominatorVal = manager->rational(std::stod(storm::utility::to_string(denominator.constantPart())));
             storm::expressions::Expression result;
             if (function.isConstant()) {
                 result = manager->integer(std::stoi(storm::utility::to_string(function.constantPart())));
@@ -46,12 +47,12 @@ namespace storm {
                 for (auto itr = nominator.begin(); itr != nominator.end(); ++itr) {
                     varsFunction.clear();
                     (*itr).gatherVariables(varsFunction);
+
                     // TODO: improve transformation from coefficient to expression
                     storm::expressions::Expression nominatorPartExpr = manager->integer(
                             std::stoi(storm::utility::to_string((*itr).coeff())));
                     for (auto var : varsFunction) {
-                        auto degree = nominator.degree(var);
-                        nominatorPartExpr = nominatorPartExpr * (manager->getVariable(var.name())^manager->integer(degree));
+                        nominatorPartExpr = nominatorPartExpr * (manager->getVariable(var.name())^manager->integer((*itr).monomial()->exponentOfVariable(var)));
                     }
                     if (varsFunction.size() >= 1) {
                         result = result + nominatorPartExpr;
