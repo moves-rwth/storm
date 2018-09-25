@@ -64,6 +64,10 @@ namespace storm {
                 rationalValues.clear();
             }
             
+            bool empty() const {
+                return booleanValues.empty() && integerValues.empty() && rationalValues.empty();
+            }
+            
             void setInEvaluator(storm::expressions::ExpressionEvaluator<ValueType>& evaluator, bool explorationChecks) const {
                 for (auto const& varValue : booleanValues) {
                     evaluator.setBooleanValue(varValue.first->variable, varValue.second);

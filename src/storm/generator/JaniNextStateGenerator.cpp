@@ -80,6 +80,7 @@ namespace storm {
             
             // Create a proper evalator.
             this->evaluator = std::make_unique<storm::expressions::ExpressionEvaluator<ValueType>>(model.getManager());
+            this->transientVariableInformation.setDefaultValuesInEvaluator(*this->evaluator);
             
             if (this->options.isBuildAllRewardModelsSet()) {
                 for (auto const& variable : model.getGlobalVariables()) {
@@ -383,12 +384,10 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
-        void JaniNextStateGenerator<ValueType, StateType>::applyTransientUpdate(TransientVariableValuation<ValueType>& transientValuation, storm::jani::EdgeDestination const& destination, int64_t assignmentLevel, storm::expressions::ExpressionEvaluator<ValueType> const& expressionEvaluator) {
+        void JaniNextStateGenerator<ValueType, StateType>::applyTransientUpdate(TransientVariableValuation<ValueType>& transientValuation, storm::jani::detail::ConstAssignments const& transientAssignments,  storm::expressions::ExpressionEvaluator<ValueType> const& expressionEvaluator) {
             
-            // Perform the assignments.
-            auto const& assignments = destination.getOrderedAssignments().getTransientAssignments(assignmentLevel);
-            auto assignmentIt = assignments.begin();
-            auto assignmentIte = assignments.end();
+            auto assignmentIt = transientAssignments.begin();
+            auto assignmentIte = transientAssignments.end();
             
             // Iterate over all boolean assignments and carry them out.
             auto boolIt = this->transientVariableInformation.booleanVariableInformation.begin();
@@ -459,15 +458,22 @@ namespace storm {
             // need the state rewards then.
             std::vector<ValueType> stateRewards(this->rewardVariables.size(), storm::utility::zero<ValueType>());
             uint64_t automatonIndex = 0;
+            TransientVariableValuation<ValueType> transientVariableValuation;
             for (auto const& automatonRef : this->parallelAutomata) {
                 auto const& automaton = automatonRef.get();
                 uint64_t currentLocationIndex = locations[automatonIndex];
                 storm::jani::Location const& location = automaton.getLocation(currentLocationIndex);
+                STORM_LOG_ASSERT(!location.getAssignments().hasMultipleLevels(true), "Indexed assignments at locations are not supported in the jani standard.");
+                applyTransientUpdate(transientVariableValuation, location.getAssignments().getTransientAssignments(), *this->evaluator);
                 auto valueIt = stateRewards.begin();
                 performTransientAssignments(location.getAssignments().getTransientAssignments(), *this->evaluator, [&valueIt] (ValueType const& value) { *valueIt += value; ++valueIt; } );
                 ++automatonIndex;
             }
-            result.addStateRewards(std::move(stateRewards));
+            transientVariableValuation.setInEvaluator(*this->evaluator, this->getOptions().isExplorationChecksSet());
+            //result.addStateRewards(std::move(stateRewards));
+            result.addStateRewards(evaluateRewardExpressions());
+            this->transientVariableInformation.setDefaultValuesInEvaluator(*this->evaluator);
+
             
             // If a terminal expression was set and we must not expand this state, return now.
             if (!this->terminalStates.empty()) {
@@ -552,8 +558,24 @@ namespace storm {
             }
             
             Choice<ValueType> choice(edge.getActionIndex(), static_cast<bool>(exitRate));
+            
+            // Perform the transient edge assignments and create the state action rewards
             TransientVariableValuation<ValueType> transientVariableValuation;
-            std::vector<ValueType> stateActionRewards(rewardVariables.size(), storm::utility::zero<ValueType>());
+            if (!edge.getAssignments().empty()) {
+                for (int64_t assignmentLevel = edge.getAssignments().getLowestLevel(true); assignmentLevel <= edge.getAssignments().getHighestLevel(true); ++assignmentLevel) {
+                    transientVariableValuation.clear();
+                    applyTransientUpdate(transientVariableValuation, edge.getAssignments().getTransientAssignments(assignmentLevel), *this->evaluator);
+                    transientVariableValuation.setInEvaluator(*this->evaluator, this->getOptions().isExplorationChecksSet());
+                }
+            }
+            std::vector<ValueType> stateActionRewards = evaluateRewardExpressions();
+            if (!edge.getAssignments().empty()) {
+                transientVariableInformation.setDefaultValuesInEvaluator(*this->evaluator);
+            }
+
+            
+            auto valueIt = stateActionRewards.begin();
+           // performTransientAssignments(edge.getAssignments().getTransientAssignments(), *this->evaluator, [&valueIt] (ValueType const& value) { *valueIt += value; ++valueIt; } );
             
             // Iterate over all updates of the current command.
             ValueType probabilitySum = storm::utility::zero<ValueType>();
@@ -561,6 +583,7 @@ namespace storm {
                 ValueType probability = this->evaluator->asRational(destination.getProbability());
                 
                 if (probability != storm::utility::zero<ValueType>()) {
+                    bool evaluatorChanged = false;
                     // Obtain target state index and add it to the list of known states. If it has not yet been
                     // seen, we also add it to the set of states that have yet to be explored.
                     int64_t assignmentLevel = edge.getLowestAssignmentLevel(); // Might be the largest possible integer, if there is no assignment
@@ -568,28 +591,37 @@ namespace storm {
                     bool hasTransientAssignments = destination.hasTransientAssignment();
                     CompressedState newState = applyUpdate(state, destination, this->variableInformation.locationVariables[automatonIndex], assignmentLevel, *this->evaluator);
                     if (hasTransientAssignments) {
-                        transientVariableValuation.clear();
                         STORM_LOG_ASSERT(this->options.isScaleAndLiftTransitionRewardsSet(), "Transition rewards are not supported and scaling to action rewards is disabled.");
-                        applyTransientUpdate(transientVariableValuation, destination, assignmentLevel, *this->evaluator);
+                        transientVariableValuation.clear();
+                        applyTransientUpdate(transientVariableValuation, destination.getOrderedAssignments().getTransientAssignments(assignmentLevel), *this->evaluator);
+                        transientVariableValuation.setInEvaluator(*this->evaluator, this->getOptions().isExplorationChecksSet());
+                        evaluatorChanged = true;
                         // Create the rewards for this destination
                         auto valueIt = stateActionRewards.begin();
-                        performTransientAssignments(destination.getOrderedAssignments().getTransientAssignments(assignmentLevel), *this->evaluator, [&] (ValueType const& value) { *valueIt += (value * probability); ++valueIt; } );
+                      //  performTransientAssignments(destination.getOrderedAssignments().getTransientAssignments(assignmentLevel), *this->evaluator, [&] (ValueType const& value) { *valueIt += (value * probability); ++valueIt; } );
                     }
                     if (assignmentLevel < highestLevel) {
                         while (assignmentLevel < highestLevel) {
                             ++assignmentLevel;
                             unpackStateIntoEvaluator(newState, this->variableInformation, *this->evaluator);
-                            transientVariableValuation.setInEvaluator(*this->evaluator, this->getOptions().isExplorationChecksSet());
-                            transientVariableValuation.clear();
+                            evaluatorChanged = true;
                             newState = applyUpdate(newState, destination, this->variableInformation.locationVariables[automatonIndex], assignmentLevel, *this->evaluator);
                             if (hasTransientAssignments) {
-                                applyTransientUpdate(transientVariableValuation, destination, assignmentLevel, *this->evaluator);
+                                transientVariableValuation.clear();
+                                applyTransientUpdate(transientVariableValuation, destination.getOrderedAssignments().getTransientAssignments(assignmentLevel), *this->evaluator);
+                                transientVariableValuation.setInEvaluator(*this->evaluator, this->getOptions().isExplorationChecksSet());
+                                evaluatorChanged = true;
                                 // update the rewards for this destination
                                 auto valueIt = stateActionRewards.begin();
-                                performTransientAssignments(destination.getOrderedAssignments().getTransientAssignments(assignmentLevel), *this->evaluator, [&] (ValueType const& value) { *valueIt += (value * probability); ++valueIt; } );
+                           //     performTransientAssignments(destination.getOrderedAssignments().getTransientAssignments(assignmentLevel), *this->evaluator, [&] (ValueType const& value) { *valueIt += (value * probability); ++valueIt; } );
                             }
                         }
-                        // Restore the old information
+                    }
+                    
+                    addEvaluatedRewardExpressions(stateActionRewards, probability);
+                    
+                    if (evaluatorChanged) {
+                        // Restore the old variable valuation
                         unpackStateIntoEvaluator(state, this->variableInformation, *this->evaluator);
                         if (hasTransientAssignments) {
                             this->transientVariableInformation.setDefaultValuesInEvaluator(*this->evaluator);
@@ -608,9 +640,7 @@ namespace storm {
                 }
             }
             
-            // Create the state-action reward for the newly created choice. Note that edge assignments are all transient and we assume that no transient variables occur on the rhs of transient assignments, i.e., the assignment level does not matter here
-            auto valueIt = stateActionRewards.begin();
-            performTransientAssignments(edge.getAssignments().getTransientAssignments(), *this->evaluator, [&valueIt] (ValueType const& value) { *valueIt += value; ++valueIt; } );
+            // Add the state action rewards
             choice.addRewards(std::move(stateActionRewards));
             
             if (this->options.isExplorationChecksSet()) {
@@ -651,20 +681,39 @@ namespace storm {
         template<typename ValueType, typename StateType>
         void JaniNextStateGenerator<ValueType, StateType>::generateSynchronizedDistribution(storm::storage::BitVector const& state, AutomataEdgeSets const& edgeCombination, std::vector<EdgeSetWithIndices::const_iterator> const& iteratorList, storm::builder::jit::Distribution<StateType, ValueType>& distribution, std::vector<ValueType>& stateActionRewards, EdgeIndexSet& edgeIndices, StateToIdCallback stateToIdCallback) {
             
-            int64_t lowestLevel = std::numeric_limits<int64_t>::max();
-            int64_t highestLevel = std::numeric_limits<int64_t>::min();
+            // Collect some information of the edges.
+            int64_t lowestDestinationAssignmentLevel = std::numeric_limits<int64_t>::max();
+            int64_t highestDestinationAssignmentLevel = std::numeric_limits<int64_t>::min();
+            int64_t lowestEdgeAssignmentLevel = std::numeric_limits<int64_t>::max();
+            int64_t highestEdgeAssignmentLevel = std::numeric_limits<int64_t>::min();
             uint64_t numDestinations = 1;
             for (uint_fast64_t i = 0; i < iteratorList.size(); ++i) {
                 if (this->getOptions().isBuildChoiceOriginsSet()) {
                     edgeIndices.insert(model.encodeAutomatonAndEdgeIndices(edgeCombination[i].first, iteratorList[i]->first));
                 }
                 storm::jani::Edge const& edge = *iteratorList[i]->second;
-                lowestLevel = std::min(lowestLevel, edge.getLowestAssignmentLevel());
-                highestLevel = std::max(highestLevel, edge.getHighestAssignmentLevel());
+                lowestDestinationAssignmentLevel = std::min(lowestDestinationAssignmentLevel, edge.getLowestAssignmentLevel());
+                highestDestinationAssignmentLevel = std::max(highestDestinationAssignmentLevel, edge.getHighestAssignmentLevel());
+                lowestEdgeAssignmentLevel = std::min(lowestEdgeAssignmentLevel, edge.getAssignments().getLowestLevel(true));
+                highestEdgeAssignmentLevel = std::max(highestEdgeAssignmentLevel, edge.getAssignments().getHighestLevel(true));
                 numDestinations *= edge.getNumberOfDestinations();
             }
-            std::vector<ValueType> destinationRewards;
+            
+            // Perform the edge assignments (if there are any)
             TransientVariableValuation<ValueType> transientVariableValuation;
+            if (lowestEdgeAssignmentLevel <= highestEdgeAssignmentLevel) {
+                for (int64_t assignmentLevel = lowestEdgeAssignmentLevel; assignmentLevel <= highestEdgeAssignmentLevel; ++assignmentLevel) {
+                    transientVariableValuation.clear();
+                    for (uint_fast64_t i = 0; i < iteratorList.size(); ++i) {
+                        storm::jani::Edge const& edge = *iteratorList[i]->second;
+                        applyTransientUpdate(transientVariableValuation, edge.getAssignments().getTransientAssignments(assignmentLevel), *this->evaluator);
+                    }
+                    transientVariableValuation.setInEvaluator(*this->evaluator, this->getOptions().isExplorationChecksSet());
+                }
+                addEvaluatedRewardExpressions(stateActionRewards, storm::utility::one<ValueType>());
+                transientVariableInformation.setDefaultValuesInEvaluator(*this->evaluator);
+            }
+            
             std::vector<storm::jani::EdgeDestination const*> destinations;
             std::vector<LocationVariableInformation const*> locationVars;
             destinations.reserve(iteratorList.size());
@@ -674,7 +723,6 @@ namespace storm {
                 // First assignment level
                 destinations.clear();
                 locationVars.clear();
-                destinationRewards.assign(rewardVariables.size(), storm::utility::zero<ValueType>());
                 transientVariableValuation.clear();
                 CompressedState successorState = state;
                 ValueType successorProbability = storm::utility::one<ValueType>();
@@ -697,49 +745,47 @@ namespace storm {
                         break;
                     }
                     
-                    successorState = applyUpdate(successorState, *destinations.back(), *locationVars.back(), lowestLevel, *this->evaluator);
-                    applyTransientUpdate(transientVariableValuation, *destinations.back(), lowestLevel, *this->evaluator);
+                    successorState = applyUpdate(successorState, *destinations.back(), *locationVars.back(), lowestDestinationAssignmentLevel, *this->evaluator);
+                    applyTransientUpdate(transientVariableValuation, destinations.back()->getOrderedAssignments().getTransientAssignments(lowestDestinationAssignmentLevel), *this->evaluator);
 
                     // add the reward for this destination to the destination rewards
-                    auto valueIt = destinationRewards.begin();
-                    performTransientAssignments(destinations.back()->getOrderedAssignments().getTransientAssignments(lowestLevel), *this->evaluator, [&valueIt] (ValueType const& value) { *valueIt += value; ++valueIt; } );
+                    //auto valueIt = destinationRewards.begin();
+                    //performTransientAssignments(destinations.back()->getOrderedAssignments().getTransientAssignments(lowestDestinationAssignmentLevel), *this->evaluator, [&valueIt] (ValueType const& value) { *valueIt += value; ++valueIt; } );
                 }
                 
+                
                 if (!storm::utility::isZero(successorProbability)) {
-                    if (lowestLevel < highestLevel) {
-                        int64_t assignmentLevel = lowestLevel;
-                        // remaining assignment levels
-                        while (assignmentLevel < highestLevel) {
-                            ++assignmentLevel;
-                            unpackStateIntoEvaluator(successorState, this->variableInformation, *this->evaluator);
-                            transientVariableValuation.setInEvaluator(*this->evaluator, this->getOptions().isExplorationChecksSet());
-                            transientVariableValuation.clear();
-
-                            auto locationVarIt = locationVars.begin();
-                            for (auto const& destPtr : destinations) {
-                                successorState = applyUpdate(successorState, *destPtr, **locationVarIt, assignmentLevel, *this->evaluator);
-                                applyTransientUpdate(transientVariableValuation, *destinations.back(), lowestLevel, *this->evaluator);
-                                // add the reward for this destination to the destination rewards
-                                auto valueIt = destinationRewards.begin();
-                                performTransientAssignments(destinations.back()->getOrderedAssignments().getTransientAssignments(assignmentLevel), *this->evaluator, [&valueIt] (ValueType const& value) { *valueIt += value; ++valueIt; } );
-                                ++locationVarIt;
-                            }
+                    bool evaluatorChanged = false;
+                    // remaining assignment levels (if there are any)
+                    for (int64_t assignmentLevel = lowestDestinationAssignmentLevel + 1; assignmentLevel <= highestDestinationAssignmentLevel; ++assignmentLevel) {
+                        unpackStateIntoEvaluator(successorState, this->variableInformation, *this->evaluator);
+                        transientVariableValuation.setInEvaluator(*this->evaluator, this->getOptions().isExplorationChecksSet());
+                        transientVariableValuation.clear();
+                        evaluatorChanged = true;
+                        auto locationVarIt = locationVars.begin();
+                        for (auto const& destPtr : destinations) {
+                            successorState = applyUpdate(successorState, *destPtr, **locationVarIt, assignmentLevel, *this->evaluator);
+                            applyTransientUpdate(transientVariableValuation, destinations.back()->getOrderedAssignments().getTransientAssignments(assignmentLevel), *this->evaluator);
+                            // add the reward for this destination to the destination rewards
+                           // auto valueIt = destinationRewards.begin();
+                           // performTransientAssignments(destinations.back()->getOrderedAssignments().getTransientAssignments(assignmentLevel), *this->evaluator, [&valueIt] (ValueType const& value) { *valueIt += value; ++valueIt; } );
+                            ++locationVarIt;
                         }
+                    }
+                    if (!transientVariableValuation.empty()) {
+                        evaluatorChanged = true;
+                        transientVariableValuation.setInEvaluator(*this->evaluator, this->getOptions().isExplorationChecksSet());
+                    }
+                    addEvaluatedRewardExpressions(stateActionRewards, successorProbability);
+                    if (evaluatorChanged) {
                         // Restore the old state information
                         unpackStateIntoEvaluator(state, this->variableInformation, *this->evaluator);
                         this->transientVariableInformation.setDefaultValuesInEvaluator(*this->evaluator);
                     }
+                    
                     StateType id = stateToIdCallback(successorState);
                     distribution.add(id, successorProbability);
-                    storm::utility::vector::addScaledVector(stateActionRewards, destinationRewards, successorProbability);
                 }
-            }
-            
-            for (uint_fast64_t i = 0; i < iteratorList.size(); ++i) {
-                storm::jani::Edge const& edge = *iteratorList[i]->second;
-                // Add the state-action reward for the newly created choice. Note that edge assignments are all transient and we assume that no transient variables occur on the rhs of transient assignments, i.e., the assignment level does not matter here
-                auto valueIt = stateActionRewards.begin();
-                performTransientAssignments(edge.getAssignments().getTransientAssignments(), *this->evaluator, [&valueIt] (ValueType const& value) { *valueIt += value; ++valueIt; } );
             }
         }
         
@@ -977,6 +1023,27 @@ namespace storm {
             // Add a value of zero for all variables that have no assignment.
             for (; rewardVariableIt != rewardVariableIte; ++rewardVariableIt) {
                 callback(storm::utility::zero<ValueType>());
+            }
+        }
+        
+        
+        template<typename ValueType, typename StateType>
+        std::vector<ValueType> JaniNextStateGenerator<ValueType, StateType>::evaluateRewardExpressions() const {
+            std::vector<ValueType> result;
+            result.reserve(rewardVariables.size());
+            for (auto const& rewardExpression : rewardVariables) {
+                result.push_back(this->evaluator->asRational(rewardExpression.getExpression()));
+            }
+            return result;
+        }
+        
+        template<typename ValueType, typename StateType>
+        void JaniNextStateGenerator<ValueType, StateType>::addEvaluatedRewardExpressions(std::vector<ValueType>& rewards, ValueType const& factor) const {
+            assert(rewards.size() == rewardVariables.size());
+            auto rewIt = rewards.begin();
+            for (auto const& rewardExpression : rewardVariables) {
+                (*rewIt) += factor * this->evaluator->asRational(rewardExpression.getExpression());
+                ++rewIt;
             }
         }
         

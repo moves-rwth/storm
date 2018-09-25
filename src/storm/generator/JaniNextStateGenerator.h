@@ -89,7 +89,7 @@ namespace storm {
              * @params assignmentLevel The assignmentLevel that is to be considered for the update.
              * @return The resulting state.
              */
-            void applyTransientUpdate(TransientVariableValuation<ValueType>& transientValuation, storm::jani::EdgeDestination const& destination, int64_t assignmentlevel, storm::expressions::ExpressionEvaluator<ValueType> const& expressionEvaluator);
+            void applyTransientUpdate(TransientVariableValuation<ValueType>& transientValuation, storm::jani::detail::ConstAssignments const& transientAssignments, storm::expressions::ExpressionEvaluator<ValueType> const& expressionEvaluator);
             
             /*!
              * Retrieves all choices possible from the given state.
@@ -127,6 +127,16 @@ namespace storm {
              * to one of the reward variables of this generator is performed.
              */
             void performTransientAssignments(storm::jani::detail::ConstAssignments const& transientAssignments, storm::expressions::ExpressionEvaluator<ValueType> const& expressionEvaluator, std::function<void (ValueType const&)> const& callback);
+            
+            /*!
+             * Evaluates the reward expressions using the current evaluator
+             */
+            std::vector<ValueType> evaluateRewardExpressions() const;
+            
+            /*!
+             * Evaluates the reward expressions using the current evaluator, multiplies them by the given factor and adds it to the given vector.
+             */
+            void addEvaluatedRewardExpressions(std::vector<ValueType>& rewards, ValueType const& factor) const;
             
             /*!
              * Builds the information structs for the reward models.
