@@ -29,6 +29,7 @@
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/UnexpectedException.h"
+#include "storm/exceptions/NotSupportedException.h"
 
 namespace storm {
     namespace generator {
@@ -53,19 +54,11 @@ namespace storm {
             }
             STORM_LOG_THROW(features.empty(), storm::exceptions::InvalidSettingsException, "The explicit next-state generator does not support the following model feature(s): " << features.toString() << ".");
 
-            // Lift the transient edge destinations of the first assignment level.
-            int64_t lowestAssignmentLevel = storm::jani::AssignmentLevelFinder().getLowestAssignmentLevel(this->model);
-            if (this->model.hasTransientEdgeDestinationAssignments()) {
-                this->model.liftTransientEdgeDestinationAssignments(lowestAssignmentLevel);
-                if (this->model.hasTransientEdgeDestinationAssignments()) {
-                    STORM_LOG_THROW(options.isScaleAndLiftTransitionRewardsSet(), storm::exceptions::InvalidSettingsException, "The explicit next-state generator currently does not support transient edge destination assignments.");
-                } else {
-                    // There are no edge destination assignments so we turn the lifting to edges off.
-                    this->options.setScaleAndLiftTransitionRewards(false);
-                }
+            // Preprocess the edge assignments:
+            if (this->model.usesAssignmentLevels()) {
+                this->model.pushEdgeAssignmentsToDestinations();
             } else {
-                // There are no edge destination assignments so we turn the lifting to edges off.
-                this->options.setScaleAndLiftTransitionRewards(false);
+                this->model.liftTransientEdgeDestinationAssignments(storm::jani::AssignmentLevelFinder().getLowestAssignmentLevel(this->model));
             }
             
             // Create all synchronization-related information, e.g. the automata that are put in parallel.
@@ -1052,6 +1045,7 @@ namespace storm {
                         hasStateActionRewards = true;
                     }
                 }
+                STORM_LOG_THROW(this->options.isScaleAndLiftTransitionRewardsSet() || !assignmentsFinderResult.hasEdgeDestinationAssignment, storm::exceptions::NotSupportedException, "Transition rewards are not supported and a reduction to action-based rewards was not possible.");
             }
             
             // If the reward expression does not evaluate to zero, we set all reward types to true
