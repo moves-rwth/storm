@@ -133,7 +133,7 @@ namespace storm {
         
         template<typename RationalNumberType>
         boost::any ToRationalNumberVisitor<RationalNumberType>::visit(IntegerLiteralExpression const& expression, boost::any const&) {
-            return RationalNumberType(carl::rationalize<storm::RationalNumber>(static_cast<carl::uint>(expression.getValue())));
+            return RationalNumberType(carl::rationalize<storm::RationalNumber>(static_cast<carl::sint>(expression.getValue())));
         }
         
         template<typename RationalNumberType>
