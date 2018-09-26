@@ -5,6 +5,7 @@
 #include "storm/utility/jani.h"
 
 #include "storm/storage/jani/Model.h"
+#include "storm/storage/jani/Property.h"
 #include "storm/storage/jani/Automaton.h"
 
 
@@ -119,24 +120,24 @@ namespace storm {
             return result;
         }
         
-        SymbolicModelDescription SymbolicModelDescription::toJani(bool makeVariablesGlobal, bool standardCompliant) const {
+        SymbolicModelDescription SymbolicModelDescription::toJani(bool makeVariablesGlobal) const {
             if (this->isJaniModel()) {
                 return *this;
             }
             if (this->isPrismProgram()) {
-                return SymbolicModelDescription(this->asPrismProgram().toJani(makeVariablesGlobal, "", standardCompliant));
+                return SymbolicModelDescription(this->asPrismProgram().toJani(makeVariablesGlobal, ""));
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot transform model description to the JANI format.");
             }
         }
         
-        std::pair<SymbolicModelDescription, std::map<std::string, std::string>> SymbolicModelDescription::toJaniWithLabelRenaming(bool makeVariablesGlobal, bool standardCompliant) const {
+        std::pair<SymbolicModelDescription, std::vector<storm::jani::Property>> SymbolicModelDescription::toJani(std::vector<storm::jani::Property> const& properties, bool makeVariablesGlobal) const {
             if (this->isJaniModel()) {
-                return std::make_pair(*this, std::map<std::string, std::string>());
+                return std::make_pair(*this, std::vector<storm::jani::Property>());
             }
             if (this->isPrismProgram()) {
-                auto modelAndRenaming = this->asPrismProgram().toJaniWithLabelRenaming(makeVariablesGlobal, "", standardCompliant);
-                return std::make_pair(SymbolicModelDescription(modelAndRenaming.first), modelAndRenaming.second);
+                auto modelProperties = this->asPrismProgram().toJani(properties, makeVariablesGlobal, "");
+                return std::make_pair(SymbolicModelDescription(modelProperties.first), modelProperties.second);
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot transform model description to the JANI format.");
             }
@@ -144,21 +145,15 @@ namespace storm {
         
         SymbolicModelDescription SymbolicModelDescription::preprocess(std::string const& constantDefinitionString) const {
             std::map<storm::expressions::Variable, storm::expressions::Expression> substitution = parseConstantDefinitions(constantDefinitionString);
-            if (this->isJaniModel()) {
-                storm::jani::Model preparedModel = this->asJaniModel().defineUndefinedConstants(substitution).substituteConstants();
-                return SymbolicModelDescription(preparedModel);
-            } else if (this->isPrismProgram()) {
-                return SymbolicModelDescription(this->asPrismProgram().defineUndefinedConstants(substitution).substituteConstants());
-            }
-            return *this;
+            return preprocess(substitution);
         }
         
         SymbolicModelDescription SymbolicModelDescription::preprocess(std::map<storm::expressions::Variable, storm::expressions::Expression> const& constantDefinitions) const {
             if (this->isJaniModel()) {
-                storm::jani::Model preparedModel = this->asJaniModel().defineUndefinedConstants(constantDefinitions).substituteConstants();
+                storm::jani::Model preparedModel = this->asJaniModel().defineUndefinedConstants(constantDefinitions).substituteConstantsFunctions();
                 return SymbolicModelDescription(preparedModel);
             } else if (this->isPrismProgram()) {
-                return SymbolicModelDescription(this->asPrismProgram().defineUndefinedConstants(constantDefinitions).substituteConstants());
+                return SymbolicModelDescription(this->asPrismProgram().defineUndefinedConstants(constantDefinitions).substituteConstantsFormulas());
             }
             return *this;
         }
@@ -177,6 +172,30 @@ namespace storm {
             } else {
                 storm::utility::prism::requireNoUndefinedConstants(this->asPrismProgram());
             }
+        }
+        
+        bool SymbolicModelDescription::hasUndefinedConstants() const {
+            if (this->isPrismProgram()) {
+                return this->asPrismProgram().hasUndefinedConstants();
+            } else {
+                return this->asJaniModel().hasUndefinedConstants();
+            }
+        }
+        
+        std::vector<storm::expressions::Variable> SymbolicModelDescription::getUndefinedConstants() const {
+            std::vector<storm::expressions::Variable> result;
+            if (this->isPrismProgram()) {
+                std::vector<std::reference_wrapper<storm::prism::Constant const>> constants = this->asPrismProgram().getUndefinedConstants();
+                for (auto const& constant : constants) {
+                    result.emplace_back(constant.get().getExpressionVariable());
+                }
+            } else {
+                std::vector<std::reference_wrapper<storm::jani::Constant const>> constants = this->asJaniModel().getUndefinedConstants();
+                for (auto const& constant : constants) {
+                    result.emplace_back(constant.get().getExpressionVariable());
+                }
+            }
+            return result;
         }
         
         std::ostream& operator<<(std::ostream& out, SymbolicModelDescription const& model) {

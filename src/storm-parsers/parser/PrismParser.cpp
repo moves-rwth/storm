@@ -428,13 +428,32 @@ namespace storm {
         }
         
         storm::prism::Formula PrismParser::createFormula(std::string const& formulaName, storm::expressions::Expression expression) {
-            // Only register formula in second run. This prevents the parser from accepting formulas that depend on future
-            // formulas.
+            // Only register formula in second run.
+            // This is necessary because the resulting type of the formula is only known in the second run.
+            // This prevents the parser from accepting formulas that depend on future formulas.
             if (this->secondRun) {
-                STORM_LOG_THROW(this->identifiers_.find(formulaName) == nullptr, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": Duplicate identifier '" << formulaName << "'.");
-                this->identifiers_.add(formulaName, expression);
+                storm::expressions::Variable variable;
+                try {
+                    if (expression.hasIntegerType()) {
+                         variable = manager->declareIntegerVariable(formulaName);
+                    } else if (expression.hasBooleanType()) {
+                         variable = manager->declareBooleanVariable(formulaName);
+                    } else {
+                        STORM_LOG_ASSERT(expression.hasNumericalType(), "Unexpected type for formula expression of formula " << formulaName);
+                         variable = manager->declareRationalVariable(formulaName);
+                    }
+                    this->identifiers_.add(formulaName, variable.getExpression());
+                } catch (storm::exceptions::InvalidArgumentException const& e) {
+                    if (manager->hasVariable(formulaName)) {
+                        STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": Duplicate identifier '" << formulaName << "'.");
+                    } else {
+                        STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": illegal identifier '" << formulaName << "'.");
+                    }
+                }
+                return storm::prism::Formula(variable, expression, this->getFilename());
+            } else {
+                return storm::prism::Formula(formulaName, expression, this->getFilename());
             }
-            return storm::prism::Formula(formulaName, expression, this->getFilename());
         }
         
         storm::prism::Label PrismParser::createLabel(std::string const& labelName, storm::expressions::Expression expression) const {

@@ -615,31 +615,46 @@ namespace storm {
                     typename std::vector<T>::const_iterator sourceIt = source.begin() + *rowGroupingIt;
                     typename std::vector<T>::const_iterator sourceIte;
                     typename std::vector<uint_fast64_t>::iterator choiceIt;
-                    uint_fast64_t localChoice;
-                    if (choices != nullptr) {
+                    if (choices) {
                         choiceIt = choices->begin() + startRow;
                     }
-                    
+
+                    // Variables for correctly tracking choices (only update if new choice is strictly better).
+                    T oldSelectedChoiceValue;
+                    uint64_t selectedChoice;
+
+                    uint64_t currentRow = 0;
                     for (; targetIt != targetIte; ++targetIt, ++rowGroupingIt, ++choiceIt) {
                         // Only traverse elements if the row group is non-empty.
                         if (*rowGroupingIt != *(rowGroupingIt + 1)) {
                             *targetIt = *sourceIt;
-                            ++sourceIt;
-                            localChoice = 1;
-                            if (choices != nullptr) {
-                                *choiceIt = 0;
+
+                            if (choices) {
+                                selectedChoice = 0;
+                                if (*choiceIt == 0) {
+                                    oldSelectedChoiceValue = *targetIt;
+                                }
                             }
                             
-                            for (sourceIte = source.begin() + *(rowGroupingIt + 1); sourceIt != sourceIte; ++sourceIt, ++localChoice) {
+                            ++sourceIt;
+                            ++currentRow;
+                            
+                            for (sourceIte = source.begin() + *(rowGroupingIt + 1); sourceIt != sourceIte; ++sourceIt, ++currentRow) {
+                                if (choices && *choiceIt + *rowGroupingIt == currentRow) {
+                                    oldSelectedChoiceValue = *sourceIt;
+                                }
+
                                 if (f(*sourceIt, *targetIt)) {
                                     *targetIt = *sourceIt;
-                                    if (choices != nullptr) {
-                                        *choiceIt = localChoice;
+                                    if (choices) {
+                                        selectedChoice = std::distance(source.begin(), sourceIt) - *rowGroupingIt;
                                     }
                                 }
                             }
-                        } else {
-                            *targetIt = storm::utility::zero<T>();
+                            
+                            if (choices && f(*targetIt, oldSelectedChoiceValue)) {
+                                *choiceIt = selectedChoice;
+                            }
                         }
                     }
                 }
@@ -672,29 +687,48 @@ namespace storm {
                 typename std::vector<T>::const_iterator sourceIt = source.begin();
                 typename std::vector<T>::const_iterator sourceIte;
                 typename std::vector<uint_fast64_t>::iterator choiceIt;
-                uint_fast64_t localChoice;
-                if (choices != nullptr) {
+                if (choices) {
                     choiceIt = choices->begin();
                 }
                 
+                // Variables for correctly tracking choices (only update if new choice is strictly better).
+                T oldSelectedChoiceValue;
+                uint64_t selectedChoice;
+                
+                uint64_t currentRow = 0;
                 for (; targetIt != targetIte; ++targetIt, ++rowGroupingIt, ++choiceIt) {
                     // Only traverse elements if the row group is non-empty.
                     if (*rowGroupingIt != *(rowGroupingIt + 1)) {
                         *targetIt = *sourceIt;
-                        ++sourceIt;
-                        localChoice = 1;
-                        if (choices != nullptr) {
-                            *choiceIt = 0;
+                        
+                        if (choices) {
+                            selectedChoice = 0;
+                            if (*choiceIt == 0) {
+                                oldSelectedChoiceValue = *targetIt;
+                            }
                         }
-                        for (sourceIte = source.begin() + *(rowGroupingIt + 1); sourceIt != sourceIte; ++sourceIt, ++localChoice) {
+
+                        ++sourceIt;
+                        ++currentRow;
+                        
+                        for (sourceIte = source.begin() + *(rowGroupingIt + 1); sourceIt != sourceIte; ++sourceIt, ++currentRow) {
+                            if (choices && *rowGroupingIt + *choiceIt == currentRow) {
+                                oldSelectedChoiceValue = *sourceIt;
+                            }
+                            
                             if (f(*sourceIt, *targetIt)) {
                                 *targetIt = *sourceIt;
-                                if (choices != nullptr) {
-                                    *choiceIt = localChoice;
+                                if (choices) {
+                                    selectedChoice = std::distance(source.begin(), sourceIt) - *rowGroupingIt;
                                 }
                             }
                         }
+                        
+                        if (choices && f(*targetIt, oldSelectedChoiceValue)) {
+                            *choiceIt = selectedChoice;
+                        }
                     } else {
+                        *choiceIt = 0;
                         *targetIt = storm::utility::zero<T>();
                     }
                 }
@@ -706,7 +740,7 @@ namespace storm {
                 tbb::parallel_for(tbb::blocked_range<uint64_t>(0, target.size()), TbbReduceVectorFunctor<T, Filter>(source, target, rowGrouping, choices, Filter()));
             }
 #endif
-            
+                        
             /*!
              * Reduces the given source vector by selecting the smallest element out of each row group.
              *
@@ -717,13 +751,13 @@ namespace storm {
              */
             template<class T>
             void reduceVectorMin(std::vector<T> const& source, std::vector<T>& target, std::vector<uint_fast64_t> const& rowGrouping, std::vector<uint_fast64_t>* choices = nullptr) {
-                reduceVector<T, std::less<T>>(source, target, rowGrouping, choices);
+                reduceVector<T, storm::utility::ElementLess<T>>(source, target, rowGrouping, choices);
             }
             
 #ifdef STORM_HAVE_INTELTBB
             template<class T>
             void reduceVectorMinParallel(std::vector<T> const& source, std::vector<T>& target, std::vector<uint_fast64_t> const& rowGrouping, std::vector<uint_fast64_t>* choices = nullptr) {
-                reduceVector<T, std::less<T>>(source, target, rowGrouping, choices);
+                reduceVector<T, storm::utility::ElementLess<T>>(source, target, rowGrouping, choices);
             }
 #endif
             
@@ -737,13 +771,13 @@ namespace storm {
              */
             template<class T>
             void reduceVectorMax(std::vector<T> const& source, std::vector<T>& target, std::vector<uint_fast64_t> const& rowGrouping, std::vector<uint_fast64_t>* choices = nullptr) {
-                reduceVector<T, std::greater<T>>(source, target, rowGrouping, choices);
+                reduceVector<T, storm::utility::ElementGreater<T>>(source, target, rowGrouping, choices);
             }
             
 #ifdef STORM_HAVE_INTELTBB
             template<class T>
             void reduceVectorMaxParallel(std::vector<T> const& source, std::vector<T>& target, std::vector<uint_fast64_t> const& rowGrouping, std::vector<uint_fast64_t>* choices = nullptr) {
-                reduceVector<T, std::greater<T>>(source, target, rowGrouping, choices);
+                reduceVector<T, storm::utility::ElementGreater<T>>(source, target, rowGrouping, choices);
             }
 #endif
             
@@ -758,7 +792,7 @@ namespace storm {
              */
             template<class T>
             void reduceVectorMinOrMax(storm::solver::OptimizationDirection dir, std::vector<T> const& source, std::vector<T>& target, std::vector<uint_fast64_t> const& rowGrouping, std::vector<uint_fast64_t>* choices = nullptr) {
-                if(dir == storm::solver::OptimizationDirection::Minimize) {
+                if (dir == storm::solver::OptimizationDirection::Minimize) {
                     reduceVectorMin(source, target, rowGrouping, choices);
                 } else {
                     reduceVectorMax(source, target, rowGrouping, choices);    

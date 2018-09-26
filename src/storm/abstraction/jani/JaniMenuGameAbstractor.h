@@ -46,7 +46,7 @@ namespace storm {
                  * @param model The concrete model for which to build the abstraction.
                  * @param smtSolverFactory A factory that is to be used for creating new SMT solvers.
                  */
-                JaniMenuGameAbstractor(storm::jani::Model const& model, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory);
+                JaniMenuGameAbstractor(storm::jani::Model const& model, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, MenuGameAbstractorOptions const& options = MenuGameAbstractorOptions());
                 
                 JaniMenuGameAbstractor(JaniMenuGameAbstractor const&) = default;
                 JaniMenuGameAbstractor& operator=(JaniMenuGameAbstractor const&) = default;
@@ -76,10 +76,20 @@ namespace storm {
                 storm::expressions::Expression const& getGuard(uint64_t player1Choice) const override;
                 
                 /*!
+                 * Retrieves the number of updates of the specified player 1 choice.
+                 */
+                virtual uint64_t getNumberOfUpdates(uint64_t player1Choice) const override;
+
+                /*!
                  * Retrieves a mapping from variables to expressions that define their updates wrt. to the given player
                  * 1 choice and auxiliary choice.
                  */
                 std::map<storm::expressions::Variable, storm::expressions::Expression> getVariableUpdates(uint64_t player1Choice, uint64_t auxiliaryChoice) const override;
+                
+                /*!
+                 * Retrieves the variables assigned by the given player 1 choice.
+                 */
+                virtual std::set<storm::expressions::Variable> const& getAssignedVariables(uint64_t player1Choice) const override;
                 
                 /*!
                  * Retrieves the range of player 1 choices.
@@ -107,12 +117,14 @@ namespace storm {
                  * @param highlightStates A BDD characterizing states that will be highlighted.
                  * @param filter A filter that is applied to select which part of the game to export.
                  */
-                void exportToDot(std::string const& filename, storm::dd::Bdd<DdType> const& highlightStates, storm::dd::Bdd<DdType> const& filter) const override;
+                virtual void exportToDot(std::string const& filename, storm::dd::Bdd<DdType> const& highlightStates, storm::dd::Bdd<DdType> const& filter) const override;
                 
                 virtual uint64_t getNumberOfPredicates() const override;
                 
                 virtual void addTerminalStates(storm::expressions::Expression const& expression) override;
                 
+                virtual void notifyGuardsArePredicates() override;
+
             protected:
                 using MenuGameAbstractor<DdType, ValueType>::exportToDot;
                 
@@ -146,6 +158,9 @@ namespace storm {
                 
                 // A state-set abstractor used to determine the initial states of the abstraction.
                 StateSetAbstractor<DdType, ValueType> initialStateAbstractor;
+                
+                // A flag indicating whether the valid blocks need to be computed and the game restricted to these.
+                bool restrictToValidBlocks;
                 
                 // An object that is used to compute the valid blocks.
                 ValidBlockAbstractor<DdType> validBlockAbstractor;

@@ -3,7 +3,7 @@
 namespace storm {
     namespace logic {
         
-        RewardAccumulation::RewardAccumulation(bool steps, bool time, bool exit) : steps(steps), time(time), exit(exit){
+        RewardAccumulation::RewardAccumulation(bool steps, bool time, bool exit) : time(time), steps(steps), exit(exit){
             // Intentionally left empty
         }
         

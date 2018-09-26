@@ -214,9 +214,9 @@ namespace storm {
                 std::string getChoiceLabelingFilename() const;
 
                 /*!
-                 * Retrieves whether the export-to-dot option was set.
+                 * Retrieves whether the constants option was set.
                  *
-                 * @return True if the export-to-dot option was set.
+                 * @return True if the constants option was set.
                  */
                 bool isConstantsSet() const;
 

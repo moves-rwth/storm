@@ -1,22 +1,22 @@
-#ifndef STORM_LOGIC_VARIABLESUBSTITUTIONVISITOR_H_
-#define STORM_LOGIC_VARIABLESUBSTITUTIONVISITOR_H_
+#pragma once
 
 #include <map>
+#include <functional>
 
 #include "storm/logic/CloneVisitor.h"
 
 #include "storm/storage/expressions/Expression.h"
 
 namespace storm {
+    
     namespace logic {
         
-        class VariableSubstitutionVisitor : public CloneVisitor {
+        class ExpressionSubstitutionVisitor : public CloneVisitor {
         public:
-            VariableSubstitutionVisitor(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution);
+            ExpressionSubstitutionVisitor() = default;
             
-            std::shared_ptr<Formula> substitute(Formula const& f) const;
+            std::shared_ptr<Formula> substitute(Formula const& f, std::function<storm::expressions::Expression(storm::expressions::Expression const&)> const& substitutionFunction) const;
             
-
             virtual boost::any visit(TimeOperatorFormula const& f, boost::any const& data) const override;
             virtual boost::any visit(LongRunAverageOperatorFormula const& f, boost::any const& data) const override;
             virtual boost::any visit(ProbabilityOperatorFormula const& f, boost::any const& data) const override;
@@ -26,15 +26,8 @@ namespace storm {
             virtual boost::any visit(InstantaneousRewardFormula const& f, boost::any const& data) const override;
             virtual boost::any visit(AtomicExpressionFormula const& f, boost::any const& data) const override;
             
-        private:
-            
-            OperatorInformation substituteOperatorInformation(OperatorInformation const& operatorInformation) const;
-            
-            std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution;
         };
         
     }
 }
 
-
-#endif /* STORM_LOGIC_VARIABLESUBSTITUTIONVISITOR_H_ */

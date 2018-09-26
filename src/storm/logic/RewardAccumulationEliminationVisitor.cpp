@@ -22,11 +22,15 @@ namespace storm {
         
         void RewardAccumulationEliminationVisitor::eliminateRewardAccumulations(std::vector<storm::jani::Property>& properties) const {
             for (auto& p : properties) {
-                auto formula = eliminateRewardAccumulations(*p.getFilter().getFormula());
-                auto states = eliminateRewardAccumulations(*p.getFilter().getStatesFormula());
-                storm::jani::FilterExpression fe(formula, p.getFilter().getFilterType(), states);
-                p = storm::jani::Property(p.getName(), storm::jani::FilterExpression(formula, p.getFilter().getFilterType(), states), p.getComment());
+                eliminateRewardAccumulations(p);
             }
+        }
+        
+        void RewardAccumulationEliminationVisitor::eliminateRewardAccumulations(storm::jani::Property& property) const {
+            auto formula = eliminateRewardAccumulations(*property.getFilter().getFormula());
+            auto states = eliminateRewardAccumulations(*property.getFilter().getStatesFormula());
+            storm::jani::FilterExpression fe(formula, property.getFilter().getFilterType(), states);
+            property = storm::jani::Property(property.getName(), storm::jani::FilterExpression(formula, property.getFilter().getFilterType(), states), property.getUndefinedConstants(), property.getComment());
         }
         
         boost::any RewardAccumulationEliminationVisitor::visit(BoundedUntilFormula const& f, boost::any const& data) const {
@@ -114,7 +118,7 @@ namespace storm {
         boost::any RewardAccumulationEliminationVisitor::visit(TotalRewardFormula const& f, boost::any const& data) const {
             STORM_LOG_THROW(!data.empty(), storm::exceptions::UnexpectedException, "Formula " << f << " does not seem to be a subformula of a reward operator.");
             auto rewName = boost::any_cast<boost::optional<std::string>>(data);
-            if (f.hasRewardAccumulation() || canEliminate(f.getRewardAccumulation(), rewName)) {
+            if (!f.hasRewardAccumulation() || canEliminate(f.getRewardAccumulation(), rewName)) {
                 return std::static_pointer_cast<Formula>(std::make_shared<TotalRewardFormula>());
             } else {
                 return std::static_pointer_cast<Formula>(std::make_shared<TotalRewardFormula>(f.getRewardAccumulation()));

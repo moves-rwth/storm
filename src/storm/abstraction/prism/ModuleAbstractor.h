@@ -38,7 +38,7 @@ namespace storm {
                  * @param smtSolverFactory A factory that is to be used for creating new SMT solvers.
                  * @param useDecomposition A flag that governs whether to use the decomposition in the abstraction.
                  */
-                ModuleAbstractor(storm::prism::Module const& module, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool useDecomposition);
+                ModuleAbstractor(storm::prism::Module const& module, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool useDecomposition, bool addPredicatesForValidBlocks, bool debug);
                 
                 ModuleAbstractor(ModuleAbstractor const&) = default;
                 ModuleAbstractor& operator=(ModuleAbstractor const&) = default;
@@ -61,10 +61,20 @@ namespace storm {
                 storm::expressions::Expression const& getGuard(uint64_t player1Choice) const;
                 
                 /*!
+                 * Retrieves the number of updates of the specified player 1 choice.
+                 */
+                uint64_t getNumberOfUpdates(uint64_t player1Choice) const;
+                
+                /*!
                  * Retrieves a mapping from variables to expressions that define their updates wrt. to the given player
                  * 1 choice and auxiliary choice.
                  */
                 std::map<storm::expressions::Variable, storm::expressions::Expression> getVariableUpdates(uint64_t player1Choice, uint64_t auxiliaryChoice) const;
+                
+                /*!
+                 * Retrieves the variables assigned by the given player 1 choice.
+                 */
+                std::set<storm::expressions::Variable> const& getAssignedVariables(uint64_t player1Choice) const;
                 
                 /*!
                  * Computes the abstraction of the module wrt. to the current set of predicates.
@@ -103,6 +113,8 @@ namespace storm {
                  */
                 std::vector<CommandAbstractor<DdType, ValueType>>& getCommands();
 
+                void notifyGuardsArePredicates();
+                
             private:
                 /*!
                  * Retrieves the abstraction information.

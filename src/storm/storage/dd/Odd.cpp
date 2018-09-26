@@ -4,6 +4,8 @@
 #include <fstream>
 #include <boost/algorithm/string/join.hpp>
 
+#include "storm/storage/BitVector.h"
+
 #include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/utility/file.h"
@@ -88,6 +90,33 @@ namespace storm {
                 expandValuesToVectorRec(oldOffset + oldOdd.getElseOffset(), oldOdd.getThenSuccessor(), oldValues, newOffset + newOdd.getElseOffset(), newOdd.getThenSuccessor(), newValues);
             }
         }
+
+        void Odd::oldToNewIndex(storm::dd::Odd const& newOdd, std::function<void (uint64_t oldOffset, uint64_t newOffset)> const& callback) const {
+            STORM_LOG_ASSERT(this->getHeight() < newOdd.getHeight(), "Expected increase in height.");
+            oldToNewIndexRec(0, *this, 0, newOdd, callback);
+        }
+        
+        void Odd::oldToNewIndexRec(uint_fast64_t oldOffset, storm::dd::Odd const& oldOdd, uint_fast64_t newOffset, storm::dd::Odd const& newOdd, std::function<void (uint64_t oldOffset, uint64_t newOffset)> const& callback) {
+            if (oldOdd.getTotalOffset() == 0 || newOdd.getTotalOffset() == 0) {
+                return;
+            }
+            
+            if (oldOdd.isTerminalNode()) {
+                if (oldOdd.getThenOffset() != 0) {
+                    if (newOdd.isTerminalNode()) {
+                        if (newOdd.getThenOffset() != 0) {
+                            callback(oldOffset, newOffset);
+                        }
+                    } else {
+                        oldToNewIndexRec(oldOffset, oldOdd, newOffset, newOdd.getElseSuccessor(), callback);
+                        oldToNewIndexRec(oldOffset, oldOdd, newOffset + newOdd.getElseOffset(), newOdd.getThenSuccessor(), callback);
+                    }
+                }
+            } else {
+                oldToNewIndexRec(oldOffset, oldOdd.getElseSuccessor(), newOffset, newOdd.getElseSuccessor(), callback);
+                oldToNewIndexRec(oldOffset + oldOdd.getElseOffset(), oldOdd.getThenSuccessor(), newOffset + newOdd.getElseOffset(), newOdd.getThenSuccessor(), callback);
+            }
+        }
         
         void Odd::exportToDot(std::string const& filename) const {
             std::ofstream dotFile;
@@ -128,6 +157,26 @@ namespace storm {
             
             dotFile << "}" << std::endl;
             storm::utility::closeFile(dotFile);
+        }
+        
+        void getEncodingRec(Odd const& odd, uint64_t index, uint64_t offset, storm::storage::BitVector& result) {
+            if (odd.isTerminalNode()) {
+                return;
+            }
+            
+            bool thenPath = false;
+            if (odd.getElseOffset() <= offset) {
+                thenPath = true;
+                offset -= odd.getElseOffset();
+                result.set(index);
+            }
+            getEncodingRec(thenPath ? odd.getThenSuccessor() : odd.getElseSuccessor(), index + 1, offset, result);
+        }
+        
+        storm::storage::BitVector Odd::getEncoding(uint64_t offset, uint64_t variableCount) const {
+            storm::storage::BitVector result(variableCount > 0 ? variableCount : this->getHeight());
+            getEncodingRec(*this, 0, offset, result);
+            return result;
         }
         
         void Odd::addToLevelToOddNodesMap(std::map<uint_fast64_t, std::unordered_set<storm::dd::Odd const*>>& levelToOddNodesMap, uint_fast64_t level) const {

@@ -14,7 +14,7 @@ namespace storm {
                  */
                 JaniExportSettings();
                 
-                bool isExportAsStandardJaniSet() const;
+                bool isAllowEdgeAssignmentsSet() const;
 
                 bool isExportFlattenedSet() const;
 
@@ -23,6 +23,10 @@ namespace storm {
                 bool isGlobalVarsSet() const;
                 
                 bool isCompactJsonSet() const;
+                
+                bool isEliminateArraysSet() const;
+                
+                bool isEliminateFunctionsSet() const;
 
                 std::vector<std::pair<std::string, std::string>> getLocationVariables() const;
 
@@ -32,12 +36,13 @@ namespace storm {
                 static const std::string moduleName;
                 
             private:
-                static const std::string standardCompliantOptionName;
-                static const std::string standardCompliantOptionShortName;
+                static const std::string edgeAssignmentsOptionName;
                 static const std::string exportFlattenOptionName;
                 static const std::string locationVariablesOptionName;
                 static const std::string globalVariablesOptionName;
                 static const std::string compactJsonOptionName;
+                static const std::string eliminateArraysOptionName;
+                static const std::string eliminateFunctionsOptionName;
                 
             };
         }

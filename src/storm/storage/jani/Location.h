@@ -31,6 +31,11 @@ namespace storm {
             OrderedAssignments const& getAssignments() const;
             
             /*!
+             * Retrieves the assignments of this location.
+             */
+            OrderedAssignments& getAssignments();
+            
+            /*!
              * Adds the given transient assignment to this location.
              */
             void addTransientAssignment(storm::jani::Assignment const& assignment);

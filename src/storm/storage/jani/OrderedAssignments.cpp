@@ -35,8 +35,8 @@ namespace storm {
             auto it = lowerBound(assignment, allAssignments);
             
             // Check if an assignment to this variable is already present
-            if (it != allAssignments.end() && assignment.getExpressionVariable() == (*it)->getExpressionVariable()) {
-                STORM_LOG_THROW(addToExisting && assignment.getExpressionVariable().hasNumericalType(), storm::exceptions::InvalidArgumentException, "Cannot add assignment ('" << assignment.getAssignedExpression() << "') as an assignment ('" << (*it)->getAssignedExpression()  << "') to variable '" <<  (*it)->getVariable().getName() << "' already exists.");
+            if (it != allAssignments.end() && assignment.getLValue() == (*it)->getLValue()) {
+                STORM_LOG_THROW(addToExisting && assignment.getLValue().isVariable() && assignment.getExpressionVariable().hasNumericalType(), storm::exceptions::InvalidArgumentException, "Cannot add assignment ('" << assignment.getAssignedExpression() << "') as an assignment ('" << (*it)->getAssignedExpression()  << "') to LValue '" <<  (*it)->getLValue() << "' already exists.");
                 (*it)->setAssignedExpression((*it)->getAssignedExpression() + assignment.getAssignedExpression());
             } else {
                 // Finally, insert the new element in the correct vectors.
@@ -80,11 +80,11 @@ namespace storm {
             return true;
         }
         
-        bool OrderedAssignments::hasMultipleLevels() const {
-            if (allAssignments.empty()) {
+        bool OrderedAssignments::hasMultipleLevels(bool onlyTransient) const {
+            if ((onlyTransient ? transientAssignments : allAssignments).empty()) {
                 return false;
             }
-            return getLowestLevel() != 0 || getHighestLevel() != 0;
+            return getLowestLevel(onlyTransient) != 0 || getHighestLevel(onlyTransient) != 0;
         }
         
         bool OrderedAssignments::empty() const {
@@ -101,14 +101,16 @@ namespace storm {
             return allAssignments.size();
         }
         
-        int_fast64_t OrderedAssignments::getLowestLevel() const {
-            assert(!allAssignments.empty());
-            return allAssignments.front()->getLevel();
+        int64_t OrderedAssignments::getLowestLevel(bool onlyTransient) const {
+            auto const& as = onlyTransient ? transientAssignments : allAssignments;
+            assert(!as.empty());
+            return as.front()->getLevel();
         }
         
-        int_fast64_t OrderedAssignments::getHighestLevel() const {
-            assert(!allAssignments.empty());
-            return allAssignments.back()->getLevel();
+        int64_t OrderedAssignments::getHighestLevel(bool onlyTransient) const {
+            auto const& as = onlyTransient ? transientAssignments : allAssignments;
+            assert(!as.empty());
+            return as.back()->getLevel();
         }
         
         bool OrderedAssignments::contains(Assignment const& assignment) const {
@@ -125,18 +127,19 @@ namespace storm {
             if (first) {
                 std::vector<Assignment> newAssignments;
                 for (uint64_t i = 0; i < allAssignments.size(); ++i) {
-                    if (synchronous && !localVars.hasVariable(allAssignments.at(i)->getVariable())) {
+                    auto const& iLValue = allAssignments.at(i)->getLValue();
+                    if (synchronous && !localVars.hasVariable(iLValue.isVariable() ? iLValue.getVariable() : iLValue.getArray())) {
                         newAssignments.push_back(*(allAssignments.at(i)));
                         continue;
                     }
                     bool readBeforeWrite = true;
                     for (uint64_t j = i + 1; j < allAssignments.size(); ++j) {
                         if (allAssignments.at(j)->getAssignedExpression().containsVariable(
-                                {allAssignments.at(i)->getVariable().getExpressionVariable()})) {
+                                {iLValue.isVariable() ? iLValue.getVariable().getExpressionVariable() : iLValue.getArray().getExpressionVariable()})) {
                             // is read.
                             break;
                         }
-                        if (allAssignments.at(j)->getVariable() == allAssignments.at(i)->getVariable()) {
+                        if (iLValue == allAssignments.at(j)->getLValue()) {
                             // is written, has not been read before
                             readBeforeWrite = false;
                             break;
@@ -158,15 +161,18 @@ namespace storm {
             std::vector<Assignment> newAssignments;
             for (auto const& assignment : allAssignments) {
                 newAssignments.push_back(*assignment);
-                if (synchronous && !localVars.hasVariable(assignment->getVariable())) {
+                if (assignment->isTransient() && !assignment->getAssignedExpression().containsVariables()) {
+                    // Since we do not support
+                }
+                if (synchronous && !localVars.hasVariable(assignment->getLValue().isVariable() ? assignment->getLValue().getVariable() : assignment->getLValue().getArray())) {
                     continue;
                 }
                 if (assignment->getLevel() == 0) {
                     continue;
                 }
                 uint64_t assNr = upperBound(assignment->getLevel() - 1);
-                if (assNr == isWrittenBeforeAssignment(assignment->getVariable(), assNr)) {
-                    if (assNr == isReadBeforeAssignment(assignment->getVariable(), assNr)) {
+                if (assNr == isWrittenBeforeAssignment(assignment->getLValue(), assNr)) {
+                    if (assNr == isReadBeforeAssignment(assignment->getLValue(), assNr)) {
                         newAssignments.back().setLevel(0);
                         changed = true;
                     }
@@ -190,6 +196,27 @@ namespace storm {
         
         detail::ConstAssignments OrderedAssignments::getNonTransientAssignments() const {
             return detail::ConstAssignments(nonTransientAssignments.begin(), nonTransientAssignments.end());
+        }
+        
+        struct AssignmentLevelToLevelComparator {
+            bool operator()(std::shared_ptr<Assignment> const& left, int64_t const& right) const {
+                return left->getLevel() < right;
+            }
+            bool operator()(int64_t const& left, std::shared_ptr<Assignment> const& right) const {
+                return left < right->getLevel();
+            }
+        };
+        
+        detail::ConstAssignments OrderedAssignments::getTransientAssignments(int64_t assignmentLevel) const {
+            auto begin = std::lower_bound(transientAssignments.begin(), transientAssignments.end(), assignmentLevel, AssignmentLevelToLevelComparator());
+            auto end = std::upper_bound(begin, transientAssignments.end(), assignmentLevel, AssignmentLevelToLevelComparator());
+            return detail::ConstAssignments(begin, end);
+        }
+        
+        detail::ConstAssignments OrderedAssignments::getNonTransientAssignments(int64_t assignmentLevel) const {
+            auto begin = std::lower_bound(nonTransientAssignments.begin(), nonTransientAssignments.end(), assignmentLevel, AssignmentLevelToLevelComparator());
+            auto end = std::upper_bound(begin, nonTransientAssignments.end(), assignmentLevel, AssignmentLevelToLevelComparator());
+            return detail::ConstAssignments(begin, end);
         }
         
         bool OrderedAssignments::hasTransientAssignment() const {
@@ -221,16 +248,19 @@ namespace storm {
         void OrderedAssignments::changeAssignmentVariables(std::map<Variable const*, std::reference_wrapper<Variable const>> const& remapping) {
             std::vector<Assignment> newAssignments;
             for (auto& assignment : allAssignments) {
-                newAssignments.emplace_back(remapping.at(&assignment->getVariable()), assignment->getAssignedExpression(), assignment->getLevel());
+                newAssignments.emplace_back(assignment->getLValue().changeAssignmentVariables(remapping), assignment->getAssignedExpression(), assignment->getLevel());
             }
             *this = OrderedAssignments(newAssignments);
         }
         
         std::vector<std::shared_ptr<Assignment>>::const_iterator OrderedAssignments::lowerBound(Assignment const& assignment, std::vector<std::shared_ptr<Assignment>> const& assignments) {
-            return std::lower_bound(assignments.begin(), assignments.end(), assignment, storm::jani::AssignmentPartialOrderByLevelAndVariable());
+            return std::lower_bound(assignments.begin(), assignments.end(), assignment, storm::jani::AssignmentPartialOrderByLevelAndLValue());
         }
-
-        uint64_t OrderedAssignments::isReadBeforeAssignment(Variable const& var, uint64_t assignmentNumber, uint64_t start) const {
+        
+        uint64_t OrderedAssignments::isReadBeforeAssignment(LValue const& lValue, uint64_t assignmentNumber, uint64_t start) const {
+            Variable const& var = lValue.isVariable() ? lValue.getVariable() : lValue.getArray();
+            // TODO: do this more carefully
+            STORM_LOG_WARN_COND(lValue.isVariable(), "Called a method that is not optimized for arrays.");
             for (uint64_t i = start; i < assignmentNumber; i++) {
                 if (allAssignments.at(i)->getAssignedExpression().containsVariable({ var.getExpressionVariable() })) {
                     return i;
@@ -239,9 +269,9 @@ namespace storm {
             return assignmentNumber;
         }
 
-        uint64_t OrderedAssignments::isWrittenBeforeAssignment(Variable const& var, uint64_t assignmentNumber, uint64_t start) const {
+        uint64_t OrderedAssignments::isWrittenBeforeAssignment(LValue const& lValue, uint64_t assignmentNumber, uint64_t start) const {
             for (uint64_t i = start; i < assignmentNumber; i++) {
-                if (allAssignments.at(i)->getVariable() == var) {
+                if (allAssignments.at(i)->getLValue() == lValue) {
                     return i;
                 }
             }
@@ -265,6 +295,15 @@ namespace storm {
                 result &= assignment.isLinear();
             }
             return result;
+        }
+        
+        bool OrderedAssignments::checkOrder() const {
+            for (std::vector<std::shared_ptr<Assignment>>::const_iterator it = allAssignments.cbegin(); it != allAssignments.cend(); ++it) {
+                if (it != lowerBound(**it, allAssignments)) {
+                    return false;
+                }
+            }
+            return true;
         }
         
         std::ostream& operator<<(std::ostream& stream, OrderedAssignments const& assignments) {

@@ -9,113 +9,8 @@
 
 namespace storm {
     namespace expressions {
-        // Forward-declare expression manager class.
         class ExpressionManager;
-        
-        class BaseType {
-        public:
-            BaseType();
-            virtual ~BaseType() = default;
-            
-            /*!
-             * Retrieves the mask that is associated with this type.
-             *
-             * @return The mask associated with this type.
-             */
-            virtual uint64_t getMask() const = 0;
-            
-            /*!
-             * Checks whether two types are actually the same.
-             *
-             * @param other The type to compare with.
-             * @return True iff the types are the same.
-             */
-            virtual bool operator==(BaseType const& other) const;
-            
-            /*!
-             * Returns a string representation of the type.
-             *
-             * @return A string representation of the type.
-             */
-            virtual std::string getStringRepresentation() const = 0;
-            
-            virtual bool isErrorType() const;
-            virtual bool isBooleanType() const;
-            virtual bool isIntegerType() const;
-            virtual bool isBitVectorType() const;
-            virtual bool isRationalType() const;
-        };
-
-        class BooleanType : public BaseType {
-        public:
-            virtual uint64_t getMask() const override;
-            virtual std::string getStringRepresentation() const override;
-            virtual bool isBooleanType() const override;
-
-        private:
-            static const uint64_t mask = (1ull << 60);
-        };
-        
-        class IntegerType : public BaseType {
-        public:
-            virtual uint64_t getMask() const override;
-            virtual std::string getStringRepresentation() const override;
-            virtual bool isIntegerType() const override;
-
-        private:
-            static const uint64_t mask = (1ull << 62);
-        };
-        
-        class BitVectorType : public BaseType {
-        public:
-            /*!
-             * Creates a new bounded bitvector type with the given bit width.
-             *
-             * @param width The bit width of the type.
-             */
-            BitVectorType(std::size_t width);
-            
-            /*!
-             * Retrieves the bit width of the bounded type.
-             *
-             * @return The bit width of the bounded type.
-             */
-            std::size_t getWidth() const;
-
-            virtual bool operator==(BaseType const& other) const override;
-            virtual uint64_t getMask() const override;
-            virtual std::string getStringRepresentation() const override;
-            virtual bool isIntegerType() const override;
-            virtual bool isBitVectorType() const override;
-
-        private:
-            static const uint64_t mask =  (1ull << 61);
-            
-            // The bit width of the type.
-            std::size_t width;
-        };
-
-        class RationalType : public BaseType {
-        public:
-            virtual uint64_t getMask() const override;
-            virtual std::string getStringRepresentation() const override;
-            virtual bool isRationalType() const override;
-
-        private:
-            static const uint64_t mask = (1ull << 63);
-        };
-        
-        class ErrorType : public BaseType {
-        public:
-            virtual uint64_t getMask() const override;
-            virtual std::string getStringRepresentation() const override;
-            virtual bool isErrorType() const override;
-            
-        private:
-            static const uint64_t mask = 0;
-        };
-        
-        bool operator<(BaseType const& first, BaseType const& second);
+        class BaseType;
         
         class Type {
         public:
@@ -187,6 +82,13 @@ namespace storm {
              * @return True iff the type is a numerical one.
              */
             bool isNumericalType() const;
+
+            /*!
+             * Checks whether this type is an array type.
+             *
+             * @return True iff the type is an array.
+             */
+            bool isArrayType() const;
             
             /*!
              * Retrieves the bit width of the type, provided that it is a bitvector type.
@@ -194,6 +96,13 @@ namespace storm {
              * @return The bit width of the bitvector type.
              */
             std::size_t getWidth() const;
+            
+            /*!
+             * Retrieves the element type of the type, provided that it is an Array type.
+             *
+             * @return The bit width of the bitvector type.
+             */
+            Type getElementType() const;
             
             /*!
              * Retrieves the manager of the type.
@@ -225,6 +134,130 @@ namespace storm {
         std::ostream& operator<<(std::ostream& stream, Type const& type);
 
         bool operator<(storm::expressions::Type const& type1, storm::expressions::Type const& type2);
+        
+        class BaseType {
+        public:
+            BaseType();
+            virtual ~BaseType() = default;
+            
+            /*!
+             * Retrieves the mask that is associated with this type.
+             *
+             * @return The mask associated with this type.
+             */
+            virtual uint64_t getMask() const = 0;
+            
+            /*!
+             * Checks whether two types are actually the same.
+             *
+             * @param other The type to compare with.
+             * @return True iff the types are the same.
+             */
+            virtual bool operator==(BaseType const& other) const;
+            
+            /*!
+             * Returns a string representation of the type.
+             *
+             * @return A string representation of the type.
+             */
+            virtual std::string getStringRepresentation() const = 0;
+            
+            virtual bool isErrorType() const;
+            virtual bool isBooleanType() const;
+            virtual bool isIntegerType() const;
+            virtual bool isBitVectorType() const;
+            virtual bool isRationalType() const;
+            virtual bool isArrayType() const;
+        };
+
+        class BooleanType : public BaseType {
+        public:
+            virtual uint64_t getMask() const override;
+            virtual std::string getStringRepresentation() const override;
+            virtual bool isBooleanType() const override;
+
+        private:
+            static const uint64_t mask = (1ull << 60);
+        };
+        
+        class IntegerType : public BaseType {
+        public:
+            virtual uint64_t getMask() const override;
+            virtual std::string getStringRepresentation() const override;
+            virtual bool isIntegerType() const override;
+
+        private:
+            static const uint64_t mask = (1ull << 62);
+        };
+        
+        class BitVectorType : public BaseType {
+        public:
+            /*!
+             * Creates a new bounded bitvector type with the given bit width.
+             *
+             * @param width The bit width of the type.
+             */
+            BitVectorType(std::size_t width);
+            
+            /*!
+             * Retrieves the bit width of the bounded type.
+             *
+             * @return The bit width of the bounded type.
+             */
+            std::size_t getWidth() const;
+
+            virtual bool operator==(BaseType const& other) const override;
+            virtual uint64_t getMask() const override;
+            virtual std::string getStringRepresentation() const override;
+            virtual bool isIntegerType() const override;
+            virtual bool isBitVectorType() const override;
+
+        private:
+            static const uint64_t mask =  (1ull << 61);
+            
+            // The bit width of the type.
+            std::size_t width;
+        };
+
+        class RationalType : public BaseType {
+        public:
+            virtual uint64_t getMask() const override;
+            virtual std::string getStringRepresentation() const override;
+            virtual bool isRationalType() const override;
+
+        private:
+            static const uint64_t mask = (1ull << 63);
+        };
+
+        class ArrayType : public BaseType {
+        public:
+            ArrayType(Type elementType);
+            
+            Type getElementType() const;
+            
+            virtual bool operator==(BaseType const& other) const override;
+            virtual uint64_t getMask() const override;
+            virtual std::string getStringRepresentation() const override;
+            virtual bool isArrayType() const override;
+
+        private:
+            static const uint64_t mask = (1ull << 59);
+            
+            // The type of the array elements (can again be of type array).
+            Type elementType;
+        };
+        
+        class ErrorType : public BaseType {
+        public:
+            virtual uint64_t getMask() const override;
+            virtual std::string getStringRepresentation() const override;
+            virtual bool isErrorType() const override;
+            
+        private:
+            static const uint64_t mask = 0;
+        };
+        
+        bool operator<(BaseType const& first, BaseType const& second);
     }
 }
 

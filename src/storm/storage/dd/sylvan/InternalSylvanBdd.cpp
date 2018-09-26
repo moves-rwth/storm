@@ -443,6 +443,33 @@ namespace storm {
             }
         }
         
+        std::vector<InternalBdd<DdType::Sylvan>> InternalBdd<DdType::Sylvan>::splitIntoGroups(std::vector<uint_fast64_t> const& ddGroupVariableIndices) const {
+            std::vector<InternalBdd<DdType::Sylvan>> result;
+            splitIntoGroupsRec(this->getSylvanBdd().GetBDD(), result, ddGroupVariableIndices, 0, ddGroupVariableIndices.size());
+            return result;
+        }
+        
+        void InternalBdd<DdType::Sylvan>::splitIntoGroupsRec(BDD dd, std::vector<InternalBdd<DdType::Sylvan>>& groups, std::vector<uint_fast64_t> const& ddGroupVariableIndices, uint_fast64_t currentLevel, uint_fast64_t maxLevel) const {
+            // For the empty DD, we do not need to create a group.
+            if (dd == sylvan_false) {
+                return;
+            }
+            
+            if (currentLevel == maxLevel) {
+                groups.push_back(InternalBdd<DdType::Sylvan>(ddManager, sylvan::Bdd(dd)));
+            } else if (bdd_isterminal(dd) || ddGroupVariableIndices[currentLevel] < sylvan_var(dd)) {
+                splitIntoGroupsRec(dd, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
+                splitIntoGroupsRec(dd, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
+            } else {
+                // Otherwise, we compute the ODDs for both the then- and else successors.
+                BDD thenDdNode = sylvan_high(dd);
+                BDD elseDdNode = sylvan_low(dd);
+                
+                splitIntoGroupsRec(elseDdNode, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
+                splitIntoGroupsRec(thenDdNode, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
+            }
+        }
+        
         std::pair<std::vector<storm::expressions::Expression>, std::unordered_map<uint_fast64_t, storm::expressions::Variable>> InternalBdd<DdType::Sylvan>::toExpression(storm::expressions::ExpressionManager& manager) const {
             std::pair<std::vector<storm::expressions::Expression>, std::unordered_map<uint_fast64_t, storm::expressions::Variable>> result;
             

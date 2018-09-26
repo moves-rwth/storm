@@ -17,11 +17,23 @@ namespace storm {
             const std::string AbstractionSettings::useDecompositionOptionName = "decomposition";
             const std::string AbstractionSettings::splitModeOptionName = "split";
             const std::string AbstractionSettings::addAllGuardsOptionName = "all-guards";
+            const std::string AbstractionSettings::addInitialExpressionsOptionName = "all-inits";
             const std::string AbstractionSettings::useInterpolationOptionName = "interpolation";
             const std::string AbstractionSettings::precisionOptionName = "precision";
+            const std::string AbstractionSettings::relativeOptionName = "relative";
             const std::string AbstractionSettings::pivotHeuristicOptionName = "pivot-heuristic";
             const std::string AbstractionSettings::reuseResultsOptionName = "reuse";
             const std::string AbstractionSettings::restrictToRelevantStatesOptionName = "relevant";
+            const std::string AbstractionSettings::solveModeOptionName = "solve";
+            const std::string AbstractionSettings::maximalAbstractionOptionName = "maxabs";
+            const std::string AbstractionSettings::rankRefinementPredicatesOptionName = "rankpred";
+            const std::string AbstractionSettings::constraintsOptionName = "constraints";
+            const std::string AbstractionSettings::useEagerRefinementOptionName = "eagerref";
+            const std::string AbstractionSettings::debugOptionName = "debug";
+            const std::string AbstractionSettings::injectRefinementPredicatesOptionName = "injectref";
+            const std::string AbstractionSettings::fixPlayer1StrategyOptionName = "fixpl1strat";
+            const std::string AbstractionSettings::fixPlayer2StrategyOptionName = "fixpl2strat";
+            const std::string AbstractionSettings::validBlockModeOptionName = "validmode";
             
             AbstractionSettings::AbstractionSettings() : ModuleSettings(moduleName) {
                 std::vector<std::string> methods = {"games", "bisimulation", "bisim"};
@@ -29,6 +41,8 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the method to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(methods))
                                              .setDefaultValueString("bisim").build())
                                 .build());
+                
+                this->addOption(storm::settings::OptionBuilder(moduleName, maximalAbstractionOptionName, false, "The maximal number of abstraction to perform before solving is aborted.").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("count", "The maximal abstraction count.").setDefaultValueUnsignedInteger(20000).build()).build());
                 
                 std::vector<std::string> onOff = {"on", "off"};
                 
@@ -42,18 +56,34 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("mode", "The mode to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(splitModes))
                                              .setDefaultValueString("all").build())
                                 .build());
-                
+
+                std::vector<std::string> solveModes = {"dd", "sparse"};
+                this->addOption(storm::settings::OptionBuilder(moduleName, solveModeOptionName, true, "Sets how the abstractions are solved.")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("mode", "The mode to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(solveModes))
+                                             .setDefaultValueString("sparse").build())
+                                .build());
+
                 this->addOption(storm::settings::OptionBuilder(moduleName, addAllGuardsOptionName, true, "Sets whether all guards are added as initial predicates.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("value", "The value of the flag.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(onOff))
                                              .setDefaultValueString("on").build())
                                 .build());
-                
+
+                this->addOption(storm::settings::OptionBuilder(moduleName, addInitialExpressionsOptionName, true, "Sets whether all initial expressions are added as initial predicates.")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("value", "The value of the flag.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(onOff))
+                                             .setDefaultValueString("on").build())
+                                .build());
+
                 this->addOption(storm::settings::OptionBuilder(moduleName, useInterpolationOptionName, true, "Sets whether interpolation is to be used to eliminate spurious pivot blocks.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("value", "The value of the flag.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(onOff))
                                              .setDefaultValueString("on").build())
                                 .build());
                 
                 this->addOption(storm::settings::OptionBuilder(moduleName, precisionOptionName, true, "The precision used for detecting convergence.").addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to achieve.").setDefaultValueDouble(1e-03).addValidatorDouble(ArgumentValidatorFactory::createDoubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
+                                
+                this->addOption(storm::settings::OptionBuilder(moduleName, relativeOptionName, true, "Sets whether to use a relative termination criterion.")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("value", "The value of the flag.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(onOff))
+                                             .setDefaultValueString("off").build())
+                                .build());
                 
                 std::vector<std::string> pivotHeuristic = {"nearest-max-dev", "most-prob-path", "max-weighted-dev"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, pivotHeuristicOptionName, true, "Sets the pivot selection heuristic.")
@@ -68,8 +98,48 @@ namespace storm {
                 
                 this->addOption(storm::settings::OptionBuilder(moduleName, restrictToRelevantStatesOptionName, true, "Sets whether to restrict to relevant states during the abstraction.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("value", "The value of the flag.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(onOff))
+                                             .setDefaultValueString("on").build())
+                                .build());
+                
+                this->addOption(storm::settings::OptionBuilder(moduleName, rankRefinementPredicatesOptionName, true, "Sets whether to rank the refinement predicates if there are multiple.")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("value", "The value of the flag.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(onOff))
                                              .setDefaultValueString("off").build())
                                 .build());
+
+                this->addOption(storm::settings::OptionBuilder(moduleName, useEagerRefinementOptionName, true, "Sets whether to refine eagerly.")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("value", "The value of the flag.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(onOff))
+                                             .setDefaultValueString("off").build())
+                                .build());
+
+                this->addOption(storm::settings::OptionBuilder(moduleName, constraintsOptionName, true, "Specifies additional constraints used by the abstraction.")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("constraints", "The constraints to use.").setDefaultValueString("").build())
+                                .build());
+
+                this->addOption(storm::settings::OptionBuilder(moduleName, injectRefinementPredicatesOptionName, true, "Specifies predicates used by the refinement instead of the derived predicates.")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("predicates", "The (semicolon-separated) refinement predicates to use.").setDefaultValueString("").build())
+                                .build());
+                
+                this->addOption(storm::settings::OptionBuilder(moduleName, fixPlayer1StrategyOptionName, true, "Sets whether to fix player 1 strategies.")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("value", "The value of the flag.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(onOff))
+                                             .setDefaultValueString("on").build())
+                                .build());
+
+                this->addOption(storm::settings::OptionBuilder(moduleName, fixPlayer2StrategyOptionName, true, "Sets whether to fix player 2 strategies.")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("value", "The value of the flag.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(onOff))
+                                             .setDefaultValueString("on").build())
+                                .build());
+
+                this->addOption(storm::settings::OptionBuilder(moduleName, debugOptionName, true, "Sets whether to enable debug mode.")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("value", "The value of the flag.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(onOff))
+                                             .setDefaultValueString("off").build())
+                                .build());
+                
+                std::vector<std::string> validModes = {"morepreds", "blockenum"};
+                this->addOption(storm::settings::OptionBuilder(moduleName, validBlockModeOptionName, true, "Sets the mode to guarantee valid blocks only.")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("mode", "The mode to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(validModes))
+                                             .setDefaultValueString("morepreds").build())
+                                .build());
+
             }
             
             AbstractionSettings::Method AbstractionSettings::getAbstractionRefinementMethod() const {
@@ -83,7 +153,7 @@ namespace storm {
             }
             
             bool AbstractionSettings::isUseDecompositionSet() const {
-                return this->getOption(useDecompositionOptionName).getHasOptionBeenSet();
+                return this->getOption(useDecompositionOptionName).getArgumentByName("value").getValueAsString() == "on";
             }
             
             AbstractionSettings::SplitMode AbstractionSettings::getSplitMode() const {
@@ -98,12 +168,28 @@ namespace storm {
                 return SplitMode::All;
             }
             
+            AbstractionSettings::SolveMode AbstractionSettings::getSolveMode() const {
+                std::string solveModeAsString = this->getOption(solveModeOptionName).getArgumentByName("mode").getValueAsString();
+                if (solveModeAsString == "dd") {
+                    return SolveMode::Dd;
+                }
+                return SolveMode::Sparse;
+            }
+            
             bool AbstractionSettings::isAddAllGuardsSet() const {
                 return this->getOption(addAllGuardsOptionName).getArgumentByName("value").getValueAsString() == "on";
             }
             
+            bool AbstractionSettings::isAddAllInitialExpressionsSet() const {
+                return this->getOption(addInitialExpressionsOptionName).getArgumentByName("value").getValueAsString() == "on";
+            }
+            
             void AbstractionSettings::setAddAllGuards(bool value) {
                 this->getOption(addAllGuardsOptionName).getArgumentByName("value").setFromStringValue(value ? "on" : "off");
+            }
+            
+            void AbstractionSettings::setAddAllInitialExpressions(bool value) {
+                this->getOption(addInitialExpressionsOptionName).getArgumentByName("value").setFromStringValue(value ? "on" : "off");
             }
             
             bool AbstractionSettings::isUseInterpolationSet() const {
@@ -116,6 +202,10 @@ namespace storm {
             
             double AbstractionSettings::getPrecision() const {
                 return this->getOption(precisionOptionName).getArgumentByName("value").getValueAsDouble();
+            }
+            
+            bool AbstractionSettings::getRelativeTerminationCriterion() const {
+                return this->getOption(relativeOptionName).getArgumentByName("value").getValueAsString() == "on";
             }
             
             AbstractionSettings::PivotSelectionHeuristic AbstractionSettings::getPivotSelectionHeuristic() const {
@@ -142,6 +232,56 @@ namespace storm {
                     return ReuseMode::Quantitative;
                 }
                 return ReuseMode::All;
+            }
+            
+            uint_fast64_t AbstractionSettings::getMaximalAbstractionCount() const {
+                return this->getOption(maximalAbstractionOptionName).getArgumentByName("count").getValueAsUnsignedInteger();
+            }
+            
+            bool AbstractionSettings::isRankRefinementPredicatesSet() const {
+                return this->getOption(rankRefinementPredicatesOptionName).getArgumentByName("value").getValueAsString() == "on";
+            }
+            
+            bool AbstractionSettings::isConstraintsSet() const {
+                return this->getOption(constraintsOptionName).getHasOptionBeenSet();
+            }
+            
+            std::string AbstractionSettings::getConstraintString() const {
+                return this->getOption(constraintsOptionName).getArgumentByName("constraints").getValueAsString();
+            }
+            
+            bool AbstractionSettings::isUseEagerRefinementSet() const {
+                return this->getOption(useEagerRefinementOptionName).getArgumentByName("value").getValueAsString() == "on";
+            }
+            
+            bool AbstractionSettings::isDebugSet() const {
+                return this->getOption(debugOptionName).getArgumentByName("value").getValueAsString() == "on";
+            }
+            
+            bool AbstractionSettings::isInjectRefinementPredicatesSet() const {
+                return this->getOption(injectRefinementPredicatesOptionName).getHasOptionBeenSet();
+            }
+            
+            std::string AbstractionSettings::getInjectedRefinementPredicates() const {
+                return this->getOption(injectRefinementPredicatesOptionName).getArgumentByName("predicates").getValueAsString();
+            }
+            
+            bool AbstractionSettings::isFixPlayer1StrategySet() const {
+                return this->getOption(fixPlayer1StrategyOptionName).getArgumentByName("value").getValueAsString() == "on";
+            }
+            
+            bool AbstractionSettings::isFixPlayer2StrategySet() const {
+                return this->getOption(fixPlayer2StrategyOptionName).getArgumentByName("value").getValueAsString() == "on";
+            }
+            
+            AbstractionSettings::ValidBlockMode AbstractionSettings::getValidBlockMode() const {
+                std::string modeAsString = this->getOption(validBlockModeOptionName).getArgumentByName("mode").getValueAsString();
+                if (modeAsString == "morepreds") {
+                    return ValidBlockMode::MorePredicates;
+                } else if (modeAsString == "blockenum") {
+                    return ValidBlockMode::BlockEnumeration;
+                }
+                return ValidBlockMode::MorePredicates;
             }
             
         }

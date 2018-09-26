@@ -23,6 +23,10 @@ namespace storm {
             return assignments;
         }
         
+        OrderedAssignments& Location::getAssignments() {
+            return assignments;
+        }
+        
         void Location::addTransientAssignment(storm::jani::Assignment const& assignment) {
             STORM_LOG_THROW(assignment.isTransient(), storm::exceptions::InvalidArgumentException, "Must not add non-transient assignment to location.");
             assignments.add(assignment);

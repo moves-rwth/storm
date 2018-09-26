@@ -11,9 +11,9 @@ namespace storm {
         storm::jani::Model* JaniGSPNBuilder::build(std::string const& automatonName, bool buildStandardProperties) {
             storm::jani::ModelType modelType = storm::jani::ModelType::MA;
             if (gspn.getNumberOfTimedTransitions() == 0) {
-                storm::jani::ModelType modelType = storm::jani::ModelType::MDP;
+                modelType = storm::jani::ModelType::MDP;
             } else if (gspn.getNumberOfImmediateTransitions() == 0) {
-                storm::jani::ModelType modelType = storm::jani::ModelType::CTMC;
+                modelType = storm::jani::ModelType::CTMC;
             }
             storm::jani::Model* model = new storm::jani::Model(gspn.getName(), modelType, janiVersion, expressionManager);
             storm::jani::Automaton mainAutomaton(automatonName, expressionManager->declareIntegerVariable("loc"));
@@ -25,6 +25,8 @@ namespace storm {
             if (buildStandardProperties) {
                 buildProperties(model);
             }
+            model->getModelFeatures().add(storm::jani::ModelFeature::DerivedOperators);
+            model->finalize();
             return model;
         }
         
@@ -106,7 +108,7 @@ namespace storm {
                     for (auto const& inPlaceEntry : trans.getInputPlaces()) {
                         destguard = destguard && (vars[inPlaceEntry.first]->getExpressionVariable() >= inPlaceEntry.second);
                         if (trans.getOutputPlaces().count(inPlaceEntry.first) == 0) {
-                            assignments.emplace_back( *vars[inPlaceEntry.first], (vars[inPlaceEntry.first])->getExpressionVariable() - inPlaceEntry.second);
+                            assignments.emplace_back(storm::jani::LValue(*vars[inPlaceEntry.first]), (vars[inPlaceEntry.first])->getExpressionVariable() - inPlaceEntry.second);
                         }
                     }
                     for (auto const& inhibPlaceEntry : trans.getInhibitionPlaces()) {
@@ -114,9 +116,9 @@ namespace storm {
                     }
                     for (auto const& outputPlaceEntry : trans.getOutputPlaces()) {
                         if (trans.getInputPlaces().count(outputPlaceEntry.first) == 0) {
-                            assignments.emplace_back( *vars[outputPlaceEntry.first], (vars[outputPlaceEntry.first])->getExpressionVariable() + outputPlaceEntry.second );
+                            assignments.emplace_back(storm::jani::LValue(*vars[outputPlaceEntry.first]), (vars[outputPlaceEntry.first])->getExpressionVariable() + outputPlaceEntry.second );
                         } else {
-                            assignments.emplace_back( *vars[outputPlaceEntry.first], (vars[outputPlaceEntry.first])->getExpressionVariable() + outputPlaceEntry.second -  trans.getInputPlaces().at(outputPlaceEntry.first));
+                            assignments.emplace_back(storm::jani::LValue(*vars[outputPlaceEntry.first]), (vars[outputPlaceEntry.first])->getExpressionVariable() + outputPlaceEntry.second -  trans.getInputPlaces().at(outputPlaceEntry.first));
                         }
                     }
                     destguard = destguard.simplify();
@@ -145,7 +147,7 @@ namespace storm {
                 for (auto const& inPlaceEntry : trans.getInputPlaces()) {
                     guard = guard && (vars[inPlaceEntry.first]->getExpressionVariable() >= inPlaceEntry.second);
                     if (trans.getOutputPlaces().count(inPlaceEntry.first) == 0) {
-                        assignments.emplace_back( *vars[inPlaceEntry.first], (vars[inPlaceEntry.first])->getExpressionVariable() - inPlaceEntry.second);
+                        assignments.emplace_back(storm::jani::LValue(*vars[inPlaceEntry.first]), (vars[inPlaceEntry.first])->getExpressionVariable() - inPlaceEntry.second);
                     }
                 }
                 for (auto const& inhibPlaceEntry : trans.getInhibitionPlaces()) {
@@ -153,9 +155,9 @@ namespace storm {
                 }
                 for (auto const& outputPlaceEntry : trans.getOutputPlaces()) {
                     if (trans.getInputPlaces().count(outputPlaceEntry.first) == 0) {
-                        assignments.emplace_back( *vars[outputPlaceEntry.first], (vars[outputPlaceEntry.first])->getExpressionVariable() + outputPlaceEntry.second );
+                        assignments.emplace_back(storm::jani::LValue(*vars[outputPlaceEntry.first]), (vars[outputPlaceEntry.first])->getExpressionVariable() + outputPlaceEntry.second );
                     } else {
-                        assignments.emplace_back( *vars[outputPlaceEntry.first], (vars[outputPlaceEntry.first])->getExpressionVariable() + outputPlaceEntry.second -  trans.getInputPlaces().at(outputPlaceEntry.first));
+                        assignments.emplace_back(storm::jani::LValue(*vars[outputPlaceEntry.first]), (vars[outputPlaceEntry.first])->getExpressionVariable() + outputPlaceEntry.second -  trans.getInputPlaces().at(outputPlaceEntry.first));
                     }
                 }
 
@@ -255,7 +257,7 @@ namespace storm {
             
             auto exprVar = expressionManager->declareBooleanVariable(name);
             auto const& janiVar = model->addVariable(*storm::jani::makeBooleanVariable(name, exprVar, expressionManager->boolean(false), true));
-            storm::jani::Assignment assignment(janiVar, transientValue);
+            storm::jani::Assignment assignment(storm::jani::LValue(janiVar), transientValue);
             model->getAutomata().front().getLocations().front().addTransientAssignment(assignment);
             return janiVar;
         }
@@ -275,11 +277,12 @@ namespace storm {
             auto const& deadlockVar = addDeadlockTransientVariable(model, getUniqueVarName(*expressionManager, "deadl"));
             auto deadlock = std::make_shared<storm::logic::AtomicExpressionFormula>(deadlockVar.getExpressionVariable().getExpression());
             auto trueFormula = std::make_shared<storm::logic::BooleanLiteralFormula>(true);
+            std::set<storm::expressions::Variable> emptyVariableSet;
             
             auto maxReachDeadlock = std::make_shared<storm::logic::ProbabilityOperatorFormula>(
                     std::make_shared<storm::logic::EventuallyFormula>(deadlock, storm::logic::FormulaContext::Probability),
                     storm::logic::OperatorInformation(storm::solver::OptimizationDirection::Maximize));
-            standardProperties.emplace_back("MaxPrReachDeadlock", maxReachDeadlock, "The maximal probability to eventually reach a deadlock.");
+            standardProperties.emplace_back("MaxPrReachDeadlock", maxReachDeadlock, emptyVariableSet, "The maximal probability to eventually reach a deadlock.");
             
             auto exprTB = expressionManager->declareRationalVariable(getUniqueVarName(*expressionManager, "TIME_BOUND"));
             auto janiTB = storm::jani::Constant(exprTB.getName(), exprTB);
@@ -289,12 +292,12 @@ namespace storm {
             auto maxReachDeadlockTimeBounded = std::make_shared<storm::logic::ProbabilityOperatorFormula>(
                     std::make_shared<storm::logic::BoundedUntilFormula>(trueFormula, deadlock, boost::none, tb, tbr),
                     storm::logic::OperatorInformation(storm::solver::OptimizationDirection::Maximize));
-            standardProperties.emplace_back("MaxPrReachDeadlockTB", maxReachDeadlockTimeBounded, "The maximal probability to reach a deadlock within 'TIME_BOUND' steps.");
+            standardProperties.emplace_back("MaxPrReachDeadlockTB", maxReachDeadlockTimeBounded, emptyVariableSet, "The maximal probability to reach a deadlock within 'TIME_BOUND' steps.");
             
             auto expTimeDeadlock = std::make_shared<storm::logic::TimeOperatorFormula>(
                     std::make_shared<storm::logic::EventuallyFormula>(deadlock, storm::logic::FormulaContext::Time),
                     storm::logic::OperatorInformation(storm::solver::OptimizationDirection::Maximize));
-            standardProperties.emplace_back("MinExpTimeDeadlock", expTimeDeadlock, "The minimal expected time to reach a deadlock.");
+            standardProperties.emplace_back("MinExpTimeDeadlock", expTimeDeadlock, emptyVariableSet, "The minimal expected time to reach a deadlock.");
             
         }
 

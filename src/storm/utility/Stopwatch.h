@@ -47,6 +47,11 @@ namespace storm {
             void addToTime(std::chrono::nanoseconds timeNanoseconds);
 
             /*!
+             * Adds the value of the (stopped) watch to the accumulated time of this watch.
+             */
+            void add(Stopwatch const& other);
+            
+            /*!
              * Stop stopwatch and add measured time to total time.
              */
             void stop();
@@ -60,6 +65,11 @@ namespace storm {
              * Reset the stopwatch.
              */
             void reset();
+            
+            /*!
+             * Retrieves whether the watch is stopped.
+             */
+            bool stopped() const;
 
             friend std::ostream& operator<<(std::ostream& out, Stopwatch const& stopwatch);
             
@@ -68,7 +78,7 @@ namespace storm {
             std::chrono::nanoseconds accumulatedTime;
             
             // A flag indicating if the stopwatch is stopped right now.
-            bool stopped;
+            bool isStopped;
             
             // The timepoint when the stopwatch was started the last time (if it's not stopped).
             std::chrono::high_resolution_clock::time_point startOfCurrentMeasurement;

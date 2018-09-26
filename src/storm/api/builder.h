@@ -5,6 +5,7 @@
 #include "storm-parsers/parser/ImcaMarkovAutomatonParser.h"
 
 #include "storm/storage/SymbolicModelDescription.h"
+#include "storm/storage/jani/ModelFeatures.h"
 
 #include "storm/storage/sparse/ModelComponents.h"
 #include "storm/models/sparse/Dtmc.h"
@@ -16,6 +17,7 @@
 
 #include "storm/builder/DdPrismModelBuilder.h"
 #include "storm/builder/DdJaniModelBuilder.h"
+#include "storm/builder/BuilderType.h"
 
 #include "storm/generator/PrismNextStateGenerator.h"
 #include "storm/generator/JaniNextStateGenerator.h"
@@ -28,6 +30,16 @@
 
 namespace storm {
     namespace api {
+        
+        inline storm::jani::ModelFeatures getSupportedJaniFeatures(storm::builder::BuilderType const& builderType) {
+            storm::jani::ModelFeatures features;
+            features.add(storm::jani::ModelFeature::DerivedOperators);
+            features.add(storm::jani::ModelFeature::StateExitRewards);
+            if (builderType == storm::builder::BuilderType::Explicit) {
+                features.add(storm::jani::ModelFeature::Arrays);
+            }
+            return features;
+        }
         
         template<storm::dd::DdType LibraryType, typename ValueType>
         std::shared_ptr<storm::models::symbolic::Model<LibraryType, ValueType>> buildSymbolicModel(storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool buildFullModel = false) {

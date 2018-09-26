@@ -18,7 +18,7 @@ namespace storm {
             
             storm::prism::Program preprocess(storm::prism::Program const& program, std::map<storm::expressions::Variable, storm::expressions::Expression> const& constantDefinitions) {
                 storm::prism::Program result = program.defineUndefinedConstants(constantDefinitions);
-                result = result.substituteConstants();
+                result = result.substituteConstantsFormulas();
                 return result;
             }
             
@@ -43,7 +43,6 @@ namespace storm {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Program still contains these undefined constants: " + stream.str());
                 }
             }
-            
         }
     }
 }

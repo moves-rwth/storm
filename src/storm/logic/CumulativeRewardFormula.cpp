@@ -47,6 +47,12 @@ namespace storm {
             }
         }
         
+        void CumulativeRewardFormula::gatherUsedVariables(std::set<storm::expressions::Variable>& usedVariables) const {
+            for (unsigned i = 0; i < this->getDimension(); ++i) {
+                this->getBound(i).gatherVariables(usedVariables);
+            }
+        }
+        
         TimeBoundReference const& CumulativeRewardFormula::getTimeBoundReference() const {
             STORM_LOG_ASSERT(!isMultiDimensional(), "Cumulative Reward Formula is multi-dimensional.");
             return getTimeBoundReference(0);

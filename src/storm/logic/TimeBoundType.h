@@ -59,6 +59,11 @@ namespace storm {
                 return rewardAccumulation.get();
             }
             
+            boost::optional<RewardAccumulation> const& getOptionalRewardAccumulation() const {
+                assert(isRewardBound());
+                return rewardAccumulation;
+            }
+            
         };
 
 

@@ -63,6 +63,16 @@ namespace storm {
                  */
                 bool isPrismCompatibilityEnabled() const;
                 
+                /*!
+                 * Retrieves whether the Jani option was set.
+                 */
+                bool isJaniInputSet() const;
+                
+                /*!
+                 * Retrieves the name of the file that contains the jani model specification if the model was given.
+                 */
+                std::string getJaniInputFilename() const;
+                
                 bool check() const override;
                 void finalize() override;
 
@@ -78,6 +88,7 @@ namespace storm {
                 static const std::string prismInputOptionName;
                 static const std::string prismCompatibilityOptionName;
                 static const std::string prismCompatibilityOptionShortName;
+                static const std::string janiInputOptionName;
             };
             
                 

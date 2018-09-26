@@ -8,6 +8,13 @@
 #include "storm/storage/prism/Program.h"
 
 namespace storm {
+    namespace builder {
+        namespace jit {
+            template <typename StateType, typename ValueType>
+            class Distribution;
+        }
+    }
+    
     namespace generator {
         
         template<typename ValueType, typename StateType = uint32_t>
@@ -84,6 +91,11 @@ namespace storm {
              * @return The labeled choices of the state.
              */
             std::vector<Choice<ValueType>> getLabeledChoices(CompressedState const& state, StateToIdCallback stateToIdCallback);
+            
+            /*!
+             * A recursive helper function to generate a synchronziing distribution.
+             */
+            void generateSynchronizedDistribution(storm::storage::BitVector const& state, ValueType const& probability, uint64_t position, std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>::const_iterator> const& iteratorList, storm::builder::jit::Distribution<StateType, ValueType>& distribution, StateToIdCallback stateToIdCallback);
             
             // The program used for the generation of next states.
             storm::prism::Program program;

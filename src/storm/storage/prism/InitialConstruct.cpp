@@ -16,9 +16,9 @@ namespace storm {
         }
         
         std::ostream& operator<<(std::ostream& stream, InitialConstruct const& initialConstruct) {
-            stream << "initial " << std::endl;
+            stream << "init " << std::endl;
             stream << "\t" << initialConstruct.getInitialStatesExpression() << std::endl;
-            stream << "endinitial" << std::endl;
+            stream << "endinit" << std::endl;
             return stream;
         }
     } // namespace prism

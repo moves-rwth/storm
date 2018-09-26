@@ -96,7 +96,7 @@ namespace storm {
              * Which expression labels are built
              * @return
              */
-            std::vector<storm::expressions::Expression> const& getExpressionLabels() const;
+            std::vector<std::pair<std::string, storm::expressions::Expression>> const& getExpressionLabels() const;
             std::vector<std::pair<LabelOrExpression, bool>> const& getTerminalStates() const;
             bool hasTerminalStates() const;
             void clearTerminalStates();
@@ -107,7 +107,9 @@ namespace storm {
             bool isBuildAllLabelsSet() const;
             bool isExplorationChecksSet() const;
             bool isShowProgressSet() const;
+            bool isScaleAndLiftTransitionRewardsSet() const;
             bool isAddOutOfBoundsStateSet() const;
+            uint64_t getReservedBitsForUnboundedVariables() const;
             bool isAddOverlappingGuardLabelSet() const;
             uint64_t getShowProgressDelay() const;
 
@@ -157,6 +159,13 @@ namespace storm {
              * @return this
              */
             BuilderOptions& setExplorationChecks(bool newValue = true);
+            
+            /**
+             * Should extra checks be performed during exploration
+             * @param newValue The new value (default true)
+             * @return this
+             */
+            BuilderOptions& setScaleAndLiftTransitionRewards(bool newValue = true);
 
             /**
              * Should a state for out of bounds be constructed
@@ -171,7 +180,16 @@ namespace storm {
              */
             BuilderOptions& setAddOverlappingGuardsLabel(bool newValue = true);
 
-
+            /**
+             * Sets the number of bits that will be reserved for unbounded integer variables.
+             */
+            BuilderOptions& setReservedBitsForUnboundedVariables(uint64_t value);
+            
+            /**
+             * Substitutes all expressions occurring in these options.
+             */
+            BuilderOptions& substituteExpressions(std::function<storm::expressions::Expression(storm::expressions::Expression const&)> const& substitutionFunction);
+            
         private:
             /// A flag that indicates whether all reward models are to be built. In this case, the reward model names are
             /// to be ignored.
@@ -187,20 +205,23 @@ namespace storm {
             std::set<std::string> labelNames;
             
             /// The expression that are to be used for creating the state labeling.
-            std::vector<storm::expressions::Expression> expressionLabels;
+            std::vector<std::pair<std::string, storm::expressions::Expression>> expressionLabels;
             
             /// If one of these labels/expressions evaluates to the given bool, the builder can abort the exploration.
             std::vector<std::pair<LabelOrExpression, bool>> terminalStates;
-            
+
             /// A flag indicating whether or not to build choice labels.
             bool buildChoiceLabels;
-                         
+            
             /// A flag indicating whether or not to build for each state the variable valuation from which it originates.
             bool buildStateValuations;
             
             // A flag that indicates whether or not to generate the information from which parts of the model specification
             // each choice originates.
             bool buildChoiceOrigins;
+            
+            /// A flag that stores whether potentially occurring transition rewards should be scaled and lifted to the edge
+            bool scaleAndLiftTransitionRewards;
 
             /// A flag that stores whether exploration checks are to be performed.
             bool explorationChecks;
@@ -211,11 +232,15 @@ namespace storm {
             /// A flag indicating that the an additional state for out of bounds should be created.
             bool addOutOfBoundsState;
 
+            /// Indicates the number of bits that are reserved for the storage of unbounded integer variables.
+            uint64_t reservedBitsForUnboundedVariables;
+            
             /// A flag that stores whether the progress of exploration is to be printed.
             bool showProgress;
 
             /// The delay for printing progress information.
             uint64_t showProgressDelay;
+            
         };
         
     }

@@ -35,6 +35,8 @@ namespace storm {
             template <typename ValueType>
             ValueType getBound() const;
             
+            virtual void gatherUsedVariables(std::set<storm::expressions::Variable>& usedVariables) const override;
+            
         private:
             static void checkNoVariablesInBound(storm::expressions::Expression const& bound);
 
