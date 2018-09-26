@@ -539,10 +539,6 @@ namespace storm {
             if (!edge.getAssignments().empty()) {
                 transientVariableInformation.setDefaultValuesInEvaluator(*this->evaluator);
             }
-
-            
-            auto valueIt = stateActionRewards.begin();
-           // performTransientAssignments(edge.getAssignments().getTransientAssignments(), *this->evaluator, [&valueIt] (ValueType const& value) { *valueIt += value; ++valueIt; } );
             
             // Iterate over all updates of the current command.
             ValueType probabilitySum = storm::utility::zero<ValueType>();
@@ -563,9 +559,6 @@ namespace storm {
                         applyTransientUpdate(transientVariableValuation, destination.getOrderedAssignments().getTransientAssignments(assignmentLevel), *this->evaluator);
                         transientVariableValuation.setInEvaluator(*this->evaluator, this->getOptions().isExplorationChecksSet());
                         evaluatorChanged = true;
-                        // Create the rewards for this destination
-                        auto valueIt = stateActionRewards.begin();
-                      //  performTransientAssignments(destination.getOrderedAssignments().getTransientAssignments(assignmentLevel), *this->evaluator, [&] (ValueType const& value) { *valueIt += (value * probability); ++valueIt; } );
                     }
                     if (assignmentLevel < highestLevel) {
                         while (assignmentLevel < highestLevel) {
@@ -578,9 +571,6 @@ namespace storm {
                                 applyTransientUpdate(transientVariableValuation, destination.getOrderedAssignments().getTransientAssignments(assignmentLevel), *this->evaluator);
                                 transientVariableValuation.setInEvaluator(*this->evaluator, this->getOptions().isExplorationChecksSet());
                                 evaluatorChanged = true;
-                                // update the rewards for this destination
-                                auto valueIt = stateActionRewards.begin();
-                           //     performTransientAssignments(destination.getOrderedAssignments().getTransientAssignments(assignmentLevel), *this->evaluator, [&] (ValueType const& value) { *valueIt += (value * probability); ++valueIt; } );
                             }
                         }
                     }
@@ -616,33 +606,6 @@ namespace storm {
             }
             
             return choice;
-        }
-        
-        template<typename ValueType, typename StateType>
-        void JaniNextStateGenerator<ValueType, StateType>::generateSynchronizedDistribution(storm::storage::BitVector const& state, ValueType const& probability, uint64_t position, AutomataEdgeSets const& edgeCombination, std::vector<EdgeSetWithIndices::const_iterator> const& iteratorList, storm::builder::jit::Distribution<StateType, ValueType>& distribution, std::vector<ValueType>& stateActionRewards, EdgeIndexSet& edgeIndices, StateToIdCallback stateToIdCallback) {
-            
-            if (storm::utility::isZero<ValueType>(probability)) {
-                return;
-            }
-            
-            if (position >= iteratorList.size()) {
-                StateType id = stateToIdCallback(state);
-                distribution.add(id, probability);
-            } else {
-                auto const& indexAndEdge = *iteratorList[position];
-                auto const& edge = *indexAndEdge.second;
-
-                for (auto const& destination : edge.getDestinations()) {
-                    generateSynchronizedDistribution(applyUpdate(state, destination, this->variableInformation.locationVariables[edgeCombination[position].first], 0, *this->evaluator), probability * this->evaluator->asRational(destination.getProbability()), position + 1, edgeCombination, iteratorList, distribution, stateActionRewards, edgeIndices, stateToIdCallback);
-                }
-                
-                if (this->getOptions().isBuildChoiceOriginsSet()) {
-                    edgeIndices.insert(model.encodeAutomatonAndEdgeIndices(edgeCombination[position].first, indexAndEdge.first));
-                }
-                
-                auto valueIt = stateActionRewards.begin();
-                performTransientAssignments(edge.getAssignments().getTransientAssignments(), *this->evaluator, [&valueIt] (ValueType const& value) { *valueIt += value; ++valueIt; } );
-            }
         }
         
         template<typename ValueType, typename StateType>
@@ -716,10 +679,6 @@ namespace storm {
                     
                     successorState = applyUpdate(successorState, *destinations.back(), *locationVars.back(), lowestDestinationAssignmentLevel, *this->evaluator);
                     applyTransientUpdate(transientVariableValuation, destinations.back()->getOrderedAssignments().getTransientAssignments(lowestDestinationAssignmentLevel), *this->evaluator);
-
-                    // add the reward for this destination to the destination rewards
-                    //auto valueIt = destinationRewards.begin();
-                    //performTransientAssignments(destinations.back()->getOrderedAssignments().getTransientAssignments(lowestDestinationAssignmentLevel), *this->evaluator, [&valueIt] (ValueType const& value) { *valueIt += value; ++valueIt; } );
                 }
                 
                 
@@ -735,9 +694,6 @@ namespace storm {
                         for (auto const& destPtr : destinations) {
                             successorState = applyUpdate(successorState, *destPtr, **locationVarIt, assignmentLevel, *this->evaluator);
                             applyTransientUpdate(transientVariableValuation, destinations.back()->getOrderedAssignments().getTransientAssignments(assignmentLevel), *this->evaluator);
-                            // add the reward for this destination to the destination rewards
-                           // auto valueIt = destinationRewards.begin();
-                           // performTransientAssignments(destinations.back()->getOrderedAssignments().getTransientAssignments(assignmentLevel), *this->evaluator, [&valueIt] (ValueType const& value) { *valueIt += value; ++valueIt; } );
                             ++locationVarIt;
                         }
                     }
@@ -965,38 +921,6 @@ namespace storm {
             }
             return NextStateGenerator<ValueType, StateType>::label(stateStorage, initialStateIndices, deadlockStateIndices, transientVariableExpressions);
         }
-        
-        template<typename ValueType, typename StateType>
-        void JaniNextStateGenerator<ValueType, StateType>::performTransientAssignments(storm::jani::detail::ConstAssignments const& transientAssignments, storm::expressions::ExpressionEvaluator<ValueType> const& expressionEvaluator,  std::function<void (ValueType const&)> const& callback) {
-        /*
-            // If there are no reward variables, there is no need to iterate at all.
-            if (rewardExpressions.empty()) {
-                return;
-            }
-            
-            // Otherwise, perform the callback for all selected reward variables.
-            auto rewardVariableIt = rewardExpressions.begin();
-            auto rewardVariableIte = rewardExpressions.end();
-            for (auto const& assignment : transientAssignments) {
-                STORM_LOG_ASSERT(assignment.getLValue().isVariable(), "Transient assignments to non-variable LValues are not supported.");
-                while (rewardVariableIt != rewardVariableIte && *rewardVariableIt < assignment.getExpressionVariable()) {
-                    callback(storm::utility::zero<ValueType>());
-                    ++rewardVariableIt;
-                }
-                if (rewardVariableIt == rewardVariableIte) {
-                    break;
-                } else if (*rewardVariableIt == assignment.getExpressionVariable()) {
-                    callback(ValueType(expressionEvaluator.asRational(assignment.getAssignedExpression())));
-                    ++rewardVariableIt;
-                }
-            }
-            // Add a value of zero for all variables that have no assignment.
-            for (; rewardVariableIt != rewardVariableIte; ++rewardVariableIt) {
-                callback(storm::utility::zero<ValueType>());
-            }
-            */
-        }
-        
         
         template<typename ValueType, typename StateType>
         std::vector<ValueType> JaniNextStateGenerator<ValueType, StateType>::evaluateRewardExpressions() const {

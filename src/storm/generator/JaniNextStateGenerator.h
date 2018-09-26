@@ -114,19 +114,12 @@ namespace storm {
             typedef std::vector<AutomatonAndEdgeSet> AutomataEdgeSets;
             
             std::vector<Choice<ValueType>> expandSynchronizingEdgeCombination(AutomataEdgeSets const& edgeCombination, uint64_t outputActionIndex, CompressedState const& state, StateToIdCallback stateToIdCallback);
-            void generateSynchronizedDistribution(storm::storage::BitVector const& state, ValueType const& probability, uint64_t position, AutomataEdgeSets const& edgeCombination, std::vector<EdgeSetWithIndices::const_iterator> const& iteratorList, storm::builder::jit::Distribution<StateType, ValueType>& distribution, std::vector<ValueType>& stateActionRewards, EdgeIndexSet& edgeIndices, StateToIdCallback stateToIdCallback);
             void generateSynchronizedDistribution(storm::storage::BitVector const& state, AutomataEdgeSets const& edgeCombination, std::vector<EdgeSetWithIndices::const_iterator> const& iteratorList, storm::builder::jit::Distribution<StateType, ValueType>& distribution, std::vector<ValueType>& stateActionRewards, EdgeIndexSet& edgeIndices, StateToIdCallback stateToIdCallback);
 
             /*!
              * Checks the list of enabled edges for multiple synchronized writes to the same global variable.
              */
             void checkGlobalVariableWritesValid(AutomataEdgeSets const& enabledEdges) const;
-            
-            /*!
-             * Treats the given transient assignments by calling the callback function whenever a transient assignment
-             * to one of the reward variables of this generator is performed.
-             */
-            void performTransientAssignments(storm::jani::detail::ConstAssignments const& transientAssignments, storm::expressions::ExpressionEvaluator<ValueType> const& expressionEvaluator, std::function<void (ValueType const&)> const& callback);
             
             /*!
              * Evaluates the reward expressions using the current evaluator
