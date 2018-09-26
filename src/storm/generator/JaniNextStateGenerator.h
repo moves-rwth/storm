@@ -162,8 +162,8 @@ namespace storm {
             /// The vector storing the edges that need to be explored (synchronously or asynchronously).
             std::vector<OutputAndEdges> edges;
             
-            /// The transient variables of reward models that need to be considered.
-            std::vector<storm::expressions::Variable> rewardVariables;
+            /// The names and defining expressions of reward models that need to be considered.
+            std::vector<std::pair<std::string, storm::expressions::Expression>> rewardExpressions;
             
             /// A vector storing information about the corresponding reward models (variables).
             std::vector<storm::builder::RewardModelInformation> rewardModelInformation;

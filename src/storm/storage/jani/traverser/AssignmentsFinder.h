@@ -6,6 +6,11 @@
 #include "storm/storage/jani/traverser/JaniTraverser.h"
 
 namespace storm {
+    
+    namespace expressions {
+        class Variable;
+    }
+    
     namespace jani {
         class AssignmentsFinder : public ConstJaniTraverser {
         public:
@@ -16,7 +21,8 @@ namespace storm {
             
             AssignmentsFinder() = default;
             
-            ResultType find(Model const& model, Variable const& variable);
+            ResultType find(Model const& model, storm::jani::Variable const& variable);
+            ResultType find(Model const& model, storm::expressions::Variable const& variable);
             
             virtual ~AssignmentsFinder() = default;
             

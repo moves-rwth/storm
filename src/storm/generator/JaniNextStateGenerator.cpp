@@ -15,6 +15,7 @@
 #include "storm/storage/jani/CompositionInformationVisitor.h"
 #include "storm/storage/jani/traverser/AssignmentLevelFinder.h"
 #include "storm/storage/jani/traverser/ArrayExpressionFinder.h"
+#include "storm/storage/jani/traverser/AssignmentsFinder.h"
 
 #include "storm/storage/sparse/JaniChoiceOrigins.h"
 
@@ -38,8 +39,7 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
-        JaniNextStateGenerator<ValueType, StateType>::JaniNextStateGenerator(storm::jani::Model const& model, NextStateGeneratorOptions const& options, bool) : NextStateGenerator<ValueType, StateType>(model.getExpressionManager(), options), model(model), rewardVariables(), hasStateActionRewards(false) {
-            STORM_LOG_THROW(!model.hasNonGlobalTransientVariable(), storm::exceptions::InvalidSettingsException, "The explicit next-state generator currently does not support automata-local transient variables.");
+        JaniNextStateGenerator<ValueType, StateType>::JaniNextStateGenerator(storm::jani::Model const& model, NextStateGeneratorOptions const& options, bool) : NextStateGenerator<ValueType, StateType>(model.getExpressionManager(), options), model(model), rewardExpressions(), hasStateActionRewards(false) {
             STORM_LOG_THROW(!this->options.isBuildChoiceLabelsSet(), storm::exceptions::InvalidSettingsException, "JANI next-state generator cannot generate choice labels.");
 
             auto features = model.getModelFeatures();
@@ -83,39 +83,13 @@ namespace storm {
             this->transientVariableInformation.setDefaultValuesInEvaluator(*this->evaluator);
             
             if (this->options.isBuildAllRewardModelsSet()) {
-                for (auto const& variable : model.getGlobalVariables()) {
-                    if (variable.isTransient()) {
-                        rewardVariables.push_back(variable.getExpressionVariable());
-                    }
-                }
+                rewardExpressions = model.getAllRewardModelExpressions();
             } else {
-                // Extract the reward models from the program based on the names we were given.
-                auto const& globalVariables = model.getGlobalVariables();
+                // Extract the reward models from the model based on the names we were given.
                 for (auto const& rewardModelName : this->options.getRewardModelNames()) {
-                    if (globalVariables.hasVariable(rewardModelName)) {
-                        rewardVariables.push_back(globalVariables.getVariable(rewardModelName).getExpressionVariable());
-                    } else {
-                        STORM_LOG_THROW(rewardModelName.empty(), storm::exceptions::InvalidArgumentException, "Cannot build unknown reward model '" << rewardModelName << "'.");
-                        STORM_LOG_THROW(globalVariables.getNumberOfRealTransientVariables() + globalVariables.getNumberOfUnboundedIntegerTransientVariables() == 1, storm::exceptions::InvalidArgumentException, "Reference to standard reward model is ambiguous.");
-                    }
-                }
-                
-                // If no reward model was yet added, but there was one that was given in the options, we try to build the
-                // standard reward model.
-                if (rewardVariables.empty() && !this->options.getRewardModelNames().empty()) {
-                    bool foundTransientVariable = false;
-                    for (auto const& transientVariable : globalVariables.getTransientVariables()) {
-                        if (transientVariable.isUnboundedIntegerVariable() || transientVariable.isRealVariable()) {
-                            rewardVariables.push_back(transientVariable.getExpressionVariable());
-                            foundTransientVariable = true;
-                            break;
-                        }
-                    }
-                    STORM_LOG_ASSERT(foundTransientVariable, "Expected to find a fitting transient variable.");
+                    rewardExpressions.emplace_back(rewardModelName, model.getRewardModelExpression(rewardModelName));
                 }
             }
-            // Sort the reward variables to match the assignments order.
-            std::sort(rewardVariables.begin(), rewardVariables.end());
             
             // Build the information structs for the reward models.
             buildRewardModelInformation();
@@ -228,6 +202,10 @@ namespace storm {
                     }
                     for (auto const& integerVariable : this->variableInformation.integerVariables) {
                         int_fast64_t variableValue = model->getIntegerValue(integerVariable.variable);
+                        if (integerVariable.forceOutOfBoundsCheck || this->getOptions().isExplorationChecksSet()) {
+                            STORM_LOG_THROW(variableValue >= integerVariable.lowerBound, storm::exceptions::WrongFormatException, "The initial value for variable " << integerVariable.variable.getName() << " is lower than the lower bound.");
+                            STORM_LOG_THROW(variableValue <= integerVariable.upperBound, storm::exceptions::WrongFormatException, "The initial value for variable " << integerVariable.variable.getName() << " is higher than the upper bound");
+                        }
                         storm::expressions::Expression localBlockingExpression = integerVariable.variable != model->getManager().integer(variableValue);
                         blockingExpression = blockingExpression.isInitialized() ? blockingExpression || localBlockingExpression : localBlockingExpression;
                         initialState.setFromInt(integerVariable.bitOffset, integerVariable.bitWidth, static_cast<uint_fast64_t>(variableValue - integerVariable.lowerBound));
@@ -456,7 +434,6 @@ namespace storm {
             
             // First, construct the state rewards, as we may return early if there are no choices later and we already
             // need the state rewards then.
-            std::vector<ValueType> stateRewards(this->rewardVariables.size(), storm::utility::zero<ValueType>());
             uint64_t automatonIndex = 0;
             TransientVariableValuation<ValueType> transientVariableValuation;
             for (auto const& automatonRef : this->parallelAutomata) {
@@ -465,12 +442,9 @@ namespace storm {
                 storm::jani::Location const& location = automaton.getLocation(currentLocationIndex);
                 STORM_LOG_ASSERT(!location.getAssignments().hasMultipleLevels(true), "Indexed assignments at locations are not supported in the jani standard.");
                 applyTransientUpdate(transientVariableValuation, location.getAssignments().getTransientAssignments(), *this->evaluator);
-                auto valueIt = stateRewards.begin();
-                performTransientAssignments(location.getAssignments().getTransientAssignments(), *this->evaluator, [&valueIt] (ValueType const& value) { *valueIt += value; ++valueIt; } );
                 ++automatonIndex;
             }
             transientVariableValuation.setInEvaluator(*this->evaluator, this->getOptions().isExplorationChecksSet());
-            //result.addStateRewards(std::move(stateRewards));
             result.addStateRewards(evaluateRewardExpressions());
             this->transientVariableInformation.setDefaultValuesInEvaluator(*this->evaluator);
 
@@ -522,9 +496,9 @@ namespace storm {
                     }
                 }
                 
-                std::vector<ValueType> stateActionRewards(rewardVariables.size(), storm::utility::zero<ValueType>());
+                std::vector<ValueType> stateActionRewards(rewardExpressions.size(), storm::utility::zero<ValueType>());
                 for (auto const& choice : allChoices) {
-                    for (uint_fast64_t rewardVariableIndex = 0; rewardVariableIndex < rewardVariables.size(); ++rewardVariableIndex) {
+                    for (uint_fast64_t rewardVariableIndex = 0; rewardVariableIndex < rewardExpressions.size(); ++rewardVariableIndex) {
                         stateActionRewards[rewardVariableIndex] += choice.getRewards()[rewardVariableIndex] * choice.getTotalMass() / totalExitRate;
                     }
                     
@@ -694,8 +668,10 @@ namespace storm {
                 storm::jani::Edge const& edge = *iteratorList[i]->second;
                 lowestDestinationAssignmentLevel = std::min(lowestDestinationAssignmentLevel, edge.getLowestAssignmentLevel());
                 highestDestinationAssignmentLevel = std::max(highestDestinationAssignmentLevel, edge.getHighestAssignmentLevel());
-                lowestEdgeAssignmentLevel = std::min(lowestEdgeAssignmentLevel, edge.getAssignments().getLowestLevel(true));
-                highestEdgeAssignmentLevel = std::max(highestEdgeAssignmentLevel, edge.getAssignments().getHighestLevel(true));
+                if (!edge.getAssignments().empty()) {
+                    lowestEdgeAssignmentLevel = std::min(lowestEdgeAssignmentLevel, edge.getAssignments().getLowestLevel(true));
+                    highestEdgeAssignmentLevel = std::max(highestEdgeAssignmentLevel, edge.getAssignments().getHighestLevel(true));
+                }
                 numDestinations *= edge.getNumberOfDestinations();
             }
             
@@ -813,7 +789,7 @@ namespace storm {
                 distribution.clear();
 
                 EdgeIndexSet edgeIndices;
-                std::vector<ValueType> stateActionRewards(rewardVariables.size(), storm::utility::zero<ValueType>());
+                std::vector<ValueType> stateActionRewards(rewardExpressions.size(), storm::utility::zero<ValueType>());
                 // old version without assignment levels generateSynchronizedDistribution(state, storm::utility::one<ValueType>(), 0, edgeCombination, iteratorList, distribution, stateActionRewards, edgeIndices, stateToIdCallback);
                 generateSynchronizedDistribution(state, edgeCombination, iteratorList, distribution, stateActionRewards, edgeIndices, stateToIdCallback);
                 distribution.compress();
@@ -964,7 +940,7 @@ namespace storm {
         
         template<typename ValueType, typename StateType>
         std::size_t JaniNextStateGenerator<ValueType, StateType>::getNumberOfRewardModels() const {
-            return rewardVariables.size();
+            return rewardExpressions.size();
         }
         
         template<typename ValueType, typename StateType>
@@ -999,14 +975,15 @@ namespace storm {
         
         template<typename ValueType, typename StateType>
         void JaniNextStateGenerator<ValueType, StateType>::performTransientAssignments(storm::jani::detail::ConstAssignments const& transientAssignments, storm::expressions::ExpressionEvaluator<ValueType> const& expressionEvaluator,  std::function<void (ValueType const&)> const& callback) {
+        /*
             // If there are no reward variables, there is no need to iterate at all.
-            if (rewardVariables.empty()) {
+            if (rewardExpressions.empty()) {
                 return;
             }
             
             // Otherwise, perform the callback for all selected reward variables.
-            auto rewardVariableIt = rewardVariables.begin();
-            auto rewardVariableIte = rewardVariables.end();
+            auto rewardVariableIt = rewardExpressions.begin();
+            auto rewardVariableIte = rewardExpressions.end();
             for (auto const& assignment : transientAssignments) {
                 STORM_LOG_ASSERT(assignment.getLValue().isVariable(), "Transient assignments to non-variable LValues are not supported.");
                 while (rewardVariableIt != rewardVariableIte && *rewardVariableIt < assignment.getExpressionVariable()) {
@@ -1024,74 +1001,66 @@ namespace storm {
             for (; rewardVariableIt != rewardVariableIte; ++rewardVariableIt) {
                 callback(storm::utility::zero<ValueType>());
             }
+            */
         }
         
         
         template<typename ValueType, typename StateType>
         std::vector<ValueType> JaniNextStateGenerator<ValueType, StateType>::evaluateRewardExpressions() const {
             std::vector<ValueType> result;
-            result.reserve(rewardVariables.size());
-            for (auto const& rewardExpression : rewardVariables) {
-                result.push_back(this->evaluator->asRational(rewardExpression.getExpression()));
+            result.reserve(rewardExpressions.size());
+            for (auto const& rewardExpression : rewardExpressions) {
+                result.push_back(this->evaluator->asRational(rewardExpression.second));
             }
             return result;
         }
         
         template<typename ValueType, typename StateType>
         void JaniNextStateGenerator<ValueType, StateType>::addEvaluatedRewardExpressions(std::vector<ValueType>& rewards, ValueType const& factor) const {
-            assert(rewards.size() == rewardVariables.size());
+            assert(rewards.size() == rewardExpressions.size());
             auto rewIt = rewards.begin();
-            for (auto const& rewardExpression : rewardVariables) {
-                (*rewIt) += factor * this->evaluator->asRational(rewardExpression.getExpression());
+            for (auto const& rewardExpression : rewardExpressions) {
+                (*rewIt) += factor * this->evaluator->asRational(rewardExpression.second);
                 ++rewIt;
             }
         }
         
         template<typename ValueType, typename StateType>
         void JaniNextStateGenerator<ValueType, StateType>::buildRewardModelInformation() {
-            // Prepare all reward model information structs.
-            for (auto const& variable : rewardVariables) {
-                rewardModelInformation.emplace_back(variable.getName(), false, false, false);
+            // Prepare all reward model information structs and get a mapping from variables to rewardModels that use this variable
+            std::map<storm::expressions::Variable, std::vector<uint64_t>> variableToRewardIndices;
+            for (uint64_t i = 0; i < rewardExpressions.size(); ++i) {
+                rewardModelInformation.emplace_back(rewardExpressions[i].first, false, false, false);
+                auto varsInExpression = rewardExpressions[i].second.getVariables();
+                for (auto const& v : varsInExpression) {
+                    auto mapIt = variableToRewardIndices.emplace(v, std::vector<uint64_t>()).first;
+                    mapIt->second.push_back(i);
+                }
             }
             
-            // Then fill them.
-            for (auto const& automatonRef : this->parallelAutomata) {
-                auto const& automaton = automatonRef.get();
-                for (auto const& location : automaton.getLocations()) {
-                    auto rewardVariableIt = rewardVariables.begin();
-                    auto rewardVariableIte = rewardVariables.end();
-                    
-                    for (auto const& assignment : location.getAssignments().getTransientAssignments()) {
-                        while (rewardVariableIt != rewardVariableIte && *rewardVariableIt < assignment.getExpressionVariable()) {
-                            ++rewardVariableIt;
-                        }
-                        if (rewardVariableIt == rewardVariableIte) {
-                            break;
-                        }
-                        if (*rewardVariableIt == assignment.getExpressionVariable()) {
-                            rewardModelInformation[std::distance(rewardVariables.begin(), rewardVariableIt)].setHasStateRewards();
-                            ++rewardVariableIt;
-                        }
+            storm::jani::AssignmentsFinder finder;
+            for (auto const& varRewIndices : variableToRewardIndices) {
+                auto assignmentsFinderResult = finder.find(this->model, varRewIndices.first);
+                if (assignmentsFinderResult.hasLocationAssignment) {
+                    for (auto const& rewModelIndex : varRewIndices.second) {
+                        rewardModelInformation[rewModelIndex].setHasStateRewards();
                     }
                 }
-                
-                for (auto const& edge : automaton.getEdges()) {
-                    auto rewardVariableIt = rewardVariables.begin();
-                    auto rewardVariableIte = rewardVariables.end();
-                    
-                    for (auto const& assignment : edge.getAssignments().getTransientAssignments()) {
-                        while (rewardVariableIt != rewardVariableIte && *rewardVariableIt < assignment.getExpressionVariable()) {
-                            ++rewardVariableIt;
-                        }
-                        if (rewardVariableIt == rewardVariableIte) {
-                            break;
-                        }
-                        if (*rewardVariableIt == assignment.getExpressionVariable()) {
-                            rewardModelInformation[std::distance(rewardVariables.begin(), rewardVariableIt)].setHasStateActionRewards();
-                            hasStateActionRewards = true;
-                            ++rewardVariableIt;
-                        }
+                if (assignmentsFinderResult.hasEdgeAssignment || (this->options.isScaleAndLiftTransitionRewardsSet() && assignmentsFinderResult.hasEdgeDestinationAssignment)) {
+                    for (auto const& rewModelIndex : varRewIndices.second) {
+                        rewardModelInformation[rewModelIndex].setHasStateActionRewards();
+                        hasStateActionRewards = true;
                     }
+                }
+            }
+            
+            // If the reward expression does not evaluate to zero, we set all reward types to true
+            for (uint64_t i = 0; i < rewardExpressions.size(); ++i) {
+                auto const& rewExpr = rewardExpressions[i].second;
+                if (rewExpr.containsVariables() || !storm::utility::isZero(this->evaluator->asRational(rewExpr))) {
+                    rewardModelInformation[i].setHasStateRewards();
+                    rewardModelInformation[i].setHasStateActionRewards();
+                    hasStateActionRewards = true;
                 }
             }
         }

@@ -883,29 +883,20 @@ namespace storm {
             void ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::generateRewards(cpptempl::data_map& modelData) {
                 // Extract the reward models from the program based on the names we were given.
                 std::vector<storm::expressions::Variable> rewardVariables;
-                auto const& globalVariables = model.getGlobalVariables();
-                for (auto const& rewardModelName : this->options.getRewardModelNames()) {
-                    if (globalVariables.hasVariable(rewardModelName)) {
-                        rewardVariables.push_back(globalVariables.getVariable(rewardModelName).getExpressionVariable());
-                    } else {
-                        STORM_LOG_THROW(rewardModelName.empty(), storm::exceptions::InvalidArgumentException, "Cannot build unknown reward model '" << rewardModelName << "'.");
-                        STORM_LOG_THROW(globalVariables.getNumberOfRealTransientVariables() + globalVariables.getNumberOfUnboundedIntegerTransientVariables() == 1, storm::exceptions::InvalidArgumentException, "Reference to standard reward model is ambiguous.");
+                if (this->options.isBuildAllRewardModelsSet()) {
+                    for (auto const& rewExpr : model.getAllRewardModelExpressions()) {
+                        STORM_LOG_ERROR_COND(rewExpr.second.isVariable(), "The jit builder can not build the non-trivial reward expression '" << rewExpr.second << "'.");
+                        rewardVariables.push_back(rewExpr.second.getBaseExpression().asVariableExpression().getVariable());
+                    }
+                } else {
+                    for (auto const& rewardModelName : this->options.getRewardModelNames()) {
+                        auto const& rewExpr = model.getRewardModelExpression(rewardModelName);
+                        STORM_LOG_ERROR_COND(rewExpr.isVariable(), "The jit builder can not build the non-trivial reward expression '" << rewExpr << "'.");
+                        rewardVariables.push_back(rewExpr.getBaseExpression().asVariableExpression().getVariable());
                     }
                 }
-                
-                // If no reward model was yet added, but there was one that was given in the options, we try to build the
-                // standard reward model.
-                if (rewardVariables.empty() && !this->options.getRewardModelNames().empty()) {
-                    bool foundTransientVariable = false;
-                    for (auto const& transientVariable : globalVariables.getTransientVariables()) {
-                        if (transientVariable.isUnboundedIntegerVariable() || transientVariable.isRealVariable()) {
-                            rewardVariables.push_back(transientVariable.getExpressionVariable());
-                            foundTransientVariable = true;
-                            break;
-                        }
-                    }
-                    STORM_LOG_ASSERT(foundTransientVariable, "Expected to find a fitting transient variable.");
-                }
+                // Sort the reward variables to match the order in the ordered assignments
+                std::sort(rewardVariables.begin(), rewardVariables.end());
                 
                 std::vector<storm::builder::RewardModelInformation> rewardModels;
                 cpptempl::data_list rewards;

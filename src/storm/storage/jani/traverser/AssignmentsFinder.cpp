@@ -1,10 +1,15 @@
 #include "storm/storage/jani/traverser/AssignmentsFinder.h"
 
+#include "storm/storage/expressions/Variable.h"
 
 namespace storm {
     namespace jani {
         
-        AssignmentsFinder::ResultType AssignmentsFinder::find(Model const& model, Variable const& variable) {
+        AssignmentsFinder::ResultType AssignmentsFinder::find(Model const& model, storm::jani::Variable const& variable) {
+            return find(model, variable.getExpressionVariable());
+        }
+        
+        AssignmentsFinder::ResultType AssignmentsFinder::find(Model const& model, storm::expressions::Variable const& variable) {
             ResultType res;
             res.hasLocationAssignment = false;
             res.hasEdgeAssignment = false;
@@ -14,9 +19,10 @@ namespace storm {
         }
         
         void AssignmentsFinder::traverse(Location const& location, boost::any const& data) {
-            auto resVar = boost::any_cast<std::pair<Variable const*, ResultType*>>(data);
+            auto resVar = boost::any_cast<std::pair<storm::expressions::Variable const*, ResultType*>>(data);
             for (auto const& assignment : location.getAssignments()) {
-                if (assignment.getVariable() == *resVar.first) {
+                storm::jani::Variable const& assignedVariable = assignment.lValueIsArrayAccess() ? assignment.getLValue().getArray() : assignment.getVariable();
+                if (assignedVariable.getExpressionVariable() == *resVar.first) {
                     resVar.second->hasLocationAssignment = true;
                 }
             }
@@ -24,9 +30,10 @@ namespace storm {
         }
         
         void AssignmentsFinder::traverse(TemplateEdge const& templateEdge, boost::any const& data) {
-            auto resVar = boost::any_cast<std::pair<Variable const*, ResultType*>>(data);
+            auto resVar = boost::any_cast<std::pair<storm::expressions::Variable const*, ResultType*>>(data);
             for (auto const& assignment : templateEdge.getAssignments()) {
-                if (assignment.getVariable() == *resVar.first) {
+                storm::jani::Variable const& assignedVariable = assignment.lValueIsArrayAccess() ? assignment.getLValue().getArray() : assignment.getVariable();
+                if (assignedVariable.getExpressionVariable() == *resVar.first) {
                     resVar.second->hasEdgeAssignment = true;
                 }
             }
@@ -34,9 +41,10 @@ namespace storm {
         }
         
         void AssignmentsFinder::traverse(TemplateEdgeDestination const& templateEdgeDestination, boost::any const& data) {
-            auto resVar = boost::any_cast<std::pair<Variable const*, ResultType*>>(data);
+            auto resVar = boost::any_cast<std::pair<storm::expressions::Variable const*, ResultType*>>(data);
             for (auto const& assignment : templateEdgeDestination.getOrderedAssignments()) {
-                if (assignment.getVariable() == *resVar.first) {
+                storm::jani::Variable const& assignedVariable = assignment.lValueIsArrayAccess() ? assignment.getLValue().getArray() : assignment.getVariable();
+                if (assignedVariable.getExpressionVariable() == *resVar.first) {
                     resVar.second->hasEdgeDestinationAssignment = true;
                 }
             }
