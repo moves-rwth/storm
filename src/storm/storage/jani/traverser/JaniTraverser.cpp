@@ -21,6 +21,9 @@ namespace storm {
             if (model.hasInitialStatesRestriction()) {
                 traverse(model.getInitialStatesRestriction(), data);
             }
+            for (auto& nonTrivRew : model.getNonTrivialRewardExpressions()) {
+                traverse(nonTrivRew.second, data);
+            }
         }
         
         void JaniTraverser::traverse(Action const& action, boost::any const& data) {
@@ -183,6 +186,9 @@ namespace storm {
             }
             if (model.hasInitialStatesRestriction()) {
                 traverse(model.getInitialStatesRestriction(), data);
+            }
+            for (auto const& nonTrivRew : model.getNonTrivialRewardExpressions()) {
+                traverse(nonTrivRew.second, data);
             }
         }
         

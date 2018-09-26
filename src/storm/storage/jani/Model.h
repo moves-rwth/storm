@@ -271,6 +271,33 @@ namespace storm {
             storm::expressions::ExpressionManager& getExpressionManager() const;
 
             /*!
+             * Adds a (non-trivial) reward model, i.e., a reward model that does not consist of a single, global, numerical variable.
+             * @return true if a new reward model was added and false if a reward model with this identifier is already present in the model (in which case no reward model is added)
+             */
+            bool addNonTrivialRewardExpression(std::string const& identifier, storm::expressions::Expression const& rewardExpression);
+            
+            /*!
+             * Retrieves the defining reward expression of the reward model with the given identifier.
+             */
+             storm::expressions::Expression getRewardModelExpression(std::string const& identifier) const;
+            
+            /*!
+             * Retrieves all available reward model names and expressions of the model.
+             * This includes defined non-trivial reward expressions as well as transient, global, numerical variables
+             */
+             std::vector<std::pair<std::string, storm::expressions::Expression>> getAllRewardModelExpressions() const;
+            
+            /*!
+             * Retrieves all available non-trivial reward model names and expressions of the model.
+             */
+             std::unordered_map<std::string, storm::expressions::Expression> const& getNonTrivialRewardExpressions() const;
+            
+            /*!
+             * Retrieves all available non-trivial reward model names and expressions of the model.
+             */
+             std::unordered_map<std::string, storm::expressions::Expression>& getNonTrivialRewardExpressions();
+            
+            /*!
              * Adds the given automaton to the automata of this model.
              */
             uint64_t addAutomaton(Automaton const& automaton);
@@ -613,6 +640,10 @@ namespace storm {
             
             /// A mapping from names to action indices.
             std::unordered_map<std::string, uint64_t> actionToIndex;
+            
+            /// A mapping from non-trivial reward model names to their defining expression.
+            /// (A reward model is trivial, if it is represented by a single, global, numeric variable)
+            std::unordered_map<std::string, storm::expressions::Expression> nonTrivialRewardModels;
             
             /// The set of non-silent action indices.
             boost::container::flat_set<uint64_t> nonsilentActionIndices;

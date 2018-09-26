@@ -79,6 +79,7 @@ namespace storm {
                 this->constants = other.constants;
                 this->constantToIndex = other.constantToIndex;
                 this->globalVariables = other.globalVariables;
+                this->nonTrivialRewardModels = other.nonTrivialRewardModels;
                 this->automata = other.automata;
                 this->automatonToIndex = other.automatonToIndex;
                 this->composition = other.composition;
@@ -435,6 +436,8 @@ namespace storm {
             
             // Otherwise, we need to actually flatten composition.
             Model flattenedModel(this->getName() + "_flattened", this->getModelType(), this->getJaniVersion(), this->getManager().shared_from_this());
+            
+            flattenedModel.getModelFeatures() = getModelFeatures();
 
             // Get an SMT solver for computing possible guard combinations.
             std::unique_ptr<storm::solver::SmtSolver> solver = smtSolverFactory->create(*expressionManager);
@@ -463,6 +466,14 @@ namespace storm {
                 flattenedModel.addConstant(constant);
             }
             
+            for (auto const& nonTrivRew : getNonTrivialRewardExpressions()) {
+                flattenedModel.addNonTrivialRewardExpression(nonTrivRew.first, nonTrivRew.second);
+            }
+            
+            for (auto const& funDef : getGlobalFunctionDefinitions()) {
+                flattenedModel.addFunctionDefinition(funDef.second);
+            }
+
             std::vector<std::reference_wrapper<Automaton const>> composedAutomata;
             for (auto const& element : parallelComposition.getSubcompositions()) {
                 STORM_LOG_THROW(element->isAutomatonComposition(), storm::exceptions::WrongFormatException, "Cannot flatten recursive (not standard-compliant) composition.");
@@ -557,6 +568,9 @@ namespace storm {
             for (auto const& automaton : composedAutomata) {
                 if (automaton.get().hasInitialStatesRestriction()) {
                     initialStatesRestriction = initialStatesRestriction && automaton.get().getInitialStatesRestriction();
+                }
+                for (auto const& funDef : automaton.get().getFunctionDefinitions()) {
+                    newAutomaton.addFunctionDefinition(funDef.second);
                 }
             }
             
@@ -748,7 +762,63 @@ namespace storm {
         storm::expressions::ExpressionManager& Model::getExpressionManager() const {
             return *expressionManager;
         }
-
+        
+        bool Model::addNonTrivialRewardExpression(std::string const& identifier, storm::expressions::Expression const& rewardExpression) {
+            if (nonTrivialRewardModels.count(identifier) > 0) {
+                return false;
+            } else {
+                nonTrivialRewardModels.emplace(identifier, rewardExpression);
+                return true;
+            }
+        }
+        
+        storm::expressions::Expression Model::getRewardModelExpression(std::string const& identifier) const {
+            auto findRes = nonTrivialRewardModels.find(identifier);
+            if (findRes != nonTrivialRewardModels.end()) {
+                return findRes->second;
+            } else {
+                // Check whether the reward model refers to a global variable
+                if (globalVariables.hasVariable(identifier)) {
+                    return globalVariables.getVariable(identifier).getExpressionVariable().getExpression();
+                } else {
+                    STORM_LOG_THROW(identifier.empty(), storm::exceptions::InvalidArgumentException, "Cannot find unknown reward model '" << identifier << "'.");
+                    STORM_LOG_THROW(nonTrivialRewardModels.size() + globalVariables.getNumberOfNumericalTransientVariables() == 1, storm::exceptions::InvalidArgumentException, "Reference to standard reward model is ambiguous.");
+                    if (nonTrivialRewardModels.size() == 1) {
+                        return nonTrivialRewardModels.begin()->second;
+                    } else {
+                        for (auto const& variable : globalVariables.getTransientVariables()) {
+                            if (variable.isRealVariable() || variable.isUnboundedIntegerVariable() || variable.isBoundedIntegerVariable()) {
+                                return variable.getExpressionVariable().getExpression();
+                            }
+                        }
+                    }
+                }
+            }
+            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Cannot find unknown reward model '" << identifier << "'.");
+            return storm::expressions::Expression();
+        }
+        
+        std::vector<std::pair<std::string, storm::expressions::Expression>> Model::getAllRewardModelExpressions() const {
+            std::vector<std::pair<std::string, storm::expressions::Expression>> result;
+            for (auto const& nonTrivExpr : nonTrivialRewardModels) {
+                result.emplace_back(nonTrivExpr.first, nonTrivExpr.second);
+            }
+            for (auto const& variable : globalVariables.getTransientVariables()) {
+                if (variable.isRealVariable() || variable.isUnboundedIntegerVariable() || variable.isBoundedIntegerVariable()) {
+                    result.emplace_back(variable.getName(), variable.getExpressionVariable().getExpression());
+                }
+            }
+            return result;
+        }
+        
+        std::unordered_map<std::string, storm::expressions::Expression> const& Model::getNonTrivialRewardExpressions() const {
+            return nonTrivialRewardModels;
+        }
+        
+        std::unordered_map<std::string, storm::expressions::Expression>& Model::getNonTrivialRewardExpressions() {
+            return nonTrivialRewardModels;
+        }
+        
         uint64_t Model::addAutomaton(Automaton const& automaton) {
             auto it = automatonToIndex.find(automaton.getName());
             STORM_LOG_THROW(it == automatonToIndex.end(), storm::exceptions::WrongFormatException, "Automaton with name '" << automaton.getName() << "' already exists.");
@@ -947,6 +1017,10 @@ namespace storm {
             // Substitute constants in initial states expression.
             result.setInitialStatesRestriction(substituteJaniExpression(this->getInitialStatesRestriction(), constantSubstitution));
             
+            for (auto& rewMod : result.getNonTrivialRewardExpressions()) {
+                rewMod.second = substituteJaniExpression(rewMod.second, constantSubstitution);
+            }
+            
             // Substitute constants in variables of automata and their edges.
             for (auto& automaton : result.getAutomata()) {
                 automaton.substitute(constantSubstitution);
@@ -996,6 +1070,10 @@ namespace storm {
             // Substitute in initial states expression.
             this->setInitialStatesRestriction(substituteJaniExpression(this->getInitialStatesRestriction(), substitution));
             
+            for (auto& rewMod : getNonTrivialRewardExpressions()) {
+                rewMod.second = substituteJaniExpression(rewMod.second, substitution);
+            }
+
             // Substitute in variables of automata and their edges.
             for (auto& automaton : this->getAutomata()) {
                 automaton.substitute(substitution);

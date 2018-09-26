@@ -280,6 +280,16 @@ namespace storm {
             return result;
         }
         
+        uint_fast64_t VariableSet::getNumberOfNumericalTransientVariables() const {
+            uint_fast64_t result = 0;
+            for (auto const& variable : transientVariables) {
+                if (variable->isRealVariable() || variable->isUnboundedIntegerVariable() || variable->isBoundedIntegerVariable()) {
+                    ++result;
+                }
+            }
+            return result;
+        }
+        
         typename detail::ConstVariables<Variable> VariableSet::getTransientVariables() const {
             return detail::ConstVariables<Variable>(transientVariables.begin(), transientVariables.end());
         }

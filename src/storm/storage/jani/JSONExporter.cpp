@@ -32,6 +32,8 @@
 #include "storm/storage/jani/Property.h"
 #include "storm/storage/jani/traverser/AssignmentsFinder.h"
 #include "storm/storage/jani/expressions/JaniReduceNestingExpressionVisitor.h"
+#include "storm/storage/jani/FunctionEliminator.h"
+#include "storm/storage/jani/expressions/JaniExpressionSubstitutionVisitor.h"
 
 namespace storm {
     namespace jani {
@@ -162,20 +164,35 @@ namespace storm {
         }
         
         modernjson::json FormulaToJaniJson::constructRewardAccumulation(storm::logic::RewardAccumulation const& rewardAccumulation, std::string const& rewardModelName) const {
+            bool steps = false;
+            bool time = false;
+            bool exit = false;
             
-            storm::jani::Variable const& transientVar = model.getGlobalVariable(rewardModelName);
-            storm::jani::AssignmentsFinder::ResultType assignmentKinds;
-            STORM_LOG_THROW(model.hasGlobalVariable(rewardModelName), storm::exceptions::InvalidPropertyException, "Unable to find transient variable with name " << rewardModelName << ".");
-            if (transientVar.getInitExpression().containsVariables() || !storm::utility::isZero(transientVar.getInitExpression().evaluateAsRational())) {
-                assignmentKinds.hasLocationAssignment = true;
-                assignmentKinds.hasEdgeAssignment = true;
-                assignmentKinds.hasEdgeDestinationAssignment = true;
+            auto rewardExpression = storm::jani::eliminateFunctionCallsInExpression(model.getRewardModelExpression(rewardModelName), model);
+            
+            auto variablesInRewardExpression = rewardExpression.getVariables();
+            std::map<storm::expressions::Variable, storm::expressions::Expression> initialSubstitution;
+            for (auto const& v : variablesInRewardExpression) {
+                STORM_LOG_ASSERT(model.hasGlobalVariable(v.getName()), "Unable to find global variable " << v.getName() << " occurring in a reward expression.");
+                auto const& janiVar = model.getGlobalVariable(v.getName());
+                if (janiVar.hasInitExpression()) {
+                    initialSubstitution.emplace(v, janiVar.getInitExpression());
+                }
+                auto assignmentKinds = storm::jani::AssignmentsFinder().find(model, v);
+                steps = steps || assignmentKinds.hasEdgeAssignment || assignmentKinds.hasEdgeDestinationAssignment;
+                time = time || (!model.isDeterministicModel() && assignmentKinds.hasLocationAssignment);
+                exit = exit || assignmentKinds.hasLocationAssignment;
             }
-            assignmentKinds = storm::jani::AssignmentsFinder().find(model, transientVar);
-
-            bool steps = rewardAccumulation.isStepsSet() && (assignmentKinds.hasEdgeAssignment || assignmentKinds.hasEdgeDestinationAssignment);
-            bool time = rewardAccumulation.isTimeSet() && !model.isDiscreteTimeModel() && assignmentKinds.hasLocationAssignment;
-            bool exit = rewardAccumulation.isExitSet() && assignmentKinds.hasLocationAssignment;
+            storm::jani::substituteJaniExpression(rewardExpression, initialSubstitution);
+            if (rewardExpression.containsVariables() || !storm::utility::isZero(rewardExpression.evaluateAsRational())) {
+                steps = true;
+                time = true;
+                exit = true;
+            }
+            
+            steps = steps && rewardAccumulation.isStepsSet();
+            time = time && rewardAccumulation.isTimeSet();
+            exit = exit && rewardAccumulation.isExitSet();
             return constructRewardAccumulation(storm::logic::RewardAccumulation(steps, time, exit));
         }
         
@@ -265,7 +282,7 @@ namespace storm {
                     opDecl["step-bounds"] = propertyInterval;
                 } else if(tbr.isRewardBound()) {
                     modernjson::json rewbound;
-                    rewbound["exp"] = tbr.getRewardName();
+                    rewbound["exp"] = buildExpression(model.getRewardModelExpression(tbr.getRewardName()), model.getConstants(), model.getGlobalVariables());
                     if (tbr.hasRewardAccumulation()) {
                         rewbound["accumulate"] = constructRewardAccumulation(tbr.getRewardAccumulation(), tbr.getRewardName());
                     } else {
@@ -512,7 +529,7 @@ namespace storm {
                     opDecl["left"][instantName] = buildExpression(f.getSubformula().asInstantaneousRewardFormula().getBound(), model.getConstants(), model.getGlobalVariables());
                 }
                 STORM_LOG_THROW(f.hasRewardModelName(), storm::exceptions::NotSupportedException, "Reward name has to be specified for Jani-conversion");
-                opDecl["left"]["exp"] = rewardModelName;
+                opDecl["left"]["exp"] = buildExpression(model.getRewardModelExpression(rewardModelName), model.getConstants(), model.getGlobalVariables());
                 opDecl["right"] = buildExpression(bound.threshold, model.getConstants(), model.getGlobalVariables());
             } else {
                 if (f.hasOptimalityType()) {
@@ -541,7 +558,7 @@ namespace storm {
                 } else if (f.getSubformula().isInstantaneousRewardFormula()) {
                     opDecl[instantName] = buildExpression(f.getSubformula().asInstantaneousRewardFormula().getBound(), model.getConstants(), model.getGlobalVariables());
                 }
-                opDecl["exp"] = rewardModelName;
+                opDecl["exp"] = buildExpression(model.getRewardModelExpression(rewardModelName), model.getConstants(), model.getGlobalVariables());
             }
             return opDecl;
         }

@@ -284,6 +284,9 @@ namespace storm {
                     if (model.hasInitialStatesRestriction()) {
                         model.setInitialStatesRestriction(globalFunctionEliminationVisitor.eliminate(model.getInitialStatesRestriction()));
                     }
+                    for (auto& nonTrivRew : model.getNonTrivialRewardExpressions()) {
+                        nonTrivRew.second = globalFunctionEliminationVisitor.eliminate(nonTrivRew.second);
+                    }
                 }
                 
                 void traverse(Automaton& automaton, boost::any const& data) override {
@@ -402,6 +405,11 @@ namespace storm {
                 detail::FunctionEliminatorTraverser().eliminate(model, properties);
             }
             STORM_LOG_ASSERT(!containsFunctionCallExpression(model), "The model still seems to contain function calls.");
+        }
+        
+        storm::expressions::Expression eliminateFunctionCallsInExpression(storm::expressions::Expression const& expression, Model const& model) {
+            detail::FunctionEliminationExpressionVisitor visitor(&model.getGlobalFunctionDefinitions());
+            return visitor.eliminate(expression);
         }
         
     }

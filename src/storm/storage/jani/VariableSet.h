@@ -219,6 +219,11 @@ namespace storm {
             uint_fast64_t getNumberOfUnboundedIntegerTransientVariables() const;
 
             /*!
+             * Retrieves the number of numerical (i.e. real, or integer) transient variables in this variable set.
+             */
+            uint_fast64_t getNumberOfNumericalTransientVariables() const;
+
+            /*!
              * Retrieves the transient variables in this variable set.
              */
             typename detail::ConstVariables<Variable> getTransientVariables() const;

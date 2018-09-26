@@ -445,6 +445,9 @@ namespace storm {
                     if (model.hasInitialStatesRestriction()) {
                         model.setInitialStatesRestriction(arrayExprEliminator->eliminate(model.getInitialStatesRestriction()));
                     }
+                    for (auto& nonTrivRew : model.getNonTrivialRewardExpressions()) {
+                        nonTrivRew.second = arrayExprEliminator->eliminate(nonTrivRew.second);
+                    }
                 }
                 
                 virtual void traverse(Automaton& automaton, boost::any const& data) override {

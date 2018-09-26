@@ -122,6 +122,7 @@ namespace storm {
             std::shared_ptr<storm::expressions::ExpressionManager> expressionManager;
             
             std::set<std::string> labels = {};
+            std::unordered_map<std::string, storm::expressions::Expression> nonTrivialRewardModelExpressions;
 
             bool allowRecursion = true;
 
