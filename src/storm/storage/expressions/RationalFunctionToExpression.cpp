@@ -58,8 +58,8 @@ namespace storm {
                         result = result + nominatorPartExpr;
                     }
                 }
-                result = result / denominatorVal;
             }
+            result = result / denominatorVal;
             return result;
         }
         template class RationalFunctionToExpression<storm::RationalFunction>;

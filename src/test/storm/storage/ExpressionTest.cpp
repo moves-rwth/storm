@@ -403,3 +403,24 @@ TEST(Expression, RationalFunctionToExpressionTest) {
     ASSERT_NO_THROW(result.simplify());
     EXPECT_EQ(rationalFunction.toString(), result.toString());
 }
+
+TEST(Expression, RationalFunctionToExpressionTest_no_params) {
+    storm::parser::ValueParser<storm::RationalFunction> parser;
+    parser.addParameter("p");
+    auto rationalFunction1 = parser.parseValue("(p + 380)/3125");
+    auto rationalFunction2 = parser.parseValue("(p)/3125");
+    auto rationalFunction = rationalFunction1 - rationalFunction2;
+
+    std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
+    auto transformer = storm::expressions::RationalFunctionToExpression<storm::RationalFunction>(manager);
+
+    storm::expressions::Expression expr;
+    EXPECT_NO_THROW(expr = transformer.toExpression(rationalFunction));
+    auto base = storm::expressions::ExpressionEvaluator<storm::RationalFunction>(*manager);
+    storm::expressions::ToRationalFunctionVisitor<storm::RationalFunction> visitor(base);
+    ASSERT_NO_THROW(rationalFunction.simplify());
+    storm::RationalFunction result;
+    ASSERT_NO_THROW(result = visitor.toRationalFunction(expr));
+    ASSERT_NO_THROW(result.simplify());
+    EXPECT_EQ(rationalFunction.toString(), result.toString());
+}
