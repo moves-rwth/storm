@@ -1004,9 +1004,7 @@ namespace storm {
             } else if (expressionStructure.is_number_integer()) {
                 return expressionManager->integer(expressionStructure.get<int64_t>());
             } else if (expressionStructure.is_number_float()) {
-                // For now, just take the double.
-                // TODO make this a rational number
-                return expressionManager->rational(expressionStructure.get<double>());
+                return expressionManager->rational(storm::utility::convertNumber<storm::RationalNumber>(expressionStructure.dump()));
             } else if (expressionStructure.is_string()) {
                 std::string ident = expressionStructure.get<std::string>();
                 return storm::expressions::Expression(getVariableOrConstantExpression(ident, scope, auxiliaryVariables));
