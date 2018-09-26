@@ -8,7 +8,7 @@ namespace storm {
         AssignmentsFinder::ResultType AssignmentsFinder::find(Model const& model, storm::jani::Variable const& variable) {
             return find(model, variable.getExpressionVariable());
         }
-        
+
         AssignmentsFinder::ResultType AssignmentsFinder::find(Model const& model, storm::expressions::Variable const& variable) {
             ResultType res;
             res.hasLocationAssignment = false;
@@ -20,35 +20,45 @@ namespace storm {
         
         void AssignmentsFinder::traverse(Location const& location, boost::any const& data) {
             auto resVar = boost::any_cast<std::pair<storm::expressions::Variable const*, ResultType*>>(data);
-            for (auto const& assignment : location.getAssignments()) {
-                storm::jani::Variable const& assignedVariable = assignment.lValueIsArrayAccess() ? assignment.getLValue().getArray() : assignment.getVariable();
-                if (assignedVariable.getExpressionVariable() == *resVar.first) {
-                    resVar.second->hasLocationAssignment = true;
+            if (!resVar.second->hasLocationAssignment) {
+                for (auto const& assignment : location.getAssignments()) {
+                    storm::jani::Variable const& assignedVariable = assignment.lValueIsArrayAccess() ? assignment.getLValue().getArray() : assignment.getVariable();
+                    if (assignedVariable.getExpressionVariable() == *resVar.first) {
+                        resVar.second->hasLocationAssignment = true;
+                        break;
+                    }
                 }
             }
-            ConstJaniTraverser::traverse(location, data);
         }
         
         void AssignmentsFinder::traverse(TemplateEdge const& templateEdge, boost::any const& data) {
             auto resVar = boost::any_cast<std::pair<storm::expressions::Variable const*, ResultType*>>(data);
-            for (auto const& assignment : templateEdge.getAssignments()) {
-                storm::jani::Variable const& assignedVariable = assignment.lValueIsArrayAccess() ? assignment.getLValue().getArray() : assignment.getVariable();
-                if (assignedVariable.getExpressionVariable() == *resVar.first) {
-                    resVar.second->hasEdgeAssignment = true;
+            if (!resVar.second->hasEdgeAssignment) {
+                for (auto const& assignment : templateEdge.getAssignments()) {
+                    storm::jani::Variable const& assignedVariable = assignment.lValueIsArrayAccess() ? assignment.getLValue().getArray() : assignment.getVariable();
+                    if (assignedVariable.getExpressionVariable() == *resVar.first) {
+                        resVar.second->hasEdgeAssignment = true;
+                        break;
+                    }
+                
                 }
             }
-            ConstJaniTraverser::traverse(templateEdge, data);
+            for (auto const& dest : templateEdge.getDestinations()) {
+                traverse(dest, data);
+            }
         }
         
         void AssignmentsFinder::traverse(TemplateEdgeDestination const& templateEdgeDestination, boost::any const& data) {
             auto resVar = boost::any_cast<std::pair<storm::expressions::Variable const*, ResultType*>>(data);
-            for (auto const& assignment : templateEdgeDestination.getOrderedAssignments()) {
-                storm::jani::Variable const& assignedVariable = assignment.lValueIsArrayAccess() ? assignment.getLValue().getArray() : assignment.getVariable();
-                if (assignedVariable.getExpressionVariable() == *resVar.first) {
-                    resVar.second->hasEdgeDestinationAssignment = true;
+            if (!resVar.second->hasEdgeDestinationAssignment) {
+                for (auto const& assignment : templateEdgeDestination.getOrderedAssignments()) {
+                    storm::jani::Variable const& assignedVariable = assignment.lValueIsArrayAccess() ? assignment.getLValue().getArray() : assignment.getVariable();
+                    if (assignedVariable.getExpressionVariable() == *resVar.first) {
+                        resVar.second->hasEdgeDestinationAssignment = true;
+                        break;
+                    }
                 }
             }
-            ConstJaniTraverser::traverse(templateEdgeDestination, data);
         }
     }
 }
