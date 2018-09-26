@@ -71,15 +71,20 @@ namespace storm {
                     
                     if (ioSettings.isJaniPropertiesSet()) {
                         if (ioSettings.areJaniPropertiesSelected()) {
+                            // Make sure to preserve the provided order
                             for (auto const& propName : ioSettings.getSelectedJaniProperties()) {
-                                auto propertyIt = janiPropertyInput.find(propName);
-                                STORM_LOG_THROW(propertyIt != janiPropertyInput.end(), storm::exceptions::InvalidArgumentException, "No JANI property with name '" << propName << "' is known.");
-                                input.properties.emplace_back(propertyIt->second);
+                                bool found = false;
+                                for (auto const& property : janiPropertyInput) {
+                                    if (property.getName() == propName) {
+                                        input.properties.emplace_back(property);
+                                        found = true;
+                                        break;
+                                    }
+                                }
+                                STORM_LOG_THROW(found, storm::exceptions::InvalidArgumentException, "No JANI property with name '" << propName << "' is known.");
                             }
                         } else {
-                            for (auto const& property : janiPropertyInput) {
-                                input.properties.emplace_back(property.second);
-                            }
+                            input.properties = janiPropertyInput;
                         }
                     }
                 }

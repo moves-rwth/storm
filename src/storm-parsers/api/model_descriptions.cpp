@@ -27,15 +27,19 @@ namespace storm {
             // Add derived-operators and state-exit-rewards as these can be handled by all model builders
             features.add(storm::jani::ModelFeature::DerivedOperators);
             features.add(storm::jani::ModelFeature::StateExitRewards);
-            return parseJaniModel(filename, features);
+            auto parsedResult = parseJaniModel(filename, features);
+            std::map<std::string, storm::jani::Property> propertyMap;
+            for (auto const& property : parsedResult.second) {
+                propertyMap.emplace(property.getName(), property);
+            }
+            return std::make_pair(std::move(parsedResult.first), std::move(propertyMap));
         }
         
-        std::pair<storm::jani::Model, std::map<std::string, storm::jani::Property>> parseJaniModel(std::string const& filename, storm::jani::ModelFeatures const& allowedFeatures) {
-            std::pair<storm::jani::Model, std::map<std::string, storm::jani::Property>> modelAndFormulae = storm::parser::JaniParser::parse(filename);
+        std::pair<storm::jani::Model, std::vector<storm::jani::Property>> parseJaniModel(std::string const& filename, storm::jani::ModelFeatures const& allowedFeatures) {
+            std::pair<storm::jani::Model, std::vector<storm::jani::Property>> modelAndFormulae = storm::parser::JaniParser::parse(filename);
             
             modelAndFormulae.first.checkValid();
-            // TODO: properties
-            auto nonEliminatedFeatures = modelAndFormulae.first.restrictToFeatures(allowedFeatures);
+            auto nonEliminatedFeatures = modelAndFormulae.first.restrictToFeatures(allowedFeatures, modelAndFormulae.second);
             STORM_LOG_THROW(nonEliminatedFeatures.empty(), storm::exceptions::NotSupportedException, "The used model feature(s) " << nonEliminatedFeatures.toString() << " is/are not in the list of allowed features.");
             return modelAndFormulae;
         }

@@ -68,7 +68,7 @@ namespace storm {
             return static_cast<int64_t>(num);
         }
 
-        std::pair<storm::jani::Model, std::map<std::string, storm::jani::Property>> JaniParser::parse(std::string const& path) {
+        std::pair<storm::jani::Model, std::vector<storm::jani::Property>> JaniParser::parse(std::string const& path) {
             JaniParser parser;
             parser.readFile(path);
             return parser.parseModel();
@@ -85,7 +85,7 @@ namespace storm {
             storm::utility::closeFile(file);
         }
 
-        std::pair<storm::jani::Model, std::map<std::string, storm::jani::Property>> JaniParser::parseModel(bool parseProperties) {
+        std::pair<storm::jani::Model, std::vector<storm::jani::Property>> JaniParser::parseModel(bool parseProperties) {
             //jani-version
             STORM_LOG_THROW(parsedStructure.count("jani-version") == 1, storm::exceptions::InvalidJaniException, "Jani-version must be given exactly once.");
             uint64_t version = getUnsignedInt(parsedStructure.at("jani-version"), "jani version");
@@ -200,7 +200,7 @@ namespace storm {
             // Parse properties
             storm::logic::RewardAccumulationEliminationVisitor rewAccEliminator(model);
             STORM_LOG_THROW(parsedStructure.count("properties") <= 1, storm::exceptions::InvalidJaniException, "At most one list of properties can be given");
-            std::map<std::string, storm::jani::Property> properties;
+            std::vector<storm::jani::Property> properties;
             if (parseProperties && parsedStructure.count("properties") == 1) {
                 STORM_LOG_THROW(parsedStructure.at("properties").is_array(), storm::exceptions::InvalidJaniException, "Properties should be an array");
                 for(auto const& propertyEntry : parsedStructure.at("properties")) {
@@ -208,7 +208,7 @@ namespace storm {
                         auto prop = this->parseProperty(propertyEntry, scope.refine("property[" + std::to_string(properties.size()) + "]"));
                         // Eliminate reward accumulations as much as possible
                         rewAccEliminator.eliminateRewardAccumulations(prop);
-                        properties.emplace(prop.getName(), prop);
+                        properties.push_back(prop);
                     } catch (storm::exceptions::NotSupportedException const& ex) {
                         STORM_LOG_WARN("Cannot handle property: " << ex.what());
                     } catch (storm::exceptions::NotImplementedException const&  ex) {
