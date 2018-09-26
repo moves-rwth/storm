@@ -80,6 +80,9 @@ namespace storm {
                     typename storm::storage::SparseMatrix<ValueType>::iterator state1succ2,
                     typename storm::storage::SparseMatrix<ValueType>::iterator state2succ1,
                     typename storm::storage::SparseMatrix<ValueType>::iterator state2succ2);
+
+            bool validateAssumptionSMTSolver(storm::analysis::Lattice* lattice,
+                    std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption);
         };
     }
 }
