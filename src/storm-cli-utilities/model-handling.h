@@ -9,6 +9,7 @@
 #include "storm/utility/file.h"
 #include "storm/utility/storm-version.h"
 #include "storm/utility/macros.h"
+#include "storm/utility/NumberTraits.h"
 
 #include "storm/utility/initialize.h"
 #include "storm/utility/Stopwatch.h"
@@ -489,29 +490,38 @@ namespace storm {
         template<typename ValueType>
         void printFilteredResult(std::unique_ptr<storm::modelchecker::CheckResult> const& result, storm::modelchecker::FilterType ft) {
             if (result->isQuantitative()) {
-                switch (ft) {
-                    case storm::modelchecker::FilterType::VALUES:
-                        STORM_PRINT(*result);
-                        break;
-                    case storm::modelchecker::FilterType::SUM:
-                        STORM_PRINT(result->asQuantitativeCheckResult<ValueType>().sum());
-                        break;
-                    case storm::modelchecker::FilterType::AVG:
-                        STORM_PRINT(result->asQuantitativeCheckResult<ValueType>().average());
-                        break;
-                    case storm::modelchecker::FilterType::MIN:
-                        STORM_PRINT(result->asQuantitativeCheckResult<ValueType>().getMin());
-                        break;
-                    case storm::modelchecker::FilterType::MAX:
-                        STORM_PRINT(result->asQuantitativeCheckResult<ValueType>().getMax());
-                        break;
-                    case storm::modelchecker::FilterType::ARGMIN:
-                    case storm::modelchecker::FilterType::ARGMAX:
-                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Outputting states is not supported.");
-                    case storm::modelchecker::FilterType::EXISTS:
-                    case storm::modelchecker::FilterType::FORALL:
-                    case storm::modelchecker::FilterType::COUNT:
-                        STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Filter type only defined for qualitative results.");
+                if (ft == storm::modelchecker::FilterType::VALUES) {
+                    STORM_PRINT(*result);
+                } else {
+                    ValueType resultValue;
+                    switch (ft) {
+                        case storm::modelchecker::FilterType::SUM:
+                            resultValue = result->asQuantitativeCheckResult<ValueType>().sum();
+                            break;
+                        case storm::modelchecker::FilterType::AVG:
+                            resultValue = result->asQuantitativeCheckResult<ValueType>().average();
+                            break;
+                        case storm::modelchecker::FilterType::MIN:
+                            resultValue = result->asQuantitativeCheckResult<ValueType>().getMin();
+                            break;
+                        case storm::modelchecker::FilterType::MAX:
+                            resultValue = result->asQuantitativeCheckResult<ValueType>().getMax();
+                            break;
+                        case storm::modelchecker::FilterType::ARGMIN:
+                        case storm::modelchecker::FilterType::ARGMAX:
+                            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Outputting states is not supported.");
+                        case storm::modelchecker::FilterType::EXISTS:
+                        case storm::modelchecker::FilterType::FORALL:
+                        case storm::modelchecker::FilterType::COUNT:
+                            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Filter type only defined for qualitative results.");
+                        default:
+                            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Unhandled filter type.");
+                    }
+                    if (storm::NumberTraits<ValueType>::IsExact && storm::utility::isConstant(resultValue)) {
+                        STORM_PRINT(resultValue << " (approx. " << storm::utility::convertNumber<double>(resultValue) << ")");
+                    } else {
+                        STORM_PRINT(resultValue);
+                    }
                 }
             } else {
                 switch (ft) {
