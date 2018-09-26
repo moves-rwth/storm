@@ -164,12 +164,12 @@ namespace storm {
                         if (variable.hasUpperBound()) {
                             upperBound = variable.getUpperBound().evaluateAsInt();
                         } else {
-                            upperBound = lowerBound + ((1u << reservedBitsForUnboundedVariables) - 1);
+                            upperBound = lowerBound + ((1ll << reservedBitsForUnboundedVariables) - 1);
                         }
                     } else {
                         STORM_LOG_THROW(variable.hasUpperBound(), storm::exceptions::WrongFormatException, "Bounded integer variable has neither a lower nor an upper bound.");
                         upperBound = variable.getUpperBound().evaluateAsInt();
-                        lowerBound = upperBound - ((1u << reservedBitsForUnboundedVariables) - 1);
+                        lowerBound = upperBound - ((1ll << reservedBitsForUnboundedVariables) - 1);
                     }
                     uint_fast64_t bitwidth = static_cast<uint_fast64_t>(std::ceil(std::log2(upperBound - lowerBound + 1)));
                     integerVariables.emplace_back(variable.getExpressionVariable(), lowerBound, upperBound, totalBitOffset, bitwidth, global, !variable.hasLowerBound() || !variable.hasUpperBound());
@@ -178,8 +178,8 @@ namespace storm {
             }
             for (auto const& variable : variableSet.getUnboundedIntegerVariables()) {
                 if (!variable.isTransient()) {
-                    int64_t lowerBound = - (1u << (reservedBitsForUnboundedVariables - 1));
-                    int64_t upperBound = (1u << (reservedBitsForUnboundedVariables - 1)) - 1;
+                    int64_t lowerBound = -(1ll << (reservedBitsForUnboundedVariables - 1));
+                    int64_t upperBound = (1ll << (reservedBitsForUnboundedVariables - 1)) - 1;
                     integerVariables.emplace_back(variable.getExpressionVariable(), lowerBound, upperBound, totalBitOffset, reservedBitsForUnboundedVariables, global, true);
                     totalBitOffset += reservedBitsForUnboundedVariables;
                 }
