@@ -36,7 +36,7 @@ namespace storm {
                         boost::any_cast<bool>(expression.getSecondOperand()->accept(*this, data));
                 }
                 
-                virtual boost::any visit(storm::expressions::VariableExpression const& expression, boost::any const&) override {
+                virtual boost::any visit(storm::expressions::VariableExpression const&, boost::any const&) override {
                     return false;
                 }
                 
@@ -48,27 +48,27 @@ namespace storm {
                     return expression.getOperand()->accept(*this, data);
                 }
                 
-                virtual boost::any visit(storm::expressions::BooleanLiteralExpression const& expression, boost::any const&) override {
+                virtual boost::any visit(storm::expressions::BooleanLiteralExpression const&, boost::any const&) override {
                     return false;
                 }
                 
-                virtual boost::any visit(storm::expressions::IntegerLiteralExpression const& expression, boost::any const&) override {
+                virtual boost::any visit(storm::expressions::IntegerLiteralExpression const&, boost::any const&) override {
                     return false;
                 }
                 
-                virtual boost::any visit(storm::expressions::RationalLiteralExpression const& expression, boost::any const&) override {
+                virtual boost::any visit(storm::expressions::RationalLiteralExpression const&, boost::any const&) override {
                     return false;
                 }
                 
-                virtual boost::any visit(storm::expressions::ValueArrayExpression const& expression, boost::any const& data) override {
+                virtual boost::any visit(storm::expressions::ValueArrayExpression const&, boost::any const&) override {
                     return true;
                 }
                 
-                virtual boost::any visit(storm::expressions::ConstructorArrayExpression const& expression, boost::any const& data) override {
+                virtual boost::any visit(storm::expressions::ConstructorArrayExpression const&, boost::any const&) override {
                     return true;
                 }
                 
-                virtual boost::any visit(storm::expressions::ArrayAccessExpression const& expression, boost::any const& data) override {
+                virtual boost::any visit(storm::expressions::ArrayAccessExpression const&, boost::any const&) override {
                     return true;
                 }
                 

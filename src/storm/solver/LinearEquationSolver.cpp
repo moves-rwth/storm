@@ -31,7 +31,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        LinearEquationSolverRequirements LinearEquationSolver<ValueType>::getRequirements(Environment const& env) const {
+        LinearEquationSolverRequirements LinearEquationSolver<ValueType>::getRequirements(Environment const&) const {
             return LinearEquationSolverRequirements();
         }
         

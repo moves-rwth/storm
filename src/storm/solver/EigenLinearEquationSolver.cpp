@@ -244,7 +244,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        LinearEquationSolverProblemFormat EigenLinearEquationSolver<ValueType>::getEquationProblemFormat(Environment const& env) const {
+        LinearEquationSolverProblemFormat EigenLinearEquationSolver<ValueType>::getEquationProblemFormat(Environment const&) const {
             return LinearEquationSolverProblemFormat::EquationSystem;
         }
         
@@ -259,7 +259,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> EigenLinearEquationSolverFactory<ValueType>::create(Environment const& env) const {
+        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> EigenLinearEquationSolverFactory<ValueType>::create(Environment const&) const {
             return std::make_unique<storm::solver::EigenLinearEquationSolver<ValueType>>();
         }
         

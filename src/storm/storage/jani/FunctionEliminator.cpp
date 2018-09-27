@@ -91,7 +91,7 @@ namespace storm {
                     }
                 }
                 
-                virtual boost::any visit(storm::expressions::VariableExpression const& expression, boost::any const& data) override {
+                virtual boost::any visit(storm::expressions::VariableExpression const& expression, boost::any const&) override {
                     return expression.getSharedPointer();
                 }
         
@@ -267,7 +267,7 @@ namespace storm {
                     }
                 }
                 
-                virtual void traverse(Model& model, boost::any const& data) override {
+                virtual void traverse(Model& model, boost::any const&) override {
                     
                     // First we need to apply functions called in function bodies
                     FunctionEliminationExpressionVisitor globalFunctionEliminationVisitor(&model.getGlobalFunctionDefinitions());
@@ -392,7 +392,7 @@ namespace storm {
                     }
                 }
                 
-                void traverse(storm::expressions::Expression const& expression, boost::any const& data) override {
+                void traverse(storm::expressions::Expression const& expression, boost::any const&) override {
                     STORM_LOG_THROW(getOccurringFunctionCalls(expression).empty(), storm::exceptions::UnexpectedException, "Did not translate functions in expression " << expression);
                 }
             };

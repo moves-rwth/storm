@@ -46,7 +46,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        bool isNan(ValueType const& value) {
+        bool isNan(ValueType const&) {
             return false;
         }
         

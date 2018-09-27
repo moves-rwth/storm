@@ -35,7 +35,7 @@ namespace storm {
         class Automaton;
         class Exporter;
         class SynchronizationVector;
-        class ArrayEliminatorData;
+        struct ArrayEliminatorData;
         class Property;
         
         class Model {

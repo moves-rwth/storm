@@ -76,24 +76,24 @@ namespace storm {
                     return boost::any_cast<std::size_t>(expression.getOperand()->accept(*this, data));
                 }
                 
-                virtual boost::any visit(storm::expressions::BooleanLiteralExpression const& expression, boost::any const& data) override {
+                virtual boost::any visit(storm::expressions::BooleanLiteralExpression const&, boost::any const&) override {
                     return 0;
                 }
                 
-                virtual boost::any visit(storm::expressions::IntegerLiteralExpression const& expression, boost::any const& data) override {
+                virtual boost::any visit(storm::expressions::IntegerLiteralExpression const&, boost::any const&) override {
                     return 0;
                 }
                 
-                virtual boost::any visit(storm::expressions::RationalLiteralExpression const& expression, boost::any const& data) override {
+                virtual boost::any visit(storm::expressions::RationalLiteralExpression const&, boost::any const&) override {
                     return 0;
                 }
                 
-                virtual boost::any visit(storm::expressions::ValueArrayExpression const& expression, boost::any const& data) override {
+                virtual boost::any visit(storm::expressions::ValueArrayExpression const& expression, boost::any const&) override {
                     STORM_LOG_ASSERT(expression.size()->isIntegerLiteralExpression(), "unexpected kind of size expression of ValueArrayExpression (" << expression.size()->toExpression() << ").");
                     return static_cast<std::size_t>(expression.size()->evaluateAsInt());
                 }
                 
-                virtual boost::any visit(storm::expressions::ConstructorArrayExpression const& expression, boost::any const& data) override {
+                virtual boost::any visit(storm::expressions::ConstructorArrayExpression const& expression, boost::any const&) override {
                     if (!expression.size()->containsVariables()) {
                         return static_cast<std::size_t>(expression.size()->evaluateAsInt());
                     } else {
@@ -114,12 +114,12 @@ namespace storm {
                     }
                 }
                 
-                virtual boost::any visit(storm::expressions::ArrayAccessExpression const& expression, boost::any const& data) override {
+                virtual boost::any visit(storm::expressions::ArrayAccessExpression const&, boost::any const&) override {
                     STORM_LOG_WARN("Found Array access expression within an array expression. This is not expected since nested arrays are currently not supported.");
                     return 0;
                 }
                 
-                virtual boost::any visit(storm::expressions::FunctionCallExpression const& expression, boost::any const& data) override {
+                virtual boost::any visit(storm::expressions::FunctionCallExpression const&, boost::any const&) override {
                     STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Found Function call expression within an array expression. This is not expected since functions are expected to be eliminated at this point.");
                     return 0;
                 }
@@ -328,7 +328,7 @@ namespace storm {
                     return ResultType(boost::any_cast<ResultType>(expression.at(index)->accept(*this, boost::any())));
                 }
                 
-                virtual boost::any visit(storm::expressions::ArrayAccessExpression const& expression, boost::any const& data) override {
+                virtual boost::any visit(storm::expressions::ArrayAccessExpression const& expression, boost::any const&) override {
                     if (expression.getSecondOperand()->containsVariables()) {
                         //get the size of the array expression
                         uint64_t size = MaxArraySizeExpressionVisitor().getMaxSize(expression.getFirstOperand()->toExpression(), arraySizes);
@@ -349,7 +349,7 @@ namespace storm {
                     }
                 }
                 
-                virtual boost::any visit(storm::expressions::FunctionCallExpression const& expression, boost::any const& data) override {
+                virtual boost::any visit(storm::expressions::FunctionCallExpression const&, boost::any const&) override {
                     STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Found Function call expression while eliminating array expressions. This is not expected since functions are expected to be eliminated at this point.");
                     return false;
                 }
@@ -497,7 +497,7 @@ namespace storm {
                     }
                 }
                 
-                void traverse(EdgeDestination& edgeDestination, boost::any const& data) override {
+                void traverse(EdgeDestination& edgeDestination, boost::any const&) override {
                     edgeDestination.setProbability(arrayExprEliminator->eliminate(edgeDestination.getProbability()));
                 }
                 

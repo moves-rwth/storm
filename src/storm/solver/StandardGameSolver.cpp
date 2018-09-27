@@ -498,7 +498,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void StandardGameSolver<ValueType>::getInducedMatrixVector(std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<uint_fast64_t> const& player1Choices, std::vector<uint_fast64_t> const& player2Choices, storm::storage::SparseMatrix<ValueType>& inducedMatrix, std::vector<ValueType>& inducedVector) const {
+        void StandardGameSolver<ValueType>::getInducedMatrixVector(std::vector<ValueType>&, std::vector<ValueType> const& b, std::vector<uint_fast64_t> const& player1Choices, std::vector<uint_fast64_t> const& player2Choices, storm::storage::SparseMatrix<ValueType>& inducedMatrix, std::vector<ValueType>& inducedVector) const {
             // Get the rows of the player 2 matrix that are selected by the schedulers.
             // Note that rows can be selected more than once and in an arbitrary order.
             std::vector<storm::storage::sparse::state_type> selectedRows;

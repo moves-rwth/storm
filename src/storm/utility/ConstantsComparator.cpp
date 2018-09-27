@@ -142,11 +142,11 @@ namespace storm {
             }
         }
         
-        bool ConstantsComparator<storm::RationalNumber>::isConstant(storm::RationalNumber const& value) const {
+        bool ConstantsComparator<storm::RationalNumber>::isConstant(storm::RationalNumber const&) const {
             return true;
         }
         
-        bool ConstantsComparator<storm::RationalNumber>::isInfinity(storm::RationalNumber const& value) const {
+        bool ConstantsComparator<storm::RationalNumber>::isInfinity(storm::RationalNumber const&) const {
             return false;
         }
         

@@ -21,6 +21,7 @@ namespace storm {
              * @param variableToExpressionMapping A mapping from variables to expressions.
              */
             JaniExpressionSubstitutionVisitor(MapType const& variableToExpressionMapping);
+            using SubstitutionVisitor<MapType>::visit;
             
             virtual boost::any visit(ValueArrayExpression const& expression, boost::any const& data) override;
             virtual boost::any visit(ConstructorArrayExpression const& expression, boost::any const& data) override;

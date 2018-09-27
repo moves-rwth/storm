@@ -16,7 +16,7 @@ namespace storm {
     namespace jani {
         class Model;
         class Automaton;
-        class ArrayEliminatorData;
+        struct ArrayEliminatorData;
         class VariableSet;
     }
     
