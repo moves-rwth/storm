@@ -321,11 +321,8 @@ namespace {
                 result.second = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
                 result.first = storm::api::buildSparseModel<ValueType>(program, result.second)->template as<MT>();
             } else if (TestType::engine == MdpEngine::JaniSparse || TestType::engine == MdpEngine::JitSparse) {
-                storm::converter::PrismToJaniConverterOptions options;
-                options.allVariablesGlobal = true;
-                options.janiOptions.standardCompliant = true;
-                options.janiOptions.exportFlattened = true;
                 auto janiData = storm::api::convertPrismToJani(program, storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
+                janiData.first.substituteFunctions();
                 result.second = storm::api::extractFormulasFromProperties(janiData.second);
                 result.first = storm::api::buildSparseModel<ValueType>(janiData.first, result.second, TestType::engine == MdpEngine::JitSparse)->template as<MT>();
             }
@@ -342,11 +339,8 @@ namespace {
                 result.second = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
                 result.first = storm::api::buildSymbolicModel<TestType::ddType, ValueType>(program, result.second)->template as<MT>();
             } else if (TestType::engine == MdpEngine::JaniDd) {
-                storm::converter::PrismToJaniConverterOptions options;
-                options.allVariablesGlobal = true;
-                options.janiOptions.standardCompliant = true;
-                options.janiOptions.exportFlattened = true;
                 auto janiData = storm::api::convertPrismToJani(program, storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
+                janiData.first.substituteFunctions();
                 result.second = storm::api::extractFormulasFromProperties(janiData.second);
                 result.first = storm::api::buildSymbolicModel<TestType::ddType, ValueType>(janiData.first, result.second)->template as<MT>();
             }
@@ -588,7 +582,7 @@ namespace {
         // This example considers a zero-reward end component that does not reach the target
         // For some methods this requires end-component elimination which is (currently) not supported in the Dd engine
 
-        if (TypeParam::engine == storm::settings::modules::CoreSettings::Engine::Sparse) {
+        if (TypeParam::engine == MdpEngine::PrismSparse || TypeParam::engine == MdpEngine::JaniSparse || TypeParam::engine == MdpEngine::JitSparse || TypeParam::engine == MdpEngine::Hybrid) {
             result = checker->check(this->env(), tasks[0]);
             EXPECT_NEAR(this->parseNumber("114/49"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
         } else {

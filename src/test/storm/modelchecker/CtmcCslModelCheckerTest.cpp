@@ -205,11 +205,8 @@ namespace {
                 result.second = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
                 result.first = storm::api::buildSparseModel<ValueType>(program, result.second)->template as<MT>();
             } else if (TestType::engine == CtmcEngine::JaniSparse || TestType::engine == CtmcEngine::JitSparse) {
-                storm::converter::PrismToJaniConverterOptions options;
-                options.allVariablesGlobal = true;
-                options.janiOptions.standardCompliant = true;
-                options.janiOptions.exportFlattened = true;
                 auto janiData = storm::api::convertPrismToJani(program, storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
+                janiData.first.substituteFunctions();
                 result.second = storm::api::extractFormulasFromProperties(janiData.second);
                 result.first = storm::api::buildSparseModel<ValueType>(janiData.first, result.second, TestType::engine == CtmcEngine::JitSparse)->template as<MT>();
             }
@@ -226,11 +223,8 @@ namespace {
                 result.second = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
                 result.first = storm::api::buildSymbolicModel<TestType::ddType, ValueType>(program, result.second)->template as<MT>();
             } else if (TestType::engine == CtmcEngine::JaniHybrid) {
-                storm::converter::PrismToJaniConverterOptions options;
-                options.allVariablesGlobal = true;
-                options.janiOptions.standardCompliant = true;
-                options.janiOptions.exportFlattened = true;
                 auto janiData = storm::api::convertPrismToJani(program, storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
+                janiData.first.substituteFunctions();
                 result.second = storm::api::extractFormulasFromProperties(janiData.second);
                 result.first = storm::api::buildSymbolicModel<TestType::ddType, ValueType>(janiData.first, result.second)->template as<MT>();
             }
