@@ -209,17 +209,30 @@ namespace storm {
 
             auto const& input = storm::settings::getModule<storm::settings::modules::ConversionInputSettings>();
 
-            // Parse the jani model
-            auto janiModelProperties = storm::api::parseJaniModel(input.getJaniInputFilename(), storm::jani::getAllKnownModelFeatures());
-            // Parse properties (if available, otherwise take the ones from the jani file)
-            std::vector<storm::jani::Property> properties;
+            // Parse the jani model and selected properties
+            boost::optional<std::vector<std::string>> janiPropertyFilter;
+            if (input.isJaniPropertiesSet()) {
+                if (input.areJaniPropertiesSelected()) {
+                    janiPropertyFilter = input.getSelectedJaniProperties();
+                } else {
+                    janiPropertyFilter = boost::none;
+                }
+            } else {
+                if (input.isPropertyInputSet()) {
+                    janiPropertyFilter = std::vector<std::string>();
+                } else {
+                    // If no properties are selected, take the ones from the jani file.
+                    janiPropertyFilter = boost::none;
+                }
+            }
+            auto janiModelProperties = storm::api::parseJaniModel(input.getJaniInputFilename(), storm::jani::getAllKnownModelFeatures(), janiPropertyFilter);
+            
+            // Parse additional properties given from command line
+            std::vector<storm::jani::Property> properties = std::move(janiModelProperties.second);
             if (input.isPropertyInputSet()) {
                 boost::optional<std::set<std::string>> propertyFilter = storm::api::parsePropertyFilter(input.getPropertyInputFilter());
-                properties = storm::api::parsePropertiesForSymbolicModelDescription(input.getPropertyInput(), janiModelProperties.first, propertyFilter);
-            } else {
-                for (auto const& p : janiModelProperties.second) {
-                    properties.push_back(p.second);
-                }
+                auto additionalProperties = storm::api::parsePropertiesForSymbolicModelDescription(input.getPropertyInput(), janiModelProperties.first, propertyFilter);
+                properties.insert(properties.end(), additionalProperties.begin(), additionalProperties.end());
             }
             
             storm::storage::SymbolicModelDescription symbDescr(janiModelProperties.first);

@@ -35,8 +35,28 @@ namespace storm {
             return std::make_pair(std::move(parsedResult.first), std::move(propertyMap));
         }
         
-        std::pair<storm::jani::Model, std::vector<storm::jani::Property>> parseJaniModel(std::string const& filename, storm::jani::ModelFeatures const& allowedFeatures) {
-            std::pair<storm::jani::Model, std::vector<storm::jani::Property>> modelAndFormulae = storm::parser::JaniParser::parse(filename);
+        std::pair<storm::jani::Model, std::vector<storm::jani::Property>> parseJaniModel(std::string const& filename, storm::jani::ModelFeatures const& allowedFeatures, boost::optional<std::vector<std::string>> const& propertyFilter) {
+            
+            bool parseProperties = !propertyFilter.is_initialized() || !propertyFilter.get().empty();
+            std::pair<storm::jani::Model, std::vector<storm::jani::Property>> modelAndFormulae = storm::parser::JaniParser::parse(filename, parseProperties);
+            
+            // eliminate unselected properties.
+            if (propertyFilter.is_initialized()) {
+                std::vector<storm::jani::Property> newProperties;
+                // Make sure to preserve the provided order
+                for (auto const& propName : propertyFilter.get()) {
+                    bool found = false;
+                    for (auto const& property : modelAndFormulae.second) {
+                        if (property.getName() == propName) {
+                            newProperties.push_back(std::move(property));
+                            found = true;
+                            break;
+                        }
+                    }
+                    STORM_LOG_ERROR_COND(found, "No JANI property with name '" << propName << "' is known.");
+                }
+                modelAndFormulae.second = std::move(newProperties);
+            }
             
             modelAndFormulae.first.checkValid();
             auto nonEliminatedFeatures = modelAndFormulae.first.restrictToFeatures(allowedFeatures, modelAndFormulae.second);

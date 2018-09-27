@@ -68,10 +68,10 @@ namespace storm {
             return static_cast<int64_t>(num);
         }
 
-        std::pair<storm::jani::Model, std::vector<storm::jani::Property>> JaniParser::parse(std::string const& path) {
+        std::pair<storm::jani::Model, std::vector<storm::jani::Property>> JaniParser::parse(std::string const& path, bool parseProperties) {
             JaniParser parser;
             parser.readFile(path);
-            return parser.parseModel();
+            return parser.parseModel(parseProperties);
         }
 
         JaniParser::JaniParser(std::string const& jsonstring) {
