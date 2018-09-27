@@ -579,10 +579,9 @@ namespace {
         auto checker = this->createModelChecker(model);
         std::unique_ptr<storm::modelchecker::CheckResult> result;
         
-        // This example considers a zero-reward end component that does not reach the target
-        // For some methods this requires end-component elimination which is (currently) not supported in the Dd engine
+        // This example considers an expected total reward formula, which is not supported in all engines
 
-        if (TypeParam::engine == MdpEngine::PrismSparse || TypeParam::engine == MdpEngine::JaniSparse || TypeParam::engine == MdpEngine::JitSparse || TypeParam::engine == MdpEngine::Hybrid) {
+        if (TypeParam::engine == MdpEngine::PrismSparse || TypeParam::engine == MdpEngine::JaniSparse) {
             result = checker->check(this->env(), tasks[0]);
             EXPECT_NEAR(this->parseNumber("114/49"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
         } else {
