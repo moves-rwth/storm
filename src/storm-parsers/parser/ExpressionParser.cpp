@@ -64,7 +64,7 @@ namespace storm {
                 prefixPowerModuloExpression = ((prefixPowerModuloOperator_ >> qi::lit("(")) > expression > qi::lit(",") > expression > qi::lit(")"))[qi::_val = phoenix::bind(&ExpressionCreator::createPowerModuloExpression, phoenix::ref(*expressionCreator), qi::_2, qi::_1, qi::_3, qi::_pass)]
                 | ((qi::lit("func") >> qi::lit("(")) > prefixPowerModuloOperator_ > qi::lit(",") > expression > qi::lit(",") > expression > qi::lit(")"))[qi::_val = phoenix::bind(&ExpressionCreator::createPowerModuloExpression, phoenix::ref(*expressionCreator), qi::_2, qi::_1, qi::_3, qi::_pass)];
             }
-            prefixPowerModuloExpression.name("power/modulo expression");
+            prefixPowerModuloExpression.name("(prefix) power/modulo expression");
             
 			identifierExpression = identifier[qi::_val = phoenix::bind(&ExpressionCreator::getIdentifierExpression, phoenix::ref(*expressionCreator), qi::_1, qi::_pass)];
             identifierExpression.name("identifier expression");
@@ -86,7 +86,7 @@ namespace storm {
             } else {
                 infixPowerModuloExpression = unaryExpression[qi::_val = qi::_1] > -(infixPowerModuloOperator_ >> expression)[qi::_val = phoenix::bind(&ExpressionCreator::createPowerModuloExpression, phoenix::ref(*expressionCreator), qi::_val, qi::_1, qi::_2, qi::_pass)];
             }
-            infixPowerModuloExpression.name("power/modulo expression");
+            infixPowerModuloExpression.name("(infix) power/modulo expression");
             
             if (allowBacktracking) {
                 multiplicationExpression = infixPowerModuloExpression[qi::_val = qi::_1] >> *(multiplicationOperator_ >> infixPowerModuloExpression)[qi::_val = phoenix::bind(&ExpressionCreator::createMultExpression, phoenix::ref(*expressionCreator), qi::_val, qi::_1, qi::_2, qi::_pass)];

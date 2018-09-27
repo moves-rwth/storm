@@ -65,27 +65,20 @@ namespace storm {
                     input.model = storm::api::parseProgram(ioSettings.getPrismInputFilename(), storm::settings::getModule<storm::settings::modules::BuildSettings>().isPrismCompatibilityEnabled());
                 } else {
                     storm::jani::ModelFeatures supportedFeatures = storm::api::getSupportedJaniFeatures(builderType);
-                    auto janiInput = storm::api::parseJaniModel(ioSettings.getJaniInputFilename(), supportedFeatures);
-                    input.model = janiInput.first;
-                    auto const& janiPropertyInput = janiInput.second;
-                    
+                    boost::optional<std::vector<std::string>> propertyFilter;
                     if (ioSettings.isJaniPropertiesSet()) {
                         if (ioSettings.areJaniPropertiesSelected()) {
-                            // Make sure to preserve the provided order
-                            for (auto const& propName : ioSettings.getSelectedJaniProperties()) {
-                                bool found = false;
-                                for (auto const& property : janiPropertyInput) {
-                                    if (property.getName() == propName) {
-                                        input.properties.emplace_back(property);
-                                        found = true;
-                                        break;
-                                    }
-                                }
-                                STORM_LOG_THROW(found, storm::exceptions::InvalidArgumentException, "No JANI property with name '" << propName << "' is known.");
-                            }
+                            propertyFilter = ioSettings.getSelectedJaniProperties();
                         } else {
-                            input.properties = janiPropertyInput;
+                            propertyFilter = boost::none;
                         }
+                    } else {
+                        propertyFilter = std::vector<std::string>();
+                    }
+                    auto janiInput = storm::api::parseJaniModel(ioSettings.getJaniInputFilename(), supportedFeatures, propertyFilter);
+                    input.model = std::move(janiInput.first);
+                    if (ioSettings.isJaniPropertiesSet()) {
+                        input.properties = std::move(janiInput.second);
                     }
                 }
             }
