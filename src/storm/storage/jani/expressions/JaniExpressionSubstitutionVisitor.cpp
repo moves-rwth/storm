@@ -13,7 +13,6 @@ namespace storm {
             return storm::expressions::JaniExpressionSubstitutionVisitor<std::unordered_map<storm::expressions::Variable, storm::expressions::Expression>>(identifierToExpressionMap).substitute(expression);
         }
     }
-    
 
     namespace expressions {
         
