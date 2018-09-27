@@ -43,7 +43,7 @@ namespace storm {
         }
 
         template<>
-        void VectorHelper<storm::RationalFunction>::reduceVector(storm::solver::OptimizationDirection dir, std::vector<storm::RationalFunction> const& source, std::vector<storm::RationalFunction>& target, std::vector<uint_fast64_t> const& rowGrouping, std::vector<uint_fast64_t>* choices) const {
+        void VectorHelper<storm::RationalFunction>::reduceVector(storm::solver::OptimizationDirection, std::vector<storm::RationalFunction> const&, std::vector<storm::RationalFunction>&, std::vector<uint_fast64_t> const&, std::vector<uint_fast64_t>*) const {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "This operation is not supported.");
         }
         

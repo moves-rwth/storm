@@ -26,7 +26,7 @@ namespace storm {
             }
         }
         
-        void JaniTraverser::traverse(Action const& action, boost::any const& data) {
+        void JaniTraverser::traverse(Action const&, boost::any const&) {
             // Intentionally left empty.
         }
         
@@ -166,7 +166,7 @@ namespace storm {
             }
         }
         
-        void JaniTraverser::traverse(storm::expressions::Expression const& expression, boost::any const& data) {
+        void JaniTraverser::traverse(storm::expressions::Expression const&, boost::any const&) {
             // intentionally left empty.
         }
         
@@ -192,7 +192,7 @@ namespace storm {
             }
         }
         
-        void ConstJaniTraverser::traverse(Action const& action, boost::any const& data) {
+        void ConstJaniTraverser::traverse(Action const&, boost::any const&) {
             // Intentionally left empty.
         }
         
@@ -331,7 +331,7 @@ namespace storm {
             }
         }
         
-        void ConstJaniTraverser::traverse(storm::expressions::Expression const& expression, boost::any const& data) {
+        void ConstJaniTraverser::traverse(storm::expressions::Expression const&, boost::any const&) {
             // intentionally left empty.
         }
         

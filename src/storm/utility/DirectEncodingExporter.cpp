@@ -145,7 +145,7 @@ namespace storm {
         }
 
         template<typename ValueType>
-        std::vector<std::string> getParameters(std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel) {
+        std::vector<std::string> getParameters(std::shared_ptr<storm::models::sparse::Model<ValueType>>) {
             return {};
         }
 
