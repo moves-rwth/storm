@@ -251,6 +251,7 @@ namespace storm {
             // Go through the reward models and construct assignments to the transient variables that are to be added to
             // edges and transient assignments that are added to the locations.
             std::map<uint_fast64_t, std::vector<storm::jani::Assignment>> transientEdgeAssignments;
+            bool hasStateRewards = false;
             for (auto const& rewardModel : program.getRewardModels()) {
                 std::string finalRewardModelName;
                 if (rewardModel.getName().empty()) {
@@ -270,6 +271,7 @@ namespace storm {
                 storm::jani::RealVariable const& newTransientVariable = janiModel.addVariable(storm::jani::RealVariable(finalRewardModelName, newExpressionVariable, manager->rational(0.0), true));
                 
                 if (rewardModel.hasStateRewards()) {
+                    hasStateRewards = true;
                     storm::expressions::Expression transientLocationExpression;
                     for (auto const& stateReward : rewardModel.getStateRewards()) {
                         storm::expressions::Expression rewardTerm = stateReward.getStatePredicateExpression().isTrue() ? stateReward.getRewardValueExpression() : storm::expressions::ite(stateReward.getStatePredicateExpression(), stateReward.getRewardValueExpression(), manager->rational(0));
@@ -321,6 +323,10 @@ namespace storm {
                 STORM_LOG_THROW(!rewardModel.hasTransitionRewards(), storm::exceptions::NotImplementedException, "Transition reward translation currently not implemented.");
             }
             STORM_LOG_THROW(transientEdgeAssignments.empty() || transientLocationAssignments.empty() || !program.specifiesSystemComposition(), storm::exceptions::NotImplementedException, "Cannot translate reward models from PRISM to JANI that specify a custom system composition.");
+            // if there are state rewards and the model is a discrete time model, we add the corresponding model feature
+            if (janiModel.isDiscreteTimeModel() && hasStateRewards) {
+                janiModel.getModelFeatures().add(storm::jani::ModelFeature::StateExitRewards);
+            }
             
             // Now create the separate JANI automata from the modules of the PRISM program. While doing so, we use the
             // previously built mapping to make variables global that are read by more than one module.
