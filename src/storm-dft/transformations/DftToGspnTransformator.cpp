@@ -92,7 +92,7 @@ namespace storm {
                     // Define a running variable for the current priority
                     // Initialize it with an offset for the DC priorities + first interval length as prios give upper interval limit
                     u_int64_t currentPrio = mDft.nrElements() + priorityIntervalLength;
-
+                    //TODO Dependencies have to have same priority
                     for (std::list<size_t>::iterator it = elementList.begin(); it != elementList.end(); ++it) {
                         priorities[*it] = currentPrio;
                         currentPrio += priorityIntervalLength;
@@ -963,6 +963,8 @@ namespace storm {
                 // Set arcs to failed
                 builder.addOutputArc(tNextConsiders.back(), failedPlace);
                 builder.addOutputArc(tNextClaims.back(), failedPlace);
+                builder.addInhibitionArc(failedPlace, tNextConsiders.back());
+                builder.addInhibitionArc(failedPlace, tNextClaims.back());
 
                 // Don't Care Mechanism
                 if (dontCareElements.count(dftSpare->id())) {
