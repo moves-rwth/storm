@@ -37,22 +37,20 @@ namespace storm {
                 STORM_LOG_DEBUG("Expecting the denominator to be constant");
             }
 
-            storm::expressions::Expression denominatorVal = manager->rational(std::stod(storm::utility::to_string(denominator.constantPart())));
+            storm::expressions::Expression denominatorVal = manager->rational(storm::utility::convertNumber<storm::RationalNumber, storm::RationalFunctionCoefficient>(denominator.constantPart()));
             storm::expressions::Expression result;
             if (function.isConstant()) {
-                result = manager->integer(std::stoi(storm::utility::to_string(function.constantPart())));
+                result = manager->rational(storm::utility::convertNumber<storm::RationalNumber, storm::RationalFunctionCoefficient>(function.constantPart()));
             } else {
                 auto nominator = function.nominatorAsPolynomial().polynomialWithCoefficient();
-                result = manager->integer(std::stoi(storm::utility::to_string(nominator.constantPart())));
+                result = manager->rational(storm::utility::convertNumber<storm::RationalNumber, storm::RationalFunctionCoefficient>(nominator.constantPart()));
                 for (auto itr = nominator.begin(); itr != nominator.end(); ++itr) {
                     varsFunction.clear();
-                    (*itr).gatherVariables(varsFunction);
+                    itr->gatherVariables(varsFunction);
 
-                    // TODO: improve transformation from coefficient to expression
-                    storm::expressions::Expression nominatorPartExpr = manager->integer(
-                            std::stoi(storm::utility::to_string((*itr).coeff())));
+                    storm::expressions::Expression nominatorPartExpr = manager->rational(storm::utility::convertNumber<storm::RationalNumber, storm::RationalFunctionCoefficient>(itr->coeff()));
                     for (auto var : varsFunction) {
-                        nominatorPartExpr = nominatorPartExpr * (manager->getVariable(var.name())^manager->integer((*itr).monomial()->exponentOfVariable(var)));
+                        nominatorPartExpr = nominatorPartExpr * (manager->getVariable(var.name())^manager->rational(storm::utility::convertNumber<storm::RationalNumber, storm::RationalFunctionCoefficient>(itr->monomial()->exponentOfVariable(var))));
                     }
                     if (varsFunction.size() >= 1) {
                         result = result + nominatorPartExpr;
@@ -62,6 +60,7 @@ namespace storm {
             result = result / denominatorVal;
             return result;
         }
+
         template class RationalFunctionToExpression<storm::RationalFunction>;
     }
 }
