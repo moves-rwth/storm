@@ -11,7 +11,6 @@ namespace storm {
         std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> GlobalPOMDPSelfLoopEliminator<ValueType>::transform() const
         {
             uint64_t nrStates = pomdp.getNumberOfStates();
-            bool nondeterminism = false;
 
             std::vector<storm::storage::BitVector> observationSelfLoopMasks;
             for (uint64_t obs = 0; obs < pomdp.getNrObservations(); ++obs) {

@@ -88,8 +88,6 @@ int main(const int argc, const char** argv) {
 
 
         auto const& coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
-        auto const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
-        auto const& bisimulationSettings = storm::settings::getModule<storm::settings::modules::BisimulationSettings>();
         auto const& pomdpSettings = storm::settings::getModule<storm::settings::modules::POMDPSettings>();
 
         // For several engines, no model building step is performed, but the verification is started right away.
