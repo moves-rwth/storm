@@ -556,10 +556,15 @@ namespace storm {
 
                 // Monotonicity?
                 storm::utility::Stopwatch monotonicityWatch(true);
-                auto monotonicityChecker = storm::analysis::MonotonicityChecker<ValueType>();
-                monotonicityChecker.checkMonotonicity(result, sparseModel->getTransitionMatrix());
-                monotonicityWatch.stop();
-                STORM_PRINT(std::endl << "Time for monotonicity: " << monotonicityWatch << "." << std::endl << std::endl);
+                if (result.size() > 0) {
+                    auto monotonicityChecker = storm::analysis::MonotonicityChecker<ValueType>();
+                    monotonicityChecker.checkMonotonicity(result, sparseModel->getTransitionMatrix());
+                    monotonicityWatch.stop();
+                } else {
+                    STORM_PRINT(std::endl << "Could not find monotonicity, no lattices created" << std::endl);
+                }
+                STORM_PRINT(std::endl << "Time for monotonicity: " << monotonicityWatch << "." << std::endl
+                                    << std::endl);
 
                 std::cout << "Bye, Jip2" << std::endl;
                 return;
