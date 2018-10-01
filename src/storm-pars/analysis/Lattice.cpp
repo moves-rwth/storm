@@ -82,7 +82,8 @@ namespace storm {
 
         void Lattice::addBetween(uint_fast64_t state, Node *above, Node *below) {
             assert(!addedStates[state]);
-            assert(compare(above, below) == ABOVE);
+            auto res = compare(above, below);
+            assert(res == ABOVE || res == UNKNOWN);
             Node *newNode = new Node();
             newNode->states = storm::storage::BitVector(numberOfStates);
             newNode->states.set(state);

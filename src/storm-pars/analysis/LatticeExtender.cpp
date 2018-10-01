@@ -94,7 +94,10 @@ namespace storm {
 
                 auto row = matrix.getRow(i);
                 for (auto rowItr = row.begin(); rowItr != row.end(); ++rowItr) {
-                    stateMap[i].set(rowItr->getColumn(), true);
+                    // ignore self-loops when there are more transitions
+                    if (i != rowItr->getColumn() || row.getNumberOfEntries() == 1) {
+                        stateMap[i].set(rowItr->getColumn(), true);
+                    }
                 }
             }
 
@@ -154,7 +157,10 @@ namespace storm {
                     // Check if current state has not been added yet, and all successors have
                     bool check = !seenStates[stateNumber];
                     for (auto succIndex = successors.getNextSetIndex(0); check && succIndex != numberOfStates; succIndex = successors.getNextSetIndex(++succIndex)) {
-                        check &= seenStates[succIndex];
+                        if (succIndex != stateNumber) {
+                            check &= seenStates[succIndex];
+                        }
+                        // if the stateNumber equals succIndex we have a self-loop
                     }
 
                     if (check && successors.getNumberOfSetBits() == 1) {
