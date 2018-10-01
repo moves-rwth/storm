@@ -65,7 +65,9 @@ namespace storm {
                 auto val2 = std::get<2>(criticalTriple);
                 storm::expressions::Variable var1 = expressionManager->getVariable(std::to_string(val1));
                 storm::expressions::Variable var2 = expressionManager->getVariable(std::to_string(val2));
+                // TODO: check of in lattice de relatie niet al andersom bestaat
 
+                assert(lattice->compare(val1, val2) == storm::analysis::Lattice::UNKNOWN);
                 auto latticeCopy = new Lattice(lattice);
                 std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>> assumptionsCopy = std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>(
                         assumptions);

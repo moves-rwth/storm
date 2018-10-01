@@ -531,14 +531,6 @@ namespace storm {
                 std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(input.properties);
                 std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel = model->as<storm::models::sparse::Model<ValueType>>();
 
-                // Check if MC is acyclic
-                auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<ValueType>(sparseModel->getTransitionMatrix(), false, false);
-                for (auto i = 0; i < decomposition.size(); ++i) {
-                    auto scc = decomposition.getBlock(i);
-                    STORM_LOG_THROW(scc.size() <= 1, storm::exceptions::NotSupportedException, "Cycle found, not supporting cyclic MCs");
-                }
-
-
                 // Transform to Lattices
                 storm::utility::Stopwatch latticeWatch(true);
                 storm::analysis::LatticeExtender<ValueType> *extender = new storm::analysis::LatticeExtender<ValueType>(sparseModel);

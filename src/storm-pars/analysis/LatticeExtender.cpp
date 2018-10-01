@@ -17,6 +17,8 @@
 #include "storm/exceptions/NotSupportedException.h"
 
 #include <set>
+#include <storm/storage/StronglyConnectedComponentDecomposition.h>
+#include <storm/storage/StronglyConnectedComponent.h>
 
 #include "storm/storage/BitVector.h"
 #include "storm/utility/macros.h"
@@ -25,8 +27,35 @@ namespace storm {
     namespace analysis {
 
         template<typename ValueType>
-        LatticeExtender<ValueType>::LatticeExtender(std::shared_ptr<storm::models::sparse::Model<ValueType>> model) : model(model) {
-            // intentionally left empty
+        LatticeExtender<ValueType>::LatticeExtender(std::shared_ptr<storm::models::sparse::Model<ValueType>> model) {
+            this->model = model;
+
+            initialMiddleStates = storm::storage::BitVector(model->getNumberOfStates());
+            // Check if MC is acyclic
+            auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<ValueType>(model->getTransitionMatrix(), false, false);
+            for (auto i = 0; i < decomposition.size(); ++i) {
+                auto scc = decomposition.getBlock(i);
+                if (scc.size() > 1) {
+                    auto states = scc.getStates();
+                    bool added = false;
+                    for (auto itr = states.begin(); !added && itr != states.end(); ++itr) {
+                        auto state = *itr;
+                        storm::storage::BitVector subSystem = storm::storage::BitVector(model->getNumberOfStates());
+                        subSystem.set(states.begin(), states.end(), true);
+                        subSystem.set(state, false);
+                        auto subDecomposition = storm::storage::StronglyConnectedComponentDecomposition<ValueType>(model->getTransitionMatrix(), subSystem, false, false);
+                        bool acyclic = true;
+                        for (auto i = 0; acyclic && i < subDecomposition.size(); ++i) {
+                            auto subScc = subDecomposition.getBlock(i);
+                            acyclic = subScc.size() <= 1;
+                        }
+                        if (acyclic) {
+                            initialMiddleStates.set(state);
+                            added = true;
+                        }
+                    }
+                }
+            }
         }
 
         template <typename ValueType>
@@ -71,6 +100,9 @@ namespace storm {
 
             // Create the Lattice
             storm::analysis::Lattice *lattice = new storm::analysis::Lattice(topStates, bottomStates, numberOfStates);
+            for (auto state = initialMiddleStates.getNextSetIndex(0); state != numberOfStates; state = initialMiddleStates.getNextSetIndex(state + 1)) {
+                lattice->add(state);
+            }
             return this->extendLattice(lattice);
         }
 
@@ -110,8 +142,9 @@ namespace storm {
                 }
             }
 
-            auto oldNumberSet = lattice->getAddedStates().getNumberOfSetBits();
-            while (lattice->getAddedStates().getNumberOfSetBits() != numberOfStates) {
+            auto oldNumberSet = numberOfStates;
+            while (oldNumberSet != lattice->getAddedStates().getNumberOfSetBits()) {
+                oldNumberSet = lattice->getAddedStates().getNumberOfSetBits();
                 for (auto stateItr = stateMap.begin(); stateItr != stateMap.end(); ++stateItr) {
                     storm::storage::BitVector seenStates = (lattice->getAddedStates());
                     // Iterate over all states
@@ -169,12 +202,6 @@ namespace storm {
                         lattice->addBetween(stateNumber, lattice->getNode(highest), lattice->getNode(lowest));
                     }
                 }
-                // Nothing changed and not done yet
-                if (oldNumberSet == lattice->getAddedStates().getNumberOfSetBits()) {
-                    // add the first unset state to the lattice between top and bottom
-                    lattice->add(lattice->getAddedStates().getNextUnsetIndex(0));
-                }
-                oldNumberSet = lattice->getAddedStates().getNumberOfSetBits();
             }
             return std::make_tuple(lattice, numberOfStates, numberOfStates);
         }

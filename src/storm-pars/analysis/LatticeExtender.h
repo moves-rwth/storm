@@ -53,6 +53,8 @@ namespace storm {
             std::shared_ptr<storm::models::sparse::Model<ValueType>> model;
 
             std::map<uint_fast64_t, storm::storage::BitVector> stateMap;
+
+            storm::storage::BitVector initialMiddleStates;
         };
     }
 }
