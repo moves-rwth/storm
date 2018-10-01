@@ -295,7 +295,7 @@ namespace storm {
                             cachedData.linEqSolver->setUpperBound(*obj.upperResultBound);
                             req.clearUpperBounds();
                         }
-                        STORM_LOG_THROW(req.empty(), storm::exceptions::UncheckedRequirementException, "At least one requirement was not checked.");
+                        STORM_LOG_THROW(!req.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + req.getEnabledRequirementsAsString() + " not checked.");
                         cachedData.linEqSolver->solveEquations(env, x, cachedData.bLinEq);
                         auto resultIt = result.begin();
                         for (auto const& state : epochModel.epochInStates) {
@@ -331,7 +331,7 @@ namespace storm {
                         cachedData.minMaxSolver->setUpperBound(upperBound.get());
                         req.clearUpperBounds();
                     }
-                    STORM_LOG_THROW(req.empty(), storm::exceptions::UncheckedRequirementException, "At least one requirement was not checked.");
+                    STORM_LOG_THROW(!req.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + req.getEnabledRequirementsAsString() + " not checked.");
                     cachedData.minMaxSolver->setRequirementsChecked(true);
                     cachedData.minMaxSolver->setOptimizationDirection(storm::solver::OptimizationDirection::Maximize);
                 

@@ -30,6 +30,11 @@ namespace storm {
                 bool isToJaniSet() const;
                 
                 /**
+                 * returns the file name where jani output should be stored.
+                 */
+                std::string getWriteToJaniFilename() const;
+                
+                /**
                  * Whether the program graph should be drawn (dot output)
                  */
                 bool isProgramGraphToDotSet() const;

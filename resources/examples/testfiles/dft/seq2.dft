@@ -1,0 +1,6 @@
+toplevel "A";
+"A" and "B" "C" "D";
+"X" seq "B" "C" "D";
+"B" lambda=0.5 dorm=0.3;
+"C" lambda=0.5 dorm=0.3;
+"D" lambda=0.5 dorm=0.3;

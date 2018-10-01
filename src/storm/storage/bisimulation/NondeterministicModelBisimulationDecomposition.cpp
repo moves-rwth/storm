@@ -367,7 +367,7 @@ namespace storm {
                                                         bool result = quotientDistributionsLess(state1, state2);
                                                         return result;
                                                     },
-                                                    [this, &block, &splitterQueue, &newBlocks] (Block<BlockDataType>& newBlock) {
+                                                    [&newBlocks] (Block<BlockDataType>& newBlock) {
                                                         newBlocks.push_back(&newBlock);
                                                     });
             

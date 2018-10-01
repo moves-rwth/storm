@@ -270,6 +270,20 @@ namespace storm {
             return dynamic_cast<SettingsType const&>(manager().getModule(SettingsType::moduleName));
         }
         
+        
+        /*!
+         * Returns true if the given module is registered.
+         *
+         */
+        template<typename SettingsType>
+        bool hasModule() {
+            static_assert(std::is_base_of<storm::settings::modules::ModuleSettings, SettingsType>::value, "Template argument must be derived from ModuleSettings");
+            if (manager().hasModule(SettingsType::moduleName)) {
+                return dynamic_cast<SettingsType const*>(&(manager().getModule(SettingsType::moduleName))) != nullptr;
+            }
+            return false;
+        }
+        
         /*!
          * Retrieves the core settings in a mutable form. This is only meant to be used for debug purposes or very
          * rare cases where it is necessary.

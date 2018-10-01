@@ -3,8 +3,10 @@
 
 #include "storm/logic/FragmentChecker.h"
 #include "storm/logic/FormulaInformationVisitor.h"
-#include "storm/logic/VariableSubstitutionVisitor.h"
+#include "storm/storage/jani/expressions/JaniExpressionSubstitutionVisitor.h"
+#include "storm/logic/ExpressionSubstitutionVisitor.h"
 #include "storm/logic/LabelSubstitutionVisitor.h"
+#include "storm/logic/RewardModelNameSubstitutionVisitor.h"
 #include "storm/logic/ToExpressionVisitor.h"
 
 namespace storm {
@@ -431,6 +433,12 @@ namespace storm {
             return result;
         }
         
+        std::set<storm::expressions::Variable> Formula::getUsedVariables() const {
+            std::set<storm::expressions::Variable> usedVariables;
+            this->gatherUsedVariables(usedVariables);
+            return usedVariables;
+        }
+        
         std::set<std::string> Formula::getReferencedRewardModels() const {
             std::set<std::string> referencedRewardModels;
             this->gatherReferencedRewardModels(referencedRewardModels);
@@ -438,8 +446,13 @@ namespace storm {
         }
         
         std::shared_ptr<Formula> Formula::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
-            VariableSubstitutionVisitor visitor(substitution);
-            return visitor.substitute(*this);
+            storm::expressions::JaniExpressionSubstitutionVisitor<std::map<storm::expressions::Variable, storm::expressions::Expression>> v(substitution);
+            return substitute([&v](storm::expressions::Expression const& exp) {return v.substitute(exp);});
+        }
+        
+        std::shared_ptr<Formula> Formula::substitute(std::function<storm::expressions::Expression(storm::expressions::Expression const&)> const& expressionSubstitution) const {
+            ExpressionSubstitutionVisitor visitor;
+            return visitor.substitute(*this, expressionSubstitution);
         }
         
         std::shared_ptr<Formula> Formula::substitute(std::map<std::string, storm::expressions::Expression> const& labelSubstitution) const {
@@ -449,6 +462,11 @@ namespace storm {
         
         std::shared_ptr<Formula> Formula::substitute(std::map<std::string, std::string> const& labelSubstitution) const {
             LabelSubstitutionVisitor visitor(labelSubstitution);
+            return visitor.substitute(*this);
+        }
+        
+        std::shared_ptr<Formula> Formula::substituteRewardModelNames(std::map<std::string, std::string> const& rewardModelNameSubstitution) const {
+            RewardModelNameSubstitutionVisitor visitor(rewardModelNameSubstitution);
             return visitor.substitute(*this);
         }
         
@@ -480,7 +498,11 @@ namespace storm {
         void Formula::gatherReferencedRewardModels(std::set<std::string>&) const {
             return;
         }
-                
+        
+        void Formula::gatherUsedVariables(std::set<storm::expressions::Variable>& usedVariables) const {
+            return;
+        }
+        
         std::string Formula::toString() const {
             std::stringstream str2;
             writeToStream(str2);

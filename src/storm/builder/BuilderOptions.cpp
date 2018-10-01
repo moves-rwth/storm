@@ -1,6 +1,7 @@
 #include "storm/builder/BuilderOptions.h"
 
 #include "storm/logic/Formulas.h"
+#include "storm/logic/FragmentSpecification.h"
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/BuildSettings.h"
@@ -37,7 +38,7 @@ namespace storm {
         }
         
 
-        BuilderOptions::BuilderOptions(bool buildAllRewardModels, bool buildAllLabels) : buildAllRewardModels(buildAllRewardModels), buildAllLabels(buildAllLabels), buildChoiceLabels(false), buildStateValuations(false), buildChoiceOrigins(false), explorationChecks(false), showProgress(false),  inferObservationsFromActions(false), showProgressDelay(0) {
+        BuilderOptions::BuilderOptions(bool buildAllRewardModels, bool buildAllLabels) : buildAllRewardModels(buildAllRewardModels), buildAllLabels(buildAllLabels), buildChoiceLabels(false), buildStateValuations(false), buildChoiceOrigins(false), scaleAndLiftTransitionRewards(true), explorationChecks(false), addOverlappingGuardsLabel(false), addOutOfBoundsState(false), reservedBitsForUnboundedVariables(32), showProgress(false), inferObservationsFromActions(false),  showProgressDelay(0) {
             // Intentionally left empty.
         }
         
@@ -59,6 +60,7 @@ namespace storm {
             auto const& buildSettings = storm::settings::getModule<storm::settings::modules::BuildSettings>();
             auto const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
             explorationChecks = buildSettings.isExplorationChecksSet();
+            reservedBitsForUnboundedVariables = buildSettings.getBitsForUnboundedVariables();
             showProgress = generalSettings.isVerboseSet();
             showProgressDelay = generalSettings.getShowProgressDelay();
         }
@@ -86,6 +88,10 @@ namespace storm {
             for (auto const& formula : atomicExpressionFormulas) {
                 addLabel(formula->getExpression());
             }
+            
+            storm::logic::FragmentSpecification transitionRewardScalingFragment = storm::logic::csl().setRewardOperatorsAllowed(true).setReachabilityRewardFormulasAllowed(true).setLongRunAverageOperatorsAllowed(true).setMultiObjectiveFormulasAllowed(true).setTotalRewardFormulasAllowed(true).setStepBoundedCumulativeRewardFormulasAllowed(true).setTimeBoundedCumulativeRewardFormulasAllowed(true);
+            scaleAndLiftTransitionRewards = scaleAndLiftTransitionRewards && formula.isInFragment(transitionRewardScalingFragment);
+            
         }
         
         void BuilderOptions::setTerminalStatesFromFormula(storm::logic::Formula const& formula) {
@@ -125,7 +131,7 @@ namespace storm {
             return labelNames;
         }
         
-        std::vector<storm::expressions::Expression> const& BuilderOptions::getExpressionLabels() const {
+        std::vector<std::pair<std::string, storm::expressions::Expression>> const& BuilderOptions::getExpressionLabels() const {
             return expressionLabels;
         }
         
@@ -164,7 +170,23 @@ namespace storm {
         bool BuilderOptions::isInferObservationsFromActionsSet() const {
             return inferObservationsFromActions;
         }
+
+        bool BuilderOptions::isScaleAndLiftTransitionRewardsSet() const {
+            return scaleAndLiftTransitionRewards;
+        }
+
+        bool BuilderOptions::isAddOutOfBoundsStateSet() const {
+            return addOutOfBoundsState;
+        }
         
+        uint64_t BuilderOptions::getReservedBitsForUnboundedVariables() const {
+            return reservedBitsForUnboundedVariables;
+        }
+
+        bool BuilderOptions::isAddOverlappingGuardLabelSet() const {
+            return addOverlappingGuardsLabel;
+        }
+
         BuilderOptions& BuilderOptions::setBuildAllRewardModels(bool newValue) {
             buildAllRewardModels = newValue;
             return *this;
@@ -199,7 +221,9 @@ namespace storm {
         }
         
         BuilderOptions& BuilderOptions::addLabel(storm::expressions::Expression const& expression) {
-            expressionLabels.emplace_back(expression);
+            std::stringstream stream;
+            stream << expression;
+            expressionLabels.emplace_back(stream.str(), expression);
             return *this;
         }
         
@@ -234,5 +258,39 @@ namespace storm {
             return *this;
         }
 
+        BuilderOptions& BuilderOptions::setScaleAndLiftTransitionRewards(bool newValue) {
+            scaleAndLiftTransitionRewards = newValue;
+            return *this;
+        }
+        
+        BuilderOptions& BuilderOptions::setAddOutOfBoundsState(bool newValue) {
+            addOutOfBoundsState = newValue;
+            return *this;
+        }
+        
+        BuilderOptions& BuilderOptions::setReservedBitsForUnboundedVariables(uint64_t newValue) {
+            reservedBitsForUnboundedVariables = newValue;
+            return *this;
+        }
+
+        BuilderOptions& BuilderOptions::setAddOverlappingGuardsLabel(bool newValue) {
+            addOverlappingGuardsLabel = newValue;
+            return *this;
+        }
+
+        BuilderOptions& BuilderOptions::substituteExpressions(std::function<storm::expressions::Expression(storm::expressions::Expression const&)> const& substitutionFunction) {
+            for (auto& e : expressionLabels) {
+                e.second = substitutionFunction(e.second);
+            }
+            
+            for (auto& t : terminalStates) {
+                if (t.first.isExpression()) {
+                    t.first = LabelOrExpression(substitutionFunction(t.first.getExpression()));
+                }
+            }
+            return *this;
+        }
+
+        
     }
 }

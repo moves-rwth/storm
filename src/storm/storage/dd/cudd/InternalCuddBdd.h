@@ -385,6 +385,14 @@ namespace storm {
              */
             void filterExplicitVector(Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, storm::storage::BitVector const& sourceValues, storm::storage::BitVector& targetValues) const;
             
+            /*!
+             * Splits the BDD into several BDDs that differ in the encoding of the given group variables (given via indices).
+             *
+             * @param ddGroupVariableIndices The indices of the variables that are used to distinguish the groups.
+             * @return A vector of BDDs that are the separate groups (wrt. to the encoding of the given variables).
+             */
+            std::vector<InternalBdd<DdType::CUDD>> splitIntoGroups(std::vector<uint_fast64_t> const& ddGroupVariableIndices) const;
+            
             friend struct std::hash<storm::dd::InternalBdd<storm::dd::DdType::CUDD>>;
             
             /*!
@@ -504,6 +512,8 @@ namespace storm {
              */
             static storm::expressions::Variable toExpressionRec(DdNode const* dd, cudd::Cudd const& ddManager, storm::expressions::ExpressionManager& manager, std::vector<storm::expressions::Expression>& expressions, std::unordered_map<uint_fast64_t, storm::expressions::Variable>& indexToVariableMap, std::unordered_map<std::pair<uint_fast64_t, uint_fast64_t>, storm::expressions::Variable>& countIndexToVariablePair, std::unordered_map<DdNode const*, uint_fast64_t>& nodeToCounterMap, std::vector<uint_fast64_t>& nextCounterForIndex);
 
+            void splitIntoGroupsRec(DdNode* dd, bool negated, std::vector<InternalBdd<DdType::CUDD>>& groups, std::vector<uint_fast64_t> const& ddGroupVariableIndices, uint_fast64_t currentLevel, uint_fast64_t maxLevel) const;
+            
             InternalDdManager<DdType::CUDD> const* ddManager;
             
             cudd::BDD cuddBdd;

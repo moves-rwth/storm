@@ -17,7 +17,7 @@ set_target_properties(storm-cli-utilities PROPERTIES DEFINE_SYMBOL "")
 list(APPEND STORM_TARGETS storm-cli-utilities)
 set(STORM_TARGETS ${STORM_TARGETS} PARENT_SCOPE)
 
-target_link_libraries(storm-cli-utilities PUBLIC storm)
+target_link_libraries(storm-cli-utilities PUBLIC storm storm-counterexamples storm-parsers)
 
 # Install storm headers to include directory.
 foreach(HEADER ${STORM_CLI_UTIL_HEADERS})
@@ -36,5 +36,5 @@ add_custom_target(copy_storm_cli_util_headers DEPENDS ${STORM_CLI_UTIL_OUTPUT_HE
 add_dependencies(storm-cli-utilities copy_storm_pars_headers)
 
 # installation
-install(TARGETS storm-cli-utilities RUNTIME DESTINATION bin LIBRARY DESTINATION lib OPTIONAL)
+install(TARGETS storm-cli-utilities EXPORT storm_Targets RUNTIME DESTINATION bin LIBRARY DESTINATION lib OPTIONAL)
 

@@ -1,8 +1,14 @@
 #ifndef STORM_LOGIC_FRAGMENTSPECIFICATION_H_
 #define STORM_LOGIC_FRAGMENTSPECIFICATION_H_
 
+#include <map>
+#include <string>
+
 namespace storm {
     namespace logic {
+        
+        class RewardAccumulation;
+        
         class FragmentSpecification {
         public:
             FragmentSpecification();
@@ -139,6 +145,10 @@ namespace storm {
             bool areOperatorsAtTopLevelOfMultiObjectiveFormulasRequired() const;
             FragmentSpecification& setOperatorsAtTopLevelOfMultiObjectiveFormulasRequired(bool newValue);
             
+            bool isRewardAccumulationAllowed() const;
+            FragmentSpecification& setRewardAccumulationAllowed(bool newValue);
+
+            
             FragmentSpecification& setOperatorsAllowed(bool newValue);
             FragmentSpecification& setTimeAllowed(bool newValue);
             FragmentSpecification& setLongRunAverageProbabilitiesAllowed(bool newValue);
@@ -195,6 +205,8 @@ namespace storm {
             bool operatorAtTopLevelRequired;
             bool multiObjectiveFormulaAtTopLevelRequired;
             bool operatorsAtTopLevelOfMultiObjectiveFormulasRequired;
+            
+            bool rewardAccumulation;
         };
         
         // Propositional.

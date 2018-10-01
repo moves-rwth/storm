@@ -214,9 +214,9 @@ namespace storm {
                 std::string getChoiceLabelingFilename() const;
 
                 /*!
-                 * Retrieves whether the export-to-dot option was set.
+                 * Retrieves whether the constants option was set.
                  *
-                 * @return True if the export-to-dot option was set.
+                 * @return True if the constants option was set.
                  */
                 bool isConstantsSet() const;
 
@@ -234,9 +234,15 @@ namespace storm {
                 bool isJaniPropertiesSet() const;
 
                 /*!
+                 * Retrieves whether one or more jani-properties have been selected
+                 * @return
+                 */
+                bool areJaniPropertiesSelected() const;
+                
+                /*!
                  * @return  The names of the jani properties to check
                  */
-                std::vector<std::string> getJaniProperties() const;
+                std::vector<std::string> getSelectedJaniProperties() const;
 
                 /*!
                  * Retrieves whether the property option was set.

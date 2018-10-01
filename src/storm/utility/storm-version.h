@@ -24,6 +24,13 @@ namespace storm {
             /// Flag indicating if the version of Storm is a development version.
             const static bool versionDev;
 
+            enum class VersionSource {
+                Git, Static
+            };
+
+            /// The source of the versioning information.
+            const static VersionSource versionSource;
+
             /// The short hash of the git commit this build is based on
             const static std::string gitRevisionHash;
 
@@ -60,7 +67,10 @@ namespace storm {
             static std::string longVersionString() {
                 std::stringstream sstream;
                 sstream << "Version " << shortVersionString();
-                if (commitsAhead) {
+                if (versionSource == VersionSource::Static) {
+                    sstream << " (derived statically)";
+                }
+                if (commitsAhead > 0) {
                     sstream << " (+ " << commitsAhead << " commits)";
                 }
                 if (!gitRevisionHash.empty()) {

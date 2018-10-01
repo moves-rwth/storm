@@ -16,6 +16,9 @@
 #include "storm/storage/jani/CompositionInformationVisitor.h"
 #include "storm/storage/jani/Compositions.h"
 #include "storm/storage/jani/JSONExporter.h"
+#include "storm/storage/jani/ArrayEliminator.h"
+#include "storm/storage/jani/FunctionEliminator.h"
+#include "storm/storage/jani/expressions/JaniExpressionSubstitutionVisitor.h"
 
 #include "storm/storage/expressions/LinearityCheckVisitor.h"
 
@@ -67,6 +70,7 @@ namespace storm {
             if (this != &other) {
                 this->name = other.name;
                 this->modelType = other.modelType;
+                this->modelFeatures = other.modelFeatures;
                 this->version = other.version;
                 this->expressionManager = other.expressionManager;
                 this->actions = other.actions;
@@ -75,10 +79,12 @@ namespace storm {
                 this->constants = other.constants;
                 this->constantToIndex = other.constantToIndex;
                 this->globalVariables = other.globalVariables;
+                this->nonTrivialRewardModels = other.nonTrivialRewardModels;
                 this->automata = other.automata;
                 this->automatonToIndex = other.automatonToIndex;
                 this->composition = other.composition;
                 this->initialStatesRestriction = other.initialStatesRestriction;
+                this->globalFunctions = other.globalFunctions;
                 
                 // Now that we have copied all the data, we need to fix all assignments as they contain references to the old model.
                 std::map<Variable const*, std::reference_wrapper<Variable const>> remapping;
@@ -112,8 +118,20 @@ namespace storm {
             return modelType;
         }
         
+        ModelFeatures const& Model::getModelFeatures() const {
+            return modelFeatures;
+        }
+        
+        ModelFeatures& Model::getModelFeatures() {
+            return modelFeatures;
+        }
+        
         std::string const& Model::getName() const {
             return name;
+        }
+        
+        void Model::setName(std::string const& newName) {
+            name = newName;
         }
         
         struct ConditionalMetaEdge {
@@ -212,11 +230,14 @@ namespace storm {
                 if (!SynchronizationVector::isNoActionInput(actionName)) {
                     components.push_back(i);
                     uint64_t actionIndex = oldModel.getActionIndex(actionName);
+                    // store that automaton occurs in the sync vector.
                     participatingAutomataAndActions.push_back(std::make_pair(composedAutomata[i], actionIndex));
+                    // Store for later that this action is one of the possible actions that synchronise
                     synchronizingActionIndices[i].insert(actionIndex);
                 }
             }
-            
+
+            // What is the action label that should be attached to the composed actions
             uint64_t resultingActionIndex = Model::SILENT_ACTION_INDEX;
             if (vector.getOutput() != Model::SILENT_ACTION_NAME) {
                 if (newModel.hasAction(vector.getOutput())) {
@@ -415,6 +436,8 @@ namespace storm {
             
             // Otherwise, we need to actually flatten composition.
             Model flattenedModel(this->getName() + "_flattened", this->getModelType(), this->getJaniVersion(), this->getManager().shared_from_this());
+            
+            flattenedModel.getModelFeatures() = getModelFeatures();
 
             // Get an SMT solver for computing possible guard combinations.
             std::unique_ptr<storm::solver::SmtSolver> solver = smtSolverFactory->create(*expressionManager);
@@ -439,6 +462,18 @@ namespace storm {
                 variableRemapping.emplace(&variable, flattenedModel.addVariable(*renamedVariable));
             }
             
+            for (auto const& constant : getConstants()) {
+                flattenedModel.addConstant(constant);
+            }
+            
+            for (auto const& nonTrivRew : getNonTrivialRewardExpressions()) {
+                flattenedModel.addNonTrivialRewardExpression(nonTrivRew.first, nonTrivRew.second);
+            }
+            
+            for (auto const& funDef : getGlobalFunctionDefinitions()) {
+                flattenedModel.addFunctionDefinition(funDef.second);
+            }
+
             std::vector<std::reference_wrapper<Automaton const>> composedAutomata;
             for (auto const& element : parallelComposition.getSubcompositions()) {
                 STORM_LOG_THROW(element->isAutomatonComposition(), storm::exceptions::WrongFormatException, "Cannot flatten recursive (not standard-compliant) composition.");
@@ -459,7 +494,11 @@ namespace storm {
             // Assert the values of the constants.
             for (auto const& constant : this->getConstants()) {
                 if (constant.isDefined()) {
-                    solver->add(constant.getExpressionVariable() == constant.getExpression());
+                    if (constant.isBooleanConstant()) {
+                        solver->add(storm::expressions::iff(constant.getExpressionVariable(), constant.getExpression()));
+                    } else {
+                        solver->add(constant.getExpressionVariable() == constant.getExpression());
+                    }
                 }
             }
             // Assert the bounds of the global variables.
@@ -530,6 +569,9 @@ namespace storm {
                 if (automaton.get().hasInitialStatesRestriction()) {
                     initialStatesRestriction = initialStatesRestriction && automaton.get().getInitialStatesRestriction();
                 }
+                for (auto const& funDef : automaton.get().getFunctionDefinitions()) {
+                    newAutomaton.addFunctionDefinition(funDef.second);
+                }
             }
             
             newAutomaton.setInitialStatesRestriction(this->getInitialStatesExpression(composedAutomata));
@@ -580,12 +622,12 @@ namespace storm {
             return nonsilentActionIndices;
         }
         
-        uint64_t Model::addConstant(Constant const& constant) {
+        void Model::addConstant(Constant const& constant) {
             auto it = constantToIndex.find(constant.getName());
             STORM_LOG_THROW(it == constantToIndex.end(), storm::exceptions::WrongFormatException, "Cannot add constant with name '" << constant.getName() << "', because a constant with that name already exists.");
             constantToIndex.emplace(constant.getName(), constants.size());
             constants.push_back(constant);
-            return constants.size() - 1;
+            // Note that we should not return a reference to the inserted constant as it might get invalidated when more constants are added.
         }
         
         bool Model::hasConstant(std::string const& name) const {
@@ -605,7 +647,15 @@ namespace storm {
         std::vector<Constant>& Model::getConstants() {
             return constants;
         }
-        
+
+        std::size_t Model::getNumberOfEdges() const {
+            size_t res = 0;
+            for (auto const& aut : getAutomata()) {
+                res += aut.getNumberOfEdges();
+            }
+            return res;
+        }
+
         Variable const& Model::addVariable(Variable const& variable) {
             if (variable.isBooleanVariable()) {
                 return addVariable(variable.asBooleanVariable());
@@ -615,6 +665,8 @@ namespace storm {
                 return addVariable(variable.asUnboundedIntegerVariable());
             } else if (variable.isRealVariable()) {
                 return addVariable(variable.asRealVariable());
+            } else if (variable.isArrayVariable()) {
+                return addVariable(variable.asArrayVariable());
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Variable has invalid type.");
             }
@@ -633,6 +685,10 @@ namespace storm {
         }
 
         RealVariable const& Model::addVariable(RealVariable const& variable) {
+            return globalVariables.addVariable(variable);
+        }
+        
+        ArrayVariable const& Model::addVariable(ArrayVariable const& variable) {
             return globalVariables.addVariable(variable);
         }
 
@@ -689,12 +745,78 @@ namespace storm {
             return false;
         }
         
-        storm::expressions::ExpressionManager& Model::getExpressionManager() {
+        FunctionDefinition const& Model::addFunctionDefinition(FunctionDefinition const& functionDefinition) {
+            auto insertionRes = globalFunctions.emplace(functionDefinition.getName(), functionDefinition);
+            STORM_LOG_THROW(insertionRes.second, storm::exceptions::InvalidOperationException, " a function with the name " << functionDefinition.getName() << " already exists in this model.");
+            return insertionRes.first->second;
+        }
+        
+        std::unordered_map<std::string, FunctionDefinition> const& Model::getGlobalFunctionDefinitions() const {
+            return globalFunctions;
+        }
+        
+        std::unordered_map<std::string, FunctionDefinition>& Model::getGlobalFunctionDefinitions() {
+            return globalFunctions;
+        }
+        
+        storm::expressions::ExpressionManager& Model::getExpressionManager() const {
             return *expressionManager;
         }
         
-        storm::expressions::ExpressionManager const& Model::getExpressionManager() const {
-            return *expressionManager;
+        bool Model::addNonTrivialRewardExpression(std::string const& identifier, storm::expressions::Expression const& rewardExpression) {
+            if (nonTrivialRewardModels.count(identifier) > 0) {
+                return false;
+            } else {
+                nonTrivialRewardModels.emplace(identifier, rewardExpression);
+                return true;
+            }
+        }
+        
+        storm::expressions::Expression Model::getRewardModelExpression(std::string const& identifier) const {
+            auto findRes = nonTrivialRewardModels.find(identifier);
+            if (findRes != nonTrivialRewardModels.end()) {
+                return findRes->second;
+            } else {
+                // Check whether the reward model refers to a global variable
+                if (globalVariables.hasVariable(identifier)) {
+                    return globalVariables.getVariable(identifier).getExpressionVariable().getExpression();
+                } else {
+                    STORM_LOG_THROW(identifier.empty(), storm::exceptions::InvalidArgumentException, "Cannot find unknown reward model '" << identifier << "'.");
+                    STORM_LOG_THROW(nonTrivialRewardModels.size() + globalVariables.getNumberOfNumericalTransientVariables() == 1, storm::exceptions::InvalidArgumentException, "Reference to standard reward model is ambiguous.");
+                    if (nonTrivialRewardModels.size() == 1) {
+                        return nonTrivialRewardModels.begin()->second;
+                    } else {
+                        for (auto const& variable : globalVariables.getTransientVariables()) {
+                            if (variable.isRealVariable() || variable.isUnboundedIntegerVariable() || variable.isBoundedIntegerVariable()) {
+                                return variable.getExpressionVariable().getExpression();
+                            }
+                        }
+                    }
+                }
+            }
+            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Cannot find unknown reward model '" << identifier << "'.");
+            return storm::expressions::Expression();
+        }
+        
+        std::vector<std::pair<std::string, storm::expressions::Expression>> Model::getAllRewardModelExpressions() const {
+            std::vector<std::pair<std::string, storm::expressions::Expression>> result;
+            for (auto const& nonTrivExpr : nonTrivialRewardModels) {
+                result.emplace_back(nonTrivExpr.first, nonTrivExpr.second);
+            }
+            for (auto const& variable : globalVariables.getTransientVariables()) {
+                if (variable.isRealVariable() || variable.isUnboundedIntegerVariable() || variable.isBoundedIntegerVariable()) {
+                    result.emplace_back(variable.getName(), variable.getExpressionVariable().getExpression());
+                }
+            }
+            return result;
+        }
+        
+        std::unordered_map<std::string, storm::expressions::Expression> const& Model::getNonTrivialRewardExpressions() const {
+            return nonTrivialRewardModels;
+        }
+        
+        std::unordered_map<std::string, storm::expressions::Expression>& Model::getNonTrivialRewardExpressions() {
+            return nonTrivialRewardModels;
         }
         
         uint64_t Model::addAutomaton(Automaton const& automaton) {
@@ -712,7 +834,15 @@ namespace storm {
         std::vector<Automaton> const& Model::getAutomata() const {
             return automata;
         }
-        
+
+        bool Model::hasAutomaton(std::string const& name) const {
+            return automatonToIndex.find(name) != automatonToIndex.end();
+        }
+
+        void Model::replaceAutomaton(uint64_t index, Automaton const& automaton) {
+            automata[index] = automaton;
+        }
+
         Automaton& Model::getAutomaton(std::string const& name) {
             auto it = automatonToIndex.find(name);
             STORM_LOG_THROW(it != automatonToIndex.end(), storm::exceptions::InvalidOperationException, "Unable to retrieve unknown automaton '" << name << "'.");
@@ -743,11 +873,6 @@ namespace storm {
         }
         
         std::shared_ptr<Composition> Model::getStandardSystemComposition() const {
-            // If there's just one automaton, we must not use the parallel composition operator.
-            if (this->getNumberOfAutomata() == 1) {
-                return std::make_shared<AutomatonComposition>(this->getAutomata().front().getName());
-            }
-            
             // Determine the action indices used by each of the automata and create the standard subcompositions.
             std::set<uint64_t> allActionIndices;
             std::vector<std::set<uint64_t>> automatonActionIndices;
@@ -872,24 +997,41 @@ namespace storm {
             std::map<storm::expressions::Variable, storm::expressions::Expression> constantSubstitution;
             for (auto& constant : result.getConstants()) {
                 if (constant.isDefined()) {
-                    constant.define(constant.getExpression().substitute(constantSubstitution));
+                    constant.define(substituteJaniExpression(constant.getExpression(), constantSubstitution));
                     constantSubstitution[constant.getExpressionVariable()] = constant.getExpression();
                 }
+            }
+            
+            for (auto& functionDefinition : result.getGlobalFunctionDefinitions()) {
+                functionDefinition.second.substitute(constantSubstitution);
             }
             
             // Substitute constants in all global variables.
             for (auto& variable : result.getGlobalVariables().getBoundedIntegerVariables()) {
                 variable.substitute(constantSubstitution);
             }
+            for (auto& variable : result.getGlobalVariables().getArrayVariables()) {
+                variable.substitute(constantSubstitution);
+            }
             
             // Substitute constants in initial states expression.
-            result.setInitialStatesRestriction(this->getInitialStatesRestriction().substitute(constantSubstitution));
+            result.setInitialStatesRestriction(substituteJaniExpression(this->getInitialStatesRestriction(), constantSubstitution));
+            
+            for (auto& rewMod : result.getNonTrivialRewardExpressions()) {
+                rewMod.second = substituteJaniExpression(rewMod.second, constantSubstitution);
+            }
             
             // Substitute constants in variables of automata and their edges.
             for (auto& automaton : result.getAutomata()) {
                 automaton.substitute(constantSubstitution);
             }
             
+            return result;
+        }
+        
+        Model Model::substituteConstantsFunctions() const {
+            auto result = substituteConstants();
+            result.substituteFunctions();
             return result;
         }
         
@@ -905,6 +1047,105 @@ namespace storm {
             return result;
         }
         
+        void Model::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {
+            // substitute in all defining expressions of constants
+            for (auto& constant : this->getConstants()) {
+                if (constant.isDefined()) {
+                    constant.define(substituteJaniExpression(constant.getExpression(), substitution));
+                }
+            }
+            
+            for (auto& functionDefinition : this->getGlobalFunctionDefinitions()) {
+                functionDefinition.second.substitute(substitution);
+            }
+            
+            // Substitute in all global variables.
+            for (auto& variable : this->getGlobalVariables().getBoundedIntegerVariables()) {
+                variable.substitute(substitution);
+            }
+            for (auto& variable : this->getGlobalVariables().getArrayVariables()) {
+                variable.substitute(substitution);
+            }
+            
+            // Substitute in initial states expression.
+            this->setInitialStatesRestriction(substituteJaniExpression(this->getInitialStatesRestriction(), substitution));
+            
+            for (auto& rewMod : getNonTrivialRewardExpressions()) {
+                rewMod.second = substituteJaniExpression(rewMod.second, substitution);
+            }
+
+            // Substitute in variables of automata and their edges.
+            for (auto& automaton : this->getAutomata()) {
+                automaton.substitute(substitution);
+            }
+        }
+        
+        void Model::substituteFunctions() {
+            std::vector<Property> emptyPropertyVector;
+            substituteFunctions(emptyPropertyVector);
+        }
+        
+        void Model::substituteFunctions(std::vector<Property>& properties) {
+            eliminateFunctions(*this, properties);
+        }
+        
+        bool Model::containsArrayVariables() const {
+            if (getGlobalVariables().containsArrayVariables()) {
+                return true;
+            }
+            for (auto const& a : getAutomata()) {
+                if (a.getVariables().containsArrayVariables()) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        
+        ArrayEliminatorData Model::eliminateArrays(bool keepNonTrivialArrayAccess) {
+            ArrayEliminator arrayEliminator;
+            return arrayEliminator.eliminate(*this, keepNonTrivialArrayAccess);
+        }
+        
+        void Model::eliminateArrays(std::vector<Property>& properties) {
+            auto data = eliminateArrays(false);
+            for (auto& p : properties) {
+                data.transformProperty(p);
+            }
+        }
+        
+        ModelFeatures Model::restrictToFeatures(ModelFeatures const& modelFeatures) {
+            std::vector<Property> emptyPropertyVector;
+            return restrictToFeatures(modelFeatures, emptyPropertyVector);
+        }
+        
+        ModelFeatures Model::restrictToFeatures(ModelFeatures const& features, std::vector<Property>& properties) {
+
+            ModelFeatures uncheckedFeatures = getModelFeatures();
+            // Check if functions need to be eliminated.
+            if (uncheckedFeatures.hasFunctions() && !features.hasFunctions()) {
+                substituteFunctions(properties);
+            }
+            uncheckedFeatures.remove(ModelFeature::Functions);
+            
+            // Check if arrays need to be eliminated. This should be done after! eliminating the functions
+            if (uncheckedFeatures.hasArrays() && !features.hasArrays()) {
+                eliminateArrays(properties);
+            }
+            uncheckedFeatures.remove(ModelFeature::Arrays);
+
+            // There is no elimination for state exit rewards
+            if (features.hasStateExitRewards()) {
+                uncheckedFeatures.remove(ModelFeature::StateExitRewards);
+            }
+            
+            // There is no elimination of derived operators
+            if (features.hasDerivedOperators()) {
+                uncheckedFeatures.remove(ModelFeature::DerivedOperators);
+            }
+    
+            return uncheckedFeatures;
+        }
+        
         void Model::setInitialStatesRestriction(storm::expressions::Expression const& initialStatesRestriction) {
             this->initialStatesRestriction = initialStatesRestriction;
         }
@@ -917,12 +1158,47 @@ namespace storm {
             return initialStatesRestriction;
         }
         
+        bool Model::hasNonTrivialInitialStates() const {
+            if (this->hasInitialStatesRestriction() && !this->getInitialStatesRestriction().isTrue()) {
+                return true;
+            } else {
+                for (auto const& variable : this->getGlobalVariables()) {
+                    if (variable.hasInitExpression() && !variable.isTransient()) {
+                        return true;
+                    }
+                }
+                
+                for (auto const& automaton : this->automata) {
+                    if (automaton.hasNonTrivialInitialStates()) {
+                        return true;
+                    }
+                }
+            }
+            
+            return false;
+        }
+        
         storm::expressions::Expression Model::getInitialStatesExpression() const {
             std::vector<std::reference_wrapper<storm::jani::Automaton const>> allAutomata;
             for (auto const& automaton : this->getAutomata()) {
                 allAutomata.push_back(automaton);
             }
             return getInitialStatesExpression(allAutomata);
+        }
+        
+        bool Model::hasTrivialInitialStatesExpression() const {
+            if (this->hasInitialStatesRestriction() && !this->getInitialStatesRestriction().isTrue()) {
+                return false;
+            }
+            
+            bool result = true;
+            for (auto const& automaton : this->getAutomata()) {
+                result &= automaton.hasTrivialInitialStatesExpression();
+                if (!result) {
+                    break;
+                }
+            }
+            return result;
         }
         
         storm::expressions::Expression Model::getInitialStatesExpression(std::vector<std::reference_wrapper<storm::jani::Automaton const>> const& automata) const {
@@ -966,6 +1242,7 @@ namespace storm {
             for (auto const& variable : this->getGlobalVariables().getBoundedIntegerVariables()) {
                 result.push_back(variable.getRangeExpression());
             }
+            STORM_LOG_ASSERT(this->getGlobalVariables().getArrayVariables().empty(), "This operation is unsupported if array variables are present.");
             
             if (automata.empty()) {
                 for (auto const& automaton : this->getAutomata()) {
@@ -1108,13 +1385,24 @@ namespace storm {
      
         void Model::makeStandardJaniCompliant() {
             for (auto& automaton : automata) {
+                // For discrete-time models, we push the assignments to real-valued transient variables (rewards) to the
+                // edges.
+                if (this->isDiscreteTimeModel()) {
+                    automaton.pushTransientRealLocationAssignmentsToEdges();
+                }
+                automaton.pushEdgeAssignmentsToDestinations();
+            }
+        }
+     
+        void Model::pushEdgeAssignmentsToDestinations() {
+            for (auto& automaton : automata) {
                 automaton.pushEdgeAssignmentsToDestinations();
             }
         }
         
-        void Model::liftTransientEdgeDestinationAssignments() {
+        void Model::liftTransientEdgeDestinationAssignments(int64_t maxLevel) {
             for (auto& automaton : this->getAutomata()) {
-                automaton.liftTransientEdgeDestinationAssignments();
+                automaton.liftTransientEdgeDestinationAssignments(maxLevel);
             }
         }
         
@@ -1127,9 +1415,9 @@ namespace storm {
             return false;
         }
         
-        bool Model::usesAssignmentLevels() const {
+        bool Model::usesAssignmentLevels(bool onlyTransient) const {
             for (auto const& automaton : this->getAutomata()) {
-                if (automaton.usesAssignmentLevels()) {
+                if (automaton.usesAssignmentLevels(onlyTransient)) {
                     return true;
                 }
             }
@@ -1156,11 +1444,11 @@ namespace storm {
             return false;
         }
         
-        uint64_t Model::encodeAutomatonAndEdgeIndices(uint64_t automatonIndex, uint64_t edgeIndex) const {
+        uint64_t Model::encodeAutomatonAndEdgeIndices(uint64_t automatonIndex, uint64_t edgeIndex) {
             return automatonIndex << 32 | edgeIndex;
         }
         
-        std::pair<uint64_t, uint64_t> Model::decodeAutomatonAndEdgeIndices(uint64_t index) const {
+        std::pair<uint64_t, uint64_t> Model::decodeAutomatonAndEdgeIndices(uint64_t index) {
             return std::make_pair(index >> 32, index & ((1ull << 32) - 1));
         }
 

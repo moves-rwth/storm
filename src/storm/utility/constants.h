@@ -16,6 +16,8 @@
 #include <vector>
 #include <map>
 
+#include "storm/utility/NumberTraits.h"
+
 namespace storm {
 
     // Forward-declare MatrixEntry class.
@@ -27,6 +29,46 @@ namespace storm {
     struct NumberTraits;
 
     namespace utility {
+
+        namespace detail {
+            template<typename ValueType>
+            struct ElementLess {
+                typedef std::less<ValueType> type;
+            };
+            
+            struct DoubleLess {
+                bool operator()(double a, double b) const {
+                    return (a == 0.0 && b > 0.0) || (b - a > 1e-17);
+                }
+            };
+            
+            template<>
+            struct ElementLess<double> {
+                typedef DoubleLess type;
+            };
+
+            template<typename ValueType>
+            struct ElementGreater {
+                typedef std::greater<ValueType> type;
+            };
+            
+            struct DoubleGreater {
+                bool operator()(double a, double b) const {
+                    return (b == 0.0 && a > 0.0) || (a - b > 1e-17);
+                }
+            };
+            
+            template<>
+            struct ElementGreater<double> {
+                typedef DoubleGreater type;
+            };
+        }
+        
+        template<typename ValueType>
+        using ElementLess = typename detail::ElementLess<ValueType>::type;
+
+        template<typename ValueType>
+        using ElementGreater = typename detail::ElementGreater<ValueType>::type;
 
         template<typename ValueType>
         ValueType one();
@@ -42,8 +84,13 @@ namespace storm {
 
         template<typename ValueType>
         bool isZero(ValueType const& a);
+        
+        template<typename ValueType>
+        bool isNan(ValueType const& a);
 
         bool isAlmostZero(double const& a);
+
+        bool isAlmostOne(double const& a);
         
         template<typename ValueType>
         bool isConstant(ValueType const& a);

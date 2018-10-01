@@ -46,6 +46,16 @@ namespace storm {
             Bdd& operator=(Bdd<LibraryType>&& other) = default;
 
             /*!
+             * Constructs the BDD representation of the encoding with the given offset.
+             *
+             * @param ddManager The DD manager responsible for the resulting BDD.
+             * @param targetOffset The offset to encode (interpreted within the ODD).
+             * @param odd The ODD used for the translation from the explicit representation to a symbolic one.
+             * @param metaVariables The meta variables to use for the symbolic encoding.
+             */
+            static Bdd<LibraryType> getEncoding(DdManager<LibraryType> const& ddManager, uint64_t targetOffset, storm::dd::Odd const& odd, std::set<storm::expressions::Variable> const& metaVariables);
+            
+            /*!
              * Constructs a BDD representation of all encodings whose value is true in the given list of truth values.
              *
              * @param ddManager The DD manager responsible for the resulting BDD.
@@ -299,6 +309,19 @@ namespace storm {
             Bdd<LibraryType> renameVariablesAbstract(std::set<storm::expressions::Variable> const& from, std::set<storm::expressions::Variable> const& to) const;
             
             /*!
+             * Renames the given meta variables in the BDD. The number of the underlying DD variables of the from meta
+             * variable set needs to be at most as large as the to meta variable set. If the amount of variables coincide,
+             * this operation coincides with renameVariables. Otherwise, it first adds a unique encoding in terms of the
+             * superfluous variables and then performs the renaming.
+             *
+             * @param from The meta variables to be renamed. The current ADD needs to contain all these meta variables.
+             * @param to The meta variables that are the target of the renaming process. The current ADD must not contain
+             * any of these meta variables.
+             * @return The resulting ADD.
+             */
+            Bdd<LibraryType> renameVariablesConcretize(std::set<storm::expressions::Variable> const& from, std::set<storm::expressions::Variable> const& to) const;
+            
+            /*!
              * Retrieves whether this DD represents the constant one function.
              *
              * @return True if this DD represents the constant one function.
@@ -319,6 +342,11 @@ namespace storm {
              */
             template<typename ValueType>
             Add<LibraryType, ValueType> toAdd() const;
+            
+            /*!
+             * Splits the BDD along the given variables (must be at the top).
+             */
+            std::vector<Bdd<LibraryType>> split(std::set<storm::expressions::Variable> const& variables) const;
             
             /*!
              * Converts the BDD to a bit vector. The given offset-labeled DD is used to determine the correct row of

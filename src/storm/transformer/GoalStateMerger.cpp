@@ -276,7 +276,7 @@ namespace storm {
         }
         
         template <typename SparseModelType>
-        std::shared_ptr<SparseModelType> GoalStateMerger<SparseModelType>::buildOutputModel(storm::storage::BitVector const& maybeStates, GoalStateMerger::ReturnType const& resultData, storm::storage::SparseMatrix<typename SparseModelType::ValueType>&& transitionMatrix, storm::models::sparse::StateLabeling&& labeling, std::unordered_map<std::string, typename SparseModelType::RewardModelType>&& rewardModels) const {
+        std::shared_ptr<SparseModelType> GoalStateMerger<SparseModelType>::buildOutputModel(storm::storage::BitVector const&, GoalStateMerger::ReturnType const&, storm::storage::SparseMatrix<typename SparseModelType::ValueType>&& transitionMatrix, storm::models::sparse::StateLabeling&& labeling, std::unordered_map<std::string, typename SparseModelType::RewardModelType>&& rewardModels) const {
             
             return std::make_shared<SparseModelType>(std::move(transitionMatrix), std::move(labeling), std::move(rewardModels));
         }

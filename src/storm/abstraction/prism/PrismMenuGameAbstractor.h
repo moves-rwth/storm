@@ -46,7 +46,7 @@ namespace storm {
                  * @param program The concrete program for which to build the abstraction.
                  * @param smtSolverFactory A factory that is to be used for creating new SMT solvers.
                  */
-                PrismMenuGameAbstractor(storm::prism::Program const& program, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory);
+                PrismMenuGameAbstractor(storm::prism::Program const& program, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, MenuGameAbstractorOptions const& options = MenuGameAbstractorOptions());
                 
                 PrismMenuGameAbstractor(PrismMenuGameAbstractor const&) = default;
                 PrismMenuGameAbstractor& operator=(PrismMenuGameAbstractor const&) = default;
@@ -74,12 +74,22 @@ namespace storm {
                  * @return The guard of the player 1 choice.
                  */
                 storm::expressions::Expression const& getGuard(uint64_t player1Choice) const override;
+
+                /*!
+                 * Retrieves the number of updates of the specified player 1 choice.
+                 */
+                virtual uint64_t getNumberOfUpdates(uint64_t player1Choice) const override;
                 
                 /*!
                  * Retrieves a mapping from variables to expressions that define their updates wrt. to the given player
                  * 1 choice and auxiliary choice.
                  */
                 std::map<storm::expressions::Variable, storm::expressions::Expression> getVariableUpdates(uint64_t player1Choice, uint64_t auxiliaryChoice) const override;
+
+                /*!
+                 * Retrieves the variables assigned by the given player 1 choice.
+                 */
+                virtual std::set<storm::expressions::Variable> const& getAssignedVariables(uint64_t player1Choice) const override;
                 
                 /*!
                  * Retrieves the range of player 1 choices.
@@ -109,6 +119,12 @@ namespace storm {
                  */
                 virtual void exportToDot(std::string const& filename, storm::dd::Bdd<DdType> const& highlightStates, storm::dd::Bdd<DdType> const& filter) const override;
 
+                virtual uint64_t getNumberOfPredicates() const override;
+                
+                virtual void addTerminalStates(storm::expressions::Expression const& expression) override;
+                
+                virtual void notifyGuardsArePredicates() override;
+                                
             protected:
                 using MenuGameAbstractor<DdType, ValueType>::exportToDot;
                 
@@ -143,6 +159,9 @@ namespace storm {
                 // A state-set abstractor used to determine the initial states of the abstraction.
                 StateSetAbstractor<DdType, ValueType> initialStateAbstractor;
                 
+                // A flag indicating whether the valid blocks need to be computed and the game restricted to these.
+                bool restrictToValidBlocks;
+                
                 // An object that is used to compute the valid blocks.
                 ValidBlockAbstractor<DdType> validBlockAbstractor;
                                 
@@ -154,6 +173,9 @@ namespace storm {
                 
                 // A flag storing whether a refinement was performed.
                 bool refinementPerformed;
+                
+                // A list of terminal state expressions.
+                std::vector<storm::expressions::Expression> terminalStateExpressions;
             };
         }
     }

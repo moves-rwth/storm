@@ -7,7 +7,9 @@
 #include <boost/container/flat_set.hpp>
 
 #include "storm/storage/jani/VariableSet.h"
-
+#include "storm/storage/jani/TemplateEdgeContainer.h"
+#include "storm/storage/jani/EdgeContainer.h"
+#include "storm/storage/jani/FunctionDefinition.h"
 
 namespace storm {
     namespace jani {
@@ -16,73 +18,8 @@ namespace storm {
         class Edge;
         class TemplateEdge;
         class Location;
-        
-        namespace detail {
-            class Edges {
-            public:
-                typedef std::vector<Edge>::iterator iterator;
-                typedef std::vector<Edge>::const_iterator const_iterator;
-                
-                Edges(iterator it, iterator ite);
-                
-                /*!
-                 * Retrieves an iterator to the edges.
-                 */
-                iterator begin() const;
-                
-                /*!
-                 * Retrieves an end iterator to the edges.
-                 */
-                iterator end() const;
-                
-                /*!
-                 * Determines whether this set of edges is empty.
-                 */
-                bool empty() const;
-                
-                /*!
-                 * Retrieves the number of edges.
-                 */
-                std::size_t size() const;
-                
-            private:
-                iterator it;
-                iterator ite;
-            };
-            
-            class ConstEdges {
-            public:
-                typedef std::vector<Edge>::iterator iterator;
-                typedef std::vector<Edge>::const_iterator const_iterator;
-                
-                ConstEdges(const_iterator it, const_iterator ite);
-                
-                /*!
-                 * Retrieves an iterator to the edges.
-                 */
-                const_iterator begin() const;
-                
-                /*!
-                 * Retrieves an end iterator to the edges.
-                 */
-                const_iterator end() const;
 
-                /*!
-                 * Determines whether this set of edges is empty.
-                 */
-                bool empty() const;
 
-                /*!
-                 * Retrieves the number of edges.
-                 */
-                std::size_t size() const;
-                
-            private:
-                const_iterator it;
-                const_iterator ite;
-            };
-        }
-        
         class Model;
         
         class Automaton {
@@ -134,6 +71,11 @@ namespace storm {
             RealVariable const& addVariable(RealVariable const& variable);
 
             /*!
+             * Adds the given array variable to this automaton.
+             */
+            ArrayVariable const& addVariable(ArrayVariable const& variable);
+
+            /*!
              * Retrieves the variables of this automaton.
              */
             VariableSet& getVariables();
@@ -142,6 +84,8 @@ namespace storm {
              * Retrieves the variables of this automaton.
              */
             VariableSet const& getVariables() const;
+
+            bool hasVariable(std::string const& name) const;
             
             /*!
              * Retrieves all expression variables used by this automaton.
@@ -155,6 +99,21 @@ namespace storm {
              */
             bool hasTransientVariable() const;
             
+            /*!
+             * Adds the given function definition
+             */
+            FunctionDefinition const& addFunctionDefinition(FunctionDefinition const& functionDefinition);
+            
+            /*!
+             * Retrieves all function definitions of this automaton
+             */
+            std::unordered_map<std::string, FunctionDefinition> const& getFunctionDefinitions() const;
+            
+            /*!
+             * Retrieves all function definitions of this automaton
+             */
+            std::unordered_map<std::string, FunctionDefinition>& getFunctionDefinitions();
+
             /*!
              * Retrieves whether the automaton has a location with the given name.
              */
@@ -254,6 +213,16 @@ namespace storm {
             ConstEdges getEdgesFromLocation(uint64_t locationIndex, uint64_t actionIndex) const;
             
             /*!
+             * Retrieves the container of all edges of this automaton.
+             */
+            EdgeContainer const& getEdgeContainer() const;
+
+            /*!
+             * Retrieves the container of all edges of this automaton.
+             */
+            EdgeContainer& getEdgeContainer();
+            
+            /*!
              * Adds the template edge to the list of edges
              */
             void registerTemplateEdge(std::shared_ptr<TemplateEdge> const&);
@@ -262,6 +231,8 @@ namespace storm {
              * Adds an edge to the automaton.
              */
             void addEdge(Edge const& edge);
+
+            bool validate() const;
             
             /*!
              * Retrieves the edges of the automaton.
@@ -299,6 +270,11 @@ namespace storm {
             bool hasInitialStatesRestriction() const;
             
             /*!
+             * Retrieves whether this automaton has non-trivial initial states.
+             */
+            bool hasNonTrivialInitialStates() const;
+            
+            /*!
              * Gets the expression restricting the legal initial values of the automaton's variables.
              */
             storm::expressions::Expression const& getInitialStatesRestriction() const;
@@ -312,6 +288,12 @@ namespace storm {
              * Retrieves the expression defining the legal initial values of the automaton's variables.
              */
             storm::expressions::Expression getInitialStatesExpression() const;
+            
+            /*!
+             * Retrieves whether the initial states expression is trivial in the sense that the automaton has no initial
+             * states restriction and all non-transient variables have initial values.
+             */
+            bool hasTrivialInitialStatesExpression() const;
             
             /*!
              * Retrieves whether there is an edge labeled with the action with the given index in this automaton.
@@ -356,6 +338,12 @@ namespace storm {
             void pushEdgeAssignmentsToDestinations();
             
             /*!
+             * Pushes the assignments to real-valued transient variables to the edges.
+             * Note: This is currently only supported if the template edges are uniquely coupled with one source location.
+             */
+            void pushTransientRealLocationAssignmentsToEdges();
+            
+            /*!
              * Retrieves whether there is any transient edge destination assignment in the automaton.
              */
             bool hasTransientEdgeDestinationAssignments() const;
@@ -363,12 +351,12 @@ namespace storm {
             /*!
              * Lifts the common edge destination assignments to edge assignments.
              */
-            void liftTransientEdgeDestinationAssignments();
+            void liftTransientEdgeDestinationAssignments(int64_t maxLevel = 0);
             
             /*!
              * Retrieves whether the automaton uses an assignment level other than zero.
              */
-            bool usesAssignmentLevels() const;
+            bool usesAssignmentLevels(bool onlyTransient = false) const;
 
             void simplifyIndexedAssignments();
             
@@ -394,6 +382,10 @@ namespace storm {
             /// The set of variables of this automaton.
             VariableSet variables;
             
+            /// A mapping from names to function definitions
+            /// Since we use an unordered_map, references to function definitions will not get invalidated when more function definitions are added
+            std::unordered_map<std::string, FunctionDefinition> functionDefinitions;
+            
             /// The locations of the automaton.
             std::vector<Location> locations;
             
@@ -401,10 +393,7 @@ namespace storm {
             std::unordered_map<std::string, uint64_t> locationToIndex;
             
             /// All edges of the automaton
-            std::vector<Edge> edges;
-            
-            /// The templates for the contained edges.
-            std::unordered_set<std::shared_ptr<TemplateEdge>> templateEdges;
+            EdgeContainer edges;
             
             /// A mapping from location indices to the starting indices. If l is mapped to i, it means that the edges
             /// leaving location l start at index i of the edges vector.

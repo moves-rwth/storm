@@ -258,8 +258,8 @@ namespace storm {
                 }
                 result.totalWeight += result.weights[j];
                 
-                STORM_LOG_TRACE("Fox-Glynn(lambda=" << lambda << ", eps=" << epsilon << "): ltp = " << result.left << ", rtp = " << result.right << ", w = " << result.totalWeight << ".");
-
+                STORM_LOG_TRACE("Fox-Glynn: ltp = " << result.left << ", rtp = " << result.right << ", w = " << result.totalWeight << ", " << result.weights.size() << " weights.");
+                
                 return result;
             }
             

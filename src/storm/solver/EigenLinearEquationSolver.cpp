@@ -116,7 +116,10 @@ namespace storm {
             } else {
                 bool converged = false;
                 uint64_t numberOfIterations = 0;
-                uint64_t maxIter = env.solver().eigen().getMaximalNumberOfIterations();
+                StormEigen::Index maxIter = std::numeric_limits<StormEigen::Index>::max();
+                if (env.solver().eigen().getMaximalNumberOfIterations() < static_cast<uint64_t>(maxIter)) {
+                    maxIter = env.solver().eigen().getMaximalNumberOfIterations();
+                }
                 uint64_t restartThreshold = env.solver().eigen().getRestartThreshold();
                 ValueType precision = storm::utility::convertNumber<ValueType>(env.solver().eigen().getPrecision());
                 EigenLinearEquationSolverPreconditioner preconditioner = env.solver().eigen().getPreconditioner();
@@ -241,35 +244,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void EigenLinearEquationSolver<ValueType>::multiply(std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<ValueType>& result) const {
-            // Typedef the map-type so we don't have to spell it out.
-            typedef decltype(StormEigen::Matrix<ValueType, StormEigen::Dynamic, 1>::Map(b->data(), b->size())) MapType;
-
-            auto eigenX = StormEigen::Matrix<ValueType, StormEigen::Dynamic, 1>::Map(x.data(), x.size());
-            auto eigenResult = StormEigen::Matrix<ValueType, StormEigen::Dynamic, 1>::Map(result.data(), result.size());
-
-            std::unique_ptr<MapType> eigenB;
-            if (b != nullptr) {
-                eigenB = std::make_unique<MapType>(StormEigen::Matrix<ValueType, StormEigen::Dynamic, 1>::Map(b->data(), b->size()));
-            }
-            
-            if (&x != &result) {
-                if (b != nullptr) {
-                    eigenResult.noalias() = *eigenA * eigenX + *eigenB;
-                } else {
-                    eigenResult.noalias() = *eigenA * eigenX;
-                }
-            } else {
-                if (b != nullptr) {
-                    eigenResult = *eigenA * eigenX + *eigenB;
-                } else {
-                    eigenResult = *eigenA * eigenX;
-                }
-            }
-        }
-        
-        template<typename ValueType>
-        LinearEquationSolverProblemFormat EigenLinearEquationSolver<ValueType>::getEquationProblemFormat(Environment const& env) const {
+        LinearEquationSolverProblemFormat EigenLinearEquationSolver<ValueType>::getEquationProblemFormat(Environment const&) const {
             return LinearEquationSolverProblemFormat::EquationSystem;
         }
         
@@ -284,7 +259,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> EigenLinearEquationSolverFactory<ValueType>::create(Environment const& env, LinearEquationSolverTask const& task) const {
+        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> EigenLinearEquationSolverFactory<ValueType>::create(Environment const&) const {
             return std::make_unique<storm::solver::EigenLinearEquationSolver<ValueType>>();
         }
         

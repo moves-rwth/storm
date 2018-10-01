@@ -17,6 +17,7 @@
 
 #include "storm/settings/SettingsManager.h"
 
+#include "storm/utility/Stopwatch.h"
 #include "storm/utility/dd.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/solver.h"
@@ -34,10 +35,10 @@ namespace storm {
             using storm::settings::modules::AbstractionSettings;
             
             template <storm::dd::DdType DdType, typename ValueType>
-            JaniMenuGameAbstractor<DdType, ValueType>::JaniMenuGameAbstractor(storm::jani::Model const& model, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory) : model(model), smtSolverFactory(smtSolverFactory), abstractionInformation(model.getManager(), model.getAllExpressionVariables(), smtSolverFactory->create(model.getManager())), automata(), initialStateAbstractor(abstractionInformation, {model.getInitialStatesExpression()}, this->smtSolverFactory), validBlockAbstractor(abstractionInformation, smtSolverFactory), currentGame(nullptr), refinementPerformed(true) {
+            JaniMenuGameAbstractor<DdType, ValueType>::JaniMenuGameAbstractor(storm::jani::Model const& model, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, MenuGameAbstractorOptions const& options) : model(model), smtSolverFactory(smtSolverFactory), abstractionInformation(model.getManager(), model.getAllExpressionVariables(), smtSolverFactory->create(model.getManager()), AbstractionInformationOptions(options.constraints)), automata(), initialStateAbstractor(abstractionInformation, {model.getInitialStatesExpression()}, this->smtSolverFactory), restrictToValidBlocks(false), validBlockAbstractor(abstractionInformation, smtSolverFactory), currentGame(nullptr), refinementPerformed(true) {
                 
                 // Check whether the model is linear as the abstraction requires this.
-                STORM_LOG_THROW(model.isLinear(), storm::exceptions::WrongFormatException, "Cannot create abstract model from non-linear model.");
+                STORM_LOG_WARN_COND(model.isLinear(), "The model appears to contain non-linear expressions, which may cause malfunctioning of the abstraction.");
                 
                 // For now, we assume that there is a single module. If the program has more than one module, it needs
                 // to be flattened before the procedure.
@@ -47,28 +48,33 @@ namespace storm {
                 for (auto const& range : this->model.get().getAllRangeExpressions()) {
                     abstractionInformation.addConstraint(range);
                     initialStateAbstractor.constrain(range);
+                    validBlockAbstractor.constrain(range);
                 }
                 
-                uint_fast64_t totalNumberOfCommands = 0;
-                uint_fast64_t maximalUpdateCount = 0;
+                uint_fast64_t totalNumberOfEdges = 0;
+                uint_fast64_t maximalDestinationCount = 0;
                 std::vector<storm::expressions::Expression> allGuards;
                 for (auto const& automaton : model.getAutomata()) {
                     for (auto const& edge : automaton.getEdges()) {
-                        maximalUpdateCount = std::max(maximalUpdateCount, static_cast<uint_fast64_t>(edge.getNumberOfDestinations()));
+                        maximalDestinationCount = std::max(maximalDestinationCount, static_cast<uint_fast64_t>(edge.getNumberOfDestinations()));
                     }
                     
-                    totalNumberOfCommands += automaton.getNumberOfEdges();
+                    totalNumberOfEdges += automaton.getNumberOfEdges();
                 }
                 
-                // NOTE: currently we assume that 100 player 2 variables suffice, which corresponds to 2^100 possible
+                // NOTE: currently we assume that 64 player 2 variables suffice, which corresponds to 2^64 possible
                 // choices. If for some reason this should not be enough, we could grow this vector dynamically, but
                 // odds are that it's impossible to treat such models in any event.
-                abstractionInformation.createEncodingVariables(static_cast<uint_fast64_t>(std::ceil(std::log2(totalNumberOfCommands))), 100, static_cast<uint_fast64_t>(std::ceil(std::log2(maximalUpdateCount))));
+                abstractionInformation.createEncodingVariables(static_cast<uint_fast64_t>(std::ceil(std::log2(totalNumberOfEdges))), 64, static_cast<uint_fast64_t>(std::ceil(std::log2(maximalDestinationCount))));
                 
                 // For each module of the concrete program, we create an abstract counterpart.
-                bool useDecomposition = storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isUseDecompositionSet();
+                auto const& settings = storm::settings::getModule<storm::settings::modules::AbstractionSettings>();
+                bool useDecomposition = settings.isUseDecompositionSet();
+                restrictToValidBlocks = settings.getValidBlockMode() == storm::settings::modules::AbstractionSettings::ValidBlockMode::BlockEnumeration;
+                bool addPredicatesForValidBlocks = !restrictToValidBlocks;
+                bool debug = settings.isDebugSet();
                 for (auto const& automaton : model.getAutomata()) {
-                    automata.emplace_back(automaton, abstractionInformation, this->smtSolverFactory, useDecomposition);
+                    automata.emplace_back(automaton, abstractionInformation, this->smtSolverFactory, useDecomposition, addPredicatesForValidBlocks, debug);
                 }
                 
                 // Retrieve global BDDs/ADDs so we can multiply them in the abstraction process.
@@ -93,8 +99,10 @@ namespace storm {
                 // Refine initial state abstractor.
                 initialStateAbstractor.refine(predicateIndices);
                 
-                // Refine the valid blocks.
-                validBlockAbstractor.refine(predicateIndices);
+                if (this->restrictToValidBlocks) {
+                    // Refine the valid blocks.
+                    validBlockAbstractor.refine(predicateIndices);
+                }
 
                 refinementPerformed |= !command.getPredicates().empty();
             }
@@ -103,7 +111,7 @@ namespace storm {
             MenuGame<DdType, ValueType> JaniMenuGameAbstractor<DdType, ValueType>::abstract() {
                 if (refinementPerformed) {
                     currentGame = buildGame();
-                    refinementPerformed = true;
+                    refinementPerformed = false;
                 }
                 return *currentGame;
             }
@@ -119,8 +127,18 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
+            uint64_t JaniMenuGameAbstractor<DdType, ValueType>::getNumberOfUpdates(uint64_t player1Choice) const {
+                return automata.front().getNumberOfUpdates(player1Choice);
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
             std::map<storm::expressions::Variable, storm::expressions::Expression> JaniMenuGameAbstractor<DdType, ValueType>::getVariableUpdates(uint64_t player1Choice, uint64_t auxiliaryChoice) const {
                 return automata.front().getVariableUpdates(player1Choice, auxiliaryChoice);
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
+            std::set<storm::expressions::Variable> const& JaniMenuGameAbstractor<DdType, ValueType>::getAssignedVariables(uint64_t player1Choice) const {
+                return automata.front().getAssignedVariables(player1Choice);
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
@@ -141,7 +159,7 @@ namespace storm {
             
             template <storm::dd::DdType DdType, typename ValueType>
             std::unique_ptr<MenuGame<DdType, ValueType>> JaniMenuGameAbstractor<DdType, ValueType>::buildGame() {
-                // As long as there is only one module, we only build its game representation.
+                // As long as there is only one automaton, we only build its game representation.
                 GameBddResult<DdType> game = automata.front().abstract();
                 
                 // Add the locations to the transitions.
@@ -149,17 +167,64 @@ namespace storm {
                 
                 // Construct a set of all unnecessary variables, so we can abstract from it.
                 std::set<storm::expressions::Variable> variablesToAbstract(abstractionInformation.getPlayer1VariableSet(abstractionInformation.getPlayer1VariableCount()));
+                std::set<storm::expressions::Variable> successorAndAuxVariables(abstractionInformation.getSuccessorVariables());
                 auto player2Variables = abstractionInformation.getPlayer2VariableSet(game.numberOfPlayer2Variables);
                 variablesToAbstract.insert(player2Variables.begin(), player2Variables.end());
                 auto auxVariables = abstractionInformation.getAuxVariableSet(0, abstractionInformation.getAuxVariableCount());
                 variablesToAbstract.insert(auxVariables.begin(), auxVariables.end());
+                successorAndAuxVariables.insert(auxVariables.begin(), auxVariables.end());
                 
-                // Do a reachability analysis on the raw transition relation.
-                storm::dd::Bdd<DdType> transitionRelation = game.bdd.existsAbstract(variablesToAbstract);
+                storm::utility::Stopwatch relevantStatesWatch(true);
+                storm::dd::Bdd<DdType> nonTerminalStates = this->abstractionInformation.getDdManager().getBddOne();
+                if (this->isRestrictToRelevantStatesSet()) {
+                    // Compute which states are non-terminal.
+                    for (auto const& expression : this->terminalStateExpressions) {
+                        nonTerminalStates &= !this->getStates(expression);
+                    }
+                    if (this->hasTargetStateExpression()) {
+                        nonTerminalStates &= !this->getStates(this->getTargetStateExpression());
+                    }
+                }
+                relevantStatesWatch.stop();
+
+                storm::dd::Bdd<DdType> extendedTransitionRelation = nonTerminalStates && game.bdd;
                 storm::dd::Bdd<DdType> initialStates = initialLocationsBdd && initialStateAbstractor.getAbstractStates();
+                if (this->restrictToValidBlocks) {
+                    STORM_LOG_DEBUG("Restricting to valid blocks.");
+                    storm::dd::Bdd<DdType> validBlocks = validBlockAbstractor.getValidBlocks();
+
+                    // Compute the choices with only valid successors so we can restrict the game to these.
+                    auto choicesWithOnlyValidSuccessors = !game.bdd.andExists(!validBlocks.swapVariables(abstractionInformation.getSourceSuccessorVariablePairs()), successorAndAuxVariables) && game.bdd.existsAbstract(successorAndAuxVariables);
+                    
+                    // Restrict the proper parts.
+                    extendedTransitionRelation &= validBlocks && choicesWithOnlyValidSuccessors;
+                    initialStates &= validBlocks;
+                }
+
+                // Do a reachability analysis on the raw transition relation.
+                storm::dd::Bdd<DdType> transitionRelation = extendedTransitionRelation.existsAbstract(variablesToAbstract);
                 initialStates.addMetaVariables(abstractionInformation.getSourcePredicateVariables());
                 storm::dd::Bdd<DdType> reachableStates = storm::utility::dd::computeReachableStates(initialStates, transitionRelation, abstractionInformation.getSourceVariables(), abstractionInformation.getSuccessorVariables());
                 
+                relevantStatesWatch.start();
+                if (this->isRestrictToRelevantStatesSet() && this->hasTargetStateExpression()) {
+                    // Get the target state BDD.
+                    storm::dd::Bdd<DdType> targetStates = reachableStates && this->getStates(this->getTargetStateExpression());
+
+                    // In the presence of target states, we keep only states that can reach the target states.
+                    reachableStates = storm::utility::dd::computeBackwardsReachableStates(targetStates, reachableStates, transitionRelation, abstractionInformation.getSourceVariables(), abstractionInformation.getSuccessorVariables());
+
+                    // Include all successors of reachable states, because the backward search otherwise potentially
+                    // cuts probability 0 choices of these states.
+                    reachableStates |= (reachableStates && !targetStates).relationalProduct(transitionRelation, abstractionInformation.getSourceVariables(), abstractionInformation.getSuccessorVariables());
+                    
+                    // Restrict transition relation to relevant fragment for computation of deadlock states.
+                    transitionRelation &= reachableStates && reachableStates.swapVariables(abstractionInformation.getExtendedSourceSuccessorVariablePairs());
+                    
+                    relevantStatesWatch.stop();
+                    STORM_LOG_TRACE("Restricting to relevant states took " << relevantStatesWatch.getTimeInMilliseconds() << "ms.");
+                }
+
                 // Find the deadlock states in the model. Note that this does not find the 'deadlocks' in bottom states,
                 // as the bottom states are not contained in the reachable states.
                 storm::dd::Bdd<DdType> deadlockStates = transitionRelation.existsAbstract(abstractionInformation.getSuccessorVariables());
@@ -177,7 +242,9 @@ namespace storm {
                 bool hasBottomStates = !bottomStateResult.states.isZero();
                 
                 // Construct the transition matrix by cutting away the transitions of unreachable states.
-                storm::dd::Add<DdType, ValueType> transitionMatrix = (game.bdd && reachableStates).template toAdd<ValueType>();
+                // Note that we also restrict the successor states of transitions, because there might be successors
+                // that are not in the set of relevant states we restrict to.
+                storm::dd::Add<DdType, ValueType> transitionMatrix = (extendedTransitionRelation && reachableStates && reachableStates.swapVariables(abstractionInformation.getExtendedSourceSuccessorVariablePairs())).template toAdd<ValueType>();
                 transitionMatrix *= edgeDecoratorAdd;
                 transitionMatrix += deadlockTransitions;
                 
@@ -208,11 +275,28 @@ namespace storm {
                 this->exportToDot(*currentGame, filename, highlightStates, filter);
             }
             
+            template <storm::dd::DdType DdType, typename ValueType>
+            uint64_t JaniMenuGameAbstractor<DdType, ValueType>::getNumberOfPredicates() const {
+                return abstractionInformation.getNumberOfPredicates();
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
+            void JaniMenuGameAbstractor<DdType, ValueType>::addTerminalStates(storm::expressions::Expression const& expression) {
+                terminalStateExpressions.emplace_back(expression);
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
+            void JaniMenuGameAbstractor<DdType, ValueType>::notifyGuardsArePredicates() {
+                for (auto& automaton : automata) {
+                    automaton.notifyGuardsArePredicates();
+                }
+            }
+            
             // Explicitly instantiate the class.
             template class JaniMenuGameAbstractor<storm::dd::DdType::CUDD, double>;
             template class JaniMenuGameAbstractor<storm::dd::DdType::Sylvan, double>;
 #ifdef STORM_HAVE_CARL
-            template class JaniMenuGameAbstractor<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+            template class JaniMenuGameAbstractor<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 #endif
         }
     }

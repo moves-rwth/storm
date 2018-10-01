@@ -160,7 +160,16 @@ namespace storm {
              data["name"] = transition.getName();
              data["rate"] = transition.getRate();
              data["priority"] = transition.getPriority();
-
+             if (!transition.hasSingleServerSemantics()) {
+                 if (transition.hasInfiniteServerSemantics()) {
+                     data["server-semantics"] = "infinite";
+                 } else if (transition.hasKServerSemantics()) {
+                     data["server-semantics"] = transition.getNumberOfServers();
+                 } else {
+                     STORM_LOG_WARN("Unable to export transition semantics.");
+                 }
+             }
+             
              modernjson::json position;
              position["x"] = x * scaleFactor;
              position["y"] = y * scaleFactor;

@@ -14,6 +14,7 @@ namespace storm {
         class BoundedIntegerVariable;
         class UnboundedIntegerVariable;
         class RealVariable;
+        class ArrayVariable;
         
         class Variable {
         public:
@@ -72,6 +73,7 @@ namespace storm {
             virtual bool isBoundedIntegerVariable() const;
             virtual bool isUnboundedIntegerVariable() const;
             virtual bool isRealVariable() const;
+            virtual bool isArrayVariable() const;
 
             virtual bool isTransient() const;
             
@@ -84,6 +86,8 @@ namespace storm {
             UnboundedIntegerVariable const& asUnboundedIntegerVariable() const;
             RealVariable& asRealVariable();
             RealVariable const& asRealVariable() const;
+            ArrayVariable& asArrayVariable();
+            ArrayVariable const& asArrayVariable() const;
             
             /*!
              * Substitutes all variables in all expressions according to the given substitution.

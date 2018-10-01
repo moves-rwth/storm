@@ -29,6 +29,8 @@ namespace storm {
             const std::string fullModelBuildOptionName = "buildfull";
             const std::string buildChoiceLabelOptionName = "buildchoicelab";
             const std::string buildStateValuationsOptionName = "buildstateval";
+            const std::string buildOutOfBoundsStateOptionName = "buildoutofboundsstate";
+            const std::string bitsForUnboundedVariablesOptionName = "int-bits";
             BuildSettings::BuildSettings() : ModuleSettings(moduleName) {
 
                 std::vector<std::string> explorationOrders = {"dfs", "bfs"};
@@ -42,9 +44,10 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, explorationOrderOptionName, false, "Sets which exploration order to use.").setShortName(explorationOrderOptionShortName)
                                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the exploration order to choose.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(explorationOrders)).setDefaultValueString("bfs").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, explorationChecksOptionName, false, "If set, additional checks (if available) are performed during model exploration to debug the model.").setShortName(explorationChecksOptionShortName).build());
-
+                this->addOption(storm::settings::OptionBuilder(moduleName, buildOutOfBoundsStateOptionName, false, "If set, a state for out-of-bounds valuations is added").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, bitsForUnboundedVariablesOptionName, false, "Sets the number of bits that is used for unbounded integer variables.")
+                                        .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("number", "The number of bits.").addValidatorUnsignedInteger(ArgumentValidatorFactory::createUnsignedRangeValidatorExcluding(0,63)).setDefaultValueUnsignedInteger(32).build()).build());
             }
-
 
             bool BuildSettings::isJitSet() const {
                 return this->getOption(jitOptionName).getHasOptionBeenSet();
@@ -74,6 +77,9 @@ namespace storm {
                 return this->getOption(buildStateValuationsOptionName).getHasOptionBeenSet();
             }
 
+            bool BuildSettings::isBuildOutOfBoundsStateSet() const {
+                return this->getOption(buildOutOfBoundsStateOptionName).getHasOptionBeenSet();
+            }
 
             storm::builder::ExplorationOrder BuildSettings::getExplorationOrder() const {
                 std::string explorationOrderAsString = this->getOption(explorationOrderOptionName).getArgumentByName("name").getValueAsString();
@@ -84,10 +90,15 @@ namespace storm {
                 }
                 STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown exploration order '" << explorationOrderAsString << "'.");
             }
-
+            
             bool BuildSettings::isExplorationChecksSet() const {
                 return this->getOption(explorationChecksOptionName).getHasOptionBeenSet();
             }
+
+            uint64_t BuildSettings::getBitsForUnboundedVariables() const {
+                return this->getOption(bitsForUnboundedVariablesOptionName).getArgumentByName("number").getValueAsUnsignedInteger();
+            }
+
         }
 
 

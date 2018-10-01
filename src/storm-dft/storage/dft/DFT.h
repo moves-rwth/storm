@@ -18,6 +18,11 @@
 #include "storm-dft/storage/dft/DFTLayoutInfo.h"
 
 namespace storm {
+    namespace builder {
+        // Forward declaration
+        template<typename T> class DFTBuilder;
+    }
+
     namespace storage {
 
         template<typename ValueType>
@@ -32,11 +37,8 @@ namespace storm {
         };
 
 
-        // Forward declarations
+        // Forward declaration
         template<typename T> class DFTColouring;
-        
-        template<typename T> class DFTBuilder;
-
 
         /**
          * Represents a Dynamic Fault Tree
@@ -76,10 +78,11 @@ namespace storm {
         
             DFT<ValueType> optimize() const;
             
-            void copyElements(std::vector<size_t> elements, DFTBuilder<ValueType> builder) const;
+            void copyElements(std::vector<size_t> elements, storm::builder::DFTBuilder<ValueType> builder) const;
             
-            size_t stateVectorSize() const {
-                return mStateVectorSize;
+            size_t stateBitVectorSize() const {
+                // Ensure multiple of 64
+                return (mStateVectorSize / 64 + (mStateVectorSize % 64 != 0)) * 64;
             }
             
             size_t nrElements() const {

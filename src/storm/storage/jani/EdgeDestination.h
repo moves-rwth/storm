@@ -66,6 +66,8 @@ namespace storm {
              * Retrieves the template destination for this destination.
              */
             TemplateEdgeDestination const& getTemplateEdgeDestination() const;
+
+            void updateTemplateEdgeDestination(TemplateEdgeDestination const& newTed);
             
         private:
             // The index of the destination location.

@@ -61,32 +61,6 @@ namespace storm {
             void solveEquations(Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
             
             /*!
-             * Performs (repeated) matrix-vector multiplication with the given parameters, i.e. computes
-             * x[i+1] = min/max(A*x[i] + b) until x[n], where x[0] = x. After each multiplication and addition, the
-             * minimal/maximal value out of each row group is selected to reduce the resulting vector to obtain the
-             * vector for the next iteration. Note that the matrix A has to be given upon construction time of the
-             * solver object.
-             *
-             * @param d For minimum, all the value of a group of rows is the taken as the minimum over all rows and as
-             * the maximum otherwise.
-             * @param x The initial vector that is to be multiplied with the matrix. This is also the output parameter,
-             * i.e. after the method returns, this vector will contain the computed values.
-             * @param b If not null, this vector is added after each multiplication.
-             * @param n Specifies the number of iterations the matrix-vector multiplication is performed.
-             * @param multiplyResult If non-null, this memory is used as a scratch memory. If given, the length of this
-             * vector must be equal to the number of rows of A.
-             * @return The result of the repeated matrix-vector multiplication as the content of the vector x.
-             */
-            virtual void repeatedMultiply(Environment const& env, OptimizationDirection d, std::vector<ValueType>& x, std::vector<ValueType> const* b, uint_fast64_t n = 1) const = 0;
-            
-            /*!
-             * Behaves the same as the other variant of <code>multiply</code>, with the
-             * distinction that instead of providing the optimization direction as an argument, the internally set
-             * optimization direction is used. Note: this method can only be called after setting the optimization direction.
-             */
-            virtual void repeatedMultiply(Environment const& env, std::vector<ValueType>& x, std::vector<ValueType>* b , uint_fast64_t n) const;
-            
-            /*!
              * Sets an optimization direction to use for calls to methods that do not explicitly provide one.
              */
             void setOptimizationDirection(OptimizationDirection direction);
@@ -167,7 +141,7 @@ namespace storm {
              * Retrieves the requirements of this solver for solving equations with the current settings. The requirements
              * are guaranteed to be ordered according to their appearance in the SolverRequirement type.
              */
-            virtual MinMaxLinearEquationSolverRequirements getRequirements(Environment const& env, boost::optional<storm::solver::OptimizationDirection> const& direction = boost::none, bool const& assumeNoInitialScheduler = false) const;
+            virtual MinMaxLinearEquationSolverRequirements getRequirements(Environment const& env, boost::optional<storm::solver::OptimizationDirection> const& direction = boost::none, bool const& hasInitialScheduler = false) const;
             
             /*!
              * Notifies the solver that the requirements for solving equations have been checked. If this has not been
@@ -196,7 +170,7 @@ namespace storm {
             boost::optional<std::vector<uint_fast64_t>> initialScheduler;
             
         private:
-            // Whether the solver can assume that the min-max equation system has a unique solution
+            /// Whether the solver can assume that the min-max equation system has a unique solution
             bool uniqueSolution;
             
             /// Whether some of the generated data during solver calls should be cached.
@@ -220,7 +194,7 @@ namespace storm {
              * Retrieves the requirements of the solver that would be created when calling create() right now. The
              * requirements are guaranteed to be ordered according to their appearance in the SolverRequirement type.
              */
-            MinMaxLinearEquationSolverRequirements getRequirements(Environment const& env, bool hasUniqueSolution = false, boost::optional<storm::solver::OptimizationDirection> const& direction = boost::none, bool const& assumeNoInitialScheduler = false) const;
+            MinMaxLinearEquationSolverRequirements getRequirements(Environment const& env, bool hasUniqueSolution = false, boost::optional<storm::solver::OptimizationDirection> const& direction = boost::none, bool const& hasInitialScheduler = false) const;
             void setRequirementsChecked(bool value = true);
             bool isRequirementsCheckedSet() const;
 

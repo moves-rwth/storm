@@ -9,6 +9,7 @@
 #include "storm/utility/vector.h"
 #include "storm/utility/solver.h"
 #include "storm/utility/Stopwatch.h"
+#include "storm/utility/ExpressionHelper.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/CoreSettings.h"
@@ -99,11 +100,13 @@ namespace storm {
                 for (auto& var : expectedChoiceVariables) {
                     solver->add(var.getExpression() >= zero);
                 }
-                storm::expressions::Expression bottomStateSum = zero;
+                std::vector<storm::expressions::Expression> bottomStateVarsAsExpression;
+                bottomStateVarsAsExpression.reserve(bottomStateVariables.size());
                 for (auto& var : bottomStateVariables) {
                     solver->add(var.getExpression() >= zero);
-                    bottomStateSum = bottomStateSum + var.getExpression();
+                    bottomStateVarsAsExpression.push_back(var.getExpression());
                 }
+                auto bottomStateSum = storm::utility::ExpressionHelper(this->expressionManager).sum(std::move(bottomStateVarsAsExpression));
                 solver->add(bottomStateSum == one);
                 
                 // assert that the "incoming" value of each state equals the "outgoing" value
@@ -138,25 +141,15 @@ namespace storm {
                     STORM_LOG_THROW(obj.formula->hasBound(), storm::exceptions::InvalidOperationException, "Invoked achievability query but no bound was specified for at least one objective.");
                     STORM_LOG_THROW(obj.formula->asRewardOperatorFormula().hasRewardModelName(), storm::exceptions::InvalidOperationException, "Expected reward operator with a reward model name. Got " << *obj.formula << " instead.");
                     std::vector<ValueType> rewards = getActionBasedExpectedRewards(obj.formula->asRewardOperatorFormula().getRewardModelName());
+                    
+                    // Get the sum of all objective values
                     std::vector<storm::expressions::Expression> objectiveValues;
                     for (uint_fast64_t choice = 0; choice < rewards.size(); ++choice) {
                         if (!storm::utility::isZero(rewards[choice])) {
                             objectiveValues.push_back(this->expressionManager->rational(rewards[choice]) * expectedChoiceVariables[choice].getExpression());
                         }
                     }
-                    
-                    // Get the sum of all objective values
-                    // As the sum can potentially have many summands, we want to make sure that the formula tree is (roughly balanced)
-                    auto vIt = objectiveValues.begin();
-                    while (objectiveValues.size() > 1) {
-                        if (vIt == objectiveValues.end() || vIt == objectiveValues.end() - 1) {
-                            vIt = objectiveValues.begin();
-                        }
-                        *vIt = *vIt + objectiveValues.back();
-                        objectiveValues.pop_back();
-                        ++vIt;
-                    }
-                    storm::expressions::Expression objValue = objectiveValues.empty() ? zero : objectiveValues.front();
+                    auto objValue = storm::utility::ExpressionHelper(this->expressionManager).sum(std::move(objectiveValues));
                     
                     // We need to actually evaluate the threshold as rational number. Otherwise a threshold like '<=16/9' might be considered as 1 due to integer division
                     storm::expressions::Expression threshold = this->expressionManager->rational(obj.formula->getThreshold().evaluateAsRational());

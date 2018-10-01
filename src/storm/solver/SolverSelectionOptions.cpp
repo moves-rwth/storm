@@ -14,6 +14,22 @@ namespace storm {
                     return "topological";
                 case MinMaxMethod::RationalSearch:
                     return "ratsearch";
+                case MinMaxMethod::IntervalIteration:
+                    return "intervaliteration";
+                case MinMaxMethod::SoundValueIteration:
+                    return "soundvalueiteration";
+                case MinMaxMethod::TopologicalCuda:
+                    return "topologicalcuda";
+            }
+            return "invalid";
+        }
+        
+        std::string toString(MultiplierType t) {
+            switch(t) {
+                case MultiplierType::Native:
+                    return "Native";
+                case MultiplierType::Gmmxx:
+                    return "Gmmxx";
             }
             return "invalid";
         }
@@ -50,6 +66,8 @@ namespace storm {
                     return "Eigen";
                 case EquationSolverType::Elimination:
                     return "Elimination";
+                case EquationSolverType::Topological:
+                    return "Topological";
             }
             return "invalid";
         }
@@ -65,7 +83,7 @@ namespace storm {
         }
         
         std::string toString(NativeLinearEquationSolverMethod t) {
-            switch( t) {
+            switch(t) {
                 case NativeLinearEquationSolverMethod::Jacobi:
                     return "Jacobi";
                 case NativeLinearEquationSolverMethod::GaussSeidel:
@@ -76,6 +94,10 @@ namespace storm {
                     return "WalkerChae";
                 case NativeLinearEquationSolverMethod::Power:
                     return "Power";
+                case NativeLinearEquationSolverMethod::SoundValueIteration:
+                    return "SoundValueIteration";
+                case NativeLinearEquationSolverMethod::IntervalIteration:
+                    return "IntervalIteration";
                 case NativeLinearEquationSolverMethod::RationalSearch:
                     return "RationalSearch";
             }

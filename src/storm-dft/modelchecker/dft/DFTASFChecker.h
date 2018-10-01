@@ -33,13 +33,15 @@ namespace storm {
                 
             }
             
+            friend bool operator<(SpareAndChildPair const& p1, SpareAndChildPair const& p2) {
+                return p1.spareIndex < p2.spareIndex || (p1.spareIndex == p2.spareIndex && p1.childIndex < p2.childIndex);
+            }
+
+        private:
             uint64_t spareIndex;
             uint64_t childIndex;
         };
         
-        bool operator<(SpareAndChildPair const& p1, SpareAndChildPair const& p2) {
-            return p1.spareIndex < p2.spareIndex || (p1.spareIndex == p2.spareIndex && p1.childIndex < p2.childIndex);
-        }
         
         class DFTASFChecker {
             using ValueType = double;

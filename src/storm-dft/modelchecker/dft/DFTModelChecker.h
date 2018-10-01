@@ -17,11 +17,10 @@ namespace storm {
         template<typename ValueType>
         class DFTModelChecker {
 
+        public:
             typedef std::pair<ValueType, ValueType> approximation_result;
             typedef std::vector<boost::variant<ValueType, approximation_result>> dft_results;
             typedef std::vector<std::shared_ptr<storm::logic::Formula const>> property_vector;
-
-        public:
 
             /*!
              * Constructor.
@@ -38,8 +37,10 @@ namespace storm {
              * @param allowModularisation Flag indication if modularisation is allowed
              * @param enableDC            Flag indicating if dont care propagation should be used
              * @param approximationError  Error allowed for approximation. Value 0 indicates no approximation
+             *
+             * @return Model checking results for the given properties.
              */
-            void check(storm::storage::DFT<ValueType> const& origDft, property_vector const& properties, bool symred = true, bool allowModularisation = true, bool enableDC = true, double approximationError = 0.0);
+            dft_results check(storm::storage::DFT<ValueType> const& origDft, property_vector const& properties, bool symred = true, bool allowModularisation = true, bool enableDC = true, double approximationError = 0.0);
 
             /*!
              * Print timings of all operations to stream.

@@ -117,6 +117,14 @@ namespace storm {
                  */
                 storm::dd::Bdd<Type> getIllegalPlayer2Mask() const;
                 
+                template<typename NewValueType>
+                std::shared_ptr<StochasticTwoPlayerGame<Type, NewValueType>> toValueType() const;
+                
+                /*!
+                 * Retrieves the number of player 2 states in the game.
+                 */
+                uint64_t getNumberOfPlayer2States() const;
+                
             private:
                 /*!
                  * Prepare all illegal masks.

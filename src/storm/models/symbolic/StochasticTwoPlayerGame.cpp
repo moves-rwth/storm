@@ -82,11 +82,35 @@ namespace storm {
                 return player2Variables;
             }
             
+            template<storm::dd::DdType Type, typename ValueType>
+            template<typename NewValueType>
+            std::shared_ptr<StochasticTwoPlayerGame<Type, NewValueType>> StochasticTwoPlayerGame<Type, ValueType>::toValueType() const {
+                typedef typename NondeterministicModel<Type, NewValueType>::RewardModelType NewRewardModelType;
+                std::unordered_map<std::string, NewRewardModelType> newRewardModels;
+                
+                for (auto const& e : this->getRewardModels()) {
+                    newRewardModels.emplace(e.first, e.second.template toValueType<NewValueType>());
+                }
+                
+                auto newLabelToBddMap = this->getLabelToBddMap();
+                newLabelToBddMap.erase("init");
+                newLabelToBddMap.erase("deadlock");
+                
+                return std::make_shared<StochasticTwoPlayerGame<Type, NewValueType>>(this->getManagerAsSharedPointer(), this->getReachableStates(), this->getInitialStates(), this->getDeadlockStates(), this->getTransitionMatrix().template toValueType<NewValueType>(), this->getRowVariables(), this->getColumnVariables(), this->getRowColumnMetaVariablePairs(), this->getPlayer1Variables(), this->getPlayer2Variables(), this->getNondeterminismVariables(), newLabelToBddMap, newRewardModels);
+
+            }
+            
+            template<storm::dd::DdType Type, typename ValueType>
+            uint64_t StochasticTwoPlayerGame<Type, ValueType>::getNumberOfPlayer2States() const {
+                return this->getQualitativeTransitionMatrix().existsAbstract(this->getColumnVariables()).getNonZeroCount();
+            }
+            
             // Explicitly instantiate the template class.
 			template class StochasticTwoPlayerGame<storm::dd::DdType::CUDD, double>;
 			template class StochasticTwoPlayerGame<storm::dd::DdType::Sylvan, double>;
 #ifdef STORM_HAVE_CARL
             template class StochasticTwoPlayerGame<storm::dd::DdType::Sylvan, storm::RationalNumber>;
+            template std::shared_ptr<StochasticTwoPlayerGame<storm::dd::DdType::Sylvan, double>> StochasticTwoPlayerGame<storm::dd::DdType::Sylvan, storm::RationalNumber>::toValueType<double>() const;
 			template class StochasticTwoPlayerGame<storm::dd::DdType::Sylvan, storm::RationalFunction>;
 #endif
             

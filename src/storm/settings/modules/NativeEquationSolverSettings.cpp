@@ -23,12 +23,13 @@ namespace storm {
             const std::string NativeEquationSolverSettings::precisionOptionName = "precision";
             const std::string NativeEquationSolverSettings::absoluteOptionName = "absolute";
             const std::string NativeEquationSolverSettings::powerMethodMultiplicationStyleOptionName = "powmult";
+            const std::string NativeEquationSolverSettings::intervalIterationSymmetricUpdatesOptionName = "symmetricupdates";
 
             NativeEquationSolverSettings::NativeEquationSolverSettings() : ModuleSettings(moduleName) {
-                std::vector<std::string> methods = { "jacobi", "gaussseidel", "sor", "walkerchae", "power", "ratsearch" };
+                std::vector<std::string> methods = { "jacobi", "gaussseidel", "sor", "walkerchae", "power", "sound-value-iteration", "svi", "interval-iteration", "ii", "ratsearch" };
                 this->addOption(storm::settings::OptionBuilder(moduleName, techniqueOptionName, true, "The method to be used for solving linear equation systems with the native engine.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the method to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(methods)).setDefaultValueString("jacobi").build()).build());
                 
-                this->addOption(storm::settings::OptionBuilder(moduleName, maximalIterationsOptionName, false, "The maximal number of iterations to perform before iterative solving is aborted.").setShortName(maximalIterationsOptionShortName).addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("count", "The maximal iteration count.").setDefaultValueUnsignedInteger(20000).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, maximalIterationsOptionName, false, "The maximal number of iterations to perform before iterative solving is aborted.").setShortName(maximalIterationsOptionShortName).addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("count", "The maximal iteration count.").build()).build());
                 
                 this->addOption(storm::settings::OptionBuilder(moduleName, precisionOptionName, false, "The precision used for detecting convergence of iterative methods.").addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to achieve.").setDefaultValueDouble(1e-06).addValidatorDouble(ArgumentValidatorFactory::createDoubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
                 
@@ -39,6 +40,8 @@ namespace storm {
                 std::vector<std::string> multiplicationStyles = {"gaussseidel", "regular", "gs", "r"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, powerMethodMultiplicationStyleOptionName, false, "Sets which method multiplication style to prefer for the power method.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of a multiplication style.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(multiplicationStyles)).setDefaultValueString("gaussseidel").build()).build());
+                                
+                this->addOption(storm::settings::OptionBuilder(moduleName, intervalIterationSymmetricUpdatesOptionName, false, "If set, interval iteration performs an update on both, lower and upper bound in each iteration").build());
             }
             
             bool NativeEquationSolverSettings::isLinearEquationSystemTechniqueSet() const {
@@ -61,6 +64,10 @@ namespace storm {
                     return storm::solver::NativeLinearEquationSolverMethod::WalkerChae;
                 } else if (linearEquationSystemTechniqueAsString == "power") {
                     return storm::solver::NativeLinearEquationSolverMethod::Power;
+                } else if (linearEquationSystemTechniqueAsString == "sound-value-iteration" || linearEquationSystemTechniqueAsString == "svi") {
+                    return storm::solver::NativeLinearEquationSolverMethod::SoundValueIteration;
+                } else if (linearEquationSystemTechniqueAsString == "interval-iteration" || linearEquationSystemTechniqueAsString == "ii") {
+                    return storm::solver::NativeLinearEquationSolverMethod::IntervalIteration;
                 } else if (linearEquationSystemTechniqueAsString == "ratsearch") {
                     return storm::solver::NativeLinearEquationSolverMethod::RationalSearch;
                 }
@@ -105,6 +112,10 @@ namespace storm {
                 STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown multiplication style '" << multiplicationStyleString << "'.");
             }
             
+            bool NativeEquationSolverSettings::isForceIntervalIterationSymmetricUpdatesSet() const {
+                return this->getOption(intervalIterationSymmetricUpdatesOptionName).getHasOptionBeenSet();
+            }
+
             bool NativeEquationSolverSettings::check() const {
                 // This list does not include the precision, because this option is shared with other modules.
                 bool optionSet = isLinearEquationSystemTechniqueSet() || isMaximalIterationCountSet() || isConvergenceCriterionSet();

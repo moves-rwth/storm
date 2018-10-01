@@ -3,11 +3,20 @@
 #include <boost/container/flat_set.hpp>
 
 #include "storm/generator/NextStateGenerator.h"
+#include "storm/generator/TransientVariableInformation.h"
 
 #include "storm/storage/jani/Model.h"
+#include "storm/storage/jani/ArrayEliminator.h"
 #include "storm/storage/jani/OrderedAssignments.h"
 
 namespace storm {
+    namespace builder {
+        namespace jit {
+            template <typename StateType, typename ValueType>
+            class Distribution;
+        }
+    }
+    
     namespace jani {
         class Edge;
         class EdgeDestination;
@@ -65,11 +74,23 @@ namespace storm {
              * Applies an update to the state currently loaded into the evaluator and applies the resulting values to
              * the given compressed state.
              * @params state The state to which to apply the new values.
-             * @params update The update to apply.
+             * @params destination The update to apply.
              * @params locationVariable The location variable that is being updated.
+             * @params assignmentLevel The assignmentLevel that is to be considered for the update.
              * @return The resulting state.
              */
-            CompressedState applyUpdate(CompressedState const& state, storm::jani::EdgeDestination const& update, storm::generator::LocationVariableInformation const& locationVariable);
+            void applyUpdate(CompressedState& state, storm::jani::EdgeDestination const& destination, storm::generator::LocationVariableInformation const& locationVariable, int64_t assignmentlevel, storm::expressions::ExpressionEvaluator<ValueType> const& expressionEvaluator);
+            
+            /*!
+             * Applies an update to the state currently loaded into the evaluator and applies the resulting values to
+             * the given compressed state.
+             * @params state The state to which to apply the new values.
+             * @params destination The update to apply.
+             * @params locationVariable The location variable that is being updated.
+             * @params assignmentLevel The assignmentLevel that is to be considered for the update.
+             * @return The resulting state.
+             */
+            void applyTransientUpdate(TransientVariableValuation<ValueType>& transientValuation, storm::jani::detail::ConstAssignments const& transientAssignments, storm::expressions::ExpressionEvaluator<ValueType> const& expressionEvaluator);
             
             /*!
              * Retrieves all choices possible from the given state.
@@ -94,17 +115,22 @@ namespace storm {
             typedef std::vector<AutomatonAndEdgeSet> AutomataEdgeSets;
             
             std::vector<Choice<ValueType>> expandSynchronizingEdgeCombination(AutomataEdgeSets const& edgeCombination, uint64_t outputActionIndex, CompressedState const& state, StateToIdCallback stateToIdCallback);
-            
+            void generateSynchronizedDistribution(storm::storage::BitVector const& state, AutomataEdgeSets const& edgeCombination, std::vector<EdgeSetWithIndices::const_iterator> const& iteratorList, storm::builder::jit::Distribution<StateType, ValueType>& distribution, std::vector<ValueType>& stateActionRewards, EdgeIndexSet& edgeIndices, StateToIdCallback stateToIdCallback);
+
             /*!
              * Checks the list of enabled edges for multiple synchronized writes to the same global variable.
              */
             void checkGlobalVariableWritesValid(AutomataEdgeSets const& enabledEdges) const;
             
             /*!
-             * Treats the given transient assignments by calling the callback function whenever a transient assignment
-             * to one of the reward variables of this generator is performed.
+             * Evaluates the reward expressions using the current evaluator
              */
-            void performTransientAssignments(storm::jani::detail::ConstAssignments const& transientAssignments, std::function<void (ValueType const&)> const& callback);
+            std::vector<ValueType> evaluateRewardExpressions() const;
+            
+            /*!
+             * Evaluates the reward expressions using the current evaluator, multiplies them by the given factor and adds it to the given vector.
+             */
+            void addEvaluatedRewardExpressions(std::vector<ValueType>& rewards, ValueType const& factor) const;
             
             /*!
              * Builds the information structs for the reward models.
@@ -130,14 +156,20 @@ namespace storm {
             /// The vector storing the edges that need to be explored (synchronously or asynchronously).
             std::vector<OutputAndEdges> edges;
             
-            /// The transient variables of reward models that need to be considered.
-            std::vector<storm::expressions::Variable> rewardVariables;
+            /// The names and defining expressions of reward models that need to be considered.
+            std::vector<std::pair<std::string, storm::expressions::Expression>> rewardExpressions;
             
             /// A vector storing information about the corresponding reward models (variables).
             std::vector<storm::builder::RewardModelInformation> rewardModelInformation;
             
             /// A flag that stores whether at least one of the selected reward models has state-action rewards.
             bool hasStateActionRewards;
+            
+            /// Data from eliminated array expressions. These are required to keep references to array variables in LValues alive.
+            storm::jani::ArrayEliminatorData arrayEliminatorData;
+            
+            /// Information about the transient variables of the model.
+            TransientVariableInformation<ValueType> transientVariableInformation;
         };
         
     }

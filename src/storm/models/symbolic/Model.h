@@ -321,12 +321,28 @@ namespace storm {
                 
                 virtual bool isSymbolicModel() const override;
 
+                virtual bool supportsParameters() const override;
+                
+                /*!
+                 * Checks whether the model has parameters.
+                 * Performance warning: the worst-case complexity is linear in the number of transitions.
+                 *
+                 * @return True iff the model has parameters.
+                 */
+                virtual bool hasParameters() const override;
+
                 std::vector<std::string> getLabels() const;
                 
                 void addParameters(std::set<storm::RationalFunctionVariable> const& parameters);
                 
                 std::set<storm::RationalFunctionVariable> const& getParameters() const;
                 
+                template<typename NewValueType>
+                typename std::enable_if<!std::is_same<ValueType, NewValueType>::value, std::shared_ptr<Model<Type, NewValueType>>>::type toValueType() const;
+                
+                template<typename NewValueType>
+                typename std::enable_if<std::is_same<ValueType, NewValueType>::value, std::shared_ptr<Model<Type, NewValueType>>>::type toValueType() const;
+
             protected:
                 /*!
                  * Sets the transition matrix of the model.
@@ -341,6 +357,13 @@ namespace storm {
                  * @returns The mapping of labels to their defining expressions.
                  */
                 std::map<std::string, storm::expressions::Expression> const& getLabelToExpressionMap() const;
+                
+                /*!
+                 * Retrieves the mapping of labels to their defining expressions.
+                 *
+                 * @returns The mapping of labels to their defining expressions.
+                 */
+                std::map<std::string, storm::dd::Bdd<Type>> const& getLabelToBddMap() const;
                 
                 /*!
                  * Prints the information header (number of states and transitions) of the model to the specified stream.

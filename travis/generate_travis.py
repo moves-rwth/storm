@@ -5,8 +5,10 @@ configs_linux = [
     # OS, compiler, build type
     ("debian-9", "gcc", "DefaultDebug"),
     ("debian-9", "gcc", "DefaultRelease"),
-    ("ubuntu-17.10", "gcc", "DefaultDebugTravis"),
-    ("ubuntu-17.10", "gcc", "DefaultReleaseTravis"),
+    ("ubuntu-18.04", "gcc", "DefaultDebugTravis"),
+    ("ubuntu-18.04", "gcc", "DefaultReleaseTravis"),
+    ("ubuntu-18.04", "gcc", "DefaultDebug"),
+    ("ubuntu-18.04", "gcc", "DefaultRelease"),
 ]
 
 # Configurations for Mac
@@ -27,6 +29,8 @@ stages = [
 
 
 if __name__ == "__main__":
+    allow_failures = []
+
     s = ""
     # Initial config
     s += "#\n"
@@ -39,6 +43,9 @@ if __name__ == "__main__":
     s += "sudo: required\n"
     s += "dist: trusty\n"
     s += "language: cpp\n"
+    s += "\n"
+    s += "git:\n"
+    s += "  depth: false\n"
     s += "\n"
     s += "# Enable caching\n"
     s += "cache:\n"
@@ -57,7 +64,7 @@ if __name__ == "__main__":
     s += "    on_failure: always\n"
     s += "    on_success: change\n"
     s += "    recipients:\n"
-    s += '    secure: "Q9CW/PtyWkZwExDrfFFb9n1STGYsRfI6awv1bZHcGwfrDvhpXoMCuF8CwviIfilm7fFJJEoKizTtdRpY0HrOnY/8KY111xrtcFYosxdndv7xbESodIxQOUoIEFCO0mCNHwWYisoi3dAA7H3Yn661EsxluwHjzX5vY0xSbw0n229hlsFz092HwGLSU33zHl7eXpQk+BOFmBTRGlOq9obtDZ17zbHz1oXFZntHK/JDUIYP0b0uq8NvE2jM6CIVdcuSwmIkOhZJoO2L3Py3rBbPci+L2PSK4Smv2UjCPF8KusnOaFIyDB3LcNM9Jqq5ssJMrK/KaO6BiuYrOZXYWZ7KEg3Y/naC8HjOH1dzty+P7oW46sb9F03pTsufqD4R7wcK+9wROTztO6aJPDG/IPH7EWgrBTxqlOkVRwi2eYuQouZpZUW6EMClKbMHMIxCH2S8aOk/r1w2cNwmPEcunnP0nl413x/ByHr4fTPFykPj8pQxIsllYjpdWBRQfDOauKWGzk6LcrFW0qpWP+/aJ2vYu/IoZQMG5lMHbp6Y1Lg09pYm7Q983v3b7D+JvXhOXMyGq91HyPahA2wwKoG1GA4uoZ2I95/IFYNiKkelDd3WTBoFLNF9YFoEJNdCywm1fO2WY4WkyEFBuQcgDA+YpFMJJMxjTbivYk9jvHk2gji//2w="\n'
+    s += '    - secure: "VWnsiQkt1xjgRo1hfNiNQqvLSr0fshFmLV7jJlUixhCr094mgD0U2bNKdUfebm28Byg9UyDYPbOFDC0sx7KydKiL1q7FKKXkyZH0k04wUu8XiNw+fYkDpmPnQs7G2n8oJ/GFJnr1Wp/1KI3qX5LX3xot4cJfx1I5iFC2O+p+ng6v/oSX+pewlMv4i7KL16ftHHHMo80N694v3g4B2NByn4GU2/bjVQcqlBp/TiVaUa5Nqu9DxZi/n9CJqGEaRHOblWyMO3EyTZsn45BNSWeQ3DtnMwZ73rlIr9CaEgCeuArc6RGghUAVqRI5ao+N5apekIaILwTgL6AJn+Lw/+NRPa8xclgd0rKqUQJMJCDZKjKz2lmIs3bxfELOizxJ3FJQ5R95FAxeAZ6rb/j40YqVVTw2IMBDnEE0J5ZmpUYNUtPti/Adf6GD9Fb2y8sLo0XDJzkI8OxYhfgjSy5KYmRj8O5MXcP2MAE8LQauNO3MaFnL9VMVOTZePJrPozQUgM021uyahf960+QNI06Uqlmg+PwWkSdllQlxHHplOgW7zClFhtSUpnJxcsUBzgg4kVg80gXUwAQkaDi7A9Wh2bs+TvMlmHzBwg+2SaAfWDgjeJIeOaipDkF1uSGzC+EHAiiKYMLd4Aahoi8SuelJUucoyJyLAq00WdUFQIh/izVhM4Y="\n'
     s += "\n"
     s += "#\n"
     s += "# Configurations\n"
@@ -90,11 +97,11 @@ if __name__ == "__main__":
             buildConfig += "      after_success:\n"
             buildConfig += '        - docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD";\n'
             if "Debug" in build_type:
-                buildConfig += "        - docker commit carl mvolk/carl:travis-debug;\n"
-                buildConfig += "        - docker push mvolk/carl:travis-debug;\n"
+                buildConfig += "        - docker commit carl movesrwth/carl:travis-debug;\n"
+                buildConfig += "        - docker push movesrwth/carl:travis-debug;\n"
             elif "Release" in build_type:
-                buildConfig += "        - docker commit carl mvolk/carl:travis;\n"
-                buildConfig += "        - docker push mvolk/carl:travis;\n"
+                buildConfig += "        - docker commit carl movesrwth/carl:travis;\n"
+                buildConfig += "        - docker push movesrwth/carl:travis;\n"
             else:
                 assert False
             s += buildConfig
@@ -130,15 +137,19 @@ if __name__ == "__main__":
 
         # Linux via Docker
         for config in configs_linux:
+            allow_fail = ""
             linux = config[0]
             compiler = config[1]
             build_type = config[2]
             s += "    # {} - {}\n".format(linux, build_type)
             buildConfig = ""
             buildConfig += "    - stage: {}\n".format(stage[0])
+            allow_fail += "    - stage: {}\n".format(stage[0])
             buildConfig += "      os: linux\n"
+            allow_fail += "      os: linux\n"
             buildConfig += "      compiler: {}\n".format(compiler)
             buildConfig += "      env: CONFIG={} LINUX={} COMPILER={}\n".format(build_type, linux, compiler)
+            allow_fail += "      env: CONFIG={} LINUX={} COMPILER={}\n".format(build_type, linux, compiler)
             buildConfig += "      install:\n"
             if stage[1] == "Build1":
                 buildConfig += "        - rm -rf build\n"
@@ -154,13 +165,19 @@ if __name__ == "__main__":
                 buildConfig += "      after_success:\n"
                 buildConfig += '        - docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD";\n'
                 if "Debug" in build_type:
-                    buildConfig += "        - docker commit storm mvolk/storm:travis-debug;\n"
-                    buildConfig += "        - docker push mvolk/storm:travis-debug;\n"
+                    buildConfig += "        - docker commit storm movesrwth/storm:travis-debug;\n"
+                    buildConfig += "        - docker push movesrwth/storm:travis-debug;\n"
                 elif "Release" in build_type:
-                    buildConfig += "        - docker commit storm mvolk/storm:travis;\n"
-                    buildConfig += "        - docker push mvolk/storm:travis;\n"
+                    buildConfig += "        - docker commit storm movesrwth/storm:travis;\n"
+                    buildConfig += "        - docker push movesrwth/storm:travis;\n"
                 else:
                     assert False
             s += buildConfig
+            if "Travis" in build_type and "Release" in build_type:
+                allow_failures.append(allow_fail)
 
+    if len(allow_failures) > 0:
+        s += "  allow_failures:\n"
+        for fail in allow_failures:
+            s += fail
     print(s)

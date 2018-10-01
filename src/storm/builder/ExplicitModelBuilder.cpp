@@ -277,6 +277,7 @@ namespace storm {
                 // (a) the transition matrix
                 // (b) the initial states
                 // (c) the hash map storing the mapping states -> ids
+                // (d) fix remapping for state-generation labels
                 
                 // Fix (a).
                 transitionMatrixBuilder.replaceColumns(remapping, 0);
@@ -289,6 +290,8 @@ namespace storm {
                 
                 // Fix (c).
                 this->stateStorage.stateToId.remap([&remapping] (StateType const& state) { return remapping[state]; } );
+
+                this->generator->remapStateIds([&remapping] (StateType const& state) { return remapping[state]; });
             }
         }
         

@@ -580,6 +580,20 @@ namespace storm {
         }
         
         template<typename ValueType>
+        typename SparseMatrix<ValueType>::index_type SparseMatrix<ValueType>::getSizeOfLargestRowGroup() const {
+            if (this->hasTrivialRowGrouping()) {
+                return 1;
+            }
+            index_type res = 0;
+            index_type previousGroupStart = 0;
+            for (auto const& i : rowGroupIndices.get()) {
+                res = std::max(res, i - previousGroupStart);
+                previousGroupStart = i;
+            }
+            return res;
+        }
+        
+        template<typename ValueType>
         std::vector<typename SparseMatrix<ValueType>::index_type> const& SparseMatrix<ValueType>::getRowGroupIndices() const {
             // If there is no current row grouping, we need to create it.
             if (!this->rowGroupIndices) {
@@ -587,6 +601,16 @@ namespace storm {
                 this->rowGroupIndices = storm::utility::vector::buildVectorForRange(0, this->getRowGroupCount() + 1);
             }
             return rowGroupIndices.get();
+        }
+        
+        template<typename ValueType>
+        std::vector<typename SparseMatrix<ValueType>::index_type> SparseMatrix<ValueType>::swapRowGroupIndices(std::vector<index_type>&& newRowGrouping) {
+            std::vector<index_type> result;
+            if (this->rowGroupIndices) {
+                result = std::move(rowGroupIndices.get());
+                rowGroupIndices = std::move(newRowGrouping);
+            }
+            return result;
         }
         
         template<typename ValueType>
@@ -946,6 +970,7 @@ namespace storm {
             // Copy over selected entries.
             rowGroupCount = 0;
             index_type rowCount = 0;
+            subEntries = 0;
             for (auto index : rowGroupConstraint) {
                 if (!this->hasTrivialRowGrouping()) {
                     matrixBuilder.newRowGroup(rowCount);
@@ -961,6 +986,7 @@ namespace storm {
                                 matrixBuilder.addNextValue(rowCount, rowGroupCount, storm::utility::zero<ValueType>());
                                 insertedDiagonalElement = true;
                             }
+                            ++subEntries;
                             matrixBuilder.addNextValue(rowCount, columnBitsSetBeforeIndex[it->getColumn()], it->getValue());
                         }
                     }
@@ -1477,7 +1503,7 @@ namespace storm {
                 multiplyWithVectorParallel(vector, tmpVector);
                 result = std::move(tmpVector);
             } else {
-                tbb::parallel_for(tbb::blocked_range<index_type>(0, result.size(), 10), TbbMultAddFunctor<ValueType>(columnsAndValues, rowIndications, vector, result, summand));
+                tbb::parallel_for(tbb::blocked_range<index_type>(0, result.size(), 100), TbbMultAddFunctor<ValueType>(columnsAndValues, rowIndications, vector, result, summand));
             }
         }
 #endif
@@ -1562,6 +1588,17 @@ namespace storm {
         
         template<typename ValueType>
         void SparseMatrix<ValueType>::multiplyAndReduceForward(OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType> const& vector, std::vector<ValueType> const* summand, std::vector<ValueType>& result, std::vector<uint_fast64_t>* choices) const {
+            if (dir == OptimizationDirection::Minimize) {
+                multiplyAndReduceForward<storm::utility::ElementLess<ValueType>>(rowGroupIndices, vector, summand, result, choices);
+            } else {
+                multiplyAndReduceForward<storm::utility::ElementGreater<ValueType>>(rowGroupIndices, vector, summand, result, choices);
+            }
+        }
+
+        template<typename ValueType>
+        template<typename Compare>
+        void SparseMatrix<ValueType>::multiplyAndReduceForward(std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType> const& vector, std::vector<ValueType> const* summand, std::vector<ValueType>& result, std::vector<uint_fast64_t>* choices) const {
+            Compare compare;
             auto elementIt = this->begin();
             auto rowGroupIt = rowGroupIndices.begin();
             auto rowIt = rowIndications.begin();
@@ -1574,11 +1611,13 @@ namespace storm {
                 choiceIt = choices->begin();
             }
             
+            // Variables for correctly tracking choices (only update if new choice is strictly better).
+            ValueType oldSelectedChoiceValue;
+            uint64_t selectedChoice;
+            
+            uint64_t currentRow = 0;
             for (auto resultIt = result.begin(), resultIte = result.end(); resultIt != resultIte; ++resultIt, ++choiceIt, ++rowGroupIt) {
                 ValueType currentValue = storm::utility::zero<ValueType>();
-                if (choices) {
-                    *choiceIt = 0;
-                }
                 
                 // Only multiply and reduce if there is at least one row in the group.
                 if (*rowGroupIt < *(rowGroupIt + 1)) {
@@ -1586,38 +1625,51 @@ namespace storm {
                         currentValue = *summandIt;
                         ++summandIt;
                     }
-
+                    
                     for (auto elementIte = this->begin() + *(rowIt + 1); elementIt != elementIte; ++elementIt) {
                         currentValue += elementIt->getValue() * vector[elementIt->getColumn()];
                     }
                     
-                    ++rowIt;
+                    if (choices) {
+                        selectedChoice = 0;
+                        if (*choiceIt == 0) {
+                            oldSelectedChoiceValue = currentValue;
+                        }
+                    }
                     
-                    for (; static_cast<uint_fast64_t>(std::distance(rowIndications.begin(), rowIt)) < *(rowGroupIt + 1); ++rowIt) {
+                    ++rowIt;
+                    ++currentRow;
+                    
+                    for (; currentRow < *(rowGroupIt + 1); ++rowIt, ++currentRow) {
                         ValueType newValue = summand ? *summandIt : storm::utility::zero<ValueType>();
                         for (auto elementIte = this->begin() + *(rowIt + 1); elementIt != elementIte; ++elementIt) {
                             newValue += elementIt->getValue() * vector[elementIt->getColumn()];
                         }
+
+                        if (choices && currentRow == *choiceIt + *rowGroupIt) {
+                            oldSelectedChoiceValue = newValue;
+                        }
                         
-                        if ((dir == OptimizationDirection::Minimize && newValue < currentValue) || (dir == OptimizationDirection::Maximize && newValue > currentValue)) {
+                        if (compare(newValue, currentValue)) {
                             currentValue = newValue;
                             if (choices) {
-                                *choiceIt = std::distance(rowIndications.begin(), rowIt) - *rowGroupIt;
+                                selectedChoice = currentRow - *rowGroupIt;
                             }
                         }
                         if (summand) {
                             ++summandIt;
                         }
                     }
-                } else if (choices) {
-                    *choiceIt = 0;
+                    
+                    // Finally write value to target vector.
+                    *resultIt = currentValue;
+                    if (choices && compare(currentValue, oldSelectedChoiceValue)) {
+                        *choiceIt = selectedChoice;
+                    }
                 }
-                
-                // Finally write value to target vector.
-                *resultIt = currentValue;
             }
         }
-
+        
 #ifdef STORM_HAVE_CARL
         template<>
         void SparseMatrix<storm::RationalFunction>::multiplyAndReduceForward(OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<storm::RationalFunction> const& vector, std::vector<storm::RationalFunction> const* b, std::vector<storm::RationalFunction>& result, std::vector<uint_fast64_t>* choices) const {
@@ -1627,6 +1679,17 @@ namespace storm {
         
         template<typename ValueType>
         void SparseMatrix<ValueType>::multiplyAndReduceBackward(OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType> const& vector, std::vector<ValueType> const* summand, std::vector<ValueType>& result, std::vector<uint_fast64_t>* choices) const {
+            if (dir == storm::OptimizationDirection::Minimize) {
+                multiplyAndReduceBackward<storm::utility::ElementLess<ValueType>>(rowGroupIndices, vector, summand, result, choices);
+            } else {
+                multiplyAndReduceBackward<storm::utility::ElementGreater<ValueType>>(rowGroupIndices, vector, summand, result, choices);
+            }
+        }
+        
+        template<typename ValueType>
+        template<typename Compare>
+        void SparseMatrix<ValueType>::multiplyAndReduceBackward(std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType> const& vector, std::vector<ValueType> const* summand, std::vector<ValueType>& result, std::vector<uint_fast64_t>* choices) const {
+            Compare compare;
             auto elementIt = this->end() - 1;
             auto rowGroupIt = rowGroupIndices.end() - 2;
             auto rowIt = rowIndications.end() - 2;
@@ -1639,10 +1702,12 @@ namespace storm {
                 choiceIt = choices->end() - 1;
             }
             
+            // Variables for correctly tracking choices (only update if new choice is strictly better).
+            ValueType oldSelectedChoiceValue;
+            uint64_t selectedChoice;
+            
+            uint64_t currentRow = this->getRowCount() - 1;
             for (auto resultIt = result.end() - 1, resultIte = result.begin() - 1; resultIt != resultIte; --resultIt, --choiceIt, --rowGroupIt) {
-                if (choices) {
-                    *choiceIt = 0;
-                }
                 ValueType currentValue = storm::utility::zero<ValueType>();
                 
                 // Only multiply and reduce if there is at least one row in the group.
@@ -1651,32 +1716,43 @@ namespace storm {
                         currentValue = *summandIt;
                         --summandIt;
                     }
-
+                    
                     for (auto elementIte = this->begin() + *rowIt - 1; elementIt != elementIte; --elementIt) {
                         currentValue += elementIt->getValue() * vector[elementIt->getColumn()];
                     }
                     if (choices) {
-                        *choiceIt = std::distance(rowIndications.begin(), rowIt) - *rowGroupIt;
+                        selectedChoice = currentRow - *rowGroupIt;
+                        if (*choiceIt == selectedChoice) {
+                            oldSelectedChoiceValue = currentValue;
+                        }
                     }
                     --rowIt;
+                    --currentRow;
                     
-                    for (uint64_t i = *rowGroupIt + 1, end = *(rowGroupIt + 1); i < end; --rowIt, ++i, --summandIt) {
+                    for (uint64_t i = *rowGroupIt + 1, end = *(rowGroupIt + 1); i < end; --rowIt, --currentRow, ++i, --summandIt) {
                         ValueType newValue = summand ? *summandIt : storm::utility::zero<ValueType>();
                         for (auto elementIte = this->begin() + *rowIt - 1; elementIt != elementIte; --elementIt) {
                             newValue += elementIt->getValue() * vector[elementIt->getColumn()];
                         }
                         
-                        if ((dir == OptimizationDirection::Minimize && newValue < currentValue) || (dir == OptimizationDirection::Maximize && newValue > currentValue)) {
+                        if (choices && currentRow == *choiceIt + *rowGroupIt) {
+                            oldSelectedChoiceValue = newValue;
+                        }
+                        
+                        if (compare(newValue, currentValue)) {
                             currentValue = newValue;
                             if (choices) {
-                                *choiceIt = std::distance(rowIndications.begin(), rowIt) - *rowGroupIt;
+                                selectedChoice = currentRow - *rowGroupIt;
                             }
                         }
                     }
+                    
+                    // Finally write value to target vector.
+                    *resultIt = currentValue;
+                    if (choices && compare(currentValue, oldSelectedChoiceValue)) {
+                        *choiceIt = selectedChoice;
+                    }
                 }
-                
-                // Finally write value to target vector.
-                *resultIt = currentValue;
             }
         }
         
@@ -1688,18 +1764,19 @@ namespace storm {
 #endif
         
 #ifdef STORM_HAVE_INTELTBB
-        template <typename ValueType>
+        template <typename ValueType, typename Compare>
         class TbbMultAddReduceFunctor {
         public:
             typedef typename storm::storage::SparseMatrix<ValueType>::index_type index_type;
             typedef typename storm::storage::SparseMatrix<ValueType>::value_type value_type;
             typedef typename storm::storage::SparseMatrix<ValueType>::const_iterator const_iterator;
             
-            TbbMultAddReduceFunctor(OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<MatrixEntry<index_type, value_type>> const& columnsAndEntries, std::vector<uint64_t> const& rowIndications, std::vector<ValueType> const& x, std::vector<ValueType>& result, std::vector<value_type> const* summand, std::vector<uint_fast64_t>* choices) : dir(dir), rowGroupIndices(rowGroupIndices), columnsAndEntries(columnsAndEntries), rowIndications(rowIndications), x(x), result(result), summand(summand), choices(choices) {
+            TbbMultAddReduceFunctor(std::vector<uint64_t> const& rowGroupIndices, std::vector<MatrixEntry<index_type, value_type>> const& columnsAndEntries, std::vector<uint64_t> const& rowIndications, std::vector<ValueType> const& x, std::vector<ValueType>& result, std::vector<value_type> const* summand, std::vector<uint_fast64_t>* choices) : rowGroupIndices(rowGroupIndices), columnsAndEntries(columnsAndEntries), rowIndications(rowIndications), x(x), result(result), summand(summand), choices(choices) {
                 // Intentionally left empty.
             }
             
             void operator()(tbb::blocked_range<index_type> const& range) const {
+
                 auto groupIt = rowGroupIndices.begin() + range.begin();
                 auto groupIte = rowGroupIndices.begin() + range.end();
                 
@@ -1716,11 +1793,12 @@ namespace storm {
                 
                 auto resultIt = result.begin() + range.begin();
                 
+                // Variables for correctly tracking choices (only update if new choice is strictly better).
+                ValueType oldSelectedChoiceValue;
+                uint64_t selectedChoice;
+
+                uint64_t currentRow = *groupIt;
                 for (; groupIt != groupIte; ++groupIt, ++resultIt, ++choiceIt) {
-                    if (choices) {
-                        *choiceIt = 0;
-                    }
-                    
                     ValueType currentValue = storm::utility::zero<ValueType>();
                     
                     // Only multiply and reduce if there is at least one row in the group.
@@ -1734,30 +1812,45 @@ namespace storm {
                             currentValue += elementIt->getValue() * x[elementIt->getColumn()];
                         }
                         
-                        ++rowIt;
+                        if (choices) {
+                            selectedChoice = 0;
+                            if (*choiceIt == 0) {
+                                oldSelectedChoiceValue = currentValue;
+                            }
+                        }
                         
-                        for (; static_cast<uint_fast64_t>(std::distance(rowIndications.begin(), rowIt)) < *(groupIt + 1); ++rowIt, ++summandIt) {
+                        ++rowIt;
+                        ++currentRow;
+                        
+                        for (; currentRow < *(groupIt + 1); ++rowIt, ++currentRow, ++summandIt) {
                             ValueType newValue = summand ? *summandIt : storm::utility::zero<ValueType>();
                             for (auto elementIte = columnsAndEntries.begin() + *(rowIt + 1); elementIt != elementIte; ++elementIt) {
                                 newValue += elementIt->getValue() * x[elementIt->getColumn()];
                             }
                             
-                            if ((dir == OptimizationDirection::Minimize && newValue < currentValue) || (dir == OptimizationDirection::Maximize && newValue > currentValue)) {
+                            if (choices && currentRow == *choiceIt + *groupIt) {
+                                oldSelectedChoiceValue = newValue;
+                            }
+
+                            if (compare(newValue, currentValue)) {
                                 currentValue = newValue;
                                 if (choices) {
-                                    *choiceIt = std::distance(rowIndications.begin(), rowIt) - *groupIt;
+                                    selectedChoice = currentRow - *groupIt;
                                 }
                             }
                         }
+                        
+                        // Finally write value to target vector.
+                        *resultIt = currentValue;
+                        if (choices && compare(currentValue, oldSelectedChoiceValue)) {
+                            *choiceIt = selectedChoice;
+                        }
                     }
-                    
-                    // Finally write value to target vector.
-                    *resultIt = currentValue;
                 }
             }
             
         private:
-            OptimizationDirection dir;
+            Compare compare;
             std::vector<uint64_t> const& rowGroupIndices;
             std::vector<MatrixEntry<index_type, value_type>> const& columnsAndEntries;
             std::vector<uint64_t> const& rowIndications;
@@ -1769,7 +1862,11 @@ namespace storm {
         
         template<typename ValueType>
         void SparseMatrix<ValueType>::multiplyAndReduceParallel(OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType> const& vector, std::vector<ValueType> const* summand, std::vector<ValueType>& result, std::vector<uint_fast64_t>* choices) const {
-            tbb::parallel_for(tbb::blocked_range<index_type>(0, rowGroupIndices.size() - 1, 10), TbbMultAddReduceFunctor<ValueType>(dir, rowGroupIndices, columnsAndValues, rowIndications, vector, result, summand, choices));
+            if (dir == storm::OptimizationDirection::Minimize) {
+                tbb::parallel_for(tbb::blocked_range<index_type>(0, rowGroupIndices.size() - 1, 100), TbbMultAddReduceFunctor<ValueType, storm::utility::ElementLess<ValueType>>(rowGroupIndices, columnsAndValues, rowIndications, vector, result, summand, choices));
+            } else {
+                tbb::parallel_for(tbb::blocked_range<index_type>(0, rowGroupIndices.size() - 1, 100), TbbMultAddReduceFunctor<ValueType, storm::utility::ElementGreater<ValueType>>(rowGroupIndices, columnsAndValues, rowIndications, vector, result, summand, choices));
+            }
         }
         
 #ifdef STORM_HAVE_CARL

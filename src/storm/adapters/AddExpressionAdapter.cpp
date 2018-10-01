@@ -111,6 +111,9 @@ namespace storm {
                 case storm::expressions::BinaryNumericalFunctionExpression::OperatorType::Power:
                     result = leftResult.pow(rightResult);
                     break;
+                case storm::expressions::BinaryNumericalFunctionExpression::OperatorType::Modulo:
+                    result = leftResult.mod(rightResult);
+                    break;
                 default:
                     STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Cannot translate expression containing power operator.");
             }

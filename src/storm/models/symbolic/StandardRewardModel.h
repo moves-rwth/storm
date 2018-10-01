@@ -212,6 +212,9 @@ namespace storm {
                  */
                 void reduceToStateBasedRewards(storm::dd::Add<Type, ValueType> const& transitionMatrix, std::set<storm::expressions::Variable> const& rowVariables, std::set<storm::expressions::Variable> const& columnVariables, bool reduceToStateRewards);
                 
+                template<typename NewValueType>
+                StandardRewardModel<Type, NewValueType> toValueType() const;
+
             private:
                 // The state reward vector.
                 boost::optional<storm::dd::Add<Type, ValueType>> optionalStateRewardVector;

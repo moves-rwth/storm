@@ -54,13 +54,6 @@ namespace storm {
             buckets = storm::storage::BitVector(bucketSize * (1ull << currentSize));
             occupied = storm::storage::BitVector(1ull << currentSize);
             values = std::vector<ValueType>(1ull << currentSize);
-
-#ifndef NDEBUG
-            numberOfInsertions = 0;
-            numberOfInsertionProbingSteps = 0;
-            numberOfFinds = 0;
-            numberOfFindProbingSteps = 0;
-#endif
         }
         
         template<class ValueType, class Hash>
@@ -81,11 +74,7 @@ namespace storm {
         template<class ValueType, class Hash>
         void BitVectorHashMap<ValueType, Hash>::increaseSize() {
             ++currentSize;
-#ifndef NDEBUG
-            STORM_LOG_TRACE("Increasing size of hash map from " << (1ull << (currentSize - 1)) << " to " << (1ull << currentSize) << ". Stats: " << numberOfFinds << " finds (avg. " << (numberOfFindProbingSteps / static_cast<double>(numberOfFinds)) << " probing steps), " << numberOfInsertions << " insertions (avg. " << (numberOfInsertionProbingSteps / static_cast<double>(numberOfInsertions)) << " probing steps).");
-#else
             STORM_LOG_TRACE("Increasing size of hash map from " << (1ull << (currentSize - 1)) << " to " << (1ull << currentSize) << ".");
-#endif
             
             // Create new containers and swap them with the old ones.
             storm::storage::BitVector oldBuckets(bucketSize * (1ull << currentSize));
@@ -96,10 +85,12 @@ namespace storm {
             std::swap(oldValues, values);
             
             // Now iterate through the elements and reinsert them in the new storage.
+            uint64_t oldSize = numberOfElements;
             numberOfElements = 0;
             for (auto bucketIndex : oldOccupied) {
                 findOrAddAndGetBucket(oldBuckets.get(bucketIndex * bucketSize, bucketSize), oldValues[bucketIndex]);
             }
+            STORM_LOG_ASSERT(oldSize == numberOfElements, "Size mismatch in rehashing. Size before was " << oldSize << " and new size is " << numberOfElements << ".");
         }
         
         template<class ValueType, class Hash>
@@ -111,7 +102,7 @@ namespace storm {
         std::pair<ValueType, uint64_t> BitVectorHashMap<ValueType, Hash>::findOrAddAndGetBucket(storm::storage::BitVector const& key, ValueType const& value) {
             checkIncreaseSize();
             
-            std::pair<bool, uint64_t> flagAndBucket = this->findBucketToInsert(key);
+            std::pair<bool, uint64_t> flagAndBucket = this->findBucket(key);
             if (flagAndBucket.first) {
                 return std::make_pair(values[flagAndBucket.second], flagAndBucket.second);
             } else {
@@ -168,38 +159,10 @@ namespace storm {
         
         template<class ValueType, class Hash>
         std::pair<bool, uint64_t> BitVectorHashMap<ValueType, Hash>::findBucket(storm::storage::BitVector const& key) const {
-#ifndef NDEBUG
-            ++numberOfFinds;
-#endif
+            STORM_LOG_ASSERT(key.size() == bucketSize, "Size of bit vector and size of buckets do not match");
             uint64_t bucket = hasher(key) >> this->getCurrentShiftWidth();
             
             while (isBucketOccupied(bucket)) {
-#ifndef NDEBUG
-                ++numberOfFindProbingSteps;
-#endif
-                if (buckets.matches(bucket * bucketSize, key)) {
-                    return std::make_pair(true, bucket);
-                }
-                ++bucket;
-                if (bucket == (1ull << currentSize)) {
-                    bucket = 0;
-                }
-            }
-
-            return std::make_pair(false, bucket);
-        }
-        
-        template<class ValueType, class Hash>
-        std::pair<bool, uint64_t> BitVectorHashMap<ValueType, Hash>::findBucketToInsert(storm::storage::BitVector const& key) {
-#ifndef NDEBUG
-            ++numberOfInsertions;
-#endif
-            uint64_t bucket = hasher(key) >> this->getCurrentShiftWidth();
-
-            while (isBucketOccupied(bucket)) {
-#ifndef NDEBUG
-                ++numberOfInsertionProbingSteps;
-#endif
                 if (buckets.matches(bucket * bucketSize, key)) {
                     return std::make_pair(true, bucket);
                 }

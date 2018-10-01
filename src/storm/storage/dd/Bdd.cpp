@@ -64,6 +64,11 @@ namespace storm {
         }
         
         template<DdType LibraryType>
+        Bdd<LibraryType> Bdd<LibraryType>::getEncoding(DdManager<LibraryType> const& ddManager, uint64_t targetOffset, storm::dd::Odd const& odd, std::set<storm::expressions::Variable> const& metaVariables) {
+            return Bdd<LibraryType>(ddManager, InternalBdd<LibraryType>::fromVector(&ddManager.getInternalDdManager(), odd, ddManager.getSortedVariableIndices(metaVariables), [targetOffset] (uint64_t offset) { return offset == targetOffset; }), metaVariables);
+        }
+        
+        template<DdType LibraryType>
         bool Bdd<LibraryType>::operator==(Bdd<LibraryType> const& other) const {
             return internalBdd == other.internalBdd;
         }
@@ -360,9 +365,72 @@ namespace storm {
         }
         
         template<DdType LibraryType>
+        Bdd<LibraryType> Bdd<LibraryType>::renameVariablesConcretize(std::set<storm::expressions::Variable> const& from, std::set<storm::expressions::Variable> const& to) const {
+            std::vector<InternalBdd<LibraryType>> fromBdds;
+            std::vector<InternalBdd<LibraryType>> toBdds;
+            
+            for (auto const& metaVariable : from) {
+                STORM_LOG_THROW(this->containsMetaVariable(metaVariable), storm::exceptions::InvalidOperationException, "Cannot rename variable '" << metaVariable.getName() << "' that is not present.");
+                DdMetaVariable<LibraryType> const& ddMetaVariable = this->getDdManager().getMetaVariable(metaVariable);
+                for (auto const& ddVariable : ddMetaVariable.getDdVariables()) {
+                    fromBdds.push_back(ddVariable.getInternalBdd());
+                }
+            }
+            std::sort(fromBdds.begin(), fromBdds.end(), [] (InternalBdd<LibraryType> const& a, InternalBdd<LibraryType> const& b) { return a.getLevel() < b.getLevel(); } );
+            for (auto const& metaVariable : to) {
+                STORM_LOG_THROW(!this->containsMetaVariable(metaVariable), storm::exceptions::InvalidOperationException, "Cannot rename to variable '" << metaVariable.getName() << "' that is already present.");
+                DdMetaVariable<LibraryType> const& ddMetaVariable = this->getDdManager().getMetaVariable(metaVariable);
+                for (auto const& ddVariable : ddMetaVariable.getDdVariables()) {
+                    toBdds.push_back(ddVariable.getInternalBdd());
+                }
+            }
+            std::sort(toBdds.begin(), toBdds.end(), [] (InternalBdd<LibraryType> const& a, InternalBdd<LibraryType> const& b) { return a.getLevel() < b.getLevel(); } );
+            
+            std::set<storm::expressions::Variable> newContainedMetaVariables = to;
+            std::set_difference(this->getContainedMetaVariables().begin(), this->getContainedMetaVariables().end(), from.begin(), from.end(), std::inserter(newContainedMetaVariables, newContainedMetaVariables.begin()));
+            
+            STORM_LOG_ASSERT(toBdds.size() >= fromBdds.size(), "Unable to perform rename-concretize with mismatching sizes.");
+            
+            if (fromBdds.size() == toBdds.size()) {
+                return Bdd<LibraryType>(this->getDdManager(), internalBdd.swapVariables(fromBdds, toBdds), newContainedMetaVariables);
+            } else {
+                InternalBdd<LibraryType> negatedCube = this->getDdManager().getBddOne().getInternalBdd();
+                for (uint64_t index = fromBdds.size(); index < toBdds.size(); ++index) {
+                    negatedCube &= !toBdds[index];
+                }
+                toBdds.resize(fromBdds.size());
+                
+                return Bdd<LibraryType>(this->getDdManager(), (internalBdd && negatedCube).swapVariables(fromBdds, toBdds), newContainedMetaVariables);
+            }
+        }
+        
+        template<DdType LibraryType>
         template<typename ValueType>
         Add<LibraryType, ValueType> Bdd<LibraryType>::toAdd() const {
             return Add<LibraryType, ValueType>(this->getDdManager(), internalBdd.template toAdd<ValueType>(), this->getContainedMetaVariables());
+        }
+        
+        template<DdType LibraryType>
+        std::vector<Bdd<LibraryType>> Bdd<LibraryType>::split(std::set<storm::expressions::Variable> const& variables) const {
+            std::set<storm::expressions::Variable> remainingMetaVariables;
+            std::set_difference(this->getContainedMetaVariables().begin(), this->getContainedMetaVariables().end(), variables.begin(), variables.end(), std::inserter(remainingMetaVariables, remainingMetaVariables.begin()));
+            
+            std::vector<uint_fast64_t> ddGroupVariableIndices;
+            for (auto const& variable : variables) {
+                DdMetaVariable<LibraryType> const& metaVariable = this->getDdManager().getMetaVariable(variable);
+                for (auto const& ddVariable : metaVariable.getDdVariables()) {
+                    ddGroupVariableIndices.push_back(ddVariable.getIndex());
+                }
+            }
+            std::sort(ddGroupVariableIndices.begin(), ddGroupVariableIndices.end());
+            
+            std::vector<InternalBdd<LibraryType>> internalBddGroups = this->internalBdd.splitIntoGroups(ddGroupVariableIndices);
+            std::vector<Bdd<LibraryType>> groups;
+            for (auto const& internalBdd : internalBddGroups) {
+                groups.emplace_back(Bdd<LibraryType>(this->getDdManager(), internalBdd, remainingMetaVariables));
+            }
+
+            return groups;
         }
         
         template<DdType LibraryType>

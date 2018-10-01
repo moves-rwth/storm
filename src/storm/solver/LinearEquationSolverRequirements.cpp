@@ -3,52 +3,78 @@
 namespace storm {
     namespace solver {
         
-        LinearEquationSolverRequirements::LinearEquationSolverRequirements() : lowerBounds(false), upperBounds(false) {
+        LinearEquationSolverRequirements::LinearEquationSolverRequirements()  {
             // Intentionally left empty.
         }
         
-        LinearEquationSolverRequirements& LinearEquationSolverRequirements::requireLowerBounds() {
-            lowerBounds = true;
+        LinearEquationSolverRequirements& LinearEquationSolverRequirements::requireLowerBounds(bool critical) {
+            lowerBoundsRequirement.enable(critical);
             return *this;
         }
         
-        LinearEquationSolverRequirements& LinearEquationSolverRequirements::requireUpperBounds() {
-            upperBounds = true;
+        LinearEquationSolverRequirements& LinearEquationSolverRequirements::requireUpperBounds(bool critical) {
+            upperBoundsRequirement.enable(critical);
             return *this;
         }
         
-        LinearEquationSolverRequirements& LinearEquationSolverRequirements::requireBounds() {
-            requireLowerBounds();
-            requireUpperBounds();
+        LinearEquationSolverRequirements& LinearEquationSolverRequirements::requireBounds(bool critical) {
+            requireLowerBounds(critical);
+            requireUpperBounds(critical);
             return *this;
         }
         
-        bool LinearEquationSolverRequirements::requiresLowerBounds() const {
-            return lowerBounds;
+        SolverRequirement const& LinearEquationSolverRequirements::lowerBounds() const {
+            return lowerBoundsRequirement;
         }
         
-        bool LinearEquationSolverRequirements::requiresUpperBounds() const {
-            return upperBounds;
+        SolverRequirement const& LinearEquationSolverRequirements::upperBounds() const {
+            return upperBoundsRequirement;
         }
         
-        bool LinearEquationSolverRequirements::requires(Element const& element) const {
+        SolverRequirement const& LinearEquationSolverRequirements::get(Element const& element) const {
             switch (element) {
-                case Element::LowerBounds: return lowerBounds; break;
-                case Element::UpperBounds: return upperBounds; break;
+                case Element::LowerBounds: return lowerBounds(); break;
+                case Element::UpperBounds: return upperBounds(); break;
             }
         }
         
         void LinearEquationSolverRequirements::clearLowerBounds() {
-            lowerBounds = false;
+            lowerBoundsRequirement.clear();
         }
         
         void LinearEquationSolverRequirements::clearUpperBounds() {
-            upperBounds = false;
+            upperBoundsRequirement.clear();
         }
         
-        bool LinearEquationSolverRequirements::empty() const {
-            return !lowerBounds && !upperBounds;
+        bool LinearEquationSolverRequirements::hasEnabledRequirement() const {
+            return lowerBoundsRequirement || upperBoundsRequirement;
         }
         
+        bool LinearEquationSolverRequirements::hasEnabledCriticalRequirement() const {
+            return lowerBoundsRequirement.isCritical() || upperBoundsRequirement.isCritical();
+        }
+        
+        
+        std::string LinearEquationSolverRequirements::getEnabledRequirementsAsString() const {
+            std::string res = "[";
+            bool first = true;
+            if (lowerBounds()) {
+                if (!first) { res += ", "; } else {first = false;}
+                res += "lowerBounds";
+                if (lowerBounds().isCritical()) {
+                    res += "(mandatory)";
+                }
+            }
+            if (upperBounds()) {
+                if (!first) { res += ", "; } else {first = false;}
+                res += "upperBounds";
+                if (upperBounds().isCritical()) {
+                    res += "(mandatory)";
+                }
+            }
+            res += "]";
+            return res;
+        }
+      
     }
 }

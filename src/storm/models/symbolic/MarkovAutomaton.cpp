@@ -66,7 +66,7 @@ namespace storm {
                 
                 // Compute the vector of exit rates.
                 this->exitRateVector = (this->getTransitionMatrix() * this->markovianMarker.template toAdd<ValueType>()).sumAbstract(columnAndNondeterminsmVariables);
-                
+                                
                 // Modify the transition matrix so all choices are probabilistic and the Markovian choices additionally
                 // have a rate.
                 this->transitionMatrix = this->transitionMatrix / this->markovianChoices.ite(this->exitRateVector, this->getManager().template getAddOne<ValueType>());
@@ -105,7 +105,7 @@ namespace storm {
             template<storm::dd::DdType Type, typename ValueType>
             MarkovAutomaton<Type, ValueType> MarkovAutomaton<Type, ValueType>::close() {
                 // Create the new transition matrix by deleting all Markovian transitions from probabilistic states.
-                storm::dd::Add<Type, ValueType> newTransitionMatrix = this->probabilisticStates.ite(this->getTransitionMatrix() * (!this->getMarkovianMarker()).template toAdd<ValueType>(), this->getTransitionMatrix());
+                storm::dd::Add<Type, ValueType> newTransitionMatrix = this->probabilisticStates.ite(this->getTransitionMatrix() * (!this->getMarkovianMarker()).template toAdd<ValueType>(), this->getTransitionMatrix() * this->getExitRateVector());
                 
                 return MarkovAutomaton<Type, ValueType>(this->getManagerAsSharedPointer(), this->getMarkovianMarker(), this->getReachableStates(), this->getInitialStates(), this->getDeadlockStates(), newTransitionMatrix, this->getRowVariables(), this->getRowExpressionAdapter(), this->getColumnVariables(), this->getRowColumnMetaVariablePairs(), this->getNondeterminismVariables(), this->getLabelToExpressionMap(), this->getRewardModels());
             }
@@ -115,11 +115,29 @@ namespace storm {
                 return this->exitRateVector;
             }
             
+            template<storm::dd::DdType Type, typename ValueType>
+            template<typename NewValueType>
+            std::shared_ptr<MarkovAutomaton<Type, NewValueType>> MarkovAutomaton<Type, ValueType>::toValueType() const {
+                typedef typename NondeterministicModel<Type, NewValueType>::RewardModelType NewRewardModelType;
+                std::unordered_map<std::string, NewRewardModelType> newRewardModels;
+                
+                for (auto const& e : this->getRewardModels()) {
+                    newRewardModels.emplace(e.first, e.second.template toValueType<NewValueType>());
+                }
+                
+                auto newLabelToBddMap = this->getLabelToBddMap();
+                newLabelToBddMap.erase("init");
+                newLabelToBddMap.erase("deadlock");
+                
+                return std::make_shared<MarkovAutomaton<Type, NewValueType>>(this->getManagerAsSharedPointer(), this->getMarkovianMarker(), this->getReachableStates(), this->getInitialStates(), this->getDeadlockStates(), this->getTransitionMatrix().template toValueType<NewValueType>(), this->getRowVariables(), this->getColumnVariables(), this->getRowColumnMetaVariablePairs(), this->getNondeterminismVariables(), newLabelToBddMap, newRewardModels);
+            }
+            
             // Explicitly instantiate the template class.
             template class MarkovAutomaton<storm::dd::DdType::CUDD, double>;
             template class MarkovAutomaton<storm::dd::DdType::Sylvan, double>;
             
             template class MarkovAutomaton<storm::dd::DdType::Sylvan, storm::RationalNumber>;
+            template std::shared_ptr<MarkovAutomaton<storm::dd::DdType::Sylvan, double>> MarkovAutomaton<storm::dd::DdType::Sylvan, storm::RationalNumber>::toValueType() const;
             template class MarkovAutomaton<storm::dd::DdType::Sylvan, storm::RationalFunction>;
             
         } // namespace symbolic

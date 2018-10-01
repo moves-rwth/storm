@@ -10,12 +10,20 @@ namespace storm {
         Location::Location(std::string const& name, std::vector<Assignment> const& transientAssignments) : name(name), assignments(transientAssignments) {
             // Intentionally left empty.
         }
+
+        Location::Location(std::string const& name, OrderedAssignments const& assignments) : name(name), assignments(assignments) {
+            // Intentionally left empty.
+        }
         
         std::string const& Location::getName() const {
             return name;
         }
         
         OrderedAssignments const& Location::getAssignments() const {
+            return assignments;
+        }
+        
+        OrderedAssignments& Location::getAssignments() {
             return assignments;
         }
         

@@ -5,7 +5,6 @@
 
 #include "storm/adapters/GmmxxAdapter.h"
 
-#include "storm/solver/GmmxxMultiplier.h"
 #include "storm/environment/solver/GmmxxSolverEnvironment.h"
 
 #include "storm/utility/vector.h"
@@ -66,7 +65,11 @@ namespace storm {
                 }
                 
                 // Prepare an iteration object that determines the accuracy and the maximum number of iterations.
-                gmm::iteration iter(storm::utility::convertNumber<ValueType>(env.solver().gmmxx().getPrecision()), 0, env.solver().gmmxx().getMaximalNumberOfIterations());
+                gmm::size_type maxIter = std::numeric_limits<gmm::size_type>::max();
+                if (env.solver().gmmxx().getMaximalNumberOfIterations() < static_cast<uint64_t>(maxIter)) {
+                    maxIter = env.solver().gmmxx().getMaximalNumberOfIterations();
+                }
+                gmm::iteration iter(storm::utility::convertNumber<ValueType>(env.solver().gmmxx().getPrecision()), 0, maxIter);
                 
                 // Invoke gmm with the corresponding settings
                 if (method == GmmxxLinearEquationSolverMethod::Bicgstab) {
@@ -104,45 +107,16 @@ namespace storm {
                 
                 // Check if the solver converged and issue a warning otherwise.
                 if (iter.converged()) {
-                    STORM_LOG_INFO("Iterative solver converged after " << iter.get_iteration() << " iterations.");
+                    STORM_LOG_INFO("Iterative solver converged after " << iter.get_iteration() << " iteration(s).");
                     return true;
                 } else {
-                    STORM_LOG_WARN("Iterative solver did not converge.");
+                    STORM_LOG_WARN("Iterative solver did not converge within " << iter.get_iteration() << " iteration(s).");
                     return false;
                 }
             }
             
             STORM_LOG_ERROR("Selected method is not available");
             return false;
-        }
-        
-        template<typename ValueType>
-        void GmmxxLinearEquationSolver<ValueType>::multiply(std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<ValueType>& result) const {
-            multiplier.multAdd(*gmmxxA, x, b, result);
-            
-            if (!this->isCachingEnabled()) {
-                clearCache();
-            }
-        }
-        
-        template<typename ValueType>
-        void GmmxxLinearEquationSolver<ValueType>::multiplyAndReduce(OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<ValueType>& result, std::vector<uint_fast64_t>* choices) const {
-            multiplier.multAddReduce(dir, rowGroupIndices, *gmmxxA, x, b, result, choices);
-        }
-        
-        template<typename ValueType>
-        bool GmmxxLinearEquationSolver<ValueType>::supportsGaussSeidelMultiplication() const {
-            return true;
-        }
-        
-        template<typename ValueType>
-        void GmmxxLinearEquationSolver<ValueType>::multiplyGaussSeidel(std::vector<ValueType>& x, std::vector<ValueType> const* b) const {
-            multiplier.multAddGaussSeidelBackward(*gmmxxA, x, b);
-        }
-
-        template<typename ValueType>
-        void GmmxxLinearEquationSolver<ValueType>::multiplyAndReduceGaussSeidel(OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<uint64_t>* choices) const {
-            multiplier.multAddReduceGaussSeidel(dir, rowGroupIndices, *gmmxxA, x, b, choices);
         }
         
         template<typename ValueType>
@@ -168,7 +142,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> GmmxxLinearEquationSolverFactory<ValueType>::create(Environment const& env, LinearEquationSolverTask const& task) const {
+        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> GmmxxLinearEquationSolverFactory<ValueType>::create(Environment const& env) const {
             return std::make_unique<storm::solver::GmmxxLinearEquationSolver<ValueType>>();
         }
         

@@ -25,7 +25,10 @@ namespace storm {
             
             template <storm::dd::DdType Type>
             storm::dd::Bdd<Type> computeReachableStates(storm::dd::Bdd<Type> const& initialStates, storm::dd::Bdd<Type> const& transitions, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables);
-            
+
+            template <storm::dd::DdType Type>
+            storm::dd::Bdd<Type> computeBackwardsReachableStates(storm::dd::Bdd<Type> const& initialStates, storm::dd::Bdd<Type> const& constraintStates, storm::dd::Bdd<Type> const& transitions, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables);
+
             template <storm::dd::DdType Type, typename ValueType>
             storm::dd::Add<Type, ValueType> getRowColumnDiagonal(storm::dd::DdManager<Type> const& ddManager, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs);
 

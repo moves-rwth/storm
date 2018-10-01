@@ -21,6 +21,7 @@ namespace storm {
             const std::string BisimulationSettings::reuseOptionName = "reuse";
             const std::string BisimulationSettings::initialPartitionOptionName = "init";
             const std::string BisimulationSettings::refinementModeOptionName = "refine";
+            const std::string BisimulationSettings::exactArithmeticDdOptionName = "ddexact";
             
             BisimulationSettings::BisimulationSettings() : ModuleSettings(moduleName) {
                 std::vector<std::string> types = { "strong", "weak" };
@@ -31,6 +32,7 @@ namespace storm {
                 
                 this->addOption(storm::settings::OptionBuilder(moduleName, representativeOptionName, false, "Sets whether to use representatives in the quotient rather than block numbers.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, originalVariablesOptionName, false, "Sets whether to use the original variables in the quotient rather than the block variables.").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, exactArithmeticDdOptionName, false, "Sets whether to use exact arithmetic in dd-based bisimulation.").build());
 
                 std::vector<std::string> signatureModes = { "eager", "lazy" };
                 this->addOption(storm::settings::OptionBuilder(moduleName, signatureModeOptionName, false, "Sets the signature computation mode.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("mode", "The mode to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(signatureModes)).setDefaultValueString("eager").build()).build());
@@ -82,6 +84,10 @@ namespace storm {
             
             bool BisimulationSettings::isUseOriginalVariablesSet() const {
                 return this->getOption(originalVariablesOptionName).getHasOptionBeenSet();
+            }
+            
+            bool BisimulationSettings::useExactArithmeticInDdBisimulation() const {
+                return this->getOption(exactArithmeticDdOptionName).getHasOptionBeenSet();
             }
             
             storm::dd::bisimulation::SignatureMode BisimulationSettings::getSignatureMode() const {

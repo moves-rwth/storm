@@ -17,7 +17,7 @@ set_target_properties(storm-dft PROPERTIES DEFINE_SYMBOL "")
 list(APPEND STORM_TARGETS storm-dft)
 set(STORM_TARGETS ${STORM_TARGETS} PARENT_SCOPE)
 
-target_link_libraries(storm-dft PUBLIC storm storm-gspn ${STORM_DFT_LINK_LIBRARIES})
+target_link_libraries(storm-dft PUBLIC storm storm-gspn storm-parsers ${STORM_DFT_LINK_LIBRARIES})
 
 # Install storm headers to include directory.
 foreach(HEADER ${STORM_DFT_HEADERS})
@@ -36,5 +36,5 @@ add_custom_target(copy_storm_dft_headers DEPENDS ${STORM_DFT_OUTPUT_HEADERS} ${S
 add_dependencies(storm-dft copy_storm_dft_headers)
 
 # installation
-install(TARGETS storm-dft RUNTIME DESTINATION bin LIBRARY DESTINATION lib OPTIONAL)
+install(TARGETS storm-dft EXPORT storm_Targets RUNTIME DESTINATION bin LIBRARY DESTINATION lib OPTIONAL)
 

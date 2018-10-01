@@ -45,10 +45,24 @@ namespace storm {
             return a == zero<ValueType>();
         }
         
+        template<typename ValueType>
+        bool isNan(ValueType const&) {
+            return false;
+        }
+        
+        template<>
+        bool isNan(double const& value) {
+            return isnan(value);
+        }
+        
         bool isAlmostZero(double const& a) {
             return a < 1e-12 && a > -1e-12;
         }
-
+        
+        bool isAlmostOne(double const& a) {
+            return a < (1.0 + 1e-12) && a > (1.0 - 1e-12);
+        }
+        
         template<typename ValueType>
         bool isConstant(ValueType const&) {
             return true;
@@ -159,13 +173,26 @@ namespace storm {
         
         template<typename ValueType>
         ValueType minimum(std::vector<ValueType> const& values) {
-            return minmax(values).first;
+            assert(!values.empty());
+            ValueType min = values.front();
+            for (auto const& vt : values) {
+                if (vt < min) {
+                    min = vt;
+                }
+            }
+            return min;
         }
-        
         
         template<typename ValueType>
         ValueType maximum(std::vector<ValueType> const& values) {
-            return minmax(values).second;
+            assert(!values.empty());
+            ValueType max = values.front();
+            for (auto const& vt : values) {
+                if (vt > max) {
+                    max = vt;
+                }
+            }
+            return max;
         }
         
         template<typename K, typename ValueType>
@@ -307,7 +334,12 @@ namespace storm {
         uint_fast64_t convertNumber(ClnRationalNumber const& number) {
             return carl::toInt<carl::uint>(number);
         }
-        
+
+        template<>
+        int_fast64_t convertNumber(ClnRationalNumber const& number) {
+            return carl::toInt<carl::sint>(number);
+        }
+
         template<>
         ClnRationalNumber convertNumber(double const& number) {
             return carl::rationalize<ClnRationalNumber>(number);
@@ -499,7 +531,12 @@ namespace storm {
         uint_fast64_t convertNumber(GmpRationalNumber const& number){
             return carl::toInt<carl::uint>(number);
         }
-        
+
+        template<>
+        int_fast64_t convertNumber(GmpRationalNumber const& number){
+            return carl::toInt<carl::sint>(number);
+        }
+
         template<>
         GmpRationalNumber convertNumber(double const& number){
             return carl::rationalize<GmpRationalNumber>(number);
@@ -892,7 +929,7 @@ namespace storm {
         template bool isZero(int const& value);
         template bool isConstant(int const& value);
         template bool isInfinity(int const& value);
-        
+
         // uint32_t
         template uint32_t one();
         template uint32_t zero();
@@ -901,7 +938,7 @@ namespace storm {
         template bool isZero(uint32_t const& value);
         template bool isConstant(uint32_t const& value);
         template bool isInfinity(uint32_t const& value);
-        
+
         // storm::storage::sparse::state_type
         template storm::storage::sparse::state_type one();
         template storm::storage::sparse::state_type zero();
@@ -910,11 +947,11 @@ namespace storm {
         template bool isZero(storm::storage::sparse::state_type const& value);
         template bool isConstant(storm::storage::sparse::state_type const& value);
         template bool isInfinity(storm::storage::sparse::state_type const& value);
-        
+
         // other instantiations
         template unsigned long convertNumber(long const&);
         template double convertNumber(long const&);
-        
+
 #if defined(STORM_HAVE_CLN)
         // Instantiations for (CLN) rational number.
         template storm::ClnRationalNumber one();
@@ -923,6 +960,7 @@ namespace storm {
         template bool isZero(NumberTraits<storm::ClnRationalNumber>::IntegerType const& value);
         template bool isConstant(storm::ClnRationalNumber const& value);
         template bool isInfinity(storm::ClnRationalNumber const& value);
+        template bool isNan(storm::ClnRationalNumber const& value);
         template storm::NumberTraits<ClnRationalNumber>::IntegerType convertNumber(storm::NumberTraits<ClnRationalNumber>::IntegerType const& number);
         template storm::ClnRationalNumber convertNumber(storm::ClnRationalNumber const& number);
         template storm::ClnRationalNumber simplify(storm::ClnRationalNumber value);
@@ -938,7 +976,7 @@ namespace storm {
         template storm::ClnRationalNumber min(storm::ClnRationalNumber const& first, storm::ClnRationalNumber const& second);
         template std::string to_string(storm::ClnRationalNumber const& value);
 #endif
-        
+
 #if defined(STORM_HAVE_GMP)
         // Instantiations for (GMP) rational number.
         template storm::GmpRationalNumber one();
@@ -947,6 +985,7 @@ namespace storm {
         template bool isZero(NumberTraits<storm::GmpRationalNumber>::IntegerType const& value);
         template bool isConstant(storm::GmpRationalNumber const& value);
         template bool isInfinity(storm::GmpRationalNumber const& value);
+        template bool isNan(storm::GmpRationalNumber const& value);
         template storm::NumberTraits<GmpRationalNumber>::IntegerType convertNumber(storm::NumberTraits<GmpRationalNumber>::IntegerType const& number);
         template storm::GmpRationalNumber convertNumber(storm::GmpRationalNumber const& number);
         template storm::GmpRationalNumber simplify(storm::GmpRationalNumber value);
@@ -961,10 +1000,10 @@ namespace storm {
         template storm::GmpRationalNumber min(storm::GmpRationalNumber const& first, storm::GmpRationalNumber const& second);
         template std::string to_string(storm::GmpRationalNumber const& value);
 #endif
-        
+
 #if defined(STORM_HAVE_CARL) && defined(STORM_HAVE_GMP) && defined(STORM_HAVE_CLN)
 #endif
-        
+
 #ifdef STORM_HAVE_CARL
         // Instantiations for rational function.
         template RationalFunction one();

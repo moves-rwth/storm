@@ -1,6 +1,9 @@
 #pragma once
 
+#include <string>
+
 #include "storm/solver/LinearEquationSolverRequirements.h"
+#include "storm/solver/SolverRequirement.h"
 
 namespace storm {
     namespace solver {
@@ -20,19 +23,21 @@ namespace storm {
                 UpperBounds
             };
             
+            // The type of a requirement.
+            
             MinMaxLinearEquationSolverRequirements(LinearEquationSolverRequirements const& linearEquationSolverRequirements = LinearEquationSolverRequirements());
             
-            MinMaxLinearEquationSolverRequirements& requireNoEndComponents();
-            MinMaxLinearEquationSolverRequirements& requireValidInitialScheduler();
-            MinMaxLinearEquationSolverRequirements& requireLowerBounds();
-            MinMaxLinearEquationSolverRequirements& requireUpperBounds();
-            MinMaxLinearEquationSolverRequirements& requireBounds();
+            MinMaxLinearEquationSolverRequirements& requireNoEndComponents(bool critical = true);
+            MinMaxLinearEquationSolverRequirements& requireValidInitialScheduler(bool critical = true);
+            MinMaxLinearEquationSolverRequirements& requireLowerBounds(bool critical = true);
+            MinMaxLinearEquationSolverRequirements& requireUpperBounds(bool critical = true);
+            MinMaxLinearEquationSolverRequirements& requireBounds(bool critical = true);
 
-            bool requiresNoEndComponents() const;
-            bool requiresValidInitialScheduler() const;
-            bool requiresLowerBounds() const;
-            bool requiresUpperBounds() const;
-            bool requires(Element const& element) const;
+            SolverRequirement const& noEndComponents() const;
+            SolverRequirement const& validInitialScheduler() const;
+            SolverRequirement const& lowerBounds() const;
+            SolverRequirement const& upperBounds() const;
+            SolverRequirement const& get(Element const& element) const;
             
             void clearNoEndComponents();
             void clearValidInitialScheduler();
@@ -40,13 +45,19 @@ namespace storm {
             void clearUpperBounds();
             void clearBounds();
             
-            bool empty() const;
+            bool hasEnabledRequirement() const;
+            bool hasEnabledCriticalRequirement() const;
+            
+            /*!
+             * Returns a string that enumerates the enabled requirements
+             */
+            std::string getEnabledRequirementsAsString() const;
             
         private:
-            bool noEndComponents;
-            bool validInitialScheduler;
-            bool lowerBounds;
-            bool upperBounds;
+            SolverRequirement noEndComponentsRequirement;
+            SolverRequirement validInitialSchedulerRequirement;
+            SolverRequirement lowerBoundsRequirement;
+            SolverRequirement upperBoundsRequirement;
         };
         
     }

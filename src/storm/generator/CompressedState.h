@@ -37,8 +37,27 @@ namespace storm {
          */
         storm::expressions::SimpleValuation unpackStateIntoValuation(CompressedState const& state, VariableInformation const& variableInformation, storm::expressions::ExpressionManager const& manager);
 
+        /*!
+         *
+         * @param variableInformation
+         * @return
+         */
         storm::storage::BitVector computeObservabilityMask(VariableInformation const& variableInformation);
+        /*!
+         *
+         * @param state
+         * @param observabilityMap
+         * @param mask
+         * @return
+         */
         uint32_t unpackStateToObservabilityClass(CompressedState const& state, std::unordered_map<storm::storage::BitVector,uint32_t>& observabilityMap, storm::storage::BitVector const& mask);
+        /*!
+         *
+         * @param varInfo
+         * @param roundTo64Bit
+         * @return
+         */
+        CompressedState createOutOfBoundsState(VariableInformation const& varInfo, bool roundTo64Bit = true);
 
     }
 }
