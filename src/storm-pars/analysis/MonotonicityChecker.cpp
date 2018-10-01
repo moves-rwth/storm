@@ -12,7 +12,7 @@ namespace storm {
         std::map<storm::analysis::Lattice*, std::map<carl::Variable, std::pair<bool, bool>>> MonotonicityChecker<ValueType>::checkMonotonicity(std::map<storm::analysis::Lattice*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> map, storm::storage::SparseMatrix<ValueType> matrix) {
             auto i = 0;
             std::map<storm::analysis::Lattice*, std::map<carl::Variable, std::pair<bool, bool>>> result;
-            for (auto itr = map.begin(); itr != map.end(); ++itr) {
+            for (auto itr = map.begin(); i < map.size() && itr != map.end(); ++itr) {
                 auto lattice = itr->first;
                 auto assumptions = itr->second;
                 std::ofstream myfile;
@@ -53,17 +53,18 @@ namespace storm {
                         STORM_PRINT("  - Do not know if monotone decreasing in: " << itr2->first << std::endl);
                     }
                 }
+                result.insert(std::pair<storm::analysis::Lattice *, std::map<carl::Variable, std::pair<bool, bool>>>(
+                                        lattice, varsMonotone));
                 ++i;
-                result.insert(std::pair<storm::analysis::Lattice*, std::map<carl::Variable, std::pair<bool, bool>>>(lattice, varsMonotone));
             }
             return result;
         }
 
         template <typename ValueType>
-        std::map<carl::Variable, std::pair<bool, bool>> MonotonicityChecker<ValueType>::analyseMonotonicity(uint_fast64_t i, storm::analysis::Lattice* lattice, storm::storage::SparseMatrix<ValueType> matrix) {
+        std::map<carl::Variable, std::pair<bool, bool>> MonotonicityChecker<ValueType>::analyseMonotonicity(uint_fast64_t j, storm::analysis::Lattice* lattice, storm::storage::SparseMatrix<ValueType> matrix) {
             std::map<carl::Variable, std::pair<bool, bool>> varsMonotone;
             std::ofstream myfile;
-            std::string filename = "mc" + std::to_string(i) + ".dot";
+            std::string filename = "mc" + std::to_string(j) + ".dot";
             myfile.open (filename);
             myfile << "digraph \"MC\" {" << std::endl;
             myfile << "\t" << "node [shape=ellipse]" << std::endl;
@@ -76,7 +77,6 @@ namespace storm {
             for (uint_fast64_t i = 0; i < matrix.getColumnCount(); ++i) {
                 // go over all rows
                 auto row = matrix.getRow(i);
-
                 auto first = (*row.begin());
                 if (first.getValue() != ValueType(1)) {
                     std::map<uint_fast64_t, ValueType> transitions;
@@ -88,7 +88,8 @@ namespace storm {
                     std::string color = "";
                     auto val = first.getValue();
                     auto vars = val.gatherVariables();
-                    for (auto itr = vars.begin(); itr != vars.end(); ++itr) { if (varsMonotone.find(*itr) == varsMonotone.end()) {
+                    for (auto itr = vars.begin(); itr != vars.end(); ++itr) {
+                        if (varsMonotone.find(*itr) == varsMonotone.end()) {
                             varsMonotone[*itr].first = true;
                             varsMonotone[*itr].second = true;
                         }
@@ -120,7 +121,6 @@ namespace storm {
                                 }
                             }
                         }
-
 
                         if ((value->first != old.first) && (value->second != old.second)) {
                             color = "color = red, ";
