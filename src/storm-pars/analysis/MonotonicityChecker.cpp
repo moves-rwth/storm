@@ -41,20 +41,25 @@ namespace storm {
                 }
 
                 std::map<carl::Variable, std::pair<bool, bool>> varsMonotone = analyseMonotonicity(i, lattice, matrix);
-                for (auto itr2 = varsMonotone.begin(); itr2 != varsMonotone.end(); ++itr2) {
-                    if (itr2->second.first) {
-                        STORM_PRINT("  - Monotone increasing in: " << itr2->first << std::endl);
-                    } else {
-                        STORM_PRINT("  - Do not know if monotone increasing in: " << itr2->first << std::endl);
+                if (varsMonotone.size() == 0) {
+                    STORM_PRINT("Result is constant" << std::endl);
+                } else {
+                    for (auto itr2 = varsMonotone.begin(); itr2 != varsMonotone.end(); ++itr2) {
+                        if (itr2->second.first) {
+                            STORM_PRINT("  - Monotone increasing in: " << itr2->first << std::endl);
+                        } else {
+                            STORM_PRINT("  - Do not know if monotone increasing in: " << itr2->first << std::endl);
+                        }
+                        if (itr2->second.second) {
+                            STORM_PRINT("  - Monotone decreasing in: " << itr2->first << std::endl);
+                        } else {
+                            STORM_PRINT("  - Do not know if monotone decreasing in: " << itr2->first << std::endl);
+                        }
                     }
-                    if (itr2->second.second) {
-                        STORM_PRINT("  - Monotone decreasing in: " << itr2->first << std::endl);
-                    } else {
-                        STORM_PRINT("  - Do not know if monotone decreasing in: " << itr2->first << std::endl);
-                    }
+                    result.insert(
+                            std::pair<storm::analysis::Lattice *, std::map<carl::Variable, std::pair<bool, bool>>>(
+                                    lattice, varsMonotone));
                 }
-                result.insert(std::pair<storm::analysis::Lattice *, std::map<carl::Variable, std::pair<bool, bool>>>(
-                                        lattice, varsMonotone));
                 ++i;
             }
             return result;
