@@ -1,14 +1,14 @@
 { stdenv, fetchFromGitHub, autoconf, pkgconfig, cmake
-, cln, ginac, gmp, boost, eigen3_3, python2, googletest }:
+, cln, ginac, gmp, boost, eigen3_3, python3, googletest }:
 
 let
   gtest-cmake = ./gtest.cmake;
 
 in stdenv.mkDerivation rec {
   name = "carl-${version}";
-  version = "17.12";
+  version = "18.06";
 
-  buildInputs = [ cln ginac gmp boost python2 googletest ];
+  buildInputs = [ cln ginac gmp boost python3 googletest ];
 
   nativeBuildInputs = [ autoconf pkgconfig cmake ];
 
@@ -18,7 +18,7 @@ in stdenv.mkDerivation rec {
     owner = "smtrat";
     repo = "carl";
     rev = version;
-    sha256 = "1299i0b6w4v6s2a2kci3jrpdq1lpaw4j3p34gx6gmp9g3n1yp6xq";
+    sha256 = "0lb4pbs3bwpi4z4bnh5113s9c4fzq7c8iwa0952j2jrhxf4kcb8q";
   };
 
   enableParallelBuilding = true;
@@ -32,6 +32,7 @@ in stdenv.mkDerivation rec {
     "-DGINAC_INCLUDE_DIR=${ginac}/include/ginac"
     "-DGINAC_LIBRARY=${ginac}/lib/libginac.so"
     "-DGTEST_FOUND=on"
+    "-DGTEST_VERSION=${googletest.version}"
     "-DGTEST_MAIN_LIBRARY=${googletest}/lib/libgtest_main.a"
     "-DGTEST_LIBRARY=${googletest}/lib/libgtest.a"
   ];
@@ -39,7 +40,7 @@ in stdenv.mkDerivation rec {
   postPatch = ''
     cp ${gtest-cmake} resources/gtest.cmake
     substituteInPlace resources/gtest.cmake --subst-var-by googletest ${googletest}
-    sed -e '/set(GTEST/i include(resources/gtest.cmake)' -i resources/resources.cmake
+    sed -e '/print_resource_info("GTest"/i include(resources/gtest.cmake)' -i resources/resources.cmake
   '';
 
   meta = with stdenv.lib; {
