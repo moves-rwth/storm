@@ -54,6 +54,10 @@ namespace storm {
                             added = true;
                         }
                     }
+                    if (!added) {
+                        // Add one of the states of the scc
+                        initialMiddleStates.set(*(states.begin()));
+                    }
                 }
             }
         }
@@ -111,6 +115,7 @@ namespace storm {
 
         template <typename ValueType>
         std::tuple<storm::analysis::Lattice*, uint_fast64_t, uint_fast64_t> LatticeExtender<ValueType>::extendLattice(storm::analysis::Lattice* lattice, std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption) {
+            // TODO: split up
             auto numberOfStates = this->model->getNumberOfStates();
             // First handle assumption
             if (assumption != nullptr) {
@@ -206,6 +211,37 @@ namespace storm {
                             }
                         }
                         lattice->addBetween(stateNumber, lattice->getNode(highest), lattice->getNode(lowest));
+                    }
+
+                    bool checkOneSuccLeft = seenStates[stateNumber] && successors.getNumberOfSetBits() <= 2;
+                    bool helper = true;
+                    for (auto succIndex = successors.getNextSetIndex(0); (check || checkOneSuccLeft) && succIndex != numberOfStates; succIndex = successors.getNextSetIndex(++succIndex)) {
+                        checkOneSuccLeft &= !(!helper && !seenStates[succIndex]);
+                        helper &= seenStates[succIndex];
+                    }
+
+                    checkOneSuccLeft &= !helper;
+
+
+                    if (checkOneSuccLeft) {
+                        // at most 2 successors
+                        auto succ1 = successors.getNextSetIndex(0);
+                        auto succ2 = successors.getNextSetIndex(succ1+1);
+                        // Otherwise there is just one transition, this is already handled above
+                        if (succ2 != numberOfStates) {
+                            auto nodeCurr = lattice->getNode(stateNumber);
+                            if (!seenStates[succ1]) {
+                                std::swap(succ1, succ2);
+                            }
+                            assert (seenStates[succ1]);
+                            auto nodeSucc = lattice->getNode(succ1);
+                            auto compare = lattice->compare(stateNumber, succ1);
+                            if (compare == storm::analysis::Lattice::ABOVE) {
+                                lattice->addBetween(succ2, lattice->getTop(), lattice->getNode(stateNumber));
+                            } else if (compare == storm::analysis::Lattice::BELOW) {
+                                lattice->addBetween(succ2, lattice->getNode(stateNumber), lattice->getBottom());
+                            }
+                        }
                     }
                 }
             }
