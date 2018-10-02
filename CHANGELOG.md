@@ -12,6 +12,7 @@ Version 1.2.x
 - Added support for expected time properties for discrete time models
 - Bug fix in the parser for DRN (MDPs and MAs might have been affected).
 - Several bug fixes related to jani
+- New binary `storm-pomdp` that handles the translation of POMDPs to pMCs.
 - `storm-gspn`: Improved .pnpro parser
 - `storm-gspn`: Added support for single/infinite/k-server semantics for GSPNs given in the .pnpro format
 - `storm-gspn`: Added option to set a global capacity for all places
