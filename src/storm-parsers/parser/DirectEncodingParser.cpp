@@ -105,10 +105,12 @@ namespace storm {
         std::shared_ptr<storm::storage::sparse::ModelComponents<ValueType, RewardModelType>> DirectEncodingParser<ValueType, RewardModelType>::parseStates(std::istream& file, storm::models::ModelType type, size_t stateSize, ValueParser<ValueType> const& valueParser, std::vector<std::string> const& rewardModelNames) {
             // Initialize
             auto modelComponents = std::make_shared<storm::storage::sparse::ModelComponents<ValueType, RewardModelType>>();
-            bool nonDeterministic = (type == storm::models::ModelType::Mdp || type == storm::models::ModelType::MarkovAutomaton);
+            bool nonDeterministic = (type == storm::models::ModelType::Mdp || type == storm::models::ModelType::MarkovAutomaton || type == storm::models::ModelType::Pomdp);
             bool continousTime = (type == storm::models::ModelType::Ctmc || type == storm::models::ModelType::MarkovAutomaton);
             storm::storage::SparseMatrixBuilder<ValueType> builder = storm::storage::SparseMatrixBuilder<ValueType>(0, 0, 0, false, nonDeterministic, 0);
             modelComponents->stateLabeling = storm::models::sparse::StateLabeling(stateSize);
+            modelComponents->observabilityClasses = std::vector<uint32_t>();
+            modelComponents->observabilityClasses->resize(stateSize);
             std::vector<std::vector<ValueType>> stateRewards;
             if (continousTime) {
                 modelComponents->exitRates = std::vector<ValueType>(stateSize);
@@ -193,7 +195,21 @@ namespace storm {
                             (*stateRewardsIt)[state] = valueParser.parseValue(rew);
                             ++stateRewardsIt;
                         }
+
                         line = line.substr(posEndReward+1);
+                    }
+
+
+                    if (type == storm::models::ModelType::Pomdp) {
+                        if (boost::starts_with(line, "{")) {
+                            size_t posEndObservation = line.find("}");
+                            std::string observation = line.substr(1, posEndObservation-1);
+                            STORM_LOG_TRACE("State observation " << observation);
+                            modelComponents->observabilityClasses.get()[state] = std::stoi(observation);
+                            line = line.substr(posEndObservation+1);
+                        } else {
+                            STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Expected an observation for state " << state << ".");
+                        }
                     }
 
                     // Parse labels

@@ -179,10 +179,20 @@ namespace storm {
         }
 
         template<typename ValueType, typename StateType>
+        uint32_t NextStateGenerator<ValueType, StateType>::observabilityClass(CompressedState const &state) const {
+            if (this->mask.size() == 0) {
+                this->mask = computeObservabilityMask(variableInformation);
+            }
+
+            return unpackStateToObservabilityClass(state, observabilityMap, mask);
+        }
+
+        template<typename ValueType, typename StateType>
         void NextStateGenerator<ValueType, StateType>::remapStateIds(std::function<StateType(StateType const&)> const& remapping) {
             if (overlappingGuardStates != boost::none) {
                 STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Remapping of Ids during model building is not supported for overlapping guard statements.");
             }
+            // Nothing to be done.
         }
 
         template class NextStateGenerator<double>;

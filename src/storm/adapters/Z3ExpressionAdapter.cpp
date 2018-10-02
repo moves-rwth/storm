@@ -227,6 +227,9 @@ namespace storm {
                         result = leftResult * rightResult;
                         break;
 					case storm::expressions::BinaryNumericalFunctionExpression::OperatorType::Divide:
+                        if (leftResult.is_int() && rightResult.is_int()) {
+                            leftResult = z3::expr(context, Z3_mk_int2real(context, leftResult));
+                        }
                         result = leftResult / rightResult;
                         break;
 					case storm::expressions::BinaryNumericalFunctionExpression::OperatorType::Min:
@@ -363,7 +366,7 @@ namespace storm {
 					case storm::expressions::UnaryNumericalFunctionExpression::OperatorType::Ceil:{
                         storm::expressions::Variable freshAuxiliaryVariable = manager.declareFreshVariable(manager.getIntegerType(), true);
                         z3::expr ceilVariable = context.int_const(freshAuxiliaryVariable.getName().c_str());
-						additionalAssertions.push_back(z3::expr(context, Z3_mk_int2real(context, ceilVariable)) - 1 <= result && result < z3::expr(context, Z3_mk_int2real(context, ceilVariable)));
+						additionalAssertions.push_back(z3::expr(context, Z3_mk_int2real(context, ceilVariable)) - 1 < result && result <= z3::expr(context, Z3_mk_int2real(context, ceilVariable)));
 						result = ceilVariable;
                         break;
 					}

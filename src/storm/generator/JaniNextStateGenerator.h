@@ -35,6 +35,7 @@ namespace storm {
             virtual ModelType getModelType() const override;
             virtual bool isDeterministicModel() const override;
             virtual bool isDiscreteTimeModel() const override;
+            virtual bool isPartiallyObservable() const override;
             virtual std::vector<StateType> getInitialStates(StateToIdCallback const& stateToIdCallback) override;
             
             virtual StateBehavior<ValueType, StateType> expand(StateToIdCallback const& stateToIdCallback) override;

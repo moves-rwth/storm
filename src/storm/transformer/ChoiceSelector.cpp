@@ -1,5 +1,8 @@
+#include <storm/exceptions/NotImplementedException.h>
 #include "storm/transformer/ChoiceSelector.h"
 #include "storm/models/sparse/Mdp.h"
+
+#include "storm/models/sparse/Pomdp.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 
 #include "storm/exceptions/UnexpectedException.h"
@@ -21,11 +24,15 @@ namespace  storm {
             if (inputModel.hasChoiceOrigins()) {
                 newComponents.choiceOrigins = inputModel.getChoiceOrigins()->selectChoices(enabledActions);
             }
+
             if (inputModel.isOfType(storm::models::ModelType::MarkovAutomaton)) {
                 auto const& ma = *inputModel.template as<storm::models::sparse::MarkovAutomaton<ValueType, RewardModelType>>();
                 newComponents.markovianStates = ma.getMarkovianStates();
                 newComponents.exitRates = ma.getExitRates();
                 return std::make_shared<storm::models::sparse::MarkovAutomaton<ValueType, RewardModelType>>(std::move(newComponents));
+            } else if(inputModel.getType() == storm::models::ModelType::Pomdp) {
+                newComponents.observabilityClasses = static_cast<storm::models::sparse::Pomdp<ValueType,RewardModelType> const&>(inputModel).getObservations();
+                return std::make_shared<storm::models::sparse::Pomdp<ValueType, RewardModelType>>(std::move(newComponents));
             } else {
                 STORM_LOG_THROW(inputModel.isOfType(storm::models::ModelType::Mdp), storm::exceptions::UnexpectedException, "Unexpected model type for choice selector.");
                 return std::make_shared<storm::models::sparse::Mdp<ValueType, RewardModelType>>(std::move(newComponents));
@@ -33,5 +40,6 @@ namespace  storm {
         }
 
         template class ChoiceSelector<double>;
+        template class ChoiceSelector<storm::RationalNumber>;
     }
 }

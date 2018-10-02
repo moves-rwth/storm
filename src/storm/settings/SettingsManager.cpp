@@ -249,7 +249,10 @@ namespace storm {
         
         void SettingsManager::printHelpForModule(std::string const& moduleName, uint_fast64_t maxLength) const {
             auto moduleIterator = moduleOptions.find(moduleName);
-            STORM_LOG_THROW(moduleIterator != moduleOptions.end(), storm::exceptions::IllegalFunctionCallException, "Cannot print help for unknown module '" << moduleName << "'.");
+            if(moduleIterator == this->moduleOptions.end()) {
+                return;
+            }
+            //STORM_LOG_THROW(moduleIterator != moduleOptions.end(), storm::exceptions::IllegalFunctionCallException, "Cannot print help for unknown module '" << moduleName << "'.");
             STORM_PRINT("##### Module '" << moduleName << "' " << std::string(std::min(maxLength, maxLength - moduleName.length() - 16), '#') << std::endl);
             
             // Save the flags for std::cout so we can manipulate them and be sure they will be restored as soon as this

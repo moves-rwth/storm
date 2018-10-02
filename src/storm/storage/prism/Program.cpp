@@ -187,11 +187,16 @@ namespace storm {
         }
         
         bool Program::isDiscreteTimeModel() const {
-            return modelType == ModelType::DTMC || modelType == ModelType::MDP;
+            return modelType == ModelType::DTMC || modelType == ModelType::MDP || modelType == ModelType::POMDP;
         }
         
         bool Program::isDeterministicModel() const {
             return modelType == ModelType::DTMC || modelType == ModelType::CTMC;
+        }
+
+
+        bool Program::isPartiallyObservable() const {
+            return modelType == ModelType::POMDP;
         }
 
         size_t Program::getNumberOfCommands() const {
@@ -1844,6 +1849,7 @@ namespace storm {
                 case Program::ModelType::MDP: out << "mdp"; break;
                 case Program::ModelType::CTMDP: out << "ctmdp"; break;
                 case Program::ModelType::MA: out << "ma"; break;
+                case Program::ModelType::POMDP: out << "pomdp"; break;
             }
             return out;
         }

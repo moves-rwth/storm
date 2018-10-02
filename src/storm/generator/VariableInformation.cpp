@@ -18,15 +18,15 @@
 namespace storm {
     namespace generator {
         
-        BooleanVariableInformation::BooleanVariableInformation(storm::expressions::Variable const& variable, uint_fast64_t bitOffset, bool global) : variable(variable), bitOffset(bitOffset), global(global) {
+        BooleanVariableInformation::BooleanVariableInformation(storm::expressions::Variable const& variable, uint_fast64_t bitOffset, bool global, bool observable) : variable(variable), bitOffset(bitOffset), global(global), observable(observable) {
             // Intentionally left empty.
         }
-        
-        IntegerVariableInformation::IntegerVariableInformation(storm::expressions::Variable const& variable, int_fast64_t lowerBound, int_fast64_t upperBound, uint_fast64_t bitOffset, uint_fast64_t bitWidth, bool global, bool forceOutOfBoundsCheck) : variable(variable), lowerBound(lowerBound), upperBound(upperBound), bitOffset(bitOffset), bitWidth(bitWidth), global(global), forceOutOfBoundsCheck(forceOutOfBoundsCheck) {
-            // Intentionally left empty.
+
+        IntegerVariableInformation::IntegerVariableInformation(storm::expressions::Variable const& variable, int_fast64_t lowerBound, int_fast64_t upperBound, uint_fast64_t bitOffset, uint_fast64_t bitWidth, bool global, bool observable, bool forceOutOfBoundsCheck) : variable(variable), lowerBound(lowerBound), upperBound(upperBound), bitOffset(bitOffset), bitWidth(bitWidth), global(global), observable(observable), forceOutOfBoundsCheck(forceOutOfBoundsCheck) {
+             // Intentionally left empty.
         }
         
-        LocationVariableInformation::LocationVariableInformation(storm::expressions::Variable const& variable, uint64_t highestValue, uint_fast64_t bitOffset, uint_fast64_t bitWidth) : variable(variable), highestValue(highestValue), bitOffset(bitOffset), bitWidth(bitWidth) {
+        LocationVariableInformation::LocationVariableInformation(storm::expressions::Variable const& variable, uint64_t highestValue, uint_fast64_t bitOffset, uint_fast64_t bitWidth, bool observable) : variable(variable), highestValue(highestValue), bitOffset(bitOffset), bitWidth(bitWidth), observable(observable) {
             // Intentionally left empty.
         }
         
@@ -39,7 +39,7 @@ namespace storm {
             }
 
             for (auto const& booleanVariable : program.getGlobalBooleanVariables()) {
-                booleanVariables.emplace_back(booleanVariable.getExpressionVariable(), totalBitOffset, true);
+                booleanVariables.emplace_back(booleanVariable.getExpressionVariable(), totalBitOffset, true, booleanVariable.isObservable());
                 ++totalBitOffset;
             }
             for (auto const& integerVariable : program.getGlobalIntegerVariables()) {
@@ -47,12 +47,12 @@ namespace storm {
                 int_fast64_t upperBound = integerVariable.getUpperBoundExpression().evaluateAsInt();
                 STORM_LOG_THROW(lowerBound <= upperBound, storm::exceptions::WrongFormatException, "Lower bound must not be above upper bound");
                 uint_fast64_t bitwidth = static_cast<uint_fast64_t>(std::ceil(std::log2(upperBound - lowerBound + 1)));
-                integerVariables.emplace_back(integerVariable.getExpressionVariable(), lowerBound, upperBound, totalBitOffset, bitwidth, true);
+                integerVariables.emplace_back(integerVariable.getExpressionVariable(), lowerBound, upperBound, totalBitOffset, bitwidth, true, integerVariable.isObservable());
                 totalBitOffset += bitwidth;
             }
             for (auto const& module : program.getModules()) {
                 for (auto const& booleanVariable : module.getBooleanVariables()) {
-                    booleanVariables.emplace_back(booleanVariable.getExpressionVariable(), totalBitOffset);
+                    booleanVariables.emplace_back(booleanVariable.getExpressionVariable(), totalBitOffset, false, booleanVariable.isObservable());
                     ++totalBitOffset;
                 }
                 for (auto const& integerVariable : module.getIntegerVariables()) {
@@ -60,7 +60,7 @@ namespace storm {
                     int_fast64_t upperBound = integerVariable.getUpperBoundExpression().evaluateAsInt();
                     STORM_LOG_THROW(lowerBound <= upperBound, storm::exceptions::WrongFormatException, "Lower bound must not be above upper bound");
                     uint_fast64_t bitwidth = static_cast<uint_fast64_t>(std::ceil(std::log2(upperBound - lowerBound + 1)));
-                    integerVariables.emplace_back(integerVariable.getExpressionVariable(), lowerBound, upperBound, totalBitOffset, bitwidth);
+                    integerVariables.emplace_back(integerVariable.getExpressionVariable(), lowerBound, upperBound, totalBitOffset, bitwidth, false, integerVariable.isObservable());
                     totalBitOffset += bitwidth;
                 }
             }
@@ -74,6 +74,23 @@ namespace storm {
             for (auto const& automaton : model.getAutomata()) {
                 STORM_LOG_THROW(!automaton.getVariables().containsNonTransientRealVariables(), storm::exceptions::InvalidArgumentException, "Cannot build model from JANI model that contains non-transient real variables in automaton '" << automaton.getName() << "'.");
             }
+//            
+//            for (auto const& variable : model.getGlobalVariables().getBooleanVariables()) {
+//                if (!variable.isTransient()) {
+//                    booleanVariables.emplace_back(variable.getExpressionVariable(), totalBitOffset, true, true);
+//                    ++totalBitOffset;
+//                }
+//            }
+//            for (auto const& variable : model.getGlobalVariables().getBoundedIntegerVariables()) {
+//                if (!variable.isTransient()) {
+//                    int_fast64_t lowerBound = variable.getLowerBound().evaluateAsInt();
+//                    int_fast64_t upperBound = variable.getUpperBound().evaluateAsInt();
+//                    uint_fast64_t bitwidth = static_cast<uint_fast64_t>(std::ceil(std::log2(upperBound - lowerBound + 1)));
+//                    integerVariables.emplace_back(variable.getExpressionVariable(), lowerBound, upperBound, totalBitOffset, bitwidth, true, true);
+//                    totalBitOffset += bitwidth;
+//                }
+//            }
+
             if (outOfBoundsState) {
                 outOfBoundsBit = 0;
                 ++totalBitOffset;
@@ -142,7 +159,7 @@ namespace storm {
         
         void VariableInformation::createVariablesForAutomaton(storm::jani::Automaton const& automaton, uint64_t reservedBitsForUnboundedVariables) {
             uint_fast64_t bitwidth = static_cast<uint_fast64_t>(std::ceil(std::log2(automaton.getNumberOfLocations())));
-            locationVariables.emplace_back(automaton.getLocationExpressionVariable(), automaton.getNumberOfLocations() - 1, totalBitOffset, bitwidth);
+            locationVariables.emplace_back(automaton.getLocationExpressionVariable(), automaton.getNumberOfLocations() - 1, totalBitOffset, bitwidth, true);
             totalBitOffset += bitwidth;
             
             createVariablesForVariableSet(automaton.getVariables(), reservedBitsForUnboundedVariables, false);
@@ -151,7 +168,7 @@ namespace storm {
         void VariableInformation::createVariablesForVariableSet(storm::jani::VariableSet const& variableSet, uint64_t reservedBitsForUnboundedVariables, bool global) {
             for (auto const& variable : variableSet.getBooleanVariables()) {
                 if (!variable.isTransient()) {
-                    booleanVariables.emplace_back(variable.getExpressionVariable(), totalBitOffset, global);
+                    booleanVariables.emplace_back(variable.getExpressionVariable(), totalBitOffset, global, true);
                     ++totalBitOffset;
                 }
             }
@@ -172,7 +189,7 @@ namespace storm {
                         lowerBound = upperBound - ((1ll << reservedBitsForUnboundedVariables) - 1);
                     }
                     uint_fast64_t bitwidth = static_cast<uint_fast64_t>(std::ceil(std::log2(upperBound - lowerBound + 1)));
-                    integerVariables.emplace_back(variable.getExpressionVariable(), lowerBound, upperBound, totalBitOffset, bitwidth, global, !variable.hasLowerBound() || !variable.hasUpperBound());
+                    integerVariables.emplace_back(variable.getExpressionVariable(), lowerBound, upperBound, totalBitOffset, bitwidth, global, true, !variable.hasLowerBound() || !variable.hasUpperBound());
                     totalBitOffset += bitwidth;
                 }
             }
@@ -180,7 +197,7 @@ namespace storm {
                 if (!variable.isTransient()) {
                     int64_t lowerBound = -(1ll << (reservedBitsForUnboundedVariables - 1));
                     int64_t upperBound = (1ll << (reservedBitsForUnboundedVariables - 1)) - 1;
-                    integerVariables.emplace_back(variable.getExpressionVariable(), lowerBound, upperBound, totalBitOffset, reservedBitsForUnboundedVariables, global, true);
+                    integerVariables.emplace_back(variable.getExpressionVariable(), lowerBound, upperBound, totalBitOffset, reservedBitsForUnboundedVariables, global, true, true);
                     totalBitOffset += reservedBitsForUnboundedVariables;
                 }
             }

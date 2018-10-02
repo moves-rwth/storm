@@ -82,6 +82,7 @@ namespace storm {
              */
             void setTerminalStatesFromFormula(storm::logic::Formula const& formula);
 
+
             /*!
              * Which reward models are built
              * @return
@@ -106,6 +107,7 @@ namespace storm {
             bool isBuildAllRewardModelsSet() const;
             bool isBuildAllLabelsSet() const;
             bool isExplorationChecksSet() const;
+            bool isInferObservationsFromActionsSet() const;
             bool isShowProgressSet() const;
             bool isScaleAndLiftTransitionRewardsSet() const;
             bool isAddOutOfBoundsStateSet() const;
@@ -159,7 +161,12 @@ namespace storm {
              * @return this
              */
             BuilderOptions& setExplorationChecks(bool newValue = true);
-            
+
+
+
+            BuilderOptions& setInferObservationsFromActions(bool newValue = true);
+
+
             /**
              * Should extra checks be performed during exploration
              * @param newValue The new value (default true)
@@ -189,7 +196,7 @@ namespace storm {
              * Substitutes all expressions occurring in these options.
              */
             BuilderOptions& substituteExpressions(std::function<storm::expressions::Expression(storm::expressions::Expression const&)> const& substitutionFunction);
-            
+
         private:
             /// A flag that indicates whether all reward models are to be built. In this case, the reward model names are
             /// to be ignored.
@@ -226,6 +233,9 @@ namespace storm {
             /// A flag that stores whether exploration checks are to be performed.
             bool explorationChecks;
 
+            /// For POMDPs, should we allow inference of observation classes from different enabled actions.
+            bool inferObservationsFromActions;
+
             /// A flag for states with overlapping guards
             bool addOverlappingGuardsLabel;
 
@@ -234,7 +244,7 @@ namespace storm {
 
             /// Indicates the number of bits that are reserved for the storage of unbounded integer variables.
             uint64_t reservedBitsForUnboundedVariables;
-            
+
             /// A flag that stores whether the progress of exploration is to be printed.
             bool showProgress;
 

@@ -130,6 +130,11 @@ namespace storm {
         bool JaniNextStateGenerator<ValueType, StateType>::isDiscreteTimeModel() const {
             return model.isDiscreteTimeModel();
         }
+
+        template<typename ValueType, typename StateType>
+        bool JaniNextStateGenerator<ValueType, StateType>::isPartiallyObservable() const {
+            return false;
+        };
         
         template<typename ValueType, typename StateType>
         uint64_t JaniNextStateGenerator<ValueType, StateType>::getLocation(CompressedState const& state, LocationVariableInformation const& locationVariable) const {
@@ -330,6 +335,7 @@ namespace storm {
                 if (assignmentIt->getAssignedExpression().hasIntegerType()) {
                     IntegerVariableInformation const& intInfo = this->variableInformation.getIntegerArrayVariableReplacement(assignmentIt->getLValue().getArray().getExpressionVariable(), arrayIndex);
                     int_fast64_t assignedValue = expressionEvaluator.asInt(assignmentIt->getAssignedExpression());
+
                     if (this->options.isAddOutOfBoundsStateSet()) {
                         if (assignedValue < intInfo.lowerBound || assignedValue > intInfo.upperBound) {
                             state = this->outOfBoundsState;
