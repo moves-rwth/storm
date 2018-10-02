@@ -20,12 +20,14 @@ set(l3pp_INCLUDE "${l3pp}/include/")
 in stdenv.mkDerivation {
   name = "storm-git";
 
-  src = fetchFromGitHub {
-    owner = "moves-rwth";
-    repo = "storm";
-    rev = "8332abab58f0c672561f5bbebd585a159852d8cc";
-    sha256 = "02ixywhfkxr8xlcizqbysb1yinsjzl6rc0cjlsg8dz8w2r3m6qix";
-  };
+  src = ../../../../.;
+  # Exchange with expression below to build a specific github revision:
+  # src = fetchFromGitHub {
+  #   owner = "moves-rwth";
+  #   repo = "storm";
+  #   rev = "8332abab58f0c672561f5bbebd585a159852d8cc";
+  #   sha256 = "02ixywhfkxr8xlcizqbysb1yinsjzl6rc0cjlsg8dz8w2r3m6qix";
+  # };
 
   buildInputs = [ boost carl cln doxygen gmp ginac glpk hwloc l3pp xercesc ]
     ++ optional tbbSupport tbb
