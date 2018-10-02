@@ -960,7 +960,7 @@ namespace storm {
         private:
             AutomatonDd composeInParallel(std::vector<AutomatonDd> const& subautomata, std::vector<storm::jani::SynchronizationVector> const& synchronizationVectors) {
                 AutomatonDd result(this->variables.manager->template getAddOne<ValueType>());
-
+                
                 // Build the results of the synchronization vectors.
                 std::unordered_map<ActionIdentification, std::vector<ActionDd>, ActionIdentificationHash> actions;
                 for (uint64_t synchronizationVectorIndex = 0; synchronizationVectorIndex < synchronizationVectors.size(); ++synchronizationVectorIndex) {
@@ -1002,6 +1002,9 @@ namespace storm {
                     }
                     
                     result.identity *= automaton.identity;
+                    
+                    // Add the transient location assignments of the automata.
+                    addToTransientAssignmentMap(result.transientLocationAssignments, automaton.transientLocationAssignments);
                 }
                 
                 if (!silentActionDds.empty()) {
@@ -1220,7 +1223,7 @@ namespace storm {
                         storm::dd::Add<Type, ValueType> nondeterminismEncoding = encodeIndex(actionIndex, highestLocalNondeterminismVariable, numberOfLocalNondeterminismVariables, this->variables);
                         transitions += nondeterminismEncoding * action.transitions;
                         
-                        joinTransientAssignmentMaps(transientEdgeAssignments, action.transientEdgeAssignments);
+                        transientEdgeAssignments = joinTransientAssignmentMaps(transientEdgeAssignments, action.transientEdgeAssignments);
                         
                         storm::dd::Bdd<Type> nondeterminismEncodingBdd = nondeterminismEncoding.toBdd();
                         for (auto& entry : action.variableToWritingFragment) {
@@ -1352,7 +1355,7 @@ namespace storm {
                     guard |= edge.guard;
                     transitions += edge.transitions;
                     variableToWritingFragment = joinVariableWritingFragmentMaps(variableToWritingFragment, edge.variableToWritingFragment);
-                    joinTransientAssignmentMaps(transientEdgeAssignments, edge.transientEdgeAssignments);
+                    transientEdgeAssignments = joinTransientAssignmentMaps(transientEdgeAssignments, edge.transientEdgeAssignments);
                 }
 
                 // Currently, we can only combine the transient edge assignments if there is no overlap of the guards of the edges.
@@ -1649,6 +1652,7 @@ namespace storm {
                     auto const& location = automaton.getLocation(locationIndex);
                     performTransientAssignments(location.getAssignments().getTransientAssignments(), [this,&automatonName,locationIndex,&result] (storm::jani::Assignment const& assignment) {
                         storm::dd::Add<Type, ValueType> assignedValues = this->variables.manager->getEncoding(this->variables.automatonToLocationDdVariableMap.at(automatonName).first, locationIndex).template toAdd<ValueType>() * this->variables.rowExpressionAdapter->translateExpression(assignment.getAssignedExpression());
+                    
                         auto it = result.transientLocationAssignments.find(assignment.getExpressionVariable());
                         if (it != result.transientLocationAssignments.end()) {
                             it->second += assignedValues;
@@ -1901,13 +1905,13 @@ namespace storm {
             std::vector<storm::expressions::Variable> rewardVariables;
             if (options.isBuildAllRewardModelsSet()) {
                 for (auto const& rewExpr : model.getAllRewardModelExpressions()) {
-                    STORM_LOG_ERROR_COND(rewExpr.second.isVariable(), "The jit builder can not build the non-trivial reward expression '" << rewExpr.second << "'.");
+                    STORM_LOG_ERROR_COND(rewExpr.second.isVariable(), "The DD-builder can not build the non-trivial reward expression '" << rewExpr.second << "'.");
                     rewardVariables.push_back(rewExpr.second.getBaseExpression().asVariableExpression().getVariable());
                 }
             } else {
                 for (auto const& rewardModelName : options.getRewardModelNames()) {
                     auto const& rewExpr = model.getRewardModelExpression(rewardModelName);
-                    STORM_LOG_ERROR_COND(rewExpr.isVariable(), "The jit builder can not build the non-trivial reward expression '" << rewExpr << "'.");
+                    STORM_LOG_ERROR_COND(rewExpr.isVariable(), "The DD-builder can not build the non-trivial reward expression '" << rewExpr << "'.");
                     rewardVariables.push_back(rewExpr.getBaseExpression().asVariableExpression().getVariable());
                 }
             }
