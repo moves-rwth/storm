@@ -561,7 +561,6 @@ namespace storm {
             bool observable = this->observables.count(variableName) > 0;
             if(observable) {
                 this->observables.erase(variableName);
-                std::cout << variableName << " is observable." << std::endl;
             }
             return storm::prism::BooleanVariable(manager->getVariable(variableName), initialValueExpression, observable, this->getFilename());
         }
@@ -582,7 +581,6 @@ namespace storm {
             bool observable = this->observables.count(variableName) > 0;
             if(observable) {
                 this->observables.erase(variableName);
-                std::cout << variableName << " is observable." << std::endl;
             }
 
             return storm::prism::IntegerVariable(manager->getVariable(variableName), lowerBoundExpression, upperBoundExpression, initialValueExpression, observable, this->getFilename());
@@ -613,7 +611,6 @@ namespace storm {
                     this->identifiers_.add(renamingPair->second, renamedVariable.getExpression());
                     if(this->observables.count(renamingPair->second) > 0) {
                         this->observables.erase(renamingPair->second);
-                        std::cout << renamingPair->second << " is observable." << std::endl;
                     }
                 }
                 for (auto const& variable : moduleToRename.getIntegerVariables()) {
@@ -623,7 +620,6 @@ namespace storm {
                     this->identifiers_.add(renamingPair->second, renamedVariable.getExpression());
                     if(this->observables.count(renamingPair->second) > 0) {
                         this->observables.erase(renamingPair->second);
-                        std::cout << renamingPair->second << " is observable." << std::endl;
                     }
                 }
                 
@@ -666,7 +662,6 @@ namespace storm {
                     bool observable = this->observables.count(renamingPair->second) > 0;
                     if(observable) {
                         this->observables.erase(renamingPair->second);
-                        std::cout << renamingPair->second << " is observable." << std::endl;
                     }
                     booleanVariables.push_back(storm::prism::BooleanVariable(manager->getVariable(renamingPair->second), variable.hasInitialValue() ? variable.getInitialValueExpression().substitute(expressionRenaming) : variable.getInitialValueExpression(), observable, this->getFilename(), get_line(qi::_1)));
                 }
@@ -679,7 +674,6 @@ namespace storm {
                     bool observable = this->observables.count(renamingPair->second) > 0;
                     if(observable) {
                         this->observables.erase(renamingPair->second);
-                        std::cout << renamingPair->second << " is observable." << std::endl;
                     }
                     integerVariables.push_back(storm::prism::IntegerVariable(manager->getVariable(renamingPair->second), variable.getLowerBoundExpression().substitute(expressionRenaming), variable.getUpperBoundExpression().substitute(expressionRenaming), variable.hasInitialValue() ? variable.getInitialValueExpression().substitute(expressionRenaming) : variable.getInitialValueExpression(), observable, this->getFilename(), get_line(qi::_1)));
                 }
