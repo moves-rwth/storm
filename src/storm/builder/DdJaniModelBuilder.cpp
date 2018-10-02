@@ -940,8 +940,14 @@ namespace storm {
                             STORM_LOG_ASSERT(previousActionPosition, "Inconsistent information about synchronization vector.");
                             AutomatonDd const& previousAutomatonDd = subautomata[previousActionPosition.get()];
                             auto precedingActionIt = previousAutomatonDd.actions.find(ActionIdentification(actionInformation.getActionIndex(synchVector.getInput(previousActionPosition.get())), synchronizationVectorIndex, isCtmc));
-                            STORM_LOG_THROW(precedingActionIt != previousAutomatonDd.actions.end(), storm::exceptions::WrongFormatException, "Subcomposition does not have action that is mentioned in parallel composition.");
-                            actionInstantiations[actionIndex].emplace_back(actionIndex, synchronizationVectorIndex, precedingActionIt->second.getHighestLocalNondeterminismVariable(), isCtmc);
+
+                            uint64_t highestLocalNondeterminismVariable = 0;
+                            if (precedingActionIt != previousAutomatonDd.actions.end()) {
+                                highestLocalNondeterminismVariable = precedingActionIt->second.getHighestLocalNondeterminismVariable();
+                            } else {
+                                STORM_LOG_WARN("Subcomposition does not have action that is mentioned in parallel composition.");
+                            }
+                            actionInstantiations[actionIndex].emplace_back(actionIndex, synchronizationVectorIndex, highestLocalNondeterminismVariable, isCtmc);
                         }
                     }
                     
