@@ -235,7 +235,8 @@ namespace storm {
 
                         // only non-zero entries (i.e. true transitions) are added to the map
                         if (probEntry != 0) {
-                            assert(0 < probEntry <= 1);
+                            assert(0 < probEntry);
+                            assert(probEntry <= 1);
                             stateProbMap.emplace(i, probEntry);
                         }
                     }
