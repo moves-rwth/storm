@@ -183,7 +183,7 @@ namespace storm {
                 time = time || (!model.isDeterministicModel() && assignmentKinds.hasLocationAssignment);
                 exit = exit || assignmentKinds.hasLocationAssignment;
             }
-            storm::jani::substituteJaniExpression(rewardExpression, initialSubstitution);
+            rewardExpression = storm::jani::substituteJaniExpression(rewardExpression, initialSubstitution);
             if (rewardExpression.containsVariables() || !storm::utility::isZero(rewardExpression.evaluateAsRational())) {
                 steps = true;
                 time = true;
