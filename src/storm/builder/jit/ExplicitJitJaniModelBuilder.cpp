@@ -56,7 +56,7 @@ namespace storm {
 #endif
             
             template <typename ValueType, typename RewardModelType>
-            ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::ExplicitJitJaniModelBuilder(storm::jani::Model const& model, storm::builder::BuilderOptions const& options) : options(options), model(model.substituteConstants()), modelComponentsBuilder(model.getModelType()) {
+            ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::ExplicitJitJaniModelBuilder(storm::jani::Model const& model, storm::builder::BuilderOptions const& options) : options(options), model(model.substituteConstantsFunctions()), modelComponentsBuilder(model.getModelType()) {
                 
                 // Load all options from the settings module.
                 storm::settings::modules::JitBuilderSettings const& settings = storm::settings::getModule<storm::settings::modules::JitBuilderSettings>();
@@ -147,6 +147,11 @@ namespace storm {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The input model contains undefined constants that influence the graph structure of the underlying model, which is not allowed.");
                 }
 #endif
+                auto features = model.getModelFeatures();
+                features.remove(storm::jani::ModelFeature::DerivedOperators);
+                features.remove(storm::jani::ModelFeature::StateExitRewards);
+                STORM_LOG_THROW(features.empty(), storm::exceptions::InvalidArgumentException, "The jit model builder does not support the following model feature(s): " << features.toString() << ".");
+                
                 //STORM_LOG_THROW(!model.reusesActionsInComposition(), storm::exceptions::InvalidArgumentException, "The jit JANI model builder currently does not support reusing actions in parallel composition");
 
                 // Comment this in to print the JANI model for debugging purposes.
@@ -878,29 +883,20 @@ namespace storm {
             void ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::generateRewards(cpptempl::data_map& modelData) {
                 // Extract the reward models from the program based on the names we were given.
                 std::vector<storm::expressions::Variable> rewardVariables;
-                auto const& globalVariables = model.getGlobalVariables();
-                for (auto const& rewardModelName : this->options.getRewardModelNames()) {
-                    if (globalVariables.hasVariable(rewardModelName)) {
-                        rewardVariables.push_back(globalVariables.getVariable(rewardModelName).getExpressionVariable());
-                    } else {
-                        STORM_LOG_THROW(rewardModelName.empty(), storm::exceptions::InvalidArgumentException, "Cannot build unknown reward model '" << rewardModelName << "'.");
-                        STORM_LOG_THROW(globalVariables.getNumberOfRealTransientVariables() + globalVariables.getNumberOfUnboundedIntegerTransientVariables() == 1, storm::exceptions::InvalidArgumentException, "Reference to standard reward model is ambiguous.");
+                if (this->options.isBuildAllRewardModelsSet()) {
+                    for (auto const& rewExpr : model.getAllRewardModelExpressions()) {
+                        STORM_LOG_ERROR_COND(rewExpr.second.isVariable(), "The jit builder can not build the non-trivial reward expression '" << rewExpr.second << "'.");
+                        rewardVariables.push_back(rewExpr.second.getBaseExpression().asVariableExpression().getVariable());
+                    }
+                } else {
+                    for (auto const& rewardModelName : this->options.getRewardModelNames()) {
+                        auto const& rewExpr = model.getRewardModelExpression(rewardModelName);
+                        STORM_LOG_ERROR_COND(rewExpr.isVariable(), "The jit builder can not build the non-trivial reward expression '" << rewExpr << "'.");
+                        rewardVariables.push_back(rewExpr.getBaseExpression().asVariableExpression().getVariable());
                     }
                 }
-                
-                // If no reward model was yet added, but there was one that was given in the options, we try to build the
-                // standard reward model.
-                if (rewardVariables.empty() && !this->options.getRewardModelNames().empty()) {
-                    bool foundTransientVariable = false;
-                    for (auto const& transientVariable : globalVariables.getTransientVariables()) {
-                        if (transientVariable.isUnboundedIntegerVariable() || transientVariable.isRealVariable()) {
-                            rewardVariables.push_back(transientVariable.getExpressionVariable());
-                            foundTransientVariable = true;
-                            break;
-                        }
-                    }
-                    STORM_LOG_ASSERT(foundTransientVariable, "Expected to find a fitting transient variable.");
-                }
+                // Sort the reward variables to match the order in the ordered assignments
+                std::sort(rewardVariables.begin(), rewardVariables.end());
                 
                 std::vector<storm::builder::RewardModelInformation> rewardModels;
                 cpptempl::data_list rewards;
@@ -1558,11 +1554,12 @@ namespace storm {
                 }
 
                 std::set<std::string> expressionLabelStrings;
-                for (auto const& expression : this->options.getExpressionLabels()) {
+                for (auto const& expressionLabel : this->options.getExpressionLabels()) {
                     cpptempl::data_map label;
-                    std::string expressionLabelString = expression.toString();
+                    std::string const& expressionLabelString = expressionLabel.first;
+                    auto const& expression = expressionLabel.second;
                     if(expressionLabelStrings.count(expressionLabelString) == 0) {
-                        label["name"] = expression.toString();
+                        label["name"] = expressionLabelString;
                         label["predicate"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(expression), storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName, storm::expressions::ToCppTranslationMode::CastDouble));
                         labels.push_back(label);
                         expressionLabelStrings.insert(expressionLabelString);

@@ -12,17 +12,16 @@ namespace storm {
             if (summands.empty()) {
                 return manager->rational(storm::utility::zero<storm::RationalNumber>());
             }
-            // As the sum can potentially have many summands, we want to make sure that the formula tree is (roughly balanced)
-            auto it = summands.begin();
-            while (summands.size() > 1) {
-                if (it == summands.end() || it == summands.end() - 1) {
-                    it = summands.begin();
+            storm::expressions::Expression res = summands.front();
+            bool first = true;
+            for (auto& s : summands) {
+                if (first) {
+                    first = false;
+                } else {
+                    res = res + s;
                 }
-                *it = *it + summands.back();
-                summands.pop_back();
-                ++it;
             }
-            return summands.front();
+            return res.simplify().reduceNesting();
         }
         
     }

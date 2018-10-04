@@ -9,6 +9,9 @@ sudo: required
 dist: trusty
 language: cpp
 
+git:
+  depth: false
+
 # Enable caching
 cache:
   timeout: 1000
@@ -25,7 +28,7 @@ notifications:
     on_failure: always
     on_success: change
     recipients:
-    secure: "Q9CW/PtyWkZwExDrfFFb9n1STGYsRfI6awv1bZHcGwfrDvhpXoMCuF8CwviIfilm7fFJJEoKizTtdRpY0HrOnY/8KY111xrtcFYosxdndv7xbESodIxQOUoIEFCO0mCNHwWYisoi3dAA7H3Yn661EsxluwHjzX5vY0xSbw0n229hlsFz092HwGLSU33zHl7eXpQk+BOFmBTRGlOq9obtDZ17zbHz1oXFZntHK/JDUIYP0b0uq8NvE2jM6CIVdcuSwmIkOhZJoO2L3Py3rBbPci+L2PSK4Smv2UjCPF8KusnOaFIyDB3LcNM9Jqq5ssJMrK/KaO6BiuYrOZXYWZ7KEg3Y/naC8HjOH1dzty+P7oW46sb9F03pTsufqD4R7wcK+9wROTztO6aJPDG/IPH7EWgrBTxqlOkVRwi2eYuQouZpZUW6EMClKbMHMIxCH2S8aOk/r1w2cNwmPEcunnP0nl413x/ByHr4fTPFykPj8pQxIsllYjpdWBRQfDOauKWGzk6LcrFW0qpWP+/aJ2vYu/IoZQMG5lMHbp6Y1Lg09pYm7Q983v3b7D+JvXhOXMyGq91HyPahA2wwKoG1GA4uoZ2I95/IFYNiKkelDd3WTBoFLNF9YFoEJNdCywm1fO2WY4WkyEFBuQcgDA+YpFMJJMxjTbivYk9jvHk2gji//2w="
+    - secure: "VWnsiQkt1xjgRo1hfNiNQqvLSr0fshFmLV7jJlUixhCr094mgD0U2bNKdUfebm28Byg9UyDYPbOFDC0sx7KydKiL1q7FKKXkyZH0k04wUu8XiNw+fYkDpmPnQs7G2n8oJ/GFJnr1Wp/1KI3qX5LX3xot4cJfx1I5iFC2O+p+ng6v/oSX+pewlMv4i7KL16ftHHHMo80N694v3g4B2NByn4GU2/bjVQcqlBp/TiVaUa5Nqu9DxZi/n9CJqGEaRHOblWyMO3EyTZsn45BNSWeQ3DtnMwZ73rlIr9CaEgCeuArc6RGghUAVqRI5ao+N5apekIaILwTgL6AJn+Lw/+NRPa8xclgd0rKqUQJMJCDZKjKz2lmIs3bxfELOizxJ3FJQ5R95FAxeAZ6rb/j40YqVVTw2IMBDnEE0J5ZmpUYNUtPti/Adf6GD9Fb2y8sLo0XDJzkI8OxYhfgjSy5KYmRj8O5MXcP2MAE8LQauNO3MaFnL9VMVOTZePJrPozQUgM021uyahf960+QNI06Uqlmg+PwWkSdllQlxHHplOgW7zClFhtSUpnJxcsUBzgg4kVg80gXUwAQkaDi7A9Wh2bs+TvMlmHzBwg+2SaAfWDgjeJIeOaipDkF1uSGzC+EHAiiKYMLd4Aahoi8SuelJUucoyJyLAq00WdUFQIh/izVhM4Y="
 
 #
 # Configurations
@@ -37,26 +40,30 @@ jobs:
     # Stage: Build Carl
     ###
 
-    # ubuntu-17.10 - DefaultDebugTravis
+    # ubuntu-18.04 - DefaultDebugTravis
     - stage: Build Carl
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultDebugTravis LINUX=ubuntu-17.10 COMPILER=gcc
+      env: CONFIG=DefaultDebugTravis LINUX=ubuntu-18.04 COMPILER=gcc
       install:
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build_carl.sh
       after_success:
         - docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD";
         - docker commit carl movesrwth/carl:travis-debug;
         - docker push movesrwth/carl:travis-debug;
-    # ubuntu-17.10 - DefaultReleaseTravis
+    # ubuntu-18.04 - DefaultReleaseTravis
     - stage: Build Carl
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultReleaseTravis LINUX=ubuntu-17.10 COMPILER=gcc
+      env: CONFIG=DefaultReleaseTravis LINUX=ubuntu-18.04 COMPILER=gcc
       install:
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build_carl.sh
       after_success:
@@ -76,6 +83,8 @@ jobs:
       install:
         - rm -rf build
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build.sh Build1
       before_cache:
@@ -90,34 +99,40 @@ jobs:
       install:
         - rm -rf build
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build.sh Build1
       before_cache:
         - docker cp storm:/opt/storm/. .
       after_failure:
         - find build -iname '*err*.log' -type f -print -exec cat {} \;
-    # ubuntu-17.10 - DefaultDebugTravis
+    # ubuntu-18.04 - DefaultDebugTravis
     - stage: Build (1st run)
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultDebugTravis LINUX=ubuntu-17.10 COMPILER=gcc
+      env: CONFIG=DefaultDebugTravis LINUX=ubuntu-18.04 COMPILER=gcc
       install:
         - rm -rf build
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build.sh Build1
       before_cache:
         - docker cp storm:/opt/storm/. .
       after_failure:
         - find build -iname '*err*.log' -type f -print -exec cat {} \;
-    # ubuntu-17.10 - DefaultReleaseTravis
+    # ubuntu-18.04 - DefaultReleaseTravis
     - stage: Build (1st run)
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultReleaseTravis LINUX=ubuntu-17.10 COMPILER=gcc
+      env: CONFIG=DefaultReleaseTravis LINUX=ubuntu-18.04 COMPILER=gcc
       install:
         - rm -rf build
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build.sh Build1
       before_cache:
@@ -132,6 +147,8 @@ jobs:
       install:
         - rm -rf build
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build.sh Build1
       before_cache:
@@ -146,6 +163,8 @@ jobs:
       install:
         - rm -rf build
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build.sh Build1
       before_cache:
@@ -164,6 +183,8 @@ jobs:
       env: CONFIG=DefaultDebug LINUX=debian-9 COMPILER=gcc
       install:
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build.sh Build2
       before_cache:
@@ -177,32 +198,38 @@ jobs:
       env: CONFIG=DefaultRelease LINUX=debian-9 COMPILER=gcc
       install:
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build.sh Build2
       before_cache:
         - docker cp storm:/opt/storm/. .
       after_failure:
         - find build -iname '*err*.log' -type f -print -exec cat {} \;
-    # ubuntu-17.10 - DefaultDebugTravis
+    # ubuntu-18.04 - DefaultDebugTravis
     - stage: Build (2nd run)
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultDebugTravis LINUX=ubuntu-17.10 COMPILER=gcc
+      env: CONFIG=DefaultDebugTravis LINUX=ubuntu-18.04 COMPILER=gcc
       install:
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build.sh Build2
       before_cache:
         - docker cp storm:/opt/storm/. .
       after_failure:
         - find build -iname '*err*.log' -type f -print -exec cat {} \;
-    # ubuntu-17.10 - DefaultReleaseTravis
+    # ubuntu-18.04 - DefaultReleaseTravis
     - stage: Build (2nd run)
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultReleaseTravis LINUX=ubuntu-17.10 COMPILER=gcc
+      env: CONFIG=DefaultReleaseTravis LINUX=ubuntu-18.04 COMPILER=gcc
       install:
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build.sh Build2
       before_cache:
@@ -216,6 +243,8 @@ jobs:
       env: CONFIG=DefaultDebug LINUX=ubuntu-18.04 COMPILER=gcc
       install:
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build.sh Build2
       before_cache:
@@ -229,6 +258,8 @@ jobs:
       env: CONFIG=DefaultRelease LINUX=ubuntu-18.04 COMPILER=gcc
       install:
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build.sh Build2
       before_cache:
@@ -247,6 +278,8 @@ jobs:
       env: CONFIG=DefaultDebug LINUX=debian-9 COMPILER=gcc
       install:
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build.sh Build3
       before_cache:
@@ -260,32 +293,38 @@ jobs:
       env: CONFIG=DefaultRelease LINUX=debian-9 COMPILER=gcc
       install:
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build.sh Build3
       before_cache:
         - docker cp storm:/opt/storm/. .
       after_failure:
         - find build -iname '*err*.log' -type f -print -exec cat {} \;
-    # ubuntu-17.10 - DefaultDebugTravis
+    # ubuntu-18.04 - DefaultDebugTravis
     - stage: Build (3rd run)
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultDebugTravis LINUX=ubuntu-17.10 COMPILER=gcc
+      env: CONFIG=DefaultDebugTravis LINUX=ubuntu-18.04 COMPILER=gcc
       install:
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build.sh Build3
       before_cache:
         - docker cp storm:/opt/storm/. .
       after_failure:
         - find build -iname '*err*.log' -type f -print -exec cat {} \;
-    # ubuntu-17.10 - DefaultReleaseTravis
+    # ubuntu-18.04 - DefaultReleaseTravis
     - stage: Build (3rd run)
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultReleaseTravis LINUX=ubuntu-17.10 COMPILER=gcc
+      env: CONFIG=DefaultReleaseTravis LINUX=ubuntu-18.04 COMPILER=gcc
       install:
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build.sh Build3
       before_cache:
@@ -299,6 +338,8 @@ jobs:
       env: CONFIG=DefaultDebug LINUX=ubuntu-18.04 COMPILER=gcc
       install:
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build.sh Build3
       before_cache:
@@ -312,6 +353,8 @@ jobs:
       env: CONFIG=DefaultRelease LINUX=ubuntu-18.04 COMPILER=gcc
       install:
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build.sh Build3
       before_cache:
@@ -330,6 +373,8 @@ jobs:
       env: CONFIG=DefaultDebug LINUX=debian-9 COMPILER=gcc
       install:
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build.sh BuildLast
       before_cache:
@@ -343,32 +388,38 @@ jobs:
       env: CONFIG=DefaultRelease LINUX=debian-9 COMPILER=gcc
       install:
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build.sh BuildLast
       before_cache:
         - docker cp storm:/opt/storm/. .
       after_failure:
         - find build -iname '*err*.log' -type f -print -exec cat {} \;
-    # ubuntu-17.10 - DefaultDebugTravis
+    # ubuntu-18.04 - DefaultDebugTravis
     - stage: Build (4th run)
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultDebugTravis LINUX=ubuntu-17.10 COMPILER=gcc
+      env: CONFIG=DefaultDebugTravis LINUX=ubuntu-18.04 COMPILER=gcc
       install:
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build.sh BuildLast
       before_cache:
         - docker cp storm:/opt/storm/. .
       after_failure:
         - find build -iname '*err*.log' -type f -print -exec cat {} \;
-    # ubuntu-17.10 - DefaultReleaseTravis
+    # ubuntu-18.04 - DefaultReleaseTravis
     - stage: Build (4th run)
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultReleaseTravis LINUX=ubuntu-17.10 COMPILER=gcc
+      env: CONFIG=DefaultReleaseTravis LINUX=ubuntu-18.04 COMPILER=gcc
       install:
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build.sh BuildLast
       before_cache:
@@ -382,6 +433,8 @@ jobs:
       env: CONFIG=DefaultDebug LINUX=ubuntu-18.04 COMPILER=gcc
       install:
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build.sh BuildLast
       before_cache:
@@ -395,6 +448,8 @@ jobs:
       env: CONFIG=DefaultRelease LINUX=ubuntu-18.04 COMPILER=gcc
       install:
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build.sh BuildLast
       before_cache:
@@ -413,6 +468,8 @@ jobs:
       env: CONFIG=DefaultDebug LINUX=debian-9 COMPILER=gcc
       install:
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build.sh TestAll
       before_cache:
@@ -426,19 +483,23 @@ jobs:
       env: CONFIG=DefaultRelease LINUX=debian-9 COMPILER=gcc
       install:
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build.sh TestAll
       before_cache:
         - docker cp storm:/opt/storm/. .
       after_failure:
         - find build -iname '*err*.log' -type f -print -exec cat {} \;
-    # ubuntu-17.10 - DefaultDebugTravis
+    # ubuntu-18.04 - DefaultDebugTravis
     - stage: Test all
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultDebugTravis LINUX=ubuntu-17.10 COMPILER=gcc
+      env: CONFIG=DefaultDebugTravis LINUX=ubuntu-18.04 COMPILER=gcc
       install:
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build.sh TestAll
       before_cache:
@@ -449,13 +510,15 @@ jobs:
         - docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD";
         - docker commit storm movesrwth/storm:travis-debug;
         - docker push movesrwth/storm:travis-debug;
-    # ubuntu-17.10 - DefaultReleaseTravis
+    # ubuntu-18.04 - DefaultReleaseTravis
     - stage: Test all
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultReleaseTravis LINUX=ubuntu-17.10 COMPILER=gcc
+      env: CONFIG=DefaultReleaseTravis LINUX=ubuntu-18.04 COMPILER=gcc
       install:
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build.sh TestAll
       before_cache:
@@ -473,6 +536,8 @@ jobs:
       env: CONFIG=DefaultDebug LINUX=ubuntu-18.04 COMPILER=gcc
       install:
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build.sh TestAll
       before_cache:
@@ -486,6 +551,8 @@ jobs:
       env: CONFIG=DefaultRelease LINUX=ubuntu-18.04 COMPILER=gcc
       install:
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build.sh TestAll
       before_cache:
@@ -495,17 +562,17 @@ jobs:
   allow_failures:
     - stage: Build (1st run)
       os: linux
-      env: CONFIG=DefaultReleaseTravis LINUX=ubuntu-17.10 COMPILER=gcc
+      env: CONFIG=DefaultReleaseTravis LINUX=ubuntu-18.04 COMPILER=gcc
     - stage: Build (2nd run)
       os: linux
-      env: CONFIG=DefaultReleaseTravis LINUX=ubuntu-17.10 COMPILER=gcc
+      env: CONFIG=DefaultReleaseTravis LINUX=ubuntu-18.04 COMPILER=gcc
     - stage: Build (3rd run)
       os: linux
-      env: CONFIG=DefaultReleaseTravis LINUX=ubuntu-17.10 COMPILER=gcc
+      env: CONFIG=DefaultReleaseTravis LINUX=ubuntu-18.04 COMPILER=gcc
     - stage: Build (4th run)
       os: linux
-      env: CONFIG=DefaultReleaseTravis LINUX=ubuntu-17.10 COMPILER=gcc
+      env: CONFIG=DefaultReleaseTravis LINUX=ubuntu-18.04 COMPILER=gcc
     - stage: Test all
       os: linux
-      env: CONFIG=DefaultReleaseTravis LINUX=ubuntu-17.10 COMPILER=gcc
+      env: CONFIG=DefaultReleaseTravis LINUX=ubuntu-18.04 COMPILER=gcc
 

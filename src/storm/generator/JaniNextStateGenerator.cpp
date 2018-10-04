@@ -3,7 +3,6 @@
 #include "storm/models/sparse/StateLabeling.h"
 
 #include "storm/storage/expressions/SimpleValuation.h"
-
 #include "storm/solver/SmtSolver.h"
 
 #include "storm/storage/jani/Edge.h"
@@ -14,6 +13,9 @@
 #include "storm/storage/jani/AutomatonComposition.h"
 #include "storm/storage/jani/ParallelComposition.h"
 #include "storm/storage/jani/CompositionInformationVisitor.h"
+#include "storm/storage/jani/traverser/AssignmentLevelFinder.h"
+#include "storm/storage/jani/traverser/ArrayExpressionFinder.h"
+#include "storm/storage/jani/traverser/AssignmentsFinder.h"
 
 #include "storm/storage/sparse/JaniChoiceOrigins.h"
 
@@ -26,67 +28,59 @@
 #include "storm/exceptions/InvalidSettingsException.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/UnexpectedException.h"
+#include "storm/exceptions/NotSupportedException.h"
 
 namespace storm {
     namespace generator {
         
         template<typename ValueType, typename StateType>
-        JaniNextStateGenerator<ValueType, StateType>::JaniNextStateGenerator(storm::jani::Model const& model, NextStateGeneratorOptions const& options) : JaniNextStateGenerator(model.substituteConstants(), options, false) {
+        JaniNextStateGenerator<ValueType, StateType>::JaniNextStateGenerator(storm::jani::Model const& model, NextStateGeneratorOptions const& options) : JaniNextStateGenerator(model.substituteConstantsFunctions(), options, false) {
             // Intentionally left empty.
         }
         
         template<typename ValueType, typename StateType>
-        JaniNextStateGenerator<ValueType, StateType>::JaniNextStateGenerator(storm::jani::Model const& model, NextStateGeneratorOptions const& options, bool) : NextStateGenerator<ValueType, StateType>(model.getExpressionManager(), options), model(model), rewardVariables(), hasStateActionRewards(false) {
-            STORM_LOG_THROW(!model.hasNonGlobalTransientVariable(), storm::exceptions::InvalidSettingsException, "The explicit next-state generator currently does not support automata-local transient variables.");
-            STORM_LOG_THROW(!model.usesAssignmentLevels(), storm::exceptions::InvalidSettingsException, "The explicit next-state generator currently does not support assignment levels.");
+        JaniNextStateGenerator<ValueType, StateType>::JaniNextStateGenerator(storm::jani::Model const& model, NextStateGeneratorOptions const& options, bool) : NextStateGenerator<ValueType, StateType>(model.getExpressionManager(), options), model(model), rewardExpressions(), hasStateActionRewards(false) {
             STORM_LOG_THROW(!this->options.isBuildChoiceLabelsSet(), storm::exceptions::InvalidSettingsException, "JANI next-state generator cannot generate choice labels.");
 
-            // Lift the transient edge destinations. We can do so, as we know that there are no assignment levels (because that's not supported anyway).
-            if (this->model.hasTransientEdgeDestinationAssignments()) {
-                this->model.liftTransientEdgeDestinationAssignments();
+            auto features = model.getModelFeatures();
+            features.remove(storm::jani::ModelFeature::DerivedOperators);
+            features.remove(storm::jani::ModelFeature::StateExitRewards);
+            // Eliminate arrays if necessary.
+            if (features.hasArrays()) {
+                arrayEliminatorData = this->model.eliminateArrays(true);
+                this->options.substituteExpressions([this](storm::expressions::Expression const& exp) {return arrayEliminatorData.transformExpression(exp);});
+                features.remove(storm::jani::ModelFeature::Arrays);
             }
-            STORM_LOG_THROW(!this->model.hasTransientEdgeDestinationAssignments(), storm::exceptions::InvalidSettingsException, "The explicit next-state generator currently does not support transient edge destination assignments.");
+            STORM_LOG_THROW(features.empty(), storm::exceptions::InvalidSettingsException, "The explicit next-state generator does not support the following model feature(s): " << features.toString() << ".");
+
+            // Preprocess the edge assignments:
+            if (this->model.usesAssignmentLevels()) {
+                this->model.pushEdgeAssignmentsToDestinations();
+            } else {
+                this->model.liftTransientEdgeDestinationAssignments(storm::jani::AssignmentLevelFinder().getLowestAssignmentLevel(this->model));
+            }
             
             // Create all synchronization-related information, e.g. the automata that are put in parallel.
             this->createSynchronizationInformation();
 
             // Now we are ready to initialize the variable information.
             this->checkValid();
-            this->variableInformation = VariableInformation(model, this->parallelAutomata, options.isAddOutOfBoundsStateSet());
+            this->variableInformation = VariableInformation(this->model, this->parallelAutomata, options.getReservedBitsForUnboundedVariables(), options.isAddOutOfBoundsStateSet());
+            this->variableInformation.registerArrayVariableReplacements(arrayEliminatorData);
+            this->transientVariableInformation = TransientVariableInformation<ValueType>(this->model, this->parallelAutomata);
+            this->transientVariableInformation.registerArrayVariableReplacements(arrayEliminatorData);
             
             // Create a proper evalator.
             this->evaluator = std::make_unique<storm::expressions::ExpressionEvaluator<ValueType>>(model.getManager());
+            this->transientVariableInformation.setDefaultValuesInEvaluator(*this->evaluator);
             
             if (this->options.isBuildAllRewardModelsSet()) {
-                for (auto const& variable : model.getGlobalVariables()) {
-                    if (variable.isTransient()) {
-                        rewardVariables.push_back(variable.getExpressionVariable());
-                    }
-                }
+                rewardExpressions = model.getAllRewardModelExpressions();
             } else {
-                // Extract the reward models from the program based on the names we were given.
-                auto const& globalVariables = model.getGlobalVariables();
+                // Extract the reward models from the model based on the names we were given.
                 for (auto const& rewardModelName : this->options.getRewardModelNames()) {
-                    if (globalVariables.hasVariable(rewardModelName)) {
-                        rewardVariables.push_back(globalVariables.getVariable(rewardModelName).getExpressionVariable());
-                    } else {
-                        STORM_LOG_THROW(rewardModelName.empty(), storm::exceptions::InvalidArgumentException, "Cannot build unknown reward model '" << rewardModelName << "'.");
-                        STORM_LOG_THROW(globalVariables.getNumberOfRealTransientVariables() + globalVariables.getNumberOfUnboundedIntegerTransientVariables() == 1, storm::exceptions::InvalidArgumentException, "Reference to standard reward model is ambiguous.");
-                    }
-                }
-                
-                // If no reward model was yet added, but there was one that was given in the options, we try to build the
-                // standard reward model.
-                if (rewardVariables.empty() && !this->options.getRewardModelNames().empty()) {
-                    bool foundTransientVariable = false;
-                    for (auto const& transientVariable : globalVariables.getTransientVariables()) {
-                        if (transientVariable.isUnboundedIntegerVariable() || transientVariable.isRealVariable()) {
-                            rewardVariables.push_back(transientVariable.getExpressionVariable());
-                            foundTransientVariable = true;
-                            break;
-                        }
-                    }
-                    STORM_LOG_ASSERT(foundTransientVariable, "Expected to find a fitting transient variable.");
+                    rewardExpressions.emplace_back(rewardModelName, model.getRewardModelExpression(rewardModelName));
                 }
             }
             
@@ -136,6 +130,11 @@ namespace storm {
         bool JaniNextStateGenerator<ValueType, StateType>::isDiscreteTimeModel() const {
             return model.isDiscreteTimeModel();
         }
+
+        template<typename ValueType, typename StateType>
+        bool JaniNextStateGenerator<ValueType, StateType>::isPartiallyObservable() const {
+            return false;
+        };
         
         template<typename ValueType, typename StateType>
         uint64_t JaniNextStateGenerator<ValueType, StateType>::getLocation(CompressedState const& state, LocationVariableInformation const& locationVariable) const {
@@ -171,108 +170,255 @@ namespace storm {
         
         template<typename ValueType, typename StateType>
         std::vector<StateType> JaniNextStateGenerator<ValueType, StateType>::getInitialStates(StateToIdCallback const& stateToIdCallback) {
-            // Prepare an SMT solver to enumerate all initial states.
-            storm::utility::solver::SmtSolverFactory factory;
-            std::unique_ptr<storm::solver::SmtSolver> solver = factory.create(model.getExpressionManager());
-            
-            std::vector<storm::expressions::Expression> rangeExpressions = model.getAllRangeExpressions(this->parallelAutomata);
-            for (auto const& expression : rangeExpressions) {
-                solver->add(expression);
-            }
-            solver->add(model.getInitialStatesExpression(this->parallelAutomata));
-            
-            // Proceed as long as the solver can still enumerate initial states.
             std::vector<StateType> initialStateIndices;
-            while (solver->check() == storm::solver::SmtSolver::CheckResult::Sat) {
-                // Create fresh state.
-                CompressedState initialState(this->variableInformation.getTotalBitOffset());
+
+            if (this->model.hasNonTrivialInitialStates()) {
+                // Prepare an SMT solver to enumerate all initial states.
+                storm::utility::solver::SmtSolverFactory factory;
+                std::unique_ptr<storm::solver::SmtSolver> solver = factory.create(model.getExpressionManager());
                 
-                // Read variable assignment from the solution of the solver. Also, create an expression we can use to
-                // prevent the variable assignment from being enumerated again.
-                storm::expressions::Expression blockingExpression;
-                std::shared_ptr<storm::solver::SmtSolver::ModelReference> model = solver->getModel();
-                for (auto const& booleanVariable : this->variableInformation.booleanVariables) {
-                    bool variableValue = model->getBooleanValue(booleanVariable.variable);
-                    storm::expressions::Expression localBlockingExpression = variableValue ? !booleanVariable.variable : booleanVariable.variable;
-                    blockingExpression = blockingExpression.isInitialized() ? blockingExpression || localBlockingExpression : localBlockingExpression;
-                    initialState.set(booleanVariable.bitOffset, variableValue);
+                std::vector<storm::expressions::Expression> rangeExpressions = model.getAllRangeExpressions(this->parallelAutomata);
+                for (auto const& expression : rangeExpressions) {
+                    solver->add(expression);
                 }
-                for (auto const& integerVariable : this->variableInformation.integerVariables) {
-                    int_fast64_t variableValue = model->getIntegerValue(integerVariable.variable);
-                    storm::expressions::Expression localBlockingExpression = integerVariable.variable != model->getManager().integer(variableValue);
-                    blockingExpression = blockingExpression.isInitialized() ? blockingExpression || localBlockingExpression : localBlockingExpression;
-                    initialState.setFromInt(integerVariable.bitOffset, integerVariable.bitWidth, static_cast<uint_fast64_t>(variableValue - integerVariable.lowerBound));
+                solver->add(model.getInitialStatesExpression(this->parallelAutomata));
+                
+                // Proceed as long as the solver can still enumerate initial states.
+                while (solver->check() == storm::solver::SmtSolver::CheckResult::Sat) {
+                    // Create fresh state.
+                    CompressedState initialState(this->variableInformation.getTotalBitOffset(true));
+                    
+                    // Read variable assignment from the solution of the solver. Also, create an expression we can use to
+                    // prevent the variable assignment from being enumerated again.
+                    storm::expressions::Expression blockingExpression;
+                    std::shared_ptr<storm::solver::SmtSolver::ModelReference> model = solver->getModel();
+                    for (auto const& booleanVariable : this->variableInformation.booleanVariables) {
+                        bool variableValue = model->getBooleanValue(booleanVariable.variable);
+                        storm::expressions::Expression localBlockingExpression = variableValue ? !booleanVariable.variable : booleanVariable.variable;
+                        blockingExpression = blockingExpression.isInitialized() ? blockingExpression || localBlockingExpression : localBlockingExpression;
+                        initialState.set(booleanVariable.bitOffset, variableValue);
+                    }
+                    for (auto const& integerVariable : this->variableInformation.integerVariables) {
+                        int_fast64_t variableValue = model->getIntegerValue(integerVariable.variable);
+                        if (integerVariable.forceOutOfBoundsCheck || this->getOptions().isExplorationChecksSet()) {
+                            STORM_LOG_THROW(variableValue >= integerVariable.lowerBound, storm::exceptions::WrongFormatException, "The initial value for variable " << integerVariable.variable.getName() << " is lower than the lower bound.");
+                            STORM_LOG_THROW(variableValue <= integerVariable.upperBound, storm::exceptions::WrongFormatException, "The initial value for variable " << integerVariable.variable.getName() << " is higher than the upper bound");
+                        }
+                        storm::expressions::Expression localBlockingExpression = integerVariable.variable != model->getManager().integer(variableValue);
+                        blockingExpression = blockingExpression.isInitialized() ? blockingExpression || localBlockingExpression : localBlockingExpression;
+                        initialState.setFromInt(integerVariable.bitOffset, integerVariable.bitWidth, static_cast<uint_fast64_t>(variableValue - integerVariable.lowerBound));
+                    }
+                    
+                    // Gather iterators to the initial locations of all the automata.
+                    std::vector<std::set<uint64_t>::const_iterator> initialLocationsIts;
+                    std::vector<std::set<uint64_t>::const_iterator> initialLocationsItes;
+                    for (auto const& automatonRef : this->parallelAutomata) {
+                        auto const& automaton = automatonRef.get();
+                        initialLocationsIts.push_back(automaton.getInitialLocationIndices().cbegin());
+                        initialLocationsItes.push_back(automaton.getInitialLocationIndices().cend());
+                    }
+                    storm::utility::combinatorics::forEach(initialLocationsIts, initialLocationsItes, [this,&initialState] (uint64_t index, uint64_t value) { setLocation(initialState, this->variableInformation.locationVariables[index], value); }, [&stateToIdCallback,&initialStateIndices,&initialState] () {
+                        // Register initial state.
+                        StateType id = stateToIdCallback(initialState);
+                        initialStateIndices.push_back(id);
+                        return true;
+                    });
+                    
+                    // Block the current initial state to search for the next one.
+                    if (!blockingExpression.isInitialized()) {
+                        break;
+                    }
+                    solver->add(blockingExpression);
                 }
                 
-                // Gather iterators to the initial locations of all the automata.
-                std::vector<std::set<uint64_t>::const_iterator> initialLocationsIts;
-                std::vector<std::set<uint64_t>::const_iterator> initialLocationsItes;
-                for (auto const& automatonRef : this->parallelAutomata) {
-                    auto const& automaton = automatonRef.get();
-                    initialLocationsIts.push_back(automaton.getInitialLocationIndices().cbegin());
-                    initialLocationsItes.push_back(automaton.getInitialLocationIndices().cend());
-                }
-                storm::utility::combinatorics::forEach(initialLocationsIts, initialLocationsItes, [this,&initialState] (uint64_t index, uint64_t value) { setLocation(initialState, this->variableInformation.locationVariables[index], value); }, [&stateToIdCallback,&initialStateIndices,&initialState] () {
-                    // Register initial state.
-                    StateType id = stateToIdCallback(initialState);
-                    initialStateIndices.push_back(id);
-                    return true;
-                });
+                STORM_LOG_DEBUG("Enumerated " << initialStateIndices.size() << " initial states using SMT solving.");
+            } else {
+                CompressedState initialState(this->variableInformation.getTotalBitOffset(true));
                 
-                // Block the current initial state to search for the next one.
-                if (!blockingExpression.isInitialized()) {
-                    break;
+                std::vector<int_fast64_t> currentIntegerValues;
+                currentIntegerValues.reserve(this->variableInformation.integerVariables.size());
+                for (auto const& variable : this->variableInformation.integerVariables) {
+                    STORM_LOG_THROW(variable.lowerBound <= variable.upperBound, storm::exceptions::InvalidArgumentException, "Expecting variable with non-empty set of possible values.");
+                    currentIntegerValues.emplace_back(0);
+                    initialState.setFromInt(variable.bitOffset, variable.bitWidth, 0);
                 }
-                solver->add(blockingExpression);
+                
+                initialStateIndices.emplace_back(stateToIdCallback(initialState));
+                
+                bool done = false;
+                while (!done) {
+                    bool changedBooleanVariable = false;
+                    for (auto const& booleanVariable : this->variableInformation.booleanVariables) {
+                        if (initialState.get(booleanVariable.bitOffset)) {
+                            initialState.set(booleanVariable.bitOffset);
+                            changedBooleanVariable = true;
+                            break;
+                        } else {
+                            initialState.set(booleanVariable.bitOffset, false);
+                        }
+                    }
+                    
+                    bool changedIntegerVariable = false;
+                    if (changedBooleanVariable) {
+                        initialStateIndices.emplace_back(stateToIdCallback(initialState));
+                    } else {
+                        for (uint64_t integerVariableIndex = 0; integerVariableIndex < this->variableInformation.integerVariables.size(); ++integerVariableIndex) {
+                            auto const& integerVariable = this->variableInformation.integerVariables[integerVariableIndex];
+                            if (currentIntegerValues[integerVariableIndex] < integerVariable.upperBound - integerVariable.lowerBound) {
+                                ++currentIntegerValues[integerVariableIndex];
+                                changedIntegerVariable = true;
+                            } else {
+                                currentIntegerValues[integerVariableIndex] = integerVariable.lowerBound;
+                            }
+                            initialState.setFromInt(integerVariable.bitOffset, integerVariable.bitWidth, currentIntegerValues[integerVariableIndex]);
+                            
+                            if (changedIntegerVariable) {
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if (changedIntegerVariable) {
+                        initialStateIndices.emplace_back(stateToIdCallback(initialState));
+                    }
+                    
+                    done = !changedBooleanVariable && !changedIntegerVariable;
+                }
+                
+                STORM_LOG_DEBUG("Enumerated " << initialStateIndices.size() << " initial states using brute force enumeration.");
             }
             
             return initialStateIndices;
         }
         
         template<typename ValueType, typename StateType>
-        CompressedState JaniNextStateGenerator<ValueType, StateType>::applyUpdate(CompressedState const& state, storm::jani::EdgeDestination const& destination, storm::generator::LocationVariableInformation const& locationVariable) {
-            CompressedState newState(state);
+        void JaniNextStateGenerator<ValueType, StateType>::applyUpdate(CompressedState& state, storm::jani::EdgeDestination const& destination, storm::generator::LocationVariableInformation const& locationVariable, int64_t assignmentLevel, storm::expressions::ExpressionEvaluator<ValueType> const& expressionEvaluator) {
             
             // Update the location of the state.
-            setLocation(newState, locationVariable, destination.getLocationIndex());
+            setLocation(state, locationVariable, destination.getLocationIndex());
             
             // Then perform the assignments.
-            auto assignmentIt = destination.getOrderedAssignments().getNonTransientAssignments().begin();
-            auto assignmentIte = destination.getOrderedAssignments().getNonTransientAssignments().end();
+            auto const& assignments = destination.getOrderedAssignments().getNonTransientAssignments(assignmentLevel);
+            auto assignmentIt = assignments.begin();
+            auto assignmentIte = assignments.end();
             
             // Iterate over all boolean assignments and carry them out.
             auto boolIt = this->variableInformation.booleanVariables.begin();
-            for (; assignmentIt != assignmentIte && assignmentIt->getAssignedExpression().hasBooleanType(); ++assignmentIt) {
+            for (; assignmentIt != assignmentIte && assignmentIt->lValueIsVariable() && assignmentIt->getExpressionVariable().hasBooleanType(); ++assignmentIt) {
                 while (assignmentIt->getExpressionVariable() != boolIt->variable) {
                     ++boolIt;
                 }
-                newState.set(boolIt->bitOffset, this->evaluator->asBool(assignmentIt->getAssignedExpression()));
+                state.set(boolIt->bitOffset, expressionEvaluator.asBool(assignmentIt->getAssignedExpression()));
             }
             
             // Iterate over all integer assignments and carry them out.
             auto integerIt = this->variableInformation.integerVariables.begin();
-            for (; assignmentIt != assignmentIte && assignmentIt->getAssignedExpression().hasIntegerType(); ++assignmentIt) {
+            for (; assignmentIt != assignmentIte && assignmentIt->lValueIsVariable() && assignmentIt->getExpressionVariable().hasIntegerType(); ++assignmentIt) {
                 while (assignmentIt->getExpressionVariable() != integerIt->variable) {
                     ++integerIt;
                 }
-                int_fast64_t assignedValue = this->evaluator->asInt(assignmentIt->getAssignedExpression());
+                int_fast64_t assignedValue = expressionEvaluator.asInt(assignmentIt->getAssignedExpression());
                 if (this->options.isAddOutOfBoundsStateSet()) {
                     if (assignedValue < integerIt->lowerBound || assignedValue > integerIt->upperBound) {
-                        return this->outOfBoundsState;
+                        state = this->outOfBoundsState;
                     }
-                } else if (this->options.isExplorationChecksSet()) {
+                } else if (integerIt->forceOutOfBoundsCheck || this->options.isExplorationChecksSet()) {
                     STORM_LOG_THROW(assignedValue >= integerIt->lowerBound, storm::exceptions::WrongFormatException, "The update " << assignmentIt->getExpressionVariable().getName() << " := " << assignmentIt->getAssignedExpression() << " leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << assignmentIt->getExpressionVariable().getName() << "'.");
                     STORM_LOG_THROW(assignedValue <= integerIt->upperBound, storm::exceptions::WrongFormatException, "The update " << assignmentIt->getExpressionVariable().getName() << " := " << assignmentIt->getAssignedExpression() << " leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << assignmentIt->getExpressionVariable().getName() << "'.");
                 }
+                state.setFromInt(integerIt->bitOffset, integerIt->bitWidth, assignedValue - integerIt->lowerBound);
+                STORM_LOG_ASSERT(static_cast<int_fast64_t>(state.getAsInt(integerIt->bitOffset, integerIt->bitWidth)) + integerIt->lowerBound == assignedValue, "Writing to the bit vector bucket failed (read " << state.getAsInt(integerIt->bitOffset, integerIt->bitWidth) << " but wrote " << assignedValue << ").");
+            }
+            // Iterate over all array access assignments and carry them out.
+            for (; assignmentIt != assignmentIte && assignmentIt->lValueIsArrayAccess(); ++assignmentIt) {
+                int_fast64_t arrayIndex = expressionEvaluator.asInt(assignmentIt->getLValue().getArrayIndex());
+                if (assignmentIt->getAssignedExpression().hasIntegerType()) {
+                    IntegerVariableInformation const& intInfo = this->variableInformation.getIntegerArrayVariableReplacement(assignmentIt->getLValue().getArray().getExpressionVariable(), arrayIndex);
+                    int_fast64_t assignedValue = expressionEvaluator.asInt(assignmentIt->getAssignedExpression());
 
-                newState.setFromInt(integerIt->bitOffset, integerIt->bitWidth, assignedValue - integerIt->lowerBound);
-                STORM_LOG_ASSERT(static_cast<int_fast64_t>(newState.getAsInt(integerIt->bitOffset, integerIt->bitWidth)) + integerIt->lowerBound == assignedValue, "Writing to the bit vector bucket failed (read " << newState.getAsInt(integerIt->bitOffset, integerIt->bitWidth) << " but wrote " << assignedValue << ").");
+                    if (this->options.isAddOutOfBoundsStateSet()) {
+                        if (assignedValue < intInfo.lowerBound || assignedValue > intInfo.upperBound) {
+                            state = this->outOfBoundsState;
+                        }
+                    } else if (this->options.isExplorationChecksSet()) {
+                        STORM_LOG_THROW(assignedValue >= intInfo.lowerBound, storm::exceptions::WrongFormatException, "The update " << assignmentIt->getLValue() << " := " << assignmentIt->getAssignedExpression() << " leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << assignmentIt->getExpressionVariable().getName() << "'.");
+                        STORM_LOG_THROW(assignedValue <= intInfo.upperBound, storm::exceptions::WrongFormatException, "The update " << assignmentIt->getLValue() << " := " << assignmentIt->getAssignedExpression() << " leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << assignmentIt->getExpressionVariable().getName() << "'.");
+                    }
+                    state.setFromInt(intInfo.bitOffset, intInfo.bitWidth, assignedValue - intInfo.lowerBound);
+                    STORM_LOG_ASSERT(static_cast<int_fast64_t>(state.getAsInt(intInfo.bitOffset, intInfo.bitWidth)) + intInfo.lowerBound == assignedValue, "Writing to the bit vector bucket failed (read " << state.getAsInt(intInfo.bitOffset, intInfo.bitWidth) << " but wrote " << assignedValue << ").");
+                } else if (assignmentIt->getAssignedExpression().hasBooleanType()) {
+                    BooleanVariableInformation const& boolInfo = this->variableInformation.getBooleanArrayVariableReplacement(assignmentIt->getLValue().getArray().getExpressionVariable(), arrayIndex);
+                    state.set(boolInfo.bitOffset, expressionEvaluator.asBool(assignmentIt->getAssignedExpression()));
+                } else {
+                    STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unhandled type of base variable.");
+                }
             }
             
             // Check that we processed all assignments.
             STORM_LOG_ASSERT(assignmentIt == assignmentIte, "Not all assignments were consumed.");
+        }
+        
+        template<typename ValueType, typename StateType>
+        void JaniNextStateGenerator<ValueType, StateType>::applyTransientUpdate(TransientVariableValuation<ValueType>& transientValuation, storm::jani::detail::ConstAssignments const& transientAssignments,  storm::expressions::ExpressionEvaluator<ValueType> const& expressionEvaluator) {
             
-            return newState;
+            auto assignmentIt = transientAssignments.begin();
+            auto assignmentIte = transientAssignments.end();
+            
+            // Iterate over all boolean assignments and carry them out.
+            auto boolIt = this->transientVariableInformation.booleanVariableInformation.begin();
+            for (; assignmentIt != assignmentIte && assignmentIt->lValueIsVariable() && assignmentIt->getExpressionVariable().hasBooleanType(); ++assignmentIt) {
+                while (assignmentIt->getExpressionVariable() != boolIt->variable) {
+                    ++boolIt;
+                }
+                transientValuation.booleanValues.emplace_back(&(*boolIt), expressionEvaluator.asBool(assignmentIt->getAssignedExpression()));
+            }
+            // Iterate over all integer assignments and carry them out.
+            auto integerIt = this->transientVariableInformation.integerVariableInformation.begin();
+            for (; assignmentIt != assignmentIte && assignmentIt->lValueIsVariable() && assignmentIt->getExpressionVariable().hasIntegerType(); ++assignmentIt) {
+                while (assignmentIt->getExpressionVariable() != integerIt->variable) {
+                    ++integerIt;
+                }
+                int64_t assignedValue = expressionEvaluator.asInt(assignmentIt->getAssignedExpression());
+                if (this->options.isExplorationChecksSet()) {
+                    STORM_LOG_THROW(assignedValue >= integerIt->lowerBound, storm::exceptions::WrongFormatException, "The update " << assignmentIt->getExpressionVariable().getName() << " := " << assignmentIt->getAssignedExpression() << " leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << assignmentIt->getExpressionVariable().getName() << "'.");
+                    STORM_LOG_THROW(assignedValue <= integerIt->upperBound, storm::exceptions::WrongFormatException, "The update " << assignmentIt->getExpressionVariable().getName() << " := " << assignmentIt->getAssignedExpression() << " leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << assignmentIt->getExpressionVariable().getName() << "'.");
+                }
+                transientValuation.integerValues.emplace_back(&(*integerIt), assignedValue);
+            }
+            // Iterate over all rational assignments and carry them out.
+            auto rationalIt = this->transientVariableInformation.rationalVariableInformation.begin();
+            for (; assignmentIt != assignmentIte && assignmentIt->lValueIsVariable() && assignmentIt->getExpressionVariable().hasRationalType(); ++assignmentIt) {
+                while (assignmentIt->getExpressionVariable() != rationalIt->variable) {
+                    ++rationalIt;
+                }
+                transientValuation.rationalValues.emplace_back(&(*rationalIt), expressionEvaluator.asRational(assignmentIt->getAssignedExpression()));
+            }
+            
+            // Iterate over all array access assignments and carry them out.
+            for (; assignmentIt != assignmentIte && assignmentIt->lValueIsArrayAccess(); ++assignmentIt) {
+                int_fast64_t arrayIndex = expressionEvaluator.asInt(assignmentIt->getLValue().getArrayIndex());
+                storm::expressions::Type const& baseType = assignmentIt->getLValue().getArray().getExpressionVariable().getType();
+                if (baseType.isIntegerType()) {
+                    auto const& intInfo = this->transientVariableInformation.getIntegerArrayVariableReplacement(assignmentIt->getLValue().getArray().getExpressionVariable(), arrayIndex);
+                    int64_t assignedValue = expressionEvaluator.asInt(assignmentIt->getAssignedExpression());
+                    if (this->options.isExplorationChecksSet()) {
+                        STORM_LOG_THROW(assignedValue >= intInfo.lowerBound, storm::exceptions::WrongFormatException, "The update " << assignmentIt->getLValue() << " := " << assignmentIt->getAssignedExpression() << " leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << assignmentIt->getExpressionVariable().getName() << "'.");
+                        STORM_LOG_THROW(assignedValue <= intInfo.upperBound, storm::exceptions::WrongFormatException, "The update " << assignmentIt->getLValue() << " := " << assignmentIt->getAssignedExpression() << " leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << assignmentIt->getExpressionVariable().getName() << "'.");
+                    }
+                    transientValuation.integerValues.emplace_back(&intInfo, assignedValue);
+                } else if (baseType.isBooleanType()) {
+                    auto const& boolInfo = this->transientVariableInformation.getBooleanArrayVariableReplacement(assignmentIt->getLValue().getArray().getExpressionVariable(), arrayIndex);
+                    transientValuation.booleanValues.emplace_back(&boolInfo, expressionEvaluator.asBool(assignmentIt->getAssignedExpression()));
+                } else if (baseType.isRationalType()) {
+                    auto const& rationalInfo = this->transientVariableInformation.getRationalArrayVariableReplacement(assignmentIt->getLValue().getArray().getExpressionVariable(), arrayIndex);
+                    transientValuation.rationalValues.emplace_back(&rationalInfo, expressionEvaluator.asRational(assignmentIt->getAssignedExpression()));
+                } else {
+                    STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unhandled type of base variable.");
+                }
+            }
+            
+            // Check that we processed all assignments.
+            STORM_LOG_ASSERT(assignmentIt == assignmentIte, "Not all assignments were consumed.");
         }
         
         template<typename ValueType, typename StateType>
@@ -285,17 +431,20 @@ namespace storm {
             
             // First, construct the state rewards, as we may return early if there are no choices later and we already
             // need the state rewards then.
-            std::vector<ValueType> stateRewards(this->rewardVariables.size(), storm::utility::zero<ValueType>());
             uint64_t automatonIndex = 0;
+            TransientVariableValuation<ValueType> transientVariableValuation;
             for (auto const& automatonRef : this->parallelAutomata) {
                 auto const& automaton = automatonRef.get();
                 uint64_t currentLocationIndex = locations[automatonIndex];
                 storm::jani::Location const& location = automaton.getLocation(currentLocationIndex);
-                auto valueIt = stateRewards.begin();
-                performTransientAssignments(location.getAssignments().getTransientAssignments(), [&valueIt] (ValueType const& value) { *valueIt += value; ++valueIt; } );
+                STORM_LOG_ASSERT(!location.getAssignments().hasMultipleLevels(true), "Indexed assignments at locations are not supported in the jani standard.");
+                applyTransientUpdate(transientVariableValuation, location.getAssignments().getTransientAssignments(), *this->evaluator);
                 ++automatonIndex;
             }
-            result.addStateRewards(std::move(stateRewards));
+            transientVariableValuation.setInEvaluator(*this->evaluator, this->getOptions().isExplorationChecksSet());
+            result.addStateRewards(evaluateRewardExpressions());
+            this->transientVariableInformation.setDefaultValuesInEvaluator(*this->evaluator);
+
             
             // If a terminal expression was set and we must not expand this state, return now.
             if (!this->terminalStates.empty()) {
@@ -320,6 +469,10 @@ namespace storm {
             // If the model is a deterministic model, we need to fuse the choices into one.
             if (this->isDeterministicModel() && totalNumberOfChoices > 1) {
                 Choice<ValueType> globalChoice;
+
+                if (this->options.isAddOverlappingGuardLabelSet()) {
+                    this->overlappingGuardStates->push_back(stateToIdCallback(*this->state));
+                }
                 
                 // For CTMCs, we need to keep track of the total exit rate to scale the action rewards later. For DTMCs
                 // this is equal to the number of choices, which is why we initialize it like this here.
@@ -340,9 +493,9 @@ namespace storm {
                     }
                 }
                 
-                std::vector<ValueType> stateActionRewards(rewardVariables.size(), storm::utility::zero<ValueType>());
+                std::vector<ValueType> stateActionRewards(rewardExpressions.size(), storm::utility::zero<ValueType>());
                 for (auto const& choice : allChoices) {
-                    for (uint_fast64_t rewardVariableIndex = 0; rewardVariableIndex < rewardVariables.size(); ++rewardVariableIndex) {
+                    for (uint_fast64_t rewardVariableIndex = 0; rewardVariableIndex < rewardExpressions.size(); ++rewardVariableIndex) {
                         stateActionRewards[rewardVariableIndex] += choice.getRewards()[rewardVariableIndex] * choice.getTotalMass() / totalExitRate;
                     }
                     
@@ -377,17 +530,67 @@ namespace storm {
             
             Choice<ValueType> choice(edge.getActionIndex(), static_cast<bool>(exitRate));
             
+            // Perform the transient edge assignments and create the state action rewards
+            TransientVariableValuation<ValueType> transientVariableValuation;
+            if (!edge.getAssignments().empty()) {
+                for (int64_t assignmentLevel = edge.getAssignments().getLowestLevel(true); assignmentLevel <= edge.getAssignments().getHighestLevel(true); ++assignmentLevel) {
+                    transientVariableValuation.clear();
+                    applyTransientUpdate(transientVariableValuation, edge.getAssignments().getTransientAssignments(assignmentLevel), *this->evaluator);
+                    transientVariableValuation.setInEvaluator(*this->evaluator, this->getOptions().isExplorationChecksSet());
+                }
+            }
+            std::vector<ValueType> stateActionRewards = evaluateRewardExpressions();
+            if (!edge.getAssignments().empty()) {
+                transientVariableInformation.setDefaultValuesInEvaluator(*this->evaluator);
+            }
+            
             // Iterate over all updates of the current command.
             ValueType probabilitySum = storm::utility::zero<ValueType>();
             for (auto const& destination : edge.getDestinations()) {
                 ValueType probability = this->evaluator->asRational(destination.getProbability());
                 
                 if (probability != storm::utility::zero<ValueType>()) {
+                    bool evaluatorChanged = false;
                     // Obtain target state index and add it to the list of known states. If it has not yet been
                     // seen, we also add it to the set of states that have yet to be explored.
-                    auto newState = applyUpdate(state, destination, this->variableInformation.locationVariables[automatonIndex]);
+                    int64_t assignmentLevel = edge.getLowestAssignmentLevel(); // Might be the largest possible integer, if there is no assignment
+                    int64_t const& highestLevel = edge.getHighestAssignmentLevel();
+                    bool hasTransientAssignments = destination.hasTransientAssignment();
+                    CompressedState newState = state;
+                    applyUpdate(newState, destination, this->variableInformation.locationVariables[automatonIndex], assignmentLevel, *this->evaluator);
+                    if (hasTransientAssignments) {
+                        STORM_LOG_ASSERT(this->options.isScaleAndLiftTransitionRewardsSet(), "Transition rewards are not supported and scaling to action rewards is disabled.");
+                        transientVariableValuation.clear();
+                        applyTransientUpdate(transientVariableValuation, destination.getOrderedAssignments().getTransientAssignments(assignmentLevel), *this->evaluator);
+                        transientVariableValuation.setInEvaluator(*this->evaluator, this->getOptions().isExplorationChecksSet());
+                        evaluatorChanged = true;
+                    }
+                    if (assignmentLevel < highestLevel) {
+                        while (assignmentLevel < highestLevel) {
+                            ++assignmentLevel;
+                            unpackStateIntoEvaluator(newState, this->variableInformation, *this->evaluator);
+                            evaluatorChanged = true;
+                            applyUpdate(newState, destination, this->variableInformation.locationVariables[automatonIndex], assignmentLevel, *this->evaluator);
+                            if (hasTransientAssignments) {
+                                transientVariableValuation.clear();
+                                applyTransientUpdate(transientVariableValuation, destination.getOrderedAssignments().getTransientAssignments(assignmentLevel), *this->evaluator);
+                                transientVariableValuation.setInEvaluator(*this->evaluator, this->getOptions().isExplorationChecksSet());
+                                evaluatorChanged = true;
+                            }
+                        }
+                    }
                     
-                    StateType stateIndex = stateToIdCallback(applyUpdate(state, destination, this->variableInformation.locationVariables[automatonIndex]));
+                    addEvaluatedRewardExpressions(stateActionRewards, probability);
+                    
+                    if (evaluatorChanged) {
+                        // Restore the old variable valuation
+                        unpackStateIntoEvaluator(state, this->variableInformation, *this->evaluator);
+                        if (hasTransientAssignments) {
+                            this->transientVariableInformation.setDefaultValuesInEvaluator(*this->evaluator);
+                        }
+                    }
+                    
+                    StateType stateIndex = stateToIdCallback(newState);
                     
                     // Update the choice by adding the probability/target state to it.
                     probability = exitRate ? exitRate.get() * probability : probability;
@@ -399,8 +602,8 @@ namespace storm {
                 }
             }
             
-            // Create the state-action reward for the newly created choice.
-            performTransientAssignments(edge.getAssignments().getTransientAssignments(), [&choice] (ValueType const& value) { choice.addReward(value); } );
+            // Add the state action rewards
+            choice.addRewards(std::move(stateActionRewards));
             
             if (this->options.isExplorationChecksSet()) {
                 // Check that the resulting distribution is in fact a distribution.
@@ -408,6 +611,112 @@ namespace storm {
             }
             
             return choice;
+        }
+        
+        template<typename ValueType, typename StateType>
+        void JaniNextStateGenerator<ValueType, StateType>::generateSynchronizedDistribution(storm::storage::BitVector const& state, AutomataEdgeSets const& edgeCombination, std::vector<EdgeSetWithIndices::const_iterator> const& iteratorList, storm::builder::jit::Distribution<StateType, ValueType>& distribution, std::vector<ValueType>& stateActionRewards, EdgeIndexSet& edgeIndices, StateToIdCallback stateToIdCallback) {
+            
+            // Collect some information of the edges.
+            int64_t lowestDestinationAssignmentLevel = std::numeric_limits<int64_t>::max();
+            int64_t highestDestinationAssignmentLevel = std::numeric_limits<int64_t>::min();
+            int64_t lowestEdgeAssignmentLevel = std::numeric_limits<int64_t>::max();
+            int64_t highestEdgeAssignmentLevel = std::numeric_limits<int64_t>::min();
+            uint64_t numDestinations = 1;
+            for (uint_fast64_t i = 0; i < iteratorList.size(); ++i) {
+                if (this->getOptions().isBuildChoiceOriginsSet()) {
+                    edgeIndices.insert(model.encodeAutomatonAndEdgeIndices(edgeCombination[i].first, iteratorList[i]->first));
+                }
+                storm::jani::Edge const& edge = *iteratorList[i]->second;
+                lowestDestinationAssignmentLevel = std::min(lowestDestinationAssignmentLevel, edge.getLowestAssignmentLevel());
+                highestDestinationAssignmentLevel = std::max(highestDestinationAssignmentLevel, edge.getHighestAssignmentLevel());
+                if (!edge.getAssignments().empty()) {
+                    lowestEdgeAssignmentLevel = std::min(lowestEdgeAssignmentLevel, edge.getAssignments().getLowestLevel(true));
+                    highestEdgeAssignmentLevel = std::max(highestEdgeAssignmentLevel, edge.getAssignments().getHighestLevel(true));
+                }
+                numDestinations *= edge.getNumberOfDestinations();
+            }
+            
+            // Perform the edge assignments (if there are any)
+            TransientVariableValuation<ValueType> transientVariableValuation;
+            if (lowestEdgeAssignmentLevel <= highestEdgeAssignmentLevel) {
+                for (int64_t assignmentLevel = lowestEdgeAssignmentLevel; assignmentLevel <= highestEdgeAssignmentLevel; ++assignmentLevel) {
+                    transientVariableValuation.clear();
+                    for (uint_fast64_t i = 0; i < iteratorList.size(); ++i) {
+                        storm::jani::Edge const& edge = *iteratorList[i]->second;
+                        applyTransientUpdate(transientVariableValuation, edge.getAssignments().getTransientAssignments(assignmentLevel), *this->evaluator);
+                    }
+                    transientVariableValuation.setInEvaluator(*this->evaluator, this->getOptions().isExplorationChecksSet());
+                }
+                addEvaluatedRewardExpressions(stateActionRewards, storm::utility::one<ValueType>());
+                transientVariableInformation.setDefaultValuesInEvaluator(*this->evaluator);
+            }
+            
+            std::vector<storm::jani::EdgeDestination const*> destinations;
+            std::vector<LocationVariableInformation const*> locationVars;
+            destinations.reserve(iteratorList.size());
+            locationVars.reserve(iteratorList.size());
+
+            for (uint64_t destinationId = 0; destinationId < numDestinations; ++destinationId) {
+                // First assignment level
+                destinations.clear();
+                locationVars.clear();
+                transientVariableValuation.clear();
+                CompressedState successorState = state;
+                ValueType successorProbability = storm::utility::one<ValueType>();
+
+                uint64_t destinationIndex = destinationId;
+                for (uint64_t i = 0; i < iteratorList.size(); ++i) {
+                    storm::jani::Edge const& edge = *iteratorList[i]->second;
+                    STORM_LOG_ASSERT(edge.getNumberOfDestinations() > 0, "Found an edge with zero destinations. This is not expected.");
+                    uint64_t localDestinationIndex = destinationIndex % edge.getNumberOfDestinations();
+                    destinations.push_back(&edge.getDestination(localDestinationIndex));
+                    locationVars.push_back(&this->variableInformation.locationVariables[edgeCombination[i].first]);
+                    destinationIndex /= edge.getNumberOfDestinations();
+                    ValueType probability = this->evaluator->asRational(destinations.back()->getProbability());
+                    if (edge.hasRate()) {
+                        successorProbability *= probability * this->evaluator->asRational(edge.getRate());
+                    } else {
+                        successorProbability *= probability;
+                    }
+                    if (storm::utility::isZero(successorProbability)) {
+                        break;
+                    }
+                    
+                    applyUpdate(successorState, *destinations.back(), *locationVars.back(), lowestDestinationAssignmentLevel, *this->evaluator);
+                    applyTransientUpdate(transientVariableValuation, destinations.back()->getOrderedAssignments().getTransientAssignments(lowestDestinationAssignmentLevel), *this->evaluator);
+                }
+                
+                
+                if (!storm::utility::isZero(successorProbability)) {
+                    bool evaluatorChanged = false;
+                    // remaining assignment levels (if there are any)
+                    for (int64_t assignmentLevel = lowestDestinationAssignmentLevel + 1; assignmentLevel <= highestDestinationAssignmentLevel; ++assignmentLevel) {
+                        unpackStateIntoEvaluator(successorState, this->variableInformation, *this->evaluator);
+                        transientVariableValuation.setInEvaluator(*this->evaluator, this->getOptions().isExplorationChecksSet());
+                        transientVariableValuation.clear();
+                        evaluatorChanged = true;
+                        auto locationVarIt = locationVars.begin();
+                        for (auto const& destPtr : destinations) {
+                            applyUpdate(successorState, *destPtr, **locationVarIt, assignmentLevel, *this->evaluator);
+                            applyTransientUpdate(transientVariableValuation, destinations.back()->getOrderedAssignments().getTransientAssignments(assignmentLevel), *this->evaluator);
+                            ++locationVarIt;
+                        }
+                    }
+                    if (!transientVariableValuation.empty()) {
+                        evaluatorChanged = true;
+                        transientVariableValuation.setInEvaluator(*this->evaluator, this->getOptions().isExplorationChecksSet());
+                    }
+                    addEvaluatedRewardExpressions(stateActionRewards, successorProbability);
+                    if (evaluatorChanged) {
+                        // Restore the old state information
+                        unpackStateIntoEvaluator(state, this->variableInformation, *this->evaluator);
+                        this->transientVariableInformation.setDefaultValuesInEvaluator(*this->evaluator);
+                    }
+                    
+                    StateType id = stateToIdCallback(successorState);
+                    distribution.add(id, successorProbability);
+                }
+            }
         }
         
         template<typename ValueType, typename StateType>
@@ -426,54 +735,18 @@ namespace storm {
                 iteratorList[i] = edgeCombination[i].second.cbegin();
             }
             
-            storm::builder::jit::Distribution<CompressedState, ValueType> currentDistribution;
-            storm::builder::jit::Distribution<CompressedState, ValueType> nextDistribution;
+            storm::builder::jit::Distribution<StateType, ValueType> distribution;
 
             // As long as there is one feasible combination of commands, keep on expanding it.
             bool done = false;
             while (!done) {
-                std::vector<ValueType> stateActionRewards(rewardVariables.size(), storm::utility::zero<ValueType>());
-                
-                currentDistribution.add(state, storm::utility::one<ValueType>());
-                
+                distribution.clear();
+
                 EdgeIndexSet edgeIndices;
-                for (uint_fast64_t i = 0; i < iteratorList.size(); ++i) {
-                    auto const& indexAndEdge = *iteratorList[i];
-                    
-                    if (this->getOptions().isBuildChoiceOriginsSet()) {
-                        edgeIndices.insert(model.encodeAutomatonAndEdgeIndices(edgeCombination[i].first, indexAndEdge.first));
-                    }
-                    
-                    storm::jani::Edge const& edge = *indexAndEdge.second;
-                    
-                    for (auto const& destination : edge.getDestinations()) {
-                        for (auto const& stateProbability : currentDistribution) {
-                            // Compute the new state under the current update and add it to the set of new target states.
-                            CompressedState newTargetState = applyUpdate(stateProbability.getState(), destination, this->variableInformation.locationVariables[edgeCombination[i].first]);
-                            
-                            // If the new state was already found as a successor state, update the probability
-                            // and otherwise insert it.
-                            ValueType probability = stateProbability.getValue() * this->evaluator->asRational(destination.getProbability());
-                            if (edge.hasRate()) {
-                                probability *= this->evaluator->asRational(edge.getRate());
-                            }
-                            if (probability != storm::utility::zero<ValueType>()) {
-                                nextDistribution.add(newTargetState, probability);
-                            }
-                        }
-                        
-                        // Create the state-action reward for the newly created choice.
-                        auto valueIt = stateActionRewards.begin();
-                        performTransientAssignments(edge.getAssignments().getTransientAssignments(), [&valueIt] (ValueType const& value) { *valueIt += value; ++valueIt; } );
-                    }
-                    
-                    nextDistribution.compress();
-                    
-                    // If there is one more command to come, shift the target states one time step back.
-                    if (i < iteratorList.size() - 1) {
-                        currentDistribution = std::move(nextDistribution);
-                    }
-                }
+                std::vector<ValueType> stateActionRewards(rewardExpressions.size(), storm::utility::zero<ValueType>());
+                // old version without assignment levels generateSynchronizedDistribution(state, storm::utility::one<ValueType>(), 0, edgeCombination, iteratorList, distribution, stateActionRewards, edgeIndices, stateToIdCallback);
+                generateSynchronizedDistribution(state, edgeCombination, iteratorList, distribution, stateActionRewards, edgeIndices, stateToIdCallback);
+                distribution.compress();
                 
                 // At this point, we applied all commands of the current command combination and newTargetStates
                 // contains all target states and their respective probabilities. That means we are now ready to
@@ -493,9 +766,8 @@ namespace storm {
                 
                 // Add the probabilities/rates to the newly created choice.
                 ValueType probabilitySum = storm::utility::zero<ValueType>();
-                for (auto const& stateProbability : nextDistribution) {
-                    StateType actualIndex = stateToIdCallback(stateProbability.getState());
-                    choice.addProbability(actualIndex, stateProbability.getValue());
+                for (auto const& stateProbability : distribution) {
+                    choice.addProbability(stateProbability.getState(), stateProbability.getValue());
                     
                     if (this->options.isExplorationChecksSet()) {
                         probabilitySum += stateProbability.getValue();
@@ -504,7 +776,7 @@ namespace storm {
                 
                 if (this->options.isExplorationChecksSet()) {
                     // Check that the resulting distribution is in fact a distribution.
-                    STORM_LOG_THROW(!this->isDiscreteTimeModel() || !this->comparator.isConstant(probabilitySum) || this->comparator.isOne(probabilitySum), storm::exceptions::WrongFormatException, "Sum of update probabilities do not sum to one for some command (actually sum to " << probabilitySum << ").");
+                    STORM_LOG_THROW(!this->isDiscreteTimeModel() || !this->comparator.isConstant(probabilitySum) || this->comparator.isOne(probabilitySum), storm::exceptions::WrongFormatException, "Sum of update probabilities do not sum to one for some edge (actually sum to " << probabilitySum << ").");
                 }
                 
                 // Now, check whether there is one more command combination to consider.
@@ -601,6 +873,8 @@ namespace storm {
         
         template<typename ValueType, typename StateType>
         void JaniNextStateGenerator<ValueType, StateType>::checkGlobalVariableWritesValid(AutomataEdgeSets const& enabledEdges) const {
+            // Todo: this also throws if the writes are on different assignment level
+            // Todo: this also throws if the writes are on different elements of the same array
             std::map<storm::expressions::Variable, uint64_t> writtenGlobalVariables;
             for (auto edgeSetIt = enabledEdges.begin(), edgeSetIte = enabledEdges.end(); edgeSetIt != edgeSetIte; ++edgeSetIt) {
                 for (auto const& indexAndEdge : edgeSetIt->second) {
@@ -620,7 +894,7 @@ namespace storm {
         
         template<typename ValueType, typename StateType>
         std::size_t JaniNextStateGenerator<ValueType, StateType>::getNumberOfRewardModels() const {
-            return rewardVariables.size();
+            return rewardExpressions.size();
         }
         
         template<typename ValueType, typename StateType>
@@ -633,10 +907,15 @@ namespace storm {
             // As in JANI we can use transient boolean variable assignments in locations to identify states, we need to
             // create a list of boolean transient variables and the expressions that define them.
             std::unordered_map<storm::expressions::Variable, storm::expressions::Expression> transientVariableToExpressionMap;
+            bool translateArrays = !this->arrayEliminatorData.replacements.empty();
             for (auto const& variable : model.getGlobalVariables().getTransientVariables()) {
                 if (variable.isBooleanVariable()) {
                     if (this->options.isBuildAllLabelsSet() || this->options.getLabelNames().find(variable.getName()) != this->options.getLabelNames().end()) {
-                        transientVariableToExpressionMap[variable.getExpressionVariable()] = model.getLabelExpression(variable.asBooleanVariable(), this->parallelAutomata);
+                        storm::expressions::Expression labelExpression = model.getLabelExpression(variable.asBooleanVariable(), this->parallelAutomata);
+                        if (translateArrays) {
+                            labelExpression = this->arrayEliminatorData.transformExpression(labelExpression);
+                        }
+                        transientVariableToExpressionMap[variable.getExpressionVariable()] = std::move(labelExpression);
                     }
                 }
             }
@@ -645,83 +924,66 @@ namespace storm {
             for (auto const& element : transientVariableToExpressionMap) {
                 transientVariableExpressions.push_back(std::make_pair(element.first.getName(), element.second));
             }
-            
             return NextStateGenerator<ValueType, StateType>::label(stateStorage, initialStateIndices, deadlockStateIndices, transientVariableExpressions);
         }
         
         template<typename ValueType, typename StateType>
-        void JaniNextStateGenerator<ValueType, StateType>::performTransientAssignments(storm::jani::detail::ConstAssignments const& transientAssignments, std::function<void (ValueType const&)> const& callback) {
-            // If there are no reward variables, there is no need to iterate at all.
-            if (rewardVariables.empty()) {
-                return;
+        std::vector<ValueType> JaniNextStateGenerator<ValueType, StateType>::evaluateRewardExpressions() const {
+            std::vector<ValueType> result;
+            result.reserve(rewardExpressions.size());
+            for (auto const& rewardExpression : rewardExpressions) {
+                result.push_back(this->evaluator->asRational(rewardExpression.second));
             }
-            
-            // Otherwise, perform the callback for all selected reward variables.
-            auto rewardVariableIt = rewardVariables.begin();
-            auto rewardVariableIte = rewardVariables.end();
-            for (auto const& assignment : transientAssignments) {
-                while (rewardVariableIt != rewardVariableIte && *rewardVariableIt < assignment.getExpressionVariable()) {
-                    callback(storm::utility::zero<ValueType>());
-                    ++rewardVariableIt;
-                }
-                if (rewardVariableIt == rewardVariableIte) {
-                    break;
-                } else if (*rewardVariableIt == assignment.getExpressionVariable()) {
-                    callback(ValueType(this->evaluator->asRational(assignment.getAssignedExpression())));
-                    ++rewardVariableIt;
-                }
-            }
-            // Add a value of zero for all variables that have no assignment.
-            for (; rewardVariableIt != rewardVariableIte; ++rewardVariableIt) {
-                callback(storm::utility::zero<ValueType>());
+            return result;
+        }
+        
+        template<typename ValueType, typename StateType>
+        void JaniNextStateGenerator<ValueType, StateType>::addEvaluatedRewardExpressions(std::vector<ValueType>& rewards, ValueType const& factor) const {
+            assert(rewards.size() == rewardExpressions.size());
+            auto rewIt = rewards.begin();
+            for (auto const& rewardExpression : rewardExpressions) {
+                (*rewIt) += factor * this->evaluator->asRational(rewardExpression.second);
+                ++rewIt;
             }
         }
         
         template<typename ValueType, typename StateType>
         void JaniNextStateGenerator<ValueType, StateType>::buildRewardModelInformation() {
-            // Prepare all reward model information structs.
-            for (auto const& variable : rewardVariables) {
-                rewardModelInformation.emplace_back(variable.getName(), false, false, false);
+            // Prepare all reward model information structs and get a mapping from variables to rewardModels that use this variable
+            std::map<storm::expressions::Variable, std::vector<uint64_t>> variableToRewardIndices;
+            for (uint64_t i = 0; i < rewardExpressions.size(); ++i) {
+                rewardModelInformation.emplace_back(rewardExpressions[i].first, false, false, false);
+                auto varsInExpression = rewardExpressions[i].second.getVariables();
+                for (auto const& v : varsInExpression) {
+                    auto mapIt = variableToRewardIndices.emplace(v, std::vector<uint64_t>()).first;
+                    mapIt->second.push_back(i);
+                }
             }
             
-            // Then fill them.
-            for (auto const& automatonRef : this->parallelAutomata) {
-                auto const& automaton = automatonRef.get();
-                for (auto const& location : automaton.getLocations()) {
-                    auto rewardVariableIt = rewardVariables.begin();
-                    auto rewardVariableIte = rewardVariables.end();
-                    
-                    for (auto const& assignment : location.getAssignments().getTransientAssignments()) {
-                        while (rewardVariableIt != rewardVariableIte && *rewardVariableIt < assignment.getExpressionVariable()) {
-                            ++rewardVariableIt;
-                        }
-                        if (rewardVariableIt == rewardVariableIte) {
-                            break;
-                        }
-                        if (*rewardVariableIt == assignment.getExpressionVariable()) {
-                            rewardModelInformation[std::distance(rewardVariables.begin(), rewardVariableIt)].setHasStateRewards();
-                            ++rewardVariableIt;
-                        }
+            storm::jani::AssignmentsFinder finder;
+            for (auto const& varRewIndices : variableToRewardIndices) {
+                auto assignmentsFinderResult = finder.find(this->model, varRewIndices.first);
+                if (assignmentsFinderResult.hasLocationAssignment) {
+                    for (auto const& rewModelIndex : varRewIndices.second) {
+                        rewardModelInformation[rewModelIndex].setHasStateRewards();
                     }
                 }
-                
-                for (auto const& edge : automaton.getEdges()) {
-                    auto rewardVariableIt = rewardVariables.begin();
-                    auto rewardVariableIte = rewardVariables.end();
-                    
-                    for (auto const& assignment : edge.getAssignments().getTransientAssignments()) {
-                        while (rewardVariableIt != rewardVariableIte && *rewardVariableIt < assignment.getExpressionVariable()) {
-                            ++rewardVariableIt;
-                        }
-                        if (rewardVariableIt == rewardVariableIte) {
-                            break;
-                        }
-                        if (*rewardVariableIt == assignment.getExpressionVariable()) {
-                            rewardModelInformation[std::distance(rewardVariables.begin(), rewardVariableIt)].setHasStateActionRewards();
-                            hasStateActionRewards = true;
-                            ++rewardVariableIt;
-                        }
+                if (assignmentsFinderResult.hasEdgeAssignment || (this->options.isScaleAndLiftTransitionRewardsSet() && assignmentsFinderResult.hasEdgeDestinationAssignment)) {
+                    for (auto const& rewModelIndex : varRewIndices.second) {
+                        rewardModelInformation[rewModelIndex].setHasStateActionRewards();
+                        hasStateActionRewards = true;
                     }
+                }
+                STORM_LOG_THROW(this->options.isScaleAndLiftTransitionRewardsSet() || !assignmentsFinderResult.hasEdgeDestinationAssignment, storm::exceptions::NotSupportedException, "Transition rewards are not supported and a reduction to action-based rewards was not possible.");
+            }
+            
+            // If the reward expression does not evaluate to zero, we set all reward types to true
+            for (uint64_t i = 0; i < rewardExpressions.size(); ++i) {
+                auto const& rewExpr = rewardExpressions[i].second;
+                if (rewExpr.containsVariables() || !storm::utility::isZero(this->evaluator->asRational(rewExpr))) {
+                    rewardModelInformation[i].setHasStateRewards();
+                    rewardModelInformation[i].setHasStateActionRewards();
+                    hasStateActionRewards = true;
                 }
             }
         }

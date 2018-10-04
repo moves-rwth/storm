@@ -11,7 +11,7 @@ namespace storm {
         const bool StormVersion::versionDev = @STORM_VERSION_DEV@;
         const StormVersion::VersionSource StormVersion::versionSource = @STORM_VERSION_SOURCE@;
         const std::string StormVersion::gitRevisionHash = "@STORM_VERSION_GIT_HASH@";
-        const boost::optional<unsigned> StormVersion::commitsAhead = @STORM_VERSION_COMMITS_AHEAD@;
+        const unsigned StormVersion::commitsAhead = @STORM_VERSION_COMMITS_AHEAD@;
         const boost::optional<bool> StormVersion::dirty = @STORM_VERSION_DIRTY@;
         const std::string StormVersion::systemName = "@CMAKE_SYSTEM_NAME@";
         const std::string StormVersion::systemVersion = "@CMAKE_SYSTEM_VERSION@";

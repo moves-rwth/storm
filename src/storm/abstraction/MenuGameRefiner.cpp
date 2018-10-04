@@ -3,9 +3,18 @@
 #include "storm/abstraction/AbstractionInformation.h"
 #include "storm/abstraction/MenuGameAbstractor.h"
 
+#include "storm/storage/BitVector.h"
+#include "storm/abstraction/ExplicitQualitativeGameResultMinMax.h"
+#include "storm/abstraction/ExplicitGameStrategyPair.h"
+#include "storm/abstraction/ExplicitQuantitativeResultMinMax.h"
+
 #include "storm/storage/dd/DdManager.h"
+#include "storm/storage/dd/Odd.h"
 #include "storm/utility/dd.h"
 #include "storm/utility/solver.h"
+#include "storm/utility/shortestPaths.h"
+
+#include "storm-parsers/parser/ExpressionParser.h"
 
 #include "storm/solver/MathsatSmtSolver.h"
 
@@ -40,7 +49,7 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type, typename ValueType>
-        MostProbablePathsResult<Type, ValueType>::MostProbablePathsResult(storm::dd::Add<Type, ValueType> const& maxProbabilities, storm::dd::Bdd<Type> const& spanningTree) : maxProbabilities(maxProbabilities), spanningTree(spanningTree) {
+        SymbolicMostProbablePathsResult<Type, ValueType>::SymbolicMostProbablePathsResult(storm::dd::Add<Type, ValueType> const& maxProbabilities, storm::dd::Bdd<Type> const& spanningTree) : maxProbabilities(maxProbabilities), spanningTree(spanningTree) {
             // Intentionally left empty.
         }
         
@@ -52,20 +61,24 @@ namespace storm {
         };
         
         template<storm::dd::DdType Type, typename ValueType>
-        PivotStateResult<Type, ValueType>::PivotStateResult(storm::dd::Bdd<Type> const& pivotState, storm::OptimizationDirection fromDirection, boost::optional<MostProbablePathsResult<Type, ValueType>> const& mostProbablePathsResult) : pivotState(pivotState), fromDirection(fromDirection), mostProbablePathsResult(mostProbablePathsResult) {
+        SymbolicPivotStateResult<Type, ValueType>::SymbolicPivotStateResult(storm::dd::Bdd<Type> const& pivotState, storm::OptimizationDirection fromDirection, boost::optional<SymbolicMostProbablePathsResult<Type, ValueType>> const& symbolicMostProbablePathsResult) : pivotState(pivotState), fromDirection(fromDirection), symbolicMostProbablePathsResult(symbolicMostProbablePathsResult) {
             // Intentionally left empty.
         }
         
         template<storm::dd::DdType Type, typename ValueType>
-        MenuGameRefiner<Type, ValueType>::MenuGameRefiner(MenuGameAbstractor<Type, ValueType>& abstractor, std::unique_ptr<storm::solver::SmtSolver>&& smtSolver) : abstractor(abstractor), useInterpolation(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isUseInterpolationSet()), splitAll(false), splitPredicates(false), addedAllGuardsFlag(false), pivotSelectionHeuristic(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getPivotSelectionHeuristic()), splitter(), equivalenceChecker(std::move(smtSolver)) {
+        MenuGameRefiner<Type, ValueType>::MenuGameRefiner(MenuGameAbstractor<Type, ValueType>& abstractor, std::unique_ptr<storm::solver::SmtSolver>&& smtSolver, MenuGameRefinerOptions const& options) : abstractor(abstractor), useInterpolation(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isUseInterpolationSet()), splitAll(false), splitPredicates(false), rankPredicates(false), addedAllGuardsFlag(false), refinementPredicatesToInject(options.refinementPredicates), pivotSelectionHeuristic(), splitter(), equivalenceChecker(std::move(smtSolver)) {
             
-            equivalenceChecker.addConstraints(abstractor.getAbstractionInformation().getConstraints());
+            auto const& abstractionSettings = storm::settings::getModule<storm::settings::modules::AbstractionSettings>();
             
+            pivotSelectionHeuristic = abstractionSettings.getPivotSelectionHeuristic();
             AbstractionSettings::SplitMode splitMode = storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getSplitMode();
             splitAll = splitMode == AbstractionSettings::SplitMode::All;
             splitPredicates = splitMode == AbstractionSettings::SplitMode::NonGuard;
+            rankPredicates = abstractionSettings.isRankRefinementPredicatesSet();
+            addPredicatesEagerly = abstractionSettings.isUseEagerRefinementSet();
             
-            if (storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isAddAllGuardsSet()) {
+            equivalenceChecker.addConstraints(abstractor.getAbstractionInformation().getConstraints());
+            if (abstractionSettings.isAddAllGuardsSet()) {
                 std::vector<storm::expressions::Expression> guards;
                 
                 std::pair<uint64_t, uint64_t> player1Choices = this->abstractor.get().getPlayer1ChoiceRange();
@@ -77,17 +90,22 @@ namespace storm {
                 }
                 performRefinement(createGlobalRefinement(preprocessPredicates(guards, RefinementPredicates::Source::InitialGuard)));
                 
+                this->abstractor.get().notifyGuardsArePredicates();
                 addedAllGuardsFlag = true;
+            }
+            if (abstractionSettings.isAddAllInitialExpressionsSet()) {
+                storm::expressions::Expression initialExpression = this->abstractor.get().getInitialExpression();
+                performRefinement(createGlobalRefinement(preprocessPredicates({initialExpression}, RefinementPredicates::Source::InitialExpression)));
             }
         }
         
         template<storm::dd::DdType Type, typename ValueType>
-        void MenuGameRefiner<Type, ValueType>::refine(std::vector<storm::expressions::Expression> const& predicates) const {
-            performRefinement(createGlobalRefinement(preprocessPredicates(predicates, RefinementPredicates::Source::Manual)));
+        void MenuGameRefiner<Type, ValueType>::refine(std::vector<storm::expressions::Expression> const& predicates, bool allowInjection) const {
+            performRefinement(createGlobalRefinement(preprocessPredicates(predicates, RefinementPredicates::Source::Manual)), allowInjection);
         }
         
         template<storm::dd::DdType Type, typename ValueType>
-        MostProbablePathsResult<Type, ValueType> getMostProbablePathSpanningTree(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& transitionFilter) {
+        SymbolicMostProbablePathsResult<Type, ValueType> getMostProbablePathSpanningTree(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& transitionFilter) {
             storm::dd::Add<Type, ValueType> maxProbabilities = game.getInitialStates().template toAdd<ValueType>();
             
             storm::dd::Bdd<Type> border = game.getInitialStates();
@@ -118,11 +136,11 @@ namespace storm {
                 border = updateStates;
             }
             
-            return MostProbablePathsResult<Type, ValueType>(maxProbabilities, spanningTree);
+            return SymbolicMostProbablePathsResult<Type, ValueType>(maxProbabilities, spanningTree);
         }
                 
         template<storm::dd::DdType Type, typename ValueType>
-        PivotStateResult<Type, ValueType> pickPivotState(AbstractionSettings::PivotSelectionHeuristic const& heuristic, storm::abstraction::MenuGame<Type, ValueType> const& game, PivotStateCandidatesResult<Type> const& pivotStateCandidateResult, boost::optional<QualitativeGameResultMinMax<Type>> const& qualitativeResult, boost::optional<QuantitativeGameResultMinMax<Type, ValueType>> const& quantitativeResult) {
+        SymbolicPivotStateResult<Type, ValueType> pickPivotState(AbstractionSettings::PivotSelectionHeuristic const& heuristic, storm::abstraction::MenuGame<Type, ValueType> const& game, PivotStateCandidatesResult<Type> const& pivotStateCandidateResult, boost::optional<SymbolicQualitativeGameResultMinMax<Type>> const& qualitativeResult, boost::optional<SymbolicQuantitativeGameResultMinMax<Type, ValueType>> const& quantitativeResult) {
             
             // Get easy access to strategies.
             storm::dd::Bdd<Type> minPlayer1Strategy;
@@ -161,7 +179,7 @@ namespace storm {
                 bool foundPivotState = !frontierPivotStates.isZero();
                 if (foundPivotState) {
                     STORM_LOG_TRACE("Picked pivot state from " << frontierPivotStates.getNonZeroCount() << " candidates on level " << level << ", " << pivotStates.getNonZeroCount() << " candidates in total.");
-                    return PivotStateResult<Type, ValueType>(frontierPivotStates.existsAbstractRepresentative(rowVariables), storm::OptimizationDirection::Minimize);
+                    return SymbolicPivotStateResult<Type, ValueType>(frontierPivotStates.existsAbstractRepresentative(rowVariables), storm::OptimizationDirection::Minimize);
                 } else {
                     // Otherwise, we perform a simulatenous BFS in the sense that we make one step in both the min and max
                     // transitions and check for pivot states we encounter.
@@ -193,7 +211,7 @@ namespace storm {
                                 }
                                 
                                 STORM_LOG_TRACE("Picked pivot state with difference " << diffValue << " from " << numberOfPivotStateCandidatesOnLevel << " candidates on level " << level << ", " << pivotStates.getNonZeroCount() << " candidates in total.");
-                                return PivotStateResult<Type, ValueType>(direction == storm::OptimizationDirection::Minimize ? diffMin.maxAbstractRepresentative(rowVariables) : diffMax.maxAbstractRepresentative(rowVariables), direction);
+                                return SymbolicPivotStateResult<Type, ValueType>(direction == storm::OptimizationDirection::Minimize ? diffMin.maxAbstractRepresentative(rowVariables) : diffMax.maxAbstractRepresentative(rowVariables), direction);
                             } else {
                                 STORM_LOG_TRACE("Picked pivot state from " << numberOfPivotStateCandidatesOnLevel << " candidates on level " << level << ", " << pivotStates.getNonZeroCount() << " candidates in total.");
                                 
@@ -204,18 +222,18 @@ namespace storm {
                                     direction = storm::OptimizationDirection::Maximize;
                                 }
                                 
-                                return PivotStateResult<Type, ValueType>(direction == storm::OptimizationDirection::Minimize ? frontierMinPivotStates.existsAbstractRepresentative(rowVariables) : frontierMaxPivotStates.existsAbstractRepresentative(rowVariables), direction);
+                                return SymbolicPivotStateResult<Type, ValueType>(direction == storm::OptimizationDirection::Minimize ? frontierMinPivotStates.existsAbstractRepresentative(rowVariables) : frontierMaxPivotStates.existsAbstractRepresentative(rowVariables), direction);
                             }
                         }
                     }
                 }
             } else {
                 // Compute the most probable paths to the reachable states and the corresponding spanning trees.
-                MostProbablePathsResult<Type, ValueType> minMostProbablePathsResult = getMostProbablePathSpanningTree(game, minPlayer1Strategy && minPlayer2Strategy);
-                MostProbablePathsResult<Type, ValueType> maxMostProbablePathsResult = getMostProbablePathSpanningTree(game, maxPlayer1Strategy && maxPlayer2Strategy);
+                SymbolicMostProbablePathsResult<Type, ValueType> minSymbolicMostProbablePathsResult = getMostProbablePathSpanningTree(game, minPlayer1Strategy && minPlayer2Strategy);
+                SymbolicMostProbablePathsResult<Type, ValueType> maxSymbolicMostProbablePathsResult = getMostProbablePathSpanningTree(game, maxPlayer1Strategy && maxPlayer2Strategy);
                 storm::dd::Bdd<Type> selectedPivotState;
                 
-                storm::dd::Add<Type, ValueType> score = pivotStates.template toAdd<ValueType>() * minMostProbablePathsResult.maxProbabilities.maximum(maxMostProbablePathsResult.maxProbabilities);
+                storm::dd::Add<Type, ValueType> score = pivotStates.template toAdd<ValueType>() * minSymbolicMostProbablePathsResult.maxProbabilities.maximum(maxSymbolicMostProbablePathsResult.maxProbabilities);
                 
                 if (heuristic == AbstractionSettings::PivotSelectionHeuristic::MaxWeightedDeviation && quantitativeResult) {
                     score = score * (quantitativeResult.get().max.values - quantitativeResult.get().min.values);
@@ -225,15 +243,15 @@ namespace storm {
 
                 storm::OptimizationDirection fromDirection = storm::OptimizationDirection::Minimize;
                 storm::dd::Add<Type, ValueType> selectedPivotStateAsAdd = selectedPivotState.template toAdd<ValueType>();
-                if ((selectedPivotStateAsAdd * maxMostProbablePathsResult.maxProbabilities).getMax() > (selectedPivotStateAsAdd * minMostProbablePathsResult.maxProbabilities).getMax()) {
+                if ((selectedPivotStateAsAdd * maxSymbolicMostProbablePathsResult.maxProbabilities).getMax() > (selectedPivotStateAsAdd * minSymbolicMostProbablePathsResult.maxProbabilities).getMax()) {
                     fromDirection = storm::OptimizationDirection::Maximize;
                 }
                 
-                return PivotStateResult<Type, ValueType>(selectedPivotState, fromDirection, fromDirection == storm::OptimizationDirection::Minimize ? minMostProbablePathsResult : maxMostProbablePathsResult);
+                return SymbolicPivotStateResult<Type, ValueType>(selectedPivotState, fromDirection, fromDirection == storm::OptimizationDirection::Minimize ? minSymbolicMostProbablePathsResult : maxSymbolicMostProbablePathsResult);
             }
             
             STORM_LOG_ASSERT(false, "This point must not be reached, because then no pivot state could be found.");
-            return PivotStateResult<Type, ValueType>(storm::dd::Bdd<Type>(), storm::OptimizationDirection::Minimize);
+            return SymbolicPivotStateResult<Type, ValueType>(storm::dd::Bdd<Type>(), storm::OptimizationDirection::Minimize);
         }
         
         template <storm::dd::DdType Type, typename ValueType>
@@ -242,7 +260,7 @@ namespace storm {
             storm::expressions::Expression newPredicate;
             bool fromGuard = false;
             
-            // Get abstraction informatin for easier access.
+            // Get abstraction information for easier access.
             AbstractionInformation<Type> const& abstractionInformation = abstractor.get().getAbstractionInformation();
             
             // Decode the index of the command chosen by player 1.
@@ -292,61 +310,155 @@ namespace storm {
                         for (uint64_t predicateIndex = 0; predicateIndex < lower.size(); ++predicateIndex) {
                             if (lower[predicateIndex] != upper[predicateIndex]) {
                                 possibleRefinementPredicates.push_back(abstractionInformation.getPredicateByIndex(predicateIndex).substitute(variableUpdates).simplify());
+                                if (!rankPredicates) {
+                                    break;
+                                }
                             }
                         }
-                        ++orderedUpdateIndex;
                         break;
                     }
                 }
                 
                 STORM_LOG_ASSERT(!possibleRefinementPredicates.empty(), "Expected refinement predicates.");
                 
-                // Since we can choose any of the deviation predicates to perform the split, we go through the remaining
-                // updates and build all deviation predicates. We can then check whether any of the possible refinement
-                // predicates also eliminates another deviation.
-                std::vector<storm::expressions::Expression> otherRefinementPredicates;
-                for (; orderedUpdateIndex < updateIndicesAndMasses.size(); ++orderedUpdateIndex) {
-                    storm::storage::BitVector const& lower = lowerChoiceUpdateToSuccessorMapping.at(updateIndicesAndMasses[orderedUpdateIndex].first).first;
-                    storm::storage::BitVector const& upper = upperChoiceUpdateToSuccessorMapping.at(updateIndicesAndMasses[orderedUpdateIndex].first).first;
-                    
-                    bool deviates = lower != upper;
-                    if (deviates) {
-                        std::map<storm::expressions::Variable, storm::expressions::Expression> newVariableUpdates = abstractor.get().getVariableUpdates(player1Index, updateIndicesAndMasses[orderedUpdateIndex].first);
-                        for (uint64_t predicateIndex = 0; predicateIndex < lower.size(); ++predicateIndex) {
-                            if (lower[predicateIndex] != upper[predicateIndex]) {
-                                otherRefinementPredicates.push_back(abstractionInformation.getPredicateByIndex(predicateIndex).substitute(newVariableUpdates).simplify());
+                STORM_LOG_TRACE("Possible refinement predicates:");
+                for (auto const& pred : possibleRefinementPredicates) {
+                    STORM_LOG_TRACE(pred);
+                }
+                
+                if (rankPredicates) {
+                    // Since we can choose any of the deviation predicates to perform the split, we go through the remaining
+                    // updates and build all deviation predicates. We can then check whether any of the possible refinement
+                    // predicates also eliminates another deviation.
+                    std::vector<storm::expressions::Expression> otherRefinementPredicates;
+                    for (; orderedUpdateIndex < updateIndicesAndMasses.size(); ++orderedUpdateIndex) {
+                        storm::storage::BitVector const& lower = lowerChoiceUpdateToSuccessorMapping.at(updateIndicesAndMasses[orderedUpdateIndex].first).first;
+                        storm::storage::BitVector const& upper = upperChoiceUpdateToSuccessorMapping.at(updateIndicesAndMasses[orderedUpdateIndex].first).first;
+                        
+                        bool deviates = lower != upper;
+                        if (deviates) {
+                            std::map<storm::expressions::Variable, storm::expressions::Expression> newVariableUpdates = abstractor.get().getVariableUpdates(player1Index, updateIndicesAndMasses[orderedUpdateIndex].first);
+                            for (uint64_t predicateIndex = 0; predicateIndex < lower.size(); ++predicateIndex) {
+                                if (lower[predicateIndex] != upper[predicateIndex]) {
+                                    otherRefinementPredicates.push_back(abstractionInformation.getPredicateByIndex(predicateIndex).substitute(newVariableUpdates).simplify());
+                                }
                             }
+                        }
+                    }
+                    
+                    // Finally, go through the refinement predicates and see how many deviations they cover.
+                    std::vector<uint64_t> refinementPredicateIndexToCount(possibleRefinementPredicates.size(), 0);
+                    for (uint64_t index = 0; index < possibleRefinementPredicates.size(); ++index) {
+                        refinementPredicateIndexToCount[index] = 1;
+                    }
+                    for (auto const& otherPredicate : otherRefinementPredicates) {
+                        for (uint64_t index = 0; index < possibleRefinementPredicates.size(); ++index) {
+                            if (equivalenceChecker.areEquivalentModuloNegation(otherPredicate, possibleRefinementPredicates[index])) {
+                                ++refinementPredicateIndexToCount[index];
+                            }
+                        }
+                    }
+                    
+                    // Find predicate that covers the most deviations.
+                    uint64_t chosenPredicateIndex = 0;
+                    for (uint64_t index = 0; index < possibleRefinementPredicates.size(); ++index) {
+                        if (refinementPredicateIndexToCount[index] > refinementPredicateIndexToCount[chosenPredicateIndex]) {
+                            chosenPredicateIndex = index;
+                        }
+                    }
+                    newPredicate = possibleRefinementPredicates[chosenPredicateIndex];
+                    STORM_LOG_DEBUG("Derived new predicate (based on weakest-precondition): " << newPredicate << ", (equivalent to " << (refinementPredicateIndexToCount[chosenPredicateIndex] - 1) << " other refinement predicates).");
+                } else {
+                    newPredicate = possibleRefinementPredicates.front();
+                    STORM_LOG_DEBUG("Derived new predicate (based on weakest-precondition): " << newPredicate << ".");
+                }
+
+                STORM_LOG_ASSERT(newPredicate.isInitialized(), "Could not derive new predicate as there is no deviation.");
+            }
+            
+            return RefinementPredicates(fromGuard ? RefinementPredicates::Source::Guard : RefinementPredicates::Source::WeakestPrecondition, {newPredicate});
+        }
+        
+        template <storm::dd::DdType Type, typename ValueType>
+        RefinementPredicates MenuGameRefiner<Type, ValueType>::derivePredicatesFromChoice(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& pivotState, storm::dd::Bdd<Type> const& player1Choice, storm::dd::Bdd<Type> const& choice, storm::dd::Bdd<Type> const& choiceSuccessors) const {
+            // Prepare result.
+            storm::expressions::Expression newPredicate;
+            bool fromGuard = false;
+            
+            // Get abstraction information for easier access.
+            AbstractionInformation<Type> const& abstractionInformation = abstractor.get().getAbstractionInformation();
+            
+            // Decode the index of the command chosen by player 1.
+            storm::dd::Add<Type, ValueType> player1ChoiceAsAdd = player1Choice.template toAdd<ValueType>();
+            auto pl1It = player1ChoiceAsAdd.begin();
+            uint_fast64_t player1Index = abstractionInformation.decodePlayer1Choice((*pl1It).first, abstractionInformation.getPlayer1VariableCount());
+            
+            // Check whether there are bottom states in the game and whether the choice actually picks the bottom state
+            // as the successor.
+            bool buttomStateSuccessor = !((abstractionInformation.getBottomStateBdd(false, false) && choiceSuccessors)).isZero();
+            
+            std::vector<storm::expressions::Expression> possibleRefinementPredicates;
+            
+            // If the choice picks the bottom state, the new predicate is based on the guard of the appropriate  command
+            // (that is the player 1 choice).
+            if (buttomStateSuccessor) {
+                STORM_LOG_TRACE("One of the successors is a bottom state, taking a guard as a new predicate.");
+                possibleRefinementPredicates.emplace_back(abstractor.get().getGuard(player1Index));
+                fromGuard = true;
+                STORM_LOG_DEBUG("Derived new predicate (based on guard): " << possibleRefinementPredicates.back());
+            } else {
+                STORM_LOG_TRACE("No bottom state successor. Deriving a new predicate using weakest precondition.");
+
+                // Decode the choice successors.
+                std::map<uint64_t, std::pair<storm::storage::BitVector, ValueType>> choiceUpdateToSuccessorMapping = abstractionInformation.template decodeChoiceToUpdateSuccessorMapping<ValueType>(choiceSuccessors);
+                std::vector<std::pair<uint64_t, ValueType>> sortedChoiceUpdateIndicesAndMasses;
+                for (auto const& e : choiceUpdateToSuccessorMapping) {
+                    sortedChoiceUpdateIndicesAndMasses.emplace_back(e.first, e.second.second);
+                }
+                std::sort(sortedChoiceUpdateIndicesAndMasses.begin(), sortedChoiceUpdateIndicesAndMasses.end(), [] (std::pair<uint64_t, ValueType> const& a, std::pair<uint64_t, ValueType> const& b) { return a.second > b.second; });
+                
+                // Compute all other (not taken) choices.
+                std::set<storm::expressions::Variable> variablesToAbstract = game.getRowVariables();
+                variablesToAbstract.insert(game.getPlayer1Variables().begin(), game.getPlayer1Variables().end());
+                
+                storm::dd::Bdd<Type> otherChoices = (pivotState && !choice && player1Choice && game.getExtendedTransitionMatrix().toBdd()).existsAbstract(variablesToAbstract);
+                STORM_LOG_ASSERT(!otherChoices.isZero(), "Expected other choices.");
+                
+                // Decode the other choices.
+                std::vector<std::map<uint64_t, std::pair<storm::storage::BitVector, ValueType>>> otherChoicesUpdateToSuccessorMappings = abstractionInformation.template decodeChoicesToUpdateSuccessorMapping<ValueType>(game.getPlayer2Variables(), otherChoices);
+                
+                for (auto const& otherChoice : otherChoicesUpdateToSuccessorMappings) {
+                    for (uint64_t updateIndex = 0; updateIndex < sortedChoiceUpdateIndicesAndMasses.size(); ++updateIndex) {
+                        storm::storage::BitVector const& choiceSuccessor = choiceUpdateToSuccessorMapping.at(sortedChoiceUpdateIndicesAndMasses[updateIndex].first).first;
+                        storm::storage::BitVector const& otherChoiceSuccessor = otherChoice.at(sortedChoiceUpdateIndicesAndMasses[updateIndex].first).first;
+
+                        bool deviates = choiceSuccessor != otherChoiceSuccessor;
+                        if (deviates) {
+                            std::map<storm::expressions::Variable, storm::expressions::Expression> variableUpdates = abstractor.get().getVariableUpdates(player1Index, sortedChoiceUpdateIndicesAndMasses[updateIndex].first);
+                            
+                            for (uint64_t predicateIndex = 0; predicateIndex < choiceSuccessor.size(); ++predicateIndex) {
+                                if (choiceSuccessor[predicateIndex] != otherChoiceSuccessor[predicateIndex]) {
+                                    possibleRefinementPredicates.push_back(abstractionInformation.getPredicateByIndex(predicateIndex).substitute(variableUpdates).simplify());
+                                    if (!rankPredicates) {
+                                        break;
+                                    }
+                                }
+                            }
+                            
+                            break;
                         }
                     }
                 }
                 
-                // Finally, go through the refinement predicates and see how many deviations they cover.
-                std::vector<uint64_t> refinementPredicateIndexToCount(possibleRefinementPredicates.size(), 0);
-                for (uint64_t index = 0; index < possibleRefinementPredicates.size(); ++index) {
-                    refinementPredicateIndexToCount[index] = 1;
+                STORM_LOG_ASSERT(!possibleRefinementPredicates.empty(), "Expected refinement predicates.");
+                
+                STORM_LOG_TRACE("Possible refinement predicates:");
+                for (auto const& pred : possibleRefinementPredicates) {
+                    STORM_LOG_TRACE(pred);
                 }
-                for (auto const& otherPredicate : otherRefinementPredicates) {
-                    for (uint64_t index = 0; index < possibleRefinementPredicates.size(); ++index) {
-                        if (equivalenceChecker.areEquivalentModuloNegation(otherPredicate, possibleRefinementPredicates[index])) {
-                            ++refinementPredicateIndexToCount[index];
-                        }
-                    }
-                }
-
-                // Find predicate that covers the most deviations.
-                uint64_t chosenPredicateIndex = 0;
-                for (uint64_t index = 0; index < possibleRefinementPredicates.size(); ++index) {
-                    if (refinementPredicateIndexToCount[index] > refinementPredicateIndexToCount[chosenPredicateIndex]) {
-                        chosenPredicateIndex = index;
-                    }
-                }
-                newPredicate = possibleRefinementPredicates[chosenPredicateIndex];
-
-                STORM_LOG_ASSERT(newPredicate.isInitialized(), "Could not derive new predicate as there is no deviation.");
-                STORM_LOG_DEBUG("Derived new predicate (based on weakest-precondition): " << newPredicate << ", (equivalent to " << (refinementPredicateIndexToCount[chosenPredicateIndex] - 1) << " other refinement predicates)");
             }
             
-            return RefinementPredicates(fromGuard ? RefinementPredicates::Source::Guard : RefinementPredicates::Source::WeakestPrecondition, {newPredicate});
+            return RefinementPredicates(fromGuard ? RefinementPredicates::Source::Guard : RefinementPredicates::Source::WeakestPrecondition, {possibleRefinementPredicates});
         }
         
         template<storm::dd::DdType Type, typename ValueType>
@@ -391,31 +503,43 @@ namespace storm {
             storm::dd::Bdd<Type> lowerChoice = pivotState && game.getExtendedTransitionMatrix().toBdd() && minPlayer1Strategy;
             storm::dd::Bdd<Type> lowerChoice1 = (lowerChoice && minPlayer2Strategy).existsAbstract(variablesToAbstract);
             storm::dd::Bdd<Type> lowerChoice2 = (lowerChoice && maxPlayer2Strategy).existsAbstract(variablesToAbstract);
-            
+
             bool lowerChoicesDifferent = !lowerChoice1.exclusiveOr(lowerChoice2).isZero() && !lowerChoice1.isZero() && !lowerChoice2.isZero();
             if (lowerChoicesDifferent) {
-                STORM_LOG_TRACE("Deriving predicate based on lower choice.");
-                predicates = derivePredicatesFromDifferingChoices((pivotState && minPlayer1Strategy).existsAbstract(game.getRowVariables()), lowerChoice1, lowerChoice2);
+                STORM_LOG_TRACE("Deriving predicates based on lower choice.");
+                if (this->addPredicatesEagerly) {
+                    predicates = derivePredicatesFromChoice(game, pivotState, (pivotState && minPlayer1Strategy).existsAbstract(game.getRowVariables()), lowerChoice && minPlayer2Strategy, lowerChoice1);
+                } else {
+                    predicates = derivePredicatesFromDifferingChoices((pivotState && minPlayer1Strategy).existsAbstract(game.getRowVariables()), lowerChoice1, lowerChoice2);
+                }
             }
             
-            if (predicates && (!player1ChoicesDifferent || predicates.get().getSource() == RefinementPredicates::Source::Guard)) {
+            if (predicates && !player1ChoicesDifferent) {
                 return predicates.get();
-            } else {
-                boost::optional<RefinementPredicates> additionalPredicates;
-                
-                storm::dd::Bdd<Type> upperChoice = pivotState && game.getExtendedTransitionMatrix().toBdd() && maxPlayer1Strategy;
-                storm::dd::Bdd<Type> upperChoice1 = (upperChoice && minPlayer2Strategy).existsAbstract(variablesToAbstract);
-                storm::dd::Bdd<Type> upperChoice2 = (upperChoice && maxPlayer2Strategy).existsAbstract(variablesToAbstract);
-                
-                bool upperChoicesDifferent = !upperChoice1.exclusiveOr(upperChoice2).isZero() && !upperChoice1.isZero() && !upperChoice2.isZero();
-                if (upperChoicesDifferent) {
-                    STORM_LOG_TRACE("Deriving predicate based on upper choice.");
+            }
+            
+            boost::optional<RefinementPredicates> additionalPredicates;
+            
+            storm::dd::Bdd<Type> upperChoice = pivotState && game.getExtendedTransitionMatrix().toBdd() && maxPlayer1Strategy;
+            storm::dd::Bdd<Type> upperChoice1 = (upperChoice && minPlayer2Strategy).existsAbstract(variablesToAbstract);
+            storm::dd::Bdd<Type> upperChoice2 = (upperChoice && maxPlayer2Strategy).existsAbstract(variablesToAbstract);
+            
+            bool upperChoicesDifferent = !upperChoice1.exclusiveOr(upperChoice2).isZero() && !upperChoice1.isZero() && !upperChoice2.isZero();
+            if (upperChoicesDifferent) {
+                STORM_LOG_TRACE("Deriving predicates based on upper choice.");
+                if (this->addPredicatesEagerly) {
+                    additionalPredicates = derivePredicatesFromChoice(game, pivotState, (pivotState && maxPlayer1Strategy).existsAbstract(game.getRowVariables()), upperChoice && maxPlayer2Strategy, upperChoice1);
+                } else {
                     additionalPredicates = derivePredicatesFromDifferingChoices((pivotState && maxPlayer1Strategy).existsAbstract(game.getRowVariables()), upperChoice1, upperChoice2);
                 }
-                
-                if (additionalPredicates) {
-                    if (additionalPredicates.get().getSource() == RefinementPredicates::Source::Guard) {
-                        return additionalPredicates.get();
+            }
+            
+            if (additionalPredicates) {
+                if (additionalPredicates.get().getSource() == RefinementPredicates::Source::Guard) {
+                    return additionalPredicates.get();
+                } else {
+                    if (!predicates) {
+                        predicates = additionalPredicates;
                     } else {
                         predicates.get().addPredicates(additionalPredicates.get().getPredicates());
                     }
@@ -460,6 +584,10 @@ namespace storm {
             predicates.emplace_back(abstractionInformation.getPredicates(decodedTargetState));
             for (auto& predicate : predicates.back()) {
                 predicate = predicate.changeManager(expressionManager);
+            }
+            // Add ranges of variables.
+            for (auto const& pred : abstractionInformation.getConstraints()) {
+                predicates.back().push_back(pred.changeManager(expressionManager));
             }
             
             // Perform a backward search for an initial state.
@@ -509,7 +637,10 @@ namespace storm {
                 for (auto& predicate : predicates.back()) {
                     predicate = predicate.changeManager(expressionManager).substitute(substitution);
                 }
-                
+                // Add ranges of variables.
+                for (auto const& pred : abstractionInformation.getConstraints()) {
+                    predicates.back().push_back(pred.changeManager(expressionManager).substitute(substitution));
+                }
                 // Move backwards one step.
                 lastSubstitution = std::move(substitution);
                 currentState = predecessorTransition.existsAbstract(variablesToAbstract);
@@ -519,49 +650,219 @@ namespace storm {
             return std::make_pair(predicates, stepVariableToCopiedVariableMap);
         }
         
+        template<typename ValueType>
+        const uint64_t ExplicitPivotStateResult<ValueType>::NO_PREDECESSOR = std::numeric_limits<uint64_t>::max();
+        
         template<storm::dd::DdType Type, typename ValueType>
-        boost::optional<RefinementPredicates> MenuGameRefiner<Type, ValueType>::derivePredicatesFromInterpolation(storm::abstraction::MenuGame<Type, ValueType> const& game, PivotStateResult<Type, ValueType> const& pivotStateResult, storm::dd::Bdd<Type> const& minPlayer1Strategy, storm::dd::Bdd<Type> const& minPlayer2Strategy, storm::dd::Bdd<Type> const& maxPlayer1Strategy, storm::dd::Bdd<Type> const& maxPlayer2Strategy) const {
+        std::pair<std::vector<uint64_t>, std::vector<uint64_t>> MenuGameRefiner<Type, ValueType>::buildReversedLabeledPath(ExplicitPivotStateResult<ValueType> const& pivotStateResult) const {
+            
+            std::pair<std::vector<uint64_t>, std::vector<uint64_t>> result;
+            result.first.emplace_back(pivotStateResult.pivotState);
+            
+            uint64_t currentState = pivotStateResult.predecessors[pivotStateResult.pivotState].first;
+            uint64_t currentAction = pivotStateResult.predecessors[pivotStateResult.pivotState].second;
+            while (currentState != ExplicitPivotStateResult<ValueType>::NO_PREDECESSOR) {
+                STORM_LOG_ASSERT(currentAction != ExplicitPivotStateResult<ValueType>::NO_PREDECESSOR, "Expected predecessor action.");
+                result.first.emplace_back(currentState);
+                result.second.emplace_back(currentAction);
+                currentAction = pivotStateResult.predecessors[currentState].second;
+                currentState = pivotStateResult.predecessors[currentState].first;
+            }
+            
+            STORM_LOG_ASSERT(result.first.size() == result.second.size() + 1, "Path size mismatch.");
+            return result;
+        }
+
+        template<storm::dd::DdType Type, typename ValueType>
+        std::pair<std::vector<std::vector<storm::expressions::Expression>>, std::map<storm::expressions::Variable, storm::expressions::Expression>> MenuGameRefiner<Type, ValueType>::buildTraceFromReversedLabeledPath(storm::expressions::ExpressionManager& expressionManager, std::vector<uint64_t> const& reversedPath, std::vector<uint64_t> const& reversedLabels, storm::dd::Odd const& odd, std::vector<uint64_t> const* stateToOffset) const {
+            STORM_LOG_ASSERT(reversedPath.size() == reversedLabels.size() + 1, "Path size mismatch.");
+
+            std::vector<std::vector<storm::expressions::Expression>> predicates;
+            
+            AbstractionInformation<Type> const& abstractionInformation = abstractor.get().getAbstractionInformation();
+            storm::expressions::Expression initialExpression = abstractor.get().getInitialExpression();
+            
+            std::set<storm::expressions::Variable> oldVariables = initialExpression.getVariables();
+            for (auto const& predicate : abstractionInformation.getPredicates()) {
+                std::set<storm::expressions::Variable> usedVariables = predicate.getVariables();
+                oldVariables.insert(usedVariables.begin(), usedVariables.end());
+            }
+            
+            std::map<storm::expressions::Variable, storm::expressions::Variable> oldToNewVariables;
+            for (auto const& variable : oldVariables) {
+                oldToNewVariables[variable] = expressionManager.getVariable(variable.getName());
+            }
+            std::map<storm::expressions::Variable, storm::expressions::Expression> currentSubstitution;
+            for (auto const& variable : oldToNewVariables) {
+                currentSubstitution[variable.second] = variable.second;
+            }
+            std::map<storm::expressions::Variable, storm::expressions::Expression> stepVariableToCopiedVariableMap;
+            
+            auto pathIt = reversedPath.rbegin();
+            
+            // Decode pivot state. The state valuation also includes
+            // * the bottom state, so we need to reserve one more, and
+            // * the location variables,
+            // so we need to reserve an appropriate size.
+            uint64_t predicateValuationOffset = abstractionInformation.getNumberOfDdSourceLocationVariables() + 1;
+            storm::storage::BitVector extendedPredicateValuation = odd.getEncoding(stateToOffset ? (*stateToOffset)[*pathIt] : *pathIt, abstractionInformation.getNumberOfPredicates() + predicateValuationOffset);
+            ++pathIt;
+            
+            // Add all predicates of initial block.
+            predicates.emplace_back(abstractionInformation.getPredicatesExcludingBottom(extendedPredicateValuation));
+            for (auto& predicate : predicates.back()) {
+                predicate = predicate.changeManager(expressionManager);
+            }
+            
+            // Add further constraints (like ranges).
+            for (auto const& pred : abstractionInformation.getConstraints()) {
+                predicates.back().push_back(pred.changeManager(expressionManager));
+            }
+            
+            // Add initial expression.
+            predicates.back().push_back(initialExpression.changeManager(expressionManager));
+
+            // Traverse the path and construct necessary formula parts.
+            auto actionIt = reversedLabels.rbegin();
+            uint64_t step = 0;
+            for (; pathIt != reversedPath.rend(); ++pathIt) {
+                
+                // Add new predicate frame.
+                predicates.emplace_back();
+                
+                // Add guard of action.
+                predicates.back().emplace_back(abstractor.get().getGuard(*actionIt).changeManager(expressionManager).substitute(currentSubstitution));
+
+                // Determine which variables are affected by the updates of the player 1 choice.
+                std::set<storm::expressions::Variable> const& assignedVariables = abstractor.get().getAssignedVariables(*actionIt);
+                
+                // Create new instances of the affected variables.
+                std::map<storm::expressions::Variable, storm::expressions::Variable> newVariableMaps;
+                for (auto const& variable : assignedVariables) {
+                    storm::expressions::Variable variableCopy = expressionManager.declareVariableCopy(variable);
+                    newVariableMaps[oldToNewVariables.at(variable)] = variableCopy;
+                    stepVariableToCopiedVariableMap[variableCopy] = variable;
+                }
+                
+                // Retrieves the possible updates to the variables.
+                auto variableUpdateVector = abstractor.get().getVariableUpdates(*actionIt);
+                
+                // Encode these updates.
+                storm::expressions::Expression allVariableUpdateExpression;
+                for (auto const& variableUpdates : variableUpdateVector) {
+                    storm::expressions::Expression variableUpdateExpression;
+                    for (auto const& update : variableUpdates) {
+                        if (update.second.hasBooleanType()) {
+                            variableUpdateExpression = variableUpdateExpression && storm::expressions::iff(newVariableMaps.at(update.first), update.second.changeManager(expressionManager).substitute(currentSubstitution));
+                        } else {
+                            variableUpdateExpression = variableUpdateExpression && newVariableMaps.at(update.first) == update.second.changeManager(expressionManager).substitute(currentSubstitution);
+                        }
+                    }
+                    
+                    allVariableUpdateExpression = allVariableUpdateExpression || variableUpdateExpression;
+                }
+                if (!allVariableUpdateExpression.isInitialized()) {
+                    allVariableUpdateExpression = expressionManager.boolean(true);
+                }
+                predicates.back().emplace_back(allVariableUpdateExpression);
+                
+                // Incorporate the new variables in the current substitution.
+                for (auto const& variablePair : newVariableMaps) {
+                    currentSubstitution[variablePair.first] = variablePair.second;
+                }
+                
+                // Decode current state.
+                extendedPredicateValuation = odd.getEncoding(stateToOffset ? (*stateToOffset)[*pathIt] : *pathIt, abstractionInformation.getNumberOfPredicates() + predicateValuationOffset);
+                
+                // Encode the predicates whose value might have changed.
+                // FIXME: could be optimized by precomputation.
+                for (uint64_t predicateIndex = 0; predicateIndex < abstractionInformation.getNumberOfPredicates(); ++predicateIndex) {
+                    auto const& predicate = abstractionInformation.getPredicateByIndex(predicateIndex);
+                    std::set<storm::expressions::Variable> usedVariables = predicate.getVariables();
+                    
+                    bool containsAssignedVariables = false;
+                    for (auto usedIt = usedVariables.begin(), assignedIt = assignedVariables.begin();;) {
+                        if (usedIt == usedVariables.end() || assignedIt == assignedVariables.end()) {
+                            break;
+                        }
+                        
+                        if (*usedIt == *assignedIt) {
+                            containsAssignedVariables = true;
+                            break;
+                        }
+                        
+                        if (*usedIt < *assignedIt) {
+                            ++usedIt;
+                        } else {
+                            ++assignedIt;
+                        }
+                    }
+                    
+                    if (containsAssignedVariables) {
+                        auto transformedPredicate = predicate.changeManager(expressionManager).substitute(currentSubstitution);
+                        predicates.back().emplace_back(extendedPredicateValuation.get(predicateIndex + predicateValuationOffset) ? transformedPredicate : !transformedPredicate);
+                    }
+                }
+                
+                // Enforce constraints of all assigned variables.
+                for (auto const& constraint : abstractionInformation.getConstraints()) {
+                    std::set<storm::expressions::Variable> usedVariables = constraint.getVariables();
+
+                    bool containsAssignedVariables = false;
+                    for (auto usedIt = usedVariables.begin(), assignedIt = assignedVariables.begin();;) {
+                        if (usedIt == usedVariables.end() || assignedIt == assignedVariables.end()) {
+                            break;
+                        }
+                        
+                        if (*usedIt == *assignedIt) {
+                            containsAssignedVariables = true;
+                            break;
+                        }
+                        
+                        if (*usedIt < *assignedIt) {
+                            ++usedIt;
+                        } else {
+                            ++assignedIt;
+                        }
+                    }
+                    
+                    if (containsAssignedVariables) {
+                        auto transformedConstraint = constraint.changeManager(expressionManager).substitute(currentSubstitution);
+                        predicates.back().emplace_back(transformedConstraint);
+                    }
+                }
+                
+                ++actionIt;
+                ++step;
+            }
+            
+            return std::make_pair(predicates, stepVariableToCopiedVariableMap);
+        }
+        
+        template<storm::dd::DdType Type, typename ValueType>
+        boost::optional<RefinementPredicates> MenuGameRefiner<Type, ValueType>::derivePredicatesFromInterpolationFromTrace(storm::expressions::ExpressionManager& interpolationManager, std::vector<std::vector<storm::expressions::Expression>> const& trace, std::map<storm::expressions::Variable, storm::expressions::Expression> const& variableSubstitution) const {
             
             AbstractionInformation<Type> const& abstractionInformation = abstractor.get().getAbstractionInformation();
             
-            // Compute the most probable path from any initial state to the pivot state.
-            MostProbablePathsResult<Type, ValueType> mostProbablePathsResult;
-            if (!pivotStateResult.mostProbablePathsResult) {
-                mostProbablePathsResult = getMostProbablePathSpanningTree(game, pivotStateResult.fromDirection == storm::OptimizationDirection::Minimize ? minPlayer1Strategy && minPlayer2Strategy : maxPlayer1Strategy && maxPlayer2Strategy);
-            } else {
-                mostProbablePathsResult = pivotStateResult.mostProbablePathsResult.get();
-            }
-            
-            // Create a new expression manager that we can use for the interpolation.
-            std::shared_ptr<storm::expressions::ExpressionManager> interpolationManager = abstractionInformation.getExpressionManager().clone();
-            
-            // Build the trace of the most probable path in terms of which predicates hold in each step.
-            std::pair<std::vector<std::vector<storm::expressions::Expression>>, std::map<storm::expressions::Variable, storm::expressions::Expression>> traceAndVariableSubstitution = buildTrace(*interpolationManager, game, mostProbablePathsResult.spanningTree, pivotStateResult.pivotState);
-            auto const& trace = traceAndVariableSubstitution.first;
-            auto const& variableSubstitution = traceAndVariableSubstitution.second;
+            auto start = std::chrono::high_resolution_clock::now();
+            boost::optional<RefinementPredicates> predicates;
 
             // Create solver and interpolation groups.
-            storm::solver::MathsatSmtSolver interpolatingSolver(*interpolationManager, storm::solver::MathsatSmtSolver::Options(true, false, true));
+            auto assertionStart = std::chrono::high_resolution_clock::now();
+            storm::solver::MathsatSmtSolver interpolatingSolver(interpolationManager, storm::solver::MathsatSmtSolver::Options(true, false, true));
             uint64_t stepCounter = 0;
-            auto traceIt = trace.rbegin();
-            auto traceIte = trace.rend();
-            for (; traceIt != traceIte; ++traceIt) {
-                auto const& step = *traceIt;
-                interpolatingSolver.push();
+            for (auto const& traceElement : trace) {
+                // interpolatingSolver.push();
                 
                 interpolatingSolver.setInterpolationGroup(stepCounter);
-                for (auto const& predicate : step) {
+                for (auto const& predicate : traceElement) {
                     interpolatingSolver.add(predicate);
                 }
+
                 ++stepCounter;
-            
-                storm::solver::SmtSolver::CheckResult result = interpolatingSolver.check();
-                // If the result already became unsatisfiable
-                if (result == storm::solver::SmtSolver::CheckResult::Unsat) {
-                    STORM_LOG_TRACE("Trace formula became unsatisfiable after step " << (stepCounter - 1) << ".");
-                    break;
-                }
             }
+            auto assertionEnd = std::chrono::high_resolution_clock::now();
+            STORM_LOG_TRACE("Asserting trace formula took " << std::chrono::duration_cast<std::chrono::milliseconds>(assertionEnd - assertionStart).count() << "ms.");
             
             // Now encode the trace as an SMT problem.
             storm::solver::SmtSolver::CheckResult result = interpolatingSolver.check();
@@ -570,24 +871,86 @@ namespace storm {
                 
                 std::vector<storm::expressions::Expression> interpolants;
                 std::vector<uint64_t> prefix;
-                for (uint64_t step = 0; step + 1 < stepCounter; ++step) {
+                for (uint64_t step = 0; step < stepCounter; ++step) {
                     prefix.push_back(step);
                     storm::expressions::Expression interpolant = interpolatingSolver.getInterpolant(prefix).substitute(variableSubstitution).changeManager(abstractionInformation.getExpressionManager());
-                    if (!interpolant.isTrue() && !interpolant.isFalse()) {
-                        STORM_LOG_DEBUG("Derived new predicate (based on interpolation): " << interpolant);
+                    if (interpolant.isFalse()) {
+                        // If the interpolant is false, it means that the prefix has become unsatisfiable.
+                        STORM_LOG_TRACE("Trace formula became unsatisfiable at position " << step << " of " << stepCounter << ".");
+                        break;
+                    }
+                    if (!interpolant.isTrue()) {
+                        STORM_LOG_DEBUG("Derived new predicate (based on interpolation at step " << step << " out of " << stepCounter << "): " << interpolant);
                         interpolants.push_back(interpolant);
                     }
                 }
-                return boost::make_optional(RefinementPredicates(RefinementPredicates::Source::Interpolation, interpolants));
+                
+                STORM_LOG_ASSERT(!interpolants.empty(), "Expected to have non-empty set of interpolants.");
+                
+                predicates = boost::make_optional(RefinementPredicates(RefinementPredicates::Source::Interpolation, interpolants));
             } else {
                 STORM_LOG_TRACE("Trace formula is satisfiable, not using interpolation.");
             }
+            auto end = std::chrono::high_resolution_clock::now();
             
-            return boost::none;
+            if (predicates) {
+                STORM_LOG_TRACE("Deriving predicates using interpolation from witness of size " << trace.size() << " took " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
+            } else {
+                STORM_LOG_TRACE("Tried deriving predicates using interpolation but failed in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
+            }
+
+            return predicates;
         }
         
         template<storm::dd::DdType Type, typename ValueType>
-        bool MenuGameRefiner<Type, ValueType>::refine(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& transitionMatrixBdd, QualitativeGameResultMinMax<Type> const& qualitativeResult) const {
+        boost::optional<RefinementPredicates> MenuGameRefiner<Type, ValueType>::derivePredicatesFromInterpolation(storm::abstraction::MenuGame<Type, ValueType> const& game, SymbolicPivotStateResult<Type, ValueType> const& symbolicPivotStateResult, storm::dd::Bdd<Type> const& minPlayer1Strategy, storm::dd::Bdd<Type> const& minPlayer2Strategy, storm::dd::Bdd<Type> const& maxPlayer1Strategy, storm::dd::Bdd<Type> const& maxPlayer2Strategy) const {
+            
+            // Compute the most probable path from any initial state to the pivot state.
+            SymbolicMostProbablePathsResult<Type, ValueType> symbolicMostProbablePathsResult;
+            if (!symbolicPivotStateResult.symbolicMostProbablePathsResult) {
+                symbolicMostProbablePathsResult = getMostProbablePathSpanningTree(game, symbolicPivotStateResult.fromDirection == storm::OptimizationDirection::Minimize ? minPlayer1Strategy && minPlayer2Strategy : maxPlayer1Strategy && maxPlayer2Strategy);
+            } else {
+                symbolicMostProbablePathsResult = symbolicPivotStateResult.symbolicMostProbablePathsResult.get();
+            }
+            
+            // Create a new expression manager that we can use for the interpolation.
+            AbstractionInformation<Type> const& abstractionInformation = abstractor.get().getAbstractionInformation();
+            std::shared_ptr<storm::expressions::ExpressionManager> interpolationManager = abstractionInformation.getExpressionManager().clone();
+            
+            // Build the trace of the most probable path in terms of which predicates hold in each step.
+            auto start = std::chrono::high_resolution_clock::now();
+            std::pair<std::vector<std::vector<storm::expressions::Expression>>, std::map<storm::expressions::Variable, storm::expressions::Expression>> traceAndVariableSubstitution = buildTrace(*interpolationManager, game, symbolicMostProbablePathsResult.spanningTree, symbolicPivotStateResult.pivotState);
+            auto end = std::chrono::high_resolution_clock::now();
+            STORM_LOG_DEBUG("Building the trace and variable substitution for interpolation from symbolic most-probable paths result took " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
+
+            return derivePredicatesFromInterpolationFromTrace(*interpolationManager, traceAndVariableSubstitution.first, traceAndVariableSubstitution.second);
+        }
+        
+        template<storm::dd::DdType Type, typename ValueType>
+        boost::optional<RefinementPredicates> MenuGameRefiner<Type, ValueType>::derivePredicatesFromInterpolation(storm::abstraction::MenuGame<Type, ValueType> const& game, ExplicitPivotStateResult<ValueType> const& pivotStateResult, storm::dd::Odd const& odd) const {
+
+            // Create a new expression manager that we can use for the interpolation.
+            AbstractionInformation<Type> const& abstractionInformation = abstractor.get().getAbstractionInformation();
+            std::shared_ptr<storm::expressions::ExpressionManager> interpolationManager = abstractionInformation.getExpressionManager().clone();
+
+            // Build the trace of the most probable path in terms of which predicates hold in each step.
+            auto start = std::chrono::high_resolution_clock::now();
+            std::pair<std::vector<uint64_t>, std::vector<uint64_t>> labeledReversedPath = buildReversedLabeledPath(pivotStateResult);
+            
+            // If the initial state is the pivot state, we can stop here.
+            if (labeledReversedPath.first.size() == 1) {
+                return boost::none;
+            }
+            
+            std::pair<std::vector<std::vector<storm::expressions::Expression>>, std::map<storm::expressions::Variable, storm::expressions::Expression>> traceAndVariableSubstitution = buildTraceFromReversedLabeledPath(*interpolationManager, labeledReversedPath.first, labeledReversedPath.second, odd);
+            auto end = std::chrono::high_resolution_clock::now();
+            STORM_LOG_DEBUG("Building the trace and variable substitution for interpolation from explicit most-probable paths result took " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
+
+            return derivePredicatesFromInterpolationFromTrace(*interpolationManager, traceAndVariableSubstitution.first, traceAndVariableSubstitution.second);
+        }
+        
+        template<storm::dd::DdType Type, typename ValueType>
+        bool MenuGameRefiner<Type, ValueType>::refine(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& transitionMatrixBdd, SymbolicQualitativeGameResultMinMax<Type> const& qualitativeResult) const {
             STORM_LOG_TRACE("Trying refinement after qualitative check.");
             // Get all relevant strategies.
             storm::dd::Bdd<Type> minPlayer1Strategy = qualitativeResult.prob0Min.getPlayer1Strategy();
@@ -608,16 +971,17 @@ namespace storm {
             // strategies and they differ. Hence, it is possible that we arrive at a point where no suitable pivot state
             // is found. In this case, we abort the qualitative refinement here.
             if (pivotStateCandidatesResult.pivotStates.isZero()) {
+                STORM_LOG_TRACE("Did not find pivot state in qualitative fragment.");
                 return false;
             }
             STORM_LOG_ASSERT(!pivotStateCandidatesResult.pivotStates.isZero(), "Unable to proceed without pivot state candidates.");
             
             // Now that we have the pivot state candidates, we need to pick one.
-            PivotStateResult<Type, ValueType> pivotStateResult = pickPivotState<Type, ValueType>(pivotSelectionHeuristic, game, pivotStateCandidatesResult, qualitativeResult, boost::none);
+            SymbolicPivotStateResult<Type, ValueType> symbolicPivotStateResult = pickPivotState<Type, ValueType>(pivotSelectionHeuristic, game, pivotStateCandidatesResult, qualitativeResult, boost::none);
 
 //            // SANITY CHECK TO MAKE SURE OUR STRATEGIES ARE NOT BROKEN.
 //            // FIXME.
-//            auto min1ChoiceInPivot = pivotStateResult.pivotState && game.getExtendedTransitionMatrix().toBdd() && minPlayer1Strategy;
+//            auto min1ChoiceInPivot = SymbolicPivotStateResult.pivotState && game.getExtendedTransitionMatrix().toBdd() && minPlayer1Strategy;
 //            STORM_LOG_ASSERT(!min1ChoiceInPivot.isZero(), "wth?");
 //            bool min1ChoiceInPivotIsProb0Min = !(min1ChoiceInPivot && qualitativeResult.prob0Min.getPlayer2States()).isZero();
 //            bool min1ChoiceInPivotIsProb0Max = !(min1ChoiceInPivot && qualitativeResult.prob0Max.getPlayer2States()).isZero();
@@ -641,7 +1005,7 @@ namespace storm {
 //            std::cout << "max/min choice there? " << min1MinPlayer2Choice << std::endl;
 //            std::cout << "max/max choice there? " << min1MaxPlayer2Choice << std::endl;
 //
-//            auto max1ChoiceInPivot = pivotStateResult.pivotState && game.getExtendedTransitionMatrix().toBdd() && maxPlayer1Strategy;
+//            auto max1ChoiceInPivot = SymbolicPivotStateResult.pivotState && game.getExtendedTransitionMatrix().toBdd() && maxPlayer1Strategy;
 //            STORM_LOG_ASSERT(!max1ChoiceInPivot.isZero(), "wth?");
 //            bool max1ChoiceInPivotIsProb0Min = !(max1ChoiceInPivot && qualitativeResult.prob0Min.getPlayer2States()).isZero();
 //            bool max1ChoiceInPivotIsProb0Max = !(max1ChoiceInPivot && qualitativeResult.prob0Max.getPlayer2States()).isZero();
@@ -659,12 +1023,12 @@ namespace storm {
 
             boost::optional<RefinementPredicates> predicates;
             if (useInterpolation) {
-                predicates = derivePredicatesFromInterpolation(game, pivotStateResult, minPlayer1Strategy, minPlayer2Strategy, maxPlayer1Strategy, maxPlayer2Strategy);
+                predicates = derivePredicatesFromInterpolation(game, symbolicPivotStateResult, minPlayer1Strategy, minPlayer2Strategy, maxPlayer1Strategy, maxPlayer2Strategy);
             }
             if (predicates) {
                 STORM_LOG_TRACE("Obtained predicates by interpolation.");
             } else {
-                predicates = derivePredicatesFromPivotState(game, pivotStateResult.pivotState, minPlayer1Strategy, minPlayer2Strategy, maxPlayer1Strategy, maxPlayer2Strategy);
+                predicates = derivePredicatesFromPivotState(game, symbolicPivotStateResult.pivotState, minPlayer1Strategy, minPlayer2Strategy, maxPlayer1Strategy, maxPlayer2Strategy);
             }
             STORM_LOG_THROW(static_cast<bool>(predicates), storm::exceptions::InvalidStateException, "Predicates needed to continue.");
             
@@ -674,8 +1038,449 @@ namespace storm {
             return true;
         }
         
+        template<typename ValueType>
+        struct ExplicitDijkstraQueueElement {
+            ExplicitDijkstraQueueElement(ValueType const& distance, uint64_t state, bool lower) : distance(distance), state(state), lower(lower) {
+                // Intentionally left empty.
+            }
+            
+            ValueType distance;
+            uint64_t state;
+            bool lower;
+        };
+        
+        template<typename ValueType>
+        struct ExplicitDijkstraQueueElementLess {
+            bool operator()(ExplicitDijkstraQueueElement<ValueType> const& a, ExplicitDijkstraQueueElement<ValueType> const& b) const {
+                if (a.distance < b.distance) {
+                    return true;
+                } else if (a.distance > b.distance) {
+                    return false;
+                } else {
+                    if (a.state < b.state) {
+                        return true;
+                    } else if (a.state > b.state) {
+                        return false;
+                    } else {
+                        if (a.lower < b.lower) {
+                            return true;
+                        } else {
+                            return false;
+                        }
+                    }
+                }
+            }
+        };
+        
+        template<typename ValueType>
+        void performDijkstraStep(std::set<ExplicitDijkstraQueueElement<ValueType>, ExplicitDijkstraQueueElementLess<ValueType>>& dijkstraQueue, bool probabilityDistances, std::vector<ValueType>& distances, std::vector<std::pair<uint64_t, uint64_t>>& predecessors, bool generatePredecessors, bool lower, uint64_t currentState, ValueType const& currentDistance, bool isPivotState, ExplicitGameStrategyPair const& strategyPair, ExplicitGameStrategyPair const& otherStrategyPair, std::vector<uint64_t> const& player1Labeling, std::vector<uint64_t> const& player2Grouping, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& targetStates, storm::storage::BitVector const& relevantStates) {
+            if (strategyPair.getPlayer1Strategy().hasDefinedChoice(currentState)) {
+                uint64_t player2Successor = strategyPair.getPlayer1Strategy().getChoice(currentState);
+                uint64_t player2Choice = strategyPair.getPlayer2Strategy().getChoice(player2Successor);
+                STORM_LOG_ASSERT(isPivotState || !otherStrategyPair.getPlayer2Strategy().hasDefinedChoice(player2Successor) || strategyPair.getPlayer2Strategy().getChoice(player2Successor) == player2Choice, "Did not expect deviation in player 2 strategy.");
+                STORM_LOG_ASSERT(player2Grouping[player2Successor] <= player2Choice && player2Choice < player2Grouping[player2Successor + 1], "Illegal choice for player 2.");
+                
+                for (auto const& entry : transitionMatrix.getRow(player2Choice)) {
+                    uint64_t player1Successor = entry.getColumn();
+                    if (!relevantStates.get(player1Successor)) {
+                        continue;
+                    }
+                    
+                    ValueType alternateDistance;
+                    if (probabilityDistances) {
+                        alternateDistance = currentDistance * entry.getValue();
+                    } else {
+                        alternateDistance = currentDistance + storm::utility::one<ValueType>();
+                    }
+                    if (probabilityDistances ? alternateDistance > distances[player1Successor] : alternateDistance < distances[player1Successor]) {
+                        distances[player1Successor] = alternateDistance;
+                        if (generatePredecessors) {
+                            predecessors[player1Successor] = std::make_pair(currentState, player1Labeling[player2Successor]);
+                        }
+                        dijkstraQueue.emplace(alternateDistance, player1Successor, lower);
+                    }
+                }
+            } else {
+                STORM_LOG_ASSERT(targetStates.get(currentState), "Expecting min strategy for non-target states.");
+            }
+        }
+        
+        template<typename ValueType>
+        boost::optional<ExplicitPivotStateResult<ValueType>> pickPivotState(bool generatePredecessors, AbstractionSettings::PivotSelectionHeuristic pivotSelectionHeuristic, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint64_t> const& player1Grouping, std::vector<uint64_t> const& player1Labeling, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& relevantStates, storm::storage::BitVector const& targetStates, ExplicitGameStrategyPair const& minStrategyPair, ExplicitGameStrategyPair const& maxStrategyPair, std::vector<ValueType> const* lowerValues = nullptr, std::vector<ValueType> const* upperValues = nullptr) {
+            
+            STORM_LOG_ASSERT(!lowerValues || upperValues, "Expected none or both value results.");
+            STORM_LOG_ASSERT(!upperValues || lowerValues, "Expected none or both value results.");
+
+            // Perform Dijkstra search that stays within the relevant states and searches for a (pivot) state in which
+            // the strategies the lower or upper player 1 action leads to a player 2 state in which the choices differ.
+            // To guarantee that the pivot state is reachable by either of the strategies, we do a parallel Dijkstra
+            // search in both the lower and upper strategy.
+            
+            bool probabilityDistances = pivotSelectionHeuristic == storm::settings::modules::AbstractionSettings::PivotSelectionHeuristic::MostProbablePath;
+            uint64_t numberOfStates = initialStates.size();
+            ValueType inftyDistance = probabilityDistances ? storm::utility::zero<ValueType>() : storm::utility::infinity<ValueType>();
+            ValueType zeroDistance = probabilityDistances ? storm::utility::one<ValueType>() : storm::utility::zero<ValueType>();
+
+            // Create storages for the lower and upper Dijkstra search.
+            std::vector<ValueType> lowerDistances(numberOfStates, inftyDistance);
+            std::vector<std::pair<uint64_t, uint64_t>> lowerPredecessors;
+            std::vector<ValueType> upperDistances(numberOfStates, inftyDistance);
+            std::vector<std::pair<uint64_t, uint64_t>> upperPredecessors;
+            
+            if (generatePredecessors) {
+                lowerPredecessors.resize(numberOfStates, std::make_pair(ExplicitPivotStateResult<ValueType>::NO_PREDECESSOR, ExplicitPivotStateResult<ValueType>::NO_PREDECESSOR));
+                upperPredecessors.resize(numberOfStates, std::make_pair(ExplicitPivotStateResult<ValueType>::NO_PREDECESSOR, ExplicitPivotStateResult<ValueType>::NO_PREDECESSOR));
+            }
+
+            // Use set as priority queue with unique membership.
+            std::set<ExplicitDijkstraQueueElement<ValueType>, ExplicitDijkstraQueueElementLess<ValueType>> dijkstraQueue;
+            
+            for (auto initialState : initialStates) {
+                if (!relevantStates.get(initialState)) {
+                    continue;
+                }
+                
+                lowerDistances[initialState] = zeroDistance;
+                upperDistances[initialState] = zeroDistance;
+                dijkstraQueue.emplace(zeroDistance, initialState, true);
+                dijkstraQueue.emplace(zeroDistance, initialState, false);
+            }
+
+            // For some heuristics, we need to potentially find more than just one pivot.
+            bool considerDeviation = (pivotSelectionHeuristic == storm::settings::modules::AbstractionSettings::PivotSelectionHeuristic::NearestMaximalDeviation || pivotSelectionHeuristic == storm::settings::modules::AbstractionSettings::PivotSelectionHeuristic::MaxWeightedDeviation) && lowerValues && upperValues;
+            bool foundPivotState = false;
+            
+            ExplicitDijkstraQueueElement<ValueType> pivotState(inftyDistance, 0, true);
+            ValueType pivotStateDeviation = storm::utility::zero<ValueType>();
+            auto const& player2Grouping = transitionMatrix.getRowGroupIndices();
+            
+            while (!dijkstraQueue.empty()) {
+                // Take out currently best state.
+                auto currentDijkstraElement = *dijkstraQueue.begin();
+                ValueType currentDistance = currentDijkstraElement.distance;
+                uint64_t currentState = currentDijkstraElement.state;
+                bool currentLower = currentDijkstraElement.lower;
+                dijkstraQueue.erase(dijkstraQueue.begin());
+                
+                if (foundPivotState && (probabilityDistances ? currentDistance < pivotState.distance : currentDistance > pivotState.distance)) {
+                    if (pivotSelectionHeuristic != storm::settings::modules::AbstractionSettings::PivotSelectionHeuristic::MaxWeightedDeviation) {
+                        // For the nearest maximal deviation and most probable path heuristics, future pivot states are
+                        // not important any more, because their distance will be strictly larger, so we can return the
+                        // current pivot state.
+                        
+                        return ExplicitPivotStateResult<ValueType>(pivotState.state, pivotState.distance, pivotState.lower ? std::move(lowerPredecessors) : std::move(upperPredecessors));
+                    } else if (pivotStateDeviation >= currentDistance) {
+                        // If the heuristic is maximal weighted deviation and the weighted deviation for any future pivot
+                        // state is necessarily at most as high as the current one, we can abort the search.
+                        return ExplicitPivotStateResult<ValueType>(pivotState.state, pivotState.distance, pivotState.lower ? std::move(lowerPredecessors) : std::move(upperPredecessors));
+                    }
+                }
+                
+                // Determine whether the current state is a pivot state.
+                bool isPivotState = false;
+                if (minStrategyPair.getPlayer1Strategy().hasDefinedChoice(currentState)) {
+                    uint64_t player2Successor = minStrategyPair.getPlayer1Strategy().getChoice(currentState);
+                    if (minStrategyPair.getPlayer2Strategy().hasDefinedChoice(player2Successor) && maxStrategyPair.getPlayer2Strategy().hasDefinedChoice(player2Successor) && minStrategyPair.getPlayer2Strategy().getChoice(player2Successor) != maxStrategyPair.getPlayer2Strategy().getChoice(player2Successor)) {
+                        isPivotState = true;
+                    }
+                }
+                if (!isPivotState && maxStrategyPair.getPlayer1Strategy().hasDefinedChoice(currentState)) {
+                    uint64_t player2Successor = maxStrategyPair.getPlayer1Strategy().getChoice(currentState);
+                    if (minStrategyPair.getPlayer2Strategy().hasDefinedChoice(player2Successor) && maxStrategyPair.getPlayer2Strategy().hasDefinedChoice(player2Successor) && minStrategyPair.getPlayer2Strategy().getChoice(player2Successor) != maxStrategyPair.getPlayer2Strategy().getChoice(player2Successor)) {
+                        isPivotState = true;
+                    }
+                }
+                
+                // If it is indeed a pivot state, we can potentially abort the search here.
+                if (isPivotState) {
+                    if (considerDeviation && foundPivotState) {
+                        ValueType deviationOfCurrentState = (*upperValues)[currentState] - (*lowerValues)[currentState];
+                        
+                        if (deviationOfCurrentState > pivotStateDeviation) {
+                            pivotState = currentDijkstraElement;
+                            pivotStateDeviation = deviationOfCurrentState;
+                            if (pivotSelectionHeuristic == storm::settings::modules::AbstractionSettings::PivotSelectionHeuristic::MaxWeightedDeviation) {
+                                // Scale the deviation with the distance (probability) for this heuristic.
+                                pivotStateDeviation *= currentDistance;
+                            }
+                        }
+                    } else if (!foundPivotState) {
+                        pivotState = currentDijkstraElement;
+                        foundPivotState = true;
+                    }
+                    
+                    // If there is no need to look at other deviations, stop here.
+                    if (!considerDeviation) {
+                        return ExplicitPivotStateResult<ValueType>(pivotState.state, pivotState.distance, pivotState.lower ? std::move(lowerPredecessors) : std::move(upperPredecessors));
+                    }
+                }
+                
+                // We only need to search further if the state has some value deviation.
+                if (!lowerValues || !upperValues || (*lowerValues)[currentState] < (*upperValues)[currentState]) {
+                    if (currentLower) {
+                        performDijkstraStep(dijkstraQueue, probabilityDistances, lowerDistances, lowerPredecessors, generatePredecessors, true, currentState, currentDistance, isPivotState, minStrategyPair, maxStrategyPair, player1Labeling, player2Grouping, transitionMatrix, targetStates, relevantStates);
+                    } else {
+                        performDijkstraStep(dijkstraQueue, probabilityDistances, upperDistances, upperPredecessors, generatePredecessors, false, currentState, currentDistance, isPivotState, maxStrategyPair, minStrategyPair, player1Labeling, player2Grouping, transitionMatrix, targetStates, relevantStates);
+                    }
+                }
+            }
+            
+            if (foundPivotState) {
+                return ExplicitPivotStateResult<ValueType>(pivotState.state, pivotState.distance, pivotState.lower ? std::move(lowerPredecessors) : std::move(upperPredecessors));
+            }
+
+            // If we arrived at this point, we have explored all relevant states, but none of them was a pivot state,
+            // which can happen when trying to refine using the qualitative result only.
+            STORM_LOG_TRACE("Did not find pivot state in explicit Dijkstra search.");
+            return boost::none;
+        }
+        
         template<storm::dd::DdType Type, typename ValueType>
-        bool MenuGameRefiner<Type, ValueType>::refine(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& transitionMatrixBdd, QuantitativeGameResultMinMax<Type, ValueType> const& quantitativeResult) const {
+        boost::optional<RefinementPredicates> MenuGameRefiner<Type, ValueType>::derivePredicatesFromInterpolationReversedPath(storm::dd::Odd const& odd, storm::expressions::ExpressionManager& interpolationManager, std::vector<uint64_t> const& reversedPath, std::vector<uint64_t> const& stateToOffset, std::vector<uint64_t> const& reversedLabels) const {
+            
+            // Build the trace of the most probable path in terms of which predicates hold in each step.
+            auto start = std::chrono::high_resolution_clock::now();
+            std::pair<std::vector<std::vector<storm::expressions::Expression>>, std::map<storm::expressions::Variable, storm::expressions::Expression>> traceAndVariableSubstitution = buildTraceFromReversedLabeledPath(interpolationManager, reversedPath, reversedLabels, odd, &stateToOffset);
+            auto end = std::chrono::high_resolution_clock::now();
+            STORM_LOG_DEBUG("Building the trace and variable substitution for interpolation from explicit most-probable paths result took " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
+            
+            return derivePredicatesFromInterpolationFromTrace(interpolationManager, traceAndVariableSubstitution.first, traceAndVariableSubstitution.second);
+        }
+        
+        template<storm::dd::DdType Type, typename ValueType>
+        boost::optional<RefinementPredicates> MenuGameRefiner<Type, ValueType>::derivePredicatesFromInterpolationKShortestPaths(storm::dd::Odd const& odd, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint64_t> const& player1Grouping, std::vector<uint64_t> const& player1Labeling, std::vector<uint64_t> const& player2Labeling, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, ValueType minProbability, ValueType maxProbability, ExplicitGameStrategyPair const& maxStrategyPair) const {
+            
+            // Extract the underlying DTMC of the max strategy pair.
+            
+            // Start by determining which states are reachable.
+            storm::storage::BitVector reachableStatesInMaxFragment(initialStates);
+            std::vector<uint64_t> stack(initialStates.begin(), initialStates.end());
+            while (!stack.empty()) {
+                uint64_t currentState = stack.back();
+                stack.pop_back();
+                
+                uint64_t player2Successor = maxStrategyPair.getPlayer1Strategy().getChoice(currentState);
+                uint64_t player2Choice = maxStrategyPair.getPlayer2Strategy().getChoice(player2Successor);
+                for (auto const& successorEntry : transitionMatrix.getRow(player2Choice)) {
+                    if (!reachableStatesInMaxFragment.get(successorEntry.getColumn())) {
+                        reachableStatesInMaxFragment.set(successorEntry.getColumn());
+                        if (!targetStates.get(successorEntry.getColumn())) {
+                            stack.push_back(successorEntry.getColumn());
+                        }
+                    }
+                }
+            }
+            
+            uint64_t numberOfReachableStates = reachableStatesInMaxFragment.getNumberOfSetBits();
+            std::vector<uint64_t> reachableStatesWithLowerIndex = reachableStatesInMaxFragment.getNumberOfSetBitsBeforeIndices();
+            
+            // Now construct the matrix just for these entries.
+            storm::storage::SparseMatrixBuilder<ValueType> builder(numberOfReachableStates, numberOfReachableStates);
+            storm::storage::BitVector dtmcInitialStates(numberOfReachableStates);
+            typename storm::utility::ksp::ShortestPathsGenerator<ValueType>::StateProbMap targetProbabilities;
+            std::vector<uint64_t> stateToOffset(numberOfReachableStates);
+            std::vector<uint64_t> dtmcPlayer1Labels(numberOfReachableStates);
+            uint64_t currentRow = 0;
+            for (auto currentState : reachableStatesInMaxFragment) {
+                stateToOffset[currentRow] = currentState;
+                if (targetStates.get(currentState)) {
+                    targetProbabilities[currentRow] = storm::utility::one<ValueType>();
+                    builder.addNextValue(currentRow, currentRow, storm::utility::one<ValueType>());
+                } else {
+                    uint64_t player2Successor = maxStrategyPair.getPlayer1Strategy().getChoice(currentState);
+                    dtmcPlayer1Labels[currentRow] = player1Labeling[player2Successor];
+                    uint64_t player2Choice = maxStrategyPair.getPlayer2Strategy().getChoice(player2Successor);
+                    
+                    for (auto const& successorEntry : transitionMatrix.getRow(player2Choice)) {
+                        builder.addNextValue(currentRow, reachableStatesWithLowerIndex[successorEntry.getColumn()], successorEntry.getValue());
+                    }
+                }
+                
+                if (initialStates.get(currentState)) {
+                    dtmcInitialStates.set(currentRow);
+                }
+                ++currentRow;
+            }
+            storm::storage::SparseMatrix<ValueType> dtmcMatrix = builder.build();
+
+            // Create a new expression manager that we can use for the interpolation.
+            AbstractionInformation<Type> const& abstractionInformation = abstractor.get().getAbstractionInformation();
+            std::shared_ptr<storm::expressions::ExpressionManager> interpolationManager = abstractionInformation.getExpressionManager().clone();
+            
+            // Use a path generator to compute k-shortest-paths.
+            storm::utility::ksp::ShortestPathsGenerator<ValueType> pathGenerator(dtmcMatrix, targetProbabilities, dtmcInitialStates, storm::utility::ksp::MatrixFormat::straight);
+            uint64_t currentShortestPath = 1;
+            bool considerNextPath = true;
+            
+            boost::optional<RefinementPredicates> result;
+            
+            while (currentShortestPath < 100 && considerNextPath) {
+                auto reversedPath = pathGenerator.getPathAsList(currentShortestPath);
+                std::vector<uint64_t> reversedLabels;
+                for (auto stateIt = reversedPath.rbegin(); stateIt != reversedPath.rend() - 1; ++stateIt) {
+                    reversedLabels.push_back(player1Labeling[maxStrategyPair.getPlayer1Strategy().getChoice(stateToOffset[*stateIt])]);
+                }
+                
+                boost::optional<RefinementPredicates> pathPredicates = derivePredicatesFromInterpolationReversedPath(odd, *interpolationManager, reversedPath, stateToOffset, reversedLabels);
+                if (pathPredicates) {
+                    if (!result) {
+                        result = RefinementPredicates(RefinementPredicates::Source::Interpolation, pathPredicates.get().getPredicates());
+                    } else {
+                        result.get().addPredicates(pathPredicates.get().getPredicates());
+                    }
+                }
+                ++currentShortestPath;
+            }
+
+            exit(-1);
+            return result;
+        }
+        
+        template<storm::dd::DdType Type, typename ValueType>
+        bool MenuGameRefiner<Type, ValueType>::refine(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Odd const& odd, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint64_t> const& player1Grouping, std::vector<uint64_t> const& player1Labeling, std::vector<uint64_t> const& player2Labeling, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, ExplicitQualitativeGameResultMinMax const& qualitativeResult, ExplicitGameStrategyPair const& minStrategyPair, ExplicitGameStrategyPair const& maxStrategyPair) const {
+            
+//            boost::optional<RefinementPredicates> kShortestPathPredicates = derivePredicatesFromInterpolationKShortestPaths(odd, transitionMatrix, player1Grouping, player1Labeling, player2Labeling, initialStates, constraintStates, targetStates, storm::utility::zero<ValueType>(), storm::utility::one<ValueType>(), maxStrategyPair);
+            
+            // Compute the set of states whose result we have for the min and max case.
+            storm::storage::BitVector relevantStates = (qualitativeResult.getProb0Min().getStates() | qualitativeResult.getProb1Min().getStates()) & (qualitativeResult.getProb0Max().getStates() | qualitativeResult.getProb1Max().getStates());
+
+            boost::optional<ExplicitPivotStateResult<ValueType>> optionalPivotStateResult = pickPivotState(useInterpolation, pivotSelectionHeuristic, transitionMatrix, player1Grouping, player1Labeling, initialStates, relevantStates, targetStates, minStrategyPair, maxStrategyPair);
+            
+            // If there was no pivot state, continue the search.
+            if (!optionalPivotStateResult) {
+                STORM_LOG_TRACE("Did not find pivot state in qualitative fragment.");
+                return false;
+            }
+            
+            // Otherwise, we can refine.
+            auto const& pivotStateResult = optionalPivotStateResult.get();
+            STORM_LOG_TRACE("Found pivot state " << pivotStateResult.pivotState << " with distance " << pivotStateResult.distance << ".");
+
+            // Translate the explicit states/choices to the symbolic ones, so we can reuse the predicate derivation techniques.
+            auto const& abstractionInformation = abstractor.get().getAbstractionInformation();
+            uint64_t pivotState = pivotStateResult.pivotState;
+            storm::dd::Bdd<Type> symbolicPivotState = storm::dd::Bdd<Type>::getEncoding(game.getManager(), pivotState, odd, game.getRowVariables());
+            storm::dd::Bdd<Type> minPlayer1Strategy = game.getManager().getBddZero();
+            storm::dd::Bdd<Type> maxPlayer1Strategy = game.getManager().getBddZero();
+            storm::dd::Bdd<Type> minPlayer2Strategy = game.getManager().getBddZero();
+            storm::dd::Bdd<Type> maxPlayer2Strategy = game.getManager().getBddZero();
+            if (minStrategyPair.getPlayer1Strategy().hasDefinedChoice(pivotState)) {
+                uint64_t player2State = minStrategyPair.getPlayer1Strategy().getChoice(pivotState);
+                STORM_LOG_ASSERT(player1Grouping[pivotState] <= player2State && player2State < player1Grouping[pivotState + 1], "Illegal choice for player 1.");
+                minPlayer1Strategy |= symbolicPivotState && abstractionInformation.encodePlayer1Choice(player1Labeling[player2State], abstractionInformation.getPlayer1VariableCount());
+                
+                if (minStrategyPair.getPlayer2Strategy().hasDefinedChoice(player2State)) {
+                    uint64_t player2Choice = minStrategyPair.getPlayer2Strategy().getChoice(player2State);
+                    minPlayer2Strategy |= minPlayer1Strategy && abstractionInformation.encodePlayer2Choice(player2Labeling[player2Choice], 0, game.getPlayer2Variables().size());
+                }
+                if (maxStrategyPair.getPlayer2Strategy().hasDefinedChoice(player2State)) {
+                    uint64_t player2Choice = maxStrategyPair.getPlayer2Strategy().getChoice(player2State);
+                    maxPlayer2Strategy |= minPlayer1Strategy && abstractionInformation.encodePlayer2Choice(player2Labeling[player2Choice], 0, game.getPlayer2Variables().size());
+                }
+            }
+            if (maxStrategyPair.getPlayer1Strategy().hasDefinedChoice(pivotState)) {
+                uint64_t player2State = maxStrategyPair.getPlayer1Strategy().getChoice(pivotState);
+                STORM_LOG_ASSERT(player1Grouping[pivotState] <= player2State && player2State < player1Grouping[pivotState + 1], "Illegal choice for player 1.");
+                maxPlayer1Strategy |= symbolicPivotState && abstractionInformation.encodePlayer1Choice(player1Labeling[player2State], abstractionInformation.getPlayer1VariableCount());
+                
+                if (minStrategyPair.getPlayer2Strategy().hasDefinedChoice(player2State)) {
+                    uint64_t player2Choice = minStrategyPair.getPlayer2Strategy().getChoice(player2State);
+                    minPlayer2Strategy |= maxPlayer1Strategy && abstractionInformation.encodePlayer2Choice(player2Labeling[player2Choice], 0, game.getPlayer2Variables().size());
+                }
+                if (maxStrategyPair.getPlayer2Strategy().hasDefinedChoice(player2State)) {
+                    uint64_t player2Choice = maxStrategyPair.getPlayer2Strategy().getChoice(player2State);
+                    maxPlayer2Strategy |= maxPlayer1Strategy && abstractionInformation.encodePlayer2Choice(player2Labeling[player2Choice], 0, game.getPlayer2Variables().size());
+                }
+            }
+            auto end = std::chrono::high_resolution_clock::now();
+
+            boost::optional<RefinementPredicates> predicates;
+            if (useInterpolation) {
+                predicates = derivePredicatesFromInterpolation(game, pivotStateResult, odd);
+            }
+            if (!predicates) {
+                predicates = derivePredicatesFromPivotState(game, symbolicPivotState, minPlayer1Strategy, minPlayer2Strategy, maxPlayer1Strategy, maxPlayer2Strategy);
+            }
+            end = std::chrono::high_resolution_clock::now();
+            STORM_LOG_THROW(static_cast<bool>(predicates), storm::exceptions::InvalidStateException, "Predicates needed to continue.");
+            
+            std::vector<storm::expressions::Expression> preparedPredicates = preprocessPredicates(predicates.get().getPredicates(), predicates.get().getSource());
+            performRefinement(createGlobalRefinement(preparedPredicates));
+            return true;
+        }
+        
+        template<storm::dd::DdType Type, typename ValueType>
+        bool MenuGameRefiner<Type, ValueType>::refine(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Odd const& odd, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint64_t> const& player1Grouping, std::vector<uint64_t> const& player1Labeling, std::vector<uint64_t> const& player2Labeling, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, ExplicitQuantitativeResultMinMax<ValueType> const& quantitativeResult, ExplicitGameStrategyPair const& minStrategyPair, ExplicitGameStrategyPair const& maxStrategyPair) const {
+            
+//            ValueType lower = quantitativeResult.getMin().getRange(initialStates).first;
+//            ValueType upper = quantitativeResult.getMax().getRange(initialStates).second;
+            
+//            boost::optional<RefinementPredicates> kShortestPathPredicates = derivePredicatesFromInterpolationKShortestPaths(odd, transitionMatrix, player1Grouping, player1Labeling, player2Labeling, initialStates, constraintStates, targetStates, lower, upper, maxStrategyPair);
+            
+            // Compute the set of states whose result we have for the min and max case.
+            storm::storage::BitVector relevantStates(odd.getTotalOffset(), true);
+            
+            boost::optional<ExplicitPivotStateResult<ValueType>> optionalPivotStateResult = pickPivotState(useInterpolation, pivotSelectionHeuristic, transitionMatrix, player1Grouping, player1Labeling, initialStates, relevantStates, targetStates, minStrategyPair, maxStrategyPair, &quantitativeResult.getMin().getValues(), &quantitativeResult.getMax().getValues());
+            
+            STORM_LOG_THROW(optionalPivotStateResult, storm::exceptions::InvalidStateException, "Did not find pivot state to proceed.");
+            
+            // Otherwise, we can refine.
+            auto const& pivotStateResult = optionalPivotStateResult.get();
+            STORM_LOG_TRACE("Found pivot state " << pivotStateResult.pivotState << " with distance " << pivotStateResult.distance << ".");
+            
+            // Translate the explicit states/choices to the symbolic ones, so we can reuse the predicate derivation techniques.
+            auto const& abstractionInformation = abstractor.get().getAbstractionInformation();
+            uint64_t pivotState = pivotStateResult.pivotState;
+            storm::dd::Bdd<Type> symbolicPivotState = storm::dd::Bdd<Type>::getEncoding(game.getManager(), pivotState, odd, game.getRowVariables());
+            storm::dd::Bdd<Type> minPlayer1Strategy = game.getManager().getBddZero();
+            storm::dd::Bdd<Type> maxPlayer1Strategy = game.getManager().getBddZero();
+            storm::dd::Bdd<Type> minPlayer2Strategy = game.getManager().getBddZero();
+            storm::dd::Bdd<Type> maxPlayer2Strategy = game.getManager().getBddZero();
+            if (minStrategyPair.getPlayer1Strategy().hasDefinedChoice(pivotState)) {
+                uint64_t player2State = minStrategyPair.getPlayer1Strategy().getChoice(pivotState);
+                STORM_LOG_ASSERT(player1Grouping[pivotState] <= player2State && player2State < player1Grouping[pivotState + 1], "Illegal choice for player 1.");
+                minPlayer1Strategy |= symbolicPivotState && abstractionInformation.encodePlayer1Choice(player1Labeling[player2State], abstractionInformation.getPlayer1VariableCount());
+                
+                if (minStrategyPair.getPlayer2Strategy().hasDefinedChoice(player2State)) {
+                    uint64_t player2Choice = minStrategyPair.getPlayer2Strategy().getChoice(player2State);
+                    minPlayer2Strategy |= minPlayer1Strategy && abstractionInformation.encodePlayer2Choice(player2Labeling[player2Choice], 0, game.getPlayer2Variables().size());
+                }
+                if (maxStrategyPair.getPlayer2Strategy().hasDefinedChoice(player2State)) {
+                    uint64_t player2Choice = maxStrategyPair.getPlayer2Strategy().getChoice(player2State);
+                    maxPlayer2Strategy |= minPlayer1Strategy && abstractionInformation.encodePlayer2Choice(player2Labeling[player2Choice], 0, game.getPlayer2Variables().size());
+                }
+            }
+            if (maxStrategyPair.getPlayer1Strategy().hasDefinedChoice(pivotState)) {
+                uint64_t player2State = maxStrategyPair.getPlayer1Strategy().getChoice(pivotState);
+                STORM_LOG_ASSERT(player1Grouping[pivotState] <= player2State && player2State < player1Grouping[pivotState + 1], "Illegal choice for player 1.");
+                maxPlayer1Strategy |= symbolicPivotState && abstractionInformation.encodePlayer1Choice(player1Labeling[player2State], abstractionInformation.getPlayer1VariableCount());
+                
+                if (minStrategyPair.getPlayer2Strategy().hasDefinedChoice(player2State)) {
+                    uint64_t player2Choice = minStrategyPair.getPlayer2Strategy().getChoice(player2State);
+                    minPlayer2Strategy |= maxPlayer1Strategy && abstractionInformation.encodePlayer2Choice(player2Labeling[player2Choice], 0, game.getPlayer2Variables().size());
+                }
+                if (maxStrategyPair.getPlayer2Strategy().hasDefinedChoice(player2State)) {
+                    uint64_t player2Choice = maxStrategyPair.getPlayer2Strategy().getChoice(player2State);
+                    maxPlayer2Strategy |= maxPlayer1Strategy && abstractionInformation.encodePlayer2Choice(player2Labeling[player2Choice], 0, game.getPlayer2Variables().size());
+                }
+            }
+            
+            boost::optional<RefinementPredicates> predicates;
+            if (useInterpolation) {
+                predicates = derivePredicatesFromInterpolation(game, pivotStateResult, odd);
+            }
+            if (!predicates) {
+                predicates = derivePredicatesFromPivotState(game, symbolicPivotState, minPlayer1Strategy, minPlayer2Strategy, maxPlayer1Strategy, maxPlayer2Strategy);
+            }
+            STORM_LOG_THROW(static_cast<bool>(predicates), storm::exceptions::InvalidStateException, "Predicates needed to continue.");
+            
+            std::vector<storm::expressions::Expression> preparedPredicates = preprocessPredicates(predicates.get().getPredicates(), predicates.get().getSource());
+            performRefinement(createGlobalRefinement(preparedPredicates));
+            return true;
+        }
+        
+        template<storm::dd::DdType Type, typename ValueType>
+        bool MenuGameRefiner<Type, ValueType>::refine(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& transitionMatrixBdd, SymbolicQuantitativeGameResultMinMax<Type, ValueType> const& quantitativeResult) const {
             STORM_LOG_TRACE("Refining after quantitative check.");
             // Get all relevant strategies.
             storm::dd::Bdd<Type> minPlayer1Strategy = quantitativeResult.min.getPlayer1Strategy();
@@ -689,16 +1494,16 @@ namespace storm {
             STORM_LOG_ASSERT(!pivotStateCandidatesResult.pivotStates.isZero(), "Unable to refine without pivot state candidates.");
             
             // Now that we have the pivot state candidates, we need to pick one.
-            PivotStateResult<Type, ValueType> pivotStateResult = pickPivotState<Type, ValueType>(pivotSelectionHeuristic, game, pivotStateCandidatesResult, boost::none, quantitativeResult);
+            SymbolicPivotStateResult<Type, ValueType> symbolicPivotStateResult = pickPivotState<Type, ValueType>(pivotSelectionHeuristic, game, pivotStateCandidatesResult, boost::none, quantitativeResult);
 
             boost::optional<RefinementPredicates> predicates;
             if (useInterpolation) {
-                predicates = derivePredicatesFromInterpolation(game, pivotStateResult, minPlayer1Strategy, minPlayer2Strategy, maxPlayer1Strategy, maxPlayer2Strategy);
+                predicates = derivePredicatesFromInterpolation(game, symbolicPivotStateResult, minPlayer1Strategy, minPlayer2Strategy, maxPlayer1Strategy, maxPlayer2Strategy);
             }
             if (predicates) {
                 STORM_LOG_TRACE("Obtained predicates by interpolation.");
             } else {
-                predicates = derivePredicatesFromPivotState(game, pivotStateResult.pivotState, minPlayer1Strategy, minPlayer2Strategy, maxPlayer1Strategy, maxPlayer2Strategy);
+                predicates = derivePredicatesFromPivotState(game, symbolicPivotStateResult.pivotState, minPlayer1Strategy, minPlayer2Strategy, maxPlayer1Strategy, maxPlayer2Strategy);
             }
             STORM_LOG_THROW(static_cast<bool>(predicates), storm::exceptions::InvalidStateException, "Predicates needed to continue.");
             
@@ -707,6 +1512,12 @@ namespace storm {
             return true;
         }
         
+        struct VariableSetHash {
+            std::size_t operator()(std::set<storm::expressions::Variable> const& set) const {
+                return set.size();
+            }
+        };
+        
         template<storm::dd::DdType Type, typename ValueType>
         std::vector<storm::expressions::Expression> MenuGameRefiner<Type, ValueType>::preprocessPredicates(std::vector<storm::expressions::Expression> const& predicates, RefinementPredicates::Source const& source) const {
             bool split = source == RefinementPredicates::Source::WeakestPrecondition && splitPredicates;
@@ -714,37 +1525,83 @@ namespace storm {
             split |= splitAll;
             
             if (split) {
+                auto start = std::chrono::high_resolution_clock::now();
                 AbstractionInformation<Type> const& abstractionInformation = abstractor.get().getAbstractionInformation();
                 std::vector<storm::expressions::Expression> cleanedAtoms;
                 
+                std::unordered_map<std::set<storm::expressions::Variable>, std::vector<storm::expressions::Expression>, VariableSetHash> predicateClasses;
+                
                 for (auto const& predicate : predicates) {
-                    
                     // Split the predicates.
                     std::vector<storm::expressions::Expression> atoms = splitter.split(predicate);
                     
-                    // Check which of the atoms are redundant in the sense that they are equivalent to a predicate we already have.
+                    // Put the atoms into the right class.
                     for (auto const& atom : atoms) {
-                        // Check whether the newly found atom is equivalent to an atom we already have in the predicate
-                        // set or in the set that is to be added.
-                        bool addAtom = true;
-                        for (auto const& oldPredicate : abstractionInformation.getPredicates()) {
-                            if (equivalenceChecker.areEquivalent(atom, oldPredicate) || equivalenceChecker.areEquivalent(atom, !oldPredicate)) {
-                                addAtom = false;
-                                break;
-                            }
-                        }
-                        for (auto const& addedAtom : cleanedAtoms) {
-                            if (equivalenceChecker.areEquivalent(addedAtom, atom) || equivalenceChecker.areEquivalent(addedAtom, !atom)) {
-                                addAtom = false;
-                                break;
-                            }
-                        }
-                        
-                        if (addAtom) {
-                            cleanedAtoms.push_back(atom);
-                        }
+                        std::set<storm::expressions::Variable> vars = atom.getVariables();
+                        predicateClasses[vars].push_back(atom);
                     }
                 }
+                
+                // Now clean the classes in the sense that redundant predicates are cleaned.
+                uint64_t checkCounter = 0;
+                for (auto& predicateClass : predicateClasses) {
+                    std::vector<storm::expressions::Expression> cleanedAtomsOfClass;
+                    
+                    for (auto const& predicate : predicateClass.second) {
+                        bool addPredicate = true;
+                        for (auto const& atom : cleanedAtomsOfClass) {
+                            if (predicate.areSame(atom)) {
+                                addPredicate = false;
+                                break;
+                            }
+                            
+                            ++checkCounter;
+                            if (equivalenceChecker.areEquivalentModuloNegation(predicate, atom)) {
+                                addPredicate = false;
+                                break;
+                            }
+                        }
+                        if (addPredicate) {
+                            cleanedAtomsOfClass.push_back(predicate);
+                        }
+                    }
+                    
+                    predicateClass.second = std::move(cleanedAtomsOfClass);
+                }
+
+                std::unordered_map<std::set<storm::expressions::Variable>, std::vector<storm::expressions::Expression>, VariableSetHash> oldPredicateClasses;
+                for (auto const& oldPredicate : abstractionInformation.getPredicates()) {
+                    std::set<storm::expressions::Variable> vars = oldPredicate.getVariables();
+                    
+                    oldPredicateClasses[vars].push_back(oldPredicate);
+                }
+                
+                for (auto const& predicateClass : predicateClasses) {
+                    auto oldPredicateClassIt = oldPredicateClasses.find(predicateClass.first);
+                    if (oldPredicateClassIt != oldPredicateClasses.end()) {
+                        for (auto const& newAtom : predicateClass.second) {
+                            bool addAtom = true;
+                            for (auto const& oldPredicate : oldPredicateClassIt->second) {
+                                if (newAtom.areSame(oldPredicate)) {
+                                    addAtom = false;
+                                    break;
+                                }
+                                ++checkCounter;
+                                if (equivalenceChecker.areEquivalentModuloNegation(newAtom, oldPredicate)) {
+                                    addAtom = false;
+                                    break;
+                                }
+                            }
+                            if (addAtom) {
+                                cleanedAtoms.push_back(newAtom);
+                            }
+                        }
+                    } else {
+                        cleanedAtoms.insert(cleanedAtoms.end(), predicateClass.second.begin(), predicateClass.second.end());
+                    }
+                }
+                auto end = std::chrono::high_resolution_clock::now();
+                STORM_LOG_TRACE("Preprocessing predicates took " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms (" << checkCounter << " checks).");
                 
                 return cleanedAtoms;
             } else {
@@ -762,13 +1619,26 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type, typename ValueType>
-        void MenuGameRefiner<Type, ValueType>::performRefinement(std::vector<RefinementCommand> const& refinementCommands) const {
-            for (auto const& command : refinementCommands) {
-                STORM_LOG_TRACE("Refining with " << command.getPredicates().size() << " predicates.");
-                for (auto const& predicate : command.getPredicates()) {
-                    STORM_LOG_TRACE(predicate);
+        void MenuGameRefiner<Type, ValueType>::performRefinement(std::vector<RefinementCommand> const& refinementCommands, bool allowInjection) const {
+            if (!refinementPredicatesToInject.empty() && allowInjection) {
+                STORM_LOG_INFO("Refining with (injected) predicates.");
+
+                for (auto const& predicate : refinementPredicatesToInject.back()) {
+                    STORM_LOG_INFO(predicate);
                 }
-                abstractor.get().refine(command);
+
+                abstractor.get().refine(RefinementCommand(refinementPredicatesToInject.back()));
+                refinementPredicatesToInject.pop_back();
+            } else {
+                for (auto const& command : refinementCommands) {
+                    STORM_LOG_INFO("Refining with " << command.getPredicates().size() << " predicates.");
+                    for (auto const& predicate : command.getPredicates()) {
+                        STORM_LOG_INFO(predicate);
+                    }
+                    if (!command.getPredicates().empty()) {
+                        abstractor.get().refine(command);
+                    }
+                }
             }
             
             STORM_LOG_TRACE("Current set of predicates:");
@@ -784,6 +1654,7 @@ namespace storm {
         
         template class MenuGameRefiner<storm::dd::DdType::CUDD, double>;
         template class MenuGameRefiner<storm::dd::DdType::Sylvan, double>;
+        template class MenuGameRefiner<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 
 #ifdef STORM_HAVE_CARL
         // Currently, this instantiation does not work.

@@ -58,7 +58,7 @@ namespace storm {
                 usedHeuristic(storm::settings::getModule<storm::settings::modules::FaultTreeSettings>().getApproximationHeuristic()),
                 generator(dft, *stateGenerationInfo, enableDC, mergeFailedStates),
                 matrixBuilder(!generator.isDeterministicModel()),
-                stateStorage(((dft.stateVectorSize() / 64) + 1) * 64),
+                stateStorage(dft.stateBitVectorSize()),
                 // TODO Matthias: make choosable
                 //explorationQueue(dft.nrElements()+1, 0, 1)
                 explorationQueue(200, 0, 0.9)

@@ -12,7 +12,11 @@ namespace storm {
         
         minMaxMethod = minMaxSettings.getMinMaxEquationSolvingMethod();
         methodSetFromDefault = minMaxSettings.isMinMaxEquationSolvingMethodSetFromDefaultValue();
-        maxIterationCount = minMaxSettings.getMaximalIterationCount();
+        if (minMaxSettings.isMaximalIterationCountSet()) {
+            maxIterationCount = minMaxSettings.getMaximalIterationCount();
+        } else {
+            maxIterationCount = std::numeric_limits<uint_fast64_t>::max();
+        }
         precision = storm::utility::convertNumber<storm::RationalNumber>(minMaxSettings.getPrecision());
         considerRelativeTerminationCriterion = minMaxSettings.getConvergenceCriterion() == storm::settings::modules::MinMaxEquationSolverSettings::ConvergenceCriterion::Relative;
         STORM_LOG_ASSERT(considerRelativeTerminationCriterion || minMaxSettings.getConvergenceCriterion() == storm::settings::modules::MinMaxEquationSolverSettings::ConvergenceCriterion::Absolute, "Unknown convergence criterion");

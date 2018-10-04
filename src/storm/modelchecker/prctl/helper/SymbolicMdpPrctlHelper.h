@@ -41,6 +41,8 @@ namespace storm {
                 static std::unique_ptr<CheckResult> computeReachabilityRewards(Environment const& env, OptimizationDirection dir, storm::models::symbolic::NondeterministicModel<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, RewardModelType const& rewardModel, storm::dd::Bdd<DdType> const& targetStates, boost::optional<storm::dd::Add<DdType, ValueType>> const& startValues = boost::none);
 
                 static std::unique_ptr<CheckResult> computeReachabilityRewards(Environment const& env, OptimizationDirection dir, storm::models::symbolic::NondeterministicModel<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, storm::dd::Bdd<DdType> const& transitionMatrixBdd, RewardModelType const& rewardModel, storm::dd::Bdd<DdType> const& maybeStates, storm::dd::Bdd<DdType> const& targetStates, storm::dd::Bdd<DdType> const& infinityStates, boost::optional<storm::dd::Add<DdType, ValueType>> const& startValues = boost::none);
+
+                static std::unique_ptr<CheckResult> computeReachabilityTimes(Environment const& env, OptimizationDirection dir, storm::models::symbolic::NondeterministicModel<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, storm::dd::Bdd<DdType> const& targetStates, boost::optional<storm::dd::Add<DdType, ValueType>> const& startValues = boost::none);
             };
             
         }

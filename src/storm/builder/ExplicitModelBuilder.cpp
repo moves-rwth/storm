@@ -73,6 +73,8 @@ namespace storm {
                     return storm::utility::builder::buildModelFromComponents(storm::models::ModelType::Ctmc, buildModelComponents());
                 case storm::generator::ModelType::MDP:
                     return storm::utility::builder::buildModelFromComponents(storm::models::ModelType::Mdp, buildModelComponents());
+                case storm::generator::ModelType::POMDP:
+                    return storm::utility::builder::buildModelFromComponents(storm::models::ModelType::Pomdp, buildModelComponents());
                 case storm::generator::ModelType::MA:
                     return storm::utility::builder::buildModelFromComponents(storm::models::ModelType::MarkovAutomaton, buildModelComponents());
                 default:
@@ -275,6 +277,7 @@ namespace storm {
                 // (a) the transition matrix
                 // (b) the initial states
                 // (c) the hash map storing the mapping states -> ids
+                // (d) fix remapping for state-generation labels
                 
                 // Fix (a).
                 transitionMatrixBuilder.replaceColumns(remapping, 0);
@@ -287,6 +290,8 @@ namespace storm {
                 
                 // Fix (c).
                 this->stateStorage.stateToId.remap([&remapping] (StateType const& state) { return remapping[state]; } );
+
+                this->generator->remapStateIds([&remapping] (StateType const& state) { return remapping[state]; });
             }
         }
         
@@ -330,7 +335,72 @@ namespace storm {
                 auto originData = choiceInformationBuilder.buildDataOfChoiceOrigins(modelComponents.transitionMatrix.getRowCount());
                 modelComponents.choiceOrigins = generator->generateChoiceOrigins(originData);
             }
-            
+            if (generator->isPartiallyObservable()) {
+                std::vector<uint32_t> classes;
+                uint32_t newObservation = 0;
+                classes.resize(stateStorage.getNumberOfStates());
+                std::unordered_map<uint32_t, std::vector<std::pair<std::vector<std::string>, uint32_t>>> observationActions;
+                for (auto const& bitVectorIndexPair : stateStorage.stateToId) {
+                    uint32_t varObservation = generator->observabilityClass(bitVectorIndexPair.first);
+                    uint32_t observation = -1; // Is replaced later on.
+                    bool checkActionNames = false;
+                    if (checkActionNames) {
+                        bool foundActionSet = false;
+                        std::vector<std::string> actionNames;
+                        bool addedAnonymousAction = false;
+                        for (uint64 choice = modelComponents.transitionMatrix.getRowGroupIndices()[bitVectorIndexPair.second];
+                             choice < modelComponents.transitionMatrix.getRowGroupIndices()[bitVectorIndexPair.second +
+                                                                                            1]; ++choice) {
+                            if (modelComponents.choiceLabeling.get().getLabelsOfChoice(choice).empty()) {
+                                STORM_LOG_THROW(!addedAnonymousAction, storm::exceptions::WrongFormatException,
+                                                "Cannot have multiple anonymous actions, as these cannot be mapped correctly.");
+                                actionNames.push_back("");
+                                addedAnonymousAction = true;
+                            } else {
+                                STORM_LOG_ASSERT(
+                                        modelComponents.choiceLabeling.get().getLabelsOfChoice(choice).size() == 1,
+                                        "Expect choice labelling to contain exactly one label at this point, but found "
+                                                << modelComponents.choiceLabeling.get().getLabelsOfChoice(
+                                                        choice).size());
+                                actionNames.push_back(
+                                        *modelComponents.choiceLabeling.get().getLabelsOfChoice(choice).begin());
+                            }
+                        }
+                        STORM_LOG_TRACE("VarObservation: " << varObservation << " Action Names: "
+                                                           << storm::utility::vector::toString(actionNames));
+                        auto it = observationActions.find(varObservation);
+                        if (it == observationActions.end()) {
+                            observationActions.emplace(varObservation,
+                                                       std::vector<std::pair<std::vector<std::string>, uint32_t>>());
+                        } else {
+                            for (auto const &entries : it->second) {
+                                STORM_LOG_TRACE(storm::utility::vector::toString(entries.first));
+                                if (entries.first == actionNames) {
+                                    observation = entries.second;
+                                    foundActionSet = true;
+                                    break;
+                                }
+                            }
+
+                            STORM_LOG_THROW(
+                                    generator->getOptions().isInferObservationsFromActionsSet() || foundActionSet,
+                                    storm::exceptions::WrongFormatException,
+                                    "Two states with the same observation have a different set of enabled actions, this is only allowed with a special option.");
+
+                        }
+                        if (!foundActionSet) {
+                            observation = newObservation;
+                            observationActions.find(varObservation)->second.emplace_back(actionNames, newObservation);
+                            ++newObservation;
+                        }
+
+                        classes[bitVectorIndexPair.second] = observation;
+                    } else {
+                        classes[bitVectorIndexPair.second] = varObservation;
+                    }
+                }
+                modelComponents.observabilityClasses = classes;
+            }
             return modelComponents;
         }
         

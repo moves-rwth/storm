@@ -14,7 +14,7 @@ namespace storm {
     namespace abstraction {
 
         template<storm::dd::DdType DdType>
-        AbstractionInformation<DdType>::AbstractionInformation(storm::expressions::ExpressionManager& expressionManager, std::set<storm::expressions::Variable> const& abstractedVariables, std::unique_ptr<storm::solver::SmtSolver>&& smtSolver, std::shared_ptr<storm::dd::DdManager<DdType>> ddManager) : expressionManager(expressionManager), equivalenceChecker(std::move(smtSolver)), abstractedVariables(abstractedVariables), ddManager(ddManager), allPredicateIdentities(ddManager->getBddOne()), allLocationIdentities(ddManager->getBddOne()), expressionToBddMap() {
+        AbstractionInformation<DdType>::AbstractionInformation(storm::expressions::ExpressionManager& expressionManager, std::set<storm::expressions::Variable> const& abstractedVariables, std::unique_ptr<storm::solver::SmtSolver>&& smtSolver, AbstractionInformationOptions const& options, std::shared_ptr<storm::dd::DdManager<DdType>> ddManager) : expressionManager(expressionManager), equivalenceChecker(std::move(smtSolver)), abstractedVariables(abstractedVariables), constraints(options.constraints), ddManager(ddManager), allPredicateIdentities(ddManager->getBddOne()), allLocationIdentities(ddManager->getBddOne()), expressionToBddMap() {
             // Intentionally left empty.
         }
         
@@ -129,6 +129,23 @@ namespace storm {
             std::vector<storm::expressions::Expression> result;
             for (uint64_t index = 0; index < this->getNumberOfPredicates(); ++index) {
                 if (predicateValuation[index]) {
+                    result.push_back(this->getPredicateByIndex(index));
+                } else {
+                    result.push_back(!this->getPredicateByIndex(index));
+                }
+            }
+            
+            return result;
+        }
+        
+        template<storm::dd::DdType DdType>
+        std::vector<storm::expressions::Expression> AbstractionInformation<DdType>::getPredicatesExcludingBottom(storm::storage::BitVector const& predicateValuation) const {
+            uint64_t offset = 1 + this->getNumberOfDdSourceLocationVariables();
+            STORM_LOG_ASSERT(predicateValuation.size() == this->getNumberOfPredicates() + offset, "Size of predicate valuation does not match number of predicates.");
+            
+            std::vector<storm::expressions::Expression> result;
+            for (uint64_t index = 0; index < this->getNumberOfPredicates(); ++index) {
+                if (predicateValuation[index + offset]) {
                     result.push_back(this->getPredicateByIndex(index));
                 } else {
                     result.push_back(!this->getPredicateByIndex(index));
@@ -446,7 +463,7 @@ namespace storm {
         template <storm::dd::DdType DdType>
         template <typename ValueType>
         std::map<uint_fast64_t, std::pair<storm::storage::BitVector, ValueType>> AbstractionInformation<DdType>::decodeChoiceToUpdateSuccessorMapping(storm::dd::Bdd<DdType> const& choice) const {
-            std::map<uint_fast64_t, std::pair<storm::storage::BitVector, double>> result;
+            std::map<uint_fast64_t, std::pair<storm::storage::BitVector, ValueType>> result;
             
             storm::dd::Add<DdType, double> lowerChoiceAsAdd = choice.template toAdd<double>();
             for (auto const& successorValuePair : lowerChoiceAsAdd) {
@@ -462,6 +479,19 @@ namespace storm {
                 
                 result[updateIndex] = std::make_pair(successor, successorValuePair.second);
             }
+            return result;
+        }
+        
+        template <storm::dd::DdType DdType>
+        template<typename ValueType>
+        std::vector<std::map<uint_fast64_t, std::pair<storm::storage::BitVector, ValueType>>> AbstractionInformation<DdType>::decodeChoicesToUpdateSuccessorMapping(std::set<storm::expressions::Variable> const& player2Variables, storm::dd::Bdd<DdType> const& choices) const {
+            std::vector<storm::dd::Bdd<DdType>> splitChoices = choices.split(player2Variables);
+        
+            std::vector<std::map<uint_fast64_t, std::pair<storm::storage::BitVector, ValueType>>> result;
+            for (auto const& choice : splitChoices) {
+                result.emplace_back(this->decodeChoiceToUpdateSuccessorMapping<ValueType>(choice));
+            }
+
             return result;
         }
         
@@ -523,13 +553,22 @@ namespace storm {
         }
         
         template <storm::dd::DdType DdType>
-        storm::expressions::Variable const& AbstractionInformation<DdType>::getDdLocationVariable(storm::expressions::Variable const& locationExpressionVariable, bool source) {
+        storm::expressions::Variable const& AbstractionInformation<DdType>::getDdLocationMetaVariable(storm::expressions::Variable const& locationExpressionVariable, bool source) {
             auto const& metaVariablePair = locationExpressionToDdVariableMap.at(locationExpressionVariable);
             if (source) {
                 return metaVariablePair.first;
             } else {
                 return metaVariablePair.second;
             }
+        }
+        
+        template <storm::dd::DdType DdType>
+        uint64_t AbstractionInformation<DdType>::getNumberOfDdSourceLocationVariables() const {
+            uint64_t result = 0;
+            for (auto const& locationVariableToMetaVariablePair : locationExpressionToDdVariableMap) {
+                result += ddManager->getMetaVariable(locationVariableToMetaVariablePair.second.first).getNumberOfDdVariables();
+            }
+            return result;
         }
         
         template <storm::dd::DdType DdType>
@@ -547,5 +586,10 @@ namespace storm {
         
         template std::map<uint_fast64_t, std::pair<storm::storage::BitVector, double>> AbstractionInformation<storm::dd::DdType::CUDD>::decodeChoiceToUpdateSuccessorMapping(storm::dd::Bdd<storm::dd::DdType::CUDD> const& choice) const;
         template std::map<uint_fast64_t, std::pair<storm::storage::BitVector, double>> AbstractionInformation<storm::dd::DdType::Sylvan>::decodeChoiceToUpdateSuccessorMapping(storm::dd::Bdd<storm::dd::DdType::Sylvan > const& choice) const;
+        template std::map<uint_fast64_t, std::pair<storm::storage::BitVector, storm::RationalNumber>> AbstractionInformation<storm::dd::DdType::Sylvan>::decodeChoiceToUpdateSuccessorMapping(storm::dd::Bdd<storm::dd::DdType::Sylvan > const& choice) const;
+
+        template std::vector<std::map<uint_fast64_t, std::pair<storm::storage::BitVector, double>>> AbstractionInformation<storm::dd::DdType::CUDD>::decodeChoicesToUpdateSuccessorMapping(std::set<storm::expressions::Variable> const& player2Variables, storm::dd::Bdd<storm::dd::DdType::CUDD> const& choices) const;
+        template std::vector<std::map<uint_fast64_t, std::pair<storm::storage::BitVector, double>>> AbstractionInformation<storm::dd::DdType::Sylvan>::decodeChoicesToUpdateSuccessorMapping(std::set<storm::expressions::Variable> const& player2Variables, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& choices) const;
+        template std::vector<std::map<uint_fast64_t, std::pair<storm::storage::BitVector, storm::RationalNumber>>> AbstractionInformation<storm::dd::DdType::Sylvan>::decodeChoicesToUpdateSuccessorMapping(std::set<storm::expressions::Variable> const& player2Variables, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& choices) const;
     }
 }

@@ -2,6 +2,7 @@
 #define STORM_GENERATOR_COMPRESSEDSTATE_H_
 
 #include "storm/storage/BitVector.h"
+#include <unordered_map>
 
 namespace storm {
     namespace expressions {
@@ -12,7 +13,6 @@ namespace storm {
     }
     
     namespace generator {
-        
         typedef storm::storage::BitVector CompressedState;
 
         struct VariableInformation;
@@ -36,6 +36,29 @@ namespace storm {
          * @return A valuation that corresponds to the compressed state.
          */
         storm::expressions::SimpleValuation unpackStateIntoValuation(CompressedState const& state, VariableInformation const& variableInformation, storm::expressions::ExpressionManager const& manager);
+
+        /*!
+         *
+         * @param variableInformation
+         * @return
+         */
+        storm::storage::BitVector computeObservabilityMask(VariableInformation const& variableInformation);
+        /*!
+         *
+         * @param state
+         * @param observabilityMap
+         * @param mask
+         * @return
+         */
+        uint32_t unpackStateToObservabilityClass(CompressedState const& state, std::unordered_map<storm::storage::BitVector,uint32_t>& observabilityMap, storm::storage::BitVector const& mask);
+        /*!
+         *
+         * @param varInfo
+         * @param roundTo64Bit
+         * @return
+         */
+        CompressedState createOutOfBoundsState(VariableInformation const& varInfo, bool roundTo64Bit = true);
+
     }
 }
 

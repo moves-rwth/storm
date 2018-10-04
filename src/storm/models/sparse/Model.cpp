@@ -56,7 +56,7 @@ namespace storm {
                     STORM_LOG_THROW(stateCount == this->getTransitionMatrix().getRowCount(), storm::exceptions::IllegalArgumentException, "Can not create deterministic model: Number of rows of transition matrix does not match state count.");
                     STORM_LOG_THROW(stateCount == this->getTransitionMatrix().getColumnCount(), storm::exceptions::IllegalArgumentException, "Can not create deterministic model: Number of columns of transition matrix does not match state count.");
                     STORM_LOG_ERROR_COND(!components.player1Matrix.is_initialized(), "Player 1 matrix given for a model that is no stochastic game (will be ignored).");
-                } else if (this->isOfType(ModelType::Mdp) || this->isOfType(ModelType::MarkovAutomaton)) {
+                } else if (this->isOfType(ModelType::Mdp) || this->isOfType(ModelType::MarkovAutomaton) || this->isOfType(ModelType::Pomdp)) {
                     STORM_LOG_THROW(stateCount == this->getTransitionMatrix().getRowGroupCount(), storm::exceptions::IllegalArgumentException, "Can not create nondeterministic model: Number of row groups of transition matrix does not match state count.");
                     STORM_LOG_THROW(stateCount == this->getTransitionMatrix().getColumnCount(), storm::exceptions::IllegalArgumentException, "Can not create nondeterministic model: Number of columns of transition matrix does not match state count.");
                     STORM_LOG_ERROR_COND(!components.player1Matrix.is_initialized(), "Player 1 matrix given for a model that is no stochastic game (will be ignored).");
@@ -423,11 +423,7 @@ namespace storm {
             
             template<typename ValueType, typename RewardModelType>
             bool Model<ValueType, RewardModelType>::supportsParameters() const {
-#ifdef STORM_HAVE_CARL
                 return std::is_same<ValueType, storm::RationalFunction>::value;
-#else
-		return false;
-#endif
             }
             
             template<typename ValueType, typename RewardModelType>

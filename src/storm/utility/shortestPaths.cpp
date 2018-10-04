@@ -377,6 +377,7 @@ namespace storm {
 
 
             template class ShortestPathsGenerator<double>;
+            template class ShortestPathsGenerator<storm::RationalNumber>;
 
             // only prints the info stored in the Path struct;
             // does not traverse the actual path (see printKShortestPath for that)

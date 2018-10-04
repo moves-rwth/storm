@@ -5,7 +5,10 @@
 #include "storm-dft/settings/modules/FaultTreeSettings.h"
 #include "storm/settings/modules/IOSettings.h"
 #include "storm/settings/modules/ResourceSettings.h"
+#include "storm/settings/modules/GeneralSettings.h"
 
+
+#include "storm-parsers/api/storm-parsers.h"
 #include "storm/utility/initialize.h"
 #include "storm-cli-utilities/cli.h"
 
@@ -29,10 +32,10 @@ void processOptions() {
         std::shared_ptr<storm::storage::DFT<ValueType>> dft;
         if (dftIOSettings.isDftJsonFileSet()) {
             STORM_LOG_DEBUG("Loading DFT from file " << dftIOSettings.getDftJsonFilename());
-            dft = storm::api::loadDFTJson<ValueType>(dftIOSettings.getDftJsonFilename());
+            dft = storm::api::loadDFTJsonFile<ValueType>(dftIOSettings.getDftJsonFilename());
         } else {
             STORM_LOG_DEBUG("Loading DFT from file " << dftIOSettings.getDftFilename());
-            dft = storm::api::loadDFTGalileo<ValueType>(dftIOSettings.getDftFilename());
+            dft = storm::api::loadDFTGalileoFile<ValueType>(dftIOSettings.getDftFilename());
         }
 
         if (dftIOSettings.isDisplayStatsSet()) {
@@ -43,7 +46,7 @@ void processOptions() {
 
         if (dftIOSettings.isExportToJson()) {
             // Export to json
-            storm::api::exportDFTToJson<ValueType>(*dft, dftIOSettings.getExportJsonFilename());
+            storm::api::exportDFTToJsonFile<ValueType>(*dft, dftIOSettings.getExportJsonFilename());
             return;
         }
 

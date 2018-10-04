@@ -2,7 +2,7 @@
 #include "storm-config.h"
 
 #include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/parser/AutoParser.h"
+#include "storm-parsers/parser/AutoParser.h"
 #include "storm/exceptions/FileIoException.h"
 #include "storm/exceptions/WrongFormatException.h"
 

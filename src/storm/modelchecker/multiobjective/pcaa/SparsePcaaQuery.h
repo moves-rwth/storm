@@ -38,7 +38,7 @@ namespace storm {
                  * Note that the approximations will be intersected with a  (sufficiently large) hyperrectangle in order to ensure that the polytopes are bounded
                  * This only works for 2 dimensional queries.
                  */
-                void exportPlotOfCurrentApproximation(std::string const& destinationDir) const;
+                void exportPlotOfCurrentApproximation(Environment const& env) const;
                 
             protected:
                 
@@ -87,7 +87,7 @@ namespace storm {
                 /*
                  * Returns true iff the maximum number of refinement steps (as possibly specified in the settings) has been reached
                  */
-                bool maxStepsPerformed() const;
+                bool maxStepsPerformed(Environment const& env) const;
                 
                 /*
                  * Transforms the given point (or polytope) to values w.r.t. the original model/formula (e.g. negates values for minimizing objectives).

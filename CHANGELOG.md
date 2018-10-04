@@ -7,12 +7,38 @@ The releases of major and minor versions contain an overview of changes since th
 Version 1.2.x
 -------------
 
-### Version 1.2.2 (to be released)
+### Version 1.2.4 (2018/08)
+- Heavily extended JANI support, in particular:
+	 * arrays, functions, state-exit-rewards (all engines)
+	 * indexed assignments, complex reward expressions (sparse engine)
+	 * several jani-related bug fixes
+- New binary `storm-conv` that handles conversions between model files
+- New binary `storm-pomdp` that handles the translation of POMDPs to pMCs.
+- Closing a Markov automaton now removes unreachable states
+- Added support for expected time properties for discrete time models
+- Bug fix in the parser for DRN (MDPs and MAs might have been affected).
+- `storm-gspn`: Improved .pnpro parser
+- `storm-gspn`: Added support for single/infinite/k-server semantics for GSPNs given in the .pnpro format
+- `storm-gspn`: Added option to set a global capacity for all places
+- `storm-gspn`: Added option to include a set of standard properties when converting GSPNs to jani
+
+### Version 1.2.3 (2018/07)
+- Fix in version parsing
+
+### Version 1.2.2 (2018/07)
+- Sound value iteration (SVI) for DTMCs and MDPs
+- Topological solver for linear equation systems and MinMax equation systems (enabled by default)
+- Added support for expected total rewards in the sparse engine
+- By default, iteration-based solvers are no longer aborted after a given number of steps.
+- Improved export for jani models
+- A fix in parsing jani properties
+- Several extensions to high-level counterexamples
+- `storm-parsers` extracted to reduce linking time
+- `storm-counterexamples` extracted to reduce linking time
 - `storm-dft`: improvements in Galileo parser
 - `storm-dft`: test cases for DFT analysis
-- Sound value iteration (SVI) for DTMCs and MDPs
-- Topological solver for linear equation systems and MinMax equation systems.
-
+- Improved Storm installation
+- Several bug fixes
 
 ### Version 1.2.1 (2018/02)
 - Multi-dimensional reward bounded reachability properties for DTMCs.

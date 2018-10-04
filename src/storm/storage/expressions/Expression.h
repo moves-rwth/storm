@@ -153,6 +153,13 @@ namespace storm {
             Expression simplify() const;
             
             /*!
+             * Tries to flatten the syntax tree of the expression, e.g., 1 + (2 + (3 + 4)) becomes (1 + 2) + (3 + 4)
+             *
+             * @return A semantically equivalent expression with reduced nesting
+             */
+            Expression reduceNesting() const;
+            
+            /*!
              * Retrieves the operator of a function application. This is only legal to call if the expression is
              * function application.
              *
@@ -255,6 +262,14 @@ namespace storm {
              */
             std::set<storm::expressions::Variable> getVariables() const;
 
+            /*!
+             * Retrieves the set of all variables that appear in the expression. These variables are added to the given
+             * set.
+             *
+             * @param variables The set to which to add the variables.
+             */
+            void gatherVariables(std::set<storm::expressions::Variable>& variables) const;
+            
             /*!
              * Retrieves whether the expression contains any of the given variables.
              *

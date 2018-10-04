@@ -27,6 +27,14 @@ namespace storm {
                     All, None, Qualitative, Quantitative
                 };
                 
+                enum class SolveMode {
+                    Dd, Sparse
+                };
+                
+                enum class ValidBlockMode {
+                    MorePredicates, BlockEnumeration
+                };
+                
                 /*!
                  * Creates a new set of abstraction settings.
                  */
@@ -59,11 +67,25 @@ namespace storm {
                 bool isAddAllGuardsSet() const;
                 
                 /*!
+                 * Retrieves whether the option to add all initial expressions was set.
+                 *
+                 * @return True iff the option was set.
+                 */
+                bool isAddAllInitialExpressionsSet() const;
+                
+                /*!
                  * Sets the option to add all guards to the specified value.
                  *
                  * @param value The new value.
                  */
                 void setAddAllGuards(bool value);
+                
+                /*!
+                 * Sets the option to add all initial expressions to the specified value.
+                 *
+                 * @param value The new value.
+                 */
+                void setAddAllInitialExpressions(bool value);
                 
                 /*!
                  * Retrieves whether the option to use interpolation was set.
@@ -78,6 +100,11 @@ namespace storm {
                  * @return The precision to use for detecting convergence.
                  */
                 double getPrecision() const;
+                
+                /*!
+                 * Retrieves whether to use a relative termination criterion for detecting convergence.
+                 */
+                bool getRelativeTerminationCriterion() const;
                 
                 /*!
                  * Retrieves the selected heuristic to select pivot blocks.
@@ -100,6 +127,74 @@ namespace storm {
                  */
                 bool isRestrictToRelevantStatesSet() const;
                 
+                /*!
+                 * Retrieves the mode with which to solve the games.
+                 */
+                SolveMode getSolveMode() const;
+                
+                /*!
+                 * Retrieves the maximal number of abstractions to perform until giving up on converging.
+                 *
+                 * @return The maximal abstraction count.
+                 */
+                uint_fast64_t getMaximalAbstractionCount() const;
+                
+                /*
+                 * Determines whether refinement predicates are to be ranked.
+                 *
+                 * @return True iff the refinement predicates are to be ranked.
+                 */
+                bool isRankRefinementPredicatesSet() const;
+                
+                /*!
+                 * Retrieves whether the constraints option was set.
+                 *
+                 * @return True if the constraints option was set.
+                 */
+                bool isConstraintsSet() const;
+                
+                /*!
+                 * Retrieves the string that specifies additional constraints.
+                 *
+                 * @return The string that defines the constraints.
+                 */
+                std::string getConstraintString() const;
+                
+                /*!
+                 * Retrieves whether to refine eagerly.
+                 */
+                bool isUseEagerRefinementSet() const;
+                
+                /*!
+                 * Retrieves whether the debug option was set.
+                 */
+                bool isDebugSet() const;
+                
+                /*!
+                 * Retrieves whether the option to inject the refinement predicates is set.
+                 */
+                bool isInjectRefinementPredicatesSet() const;
+                
+                /*!
+                 * Retrieves a string containing refinement predicates to inject (if there are any).
+                 */
+                std::string getInjectedRefinementPredicates() const;
+
+                /*!
+                 * Retrieves whether player 1 strategies are to be fixed.
+                 */
+                bool isFixPlayer1StrategySet() const;
+
+                /*!
+                 * Retrieves whether player 2 strategies are to be fixed.
+                 */
+                bool isFixPlayer2StrategySet() const;
+
+                /*!
+                 * Retrieves the selected mode to guarantee valid blocks.
+                 */
+                ValidBlockMode getValidBlockMode() const;
+                
                 const static std::string moduleName;
                 
             private:
@@ -107,11 +202,23 @@ namespace storm {
                 const static std::string useDecompositionOptionName;
                 const static std::string splitModeOptionName;
                 const static std::string addAllGuardsOptionName;
+                const static std::string addInitialExpressionsOptionName;
                 const static std::string useInterpolationOptionName;
                 const static std::string precisionOptionName;
+                const static std::string relativeOptionName;
                 const static std::string pivotHeuristicOptionName;
                 const static std::string reuseResultsOptionName;
                 const static std::string restrictToRelevantStatesOptionName;
+                const static std::string solveModeOptionName;
+                const static std::string maximalAbstractionOptionName;
+                const static std::string rankRefinementPredicatesOptionName;
+                const static std::string constraintsOptionName;
+                const static std::string useEagerRefinementOptionName;
+                const static std::string debugOptionName;
+                const static std::string injectRefinementPredicatesOptionName;
+                const static std::string fixPlayer1StrategyOptionName;
+                const static std::string fixPlayer2StrategyOptionName;
+                const static std::string validBlockModeOptionName;
             };
             
         }

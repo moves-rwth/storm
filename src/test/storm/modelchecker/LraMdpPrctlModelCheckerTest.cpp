@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 
-#include "storm/parser/FormulaParser.h"
+#include "storm-parsers/parser/FormulaParser.h"
 #include "storm/logic/Formulas.h"
 #include "storm/solver/StandardMinMaxLinearEquationSolver.h"
 #include "storm/models/sparse/StandardRewardModel.h"
@@ -12,7 +12,7 @@
 #include "storm/settings/modules/GeneralSettings.h"
 
 #include "storm/settings/modules/NativeEquationSolverSettings.h"
-#include "storm/parser/AutoParser.h"
+#include "storm-parsers/parser/AutoParser.h"
 
 TEST(LraMdpPrctlModelCheckerTest, LRA_SingleMec) {
     storm::storage::SparseMatrixBuilder<double> matrixBuilder;

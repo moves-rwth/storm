@@ -32,7 +32,7 @@ namespace storm {
             
             
             GSPN(std::string const& name, std::vector<Place> const& places, std::vector<ImmediateTransition<WeightType>> const& itransitions,
-                 std::vector<TimedTransition<RateType>> const& ttransitions, std::vector<TransitionPartition> const& partitions, std::shared_ptr<storm::expressions::ExpressionManager> const& exprManager);
+                 std::vector<TimedTransition<RateType>> const& ttransitions, std::vector<TransitionPartition> const& partitions, std::shared_ptr<storm::expressions::ExpressionManager> const& exprManager, std::map<storm::expressions::Variable, storm::expressions::Expression> const& constantsSubstitution = std::map<storm::expressions::Variable, storm::expressions::Expression>());
             
             /*!
              * Returns the number of places in this gspn.
@@ -145,8 +145,13 @@ namespace storm {
              */
             std::shared_ptr<storm::expressions::ExpressionManager> const& getExpressionManager() const;
             
+            /*!
+             * Gets an assignment of occurring constants of the GSPN to their value
+             */
+            std::map<storm::expressions::Variable, storm::expressions::Expression> const& getConstantsSubstitution() const;
+            
             /**
-             *  Set Capacities according to name->capacity map.
+             *  Set Capacities of places according to name->capacity map.
              */
             void setCapacities(std::unordered_map<std::string, uint64_t> const& mapping);
             
@@ -217,6 +222,8 @@ namespace storm {
             std::vector<storm::gspn::TransitionPartition> partitions;
 
             std::shared_ptr<storm::expressions::ExpressionManager> exprManager;
+            
+            std::map<storm::expressions::Variable, storm::expressions::Expression> constantsSubstitution;
 
             // Layout information
             mutable std::map<uint64_t, LayoutInfo> placeLayout;

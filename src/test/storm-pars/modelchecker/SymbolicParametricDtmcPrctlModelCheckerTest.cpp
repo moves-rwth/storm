@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 
-#include "storm/parser/FormulaParser.h"
+#include "storm-parsers/parser/FormulaParser.h"
 #include "storm/logic/Formulas.h"
 #include "storm/utility/solver.h"
 #include "storm/storage/SymbolicModelDescription.h"
@@ -9,7 +9,7 @@
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
 #include "storm/modelchecker/results/SymbolicQuantitativeCheckResult.h"
 #include "storm/solver/SymbolicEliminationLinearEquationSolver.h"
-#include "storm/parser/PrismParser.h"
+#include "storm-parsers/parser/PrismParser.h"
 #include "storm/builder/DdPrismModelBuilder.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
 #include "storm/models/symbolic/Dtmc.h"

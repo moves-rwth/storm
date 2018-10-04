@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 
-#include "storm/parser/FormulaParser.h"
+#include "storm-parsers/parser/FormulaParser.h"
 #include "storm/logic/Formulas.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/modelchecker/reachability/SparseDtmcEliminationModelChecker.h"
@@ -10,7 +10,7 @@
 
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/SettingMemento.h"
-#include "storm/parser/AutoParser.h"
+#include "storm-parsers/parser/AutoParser.h"
 
 TEST(SparseDtmcEliminationModelCheckerTest, Die) {
     std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser<>::parseModel(STORM_TEST_RESOURCES_DIR "/tra/die.tra", STORM_TEST_RESOURCES_DIR "/lab/die.lab", "", STORM_TEST_RESOURCES_DIR "/rew/die.coin_flips.trans.rew");

@@ -45,6 +45,11 @@ namespace storm {
             void setIntegerValue(storm::expressions::Variable const& variable, int_fast64_t value) override;
             void setRationalValue(storm::expressions::Variable const& variable, double value) override;
             
+            // Sets a rational value from a RationalNumber.
+            // Note: If an expression contains the given variable and is evaluated to int or bool, the value is internally considered as a double.
+            void setRationalValue(storm::expressions::Variable const& variable, storm::RationalNumber const& value);
+  
+            
             RationalNumber asRational(Expression const& expression) const override;
             
         private:
@@ -60,6 +65,10 @@ namespace storm {
             void setBooleanValue(storm::expressions::Variable const& variable, bool value) override;
             void setIntegerValue(storm::expressions::Variable const& variable, int_fast64_t value) override;
             void setRationalValue(storm::expressions::Variable const& variable, double value) override;
+            
+            // Sets a rational value from a RationalFunction. The function needs to be constant.
+            // Note: If an expression contains the given variable and is evaluated to int or bool, the value is internally considered as a double.
+            void setRationalValue(storm::expressions::Variable const& variable, storm::RationalFunction const& value);
 
             RationalFunction asRational(Expression const& expression) const override;
             

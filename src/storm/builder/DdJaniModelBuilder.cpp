@@ -653,6 +653,40 @@ namespace storm {
                 ActionDd multiplyTransitions(storm::dd::Add<Type, ValueType> const& factor) const {
                     return ActionDd(guard, transitions * factor, transientEdgeAssignments, localNondeterminismVariables, variableToWritingFragment, illegalFragment);
                 }
+                
+                ActionDd add(ActionDd const& other) const {
+                    storm::dd::Bdd<Type> newGuard = this->guard || other.guard;
+                    storm::dd::Add<Type, ValueType> newTransitions = this->transitions + other.transitions;
+                    
+                    // Join the transient edge assignments.
+                    std::map<storm::expressions::Variable, storm::dd::Add<Type, ValueType>> newTransientEdgeAssignments(this->transientEdgeAssignments);
+                    for (auto const& entry : other.transientEdgeAssignments) {
+                        auto it = newTransientEdgeAssignments.find(entry.first);
+                        if (it == newTransientEdgeAssignments.end()) {
+                            newTransientEdgeAssignments[entry.first] = entry.second;
+                        } else {
+                            it->second += entry.second;
+                        }
+                    }
+                    
+                    std::pair<uint64_t, uint64_t> newLocalNondeterminismVariables = std::make_pair(std::min(this->localNondeterminismVariables.first, other.localNondeterminismVariables.first), std::max(this->localNondeterminismVariables.second, other.localNondeterminismVariables.second));
+
+                    // Join variable-to-writing-fragment maps.
+                    std::map<storm::expressions::Variable, storm::dd::Bdd<Type>> newVariableToWritingFragment(this->variableToWritingFragment);
+                    for (auto const& entry : other.variableToWritingFragment) {
+                        auto it = newVariableToWritingFragment.find(entry.first);
+                        if (it == newVariableToWritingFragment.end()) {
+                            newVariableToWritingFragment[entry.first] = entry.second;
+                        } else {
+                            it->second |= entry.second;
+                        }
+                    }
+                    
+                    // Join illegal fragments.
+                    storm::dd::Bdd<Type> newIllegalFragment = this->illegalFragment || other.illegalFragment;
+                    
+                    return ActionDd(newGuard, newTransitions, newTransientEdgeAssignments, newLocalNondeterminismVariables, newVariableToWritingFragment, newIllegalFragment);
+                }
 
                 bool isInputEnabled() const {
                     return inputEnabled;
@@ -975,7 +1009,16 @@ namespace storm {
 
                 // Finally, combine (potentially) multiple action DDs.
                 for (auto const& actionDds : actions) {
-                    ActionDd combinedAction = actionDds.second.size() > 1 ? combineUnsynchronizedActions(actionDds.second) : actionDds.second.front();
+                    ActionDd combinedAction;
+                    if (actionDds.first == silentMarkovianActionIdentification) {
+                        // For the Markovian transitions, we can simply add the actions.
+                        combinedAction = actionDds.second.front();
+                        for (uint64_t i = 1; i < actionDds.second.size(); ++i) {
+                            combinedAction = combinedAction.add(actionDds.second[i]);
+                        }
+                    } else {
+                        combinedAction = actionDds.second.size() > 1 ? combineUnsynchronizedActions(actionDds.second) : actionDds.second.front();
+                    }
                     result.actions[actionDds.first] = combinedAction;
                     result.extendLocalNondeterminismVariables(combinedAction.getLocalNondeterminismVariables());
                 }
@@ -1333,7 +1376,7 @@ namespace storm {
                     } else if (modelType == storm::jani::ModelType::MDP || modelType == storm::jani::ModelType::LTS) {
                         return combineEdgesToActionNondeterministic(edgeDds, localNondeterminismVariableOffset);
                     } else if (modelType == storm::jani::ModelType::MA) {
-                        if (instantiation.isMarkovian()){
+                        if (instantiation.isMarkovian()) {
                             return combineEdgesToActionDeterministic(edgeDds);
                         } else {
                             return combineEdgesToActionNondeterministic(edgeDds, localNondeterminismVariableOffset);
@@ -1849,38 +1892,23 @@ namespace storm {
         
         template <storm::dd::DdType Type, typename ValueType>
         std::vector<storm::expressions::Variable> selectRewardVariables(storm::jani::Model const& model, typename DdJaniModelBuilder<Type, ValueType>::Options const& options) {
-            std::vector<storm::expressions::Variable> result;
+            std::vector<storm::expressions::Variable> rewardVariables;
             if (options.isBuildAllRewardModelsSet()) {
-                for (auto const& variable : model.getGlobalVariables()) {
-                    if (variable.isTransient() && (variable.isRealVariable() || variable.isUnboundedIntegerVariable())) {
-                        result.push_back(variable.getExpressionVariable());
-                    }
+                for (auto const& rewExpr : model.getAllRewardModelExpressions()) {
+                    STORM_LOG_ERROR_COND(rewExpr.second.isVariable(), "The jit builder can not build the non-trivial reward expression '" << rewExpr.second << "'.");
+                    rewardVariables.push_back(rewExpr.second.getBaseExpression().asVariableExpression().getVariable());
                 }
             } else {
-                auto const& globalVariables = model.getGlobalVariables();
-                
                 for (auto const& rewardModelName : options.getRewardModelNames()) {
-                    if (globalVariables.hasVariable(rewardModelName)) {
-                        result.push_back(globalVariables.getVariable(rewardModelName).getExpressionVariable());
-                    } else {
-                        STORM_LOG_THROW(rewardModelName.empty(), storm::exceptions::InvalidArgumentException, "Cannot build unknown reward model '" << rewardModelName << "'.");
-                        STORM_LOG_THROW(globalVariables.getNumberOfRealTransientVariables() + globalVariables.getNumberOfUnboundedIntegerTransientVariables() == 1, storm::exceptions::InvalidArgumentException, "Reference to standard reward model is ambiguous.");
-                    }
-                }
-                
-                // If no reward model was yet added, but there was one that was given in the options, we try to build the
-                // standard reward model.
-                if (result.empty() && !options.getRewardModelNames().empty()) {
-                    for (auto const& variable : globalVariables.getTransientVariables()) {
-                        if (variable.isRealVariable() || variable.isUnboundedIntegerVariable()) {
-                            result.push_back(variable.getExpressionVariable());
-                            break;
-                        }
-                    }
+                    auto const& rewExpr = model.getRewardModelExpression(rewardModelName);
+                    STORM_LOG_ERROR_COND(rewExpr.isVariable(), "The jit builder can not build the non-trivial reward expression '" << rewExpr << "'.");
+                    rewardVariables.push_back(rewExpr.getBaseExpression().asVariableExpression().getVariable());
                 }
             }
+            // Sort the reward variables to match the order in the ordered assignments
+            std::sort(rewardVariables.begin(), rewardVariables.end());
             
-            return result;
+            return rewardVariables;
         }
         
         template <storm::dd::DdType Type, typename ValueType>
@@ -1943,8 +1971,13 @@ namespace storm {
             }
             
             STORM_LOG_THROW(!model.usesAssignmentLevels(), storm::exceptions::WrongFormatException, "The symbolic JANI model builder currently does not support assignment levels.");
+            auto features = model.getModelFeatures();
+            features.remove(storm::jani::ModelFeature::DerivedOperators);
+            features.remove(storm::jani::ModelFeature::StateExitRewards);
+            STORM_LOG_THROW(features.empty(), storm::exceptions::InvalidSettingsException, "The dd jani model builder does not support the following model feature(s): " << features.toString() << ".");
 
             storm::jani::Model preparedModel = model;
+            preparedModel.substituteFunctions();
             
             // Lift the transient edge destinations. We can do so, as we know that there are no assignment levels (because that's not supported anyway).
             if (preparedModel.hasTransientEdgeDestinationAssignments()) {

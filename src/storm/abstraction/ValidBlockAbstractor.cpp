@@ -5,6 +5,7 @@
 #include "storm/storage/dd/DdManager.h"
 
 #include "storm/utility/solver.h"
+#include "storm/utility/Stopwatch.h"
 
 namespace storm {
     namespace abstraction {
@@ -35,6 +36,13 @@ namespace storm {
         }
         
         template <storm::dd::DdType DdType>
+        void ValidBlockAbstractor<DdType>::constrain(storm::expressions::Expression const& constraint) {
+            for (uint64_t i = 0; i < smtSolvers.size(); ++i) {
+                smtSolvers[i]->add(constraint);
+            }
+        }
+        
+        template <storm::dd::DdType DdType>
         void ValidBlockAbstractor<DdType>::refine(std::vector<uint64_t> const& predicates) {
             for (auto const& predicate : predicates) {
                 std::map<uint64_t, uint64_t> mergeInformation = localExpressionInformation.addExpression(predicate);
@@ -61,13 +69,13 @@ namespace storm {
         template <storm::dd::DdType DdType>
         void ValidBlockAbstractor<DdType>::recomputeValidBlocks() {
             storm::dd::Bdd<DdType> newValidBlocks = abstractionInformation.get().getDdManager().getBddOne();
-            
+
             for (uint64_t blockIndex = 0; blockIndex < localExpressionInformation.getNumberOfBlocks(); ++blockIndex) {
                 std::set<uint64_t> const& predicateBlock = localExpressionInformation.getExpressionBlock(blockIndex);
                 
                 // If the size of the block changed, we need to add the appropriate variables and recompute the solution.
                 if (relevantVariablesAndPredicates[blockIndex].size() < predicateBlock.size()) {
-                    recomputeValidBlockForPredicateBlock(blockIndex);
+                    recomputeValidBlocksForPredicateBlock(blockIndex);
                 }
                 
                 newValidBlocks &= validBlocksForPredicateBlocks[blockIndex];
@@ -77,9 +85,8 @@ namespace storm {
         }
         
         template <storm::dd::DdType DdType>
-        void ValidBlockAbstractor<DdType>::recomputeValidBlockForPredicateBlock(uint64_t blockIndex) {
+        void ValidBlockAbstractor<DdType>::recomputeValidBlocksForPredicateBlock(uint64_t blockIndex) {
             std::set<uint64_t> const& predicateBlock = localExpressionInformation.getExpressionBlock(blockIndex);
-            
             std::vector<std::pair<storm::expressions::Variable, uint_fast64_t>> newVariables = this->getAbstractionInformation().declareNewVariables(relevantVariablesAndPredicates[blockIndex], predicateBlock);
             for (auto const& element : newVariables) {
                 smtSolvers[blockIndex]->add(storm::expressions::iff(element.first, this->getAbstractionInformation().getPredicateByIndex(element.second)));
@@ -114,13 +121,11 @@ namespace storm {
         template <storm::dd::DdType DdType>
         storm::dd::Bdd<DdType> ValidBlockAbstractor<DdType>::getSourceStateBdd(storm::solver::SmtSolver::ModelReference const& model, uint64_t blockIndex) const {
             storm::dd::Bdd<DdType> result = this->getAbstractionInformation().getDdManager().getBddOne();
-//            std::cout << "new model ----------------" << std::endl;
-            for (auto const& variableIndexPair : relevantVariablesAndPredicates[blockIndex]) {
+            for (auto variableIndexPairIt = relevantVariablesAndPredicates[blockIndex].rbegin(), variableIndexPairIte = relevantVariablesAndPredicates[blockIndex].rend(); variableIndexPairIt != variableIndexPairIte; ++variableIndexPairIt) {
+                auto const& variableIndexPair = *variableIndexPairIt;
                 if (model.getBooleanValue(variableIndexPair.first)) {
-//                    std::cout << this->getAbstractionInformation().getPredicateByIndex(variableIndexPair.second) << " is true" << std::endl;
                     result &= this->getAbstractionInformation().encodePredicateAsSource(variableIndexPair.second);
                 } else {
-//                    std::cout << this->getAbstractionInformation().getPredicateByIndex(variableIndexPair.second) << " is false" << std::endl;
                     result &= !this->getAbstractionInformation().encodePredicateAsSource(variableIndexPair.second);
                 }
             }

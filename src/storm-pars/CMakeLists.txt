@@ -36,5 +36,5 @@ add_custom_target(copy_storm_pars_headers DEPENDS ${STORM_PARS_OUTPUT_HEADERS} $
 add_dependencies(storm-pars copy_storm_pars_headers)
 
 # installation
-install(TARGETS storm-pars RUNTIME DESTINATION bin LIBRARY DESTINATION lib OPTIONAL)
+install(TARGETS storm-pars EXPORT storm_Targets RUNTIME DESTINATION bin LIBRARY DESTINATION lib OPTIONAL)
 

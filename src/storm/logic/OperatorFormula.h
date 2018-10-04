@@ -49,6 +49,8 @@ namespace storm {
             virtual bool hasQualitativeResult() const override;
             virtual bool hasQuantitativeResult() const override;
             
+            virtual void gatherUsedVariables(std::set<storm::expressions::Variable>& usedVariables) const override;
+            
             virtual std::ostream& writeToStream(std::ostream& out) const override;
             
         protected:

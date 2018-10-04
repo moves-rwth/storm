@@ -73,10 +73,10 @@ namespace storm {
             storm::dd::Bdd<Type> allRows;
             
             // An ADD that can be used to compensate for the illegal choices of player 1.
-            storm::dd::Add<Type> illegalPlayer1Mask;
+            storm::dd::Add<Type, ValueType> illegalPlayer1Mask;
 
             // An ADD that can be used to compensate for the illegal choices of player 2.
-            storm::dd::Add<Type> illegalPlayer2Mask;
+            storm::dd::Add<Type, ValueType> illegalPlayer2Mask;
 
             // The row variables.
             std::set<storm::expressions::Variable> rowMetaVariables;

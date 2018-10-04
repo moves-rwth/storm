@@ -3,11 +3,13 @@
 #include "storm/storage/jani/Edge.h"
 #include "storm/storage/jani/TemplateEdge.h"
 #include "storm/storage/jani/Location.h"
+#include "storm/storage/jani/expressions/JaniExpressionSubstitutionVisitor.h"
 
 #include "storm/utility/macros.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidTypeException.h"
+#include "storm/exceptions/NotSupportedException.h"
 
 namespace storm {
     namespace jani {
@@ -32,6 +34,8 @@ namespace storm {
                 return addVariable(variable.asUnboundedIntegerVariable());
             } else if (variable.isRealVariable()) {
                 return addVariable(variable.asRealVariable());
+            } else if (variable.isArrayVariable()) {
+                return addVariable(variable.asArrayVariable());
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Variable has invalid type.");
             }
@@ -52,6 +56,14 @@ namespace storm {
         RealVariable const& Automaton::addVariable(RealVariable const& variable) {
             return variables.addVariable(variable);
         }
+        
+        ArrayVariable const& Automaton::addVariable(ArrayVariable const& variable) {
+            return variables.addVariable(variable);
+        }
+
+        bool Automaton::hasVariable(std::string const& name) const {
+            return variables.hasVariable(name);
+        }
 
         VariableSet& Automaton::getVariables() {
             return variables;
@@ -71,6 +83,20 @@ namespace storm {
         
         bool Automaton::hasTransientVariable() const {
             return variables.hasTransientVariable();
+        }
+        
+        FunctionDefinition const& Automaton::addFunctionDefinition(FunctionDefinition const& functionDefinition) {
+            auto insertionRes = functionDefinitions.emplace(functionDefinition.getName(), functionDefinition);
+            STORM_LOG_THROW(insertionRes.second, storm::exceptions::InvalidArgumentException, " a function with the name " << functionDefinition.getName() << " already exists in this automaton (" << this->getName() << ")");
+            return insertionRes.first->second;
+        }
+        
+        std::unordered_map<std::string, FunctionDefinition> const& Automaton::getFunctionDefinitions() const {
+            return functionDefinitions;
+        }
+        
+        std::unordered_map<std::string, FunctionDefinition>& Automaton::getFunctionDefinitions() {
+            return functionDefinitions;
         }
         
         bool Automaton::hasLocation(std::string const& name) const {
@@ -265,6 +291,14 @@ namespace storm {
             return ConstEdges(it1, it2);
         }
         
+        EdgeContainer const& Automaton::getEdgeContainer() const {
+            return edges;
+        }
+        
+        EdgeContainer& Automaton::getEdgeContainer() {
+            return edges;
+        }
+        
         void Automaton::addEdge(Edge const& edge) {
             STORM_LOG_THROW(edge.getSourceLocationIndex() < locations.size(), storm::exceptions::InvalidArgumentException, "Cannot add edge with unknown source location index '" << edge.getSourceLocationIndex() << "'.");
             assert(validate());
@@ -277,8 +311,6 @@ namespace storm {
             for (uint64_t locationIndex = edge.getSourceLocationIndex() + 1; locationIndex < locationToStartingIndex.size(); ++locationIndex) {
                 ++locationToStartingIndex[locationIndex];
             }
-            
-
         }
         
         std::vector<Edge>& Automaton::getEdges() {
@@ -316,6 +348,20 @@ namespace storm {
             return initialStatesRestriction.isInitialized();
         }
         
+        bool Automaton::hasNonTrivialInitialStates() const {
+            if (this->hasInitialStatesRestriction() && !this->getInitialStatesRestriction().isTrue()) {
+                return true;
+            }
+            
+            for (auto const& variable : this->getVariables()) {
+                if (variable.hasInitExpression() && !variable.isTransient()) {
+                    return true;
+                }
+            }
+            
+            return false;
+        }
+        
         storm::expressions::Expression const& Automaton::getInitialStatesRestriction() const {
             return initialStatesRestriction;
         }
@@ -328,7 +374,7 @@ namespace storm {
             storm::expressions::Expression result;
             
             // Add initial state restriction if there is one.
-            if (this->hasInitialStatesRestriction()) {
+            if (this->hasInitialStatesRestriction() && !this->getInitialStatesRestriction().isTrue()) {
                 result = this->getInitialStatesRestriction();
             }
             
@@ -351,6 +397,27 @@ namespace storm {
             return result;
         }
         
+        bool Automaton::hasTrivialInitialStatesExpression() const {
+            if (this->hasInitialStatesRestriction()) {
+                return false;
+            }
+            
+            bool result = true;
+            for (auto const& variable : this->getVariables()) {
+                if (variable.isTransient()) {
+                    continue;
+                }
+                
+                result &= variable.hasInitExpression();
+                
+                if (!result) {
+                    break;
+                }
+            }
+            
+            return result;
+        }
+        
         bool Automaton::hasEdgeLabeledWithActionIndex(uint64_t actionIndex) const {
             return actionIndices.find(actionIndex) != actionIndices.end();
         }
@@ -364,7 +431,13 @@ namespace storm {
         }
         
         void Automaton::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {
+            for (auto& functionDefinition : this->getFunctionDefinitions()) {
+                functionDefinition.second.substitute(substitution);
+            }
             for (auto& variable : this->getVariables().getBoundedIntegerVariables()) {
+                variable.substitute(substitution);
+            }
+            for (auto& variable : this->getVariables().getArrayVariables()) {
                 variable.substitute(substitution);
             }
             
@@ -372,7 +445,7 @@ namespace storm {
                 location.substitute(substitution);
             }
             
-            this->setInitialStatesRestriction(this->getInitialStatesRestriction().substitute(substitution));
+            this->setInitialStatesRestriction(substituteJaniExpression(this->getInitialStatesRestriction(), substitution));
             
             edges.substitute(substitution);
         }
@@ -419,6 +492,38 @@ namespace storm {
             edges.pushAssignmentsToDestinations();
         }
         
+        void Automaton::pushTransientRealLocationAssignmentsToEdges() {
+            std::set<std::shared_ptr<storm::jani::TemplateEdge>> encounteredTemplateEdges;
+            
+            for (uint64_t locationIndex = 0; locationIndex < locations.size(); ++locationIndex) {
+                auto& location = locations[locationIndex];
+                auto edges = this->getEdgesFromLocation(locationIndex);
+            
+                storm::jani::Location newLocation(location.getName());
+                bool createNewLocation = true;
+                for (auto& edge : edges) {
+                    STORM_LOG_THROW(encounteredTemplateEdges.find(edge.getTemplateEdge()) == encounteredTemplateEdges.end(), storm::exceptions::NotSupportedException, "Pushing location assignments to edges is only supported for automata with unique template edges.");
+
+                    auto& templateEdge = edge.getTemplateEdge();
+                    encounteredTemplateEdges.insert(templateEdge);
+                    
+                    for (auto const& assignment : location.getAssignments().getTransientAssignments()) {
+                        if (assignment.getVariable().isTransient() && assignment.getVariable().isRealVariable()) {
+                            templateEdge->addTransientAssignment(assignment, true);
+                        } else if (createNewLocation) {
+                            newLocation.addTransientAssignment(assignment);
+                        }
+                    }
+                    
+                    if (createNewLocation) {
+                        createNewLocation = false;
+                    }
+                }
+
+                location = std::move(newLocation);
+            }
+        }
+        
         bool Automaton::hasTransientEdgeDestinationAssignments() const {
             for (auto const& edge : this->getEdges()) {
                 if (edge.hasTransientEdgeDestinationAssignments()) {
@@ -428,8 +533,8 @@ namespace storm {
             return false;
         }
         
-        void Automaton::liftTransientEdgeDestinationAssignments() {
-            edges.liftTransientDestinationAssignments();
+        void Automaton::liftTransientEdgeDestinationAssignments(int64_t maxLevel) {
+            edges.liftTransientDestinationAssignments(maxLevel);
         }
 
         bool Automaton::validate() const {
@@ -440,9 +545,8 @@ namespace storm {
             return true;
         }
 
-
-        bool Automaton::usesAssignmentLevels() const {
-            return edges.usesAssignmentLevels();
+        bool Automaton::usesAssignmentLevels(bool onlyTransient) const {
+            return edges.usesAssignmentLevels(onlyTransient);
         }
         
         bool Automaton::isLinear() const {
@@ -452,9 +556,9 @@ namespace storm {
                 result &= location.isLinear();
             }
             if (result) {
-                return edges.isLinear();
+                result &= edges.isLinear();
             }
-            return false;
+            return result;
         }
 
         void Automaton::restrictToEdges(boost::container::flat_set<uint_fast64_t> const& edgeIndices) {

@@ -62,14 +62,14 @@ namespace storm {
          * Transforms the given symbolic model to a sparse model.
          */
         template<storm::dd::DdType Type, typename ValueType>
-        std::shared_ptr<storm::models::sparse::Model<ValueType>> transformSymbolicToSparseModel(std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> const& symbolicModel) {
+        std::shared_ptr<storm::models::sparse::Model<ValueType>> transformSymbolicToSparseModel(std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> const& symbolicModel, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas = std::vector<std::shared_ptr<storm::logic::Formula const>>()) {
             switch (symbolicModel->getType()) {
                 case storm::models::ModelType::Dtmc:
-                    return storm::transformer::SymbolicDtmcToSparseDtmcTransformer<Type, ValueType>().translate(*symbolicModel->template as<storm::models::symbolic::Dtmc<Type, ValueType>>());
+                    return storm::transformer::SymbolicDtmcToSparseDtmcTransformer<Type, ValueType>().translate(*symbolicModel->template as<storm::models::symbolic::Dtmc<Type, ValueType>>(), formulas);
                 case storm::models::ModelType::Mdp:
-                    return storm::transformer::SymbolicMdpToSparseMdpTransformer<Type, ValueType>::translate(*symbolicModel->template as<storm::models::symbolic::Mdp<Type, ValueType>>());
+                    return storm::transformer::SymbolicMdpToSparseMdpTransformer<Type, ValueType>::translate(*symbolicModel->template as<storm::models::symbolic::Mdp<Type, ValueType>>(), formulas);
                 case storm::models::ModelType::Ctmc:
-                    return storm::transformer::SymbolicCtmcToSparseCtmcTransformer<Type, ValueType>::translate(*symbolicModel->template as<storm::models::symbolic::Ctmc<Type, ValueType>>());
+                    return storm::transformer::SymbolicCtmcToSparseCtmcTransformer<Type, ValueType>::translate(*symbolicModel->template as<storm::models::symbolic::Ctmc<Type, ValueType>>(), formulas);
                 default:
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Transformation of symbolic " << symbolicModel->getType() << " to sparse model is not supported.");
             }

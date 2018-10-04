@@ -4,12 +4,12 @@
 
 namespace storm {
     namespace prism {
-        BooleanVariable::BooleanVariable(storm::expressions::Variable const& variable, storm::expressions::Expression const& initialValueExpression, std::string const& filename, uint_fast64_t lineNumber) : Variable(variable, initialValueExpression, filename, lineNumber) {
+        BooleanVariable::BooleanVariable(storm::expressions::Variable const& variable, storm::expressions::Expression const& initialValueExpression, bool observable, std::string const& filename, uint_fast64_t lineNumber) : Variable(variable, initialValueExpression, observable, filename, lineNumber) {
             // Nothing to do here.
         }
         
         BooleanVariable BooleanVariable::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
-            return BooleanVariable(this->getExpressionVariable(), this->getInitialValueExpression().isInitialized() ? this->getInitialValueExpression().substitute(substitution) : this->getInitialValueExpression(), this->getFilename(), this->getLineNumber());
+            return BooleanVariable(this->getExpressionVariable(), this->getInitialValueExpression().isInitialized() ? this->getInitialValueExpression().substitute(substitution) : this->getInitialValueExpression(), this->isObservable(), this->getFilename(), this->getLineNumber());
         }
         
         void BooleanVariable::createMissingInitialValue() {
