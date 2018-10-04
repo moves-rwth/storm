@@ -637,6 +637,22 @@ namespace storm {
         bool Model::hasConstant(std::string const& name) const {
             return constantToIndex.find(name) != constantToIndex.end();
         }
+
+
+        void Model::removeConstant(std::string const& name) {
+            auto pos = constantToIndex.find(name);
+            if (pos != constantToIndex.end()) {
+                uint64_t index = pos->second;
+                constants.erase(constants.begin() + index);
+                constantToIndex.erase(pos);
+                for (auto& entry : constantToIndex) {
+                    if(entry.second > index) {
+                        entry.second--;
+                    }
+                }
+            }
+
+        }
         
         Constant const& Model::getConstant(std::string const& name) const {
             auto it = constantToIndex.find(name);

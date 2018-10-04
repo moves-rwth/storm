@@ -169,6 +169,11 @@ namespace storm {
              * Retrieves whether the model has a constant with the given name.
              */
             bool hasConstant(std::string const& name) const;
+
+            /*!
+             * Removes (without checks) a constant from the model.
+             */
+            void removeConstant(std::string const& name);
             
             /*!
              * Retrieves the constants of the model.
