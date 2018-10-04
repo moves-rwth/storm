@@ -1118,7 +1118,11 @@ namespace storm {
             
             // Unset model-features that only relate to properties. These are only set if such properties actually exist.
             modelFeatures.remove(storm::jani::ModelFeature::StateExitRewards);
-            
+            if (formulas.empty()) {
+                jsonStruct["properties"] = modernjson::json(modernjson::json::value_t::array);
+                return;
+            }
+
             uint64_t index = 0;
             for(auto const& f : formulas) {
                 modernjson::json propDecl;
