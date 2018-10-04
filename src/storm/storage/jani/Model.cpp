@@ -117,6 +117,10 @@ namespace storm {
         ModelType const& Model::getModelType() const {
             return modelType;
         }
+
+        void Model::setModelType(ModelType const& newModelType) {
+            modelType = newModelType;
+        }
         
         ModelFeatures const& Model::getModelFeatures() const {
             return modelFeatures;
