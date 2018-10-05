@@ -149,6 +149,10 @@ namespace storm {
                 if (transformToJani) {
                     storm::prism::Program const& model = output.model.get().asPrismProgram();
                     auto modelAndProperties = model.toJani(output.properties);
+                    
+                    // Remove functions here
+                    modelAndProperties.first.substituteFunctions();
+                    
                     output.model = modelAndProperties.first;
                     
                     if (!modelAndProperties.second.empty()) {
