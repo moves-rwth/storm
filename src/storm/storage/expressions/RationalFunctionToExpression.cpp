@@ -37,7 +37,6 @@ namespace storm {
                 STORM_LOG_DEBUG("Expecting the denominator to be constant");
             }
 
-            storm::expressions::Expression denominatorVal = manager->rational(storm::utility::convertNumber<storm::RationalNumber, storm::RationalFunctionCoefficient>(denominator.constantPart()));
             storm::expressions::Expression result;
             if (function.isConstant()) {
                 result = manager->rational(storm::utility::convertNumber<storm::RationalNumber, storm::RationalFunctionCoefficient>(function.constantPart()));
@@ -56,8 +55,10 @@ namespace storm {
                         result = result + nominatorPartExpr;
                     }
                 }
+                storm::expressions::Expression denominatorVal = manager->rational(storm::utility::convertNumber<storm::RationalNumber, storm::RationalFunctionCoefficient>(denominator.constantPart()));
+                result = result / denominatorVal;
             }
-            result = result / denominatorVal;
+
             return result;
         }
 
