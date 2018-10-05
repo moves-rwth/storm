@@ -444,9 +444,11 @@ namespace storm {
             for (auto& location : this->getLocations()) {
                 location.substitute(substitution);
             }
-            
-            this->setInitialStatesRestriction(substituteJaniExpression(this->getInitialStatesRestriction(), substitution));
-            
+
+            if (hasInitialStatesRestriction()) {
+                this->setInitialStatesRestriction(substituteJaniExpression(this->getInitialStatesRestriction(), substitution));
+            }
+
             edges.substitute(substitution);
         }
         void Automaton::registerTemplateEdge(std::shared_ptr<TemplateEdge> const& te) {
