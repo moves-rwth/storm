@@ -1820,6 +1820,8 @@ namespace storm {
             std::vector<storm::jani::Property> newProperties;
             if (converter.labelsWereRenamed() || converter.rewardModelsWereRenamed()) {
                 newProperties = converter.applyRenaming(properties);
+            } else {
+                newProperties = properties;  // Nothing to be done here. Notice that the copy operation is suboptimal. 
             }
             return std::make_pair(janiModel, newProperties);
         }
