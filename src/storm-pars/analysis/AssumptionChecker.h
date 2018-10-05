@@ -59,7 +59,8 @@ namespace storm {
              * @return true if the assumption has been validated and holds, false otherwise
              */
             bool validated(std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption);
-            
+            bool valid(std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption);
+
         private:
             std::shared_ptr<storm::logic::Formula const> formula;
 
@@ -68,6 +69,8 @@ namespace storm {
             std::vector<std::vector<double>> results;
 
             std::set<std::shared_ptr<storm::expressions::BinaryRelationExpression>> validatedAssumptions;
+
+            std::set<std::shared_ptr<storm::expressions::BinaryRelationExpression>> validAssumptions;
 
             bool validateAssumptionFunction(storm::analysis::Lattice* lattice,
                     typename storm::storage::SparseMatrix<ValueType>::iterator state1succ1,

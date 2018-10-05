@@ -147,19 +147,40 @@ namespace storm {
 
                     if (state1succ1->getColumn() == state2succ1->getColumn() && state1succ2->getColumn() == state2succ2->getColumn()) {
                         result = validateAssumptionFunction(lattice, state1succ1, state1succ2, state2succ1, state2succ2);
+
                         if (!result) {
                             result = validateAssumptionSMTSolver(lattice, state1succ1, state1succ2, state2succ1, state2succ2);
                         }
+
+                        validatedAssumptions.insert(assumption);
+                        if (result) {
+                            validAssumptions.insert(assumption);
+                        }
                     }
                 } else {
-                    result = validateAssumptionSMTSolver(lattice, assumption);
-                }
-            }
+                    bool subset = true;
+                    auto row1 = matrix.getRow(std::stoi(assumption->getFirstOperand()->asVariableExpression().getVariableName()));
+                    auto row2 = matrix.getRow(std::stoi(assumption->getSecondOperand()->asVariableExpression().getVariableName()));
 
-            if (result) {
-                validatedAssumptions.insert(assumption);
-            } else {
-                STORM_LOG_DEBUG("Could not validate: " << *assumption << std::endl);
+                    if (row1.getNumberOfEntries() > row2.getNumberOfEntries()) {
+                        std::swap(row1, row2);
+                    }
+                    for (auto itr1 = row1.begin(); subset && itr1 != row1.end(); ++itr1) {
+                        bool found = false;
+                        for (auto itr2 = row2.begin(); !found && itr2 != row2.end(); ++itr2) {
+                            found = itr1->getColumn() == itr2->getColumn();
+                        }
+                        subset &= found;
+                    }
+
+                    if (subset) {
+                        result = validateAssumptionSMTSolver(lattice, assumption);
+                        validatedAssumptions.insert(assumption);
+                        if (result) {
+                            validAssumptions.insert(assumption);
+                        }
+                    }
+                }
             }
             return result;
         }
@@ -256,30 +277,6 @@ namespace storm {
             auto row1 = matrix.getRow(std::stoi(assumption->getFirstOperand()->asVariableExpression().getVariableName()));
             auto row2 = matrix.getRow(std::stoi(assumption->getSecondOperand()->asVariableExpression().getVariableName()));
 
-            if (row1.getNumberOfEntries() <= row2.getNumberOfEntries()) {
-                for (auto itr1 = row1.begin(); result && itr1 != row1.end(); ++itr1) {
-                    bool found = false;
-                    for (auto itr2 = row2.begin(); !found && itr2 != row2.end(); ++itr2) {
-                        found = itr1->getColumn() == itr2->getColumn();
-                    }
-
-                    if (!found) {
-                        result = false;
-                    }
-                }
-            } else {
-                for (auto itr1 = row2.begin(); result && itr1 != row2.end(); ++itr1) {
-                    bool found = false;
-                    for (auto itr2 = row1.begin(); !found && itr2 != row1.end(); ++itr2) {
-                        found = itr1->getColumn() == itr2->getColumn();
-                    }
-
-                    if (!found) {
-                        result = false;
-                    }
-                }
-            }
-
             if (result) {
                 storm::solver::Z3SmtSolver s(*manager);
                 if (row1.getNumberOfEntries() >= row2.getNumberOfEntries()) {
@@ -354,6 +351,12 @@ namespace storm {
         template <typename ValueType>
         bool AssumptionChecker<ValueType>::validated(std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption) {
             return find(validatedAssumptions.begin(), validatedAssumptions.end(), assumption) != validatedAssumptions.end();
+        }
+
+        template <typename ValueType>
+        bool AssumptionChecker<ValueType>::valid(std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption) {
+            assert(find(validatedAssumptions.begin(), validatedAssumptions.end(), assumption) != validatedAssumptions.end());
+            return find(validAssumptions.begin(), validAssumptions.end(), assumption) != validAssumptions.end();
         }
 
         template class AssumptionChecker<storm::RationalFunction>;

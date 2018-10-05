@@ -55,6 +55,7 @@ namespace storm {
             std::tuple<storm::analysis::Lattice*, uint_fast64_t, uint_fast64_t> criticalTriple = this->latticeExtender->extendLattice(lattice, assumptions.back());
 
             if (validate && assumptionChecker->validated(assumptions.back())) {
+                assert (assumptionChecker->valid(assumptions.back()));
                 assumptions.pop_back();
             }
 
@@ -91,17 +92,23 @@ namespace storm {
             if (assumptionChecker->checkOnSamples(assumption)) {
                 if (validate) {
                     assumptionChecker->validateAssumption(assumption, lattice);
+                    if (!assumptionChecker->validated(assumption) || assumptionChecker->valid(assumption)) {
+                        assumptions.push_back(
+                                std::shared_ptr<storm::expressions::BinaryRelationExpression>(assumption));
+                        result = (runRecursive(lattice, assumptions));
+                    }
+                } else {
+                    assumptions.push_back(std::shared_ptr<storm::expressions::BinaryRelationExpression>(assumption));
+                    result = (runRecursive(lattice, assumptions));
                 }
-                assumptions.push_back(std::shared_ptr<storm::expressions::BinaryRelationExpression>(assumption));
-                result = (runRecursive(lattice, assumptions));
+
+
             } else {
                 delete lattice;
             }
 
             return result;
         }
-
-
 
         template class AssumptionMaker<storm::RationalFunction>;
     }
