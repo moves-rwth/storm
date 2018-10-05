@@ -44,21 +44,28 @@ namespace storm {
             bool checkOnSamples(std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption);
 
             /*!
-             * Checks if an assumption can be validated based on the lattice and underlying transition matrix.
+             * Tries to validate an assumption based on the lattice and underlying transition matrix.
              *
              * @param assumption The assumption to validate.
              * @param lattice The lattice.
-             * @return true if the assumption is validated and holds, false otherwise
+             * @return true if the assumption can be validated and holds, false otherwise
              */
             bool validateAssumption(std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption, storm::analysis::Lattice* lattice);
 
             /*!
-             * Looks up if assumption has been validated and holds.
+             * Looks up if assumption has been validated.
              *
              * @param assumption The assumption.
-             * @return true if the assumption has been validated and holds, false otherwise
+             * @return true if the assumption has been validated.
              */
             bool validated(std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption);
+
+            /*!
+             * Looks up if assumption is valid. Requires the function to be validated.
+             *
+             * @param assumption The assumption.
+             * @return true if the assumption is valid.
+             */
             bool valid(std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption);
 
         private:
