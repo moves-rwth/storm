@@ -581,7 +581,7 @@ namespace {
         
         // This example considers an expected total reward formula, which is not supported in all engines
 
-        if (TypeParam::engine == MdpEngine::PrismSparse || TypeParam::engine == MdpEngine::JaniSparse) {
+        if (TypeParam::engine == MdpEngine::PrismSparse || TypeParam::engine == MdpEngine::JaniSparse || TypeParam::engine == MdpEngine::JitSparse) {
             result = checker->check(this->env(), tasks[0]);
             EXPECT_NEAR(this->parseNumber("114/49"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
         } else {
