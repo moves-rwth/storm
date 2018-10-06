@@ -79,7 +79,13 @@ namespace storm {
              * Retrieves the type of the model.
              */
             ModelType const& getModelType() const;
-            
+
+            /*!
+             * Changes (only) the type declaration of the model. Notice that this operation should be applied with great care, as it may break several algorithms.
+             * The operation is useful to e.g. make a deterministic model into a non-deterministic one.
+             */
+            void setModelType(ModelType const&);
+
             /*!
              * Retrieves the enabled model features
              */
@@ -163,6 +169,11 @@ namespace storm {
              * Retrieves whether the model has a constant with the given name.
              */
             bool hasConstant(std::string const& name) const;
+
+            /*!
+             * Removes (without checks) a constant from the model.
+             */
+            void removeConstant(std::string const& name);
             
             /*!
              * Retrieves the constants of the model.

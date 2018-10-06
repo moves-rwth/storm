@@ -5,7 +5,7 @@ namespace storm {
 
         JaniConversionOptions::JaniConversionOptions() : edgeAssignments(false), flatten(false), substituteConstants(true), allowedModelFeatures(storm::jani::getAllKnownModelFeatures()) {
             // Intentionally left empty
-        };
+        }
 
         JaniConversionOptions::JaniConversionOptions(storm::settings::modules::JaniExportSettings const& settings) : locationVariables(settings.getLocationVariables()), edgeAssignments(settings.isAllowEdgeAssignmentsSet()), flatten(settings.isExportFlattenedSet()), substituteConstants(true), allowedModelFeatures(storm::jani::getAllKnownModelFeatures()) {
             if (settings.isEliminateFunctionsSet()) {
@@ -14,7 +14,7 @@ namespace storm {
             if (settings.isEliminateArraysSet()) {
                 allowedModelFeatures.remove(storm::jani::ModelFeature::Arrays);
             }
-        };
+        }
     }
 }
 

@@ -6,7 +6,7 @@ namespace storm {
 
         PrismToJaniConverterOptions::PrismToJaniConverterOptions() : allVariablesGlobal(false), suffix("") {
             // Intentionally left empty
-        };
+        }
     }
 }
 

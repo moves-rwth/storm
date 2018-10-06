@@ -183,7 +183,7 @@ namespace storm {
                 time = time || (!model.isDeterministicModel() && assignmentKinds.hasLocationAssignment);
                 exit = exit || assignmentKinds.hasLocationAssignment;
             }
-            storm::jani::substituteJaniExpression(rewardExpression, initialSubstitution);
+            rewardExpression = storm::jani::substituteJaniExpression(rewardExpression, initialSubstitution);
             if (rewardExpression.containsVariables() || !storm::utility::isZero(rewardExpression.evaluateAsRational())) {
                 steps = true;
                 time = true;
@@ -1118,7 +1118,11 @@ namespace storm {
             
             // Unset model-features that only relate to properties. These are only set if such properties actually exist.
             modelFeatures.remove(storm::jani::ModelFeature::StateExitRewards);
-            
+            if (formulas.empty()) {
+                jsonStruct["properties"] = modernjson::json(modernjson::json::value_t::array);
+                return;
+            }
+
             uint64_t index = 0;
             for(auto const& f : formulas) {
                 modernjson::json propDecl;

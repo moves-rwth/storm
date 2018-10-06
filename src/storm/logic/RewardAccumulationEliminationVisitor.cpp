@@ -3,6 +3,7 @@
 
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/traverser/AssignmentsFinder.h"
+#include "storm/storage/jani/expressions/JaniExpressionSubstitutionVisitor.h"
 #include "storm/utility/macros.h"
 
 #include "storm/exceptions/UnexpectedException.h"
@@ -126,20 +127,33 @@ namespace storm {
         }
         
         bool RewardAccumulationEliminationVisitor::canEliminate(storm::logic::RewardAccumulation const& accumulation, boost::optional<std::string> rewardModelName) const {
-            STORM_LOG_THROW(rewardModelName.is_initialized(), storm::exceptions::InvalidPropertyException, "Unable to find transient variable with for unique reward model.");
-            storm::jani::AssignmentsFinder::ResultType assignmentKinds;
-            STORM_LOG_THROW(model.hasGlobalVariable(rewardModelName.get()), storm::exceptions::InvalidPropertyException, "Unable to find transient variable with name " << rewardModelName.get() << ".");
-            storm::jani::Variable const& transientVar = model.getGlobalVariable(rewardModelName.get());
-            if (transientVar.getInitExpression().containsVariables() || !storm::utility::isZero(transientVar.getInitExpression().evaluateAsRational())) {
-                assignmentKinds.hasLocationAssignment = true;
-                assignmentKinds.hasEdgeAssignment = true;
-                assignmentKinds.hasEdgeDestinationAssignment = true;
+            STORM_LOG_THROW(rewardModelName.is_initialized(), storm::exceptions::InvalidPropertyException, "Unable to find transient variable for unique reward model.");
+            storm::expressions::Expression rewardExpression = model.getRewardModelExpression(rewardModelName.get());
+            bool hasStateRewards = false;
+            bool hasActionOrTransitionRewards = false;
+            auto variablesInRewardExpression = rewardExpression.getVariables();
+            std::map<storm::expressions::Variable, storm::expressions::Expression> initialSubstitution;
+            for (auto const& v : variablesInRewardExpression) {
+                STORM_LOG_ASSERT(model.hasGlobalVariable(v.getName()), "Unable to find global variable " << v.getName() << " occurring in a reward expression.");
+                auto const& janiVar = model.getGlobalVariable(v.getName());
+                if (janiVar.hasInitExpression()) {
+                    initialSubstitution.emplace(v, janiVar.getInitExpression());
+                }
+                auto assignmentKinds = storm::jani::AssignmentsFinder().find(model, v);
+                hasActionOrTransitionRewards = hasActionOrTransitionRewards || assignmentKinds.hasEdgeAssignment || assignmentKinds.hasEdgeDestinationAssignment;
+                hasStateRewards = hasStateRewards || assignmentKinds.hasLocationAssignment;
             }
-            assignmentKinds = storm::jani::AssignmentsFinder().find(model, transientVar);
-            if ((assignmentKinds.hasEdgeAssignment || assignmentKinds.hasEdgeDestinationAssignment) && !accumulation.isStepsSet()) {
+            rewardExpression = storm::jani::substituteJaniExpression(rewardExpression, initialSubstitution);
+            if (rewardExpression.containsVariables() || !storm::utility::isZero(rewardExpression.evaluateAsRational())) {
+                hasStateRewards = true;
+                hasActionOrTransitionRewards = true;
+            }
+            
+            
+            if (hasActionOrTransitionRewards && !accumulation.isStepsSet()) {
                 return false;
             }
-            if (assignmentKinds.hasLocationAssignment) {
+            if (hasStateRewards) {
                 if (model.isDiscreteTimeModel()) {
                     if (!accumulation.isExitSet()) {
                         return false;

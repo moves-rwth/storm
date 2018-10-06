@@ -683,7 +683,7 @@ namespace storm {
              * @return A vector of indices that is a topological sort of the states.
              */
             template <typename T>
-            std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<T> const& matrix) ;
+            std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<T> const& matrix, std::vector<uint64_t> const& firstStates = {}) ;
 
         } // namespace graph
     } // namespace utility

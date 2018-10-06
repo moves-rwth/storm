@@ -65,7 +65,6 @@ namespace storm {
             result.keptActions = storm::storage::BitVector(originalModel.getTransitionMatrix().getRowCount(), false);
             for (auto subsysState : subsystemStates) {
                 result.newToOldStateIndexMapping.push_back(subsysState);
-                bool stateHasOneChoiceLeft = false;
                 for (uint_fast64_t row = subsystemActions.getNextSetIndex(originalModel.getTransitionMatrix().getRowGroupIndices()[subsysState]); row < originalModel.getTransitionMatrix().getRowGroupIndices()[subsysState+1]; row = subsystemActions.getNextSetIndex(row+1)) {
                     bool allRowEntriesStayInSubsys = true;
                     for (auto const& entry : originalModel.getTransitionMatrix().getRow(row)) {
@@ -74,10 +73,8 @@ namespace storm {
                             break;
                         }
                     }
-                    stateHasOneChoiceLeft |= allRowEntriesStayInSubsys;
                     result.keptActions.set(row, allRowEntriesStayInSubsys);
                 }
-                 STORM_LOG_THROW(stateHasOneChoiceLeft, storm::exceptions::InvalidArgumentException, "The subsystem would contain a deadlock state.");
             }
             
             // Transform the components of the model

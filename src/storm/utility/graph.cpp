@@ -1554,9 +1554,56 @@ namespace storm {
                 
                 return SymbolicGameProb01Result<Type>(maybePlayer1States, maybePlayer2States, player1StrategyBdd, player2StrategyBdd);
             }
-            
+
+
+            template<typename T>
+            void topologicalSortHelper(storm::storage::SparseMatrix<T> const& matrix, uint64_t state, std::vector<uint_fast64_t>& topologicalSort, std::vector<uint_fast64_t>& recursionStack, std::vector<typename storm::storage::SparseMatrix<T>::const_iterator>& iteratorRecursionStack, storm::storage::BitVector& visitedStates) {
+                if (!visitedStates.get(state)) {
+                    recursionStack.push_back(state);
+                    iteratorRecursionStack.push_back(matrix.begin(state));
+
+                    recursionStepForward:
+                        while (!recursionStack.empty()) {
+                            uint_fast64_t currentState = recursionStack.back();
+                            typename storm::storage::SparseMatrix<T>::const_iterator successorIterator = iteratorRecursionStack.back();
+
+                            visitedStates.set(currentState, true);
+
+                            recursionStepBackward:
+                                for (; successorIterator != matrix.end(currentState); ++successorIterator) {
+                                    if (!visitedStates.get(successorIterator->getColumn())) {
+                                        // Put unvisited successor on top of our recursion stack and remember that.
+                                        recursionStack.push_back(successorIterator->getColumn());
+
+                                        // Also, put initial value for iterator on corresponding recursion stack.
+                                        iteratorRecursionStack.push_back(matrix.begin(successorIterator->getColumn()));
+
+                                        goto recursionStepForward;
+                                    }
+                                }
+
+                                topologicalSort.push_back(currentState);
+
+                                // If we reach this point, we have completed the recursive descent for the current state.
+                                // That is, we need to pop it from the recursion stacks.
+                                recursionStack.pop_back();
+                                iteratorRecursionStack.pop_back();
+
+                                // If there is at least one state under the current one in our recursion stack, we need
+                                // to restore the topmost state as the current state and jump to the part after the
+                                // original recursive call.
+                                if (recursionStack.size() > 0) {
+                                    currentState = recursionStack.back();
+                                    successorIterator = iteratorRecursionStack.back();
+
+                                    goto recursionStepBackward;
+                                }
+                        }
+                }
+            }
+
             template <typename T>
-            std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<T> const& matrix) {
+            std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<T> const& matrix, std::vector<uint64_t> const& firstStates) {
                 if (matrix.getRowCount() != matrix.getColumnCount()) {
                     STORM_LOG_ERROR("Provided matrix is required to be square.");
                     throw storm::exceptions::InvalidArgumentException() << "Provided matrix is required to be square.";
@@ -1576,49 +1623,11 @@ namespace storm {
                 
                 // Perform a depth-first search over the given transitions and record states in the reverse order they were visited.
                 storm::storage::BitVector visitedStates(numberOfStates);
+                for (auto const state : firstStates ) {
+                    topologicalSortHelper<T>(matrix, state, topologicalSort, recursionStack, iteratorRecursionStack, visitedStates);
+                }
                 for (uint_fast64_t state = 0; state < numberOfStates; ++state) {
-                    if (!visitedStates.get(state)) {
-                        recursionStack.push_back(state);
-                        iteratorRecursionStack.push_back(matrix.begin(state));
-                        
-                    recursionStepForward:
-                        while (!recursionStack.empty()) {
-                            uint_fast64_t currentState = recursionStack.back();
-                            typename storm::storage::SparseMatrix<T>::const_iterator successorIterator = iteratorRecursionStack.back();
-                            
-                            visitedStates.set(currentState, true);
-                            
-                        recursionStepBackward:
-                            for (; successorIterator != matrix.end(currentState); ++successorIterator) {
-                                if (!visitedStates.get(successorIterator->getColumn())) {
-                                    // Put unvisited successor on top of our recursion stack and remember that.
-                                    recursionStack.push_back(successorIterator->getColumn());
-                                    
-                                    // Also, put initial value for iterator on corresponding recursion stack.
-                                    iteratorRecursionStack.push_back(matrix.begin(successorIterator->getColumn()));
-                                    
-                                    goto recursionStepForward;
-                                }
-                            }
-                            
-                            topologicalSort.push_back(currentState);
-                            
-                            // If we reach this point, we have completed the recursive descent for the current state.
-                            // That is, we need to pop it from the recursion stacks.
-                            recursionStack.pop_back();
-                            iteratorRecursionStack.pop_back();
-                            
-                            // If there is at least one state under the current one in our recursion stack, we need
-                            // to restore the topmost state as the current state and jump to the part after the
-                            // original recursive call.
-                            if (recursionStack.size() > 0) {
-                                currentState = recursionStack.back();
-                                successorIterator = iteratorRecursionStack.back();
-                                
-                                goto recursionStepBackward;
-                            }
-                        }
-                    }
+                    topologicalSortHelper<T>(matrix, state, topologicalSort, recursionStack, iteratorRecursionStack, visitedStates);
                 }
                 
                 return topologicalSort;
@@ -1696,7 +1705,7 @@ namespace storm {
             
             template ExplicitGameProb01Result performProb1(storm::storage::SparseMatrix<double> const& transitionMatrix, std::vector<uint64_t> const& player1RowGrouping, storm::storage::SparseMatrix<double> const& player1BackwardTransitions, std::vector<uint64_t> const& player2BackwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::OptimizationDirection const& player1Direction, storm::OptimizationDirection const& player2Direction, storm::abstraction::ExplicitGameStrategyPair* strategyPair, boost::optional<storm::storage::BitVector> const& player1Candidates);
             
-            template std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<double> const& matrix) ;
+            template std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<double> const& matrix,  std::vector<uint64_t> const& firstStates) ;
             
             // Instantiations for storm::RationalNumber.
 #ifdef STORM_HAVE_CARL
@@ -1752,7 +1761,7 @@ namespace storm {
             
             template ExplicitGameProb01Result performProb1(storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, std::vector<uint64_t> const& player1RowGrouping, storm::storage::SparseMatrix<storm::RationalNumber> const& player1BackwardTransitions, std::vector<uint64_t> const& player2BackwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::OptimizationDirection const& player1Direction, storm::OptimizationDirection const& player2Direction, storm::abstraction::ExplicitGameStrategyPair* strategyPair, boost::optional<storm::storage::BitVector> const& player1Candidates);
             
-            template std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<storm::RationalNumber> const& matrix);
+            template std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<storm::RationalNumber> const& matrix,  std::vector<uint64_t> const& firstStates);
             // End of instantiations for storm::RationalNumber.
             
             template storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<storm::RationalFunction> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, bool useStepBound, uint_fast64_t maximalSteps, boost::optional<storm::storage::BitVector> const& choiceFilter);
@@ -1804,7 +1813,7 @@ namespace storm {
             template std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01Min(storm::models::sparse::NondeterministicModel<storm::RationalFunction> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
             
             
-            template std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<storm::RationalFunction> const& matrix);
+            template std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<storm::RationalFunction> const& matrix,  std::vector<uint64_t> const& firstStates);
             
 #endif
             

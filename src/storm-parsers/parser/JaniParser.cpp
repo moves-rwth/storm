@@ -205,7 +205,11 @@ namespace storm {
                 STORM_LOG_THROW(parsedStructure.at("properties").is_array(), storm::exceptions::InvalidJaniException, "Properties should be an array");
                 for(auto const& propertyEntry : parsedStructure.at("properties")) {
                     try {
+                        nonTrivialRewardModelExpressions.clear();
                         auto prop = this->parseProperty(propertyEntry, scope.refine("property[" + std::to_string(properties.size()) + "]"));
+                        for (auto const& nonTrivRewExpr : nonTrivialRewardModelExpressions) {
+                            model.addNonTrivialRewardExpression(nonTrivRewExpr.first, nonTrivRewExpr.second);
+                        }
                         // Eliminate reward accumulations as much as possible
                         rewAccEliminator.eliminateRewardAccumulations(prop);
                         properties.push_back(prop);
@@ -321,7 +325,10 @@ namespace storm {
                         STORM_LOG_THROW(propertyStructure.count("reward-instants") == 0, storm::exceptions::NotSupportedException, "Storm does not support to have a step-instant and a reward-instant in " + scope.description);
 
                         storm::expressions::Expression stepInstantExpr = parseExpression(propertyStructure.at("step-instant"), scope.refine("Step instant"));
-                        if(rewardAccumulation.isEmpty()) {
+                        if (!rewExpr.isVariable()) {
+                            nonTrivialRewardModelExpressions.emplace(rewardName, rewExpr);
+                        }
+                        if (rewardAccumulation.isEmpty()) {
                              return std::make_shared<storm::logic::RewardOperatorFormula>(std::make_shared<storm::logic::InstantaneousRewardFormula>(stepInstantExpr, storm::logic::TimeBoundType::Steps), rewardName, opInfo);
                         } else {
                             return std::make_shared<storm::logic::RewardOperatorFormula>(std::make_shared<storm::logic::CumulativeRewardFormula>(storm::logic::TimeBound(false, stepInstantExpr), storm::logic::TimeBoundReference(storm::logic::TimeBoundType::Steps), rewardAccumulation), rewardName, opInfo);
@@ -329,7 +336,10 @@ namespace storm {
                     } else if (propertyStructure.count("time-instant") > 0) {
                         STORM_LOG_THROW(propertyStructure.count("reward-instants") == 0, storm::exceptions::NotSupportedException, "Storm does not support to have a time-instant and a reward-instant in " + scope.description);
                         storm::expressions::Expression timeInstantExpr = parseExpression(propertyStructure.at("time-instant"), scope.refine("time instant"));
-                        if(rewardAccumulation.isEmpty()) {
+                        if (!rewExpr.isVariable()) {
+                            nonTrivialRewardModelExpressions.emplace(rewardName, rewExpr);
+                        }
+                        if (rewardAccumulation.isEmpty()) {
                             return std::make_shared<storm::logic::RewardOperatorFormula>(std::make_shared<storm::logic::InstantaneousRewardFormula>(timeInstantExpr, storm::logic::TimeBoundType::Time), rewardName, opInfo);
                         } else {
                             return std::make_shared<storm::logic::RewardOperatorFormula>(std::make_shared<storm::logic::CumulativeRewardFormula>(storm::logic::TimeBound(false, timeInstantExpr), storm::logic::TimeBoundReference(storm::logic::TimeBoundType::Time), rewardAccumulation), rewardName, opInfo);
@@ -349,6 +359,9 @@ namespace storm {
                             storm::expressions::Expression rewInstantExpr = parseExpression(rewInst.at("instant"), scope.refine("reward instant"));
                             bounds.emplace_back(false, rewInstantExpr);
                         }
+                        if (!rewExpr.isVariable()) {
+                            nonTrivialRewardModelExpressions.emplace(rewardName, rewExpr);
+                        }
                         return std::make_shared<storm::logic::RewardOperatorFormula>(std::make_shared<storm::logic::CumulativeRewardFormula>(bounds, boundReferences, rewardAccumulation), rewardName, opInfo);
                     } else {
                         time = !rewExpr.containsVariables() && storm::utility::isOne(rewExpr.evaluateAsRational());
@@ -363,11 +376,11 @@ namespace storm {
                             assert(subformula->isTotalRewardFormula() || subformula->isTimePathFormula());
                             return std::make_shared<storm::logic::TimeOperatorFormula>(subformula, opInfo);
                         } else {
+                            if (!rewExpr.isVariable()) {
+                                nonTrivialRewardModelExpressions.emplace(rewardName, rewExpr);
+                            }
                             return std::make_shared<storm::logic::RewardOperatorFormula>(subformula, rewardName, opInfo);
                         }
-                    }
-                    if (!time && !rewExpr.isVariable()) {
-                        nonTrivialRewardModelExpressions.emplace(rewardName, rewExpr);
                     }
                 } else if (opString == "Smin" || opString == "Smax") {
                     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Smin and Smax are currently not supported");
@@ -829,9 +842,9 @@ namespace storm {
                             }
                         } else {
                             if (type.bounds) {
-                                return std::make_shared<storm::jani::UnboundedIntegerVariable>(name, expressionManager->declareIntegerVariable(exprManagerName), initVal.get(), transientVar);
-                            } else {
                                 return storm::jani::makeBoundedIntegerVariable(name, expressionManager->declareIntegerVariable(exprManagerName), boost::none, false, type.bounds->first, type.bounds->second);
+                            } else {
+                                return std::make_shared<storm::jani::UnboundedIntegerVariable>(name, expressionManager->declareIntegerVariable(exprManagerName));
                             }
                         }
                         break;
@@ -1403,6 +1416,7 @@ namespace storm {
                     STORM_LOG_THROW(edgeEntry.at("rate").count("exp") == 1, storm::exceptions::InvalidJaniException, "Rate in edge from '" << sourceLoc << "' in automaton '" << name << "' must have a defing expression.");
                     rateExpr = parseExpression(edgeEntry.at("rate").at("exp"), scope.refine("rate expression in edge from '" + sourceLoc));
                     STORM_LOG_THROW(rateExpr.hasNumericalType(), storm::exceptions::InvalidJaniException, "Rate '" << rateExpr << "' has not a numerical type");
+                    STORM_LOG_THROW(rateExpr.containsVariables() || rateExpr.evaluateAsRational() > storm::utility::zero<storm::RationalNumber>(), storm::exceptions::InvalidJaniException, "Only positive rates are allowed but rate '" << rateExpr << " was found.");
                 }
                 // guard
                 STORM_LOG_THROW(edgeEntry.count("guard") <= 1, storm::exceptions::InvalidJaniException, "Guard can be given at most once in edge from '" << sourceLoc << "' in automaton '" << name << "'");
