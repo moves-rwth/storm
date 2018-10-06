@@ -52,11 +52,11 @@ namespace storm {
             // Perform conversion
             auto res = program.toJani(properties, options.allVariablesGlobal);
             if (res.second.empty()) {
-                std::vector<storm::jani::Property> clondedProperties;
+                std::vector<storm::jani::Property> clonedProperties;
                 for (auto const& p : properties) {
-                    clondedProperties.push_back(p.clone());
+                    clonedProperties.push_back(p.clone());
                 }
-                res.second = std::move(clondedProperties);
+                res.second = std::move(clonedProperties);
             }
             
             // Postprocess Jani model based on the options

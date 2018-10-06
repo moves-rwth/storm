@@ -138,7 +138,6 @@ namespace {
                 result.first = storm::api::buildSparseModel<ValueType>(program, result.second)->template as<MT>();
             } else if (TestType::engine == MaEngine::JaniSparse || TestType::engine == MaEngine::JitSparse) {
                 auto janiData = storm::api::convertPrismToJani(program, storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
-                janiData.first.substituteFunctions();
                 result.second = storm::api::extractFormulasFromProperties(janiData.second);
                 result.first = storm::api::buildSparseModel<ValueType>(janiData.first, result.second, TestType::engine == MaEngine::JitSparse)->template as<MT>();
             }

@@ -35,7 +35,6 @@
 
 #include "storm/settings/modules/CoreSettings.h"
 
-
 #include "storm/utility/OsDetection.h"
 #include "storm-config.h"
 
@@ -1044,7 +1043,7 @@ namespace storm {
                 if (generateLevelCode) {
                     vectorSource << "int64_t lowestLevel, int64_t highestLevel, ";
                 }
-                vectorSource << "Choice<IndexType, ValueType>& choice) {" << std::endl;
+                vectorSource << "ValueType const& rate, Choice<IndexType, ValueType>& choice) {" << std::endl;
                 if (options.isExplorationChecksSet()) {
                     indent(vectorSource, indentLevel + 1) << "VariableWrites variableWrites;" << std::endl;
                 }
@@ -1074,13 +1073,14 @@ namespace storm {
                 indent(vectorSource, indentLevel + 1) << "IndexType outStateIndex = getOrAddIndex(out, statesToExplore);" << std::endl;
                 indent(vectorSource, indentLevel + 1) << "ValueType probability = ";
                 for (uint64_t index = 0; index < numberOfActionInputs; ++index) {
-                    vectorSource << "destination" << index << ".value(in)";
+                    vectorSource << "destination" << index << ".probability(in)";
                     if (index + 1 < numberOfActionInputs) {
                         vectorSource << " * ";
                     }
                 }
                 vectorSource << ";" << std::endl;
-                indent(vectorSource, indentLevel + 1) << "choice.add(outStateIndex, probability);" << std::endl;
+                indent(vectorSource, indentLevel + 1) << "ValueType value = rate * probability;" << std::endl;
+                indent(vectorSource, indentLevel + 1) << "choice.add(outStateIndex, value);" << std::endl;
                 
                 std::stringstream tmp;
                 indent(tmp, indentLevel + 1) << "{% for reward in destination_rewards %}choice.addReward({$reward.index}, probability * transientOut.{$reward.variable});" << std::endl;
@@ -1092,7 +1092,7 @@ namespace storm {
                 for (uint64_t index = 0; index < numberOfActionInputs; ++index) {
                     vectorSource << "Edge const& edge" << index << ", ";
                 }
-                vectorSource << "Choice<IndexType, ValueType>& choice) {" << std::endl;
+                vectorSource << "ValueType const& rate, Choice<IndexType, ValueType>& choice) {" << std::endl;
                 if (generateLevelCode) {
                     indent(vectorSource, indentLevel + 1) << "int64_t lowestLevel; int64_t highestLevel;";
                 }
@@ -1115,7 +1115,7 @@ namespace storm {
                 if (generateLevelCode) {
                     vectorSource << "lowestLevel, highestLevel, ";
                 }
-                vectorSource << "choice);" << std::endl;
+                vectorSource << "rate, choice);" << std::endl;
                 for (uint64_t index = 0; index < numberOfActionInputs; ++index) {
                     indent(vectorSource, indentLevel + numberOfActionInputs - index) << "}" << std::endl;
                 }
@@ -1138,7 +1138,7 @@ namespace storm {
                             vectorSource << ", VariableWrites& variableWrites";
                         }
                     }
-                    vectorSource << ") {" << std::endl;
+                    vectorSource << ", ValueType const& rate) {" << std::endl;
                     if (index == 0) {
                         if (options.isExplorationChecksSet()) {
                             indent(vectorSource, indentLevel + 1) << "VariableWrites variableWrites;" << std::endl;
@@ -1157,11 +1157,11 @@ namespace storm {
                         for (uint64_t innerIndex = 0; innerIndex <= index; ++innerIndex) {
                             vectorSource << "edge" << innerIndex << ", ";
                         }
-                        vectorSource << "transientIn, transientOut";
+                        vectorSource << "transientIn, transientOut, ";
                         if (options.isExplorationChecksSet()) {
-                            vectorSource << ", variableWrites";
+                            vectorSource << "variableWrites, ";
                         }
-                        vectorSource << ");" << std::endl;
+                        vectorSource << "rate * edge" << index << ".get().rate(in));" << std::endl;
                     } else {
                         indent(vectorSource, indentLevel + 2) << "Choice<IndexType, ValueType>& choice = behaviour.addChoice();" << std::endl;
                         
@@ -1176,7 +1176,7 @@ namespace storm {
                         for (uint64_t innerIndex = 0; innerIndex <= index; ++innerIndex) {
                             vectorSource << "edge" << innerIndex << ", ";
                         }
-                        vectorSource << " choice);" << std::endl;
+                        vectorSource << "rate * edge" << index << ".get().rate(in), choice);" << std::endl;
                         
                     }
                     indent(vectorSource, indentLevel + 1) << "}" << std::endl;
@@ -1212,7 +1212,7 @@ namespace storm {
                 
                 indent(vectorSource, indentLevel) << "void exploreSynchronizationVector_" << synchronizationVectorIndex << "(StateType const& state, TransientVariables const& transientIn, StateBehaviour<IndexType, ValueType>& behaviour, StateSet<StateType>& statesToExplore) {" << std::endl;
                 indent(vectorSource, indentLevel + 1) << "#ifndef NDEBUG" << std::endl;
-                indent(vectorSource, indentLevel + 1) << "std::cout << \"exploring synchronization vector " << synchronizationVectorIndex << "\" << std::endl;" << std::endl;
+                indent(vectorSource, indentLevel + 1) << "std::cout << \"Exploring synchronization vector " << synchronizationVectorIndex << ".\" << std::endl;" << std::endl;
                 indent(vectorSource, indentLevel + 1) << "#endif" << std::endl;
                 indent(vectorSource, indentLevel + 1) << "std::vector<std::vector<std::reference_wrapper<Edge const>>> edges(" << synchronizationVector.getNumberOfActionInputs() << ");" << std::endl;
                 
@@ -1226,7 +1226,7 @@ namespace storm {
                         ++participatingPosition;
                     }
                 }
-                indent(vectorSource, indentLevel + 1) << "performSynchronizedEdges_" << synchronizationVectorIndex << "_0(state, edges, behaviour, statesToExplore);" << std::endl;
+                indent(vectorSource, indentLevel + 1) << "performSynchronizedEdges_" << synchronizationVectorIndex << "_0(state, edges, behaviour, statesToExplore, storm::utility::one<ValueType>());" << std::endl;
                 indent(vectorSource, indentLevel) << "}" << std::endl << std::endl;
                 
                 cpptempl::data_map vector;
@@ -1338,7 +1338,7 @@ namespace storm {
                 uint64_t destinationIndex = 0;
                 std::set<storm::expressions::Variable> transientVariablesInDestinations;
                 for (auto const& destination : edge.getDestinations()) {
-                    destinations.push_back(generateDestination(automaton, destinationIndex, destination, edge.getOptionalRate()));
+                    destinations.push_back(generateDestination(automaton, destinationIndex, destination));
                     
                     for (auto const& assignment : destination.getOrderedAssignments().getAllAssignments()) {
                         if (assignment.isTransient()) {
@@ -1364,6 +1364,17 @@ namespace storm {
                 edgeData["name"] = automaton.getName() + "_" + std::to_string(edgeIndex);
                 edgeData["transient_assignments"] = cpptempl::make_data(edgeAssignments);
                 edgeData["markovian"] = asString(edge.hasRate());
+                if (edge.hasRate()) {
+                    if (std::is_same<double, ValueType>::value) {
+                        edgeData["rate"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(edge.getRate()), storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName, storm::expressions::ToCppTranslationMode::CastDouble));
+                    } else if (std::is_same<storm::RationalNumber, ValueType>::value) {
+                        edgeData["rate"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(edge.getRate()), storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName, storm::expressions::ToCppTranslationMode::CastRationalNumber));
+                    } else if (std::is_same<storm::RationalFunction, ValueType>::value) {
+                        edgeData["rate"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(edge.getRate()), storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName, storm::expressions::ToCppTranslationMode::CastRationalFunction));
+                    }
+                } else {
+                    edgeData["rate"] = std::string("storm::utility::one<ValueType>()");
+                }
                 
                 cpptempl::data_list transientVariablesInDestinationsData;
                 for (auto const& variable : transientVariablesInDestinations) {
@@ -1379,19 +1390,19 @@ namespace storm {
             }
             
             template <typename ValueType, typename RewardModelType>
-                cpptempl::data_map ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::generateDestination(storm::jani::Automaton const& automaton, uint64_t destinationIndex, storm::jani::EdgeDestination const& destination, boost::optional<storm::expressions::Expression> const& rate) {
+                cpptempl::data_map ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::generateDestination(storm::jani::Automaton const& automaton, uint64_t destinationIndex, storm::jani::EdgeDestination const& destination) {
                 cpptempl::data_map destinationData;
                 
                 cpptempl::data_list levels = generateLevels(automaton, destination.getLocationIndex(), destination.getOrderedAssignments());
                 destinationData["name"] = asString(destinationIndex);
                 destinationData["levels"] = cpptempl::make_data(levels);
-                storm::expressions::Expression expressionToTranslate = rate ? shiftVariablesWrtLowerBound(rate.get() * destination.getProbability()) : shiftVariablesWrtLowerBound(destination.getProbability());
+                storm::expressions::Expression shiftedProbabilityExpression = shiftVariablesWrtLowerBound(destination.getProbability());
                 if (std::is_same<double, ValueType>::value) {
-                    destinationData["value"] = expressionTranslator.translate(expressionToTranslate, storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName, storm::expressions::ToCppTranslationMode::CastDouble));
+                    destinationData["probability"] = expressionTranslator.translate(shiftedProbabilityExpression, storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName, storm::expressions::ToCppTranslationMode::CastDouble));
                 } else if (std::is_same<storm::RationalNumber, ValueType>::value) {
-                    destinationData["value"] = expressionTranslator.translate(expressionToTranslate, storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName, storm::expressions::ToCppTranslationMode::CastRationalNumber));
+                    destinationData["probability"] = expressionTranslator.translate(shiftedProbabilityExpression, storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName, storm::expressions::ToCppTranslationMode::CastRationalNumber));
                 } else if (std::is_same<storm::RationalFunction, ValueType>::value) {
-                    destinationData["value"] = expressionTranslator.translate(expressionToTranslate, storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName, storm::expressions::ToCppTranslationMode::CastRationalFunction));
+                    destinationData["probability"] = expressionTranslator.translate(shiftedProbabilityExpression, storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName, storm::expressions::ToCppTranslationMode::CastRationalFunction));
                 }
                 if (destination.getOrderedAssignments().empty()) {
                     destinationData["lowestLevel"] = "0";
@@ -1927,6 +1938,10 @@ namespace storm {
                                 return false;
                             }
                             
+                            static ValueType edge_rate_{$edge.name}(StateType const& in) {
+                                return {$edge.rate};
+                            }
+                            
                             static void edge_perform_{$edge.name}(StateType const& in, TransientVariables const& transientIn, TransientVariables& transientOut {% if exploration_checks %}, VariableWrites& variableWrites {% endif %}) {
                                 {% for assignment in edge.transient_assignments %}transientOut.{$assignment.variable} = {$assignment.value};
                                 {% if exploration_checks %}
@@ -1991,8 +2006,8 @@ namespace storm {
                                 {% endfor %}
                             }
 
-                            static ValueType destination_value_{$edge.name}_{$destination.name}(StateType const& in) {
-                                return {$destination.value};
+                            static ValueType destination_probability_{$edge.name}_{$destination.name}(StateType const& in) {
+                                return {$destination.probability};
                             }
                             {% endfor %}{% endfor %}
                             
@@ -2002,6 +2017,10 @@ namespace storm {
                                     return true;
                                 }
                                 return false;
+                            }
+                            
+                            static ValueType edge_rate_{$edge.name}(StateType const& in) {
+                                return {$edge.rate};
                             }
                             
                             static void edge_perform_{$edge.name}(StateType const& in, TransientVariables const& transientIn, TransientVariables& transientOut {% if exploration_checks %}, VariableWrites& variableWrites {% endif %}) {
@@ -2068,12 +2087,12 @@ namespace storm {
                                 {% endfor %}
                             }
                             
-                            static ValueType destination_value_{$edge.name}_{$destination.name}(StateType const& in) {
-                                return {$destination.value};
+                            static ValueType destination_probability_{$edge.name}_{$destination.name}(StateType const& in) {
+                                return {$destination.probability};
                             }
                             {% endfor %}{% endfor %}
                             
-                            typedef ValueType (*DestinationValueFunctionPtr)(StateType const&);
+                            typedef ValueType (*DestinationProbabilityFunctionPtr)(StateType const&);
                             typedef void (*DestinationLevelFunctionPtr)(int_fast64_t, StateType const&, StateType&, TransientVariables const&, TransientVariables& {% if exploration_checks %}, VariableWrites& {% endif %});
                             typedef void (*DestinationFunctionPtr)(StateType const&, StateType&, TransientVariables const&, TransientVariables& {% if exploration_checks %}, VariableWrites& {% endif %});
                             typedef void (*DestinationWithoutTransientLevelFunctionPtr)(int_fast64_t, StateType const&, StateType& {% if exploration_checks %}, VariableWrites& {% endif %});
@@ -2081,11 +2100,11 @@ namespace storm {
                             
                             class Destination {
                             public:
-                                Destination() : mLowestLevel(0), mHighestLevel(0), destinationValueFunction(nullptr), destinationLevelFunction(nullptr), destinationFunction(nullptr), destinationWithoutTransientLevelFunction(nullptr), destinationWithoutTransientFunction(nullptr) {
+                                Destination() : mLowestLevel(0), mHighestLevel(0), destinationProbabilityFunction(nullptr), destinationLevelFunction(nullptr), destinationFunction(nullptr), destinationWithoutTransientLevelFunction(nullptr), destinationWithoutTransientFunction(nullptr) {
                                     // Intentionally left empty.
                                 }
                                 
-                                Destination(int_fast64_t lowestLevel, int_fast64_t highestLevel, DestinationValueFunctionPtr destinationValueFunction, DestinationLevelFunctionPtr destinationLevelFunction, DestinationFunctionPtr destinationFunction, DestinationWithoutTransientLevelFunctionPtr destinationWithoutTransientLevelFunction, DestinationWithoutTransientFunctionPtr destinationWithoutTransientFunction) : mLowestLevel(lowestLevel), mHighestLevel(highestLevel), destinationValueFunction(destinationValueFunction), destinationLevelFunction(destinationLevelFunction), destinationFunction(destinationFunction), destinationWithoutTransientLevelFunction(destinationWithoutTransientLevelFunction), destinationWithoutTransientFunction(destinationWithoutTransientFunction) {
+                                Destination(int_fast64_t lowestLevel, int_fast64_t highestLevel, DestinationProbabilityFunctionPtr destinationProbabilityFunction, DestinationLevelFunctionPtr destinationLevelFunction, DestinationFunctionPtr destinationFunction, DestinationWithoutTransientLevelFunctionPtr destinationWithoutTransientLevelFunction, DestinationWithoutTransientFunctionPtr destinationWithoutTransientFunction) : mLowestLevel(lowestLevel), mHighestLevel(highestLevel), destinationProbabilityFunction(destinationProbabilityFunction), destinationLevelFunction(destinationLevelFunction), destinationFunction(destinationFunction), destinationWithoutTransientLevelFunction(destinationWithoutTransientLevelFunction), destinationWithoutTransientFunction(destinationWithoutTransientFunction) {
                                     // Intentionally left empty.
                                 }
                                 
@@ -2097,8 +2116,8 @@ namespace storm {
                                     return mHighestLevel;
                                 }
                                 
-                                ValueType value(StateType const& in) const {
-                                    return destinationValueFunction(in);
+                                ValueType probability(StateType const& in) const {
+                                    return destinationProbabilityFunction(in);
                                 }
                                 
                                 void perform(int_fast64_t level, StateType const& in, StateType& out, TransientVariables const& transientIn, TransientVariables& transientOut {% if exploration_checks %}, VariableWrites& variableWrites {% endif %}) const {
@@ -2120,7 +2139,7 @@ namespace storm {
                             private:
                                 int_fast64_t mLowestLevel;
                                 int_fast64_t mHighestLevel;
-                                DestinationValueFunctionPtr destinationValueFunction;
+                                DestinationProbabilityFunctionPtr destinationProbabilityFunction;
                                 DestinationLevelFunctionPtr destinationLevelFunction;
                                 DestinationFunctionPtr destinationFunction;
                                 DestinationWithoutTransientLevelFunctionPtr destinationWithoutTransientLevelFunction;
@@ -2128,17 +2147,18 @@ namespace storm {
                             };
                             
                             typedef bool (*EdgeEnabledFunctionPtr)(StateType const&, TransientVariables const& transientIn);
+                            typedef ValueType (*EdgeRateFunctionPtr)(StateType const&);
                             typedef void (*EdgeTransientFunctionPtr)(StateType const&, TransientVariables const& transientIn, TransientVariables& out {% if exploration_checks %}, VariableWrites& variableWrites {% endif %});
                             
                             class Edge {
                             public:
                                 typedef std::vector<Destination> ContainerType;
                                 
-                                Edge() : edgeEnabledFunction(nullptr), edgeTransientFunction(nullptr) {
+                                Edge() : edgeEnabledFunction(nullptr), edgeRateFunction(nullptr), edgeTransientFunction(nullptr) {
                                     // Intentionally left empty.
                                 }
                                 
-                                Edge(EdgeEnabledFunctionPtr edgeEnabledFunction, EdgeTransientFunctionPtr edgeTransientFunction = nullptr) : edgeEnabledFunction(edgeEnabledFunction), edgeTransientFunction(edgeTransientFunction) {
+                                Edge(EdgeEnabledFunctionPtr edgeEnabledFunction, EdgeRateFunctionPtr edgeRateFunction, EdgeTransientFunctionPtr edgeTransientFunction = nullptr) : edgeEnabledFunction(edgeEnabledFunction), edgeRateFunction(edgeRateFunction), edgeTransientFunction(edgeTransientFunction) {
                                     // Intentionally left empty.
                                 }
                                 
@@ -2150,8 +2170,8 @@ namespace storm {
                                     destinations.push_back(destination);
                                 }
                                 
-                                void addDestination(int_fast64_t lowestLevel, int_fast64_t highestLevel, DestinationValueFunctionPtr destinationValueFunction, DestinationLevelFunctionPtr destinationLevelFunction, DestinationFunctionPtr destinationFunction, DestinationWithoutTransientLevelFunctionPtr destinationWithoutTransientLevelFunction, DestinationWithoutTransientFunctionPtr destinationWithoutTransientFunction) {
-                                    destinations.emplace_back(lowestLevel, highestLevel, destinationValueFunction, destinationLevelFunction, destinationFunction, destinationWithoutTransientLevelFunction, destinationWithoutTransientFunction);
+                                void addDestination(int_fast64_t lowestLevel, int_fast64_t highestLevel, DestinationProbabilityFunctionPtr destinationProbabilityFunction, DestinationLevelFunctionPtr destinationLevelFunction, DestinationFunctionPtr destinationFunction, DestinationWithoutTransientLevelFunctionPtr destinationWithoutTransientLevelFunction, DestinationWithoutTransientFunctionPtr destinationWithoutTransientFunction) {
+                                    destinations.emplace_back(lowestLevel, highestLevel, destinationProbabilityFunction, destinationLevelFunction, destinationFunction, destinationWithoutTransientLevelFunction, destinationWithoutTransientFunction);
                                 }
                                 
                                 std::vector<Destination> const& getDestinations() const {
@@ -2166,12 +2186,17 @@ namespace storm {
                                     return destinations.end();
                                 }
                                 
+                                ValueType rate(StateType const& in) const {
+                                    return edgeRateFunction(in);
+                                }
+                                
                                 void perform(StateType const& in, TransientVariables const& transientIn, TransientVariables& transientOut {% if exploration_checks %}, VariableWrites& variableWrites {% endif %}) const {
                                     edgeTransientFunction(in, transientIn, transientOut {% if exploration_checks %}, variableWrites {% endif %});
                                 }
                                 
                             private:
                                 EdgeEnabledFunctionPtr edgeEnabledFunction;
+                                EdgeRateFunctionPtr edgeRateFunction;
                                 EdgeTransientFunctionPtr edgeTransientFunction;
                                 ContainerType destinations;
                             };
@@ -2201,14 +2226,14 @@ namespace storm {
                                         initialStates.push_back(state);
                                     }{% endfor %}
                                     {% for edge in nonsynch_edges %}{
-                                        edge_{$edge.name} = Edge(&edge_enabled_{$edge.name}, edge_perform_{$edge.name});
-                                        {% for destination in edge.destinations %}edge_{$edge.name}.addDestination({$destination.lowestLevel}, {$destination.highestLevel}, &destination_value_{$edge.name}_{$destination.name}, &destination_perform_level_{$edge.name}_{$destination.name}, &destination_perform_{$edge.name}_{$destination.name}, &destination_perform_level_{$edge.name}_{$destination.name}, &destination_perform_{$edge.name}_{$destination.name});
+                                        edge_{$edge.name} = Edge(&edge_enabled_{$edge.name}, &edge_rate_{$edge.name}, edge_perform_{$edge.name});
+                                        {% for destination in edge.destinations %}edge_{$edge.name}.addDestination({$destination.lowestLevel}, {$destination.highestLevel}, &destination_probability_{$edge.name}_{$destination.name}, &destination_perform_level_{$edge.name}_{$destination.name}, &destination_perform_{$edge.name}_{$destination.name}, &destination_perform_level_{$edge.name}_{$destination.name}, &destination_perform_{$edge.name}_{$destination.name});
                                         {% endfor %}
                                     }
                                     {% endfor %}
                                     {% for edge in synch_edges %}{
-                                        edge_{$edge.name} = Edge(&edge_enabled_{$edge.name}, edge_perform_{$edge.name});
-                                        {% for destination in edge.destinations %}edge_{$edge.name}.addDestination({$destination.lowestLevel}, {$destination.highestLevel}, &destination_value_{$edge.name}_{$destination.name}, &destination_perform_level_{$edge.name}_{$destination.name}, &destination_perform_{$edge.name}_{$destination.name}, &destination_perform_level_{$edge.name}_{$destination.name}, &destination_perform_{$edge.name}_{$destination.name});
+                                        edge_{$edge.name} = Edge(&edge_enabled_{$edge.name}, &edge_rate_{$edge.name}, edge_perform_{$edge.name});
+                                        {% for destination in edge.destinations %}edge_{$edge.name}.addDestination({$destination.lowestLevel}, {$destination.highestLevel}, &destination_probability_{$edge.name}_{$destination.name}, &destination_perform_level_{$edge.name}_{$destination.name}, &destination_perform_{$edge.name}_{$destination.name}, &destination_perform_level_{$edge.name}_{$destination.name}, &destination_perform_{$edge.name}_{$destination.name});
                                         {% endfor %}
                                     }
                                     {% endfor %}
@@ -2343,6 +2368,9 @@ namespace storm {
                                 
                                 void exploreNonSynchronizingEdges(StateType const& in, TransientVariables const& transientIn, StateBehaviour<IndexType, ValueType>& behaviour, StateSet<StateType>& statesToExplore) {
                                     {% for edge in nonsynch_edges %}{
+#ifndef NDEBUG
+                                        std::cout << "Exploring non-synchronizing edge {$edge.name}." << std::endl;
+#endif
                                         if ({$edge.guard}) {
                                             Choice<IndexType, ValueType>& choice = behaviour.addChoice(!model_is_deterministic() && !model_is_discrete_time() && {$edge.markovian});
                                             choice.resizeRewards({$edge_destination_rewards_count});
@@ -2358,6 +2386,7 @@ namespace storm {
                                                 choice.addReward({$reward.index}, transient.{$reward.variable});
                                                 {% endfor %}
                                             }
+                                            auto rate = edge_rate_{$edge.name}(in);
                                             {% for destination in edge.destinations %}{
                                                 {% if exploration_checks %}VariableWrites variableWrites;
                                                 {% endif %}
@@ -2367,9 +2396,10 @@ namespace storm {
                                                 TransientVariables transientOut;
                                                 destination_perform_{$edge.name}_{$destination.name}(in, out{% if edge.transient_variables_in_destinations %}, transientIn, transientOut{% endif %}{% if exploration_checks %}, variableWrites{% endif %});
                                                 IndexType outStateIndex = getOrAddIndex(out, statesToExplore);
-                                                choice.add(outStateIndex, destination_value_{$edge.name}_{$destination.name}(in));
+                                                auto probability = destination_probability_{$edge.name}_{$destination.name}(in);
+                                                choice.add(outStateIndex, rate * probability);
                                                 {% for reward in destination_rewards %}
-                                                choice.addReward({$reward.index}, transientOut.{$reward.variable});
+                                                choice.addReward({$reward.index}, probability * transientOut.{$reward.variable});
                                                 {% endfor %}
                                             }
                                             {% endfor %}
@@ -2395,9 +2425,6 @@ namespace storm {
                                     } else {
                                         IndexType newIndex = static_cast<IndexType>(stateIds.size());
                                         stateIds.insert(std::make_pair(state, newIndex));
-#ifndef NDEBUG
-                                        std::cout << "inserting state " << state << std::endl;
-#endif
                                         statesToExplore.add(state);
                                         return newIndex;
                                     }

@@ -74,7 +74,7 @@ namespace storm {
             // Determine the reward models we need to build.
             std::set<std::string> referencedRewardModels = formula.getReferencedRewardModels();
             for (auto const& rewardModelName : referencedRewardModels) {
-                rewardModelNames.push_back(rewardModelName);
+                rewardModelNames.emplace(rewardModelName);
             }
             
             // Extract all the labels used in the formula.
@@ -123,7 +123,7 @@ namespace storm {
             }
         }
         
-        std::vector<std::string> const& BuilderOptions::getRewardModelNames() const {
+        std::set<std::string> const& BuilderOptions::getRewardModelNames() const {
             return rewardModelNames;
         }
         
@@ -211,7 +211,7 @@ namespace storm {
         
         BuilderOptions& BuilderOptions::addRewardModel(std::string const& rewardModelName) {
             STORM_LOG_THROW(!buildAllRewardModels, storm::exceptions::InvalidSettingsException, "Cannot add reward model, because all reward models are built anyway.");
-            rewardModelNames.emplace_back(rewardModelName);
+            rewardModelNames.emplace(rewardModelName);
             return *this;
         }
         

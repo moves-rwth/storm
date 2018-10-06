@@ -82,17 +82,18 @@ namespace storm {
              */
             void setTerminalStatesFromFormula(storm::logic::Formula const& formula);
 
-
             /*!
              * Which reward models are built
              * @return
              */
-            std::vector<std::string> const& getRewardModelNames() const;
+            std::set<std::string> const& getRewardModelNames() const;
+            
             /*!
              * Which labels are built
              * @return
              */
             std::set<std::string> const& getLabelNames() const;
+            
             /*!
              * Which expression labels are built
              * @return
@@ -203,7 +204,7 @@ namespace storm {
             bool buildAllRewardModels;
             
             /// The names of the reward models to generate.
-            std::vector<std::string> rewardModelNames;
+            std::set<std::string> rewardModelNames;
             
             /// A flag that indicates whether all labels are to be built. In this case, the label names are to be ignored.
             bool buildAllLabels;

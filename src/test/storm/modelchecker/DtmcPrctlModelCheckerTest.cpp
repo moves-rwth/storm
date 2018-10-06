@@ -462,10 +462,10 @@ namespace {
                 result.first = storm::api::buildSparseModel<ValueType>(program, result.second)->template as<MT>();
             } else if (TestType::engine == DtmcEngine::JaniSparse || TestType::engine == DtmcEngine::JitSparse) {
                 auto janiData = storm::api::convertPrismToJani(program, storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
-                janiData.first.substituteFunctions();
                 result.second = storm::api::extractFormulasFromProperties(janiData.second);
                 result.first = storm::api::buildSparseModel<ValueType>(janiData.first, result.second, TestType::engine == DtmcEngine::JitSparse)->template as<MT>();
             }
+
             return result;
         }
         
