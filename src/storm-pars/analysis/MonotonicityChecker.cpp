@@ -49,6 +49,8 @@ namespace storm {
 
         template <typename ValueType>
         std::map<storm::analysis::Lattice*, std::map<carl::Variable, std::pair<bool, bool>>> MonotonicityChecker<ValueType>::checkMonotonicity(std::map<storm::analysis::Lattice*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> map, storm::storage::SparseMatrix<ValueType> matrix) {
+            storm::utility::Stopwatch finalCheckWatch(true);
+
             auto i = 0;
             std::map<storm::analysis::Lattice*, std::map<carl::Variable, std::pair<bool, bool>>> result;
             for (auto itr = map.begin(); i < map.size() && itr != map.end(); ++itr) {
@@ -101,6 +103,9 @@ namespace storm {
                 }
                 ++i;
             }
+
+            finalCheckWatch.stop();
+            STORM_PRINT(std::endl << "Time for monotonicitycheck on lattice: " << finalCheckWatch << "." << std::endl << std::endl);
             return result;
         }
 
@@ -127,7 +132,7 @@ namespace storm {
             }
 
             latticeWatch.stop();
-            STORM_PRINT(std::endl << "Time for lattice creation: " << latticeWatch << "." << std::endl << std::endl);
+            STORM_PRINT(std::endl << "Total time for lattice creation: " << latticeWatch << "." << std::endl << std::endl);
             return result;
         }
 

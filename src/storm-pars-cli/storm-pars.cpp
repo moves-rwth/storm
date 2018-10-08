@@ -531,7 +531,7 @@ namespace storm {
                 auto monotonicityChecker = storm::analysis::MonotonicityChecker<ValueType>(model, formulas, parSettings.isValidateAssumptionsSet());
                 monotonicityChecker.checkMonotonicity();
                 monotonicityWatch.stop();
-                STORM_PRINT(std::endl << "Time for monotonicity: " << monotonicityWatch << "." << std::endl
+                STORM_PRINT(std::endl << "Total time for monotonicity checking: " << monotonicityWatch << "." << std::endl
                                     << std::endl);
 
                 std::cout << "Bye, Jip2" << std::endl;

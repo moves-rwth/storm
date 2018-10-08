@@ -22,6 +22,8 @@
 
 #include "storm/storage/BitVector.h"
 #include "storm/utility/macros.h"
+#include "storm/utility/Stopwatch.h"
+
 
 namespace storm {
     namespace analysis {
@@ -46,6 +48,8 @@ namespace storm {
 
         template <typename ValueType>
         std::tuple<storm::analysis::Lattice*, uint_fast64_t, uint_fast64_t> LatticeExtender<ValueType>::toLattice(std::vector<std::shared_ptr<storm::logic::Formula const>> formulas) {
+            storm::utility::Stopwatch latticeWatch(true);
+
             STORM_LOG_THROW((++formulas.begin()) == formulas.end(), storm::exceptions::NotSupportedException, "Only one formula allowed for monotonicity analysis");
             STORM_LOG_THROW((*(formulas[0])).isProbabilityOperatorFormula()
                             && ((*(formulas[0])).asProbabilityOperatorFormula().getSubformula().isUntilFormula()
@@ -92,6 +96,10 @@ namespace storm {
             for (auto state = initialMiddleStates.getNextSetIndex(0); state != numberOfStates; state = initialMiddleStates.getNextSetIndex(state + 1)) {
                 lattice->add(state);
             }
+
+
+            latticeWatch.stop();
+            STORM_PRINT(std::endl << "Time for initialization of lattice: " << latticeWatch << "." << std::endl << std::endl);
             return this->extendLattice(lattice);
         }
 
