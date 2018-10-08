@@ -1,9 +1,5 @@
 
 
-
-#include "storm-pars/analysis/AssumptionMaker.h"
-#include "storm-pars/analysis/Lattice.h"
-#include "storm-pars/analysis/LatticeExtender.h"
 #include "storm-pars/analysis/MonotonicityChecker.h"
 
 #include "storm-cli-utilities/cli.h"
@@ -529,40 +525,12 @@ namespace storm {
                 std::cout << "Hello, Jip2" << std::endl;
 
                 std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(input.properties);
-                std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel = model->as<storm::models::sparse::Model<ValueType>>();
 
-                // Transform to Lattices
-                storm::utility::Stopwatch latticeWatch(true);
-                storm::analysis::LatticeExtender<ValueType> *extender = new storm::analysis::LatticeExtender<ValueType>(sparseModel);
-                std::tuple<storm::analysis::Lattice*, uint_fast64_t, uint_fast64_t> criticalTuple = extender->toLattice(formulas);
-                std::map<storm::analysis::Lattice*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> result;
-                if (model->isOfType(storm::models::ModelType::Dtmc)) {
-                    auto dtmcModel = model->as<storm::models::sparse::Dtmc<ValueType>>();
-                    auto assumptionChecker = storm::analysis::AssumptionChecker<ValueType>(formulas[0], dtmcModel, 3);
-                    auto assumptionMaker = storm::analysis::AssumptionMaker<ValueType>(extender, &assumptionChecker, sparseModel->getNumberOfStates(), parSettings.isValidateAssumptionsSet());
-                    result = assumptionMaker.makeAssumptions(std::get<0>(criticalTuple), std::get<1>(criticalTuple), std::get<2>(criticalTuple));
-                } else if (model->isOfType(storm::models::ModelType::Dtmc)) {
-                    auto mdpModel = model->as<storm::models::sparse::Mdp<ValueType>>();
-                    auto assumptionChecker = storm::analysis::AssumptionChecker<ValueType>(formulas[0], mdpModel, 3);
-                    auto assumptionMaker = storm::analysis::AssumptionMaker<ValueType>(extender, &assumptionChecker, sparseModel->getNumberOfStates(), parSettings.isValidateAssumptionsSet());
-                    result = assumptionMaker.makeAssumptions(std::get<0>(criticalTuple), std::get<1>(criticalTuple), std::get<2>(criticalTuple));
-                } else {
-                    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Unable to perform monotonicity analysis on the provided model type.");
-                }
-
-
-                latticeWatch.stop();
-                STORM_PRINT(std::endl << "Time for lattice creation: " << latticeWatch << "." << std::endl << std::endl);
-
-                // Monotonicity?
+                // Monotonicity
                 storm::utility::Stopwatch monotonicityWatch(true);
-                if (result.size() > 0) {
-                    auto monotonicityChecker = storm::analysis::MonotonicityChecker<ValueType>();
-                    monotonicityChecker.checkMonotonicity(result, sparseModel->getTransitionMatrix());
-                    monotonicityWatch.stop();
-                } else {
-                    STORM_PRINT(std::endl << "Could not find monotonicity, no lattices created" << std::endl);
-                }
+                auto monotonicityChecker = storm::analysis::MonotonicityChecker<ValueType>(model, formulas, parSettings.isValidateAssumptionsSet());
+                monotonicityChecker.checkMonotonicity();
+                monotonicityWatch.stop();
                 STORM_PRINT(std::endl << "Time for monotonicity: " << monotonicityWatch << "." << std::endl
                                     << std::endl);
 

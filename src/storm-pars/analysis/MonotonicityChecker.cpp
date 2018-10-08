@@ -3,11 +3,50 @@
 //
 
 #include "MonotonicityChecker.h"
+#include "storm-pars/analysis/AssumptionMaker.h"
+#include "storm-pars/analysis/AssumptionChecker.h"
+#include "storm-pars/analysis/Lattice.h"
+#include "storm-pars/analysis/LatticeExtender.h"
+
 #include "storm/exceptions/NotSupportedException.h"
-#include "storm/exceptions/UnexpectedException.h"   
+#include "storm/exceptions/UnexpectedException.h"
+#include "storm/exceptions/InvalidOperationException.h"
+
+#include "storm/utility/Stopwatch.h"
+#include "storm/models/ModelType.h"
+
+#include "storm/modelchecker/results/CheckResult.h"
+#include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+
 
 namespace storm {
     namespace analysis {
+        template <typename ValueType>
+        MonotonicityChecker<ValueType>::MonotonicityChecker(std::shared_ptr<storm::models::ModelBase> model, std::vector<std::shared_ptr<storm::logic::Formula const>> formulas, bool validate) {
+            this->model = model;
+            this->formulas = formulas;
+            this->validate = validate;
+        }
+
+        template <typename ValueType>
+        std::map<storm::analysis::Lattice*, std::map<carl::Variable, std::pair<bool, bool>>> MonotonicityChecker<ValueType>::checkMonotonicity() {
+            bool maybeMonotone = true;
+            if (model->isOfType(storm::models::ModelType::Dtmc)) {
+                auto dtmcModel = model->as<storm::models::sparse::Dtmc<ValueType>>();
+                maybeMonotone = checkOnSamples(dtmcModel,3);
+            } //TODO mdp
+            if (maybeMonotone) {
+                auto map = createLattice();
+                std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel = model->as<storm::models::sparse::Model<ValueType>>();
+                auto matrix = sparseModel->getTransitionMatrix();
+                return checkMonotonicity(map, matrix);
+            } else {
+                std::map<storm::analysis::Lattice*, std::map<carl::Variable, std::pair<bool, bool>>> result;
+                std::cout << "Not monotone" << std::endl;
+                return result;
+            }
+        }
+
         template <typename ValueType>
         std::map<storm::analysis::Lattice*, std::map<carl::Variable, std::pair<bool, bool>>> MonotonicityChecker<ValueType>::checkMonotonicity(std::map<storm::analysis::Lattice*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> map, storm::storage::SparseMatrix<ValueType> matrix) {
             auto i = 0;
@@ -62,6 +101,33 @@ namespace storm {
                 }
                 ++i;
             }
+            return result;
+        }
+
+        template <typename ValueType>
+        std::map<storm::analysis::Lattice*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> MonotonicityChecker<ValueType>::createLattice() {
+            // Transform to Lattices
+            storm::utility::Stopwatch latticeWatch(true);
+            std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel = model->as<storm::models::sparse::Model<ValueType>>();
+            storm::analysis::LatticeExtender<ValueType> *extender = new storm::analysis::LatticeExtender<ValueType>(sparseModel);
+            std::tuple<storm::analysis::Lattice*, uint_fast64_t, uint_fast64_t> criticalTuple = extender->toLattice(formulas);
+            std::map<storm::analysis::Lattice*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> result;
+            if (model->isOfType(storm::models::ModelType::Dtmc)) {
+                auto dtmcModel = model->as<storm::models::sparse::Dtmc<ValueType>>();
+                auto assumptionChecker = storm::analysis::AssumptionChecker<ValueType>(formulas[0], dtmcModel, 3);
+                auto assumptionMaker = storm::analysis::AssumptionMaker<ValueType>(extender, &assumptionChecker, sparseModel->getNumberOfStates(), validate);
+                result = assumptionMaker.makeAssumptions(std::get<0>(criticalTuple), std::get<1>(criticalTuple), std::get<2>(criticalTuple));
+            } else if (model->isOfType(storm::models::ModelType::Dtmc)) {
+                auto mdpModel = model->as<storm::models::sparse::Mdp<ValueType>>();
+                auto assumptionChecker = storm::analysis::AssumptionChecker<ValueType>(formulas[0], mdpModel, 3);
+                auto assumptionMaker = storm::analysis::AssumptionMaker<ValueType>(extender, &assumptionChecker, sparseModel->getNumberOfStates(), validate);
+                result = assumptionMaker.makeAssumptions(std::get<0>(criticalTuple), std::get<1>(criticalTuple), std::get<2>(criticalTuple));
+            } else {
+               STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Unable to perform monotonicity analysis on the provided model type.");
+            }
+
+            latticeWatch.stop();
+            STORM_PRINT(std::endl << "Time for lattice creation: " << latticeWatch << "." << std::endl << std::endl);
             return result;
         }
 
@@ -161,6 +227,58 @@ namespace storm {
             myfile << "}" << std::endl;
             myfile.close();
             return varsMonotone;
+        }
+
+        template <typename ValueType>
+        bool MonotonicityChecker<ValueType>::checkOnSamples(std::shared_ptr<storm::models::sparse::Dtmc<ValueType>> model, uint_fast64_t numberOfSamples) {
+            bool monDecr = true;
+            bool monIncr = true;
+
+            auto instantiator = storm::utility::ModelInstantiator<storm::models::sparse::Dtmc<ValueType>, storm::models::sparse::Dtmc<double>>(*model);
+            auto matrix = model->getTransitionMatrix();
+            std::set<storm::RationalFunctionVariable> variables =  storm::models::sparse::getProbabilityParameters(*model);
+            double previous = -1;
+            for (auto i = 0; i < numberOfSamples; ++i) {
+                auto valuation = storm::utility::parametric::Valuation<ValueType>();
+                for (auto itr = variables.begin(); itr != variables.end(); ++itr) {
+                    // TODO: Type
+                    auto val = std::pair<storm::RationalFunctionVariable, storm::RationalFunctionCoefficient>((*itr), storm::utility::convertNumber<storm::RationalFunctionCoefficient>(boost::lexical_cast<std::string>((i+1)/(double (numberOfSamples + 1)))));
+                    valuation.insert(val);
+                }
+                storm::models::sparse::Dtmc<double> sampleModel = instantiator.instantiate(valuation);
+                auto checker = storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>>(sampleModel);
+                std::unique_ptr<storm::modelchecker::CheckResult> checkResult;
+                auto formula = formulas[0];
+                if (formula->isProbabilityOperatorFormula() &&
+                    formula->asProbabilityOperatorFormula().getSubformula().isUntilFormula()) {
+                    const storm::modelchecker::CheckTask<storm::logic::UntilFormula, double> checkTask = storm::modelchecker::CheckTask<storm::logic::UntilFormula, double>(
+                            (*formula).asProbabilityOperatorFormula().getSubformula().asUntilFormula());
+                    checkResult = checker.computeUntilProbabilities(Environment(), checkTask);
+                } else if (formula->isProbabilityOperatorFormula() &&
+                           formula->asProbabilityOperatorFormula().getSubformula().isEventuallyFormula()) {
+                    const storm::modelchecker::CheckTask<storm::logic::EventuallyFormula, double> checkTask = storm::modelchecker::CheckTask<storm::logic::EventuallyFormula, double>(
+                            (*formula).asProbabilityOperatorFormula().getSubformula().asEventuallyFormula());
+                    checkResult = checker.computeReachabilityProbabilities(Environment(), checkTask);
+                } else {
+                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
+                                    "Expecting until or eventually formula");
+                }
+                auto quantitativeResult = checkResult->asExplicitQuantitativeCheckResult<double>();
+                std::vector<double> values = quantitativeResult.getValueVector();
+                auto initialStates = model->getInitialStates();
+                double initial = 0;
+                for (auto i = initialStates.getNextSetIndex(0); i < model->getNumberOfStates(); i = initialStates.getNextSetIndex(i+1)) {
+                    initial += values[i];
+                }
+                if (previous != -1) {
+                    monDecr &= previous >= initial;
+                    monIncr &= previous <= initial;
+                }
+                previous = initial;
+            }
+
+            bool result = monDecr || monIncr;
+            return result;
         }
 
         template class MonotonicityChecker<storm::RationalFunction>;
