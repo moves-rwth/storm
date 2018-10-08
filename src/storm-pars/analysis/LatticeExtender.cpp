@@ -37,27 +37,9 @@ namespace storm {
                 auto scc = decomposition.getBlock(i);
                 if (scc.size() > 1) {
                     auto states = scc.getStates();
-                    bool added = false;
-                    for (auto itr = states.begin(); !added && itr != states.end(); ++itr) {
-                        auto state = *itr;
-                        storm::storage::BitVector subSystem = storm::storage::BitVector(model->getNumberOfStates());
-                        subSystem.set(states.begin(), states.end(), true);
-                        subSystem.set(state, false);
-                        auto subDecomposition = storm::storage::StronglyConnectedComponentDecomposition<ValueType>(model->getTransitionMatrix(), subSystem, false, false);
-                        bool acyclic = true;
-                        for (auto i = 0; acyclic && i < subDecomposition.size(); ++i) {
-                            auto subScc = subDecomposition.getBlock(i);
-                            acyclic = subScc.size() <= 1;
-                        }
-                        if (acyclic) {
-                            initialMiddleStates.set(state);
-                            added = true;
-                        }
-                    }
-                    if (!added) {
-                        // Add one of the states of the scc
-                        initialMiddleStates.set(*(states.begin()));
-                    }
+                    // TODO: Smarter state picking
+                    // Add one of the states of the scc
+                    initialMiddleStates.set(*(states.begin()));
                 }
             }
         }
