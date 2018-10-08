@@ -31,7 +31,7 @@ namespace storm {
             /*!
              * An enum for the different model types.
              */
-            enum class ModelType {UNDEFINED, DTMC, CTMC, MDP, CTMDP, MA, POMDP};
+            enum class ModelType {UNDEFINED, DTMC, CTMC, MDP, CTMDP, MA, POMDP, PTA};
             
             enum class ValidityCheckLevel  : unsigned {VALIDINPUT = 0, READYFORPROCESSING = 1};
             

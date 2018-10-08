@@ -6,11 +6,11 @@
 
 namespace storm {
     namespace prism {
-        Module::Module(std::string const& moduleName, std::vector<storm::prism::BooleanVariable> const& booleanVariables, std::vector<storm::prism::IntegerVariable> const& integerVariables, std::vector<storm::prism::Command> const& commands, std::string const& filename, uint_fast64_t lineNumber) : Module(moduleName, booleanVariables, integerVariables, commands, "", std::map<std::string, std::string>(), filename, lineNumber) {
+        Module::Module(std::string const& moduleName, std::vector<storm::prism::BooleanVariable> const& booleanVariables, std::vector<storm::prism::IntegerVariable> const& integerVariables, std::vector<storm::prism::ClockVariable> const& clockVariables, storm::expressions::Expression const& invariant, std::vector<storm::prism::Command> const& commands, std::string const& filename, uint_fast64_t lineNumber) : Module(moduleName, booleanVariables, integerVariables, clockVariables, invariant, commands, "", std::map<std::string, std::string>(), filename, lineNumber) {
             // Intentionally left empty.
         }
         
-        Module::Module(std::string const& moduleName, std::vector<storm::prism::BooleanVariable> const& booleanVariables, std::vector<storm::prism::IntegerVariable> const& integerVariables, std::vector<storm::prism::Command> const& commands, std::string const& renamedFromModule, std::map<std::string, std::string> const& renaming, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), moduleName(moduleName), booleanVariables(booleanVariables), booleanVariableToIndexMap(), integerVariables(integerVariables), integerVariableToIndexMap(), commands(commands), synchronizingActionIndices(), actionIndicesToCommandIndexMap(), renamedFromModule(renamedFromModule), renaming(renaming) {
+        Module::Module(std::string const& moduleName, std::vector<storm::prism::BooleanVariable> const& booleanVariables, std::vector<storm::prism::IntegerVariable> const& integerVariables, std::vector<storm::prism::ClockVariable> const& clockVariables, storm::expressions::Expression const& invariant, std::vector<storm::prism::Command> const& commands, std::string const& renamedFromModule, std::map<std::string, std::string> const& renaming, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), moduleName(moduleName), booleanVariables(booleanVariables), booleanVariableToIndexMap(), integerVariables(integerVariables), integerVariableToIndexMap(), clockVariables(clockVariables), clockVariableToIndexMap(), invariant(invariant), commands(commands), synchronizingActionIndices(), actionIndicesToCommandIndexMap(), renamedFromModule(renamedFromModule), renaming(renaming) {
             // Initialize the internal mappings for fast information retrieval.
             this->createMappings();
         }
@@ -42,6 +42,20 @@ namespace storm {
         std::vector<storm::prism::IntegerVariable> const& Module::getIntegerVariables() const {
             return this->integerVariables;
         }
+        
+        std::size_t Module::getNumberOfClockVariables() const {
+            return this->clockVariables.size();
+        }
+        
+        storm::prism::ClockVariable const& Module::getClockVariable(std::string const& variableName) const {
+            auto const& nameIndexPair = this->clockVariableToIndexMap.find(variableName);
+            STORM_LOG_THROW(nameIndexPair != this->clockVariableToIndexMap.end(), storm::exceptions::InvalidArgumentException, "Unknown clock variable '" << variableName << "'.");
+            return this->getClockVariables()[nameIndexPair->second];
+        }
+        
+        std::vector<storm::prism::ClockVariable> const& Module::getClockVariables() const {
+            return this->clockVariables;
+        }
 
         std::set<storm::expressions::Variable> Module::getAllExpressionVariables() const {
             std::set<storm::expressions::Variable> result;
@@ -49,6 +63,9 @@ namespace storm {
                 result.insert(var.getExpressionVariable());
             }
             for (auto const& var : this->getIntegerVariables()) {
+                result.insert(var.getExpressionVariable());
+            }
+            for (auto const& var : this->getClockVariables()) {
                 result.insert(var.getExpressionVariable());
             }
             return result;
@@ -134,6 +151,9 @@ namespace storm {
             for (uint_fast64_t i = 0; i < this->integerVariables.size(); ++i) {
                 this->integerVariableToIndexMap[this->getIntegerVariables()[i].getName()] = i;
             }
+            for (uint_fast64_t i = 0; i < this->clockVariables.size(); ++i) {
+                this->booleanVariableToIndexMap[this->getClockVariables()[i].getName()] = i;
+            }
             
             // Add the mapping for all commands.
             for (uint_fast64_t i = 0; i < this->commands.size(); i++) {
@@ -169,7 +189,7 @@ namespace storm {
                 }
             }
             
-            return Module(this->getName(), this->getBooleanVariables(), this->getIntegerVariables(), newCommands);
+            return Module(this->getName(), this->getBooleanVariables(), this->getIntegerVariables(), this->getClockVariables(), this->getInvariant(), newCommands);
         }
         
         Module Module::restrictActionIndices(boost::container::flat_set<uint_fast64_t> const& actionIndices) const {
@@ -181,7 +201,7 @@ namespace storm {
                 }
             }
             
-            return Module(this->getName(), this->getBooleanVariables(), this->getIntegerVariables(), newCommands);
+            return Module(this->getName(), this->getBooleanVariables(), this->getIntegerVariables(), this->getClockVariables(), this->getInvariant(), newCommands);
         }
         
         Module Module::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
@@ -203,7 +223,7 @@ namespace storm {
                 newCommands.emplace_back(command.substitute(substitution));
             }
             
-            return Module(this->getName(), newBooleanVariables, newIntegerVariables, newCommands, this->getFilename(), this->getLineNumber());
+            return Module(this->getName(), newBooleanVariables, newIntegerVariables, this->getClockVariables(), this->getInvariant(), newCommands, this->getFilename(), this->getLineNumber());
         }
         
         bool Module::containsVariablesOnlyInUpdateProbabilities(std::set<storm::expressions::Variable> const& undefinedConstantVariables) const {
@@ -240,8 +260,19 @@ namespace storm {
             for (auto& variable : integerVariables) {
                 variable.createMissingInitialValue();
             }
+            for (auto& variable : clockVariables) {
+                variable.createMissingInitialValue();
+            }
         }
         
+        bool Module::hasInvariant() const {
+            return this->invariant.isInitialized();
+        }
+
+        storm::expressions::Expression const& Module::getInvariant() const {
+            return this->invariant;
+        }
+
         std::ostream& operator<<(std::ostream& stream, Module const& module) {
             stream << "module " << module.getName() << std::endl;
             for (auto const& booleanVariable : module.getBooleanVariables()) {
@@ -249,6 +280,9 @@ namespace storm {
             }
             for (auto const& integerVariable : module.getIntegerVariables()) {
                 stream << "\t" << integerVariable << std::endl;
+            }
+            for (auto const& clockVariable : module.getClockVariables()) {
+                stream << "\t" << clockVariable << std::endl;
             }
             for (auto const& command : module.getCommands()) {
                 stream << "\t" << command << std::endl;

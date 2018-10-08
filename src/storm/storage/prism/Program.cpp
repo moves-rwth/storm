@@ -810,8 +810,11 @@ namespace storm {
                 for (auto const& booleanVariable : module.getBooleanVariables()) {
                     this->variableToModuleIndexMap[booleanVariable.getName()] = moduleIndex;
                 }
-                for (auto const& integerVariable : module.getBooleanVariables()) {
+                for (auto const& integerVariable : module.getIntegerVariables()) {
                     this->variableToModuleIndexMap[integerVariable.getName()] = moduleIndex;
+                }
+                for (auto const& clockVariable : module.getClockVariables()) {
+                    this->variableToModuleIndexMap[clockVariable.getName()] = moduleIndex;
                 }
             }
             
@@ -1104,6 +1107,12 @@ namespace storm {
                     variables.insert(variable.getExpressionVariable());
                     all.insert(variable.getExpressionVariable());
                 }
+                
+                for (auto const& variable : module.getClockVariables()) {
+                    // Record the new identifier for future checks.
+                    variables.insert(variable.getExpressionVariable());
+                    all.insert(variable.getExpressionVariable());
+                }
             }
             
             // Create the set of valid identifiers for future checks.
@@ -1121,7 +1130,7 @@ namespace storm {
                 }
             }
             
-            // Check the commands of the modules.
+            // Check the commands and invariants of the modules.
             bool hasProbabilisticCommand = false;
             bool hasMarkovianCommand = false;
             bool hasLabeledMarkovianCommand = false;
@@ -1132,6 +1141,24 @@ namespace storm {
                 }
                 for (auto const& variable : module.getIntegerVariables()) {
                     legalVariables.insert(variable.getExpressionVariable());
+                }
+                for (auto const& variable : module.getClockVariables()) {
+                    legalVariables.insert(variable.getExpressionVariable());
+                }
+                
+                if (module.hasInvariant()) {
+                    std::set<storm::expressions::Variable> containedVariables = module.getInvariant().getVariables();
+                    std::set<storm::expressions::Variable> illegalVariables;
+                    std::set_difference(containedVariables.begin(), containedVariables.end(), variablesAndConstants.begin(), variablesAndConstants.end(), std::inserter(illegalVariables, illegalVariables.begin()));
+                    bool isValid = illegalVariables.empty();
+                    if (!isValid) {
+                        std::vector<std::string> illegalVariableNames;
+                        for (auto const& var : illegalVariables) {
+                            illegalVariableNames.push_back(var.getName());
+                        }
+                        STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << module.getFilename() << ", line " << module.getLineNumber() << ": invariant " << module.getInvariant()  << " refers to unknown identifiers: " << boost::algorithm::join(illegalVariableNames, ",") << ".");
+                    }
+                    STORM_LOG_THROW(module.getInvariant().hasBooleanType(), storm::exceptions::WrongFormatException, "Error in " << module.getFilename() << ", line " << module.getLineNumber() << ": invariant " << module.getInvariant() << " must evaluate to type 'bool'.");
                 }
                 
                 for (auto& command : module.getCommands()) {
@@ -1189,7 +1216,7 @@ namespace storm {
                                 }
                             }
                             STORM_LOG_THROW(alreadyAssignedVariables.find(assignedVariable) == alreadyAssignedVariables.end(), storm::exceptions::WrongFormatException, "Error in " << command.getFilename() << ", line " << command.getLineNumber() << ": duplicate assignment to variable '" << assignment.getVariableName() << "'.");
-                            STORM_LOG_THROW(assignedVariable.getType() == assignment.getExpression().getType(), storm::exceptions::WrongFormatException, "Error in " << command.getFilename() << ", line " << command.getLineNumber() << ": illegally assigning a value of type '" << assignment.getExpression().getType() << "' to variable '" << assignment.getVariableName() << "' of type '" << assignedVariable.getType() << "'.");
+                            STORM_LOG_THROW(assignedVariable.getType() == assignment.getExpression().getType() || (assignedVariable.getType().isRationalType() && assignment.getExpression().getType().isNumericalType()), storm::exceptions::WrongFormatException, "Error in " << command.getFilename() << ", line " << command.getLineNumber() << ": illegally assigning a value of type '" << assignment.getExpression().getType() << "' to variable '" << assignment.getVariableName() << "' of type '" << assignedVariable.getType() << "'.");
                             
                             containedVariables = assignment.getExpression().getVariables();
                             illegalVariables.clear();
@@ -1409,7 +1436,8 @@ namespace storm {
                     }
                 }
                 
-                newModules.emplace_back(module.getName(), newBooleanVars, newIntegerVars, newCommands);
+                // we currently do not simplify clock variables or invariants
+                newModules.emplace_back(module.getName(), newBooleanVars, newIntegerVars, module.getClockVariables(), module.getInvariant(), newCommands);
                 
                 // Determine the set of action indices that have been deleted entirely.
                 std::set_difference(module.getSynchronizingActionIndices().begin(), module.getSynchronizingActionIndices().end(), newModules.back().getSynchronizingActionIndices().begin(), newModules.back().getSynchronizingActionIndices().end(), std::inserter(actionIndicesToDelete, actionIndicesToDelete.begin()));
@@ -1464,6 +1492,7 @@ namespace storm {
             std::stringstream newModuleName;
             std::vector<storm::prism::BooleanVariable> allBooleanVariables;
             std::vector<storm::prism::IntegerVariable> allIntegerVariables;
+            std::vector<storm::prism::ClockVariable> allClockVariables;
             std::vector<storm::prism::Command> newCommands;
             uint_fast64_t nextCommandIndex = 0;
             uint_fast64_t nextUpdateIndex = 0;
@@ -1489,6 +1518,7 @@ namespace storm {
             // this is just for simplicity and is not needed.
             allBooleanVariables.insert(allBooleanVariables.end(), this->getGlobalBooleanVariables().begin(), this->getGlobalBooleanVariables().end());
             allIntegerVariables.insert(allIntegerVariables.end(), this->getGlobalIntegerVariables().begin(), this->getGlobalIntegerVariables().end());
+            storm::expressions::Expression newInvariant;
             
             // Now go through the modules, gather the variables, construct the name of the new module and assert the
             // bounds of the discovered variables.
@@ -1496,10 +1526,15 @@ namespace storm {
                 newModuleName << module.getName() << "_";
                 allBooleanVariables.insert(allBooleanVariables.end(), module.getBooleanVariables().begin(), module.getBooleanVariables().end());
                 allIntegerVariables.insert(allIntegerVariables.end(), module.getIntegerVariables().begin(), module.getIntegerVariables().end());
+                allClockVariables.insert(allClockVariables.end(), module.getClockVariables().begin(), module.getClockVariables().end());
                 
                 for (auto const& variable : module.getIntegerVariables()) {
                     solver->add(variable.getExpression() >= variable.getLowerBoundExpression());
                     solver->add(variable.getExpression() <= variable.getUpperBoundExpression());
+                }
+                
+                if (module.hasInvariant()) {
+                    newInvariant = newInvariant.isInitialized() ? (newInvariant && module.getInvariant()) : module.getInvariant();
                 }
                 
                 // The commands without a synchronizing action name, can simply be copied (plus adjusting the global
@@ -1643,7 +1678,7 @@ namespace storm {
             }
             
             // Finally, we can create the module and the program and return it.
-            storm::prism::Module singleModule(newModuleName.str(), allBooleanVariables, allIntegerVariables, newCommands, this->getFilename(), 0);
+            storm::prism::Module singleModule(newModuleName.str(), allBooleanVariables, allIntegerVariables, allClockVariables, newInvariant, newCommands, this->getFilename(), 0);
             
             return Program(manager, this->getModelType(), this->getConstants(), std::vector<storm::prism::BooleanVariable>(), std::vector<storm::prism::IntegerVariable>(), this->getFormulas(), {singleModule}, actionToIndexMap, this->getRewardModels(), this->getLabels(), this->getOptionalInitialConstruct(), this->getOptionalSystemCompositionConstruct(), prismCompatibility, this->getFilename(), 0, true);
         }
@@ -1852,6 +1887,7 @@ namespace storm {
                 case Program::ModelType::CTMDP: out << "ctmdp"; break;
                 case Program::ModelType::MA: out << "ma"; break;
                 case Program::ModelType::POMDP: out << "pomdp"; break;
+                case Program::ModelType::PTA: out << "pta"; break;
             }
             return out;
         }

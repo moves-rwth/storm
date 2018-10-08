@@ -98,7 +98,8 @@ namespace storm {
                     ("mdp", storm::prism::Program::ModelType::MDP)
                     ("ctmdp", storm::prism::Program::ModelType::CTMDP)
                     ("ma", storm::prism::Program::ModelType::MA)
-                    ("pomdp", storm::prism::Program::ModelType::POMDP);
+                    ("pomdp", storm::prism::Program::ModelType::POMDP)
+                    ("pta", storm::prism::Program::ModelType::PTA);
                 }
             };
             
@@ -111,21 +112,24 @@ namespace storm {
                     ("ctmdp", 4)
                     ("ma", 5)
                     ("pomdp", 6)
-                    ("const", 7)
-                    ("int", 8)
-                    ("bool", 9)
-                    ("module", 10)
-                    ("endmodule", 11)
-                    ("rewards", 12)
-                    ("endrewards", 13)
-                    ("true", 14)
-                    ("false", 15)
-                    ("min", 16)
-                    ("max", 17)
-                    ("floor", 18)
-                    ("ceil", 19)
-                    ("init", 20)
-                    ("endinit", 21);
+                    ("pta", 7)
+                    ("const", 8)
+                    ("int", 9)
+                    ("bool", 10)
+                    ("module", 11)
+                    ("endmodule", 12)
+                    ("rewards", 13)
+                    ("endrewards", 14)
+                    ("true", 15)
+                    ("false", 16)
+                    ("min", 17)
+                    ("max", 18)
+                    ("floor", 19)
+                    ("ceil", 20)
+                    ("init", 21)
+                    ("endinit", 22)
+                    ("invariant", 23)
+                    ("endinvariant", 24);
                 }
             };
             
@@ -213,13 +217,14 @@ namespace storm {
             
             // Rules for modules definition.
             qi::rule<Iterator, std::vector<storm::prism::Module>(GlobalProgramInformation&), Skipper> moduleDefinitionList;
-            qi::rule<Iterator, storm::prism::Module(GlobalProgramInformation&), qi::locals<std::vector<storm::prism::BooleanVariable>, std::vector<storm::prism::IntegerVariable>>, Skipper> moduleDefinition;
+            qi::rule<Iterator, storm::prism::Module(GlobalProgramInformation&), qi::locals<std::vector<storm::prism::BooleanVariable>, std::vector<storm::prism::IntegerVariable>, std::vector<storm::prism::ClockVariable>>, Skipper> moduleDefinition;
             qi::rule<Iterator, storm::prism::Module(GlobalProgramInformation&), qi::locals<std::map<std::string, std::string>>, Skipper> moduleRenaming;
             
             // Rules for variable definitions.
-            qi::rule<Iterator, qi::unused_type(std::vector<storm::prism::BooleanVariable>&, std::vector<storm::prism::IntegerVariable>&), Skipper> variableDefinition;
+            qi::rule<Iterator, qi::unused_type(std::vector<storm::prism::BooleanVariable>&, std::vector<storm::prism::IntegerVariable>&, std::vector<storm::prism::ClockVariable>&), Skipper> variableDefinition;
             qi::rule<Iterator, storm::prism::BooleanVariable(), qi::locals<storm::expressions::Expression>, Skipper> booleanVariableDefinition;
             qi::rule<Iterator, storm::prism::IntegerVariable(), qi::locals<storm::expressions::Expression>, Skipper> integerVariableDefinition;
+            qi::rule<Iterator, storm::prism::ClockVariable(), qi::locals<storm::expressions::Expression>, Skipper> clockVariableDefinition;
             
             // Rules for command definitions.
             qi::rule<Iterator, storm::prism::Command(GlobalProgramInformation&), qi::locals<bool>, Skipper> commandDefinition;
@@ -238,6 +243,9 @@ namespace storm {
             qi::rule<Iterator, qi::unused_type(GlobalProgramInformation&), Skipper> initialStatesConstruct;
 
             qi::rule<Iterator, qi::unused_type(), Skipper> observablesConstruct;
+            
+            // Rules for invariant constructs
+            qi::rule<Iterator, storm::expressions::Expression(), Skipper> invariantConstruct;
 
             // Rules for the system composition.
             qi::rule<Iterator, qi::unused_type(GlobalProgramInformation&), Skipper> systemCompositionConstruct;
@@ -303,7 +311,8 @@ namespace storm {
             storm::prism::Command createDummyCommand(boost::optional<std::string> const& actionName, GlobalProgramInformation& globalProgramInformation) const;
             storm::prism::BooleanVariable createBooleanVariable(std::string const& variableName, storm::expressions::Expression initialValueExpression) const;
             storm::prism::IntegerVariable createIntegerVariable(std::string const& variableName, storm::expressions::Expression lowerBoundExpression, storm::expressions::Expression upperBoundExpression, storm::expressions::Expression initialValueExpression) const;
-            storm::prism::Module createModule(std::string const& moduleName, std::vector<storm::prism::BooleanVariable> const& booleanVariables, std::vector<storm::prism::IntegerVariable> const& integerVariables, std::vector<storm::prism::Command> const& commands, GlobalProgramInformation& globalProgramInformation) const;
+            storm::prism::ClockVariable createClockVariable(std::string const& variableName) const;
+            storm::prism::Module createModule(std::string const& moduleName, std::vector<storm::prism::BooleanVariable> const& booleanVariables, std::vector<storm::prism::IntegerVariable> const& integerVariables, std::vector<storm::prism::ClockVariable> const& clockVariables, boost::optional<storm::expressions::Expression> const& invariant, std::vector<storm::prism::Command> const& commands, GlobalProgramInformation& globalProgramInformation) const;
             storm::prism::Module createRenamedModule(std::string const& newModuleName, std::string const& oldModuleName, std::map<std::string, std::string> const& renaming, GlobalProgramInformation& globalProgramInformation) const;
             storm::prism::Program createProgram(GlobalProgramInformation const& globalProgramInformation) const;
             void createObservablesList(std::vector<std::string> const& observables);
