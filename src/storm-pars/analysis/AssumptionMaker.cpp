@@ -96,6 +96,8 @@ namespace storm {
                         assumptions.push_back(
                                 std::shared_ptr<storm::expressions::BinaryRelationExpression>(assumption));
                         result = (runRecursive(lattice, assumptions));
+                    } else if (assumptionChecker->validated(assumption) && !assumptionChecker->valid(assumption)) {
+                        delete lattice;
                     }
                 } else {
                     assumptions.push_back(std::shared_ptr<storm::expressions::BinaryRelationExpression>(assumption));
