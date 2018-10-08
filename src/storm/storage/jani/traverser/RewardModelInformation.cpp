@@ -3,6 +3,7 @@
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/Variable.h"
 #include "storm/storage/jani/Model.h"
+#include "storm/storage/jani/expressions/JaniExpressionSubstitutionVisitor.h"
 
 namespace storm {
     namespace jani {
@@ -15,8 +16,8 @@ namespace storm {
             // Intentionally left empty
         }
         
-        RewardModelInformation::RewardModelInformation(Model const& model, storm::expressions::Expression const& rewardModelExpression) : stateRewards(false), actionRewards(false), transitionRewards(false), destinationDependendRewards(false) {
-            auto variablesInRewardExpression = rewardExpression.getVariables();
+        RewardModelInformation::RewardModelInformation(Model const& model, storm::expressions::Expression const& rewardModelExpression) : stateRewards(false), actionRewards(false), transitionRewards(false) {
+            auto variablesInRewardExpression = rewardModelExpression.getVariables();
             std::map<storm::expressions::Variable, storm::expressions::Expression> initialSubstitution;
             for (auto const& v : variablesInRewardExpression) {
                 STORM_LOG_ASSERT(model.hasGlobalVariable(v.getName()), "Unable to find global variable " << v.getName() << " occurring in a reward expression.");
@@ -25,7 +26,7 @@ namespace storm {
                     initialSubstitution.emplace(v, janiVar.getInitExpression());
                 }
             }
-            auto initExpr = storm::jani::substituteJaniExpression(rewardExpression, initialSubstitution);
+            auto initExpr = storm::jani::substituteJaniExpression(rewardModelExpression, initialSubstitution);
             if (initExpr.containsVariables() || !storm::utility::isZero(initExpr.evaluateAsRational())) {
                 stateRewards = true;
                 actionRewards = true;
@@ -91,7 +92,7 @@ namespace storm {
         }
         
         bool RewardModelInformation::hasTransitionRewards () const {
-            return transitionReward;
+            return transitionRewards;
         }
         
 
