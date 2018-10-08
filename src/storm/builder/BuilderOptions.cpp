@@ -1,7 +1,7 @@
 #include "storm/builder/BuilderOptions.h"
 
 #include "storm/logic/Formulas.h"
-#include "storm/logic/FragmentSpecification.h"
+#include "storm/logic/LiftableTransitionRewardsVisitor.h"
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/BuildSettings.h"
@@ -42,15 +42,15 @@ namespace storm {
             // Intentionally left empty.
         }
         
-        BuilderOptions::BuilderOptions(storm::logic::Formula const& formula) : BuilderOptions() {
-            this->preserveFormula(formula);
+        BuilderOptions::BuilderOptions(storm::logic::Formula const& formula, storm::storage::SymbolicModelDescription const& modelDescription) : BuilderOptions() {
+            this->preserveFormula(formula, modelDescription);
             this->setTerminalStatesFromFormula(formula);
         }
         
-        BuilderOptions::BuilderOptions(std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) : BuilderOptions() {
+        BuilderOptions::BuilderOptions(std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, storm::storage::SymbolicModelDescription const& modelDescription) : BuilderOptions() {
             if (!formulas.empty()) {
                 for (auto const& formula : formulas) {
-                    this->preserveFormula(*formula);
+                    this->preserveFormula(*formula, modelDescription);
                 }
                 if (formulas.size() == 1) {
                     this->setTerminalStatesFromFormula(*formulas.front());
@@ -65,7 +65,7 @@ namespace storm {
             showProgressDelay = generalSettings.getShowProgressDelay();
         }
         
-        void BuilderOptions::preserveFormula(storm::logic::Formula const& formula) {
+        void BuilderOptions::preserveFormula(storm::logic::Formula const& formula, storm::storage::SymbolicModelDescription const& modelDescription) {
             // If we already had terminal states, we need to erase them.
             if (hasTerminalStates()) {
                 clearTerminalStates();
@@ -89,9 +89,7 @@ namespace storm {
                 addLabel(formula->getExpression());
             }
             
-            storm::logic::FragmentSpecification transitionRewardScalingFragment = storm::logic::csl().setRewardOperatorsAllowed(true).setReachabilityRewardFormulasAllowed(true).setLongRunAverageOperatorsAllowed(true).setMultiObjectiveFormulasAllowed(true).setTotalRewardFormulasAllowed(true).setStepBoundedCumulativeRewardFormulasAllowed(true).setTimeBoundedCumulativeRewardFormulasAllowed(true);
-            scaleAndLiftTransitionRewards = scaleAndLiftTransitionRewards && formula.isInFragment(transitionRewardScalingFragment);
-            
+            scaleAndLiftTransitionRewards = scaleAndLiftTransitionRewards && storm::logic::LiftableTransitionRewardsVisitor(modelDescription).areTransitionRewardsLiftable(formula);
         }
         
         void BuilderOptions::setTerminalStatesFromFormula(storm::logic::Formula const& formula) {

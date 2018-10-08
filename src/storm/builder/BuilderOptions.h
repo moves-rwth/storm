@@ -8,6 +8,7 @@
 #include <boost/optional.hpp>
 
 #include "storm/storage/expressions/Expression.h"
+#include "storm/storage/SymbolicModelDescription.h"
 
 namespace storm {
     namespace expressions {
@@ -54,7 +55,7 @@ namespace storm {
              *
              * @param formula The formula based on which to choose the building options.
              */
-            BuilderOptions(storm::logic::Formula const& formula);
+            BuilderOptions(storm::logic::Formula const& formula, storm::storage::SymbolicModelDescription const& modelDescription = storm::storage::SymbolicModelDescription());
             
             /*!
              * Creates an object representing the suggested building options assuming that the given formulas are
@@ -62,7 +63,7 @@ namespace storm {
              *
              * @param formula Thes formula based on which to choose the building options.
              */
-            BuilderOptions(std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas);
+            BuilderOptions(std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, storm::storage::SymbolicModelDescription const& modelDescription = storm::storage::SymbolicModelDescription());
             
             /*!
              * Changes the options in a way that ensures that the given formula can be checked on the model once it
@@ -70,7 +71,7 @@ namespace storm {
              *
              * @param formula The formula that is to be ''preserved''.
              */
-            void preserveFormula(storm::logic::Formula const& formula);
+            void preserveFormula(storm::logic::Formula const& formula, storm::storage::SymbolicModelDescription const& modelDescription = storm::storage::SymbolicModelDescription());
             
             /*!
              * Analyzes the given formula and sets an expression for the states states of the model that can be

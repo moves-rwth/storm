@@ -110,7 +110,7 @@ namespace storm {
 
         template<typename ValueType>
         std::shared_ptr<storm::models::sparse::Model<ValueType>> buildSparseModel(storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool jit = false, bool doctor = false) {
-            storm::builder::BuilderOptions options(formulas);
+            storm::builder::BuilderOptions options(formulas, model);
             return buildSparseModel<ValueType>(model, options, jit, doctor);
         }
         
