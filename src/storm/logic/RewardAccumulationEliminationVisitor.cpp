@@ -2,7 +2,7 @@
 #include "storm/logic/Formulas.h"
 
 #include "storm/storage/jani/Model.h"
-#include "storm/storage/jani/traverser/AssignmentsFinder.h"
+#include "storm/storage/jani/traverser/RewardModelInformation.h"
 #include "storm/storage/jani/expressions/JaniExpressionSubstitutionVisitor.h"
 #include "storm/utility/macros.h"
 
@@ -128,32 +128,12 @@ namespace storm {
         
         bool RewardAccumulationEliminationVisitor::canEliminate(storm::logic::RewardAccumulation const& accumulation, boost::optional<std::string> rewardModelName) const {
             STORM_LOG_THROW(rewardModelName.is_initialized(), storm::exceptions::InvalidPropertyException, "Unable to find transient variable for unique reward model.");
-            storm::expressions::Expression rewardExpression = model.getRewardModelExpression(rewardModelName.get());
-            bool hasStateRewards = false;
-            bool hasActionOrTransitionRewards = false;
-            auto variablesInRewardExpression = rewardExpression.getVariables();
-            std::map<storm::expressions::Variable, storm::expressions::Expression> initialSubstitution;
-            for (auto const& v : variablesInRewardExpression) {
-                STORM_LOG_ASSERT(model.hasGlobalVariable(v.getName()), "Unable to find global variable " << v.getName() << " occurring in a reward expression.");
-                auto const& janiVar = model.getGlobalVariable(v.getName());
-                if (janiVar.hasInitExpression()) {
-                    initialSubstitution.emplace(v, janiVar.getInitExpression());
-                }
-                auto assignmentKinds = storm::jani::AssignmentsFinder().find(model, v);
-                hasActionOrTransitionRewards = hasActionOrTransitionRewards || assignmentKinds.hasEdgeAssignment || assignmentKinds.hasEdgeDestinationAssignment;
-                hasStateRewards = hasStateRewards || assignmentKinds.hasLocationAssignment;
-            }
-            rewardExpression = storm::jani::substituteJaniExpression(rewardExpression, initialSubstitution);
-            if (rewardExpression.containsVariables() || !storm::utility::isZero(rewardExpression.evaluateAsRational())) {
-                hasStateRewards = true;
-                hasActionOrTransitionRewards = true;
-            }
+            storm::jani::RewardModelInformation info(model, rewardModelName.get());
             
-            
-            if (hasActionOrTransitionRewards && !accumulation.isStepsSet()) {
+            if ((info.hasActionRewards() || info.hasTransitionRewards())  && !accumulation.isStepsSet()) {
                 return false;
             }
-            if (hasStateRewards) {
+            if (info.hasStateRewards()) {
                 if (model.isDiscreteTimeModel()) {
                     if (!accumulation.isExitSet()) {
                         return false;

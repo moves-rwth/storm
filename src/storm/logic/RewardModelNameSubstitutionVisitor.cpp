@@ -2,7 +2,6 @@
 #include "storm/logic/Formulas.h"
 
 #include "storm/storage/jani/Model.h"
-#include "storm/storage/jani/traverser/AssignmentsFinder.h"
 #include "storm/utility/macros.h"
 
 #include "storm/exceptions/UnexpectedException.h"

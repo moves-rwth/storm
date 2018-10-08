@@ -15,7 +15,7 @@
 #include "storm/storage/jani/CompositionInformationVisitor.h"
 #include "storm/storage/jani/traverser/AssignmentLevelFinder.h"
 #include "storm/storage/jani/traverser/ArrayExpressionFinder.h"
-#include "storm/storage/jani/traverser/AssignmentsFinder.h"
+#include "storm/storage/jani/traverser/RewardModelInformation.h"
 
 #include "storm/storage/sparse/JaniChoiceOrigins.h"
 
@@ -949,41 +949,13 @@ namespace storm {
         
         template<typename ValueType, typename StateType>
         void JaniNextStateGenerator<ValueType, StateType>::buildRewardModelInformation() {
-            // Prepare all reward model information structs and get a mapping from variables to rewardModels that use this variable
-            std::map<storm::expressions::Variable, std::vector<uint64_t>> variableToRewardIndices;
-            for (uint64_t i = 0; i < rewardExpressions.size(); ++i) {
-                rewardModelInformation.emplace_back(rewardExpressions[i].first, false, false, false);
-                auto varsInExpression = rewardExpressions[i].second.getVariables();
-                for (auto const& v : varsInExpression) {
-                    auto mapIt = variableToRewardIndices.emplace(v, std::vector<uint64_t>()).first;
-                    mapIt->second.push_back(i);
-                }
-            }
-            
-            storm::jani::AssignmentsFinder finder;
-            for (auto const& varRewIndices : variableToRewardIndices) {
-                auto assignmentsFinderResult = finder.find(this->model, varRewIndices.first);
-                if (assignmentsFinderResult.hasLocationAssignment) {
-                    for (auto const& rewModelIndex : varRewIndices.second) {
-                        rewardModelInformation[rewModelIndex].setHasStateRewards();
-                    }
-                }
-                if (assignmentsFinderResult.hasEdgeAssignment || (this->options.isScaleAndLiftTransitionRewardsSet() && assignmentsFinderResult.hasEdgeDestinationAssignment)) {
-                    for (auto const& rewModelIndex : varRewIndices.second) {
-                        rewardModelInformation[rewModelIndex].setHasStateActionRewards();
-                        hasStateActionRewards = true;
-                    }
-                }
-                STORM_LOG_THROW(this->options.isScaleAndLiftTransitionRewardsSet() || !assignmentsFinderResult.hasEdgeDestinationAssignment, storm::exceptions::NotSupportedException, "Transition rewards are not supported and a reduction to action-based rewards was not possible.");
-            }
-            
-            // If the reward expression does not evaluate to zero, we set all reward types to true
-            for (uint64_t i = 0; i < rewardExpressions.size(); ++i) {
-                auto const& rewExpr = rewardExpressions[i].second;
-                if (rewExpr.containsVariables() || !storm::utility::isZero(this->evaluator->asRational(rewExpr))) {
-                    rewardModelInformation[i].setHasStateRewards();
-                    rewardModelInformation[i].setHasStateActionRewards();
+            for (auto const& rewardModel : rewardExpressions) {
+                storm::jani::RewardModelInformation info(this->model, rewardModel.second);
+                rewardModelInformation.emplace_back(rewardModel.first, info.hasStateRewards(), false, false);
+                STORM_LOG_THROW(this->options.isScaleAndLiftTransitionRewardsSet() || !info.hasTransitionRewards(), storm::exceptions::NotSupportedException, "Transition rewards are not supported and a reduction to action-based rewards was not possible.");
+                if (info.hasActionRewards() || (this->options.isScaleAndLiftTransitionRewardsSet() && info.hasTransitionRewards())) {
                     hasStateActionRewards = true;
+                    rewardModelInformation.back().setHasStateActionRewards();
                 }
             }
         }
