@@ -38,6 +38,8 @@ namespace storm {
                     break;
                 case Program::ModelType::MA: modelType = storm::jani::ModelType::MA;
                     break;
+                case Program::ModelType::PTA: modelType = storm::jani::ModelType::PTA;
+                    break;
                 default: modelType = storm::jani::ModelType::UNDEFINED;
             }
             storm::jani::Model janiModel("jani_from_prism", modelType, 1, manager);
@@ -359,11 +361,28 @@ namespace storm {
                         STORM_LOG_INFO("Variable " << variable.getName() << " is declared but never used.");
                     }
                 }
+                for (auto const& variable : module.getClockVariables()) {
+                    storm::jani::ClockVariable newClockVariable = *storm::jani::makeClockVariable(variable.getName(), variable.getExpressionVariable(), variable.hasInitialValue() ? boost::make_optional(variable.getInitialValueExpression()) : boost::none, false);
+                    auto findRes = variablesToMakeGlobal.find(variable.getExpressionVariable());
+                    if (findRes != variablesToMakeGlobal.end()) {
+                        bool makeVarGlobal = findRes->second;
+                        storm::jani::ClockVariable const& createdVariable = makeVarGlobal ? janiModel.addVariable(newClockVariable) : automaton.addVariable(newClockVariable);
+                        variableToVariableMap.emplace(variable.getExpressionVariable(), createdVariable);
+                    } else {
+                        STORM_LOG_INFO("Variable " << variable.getName() << " is declared but never used.");
+                    }
+                }
+                
                 automaton.setInitialStatesRestriction(manager->boolean(true));
                 
                 // Create a single location that will have all the edges.
                 uint64_t onlyLocationIndex = automaton.addLocation(storm::jani::Location("l"));
                 automaton.addInitialLocation(onlyLocationIndex);
+                
+                if (module.hasInvariant()) {
+                    storm::jani::Location& onlyLocation = automaton.getLocation(onlyLocationIndex);
+                    onlyLocation.setTimeProgressInvariant(module.getInvariant());
+                }
                 
                 // If we are translating the first module that has the action, we need to add the transient assignments to the location.
                 // However, in standard compliant JANI, there are no state rewards
