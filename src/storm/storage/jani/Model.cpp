@@ -687,6 +687,8 @@ namespace storm {
                 return addVariable(variable.asRealVariable());
             } else if (variable.isArrayVariable()) {
                 return addVariable(variable.asArrayVariable());
+            } else if (variable.isClockVariable()) {
+                return addVariable(variable.asClockVariable());
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Variable has invalid type.");
             }
@@ -709,6 +711,10 @@ namespace storm {
         }
         
         ArrayVariable const& Model::addVariable(ArrayVariable const& variable) {
+            return globalVariables.addVariable(variable);
+        }
+        
+        ClockVariable const& Model::addVariable(ClockVariable const& variable) {
             return globalVariables.addVariable(variable);
         }
 
@@ -1033,6 +1039,9 @@ namespace storm {
             for (auto& variable : result.getGlobalVariables().getArrayVariables()) {
                 variable.substitute(constantSubstitution);
             }
+            for (auto& variable : result.getGlobalVariables().getClockVariables()) {
+                variable.substitute(constantSubstitution);
+            }
             
             // Substitute constants in initial states expression.
             result.setInitialStatesRestriction(substituteJaniExpression(this->getInitialStatesRestriction(), constantSubstitution));
@@ -1084,6 +1093,9 @@ namespace storm {
                 variable.substitute(substitution);
             }
             for (auto& variable : this->getGlobalVariables().getArrayVariables()) {
+                variable.substitute(substitution);
+            }
+            for (auto& variable : this->getGlobalVariables().getClockVariables()) {
                 variable.substitute(substitution);
             }
             

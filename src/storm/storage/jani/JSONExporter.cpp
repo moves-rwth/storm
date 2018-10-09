@@ -811,7 +811,7 @@ namespace storm {
         
         
         modernjson::json buildVariablesArray(storm::jani::VariableSet const& varSet, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables = VariableSet()) {
-            modernjson::json variableDeclarations;
+            modernjson::json variableDeclarations = std::vector<modernjson::json>();
             for(auto const& variable : varSet) {
                 modernjson::json varEntry;
                 varEntry["name"] = variable.getName();
@@ -830,8 +830,7 @@ namespace storm {
                     typeDesc["base"] = "int";
                     typeDesc["lower-bound"] = buildExpression(variable.asBoundedIntegerVariable().getLowerBound(), constants, globalVariables, localVariables);
                     typeDesc["upper-bound"] = buildExpression(variable.asBoundedIntegerVariable().getUpperBound(), constants, globalVariables, localVariables);
-                } else {
-                    assert(variable.isArrayVariable());
+                } else if (variable.isArrayVariable()) {
                     typeDesc["kind"] = "array";
                     switch (variable.asArrayVariable().getElementType()) {
                         case storm::jani::ArrayVariable::ElementType::Bool:
@@ -857,6 +856,9 @@ namespace storm {
                             }
                             break;
                     }
+                } else {
+                    assert(variable.isClockVariable());
+                    typeDesc = "clock";
                 }
                 varEntry["type"] = typeDesc;
                 if (variable.hasInitExpression()) {
@@ -885,7 +887,7 @@ namespace storm {
         }
         
         modernjson::json buildFunctionsArray(std::unordered_map<std::string, FunctionDefinition> const& functionDefinitions, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables = VariableSet()) {
-            modernjson::json functionDeclarations;
+            modernjson::json functionDeclarations = std::vector<modernjson::json>();
             for (auto const& nameFunDef : functionDefinitions) {
                 storm::jani::FunctionDefinition const& funDef = nameFunDef.second;
                 modernjson::json funDefJson;
@@ -908,7 +910,7 @@ namespace storm {
         }
         
         modernjson::json buildAssignmentArray(storm::jani::OrderedAssignments const& orderedAssignments, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables, bool commentExpressions) {
-            modernjson::json assignmentDeclarations;
+            modernjson::json assignmentDeclarations = std::vector<modernjson::json>();
             bool addIndex = orderedAssignments.hasMultipleLevels();
             for(auto const& assignment : orderedAssignments) {
                 modernjson::json assignmentEntry;
@@ -935,11 +937,18 @@ namespace storm {
         }
         
         modernjson::json buildLocationsArray(std::vector<storm::jani::Location> const& locations, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables, bool commentExpressions) {
-            modernjson::json locationDeclarations;
+            modernjson::json locationDeclarations = std::vector<modernjson::json>();
             for(auto const& location : locations) {
                 modernjson::json locEntry;
                 locEntry["name"] = location.getName();
-                // TODO support invariants?
+                if (location.hasTimeProgressInvariant()) {
+                    modernjson::json timeProg;
+                    timeProg["exp"] = buildExpression(location.getTimeProgressInvariant(), constants, globalVariables, localVariables);
+                    if (commentExpressions) {
+                        timeProg["comment"] = location.getTimeProgressInvariant().toString();
+                    }
+                    locEntry["time-progress"] = std::move(timeProg);
+                }
                 if (!location.getAssignments().empty()) {
                     locEntry["transient-values"] = buildAssignmentArray(location.getAssignments(), constants, globalVariables, localVariables, commentExpressions);
                 }

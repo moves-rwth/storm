@@ -404,6 +404,7 @@ namespace storm {
             public:
 
                 typedef ArrayEliminatorData ResultType;
+                using JaniTraverser::traverse;
                 
                 ArrayVariableReplacer(storm::expressions::ExpressionManager& expressionManager, bool keepNonTrivialArrayAccess, std::unordered_map<storm::expressions::Variable, std::size_t> const& arrayVarToSizesMap) : expressionManager(expressionManager) , keepNonTrivialArrayAccess(keepNonTrivialArrayAccess), arraySizes(arrayVarToSizesMap) {}
                 
@@ -470,19 +471,27 @@ namespace storm {
                     arrayExprEliminator = std::make_unique<ArrayExpressionEliminationVisitor>(replacements, arraySizes);
                     
                     for (auto& loc : automaton.getLocations()) {
-                        JaniTraverser::traverse(loc, data);
+                        traverse(loc, data);
                     }
-                    JaniTraverser::traverse(automaton.getEdgeContainer(), data);
+                    traverse(automaton.getEdgeContainer(), data);
                     
                     if (automaton.hasInitialStatesRestriction()) {
                         automaton.setInitialStatesRestriction(arrayExprEliminator->eliminate(automaton.getInitialStatesRestriction()));
                     }
                 }
-         
+
+                virtual void traverse(Location& location, boost::any const& data) override {
+                    traverse(location.getAssignments(), data);
+                    if (location.hasTimeProgressInvariant()) {
+                        location.setTimeProgressInvariant(arrayExprEliminator->eliminate(location.getTimeProgressInvariant()));
+                        traverse(location.getTimeProgressInvariant(), data);
+                    }
+                }
+
                 void traverse(TemplateEdge& templateEdge, boost::any const& data) override {
                     templateEdge.setGuard(arrayExprEliminator->eliminate(templateEdge.getGuard()));
                     for (auto& dest : templateEdge.getDestinations()) {
-                        JaniTraverser::traverse(dest, data);
+                        traverse(dest, data);
                     }
                     traverse(templateEdge.getAssignments(), data);
                 }
@@ -493,7 +502,7 @@ namespace storm {
                         edge.setRate(arrayExprEliminator->eliminate(edge.getRate()));
                     }
                     for (auto& dest : edge.getDestinations()) {
-                        JaniTraverser::traverse(dest, data);
+                        traverse(dest, data);
                     }
                 }
                 

@@ -24,6 +24,7 @@ namespace storm {
             virtual void traverse(UnboundedIntegerVariable& variable, boost::any const& data);
             virtual void traverse(RealVariable& variable, boost::any const& data);
             virtual void traverse(ArrayVariable& variable, boost::any const& data);
+            virtual void traverse(ClockVariable& variable, boost::any const& data);
             virtual void traverse(EdgeContainer& edgeContainer, boost::any const& data);
             virtual void traverse(TemplateEdge& templateEdge, boost::any const& data);
             virtual void traverse(TemplateEdgeDestination& templateEdgeDestination, boost::any const& data);
@@ -52,6 +53,7 @@ namespace storm {
             virtual void traverse(UnboundedIntegerVariable const& variable, boost::any const& data);
             virtual void traverse(RealVariable const& variable, boost::any const& data);
             virtual void traverse(ArrayVariable const& variable, boost::any const& data);
+            virtual void traverse(ClockVariable const& variable, boost::any const& data);
             virtual void traverse(EdgeContainer const& edgeContainer, boost::any const& data);
             virtual void traverse(TemplateEdge const& templateEdge, boost::any const& data);
             virtual void traverse(TemplateEdgeDestination const& templateEdgeDestination, boost::any const& data);

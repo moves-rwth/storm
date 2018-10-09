@@ -41,6 +41,22 @@ namespace storm {
             void addTransientAssignment(storm::jani::Assignment const& assignment);
   
             /*!
+             * Retrieves whether a time progress invariant is attached to this location
+             */
+            bool hasTimeProgressInvariant() const;
+            
+            /*!
+             * Retrieves the time progress invariant
+             */
+            storm::expressions::Expression const& getTimeProgressInvariant() const;
+            
+            /*!
+             * Sets the time progress invariant of this location
+             * @param expression the location invariant (type bool)
+             */
+            void setTimeProgressInvariant(storm::expressions::Expression const& expression);
+            
+            /*!
              * Substitutes all variables in all expressions according to the given substitution.
              */
             void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution);
@@ -66,6 +82,9 @@ namespace storm {
             
             /// The transient assignments made in this location.
             OrderedAssignments assignments;
+            
+            // The location's time progress condition
+            storm::expressions::Expression timeProgressInvariant;
         };
         
     }

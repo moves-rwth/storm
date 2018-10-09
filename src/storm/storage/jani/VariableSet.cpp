@@ -52,6 +52,14 @@ namespace storm {
             return detail::ConstVariables<ArrayVariable>(arrayVariables.begin(), arrayVariables.end());
         }
         
+        detail::Variables<ClockVariable> VariableSet::getClockVariables() {
+            return detail::Variables<ClockVariable>(clockVariables.begin(), clockVariables.end());
+        }
+        
+        detail::ConstVariables<ClockVariable> VariableSet::getClockVariables() const {
+            return detail::ConstVariables<ClockVariable>(clockVariables.begin(), clockVariables.end());
+        }
+        
         Variable const& VariableSet::addVariable(Variable const& variable) {
             if (variable.isBooleanVariable()) {
                 return addVariable(variable.asBooleanVariable());
@@ -63,6 +71,8 @@ namespace storm {
                 return addVariable(variable.asRealVariable());
             } else if (variable.isArrayVariable()) {
                 return addVariable(variable.asArrayVariable());
+            } else if (variable.isClockVariable()) {
+                return addVariable(variable.asClockVariable());
             }
             STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Cannot add variable of unknown type.");
         }
@@ -124,6 +134,19 @@ namespace storm {
             std::shared_ptr<ArrayVariable> newVariable = std::make_shared<ArrayVariable>(variable);
             variables.push_back(newVariable);
             arrayVariables.push_back(newVariable);
+            if (variable.isTransient()) {
+                transientVariables.push_back(newVariable);
+            }
+            nameToVariable.emplace(variable.getName(), variable.getExpressionVariable());
+            variableToVariable.emplace(variable.getExpressionVariable(), newVariable);
+            return *newVariable;
+        }
+        
+        ClockVariable const& VariableSet::addVariable(ClockVariable const& variable) {
+            STORM_LOG_THROW(!this->hasVariable(variable.getName()), storm::exceptions::WrongFormatException, "Cannot add variable with name '" << variable.getName() << "', because a variable with that name already exists.");
+            std::shared_ptr<ClockVariable> newVariable = std::make_shared<ClockVariable>(variable);
+            variables.push_back(newVariable);
+            clockVariables.push_back(newVariable);
             if (variable.isTransient()) {
                 transientVariables.push_back(newVariable);
             }
@@ -228,6 +251,10 @@ namespace storm {
             return !arrayVariables.empty();
         }
         
+        bool VariableSet::containsClockVariables() const {
+            return !clockVariables.empty();
+        }
+        
         bool VariableSet::containsNonTransientRealVariables() const {
             for (auto const& variable : realVariables) {
                 if (!variable->isTransient()) {
@@ -247,7 +274,7 @@ namespace storm {
         }
         
         bool VariableSet::empty() const {
-            return !(containsBooleanVariable() || containsBoundedIntegerVariable() || containsUnboundedIntegerVariables() || containsRealVariables() || containsArrayVariables());
+            return !(containsBooleanVariable() || containsBoundedIntegerVariable() || containsUnboundedIntegerVariables() || containsRealVariables() || containsArrayVariables() || containsClockVariables());
         }
         
         uint_fast64_t VariableSet::getNumberOfTransientVariables() const {
@@ -328,6 +355,13 @@ namespace storm {
                 }
                 if (arrayVariable.hasUpperElementTypeBound()) {
                     if (arrayVariable.getUpperElementTypeBound().containsVariable(variables)) {
+                        return true;
+                    }
+                }
+            }
+            for (auto const& clockVariable : this->getClockVariables()) {
+                if (clockVariable.hasInitExpression()) {
+                    if (clockVariable.getInitExpression().containsVariable(variables)) {
                         return true;
                     }
                 }
