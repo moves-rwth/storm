@@ -76,6 +76,11 @@ namespace storm {
             ArrayVariable const& addVariable(ArrayVariable const& variable);
 
             /*!
+             * Adds the given array variable to this automaton.
+             */
+            ClockVariable const& addVariable(ClockVariable const& variable);
+
+            /*!
              * Retrieves the variables of this automaton.
              */
             VariableSet& getVariables();

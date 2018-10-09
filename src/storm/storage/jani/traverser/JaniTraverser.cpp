@@ -70,10 +70,16 @@ namespace storm {
             for (auto& v : variableSet.getArrayVariables()) {
                 traverse(v, data);
             }
+            for (auto& v : variableSet.getClockVariables()) {
+                traverse(v, data);
+            }
         }
         
         void JaniTraverser::traverse(Location& location, boost::any const& data) {
             traverse(location.getAssignments(), data);
+            if (location.hasTimeProgressInvariant()) {
+                traverse(location.getTimeProgressInvariant(), data);
+            }
         }
         
         void JaniTraverser::traverse(BooleanVariable& variable, boost::any const& data) {
@@ -111,6 +117,12 @@ namespace storm {
             }
             if (variable.hasUpperElementTypeBound()) {
                 traverse(variable.getUpperElementTypeBound(), data);
+            }
+        }
+        
+        void JaniTraverser::traverse(ClockVariable& variable, boost::any const& data) {
+            if (variable.hasInitExpression()) {
+                traverse(variable.getInitExpression(), data);
             }
         }
         
@@ -236,10 +248,16 @@ namespace storm {
             for (auto const& v : variableSet.getArrayVariables()) {
                 traverse(v, data);
             }
+            for (auto const& v : variableSet.getClockVariables()) {
+                traverse(v, data);
+            }
         }
         
         void ConstJaniTraverser::traverse(Location const& location, boost::any const& data) {
             traverse(location.getAssignments(), data);
+            if (location.hasTimeProgressInvariant()) {
+                traverse(location.getTimeProgressInvariant(), data);
+            }
         }
         
         void ConstJaniTraverser::traverse(BooleanVariable const& variable, boost::any const& data) {
@@ -277,6 +295,12 @@ namespace storm {
             }
             if (variable.hasUpperElementTypeBound()) {
                 traverse(variable.getUpperElementTypeBound(), data);
+            }
+        }
+        
+        void ConstJaniTraverser::traverse(ClockVariable const& variable, boost::any const& data) {
+            if (variable.hasInitExpression()) {
+                traverse(variable.getInitExpression(), data);
             }
         }
         

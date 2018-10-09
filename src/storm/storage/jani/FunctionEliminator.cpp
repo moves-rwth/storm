@@ -200,6 +200,8 @@ namespace storm {
 
             class FunctionEliminatorTraverser : public JaniTraverser {
             public:
+                
+                using JaniTraverser::traverse;
 
                 FunctionEliminatorTraverser() = default;
                 
@@ -277,7 +279,7 @@ namespace storm {
                     for (auto& c : model.getConstants()) {
                         traverse(c, &globalFunctionEliminationVisitor);
                     }
-                    JaniTraverser::traverse(model.getGlobalVariables(), &globalFunctionEliminationVisitor);
+                    traverse(model.getGlobalVariables(), &globalFunctionEliminationVisitor);
                     for (auto& aut : model.getAutomata()) {
                         traverse(aut, &globalFunctionEliminationVisitor);
                     }
@@ -295,13 +297,21 @@ namespace storm {
                     eliminateFunctionsInFunctionBodies(functionEliminationVisitor, automaton.getFunctionDefinitions());
                     
                     // Now run through the remaining components
-                    JaniTraverser::traverse(automaton.getVariables(), &functionEliminationVisitor);
+                    traverse(automaton.getVariables(), &functionEliminationVisitor);
                     for (auto& loc : automaton.getLocations()) {
-                        JaniTraverser::traverse(loc, &functionEliminationVisitor);
+                        traverse(loc, &functionEliminationVisitor);
                     }
-                    JaniTraverser::traverse(automaton.getEdgeContainer(), &functionEliminationVisitor);
+                    traverse(automaton.getEdgeContainer(), &functionEliminationVisitor);
                     if (automaton.hasInitialStatesRestriction()) {
                         automaton.setInitialStatesRestriction(functionEliminationVisitor.eliminate(automaton.getInitialStatesRestriction()));
+                    }
+                }
+                
+                void traverse(Location& location, boost::any const& data) override {
+                    traverse(location.getAssignments(), data);
+                    if (location.hasTimeProgressInvariant()) {
+                        FunctionEliminationExpressionVisitor* functionEliminationVisitor = boost::any_cast<FunctionEliminationExpressionVisitor*>(data);
+                        location.setTimeProgressInvariant(functionEliminationVisitor->eliminate(location.getTimeProgressInvariant()));
                     }
                 }
                 
@@ -355,13 +365,20 @@ namespace storm {
                     }
                 }
                 
+                void traverse(ClockVariable& variable, boost::any const& data) override {
+                    FunctionEliminationExpressionVisitor* functionEliminationVisitor = boost::any_cast<FunctionEliminationExpressionVisitor*>(data);
+                    if (variable.hasInitExpression()) {
+                        variable.setInitExpression(functionEliminationVisitor->eliminate(variable.getInitExpression()));
+                    }
+                }
+                
                 void traverse(TemplateEdge& templateEdge, boost::any const& data) override {
                     FunctionEliminationExpressionVisitor* functionEliminationVisitor = boost::any_cast<FunctionEliminationExpressionVisitor*>(data);
                     templateEdge.setGuard(functionEliminationVisitor->eliminate(templateEdge.getGuard()));
                     for (auto& dest : templateEdge.getDestinations()) {
-                        JaniTraverser::traverse(dest, data);
+                        traverse(dest, data);
                     }
-                    JaniTraverser::traverse(templateEdge.getAssignments(), data);
+                    traverse(templateEdge.getAssignments(), data);
                 }
                 
                 void traverse(Edge& edge, boost::any const& data) override {

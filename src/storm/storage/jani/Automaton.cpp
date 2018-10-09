@@ -36,6 +36,8 @@ namespace storm {
                 return addVariable(variable.asRealVariable());
             } else if (variable.isArrayVariable()) {
                 return addVariable(variable.asArrayVariable());
+            } else if (variable.isClockVariable()) {
+                return addVariable(variable.asClockVariable());
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Variable has invalid type.");
             }
@@ -58,6 +60,10 @@ namespace storm {
         }
         
         ArrayVariable const& Automaton::addVariable(ArrayVariable const& variable) {
+            return variables.addVariable(variable);
+        }
+        
+        ClockVariable const& Automaton::addVariable(ClockVariable const& variable) {
             return variables.addVariable(variable);
         }
 
@@ -438,6 +444,9 @@ namespace storm {
                 variable.substitute(substitution);
             }
             for (auto& variable : this->getVariables().getArrayVariables()) {
+                variable.substitute(substitution);
+            }
+            for (auto& variable : this->getVariables().getClockVariables()) {
                 variable.substitute(substitution);
             }
             
