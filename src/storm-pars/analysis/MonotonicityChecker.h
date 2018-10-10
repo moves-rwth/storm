@@ -48,13 +48,17 @@ namespace storm {
 
             std::map<storm::analysis::Lattice*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> createLattice();
 
-            bool checkOnSamples(std::shared_ptr<storm::models::sparse::Dtmc<ValueType>> model, uint_fast64_t numberOfSamples);
+            std::map<carl::Variable, std::pair<bool, bool>> checkOnSamples(std::shared_ptr<storm::models::sparse::Dtmc<ValueType>> model, uint_fast64_t numberOfSamples);
+
+            std::map<carl::Variable, std::pair<bool, bool>> checkOnSamples(std::shared_ptr<storm::models::sparse::Mdp<ValueType>> model, uint_fast64_t numberOfSamples);
 
             std::shared_ptr<storm::models::ModelBase> model;
 
             std::vector<std::shared_ptr<storm::logic::Formula const>> formulas;
 
             bool validate;
+
+            std::map<carl::Variable, std::pair<bool, bool>> resultCheckOnSamples;
         };
     }
 }
