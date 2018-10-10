@@ -194,7 +194,7 @@ namespace storm {
              * Retrieves the requirements of the solver that would be created when calling create() right now. The
              * requirements are guaranteed to be ordered according to their appearance in the SolverRequirement type.
              */
-            MinMaxLinearEquationSolverRequirements getRequirements(Environment const& env, bool hasUniqueSolution = false, boost::optional<storm::solver::OptimizationDirection> const& direction = boost::none, bool const& hasInitialScheduler = false) const;
+            MinMaxLinearEquationSolverRequirements getRequirements(Environment const& env, bool hasUniqueSolution = false, boost::optional<storm::solver::OptimizationDirection> const& direction = boost::none, bool hasInitialScheduler = false, bool trackScheduler = false) const;
             void setRequirementsChecked(bool value = true);
             bool isRequirementsCheckedSet() const;
 
