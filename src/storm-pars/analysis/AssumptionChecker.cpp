@@ -258,7 +258,7 @@ namespace storm {
                 storm::expressions::Expression exprBounds = manager->boolean(true);
                 auto variables = manager->getVariables();
                 for (auto var : variables) {
-                    exprBounds = exprBounds && var >= 0 && var <= 1;
+                    exprBounds = exprBounds && var > 0 && var < 1;
                 }
 
                 s.add(exprGiven);
@@ -335,7 +335,7 @@ namespace storm {
 
                 auto variables = manager->getVariables();
                 for (auto var : variables) {
-                    exprBounds = exprBounds && var >= 0 && var <= 1;
+                    exprBounds = exprBounds && var > 0 && var < 1;
                 }
 
                 s.add(exprGiven);
