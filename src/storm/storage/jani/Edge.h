@@ -112,6 +112,16 @@ namespace storm {
             bool usesAssignmentLevels(bool onlyTransient = false) const;
 
             /*!
+             * Retrieves the color of the edge
+             */
+            uint64_t getColor() const;
+
+            /*!
+             * Sets the color of the edge
+             */
+            void setColor(uint64_t newColor);
+
+            /*!
              *
              * @param localVars
              */
@@ -151,6 +161,9 @@ namespace storm {
             
             /// The concrete destination objects.
             std::vector<EdgeDestination> destinations;
+
+            /// The color of the edge, used to persistently mark and identify specific edges (by the user)
+            uint64_t color;
         };
         
         std::ostream& operator<<(std::ostream& stream, Edge const& edge);

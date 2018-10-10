@@ -91,6 +91,14 @@ namespace storm {
         bool Edge::hasSilentAction() const {
             return actionIndex == Model::SILENT_ACTION_INDEX;
         }
+
+        uint64_t Edge::getColor() const {
+            return this->color;
+        }
+
+        void Edge::setColor(uint64_t newColor) {
+            this->color = newColor;
+        }
         
         boost::container::flat_set<storm::expressions::Variable> const& Edge::getWrittenGlobalVariables() const {
             return templateEdge->getWrittenGlobalVariables();
