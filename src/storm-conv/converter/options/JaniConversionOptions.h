@@ -33,6 +33,9 @@ namespace storm {
             /// Only these model features are allowed in the output
             storm::jani::ModelFeatures allowedModelFeatures;
             
+            // Add constants that are defined in the properties to the model
+            bool addPropertyConstants;
+            
         };
     }
 }

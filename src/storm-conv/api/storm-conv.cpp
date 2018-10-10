@@ -2,6 +2,7 @@
 
 #include "storm/storage/prism/Program.h"
 #include "storm/storage/jani/Property.h"
+#include "storm/storage/jani/Constant.h"
 #include "storm/storage/jani/JaniLocationExpander.h"
 #include "storm/storage/jani/JSONExporter.h"
 
@@ -45,6 +46,17 @@ namespace storm {
             if (options.modelName) {
                 janiModel.setName(options.modelName.get());
             }
+            
+            if (options.addPropertyConstants) {
+                for (auto& f : properties) {
+                    for (auto const& constant : f.getUndefinedConstants()) {
+                        if (!janiModel.hasConstant(constant.getName())) {
+                            janiModel.addConstant(storm::jani::Constant(constant.getName(), constant));
+                        }
+                    }
+                }
+            }
+            
         }
         
         std::pair<storm::jani::Model, std::vector<storm::jani::Property>> convertPrismToJani(storm::prism::Program const& program, std::vector<storm::jani::Property> const& properties, storm::converter::PrismToJaniConverterOptions options) {

@@ -3,11 +3,11 @@
 namespace storm {
     namespace converter {
 
-        JaniConversionOptions::JaniConversionOptions() : edgeAssignments(false), flatten(false), substituteConstants(true), allowedModelFeatures(storm::jani::getAllKnownModelFeatures()) {
+        JaniConversionOptions::JaniConversionOptions() : edgeAssignments(false), flatten(false), substituteConstants(true), allowedModelFeatures(storm::jani::getAllKnownModelFeatures()), addPropertyConstants(true) {
             // Intentionally left empty
         }
 
-        JaniConversionOptions::JaniConversionOptions(storm::settings::modules::JaniExportSettings const& settings) : locationVariables(settings.getLocationVariables()), edgeAssignments(settings.isAllowEdgeAssignmentsSet()), flatten(settings.isExportFlattenedSet()), substituteConstants(true), allowedModelFeatures(storm::jani::getAllKnownModelFeatures()) {
+        JaniConversionOptions::JaniConversionOptions(storm::settings::modules::JaniExportSettings const& settings) : locationVariables(settings.getLocationVariables()), edgeAssignments(settings.isAllowEdgeAssignmentsSet()), flatten(settings.isExportFlattenedSet()), substituteConstants(true), allowedModelFeatures(storm::jani::getAllKnownModelFeatures()), addPropertyConstants(true) {
             if (settings.isEliminateFunctionsSet()) {
                 allowedModelFeatures.remove(storm::jani::ModelFeature::Functions);
             }
