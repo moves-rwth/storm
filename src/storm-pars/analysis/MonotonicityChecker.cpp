@@ -26,6 +26,7 @@ namespace storm {
             this->model = model;
             this->formulas = formulas;
             this->validate = validate;
+            this->resultCheckOnSamples = std::map<carl::Variable, std::pair<bool, bool>>();
         }
 
         template <typename ValueType>
@@ -99,7 +100,8 @@ namespace storm {
                     STORM_PRINT("Result is constant" << std::endl);
                 } else {
                     for (auto itr2 = varsMonotone.begin(); itr2 != varsMonotone.end(); ++itr2) {
-                        if (!resultCheckOnSamples[itr2->first].first && !resultCheckOnSamples[itr2->first].second) {
+                        if (resultCheckOnSamples.find(itr2->first) != resultCheckOnSamples.end() &&
+                            (!resultCheckOnSamples[itr2->first].first && !resultCheckOnSamples[itr2->first].second)) {
                             STORM_PRINT("  - Not monotone in: " << itr2->first << std::endl);
                         } else {
                             if (itr2->second.first) {
@@ -184,7 +186,8 @@ namespace storm {
                     auto val = first.getValue();
                     auto vars = val.gatherVariables();
                     for (auto itr = vars.begin(); itr != vars.end(); ++itr) {
-                        if (!resultCheckOnSamples[*itr].first && !resultCheckOnSamples[*itr].second) {
+                        if (resultCheckOnSamples.find(*itr) != resultCheckOnSamples.end() &&
+                            (!resultCheckOnSamples[*itr].first && !resultCheckOnSamples[*itr].second)) {
                             if (varsMonotone.find(*itr) == varsMonotone.end()) {
                                 varsMonotone[*itr].first = false;
                                 varsMonotone[*itr].second = false;
