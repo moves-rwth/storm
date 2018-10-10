@@ -967,7 +967,7 @@ namespace storm {
         
         modernjson::json buildDestinations(std::vector<EdgeDestination> const& destinations, std::map<uint64_t, std::string> const& locationNames, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables, bool commentExpressions) {
             assert(destinations.size() > 0);
-            modernjson::json destDeclarations;
+            modernjson::json destDeclarations = std::vector<modernjson::json>();
             for(auto const& destination : destinations) {
                 modernjson::json destEntry;
                 destEntry["location"] = locationNames.at(destination.getLocationIndex());
@@ -992,7 +992,7 @@ namespace storm {
         }
         
         modernjson::json buildEdges(std::vector<Edge> const& edges , std::map<uint64_t, std::string> const& actionNames, std::map<uint64_t, std::string> const& locationNames, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables, bool commentExpressions) {
-            modernjson::json edgeDeclarations;
+            modernjson::json edgeDeclarations = std::vector<modernjson::json>();
             for(auto const& edge : edges) {
                 if (edge.getGuard().isFalse()) {
                     continue;
@@ -1026,7 +1026,7 @@ namespace storm {
         }
         
         modernjson::json buildAutomataArray(std::vector<storm::jani::Automaton> const& automata, std::map<uint64_t, std::string> const& actionNames, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, bool commentExpressions) {
-            modernjson::json automataDeclarations;
+            modernjson::json automataDeclarations = std::vector<modernjson::json>();
             for(auto const& automaton : automata) {
                 modernjson::json autoEntry;
                 autoEntry["name"] = automaton.getName();
