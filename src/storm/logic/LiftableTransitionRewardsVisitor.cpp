@@ -120,14 +120,14 @@ namespace storm {
         }
         
         bool LiftableTransitionRewardsVisitor::rewardModelHasTransitionRewards(std::string const& rewardModelName) const {
-            if (symbolicModelDescription.isJaniModel()) {
-                return storm::jani::RewardModelInformation(symbolicModelDescription.asJaniModel(), rewardModelName).hasTransitionRewards();
-            } else if (symbolicModelDescription.isPrismProgram()) {
-                return symbolicModelDescription.asPrismProgram().getRewardModel(rewardModelName).hasTransitionRewards();
-            } else {
-                // No model given
-                return false;
+            if (symbolicModelDescription.hasModel()) {
+                if (symbolicModelDescription.isJaniModel()) {
+                    return storm::jani::RewardModelInformation(symbolicModelDescription.asJaniModel(), rewardModelName).hasTransitionRewards();
+                } else if (symbolicModelDescription.isPrismProgram()) {
+                    return symbolicModelDescription.asPrismProgram().getRewardModel(rewardModelName).hasTransitionRewards();
+                }
             }
+            return false;
         }
     }
 }
