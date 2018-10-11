@@ -28,7 +28,7 @@
 #include "storm-parsers/api/storm-parsers.h"
 
 // TODO: extend for cases in which checkOnSamples and validateAssumption return true
-TEST(AssumptionCheckerTest, Brp) {
+TEST(AssumptionCheckerTest, Brp_no_bisimulation) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/brp16_2.pm";
     std::string formulaAsString = "P=? [F s=4 & i=N ]";
     std::string constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
@@ -62,9 +62,29 @@ TEST(AssumptionCheckerTest, Brp) {
                                                          storm::expressions::BinaryRelationExpression::RelationType::GreaterOrEqual));
     EXPECT_TRUE(checker.checkOnSamples(assumption));
 
-    auto emptyLattice = new storm::analysis::Lattice(storm::storage::BitVector(8), storm::storage::BitVector(8), 8);
-    // Validate assumptions
-    EXPECT_FALSE(checker.validateAssumption(assumption, emptyLattice));
+    auto dummyLattice = new storm::analysis::Lattice(storm::storage::BitVector(8), storm::storage::BitVector(8), 8);
+    // Validate assumption
+    EXPECT_FALSE(checker.validateAssumption(assumption, dummyLattice));
     EXPECT_FALSE(checker.validated(assumption));
+
+    expressionManager->declareRationalVariable("6");
+    expressionManager->declareRationalVariable("8");
+    assumption = std::make_shared<storm::expressions::BinaryRelationExpression>(
+            storm::expressions::BinaryRelationExpression(*expressionManager, expressionManager->getBooleanType(),
+                                                         expressionManager->getVariable("6").getExpression().getBaseExpressionPointer(),
+                                                         expressionManager->getVariable("8").getExpression().getBaseExpressionPointer(),
+                                                         storm::expressions::BinaryRelationExpression::RelationType::GreaterOrEqual));
+    storm::storage::BitVector above(13);
+    above.set(12);
+    storm::storage::BitVector below(13);
+    below.set(9);
+    dummyLattice = new storm::analysis::Lattice(above, below, 13);
+    EXPECT_TRUE(checker.checkOnSamples(assumption));
+    EXPECT_TRUE(checker.validateAssumption(assumption, dummyLattice));
+    EXPECT_TRUE(checker.validated(assumption));
+    EXPECT_TRUE(checker.valid(assumption));
 }
+
+
+
 
