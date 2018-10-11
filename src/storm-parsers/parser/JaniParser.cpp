@@ -129,13 +129,13 @@ namespace storm {
             size_t constantsCount = parsedStructure.count("constants");
             STORM_LOG_THROW(constantsCount < 2, storm::exceptions::InvalidJaniException, "Constant-declarations can be given at most once.");
             if (constantsCount == 1) {
+                // Reserve enough space to make sure that pointers to constants remain valid after adding new ones.
+                model.getConstants().reserve(parsedStructure.at("constants").size());
                 for (auto const &constStructure : parsedStructure.at("constants")) {
                     std::shared_ptr<storm::jani::Constant> constant = parseConstant(constStructure, scope.refine("constants[" + std::to_string(constants.size()) + "]"));
                     model.addConstant(*constant);
-                }
-                // Insert references after adding all constants to make sure that they remain valid
-                for (auto const& constant : model.getConstants()) {
-                    constants.emplace(constant.getName(), &constant);
+                    assert(model.getConstants().back().getName() == constant->getName());
+                    constants.emplace(constant->getName(), &model.getConstants().back());
                 }
             }
             
