@@ -287,7 +287,7 @@ namespace storm {
                 }
             }
             storm::expressions::Expression expr = parseExpression(propertyStructure, scope.refine("expression in property"), true);
-            if(expr.isInitialized()) {
+            if (expr.isInitialized() && propertyStructure.count("op") == 0) {
                 assert(bound == boost::none);
                 return std::make_shared<storm::logic::AtomicExpressionFormula>(expr);
             } else if(propertyStructure.count("op") == 1) {
@@ -494,8 +494,7 @@ namespace storm {
                     std::vector<std::shared_ptr<storm::logic::Formula const>> args = parseUnaryFormulaArgument(propertyStructure, formulaContext, opString, scope);
                     assert(args.size() == 1);
                     return std::make_shared<storm::logic::UnaryBooleanStateFormula const>(storm::logic::UnaryBooleanStateFormula::OperatorType::Not, args[0]);
-                    
-                } else if (opString == "≥" || opString == "≤" || opString == "<" || opString == ">" || opString == "=" || opString == "≠") {
+                } else if (!expr.isInitialized() && (opString == "≥" || opString == "≤" || opString == "<" || opString == ">" || opString == "=" || opString == "≠")) {
                     assert(bound == boost::none);
                     storm::logic::ComparisonType ct;
                     if(opString == "≥") {
@@ -539,6 +538,9 @@ namespace storm {
                         }
                     }
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "No complex comparisons for properties are supported.");
+                } else if (expr.isInitialized()) {
+                    assert(bound == boost::none);
+                    return std::make_shared<storm::logic::AtomicExpressionFormula>(expr);
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Unknown operator " << opString);
                 }
