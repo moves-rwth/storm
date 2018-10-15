@@ -389,7 +389,7 @@ namespace storm {
                     
                     STORM_LOG_THROW(propertyStructure.count("exp") > 0, storm::exceptions::InvalidJaniException, "Expected an expression at steady state property at " << scope.description);
                     auto rewExpr = parseExpression(propertyStructure["exp"], scope.refine("steady-state operator"), true);
-                    if (!expr.isInitialized() || expr.hasBooleanType()) {
+                    if (!rewExpr.isInitialized() || rewExpr.hasBooleanType()) {
                         std::shared_ptr<storm::logic::Formula const> subformula = parseUnaryFormulaArgument(propertyStructure, formulaContext, opString, scope.refine("Steady-state operator"))[0];
                         return std::make_shared<storm::logic::LongRunAverageOperatorFormula>(subformula, opInfo);
                     }
