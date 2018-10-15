@@ -383,7 +383,24 @@ namespace storm {
                         }
                     }
                 } else if (opString == "Smin" || opString == "Smax") {
-                    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Smin and Smax are currently not supported");
+                    storm::logic::OperatorInformation opInfo;
+                    opInfo.optimalityType =  opString == "Smin" ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize;
+                    opInfo.bound = bound;
+                    
+                    STORM_LOG_THROW(propertyStructure.count("exp") > 0, storm::exceptions::InvalidJaniException, "Expected an expression at steady state property at " << scope.description);
+                    auto rewExpr = parseExpression(propertyStructure["exp"], scope.refine("steady-state operator"), true);
+                    if (!expr.isInitialized() || expr.hasBooleanType()) {
+                        std::shared_ptr<storm::logic::Formula const> subformula = parseUnaryFormulaArgument(propertyStructure, formulaContext, opString, scope.refine("Steady-state operator"))[0];
+                        return std::make_shared<storm::logic::LongRunAverageOperatorFormula>(subformula, opInfo);
+                    }
+                    STORM_LOG_THROW(rewExpr.hasNumericalType(), storm::exceptions::InvalidJaniException, "Reward expression '" << rewExpr << "' does not have numerical type in " << scope.description);
+                    std::string rewardName = rewExpr.toString();
+                    if (!rewExpr.isVariable()) {
+                        nonTrivialRewardModelExpressions.emplace(rewardName, rewExpr);
+                    }
+                    auto subformula = std::make_shared<storm::logic::LongRunAverageRewardFormula>();
+                    return std::make_shared<storm::logic::RewardOperatorFormula>(subformula, rewardName, opInfo);
+                    
                 } else if (opString == "U" || opString == "F") {
                     assert(bound == boost::none);
                     std::vector<std::shared_ptr<storm::logic::Formula const>> args;
@@ -540,6 +557,7 @@ namespace storm {
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "No complex comparisons for properties are supported.");
                 } else if (expr.isInitialized()) {
                     assert(bound == boost::none);
+                    STORM_LOG_THROW(expr.hasBooleanType(), storm::exceptions::InvalidJaniException, "Expected a boolean expression at " << scope.description);
                     return std::make_shared<storm::logic::AtomicExpressionFormula>(expr);
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Unknown operator " << opString);

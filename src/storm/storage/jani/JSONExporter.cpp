@@ -370,7 +370,7 @@ namespace storm {
                     
                 } else {
                     // TODO add checks
-                    opDecl["op"] = "Pmin";
+                    opDecl["op"] = "Smin";
                     opDecl["exp"] = anyToJson(f.getSubformula().accept(*this, data));
                 }
             }
@@ -478,14 +478,24 @@ namespace storm {
             }
             STORM_LOG_THROW(!rewardModelName.empty(), storm::exceptions::NotSupportedException, "Reward name has to be specified for Jani-conversion");
 
+            std::string opString = "";
+            if (f.getSubformula().isLongRunAverageRewardFormula()) {
+                opString = "S";
+            } else {
+                opString = "E";
+            }
+            if (f.hasOptimalityType()) {
+                opString += storm::solver::minimize(f.getOptimalityType()) ? "min" : "max";
+            } else if (f.hasBound()) {
+                opString += storm::logic::isLowerBound(f.getBound().comparisonType) ? "min" : "max";
+            } else {
+                opString += "min";
+            }
+            
             if(f.hasBound()) {
                 auto bound = f.getBound();
                 opDecl["op"] = comparisonTypeToJani(bound.comparisonType);
-                if(f.hasOptimalityType()) {
-                    opDecl["left"]["op"] = f.getOptimalityType() == storm::solver::OptimizationDirection::Minimize ? "Emin" : "Emax";
-                } else {
-                    opDecl["left"]["op"] = (bound.comparisonType == storm::logic::ComparisonType::Less || bound.comparisonType == storm::logic::ComparisonType::LessEqual) ? "Emax" : "Emin";
-                }
+                opDecl["left"]["op"] = opString;
                 if (f.getSubformula().isEventuallyFormula()) {
                     opDecl["left"]["reach"] = anyToJson(f.getSubformula().asEventuallyFormula().getSubformula().accept(*this, data));
                     if (f.getSubformula().asEventuallyFormula().hasRewardAccumulation()) {
@@ -504,17 +514,13 @@ namespace storm {
                     }
                 } else if (f.getSubformula().isInstantaneousRewardFormula()) {
                     opDecl["left"][instantName] = buildExpression(f.getSubformula().asInstantaneousRewardFormula().getBound(), model.getConstants(), model.getGlobalVariables());
+                } else if (f.getSubformula().isLongRunAverageRewardFormula()) {
+                    // Nothing to do in this case
                 }
-                STORM_LOG_THROW(f.hasRewardModelName(), storm::exceptions::NotSupportedException, "Reward name has to be specified for Jani-conversion");
                 opDecl["left"]["exp"] = buildExpression(model.getRewardModelExpression(rewardModelName), model.getConstants(), model.getGlobalVariables());
                 opDecl["right"] = buildExpression(bound.threshold, model.getConstants(), model.getGlobalVariables());
             } else {
-                if (f.hasOptimalityType()) {
-                    opDecl["op"] = f.getOptimalityType() == storm::solver::OptimizationDirection::Minimize ? "Emin" : "Emax";
-                } else {
-                    // TODO add checks
-                    opDecl["op"] = "Emin";
-                }
+                opDecl["op"] = opString;
 
                 if (f.getSubformula().isEventuallyFormula()) {
                     opDecl["reach"] = anyToJson(f.getSubformula().asEventuallyFormula().getSubformula().accept(*this, data));
@@ -534,6 +540,8 @@ namespace storm {
                     }
                 } else if (f.getSubformula().isInstantaneousRewardFormula()) {
                     opDecl[instantName] = buildExpression(f.getSubformula().asInstantaneousRewardFormula().getBound(), model.getConstants(), model.getGlobalVariables());
+                } else if (f.getSubformula().isLongRunAverageRewardFormula()) {
+                    // Nothing to do in this case
                 }
                 opDecl["exp"] = buildExpression(model.getRewardModelExpression(rewardModelName), model.getConstants(), model.getGlobalVariables());
             }
