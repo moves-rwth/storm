@@ -7,6 +7,8 @@
 
 #include <map>
 #include "Lattice.h"
+#include "LatticeExtender.h"
+#include "AssumptionMaker.h"
 #include "storm/storage/expressions/BinaryRelationExpression.h"
 
 #include "carl/core/Variable.h"
@@ -42,6 +44,14 @@ namespace storm {
              */
             std::map<storm::analysis::Lattice*, std::map<carl::Variable, std::pair<bool, bool>>> checkMonotonicity();
 
+            /*!
+             * TODO
+             * @param lattice
+             * @param matrix
+             * @return
+             */
+            bool somewhereMonotonicity(storm::analysis::Lattice* lattice) ;
+
         private:
             //TODO: variabele type
             std::map<carl::Variable, std::pair<bool, bool>> analyseMonotonicity(uint_fast64_t i, storm::analysis::Lattice* lattice, storm::storage::SparseMatrix<ValueType> matrix) ;
@@ -52,6 +62,8 @@ namespace storm {
 
             std::map<carl::Variable, std::pair<bool, bool>> checkOnSamples(std::shared_ptr<storm::models::sparse::Mdp<ValueType>> model, uint_fast64_t numberOfSamples);
 
+            std::map<storm::analysis::Lattice*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> extendLatticeWithAssumptions(storm::analysis::Lattice* lattice, storm::analysis::AssumptionMaker<ValueType>* assumptionMaker, uint_fast64_t val1, uint_fast64_t val2, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>> assumptions);
+
             std::shared_ptr<storm::models::ModelBase> model;
 
             std::vector<std::shared_ptr<storm::logic::Formula const>> formulas;
@@ -59,6 +71,8 @@ namespace storm {
             bool validate;
 
             std::map<carl::Variable, std::pair<bool, bool>> resultCheckOnSamples;
+
+            storm::analysis::LatticeExtender<ValueType> *extender;
         };
     }
 }

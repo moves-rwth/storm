@@ -111,9 +111,34 @@ namespace storm {
             if (assumption != nullptr) {
                 storm::expressions::BinaryRelationExpression expr = *assumption;
                 STORM_LOG_THROW(expr.getRelationType() ==
-                                storm::expressions::BinaryRelationExpression::RelationType::GreaterOrEqual,
-                                storm::exceptions::NotImplementedException, "Only GreaterOrEqual assumptions allowed");
-                if (expr.getFirstOperand()->isVariable() && expr.getSecondOperand()->isVariable()) {
+                                storm::expressions::BinaryRelationExpression::RelationType::GreaterOrEqual
+                                || expr.getRelationType() ==
+                                   storm::expressions::BinaryRelationExpression::RelationType::Equal,
+                                storm::exceptions::NotImplementedException, "Only GreaterOrEqual or Equal assumptions allowed");
+                if (expr.getRelationType() == storm::expressions::BinaryRelationExpression::RelationType::Equal) {
+                    assert (expr.getFirstOperand()->isVariable() && expr.getSecondOperand()->isVariable());
+                    storm::expressions::Variable var1 = expr.getFirstOperand()->asVariableExpression().getVariable();
+                    storm::expressions::Variable var2 = expr.getSecondOperand()->asVariableExpression().getVariable();
+                    auto val1 = std::stoul(var1.getName(), nullptr, 0);
+                    auto val2 = std::stoul(var2.getName(), nullptr, 0);
+                    auto comp = lattice->compare(val1, val2);
+                    assert (comp == storm::analysis::Lattice::UNKNOWN || comp == storm::analysis::Lattice::SAME);
+                    storm::analysis::Lattice::Node *n1 = lattice->getNode(val1);
+                    storm::analysis::Lattice::Node *n2 = lattice->getNode(val2);
+
+                        if (n1 != nullptr && n2 != nullptr) {
+                            lattice->mergeNodes(n1, n2);
+                        } else if (n1 != nullptr) {
+                            lattice->addToNode(val2, n1);
+                        } else if (n2 != nullptr) {
+                            lattice->addToNode(val1, n2);
+                        } else {
+                            lattice->add(val1);
+                            lattice->addToNode(val2, lattice->getNode(val1));
+
+                        }
+                } else {
+                    assert (expr.getFirstOperand()->isVariable() && expr.getSecondOperand()->isVariable());
                     storm::expressions::Variable largest = expr.getFirstOperand()->asVariableExpression().getVariable();
                     storm::expressions::Variable smallest = expr.getSecondOperand()->asVariableExpression().getVariable();
                     if (lattice->compare(std::stoul(largest.getName(), nullptr, 0),
@@ -127,7 +152,8 @@ namespace storm {
                         if (n1 != nullptr && n2 != nullptr) {
                             lattice->addRelationNodes(n1, n2);
                         } else if (n1 != nullptr) {
-                            lattice->addBetween(std::stoul(smallest.getName(), nullptr, 0), n1, lattice->getBottom());
+                            lattice->addBetween(std::stoul(smallest.getName(), nullptr, 0), n1,
+                                                lattice->getBottom());
                         } else if (n2 != nullptr) {
                             lattice->addBetween(std::stoul(largest.getName(), nullptr, 0), lattice->getTop(), n2);
                         } else {

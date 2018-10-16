@@ -61,6 +61,8 @@ namespace storm {
                      */
                     void addRelationNodes(storm::analysis::Lattice::Node *above, storm::analysis::Lattice::Node * below);
 
+                    void mergeNodes(storm::analysis::Lattice::Node *n1, storm::analysis::Lattice::Node * n2);
+
                     /*!
                      * Compares the level of the nodes of the states.
                      * Behaviour unknown when one or more of the states doesnot occur at any Node in the Lattice.

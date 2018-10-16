@@ -140,8 +140,8 @@ TEST(MonotonicityCheckerTest, Brp_with_bisimulation) {
 
     storm::analysis::MonotonicityChecker<storm::RationalFunction> monotonicityChecker = storm::analysis::MonotonicityChecker<storm::RationalFunction>(dtmc, formulas, true);
     auto result = monotonicityChecker.checkMonotonicity();
-    EXPECT_EQ(result.size(), 1);
-    EXPECT_EQ(result.begin()->second.size(), 2);
+    EXPECT_EQ(1, result.size());
+    EXPECT_EQ(2, result.begin()->second.size());
     auto monotone = result.begin()->second.begin();
     EXPECT_EQ(monotone->second.first, true);
     EXPECT_EQ(monotone->second.second, false);

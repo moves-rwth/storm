@@ -27,6 +27,10 @@ namespace storm {
             this->formulas = formulas;
             this->validate = validate;
             this->resultCheckOnSamples = std::map<carl::Variable, std::pair<bool, bool>>();
+            if (model != nullptr) {
+                std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel = model->as<storm::models::sparse::Model<ValueType>>();
+                this->extender = new storm::analysis::LatticeExtender<ValueType>(sparseModel);
+            }
         }
 
         template <typename ValueType>
@@ -124,7 +128,7 @@ namespace storm {
             }
 
             finalCheckWatch.stop();
-            STORM_PRINT(std::endl << "Time for monotonicitycheck on lattice: " << finalCheckWatch << "." << std::endl << std::endl);
+            STORM_PRINT(std::endl << "Time for monotonicity check on lattice: " << finalCheckWatch << "." << std::endl << std::endl);
             return result;
         }
 
@@ -132,26 +136,111 @@ namespace storm {
         std::map<storm::analysis::Lattice*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> MonotonicityChecker<ValueType>::createLattice() {
             // Transform to Lattices
             storm::utility::Stopwatch latticeWatch(true);
-            std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel = model->as<storm::models::sparse::Model<ValueType>>();
-            storm::analysis::LatticeExtender<ValueType> *extender = new storm::analysis::LatticeExtender<ValueType>(sparseModel);
             std::tuple<storm::analysis::Lattice*, uint_fast64_t, uint_fast64_t> criticalTuple = extender->toLattice(formulas);
-            std::map<storm::analysis::Lattice*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> result;
-            if (model->isOfType(storm::models::ModelType::Dtmc)) {
-                auto dtmc = model->as<storm::models::sparse::Dtmc<ValueType>>();
-                auto assumptionChecker = storm::analysis::AssumptionChecker<ValueType>(formulas[0], dtmc, 3);
-                auto assumptionMaker = storm::analysis::AssumptionMaker<ValueType>(extender, &assumptionChecker, sparseModel->getNumberOfStates(), validate);
-                result = assumptionMaker.makeAssumptions(std::get<0>(criticalTuple), std::get<1>(criticalTuple), std::get<2>(criticalTuple));
-            } else if (model->isOfType(storm::models::ModelType::Dtmc)) {
-                auto mdp = model->as<storm::models::sparse::Mdp<ValueType>>();
-                auto assumptionChecker = storm::analysis::AssumptionChecker<ValueType>(formulas[0], mdp, 3);
-                auto assumptionMaker = storm::analysis::AssumptionMaker<ValueType>(extender, &assumptionChecker, sparseModel->getNumberOfStates(), validate);
-                result = assumptionMaker.makeAssumptions(std::get<0>(criticalTuple), std::get<1>(criticalTuple), std::get<2>(criticalTuple));
-            } else {
-               STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Unable to perform monotonicity analysis on the provided model type.");
-            }
 
+            std::map<storm::analysis::Lattice*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> result;
+
+            auto val1 = std::get<1>(criticalTuple);
+            auto val2 = std::get<2>(criticalTuple);
+            auto numberOfStates = model->getNumberOfStates();
+            std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>> assumptions;
+
+            if (val1 == numberOfStates && val2 == numberOfStates) {
+                result.insert(std::pair<storm::analysis::Lattice*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>>(std::get<0>(criticalTuple), assumptions));
+            } else if (val1 != numberOfStates && val2 != numberOfStates) {
+
+                storm::analysis::AssumptionChecker<ValueType> *assumptionChecker;
+                if (model->isOfType(storm::models::ModelType::Dtmc)) {
+                    auto dtmc = model->as<storm::models::sparse::Dtmc<ValueType>>();
+                    assumptionChecker = new storm::analysis::AssumptionChecker<ValueType>(formulas[0], dtmc, 3);
+                } else if (model->isOfType(storm::models::ModelType::Mdp)) {
+                    auto mdp = model->as<storm::models::sparse::Mdp<ValueType>>();
+                    assumptionChecker = new storm::analysis::AssumptionChecker<ValueType>(formulas[0], mdp, 3);
+                } else {
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException,
+                                    "Unable to perform monotonicity analysis on the provided model type.");
+                }
+                auto assumptionMaker = new storm::analysis::AssumptionMaker<ValueType>(assumptionChecker, numberOfStates, validate);
+                result = extendLatticeWithAssumptions(std::get<0>(criticalTuple), assumptionMaker, val1, val2, assumptions);
+            } else {
+                assert(false);
+            }
             latticeWatch.stop();
             STORM_PRINT(std::endl << "Total time for lattice creation: " << latticeWatch << "." << std::endl << std::endl);
+            return result;
+        }
+
+        template <typename ValueType>
+        std::map<storm::analysis::Lattice*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> MonotonicityChecker<ValueType>::extendLatticeWithAssumptions(storm::analysis::Lattice* lattice, storm::analysis::AssumptionMaker<ValueType>* assumptionMaker, uint_fast64_t val1, uint_fast64_t val2, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>> assumptions) {
+            std::map<storm::analysis::Lattice*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> result;
+
+            auto numberOfStates = model->getNumberOfStates();
+            if (val1 == numberOfStates || val2 == numberOfStates) {
+                assert (val1 == val2);
+                result.insert(std::pair<storm::analysis::Lattice*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>>(lattice, assumptions));
+            } else {
+                auto assumptionPair = assumptionMaker->createAndCheckAssumption(val1, val2, lattice);
+                assert (assumptionPair.size() == 2);
+                auto itr = assumptionPair.begin();
+                auto assumption1 = *itr;
+                ++itr;
+                auto assumption2 = *itr;
+
+                if (!assumption1.second && !assumption2.second) {
+                    // TODO check op lattice of er nog monotonicity is
+                    auto assumptionsCopy = std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>(assumptions);
+                    auto latticeCopy = new storm::analysis::Lattice(lattice);
+                    assumptions.push_back(assumption1.first);
+                    assumptionsCopy.push_back(assumption2.first);
+
+                    auto criticalTuple = extender->extendLattice(lattice, assumption1.first);
+                    if (somewhereMonotonicity(std::get<0>(criticalTuple))) {
+                        auto map = extendLatticeWithAssumptions(std::get<0>(criticalTuple), assumptionMaker, std::get<1>(criticalTuple), std::get<2>(criticalTuple), assumptions);
+                        result.insert(map.begin(), map.end());
+                    }
+
+
+                    criticalTuple = extender->extendLattice(latticeCopy, assumption2.first);
+                    if (somewhereMonotonicity(std::get<0>(criticalTuple))) {
+                        auto map = extendLatticeWithAssumptions(std::get<0>(criticalTuple), assumptionMaker,
+                                                           std::get<1>(criticalTuple), std::get<2>(criticalTuple),
+                                                           assumptionsCopy);
+                        result.insert(map.begin(), map.end());
+                    }
+                } else if (assumption1.second && assumption2.second) {
+                    auto assumption = assumptionMaker->createEqualAssumption(val1, val2);
+                    if (!validate) {
+                        assumptions.push_back(assumption);
+                    }
+                    // if validate is true and both hold, then they must be valid, so no need to add to assumptions
+                    auto criticalTuple = extender->extendLattice(lattice, assumption);
+                    if (somewhereMonotonicity(std::get<0>(criticalTuple))) {
+                        result = extendLatticeWithAssumptions(std::get<0>(criticalTuple), assumptionMaker, std::get<1>(criticalTuple), std::get<2>(criticalTuple), assumptions);
+                    }
+                } else if (assumption1.second) {
+                    if (!validate) {
+                        assumptions.push_back(assumption1.first);
+                    }
+                    // if validate is true and both hold, then they must be valid, so no need to add to assumptions
+
+                    auto criticalTuple = extender->extendLattice(lattice, assumption1.first);
+
+                    if (somewhereMonotonicity(std::get<0>(criticalTuple))) {
+                        result = extendLatticeWithAssumptions(std::get<0>(criticalTuple), assumptionMaker, std::get<1>(criticalTuple), std::get<2>(criticalTuple), assumptions);
+                    }
+
+                } else {
+                    assert (assumption2.second);
+                    if (!validate) {
+                        assumptions.push_back(assumption2.first);
+                    }
+                    // if validate is true and both hold, then they must be valid, so no need to add to assumptions
+                    auto criticalTuple = extender->extendLattice(lattice, assumption2.first);
+                    if (somewhereMonotonicity(std::get<0>(criticalTuple))) {
+                        result = extendLatticeWithAssumptions(std::get<0>(criticalTuple), assumptionMaker, std::get<1>(criticalTuple), std::get<2>(criticalTuple), assumptions);
+                    }
+                }
+            }
             return result;
         }
 
@@ -220,6 +309,7 @@ namespace storm {
                                         value->first &= derivative3.constantPart() >= 0;
                                         value->second &= derivative3.constantPart() <= 0;
                                     } else if (compare == storm::analysis::Lattice::SAME) {
+                                        // TODO: klopt dit
                                         // Behaviour doesn't matter, as the states are at the same level.
                                     } else {
                                         // As the relation between the states is unknown, we can't claim anything about the monotonicity.
@@ -268,6 +358,73 @@ namespace storm {
             STORM_PRINT(std::endl << "Time to check monotonicity based on the lattice: " << analyseWatch << "." << std::endl << std::endl);
             return varsMonotone;
         }
+
+        template <typename ValueType>
+        bool MonotonicityChecker<ValueType>::somewhereMonotonicity(storm::analysis::Lattice* lattice) {
+            std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel = model->as<storm::models::sparse::Model<ValueType>>();
+            auto matrix = sparseModel->getTransitionMatrix();
+
+            // TODO: tussenresultaten hergebruiken
+            std::map<carl::Variable, std::pair<bool, bool>> varsMonotone;
+
+            for (uint_fast64_t i = 0; i < matrix.getColumnCount(); ++i) {
+                // go over all rows
+                auto row = matrix.getRow(i);
+                auto first = (*row.begin());
+                if (first.getValue() != ValueType(1)) {
+                    std::map<uint_fast64_t, ValueType> transitions;
+
+                    for (auto itr = row.begin(); itr != row.end(); ++itr) {
+                        transitions.insert(std::pair<uint_fast64_t, ValueType>((*itr).getColumn(), (*itr).getValue()));
+                    }
+
+                    auto val = first.getValue();
+                    auto vars = val.gatherVariables();
+                    for (auto itr = vars.begin(); itr != vars.end(); ++itr) {
+                        if (varsMonotone.find(*itr) == varsMonotone.end()) {
+                            varsMonotone[*itr].first = true;
+                            varsMonotone[*itr].second = true;
+                        }
+                        std::pair<bool, bool> *value = &varsMonotone.find(*itr)->second;
+                        std::pair<bool, bool> old = *value;
+
+                        for (auto itr2 = transitions.begin(); itr2 != transitions.end(); ++itr2) {
+                            for (auto itr3 = transitions.begin(); itr3 != transitions.end(); ++itr3) {
+                                auto derivative2 = (*itr2).second.derivative(*itr);
+                                auto derivative3 = (*itr3).second.derivative(*itr);
+                                STORM_LOG_THROW(derivative2.isConstant() && derivative3.isConstant(),
+                                                storm::exceptions::NotSupportedException,
+                                                "Expecting derivative to be constant");
+
+                                auto compare = lattice->compare((*itr2).first, (*itr3).first);
+
+                                if (compare == storm::analysis::Lattice::ABOVE) {
+                                    // As the first state (itr2) is above the second state (itr3) it is sufficient to look at the derivative of itr2.
+                                    value->first &= derivative2.constantPart() >= 0;
+                                    value->second &= derivative2.constantPart() <= 0;
+                                } else if (compare == storm::analysis::Lattice::BELOW) {
+                                    // As the second state (itr3) is above the first state (itr2) it is sufficient to look at the derivative of itr3.
+                                    value->first &= derivative3.constantPart() >= 0;
+                                    value->second &= derivative3.constantPart() <= 0;
+                                } else if (compare == storm::analysis::Lattice::SAME) {
+                                    // Behaviour doesn't matter, as the states are at the same level.
+                                } else {
+                                    // As the relation between the states is unknown, we don't do anything
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            bool result = false;
+
+            for (auto itr = varsMonotone.begin(); !result && itr != varsMonotone.end(); ++itr) {
+                result = itr->second.first || itr->second.second;
+            }
+            return result;
+        }
+
 
         template <typename ValueType>
         std::map<carl::Variable, std::pair<bool, bool>> MonotonicityChecker<ValueType>::checkOnSamples(std::shared_ptr<storm::models::sparse::Dtmc<ValueType>> model, uint_fast64_t numberOfSamples) {

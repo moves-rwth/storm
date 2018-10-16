@@ -53,12 +53,29 @@ TEST(AssumptionMakerTest, Brp_without_bisimulation) {
     ASSERT_EQ(186, std::get<2>(criticalTuple));
 
     auto assumptionChecker = storm::analysis::AssumptionChecker<storm::RationalFunction>(formulas[0], dtmc, 3);
-    auto assumptionMaker = storm::analysis::AssumptionMaker<storm::RationalFunction>(extender, &assumptionChecker, dtmc->getNumberOfStates(), true);
-    auto result = assumptionMaker.makeAssumptions(std::get<0>(criticalTuple), std::get<1>(criticalTuple), std::get<2>(criticalTuple));
-    EXPECT_EQ(1, result.size());
-    auto lattice = result.begin()->first;
-    EXPECT_EQ(storm::analysis::Lattice::ABOVE, lattice->compare(186, 183));
-    for (auto i = 0; i < dtmc->getNumberOfStates(); ++i) {
-        EXPECT_TRUE(lattice->getAddedStates()[i]);
-    }
+    auto assumptionMaker = storm::analysis::AssumptionMaker<storm::RationalFunction>(&assumptionChecker, dtmc->getNumberOfStates(), true);
+    auto result = assumptionMaker.createAndCheckAssumption(std::get<1>(criticalTuple), std::get<2>(criticalTuple), std::get<0>(criticalTuple));
+
+    auto itr = result.begin();
+
+    auto var1 = itr->first->getManager().getVariable("183");
+    auto var2 = itr->first->getManager().getVariable("186");
+
+    EXPECT_EQ(2, result.size());
+
+    EXPECT_EQ(false, itr->second);
+    EXPECT_EQ(true, itr->first->getFirstOperand()->isVariable());
+    EXPECT_EQ(true, itr->first->getSecondOperand()->isVariable());
+    EXPECT_EQ(var1, itr->first->getFirstOperand()->asVariableExpression().getVariable());
+    EXPECT_EQ(var2, itr->first->getSecondOperand()->asVariableExpression().getVariable());
+    EXPECT_EQ(storm::expressions::BinaryRelationExpression::RelationType::GreaterOrEqual, itr->first->getRelationType());
+
+    ++itr;
+    EXPECT_EQ(false, itr->second);
+    EXPECT_EQ(true, itr->first->getFirstOperand()->isVariable());
+    EXPECT_EQ(true, itr->first->getSecondOperand()->isVariable());
+    EXPECT_EQ(var2, itr->first->getFirstOperand()->asVariableExpression().getVariable());
+    EXPECT_EQ(var1, itr->first->getSecondOperand()->asVariableExpression().getVariable());
+    EXPECT_EQ(storm::expressions::BinaryRelationExpression::RelationType::GreaterOrEqual, itr->first->getRelationType());
+    // TODO: createEqualsAssumption checken
 }

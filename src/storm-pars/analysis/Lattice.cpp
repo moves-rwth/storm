@@ -114,6 +114,10 @@ namespace storm {
             below->above.insert(above);
         }
 
+        void Lattice::mergeNodes(storm::analysis::Lattice::Node *n1, storm::analysis::Lattice::Node * n2) {
+            // TODO
+        }
+
         int Lattice::compare(uint_fast64_t state1, uint_fast64_t state2) {
             return compare(getNode(state1), getNode(state2));
         }
