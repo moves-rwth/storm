@@ -167,7 +167,7 @@ namespace storm {
             storm::jani::RewardModelInformation info(model, rewardModelName);
             
             bool steps = rewardAccumulation.isStepsSet() && (info.hasActionRewards() || info.hasTransitionRewards());
-            bool time = rewardAccumulation.isTimeSet() && !model.isDeterministicModel() && info.hasStateRewards();
+            bool time = rewardAccumulation.isTimeSet() && !model.isDiscreteTimeModel() && info.hasStateRewards();
             bool exit = rewardAccumulation.isExitSet() && info.hasStateRewards();
             
             return constructRewardAccumulation(storm::logic::RewardAccumulation(steps, time, exit));
