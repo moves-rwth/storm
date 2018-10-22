@@ -68,63 +68,72 @@ namespace storm {
         template <typename ValueType>
         std::map<storm::analysis::Lattice*, std::map<carl::Variable, std::pair<bool, bool>>> MonotonicityChecker<ValueType>::checkMonotonicity(std::map<storm::analysis::Lattice*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> map, storm::storage::SparseMatrix<ValueType> matrix) {
             storm::utility::Stopwatch finalCheckWatch(true);
+            std::map<storm::analysis::Lattice *, std::map<carl::Variable, std::pair<bool, bool>>> result;
+            
+            if (map.size() == 0) {
+                STORM_PRINT(std::endl << "Do not know about monotonicity" << std::endl);
+            } else {
+                auto i = 0;
 
-            auto i = 0;
-            std::map<storm::analysis::Lattice*, std::map<carl::Variable, std::pair<bool, bool>>> result;
-            for (auto itr = map.begin(); i < map.size() && itr != map.end(); ++itr) {
-                auto lattice = itr->first;
-                auto assumptions = itr->second;
-                std::ofstream myfile;
-                std::string filename = "lattice" + std::to_string(i) + ".dot";
-                myfile.open (filename);
-                lattice->toDotFile(myfile);
-                myfile.close();
+                for (auto itr = map.begin(); i < map.size() && itr != map.end(); ++itr) {
+                    auto lattice = itr->first;
+                    auto assumptions = itr->second;
+                    std::ofstream myfile;
+                    std::string filename = "lattice" + std::to_string(i) + ".dot";
+                    myfile.open(filename);
+                    lattice->toDotFile(myfile);
+                    myfile.close();
 
-                if (assumptions.size() > 0) {
-                    STORM_PRINT("Given assumptions: " << std::endl);
-                    bool first = true;
-                    for (auto itr2 = assumptions.begin(); itr2 != assumptions.end(); ++itr2) {
-                        if (!first) {
-                            STORM_PRINT(" ^ ");
-                        } else {
-                            STORM_PRINT("    ");
-                            first = false;
-                        }
-
-                        std::shared_ptr<storm::expressions::BinaryRelationExpression> expression = *itr2;
-                        auto var1 = expression->getFirstOperand();
-                        auto var2 = expression->getSecondOperand();
-                        STORM_PRINT(*expression);
-                    }
-                    STORM_PRINT(std::endl);
-                }
-
-                std::map<carl::Variable, std::pair<bool, bool>> varsMonotone = analyseMonotonicity(i, lattice, matrix);
-                if (varsMonotone.size() == 0) {
-                    STORM_PRINT("Result is constant" << std::endl);
-                } else {
-                    for (auto itr2 = varsMonotone.begin(); itr2 != varsMonotone.end(); ++itr2) {
-                        if (resultCheckOnSamples.find(itr2->first) != resultCheckOnSamples.end() &&
-                            (!resultCheckOnSamples[itr2->first].first && !resultCheckOnSamples[itr2->first].second)) {
-                            STORM_PRINT("  - Not monotone in: " << itr2->first << std::endl);
-                        } else {
-                            if (itr2->second.first) {
-                                STORM_PRINT("  - Monotone increasing in: " << itr2->first << std::endl);
+                    if (assumptions.size() > 0) {
+                        STORM_PRINT("Given assumptions: " << std::endl);
+                        bool first = true;
+                        for (auto itr2 = assumptions.begin(); itr2 != assumptions.end(); ++itr2) {
+                            if (!first) {
+                                STORM_PRINT(" ^ ");
                             } else {
-                                STORM_PRINT("  - Do not know if monotone increasing in: " << itr2->first << std::endl);
+                                STORM_PRINT("    ");
+                                first = false;
                             }
-                            if (itr2->second.second) {
-                                STORM_PRINT("  - Monotone decreasing in: " << itr2->first << std::endl);
+
+                            std::shared_ptr<storm::expressions::BinaryRelationExpression> expression = *itr2;
+                            auto var1 = expression->getFirstOperand();
+                            auto var2 = expression->getSecondOperand();
+                            STORM_PRINT(*expression);
+                        }
+                        STORM_PRINT(std::endl);
+                    }
+
+                    std::map<carl::Variable, std::pair<bool, bool>> varsMonotone = analyseMonotonicity(i, lattice,
+                                                                                                       matrix);
+                    if (varsMonotone.size() == 0) {
+                        STORM_PRINT("Result is constant" << std::endl);
+                    } else {
+                        for (auto itr2 = varsMonotone.begin(); itr2 != varsMonotone.end(); ++itr2) {
+                            if (resultCheckOnSamples.find(itr2->first) != resultCheckOnSamples.end() &&
+                                (!resultCheckOnSamples[itr2->first].first &&
+                                 !resultCheckOnSamples[itr2->first].second)) {
+                                STORM_PRINT("  - Not monotone in: " << itr2->first << std::endl);
                             } else {
-                                STORM_PRINT("  - Do not know if monotone decreasing in: " << itr2->first << std::endl);
+                                if (itr2->second.first) {
+                                    STORM_PRINT("  - Monotone increasing in: " << itr2->first << std::endl);
+                                } else {
+                                    STORM_PRINT(
+                                            "  - Do not know if monotone increasing in: " << itr2->first << std::endl);
+                                }
+                                if (itr2->second.second) {
+                                    STORM_PRINT("  - Monotone decreasing in: " << itr2->first << std::endl);
+                                } else {
+                                    STORM_PRINT(
+                                            "  - Do not know if monotone decreasing in: " << itr2->first << std::endl);
+                                }
                             }
                         }
+                        result.insert(
+                                std::pair<storm::analysis::Lattice *, std::map<carl::Variable, std::pair<bool, bool>>>(
+                                        lattice, varsMonotone));
                     }
-                    result.insert(
-                            std::pair<storm::analysis::Lattice *, std::map<carl::Variable, std::pair<bool, bool>>>(
-                                    lattice, varsMonotone));
+                    ++i;
                 }
-                ++i;
             }
 
             finalCheckWatch.stop();
