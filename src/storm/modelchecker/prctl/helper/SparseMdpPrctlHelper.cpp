@@ -34,6 +34,7 @@
 #include "storm/utility/Stopwatch.h"
 #include "storm/utility/ProgressMeasurement.h"
 #include "storm/utility/export.h"
+#include "storm/utility/NumberTraits.h"
 
 #include "storm/transformer/EndComponentEliminator.h"
 
@@ -1478,7 +1479,12 @@ namespace storm {
                 }
                 
                 // Solve MEC with the method specified in the settings
-                storm::solver::LraMethod method = storm::settings::getModule<storm::settings::modules::MinMaxEquationSolverSettings>().getLraMethod();
+                auto minMaxSettings = storm::settings::getModule<storm::settings::modules::MinMaxEquationSolverSettings>();
+                storm::solver::LraMethod method = minMaxSettings.getLraMethod();
+                if (storm::NumberTraits<ValueType>::IsExact && minMaxSettings.isLraMethodSetFromDefaultValue() && method != storm::solver::LraMethod::LinearProgramming) {
+                    STORM_LOG_INFO("Selecting 'LP' as the solution technique for long-run properties to guarantee exact results. If you want to override this, please explicitly specify a different LRA method.");
+                    method = storm::solver::LraMethod::LinearProgramming;
+                }
                 if (method == storm::solver::LraMethod::LinearProgramming) {
                     return computeLraForMaximalEndComponentLP(env, dir, transitionMatrix, rewardModel, mec);
                 } else if (method == storm::solver::LraMethod::ValueIteration) {

@@ -15,6 +15,7 @@
 #include "storm/solver/MathsatSmtSolver.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/CoreSettings.h"
+#include "storm/utility/NumberTraits.h"
 
 #include "storm/exceptions/InvalidSettingsException.h"
 
@@ -25,8 +26,11 @@ namespace storm {
             template<typename ValueType>
             std::unique_ptr<storm::solver::LpSolver<ValueType>> LpSolverFactory<ValueType>::create(std::string const& name, storm::solver::LpSolverTypeSelection solvT) const {
                 storm::solver::LpSolverType t;
-                if(solvT == storm::solver::LpSolverTypeSelection::FROMSETTINGS) {
+                if (solvT == storm::solver::LpSolverTypeSelection::FROMSETTINGS) {
                     t = storm::settings::getModule<storm::settings::modules::CoreSettings>().getLpSolver();
+                    if (storm::NumberTraits<ValueType>::IsExact && t != storm::solver::LpSolverType::Z3 && storm::settings::getModule<storm::settings::modules::CoreSettings>().isLpSolverSetFromDefaultValue()) {
+                        t = storm::solver::LpSolverType::Z3;
+                    }
                 } else {
                     t = convert(solvT);
                 }

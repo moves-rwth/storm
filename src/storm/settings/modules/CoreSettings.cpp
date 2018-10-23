@@ -112,6 +112,10 @@ namespace storm {
                 STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown LP solver '" << lpSolverName << "'.");
             }
             
+            bool CoreSettings::isLpSolverSetFromDefaultValue() const {
+                return !this->getOption(lpSolverOptionName).getHasOptionBeenSet() || this->getOption(lpSolverOptionName).getArgumentByName("name").wasSetFromDefaultValue();
+            }
+            
             storm::solver::SmtSolverType CoreSettings::getSmtSolver() const {
                 std::string smtSolverName = this->getOption(smtSolverOptionName).getArgumentByName("name").getValueAsString();
                 if (smtSolverName == "z3") {

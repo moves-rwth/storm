@@ -111,6 +111,10 @@ namespace storm {
                 STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown lra solving technique '" << lraMethodString << "'.");
             }
             
+            bool MinMaxEquationSolverSettings::isLraMethodSetFromDefaultValue() const {
+                return !this->getOption(lraMethodOptionName).getArgumentByName("name").getHasBeenSet() || this->getOption(lraMethodOptionName).getArgumentByName("name").wasSetFromDefaultValue();
+            }
+            
             MinMaxEquationSolverSettings::MarkovAutomatonBoundedReachabilityMethod MinMaxEquationSolverSettings::getMarkovAutomatonBoundedReachabilityMethod() const {
                 std::string techniqueAsString = this->getOption(markovAutomatonBoundedReachabilityMethodOptionName).getArgumentByName("name").getValueAsString();
                 if (techniqueAsString == "imca") {
