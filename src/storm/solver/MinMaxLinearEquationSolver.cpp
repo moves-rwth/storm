@@ -161,9 +161,10 @@ namespace storm {
         }
 
         template<typename ValueType>
-        MinMaxLinearEquationSolverRequirements MinMaxLinearEquationSolverFactory<ValueType>::getRequirements(Environment const& env, bool hasUniqueSolution, boost::optional<storm::solver::OptimizationDirection> const& direction, bool const& hasInitialScheduler) const {
+        MinMaxLinearEquationSolverRequirements MinMaxLinearEquationSolverFactory<ValueType>::getRequirements(Environment const& env, bool hasUniqueSolution, boost::optional<storm::solver::OptimizationDirection> const& direction, bool hasInitialScheduler, bool trackScheduler) const {
             // Create dummy solver and ask it for requirements.
             std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> solver = this->create(env);
+            solver->setTrackScheduler(trackScheduler);
             solver->setHasUniqueSolution(hasUniqueSolution);
             return solver->getRequirements(env, direction, hasInitialScheduler);
         }

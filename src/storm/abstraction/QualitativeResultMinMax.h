@@ -13,7 +13,8 @@ namespace storm {
             virtual ~QualitativeResultMinMax() = default;
 
             virtual bool isSymbolic() const;
-            
+            virtual bool isExplicit() const;
+
             template<storm::dd::DdType Type>
             SymbolicQualitativeResultMinMax<Type> const& asSymbolicQualitativeResultMinMax() const;
             

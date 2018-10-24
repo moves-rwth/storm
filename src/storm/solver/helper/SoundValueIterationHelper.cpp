@@ -303,7 +303,7 @@ namespace storm {
                 
                 STORM_LOG_INFO("Sound Value Iteration terminated with lower bound (over all states) "
                                        << (hasLowerBound ? lowerBound : storm::utility::zero<ValueType>()) << (hasLowerBound ? "" : "(none)")
-                                       << " and upper bound (over all states)"
+                                       << " and upper bound (over all states) "
                                        << (hasUpperBound ? upperBound : storm::utility::infinity<ValueType>()) << (hasUpperBound ? "" : "(none)")
                                        << ". Decision value is "
                                        << (hasDecisionValue ? decisionValue : -storm::utility::infinity<ValueType>()) << (hasDecisionValue ? "" : "(none)")

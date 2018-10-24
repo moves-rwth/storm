@@ -4,6 +4,7 @@
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/Mdp.h"
+#include "storm/models/sparse/Pomdp.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 
 namespace storm {
@@ -19,6 +20,8 @@ namespace storm {
                         return std::make_shared<storm::models::sparse::Ctmc<ValueType, RewardModelType>>(std::move(components));
                     case storm::models::ModelType::Mdp:
                         return std::make_shared<storm::models::sparse::Mdp<ValueType, RewardModelType>>(std::move(components));
+                    case storm::models::ModelType::Pomdp:
+                        return std::make_shared<storm::models::sparse::Pomdp<ValueType, RewardModelType>>(std::move(components));
                     case storm::models::ModelType::MarkovAutomaton:
                         return std::make_shared<storm::models::sparse::MarkovAutomaton<ValueType, RewardModelType>>(std::move(components));
                     case storm::models::ModelType::S2pg:

@@ -34,7 +34,6 @@
 #include "storm/settings/modules/ExplorationSettings.h"
 #include "storm/settings/modules/ResourceSettings.h"
 #include "storm/settings/modules/AbstractionSettings.h"
-#include "storm/settings/modules/JaniExportSettings.h"
 #include "storm/settings/modules/JitBuilderSettings.h"
 #include "storm/settings/modules/MultiObjectiveSettings.h"
 #include "storm/settings/modules/MultiplierSettings.h"
@@ -138,7 +137,7 @@ namespace storm {
             }
 
             // Include the options from a possibly specified configuration file, but don't overwrite existing settings.
-            if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isConfigSet()) {
+            if (storm::settings::hasModule<storm::settings::modules::GeneralSettings>() && storm::settings::getModule<storm::settings::modules::GeneralSettings>().isConfigSet()) {
                 this->setFromConfigurationFile(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getConfigFilename());
             }
             
@@ -250,7 +249,10 @@ namespace storm {
         
         void SettingsManager::printHelpForModule(std::string const& moduleName, uint_fast64_t maxLength) const {
             auto moduleIterator = moduleOptions.find(moduleName);
-            STORM_LOG_THROW(moduleIterator != moduleOptions.end(), storm::exceptions::IllegalFunctionCallException, "Cannot print help for unknown module '" << moduleName << "'.");
+            if(moduleIterator == this->moduleOptions.end()) {
+                return;
+            }
+            //STORM_LOG_THROW(moduleIterator != moduleOptions.end(), storm::exceptions::IllegalFunctionCallException, "Cannot print help for unknown module '" << moduleName << "'.");
             STORM_PRINT("##### Module '" << moduleName << "' " << std::string(std::min(maxLength, maxLength - moduleName.length() - 16), '#') << std::endl);
             
             // Save the flags for std::cout so we can manipulate them and be sure they will be restored as soon as this
@@ -546,7 +548,6 @@ namespace storm {
             storm::settings::addModule<storm::settings::modules::ExplorationSettings>();
             storm::settings::addModule<storm::settings::modules::ResourceSettings>();
             storm::settings::addModule<storm::settings::modules::AbstractionSettings>();
-            storm::settings::addModule<storm::settings::modules::JaniExportSettings>();
             storm::settings::addModule<storm::settings::modules::JitBuilderSettings>();
             storm::settings::addModule<storm::settings::modules::MultiObjectiveSettings>();
             storm::settings::addModule<storm::settings::modules::MultiplierSettings>();

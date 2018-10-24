@@ -93,7 +93,7 @@ namespace storm {
         
         boost::any SyntacticalEqualityCheckVisitor::visit(UnaryBooleanFunctionExpression const& expression, boost::any const& data) {
             BaseExpression const& otherBaseExpression = boost::any_cast<std::reference_wrapper<BaseExpression const>>(data).get();
-            if (otherBaseExpression.isBinaryBooleanFunctionExpression()) {
+            if (otherBaseExpression.isUnaryBooleanFunctionExpression()) {
                 UnaryBooleanFunctionExpression const& otherExpression = otherBaseExpression.asUnaryBooleanFunctionExpression();
                 
                 bool result = expression.getOperatorType() == otherExpression.getOperatorType();
@@ -108,7 +108,7 @@ namespace storm {
         
         boost::any SyntacticalEqualityCheckVisitor::visit(UnaryNumericalFunctionExpression const& expression, boost::any const& data) {
             BaseExpression const& otherBaseExpression = boost::any_cast<std::reference_wrapper<BaseExpression const>>(data).get();
-            if (otherBaseExpression.isBinaryBooleanFunctionExpression()) {
+            if (otherBaseExpression.isUnaryNumericalFunctionExpression()) {
                 UnaryNumericalFunctionExpression const& otherExpression = otherBaseExpression.asUnaryNumericalFunctionExpression();
                 
                 bool result = expression.getOperatorType() == otherExpression.getOperatorType();

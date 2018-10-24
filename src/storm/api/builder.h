@@ -5,17 +5,20 @@
 #include "storm-parsers/parser/ImcaMarkovAutomatonParser.h"
 
 #include "storm/storage/SymbolicModelDescription.h"
+#include "storm/storage/jani/ModelFeatures.h"
 
 #include "storm/storage/sparse/ModelComponents.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/Mdp.h"
+#include "storm/models/sparse/Pomdp.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/StochasticTwoPlayerGame.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 
 #include "storm/builder/DdPrismModelBuilder.h"
 #include "storm/builder/DdJaniModelBuilder.h"
+#include "storm/builder/BuilderType.h"
 
 #include "storm/generator/PrismNextStateGenerator.h"
 #include "storm/generator/JaniNextStateGenerator.h"
@@ -28,6 +31,16 @@
 
 namespace storm {
     namespace api {
+        
+        inline storm::jani::ModelFeatures getSupportedJaniFeatures(storm::builder::BuilderType const& builderType) {
+            storm::jani::ModelFeatures features;
+            features.add(storm::jani::ModelFeature::DerivedOperators);
+            features.add(storm::jani::ModelFeature::StateExitRewards);
+            if (builderType == storm::builder::BuilderType::Explicit) {
+                features.add(storm::jani::ModelFeature::Arrays);
+            }
+            return features;
+        }
         
         template<storm::dd::DdType LibraryType, typename ValueType>
         std::shared_ptr<storm::models::symbolic::Model<LibraryType, ValueType>> buildSymbolicModel(storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool buildFullModel = false) {
@@ -97,7 +110,7 @@ namespace storm {
 
         template<typename ValueType>
         std::shared_ptr<storm::models::sparse::Model<ValueType>> buildSparseModel(storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool jit = false, bool doctor = false) {
-            storm::builder::BuilderOptions options(formulas);
+            storm::builder::BuilderOptions options(formulas, model);
             return buildSparseModel<ValueType>(model, options, jit, doctor);
         }
         
@@ -112,6 +125,8 @@ namespace storm {
                     return std::make_shared<storm::models::sparse::Mdp<ValueType, RewardModelType>>(std::move(components));
                 case storm::models::ModelType::MarkovAutomaton:
                     return std::make_shared<storm::models::sparse::MarkovAutomaton<ValueType, RewardModelType>>(std::move(components));
+                case storm::models::ModelType::Pomdp:
+                    return std::make_shared<storm::models::sparse::Pomdp<ValueType, RewardModelType>>(std::move(components));
                 case storm::models::ModelType::S2pg:
                     return std::make_shared<storm::models::sparse::StochasticTwoPlayerGame<ValueType, RewardModelType>>(std::move(components));
             }

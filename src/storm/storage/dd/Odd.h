@@ -5,8 +5,13 @@
 #include <map>
 #include <memory>
 #include <unordered_set>
+#include <functional>
 
 namespace storm {
+    namespace storage {
+        class BitVector;
+    }
+    
     namespace dd {
         class Odd {
         public:
@@ -113,11 +118,30 @@ namespace storm {
             void expandExplicitVector(storm::dd::Odd const& newOdd, std::vector<ValueType> const& oldValues, std::vector<ValueType>& newValues) const;
             
             /*!
+             * Translates the indices of the old ODD to that of the new ODD by calling the callback for each old-new
+             * offset pair. Note that for each old offset, there may be multiple new offsets. The new ODD is expected
+             * to extend the old ODD by adding layers *at the bottom*.
+             *
+             * @param newOdd The new ODD to use.
+             * @param callback The callback function.
+             */
+            void oldToNewIndex(storm::dd::Odd const& newOdd, std::function<void (uint64_t oldOffset, uint64_t newOffset)> const& callback) const;
+            
+            /*!
              * Exports the ODD in the dot format to the given file.
              *
              * @param filename The name of the file to which to write the dot output.
              */
             void exportToDot(std::string const& filename) const;
+            
+            /*!
+             * Retrieves the encoding for the given offset.
+             *
+             * @param offset The target offset.
+             * @param variableCount If not null, this indicates how many variables are contained in the encoding. If 0,
+             * this number is automatically determined.
+             */
+            storm::storage::BitVector getEncoding(uint64_t offset, uint64_t variableCount = 0) const;
             
         private:
             /*!
@@ -141,6 +165,8 @@ namespace storm {
              */
             template <typename ValueType>
             static void expandValuesToVectorRec(uint_fast64_t oldOffset, storm::dd::Odd const& oldOdd, std::vector<ValueType> const& oldValues, uint_fast64_t newOffset, storm::dd::Odd const& newOdd, std::vector<ValueType>& newValues);
+            
+            static void oldToNewIndexRec(uint_fast64_t oldOffset, storm::dd::Odd const& oldOdd, uint_fast64_t newOffset, storm::dd::Odd const& newOdd, std::function<void (uint64_t oldOffset, uint64_t newOffset)> const& callback);
             
             // The then- and else-nodes.
             std::shared_ptr<Odd> elseNode;

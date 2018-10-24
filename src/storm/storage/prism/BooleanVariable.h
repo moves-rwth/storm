@@ -25,7 +25,7 @@ namespace storm {
              * @param filename The filename in which the variable is defined.
              * @param lineNumber The line number in which the variable is defined.
              */
-            BooleanVariable(storm::expressions::Variable const& variable, storm::expressions::Expression const& initialValueExpression, std::string const& filename = "", uint_fast64_t lineNumber = 0);
+            BooleanVariable(storm::expressions::Variable const& variable, storm::expressions::Expression const& initialValueExpression, bool observable, std::string const& filename = "", uint_fast64_t lineNumber = 0);
             
             /*!
              * Substitutes all identifiers in the boolean variable according to the given map.

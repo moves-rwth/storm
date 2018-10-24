@@ -7,6 +7,8 @@
 #include "storm/utility/constants.h"
 #include "storm/utility/vector.h"
 #include "storm/utility/macros.h"
+#include "storm/utility/graph.h"
+#include "storm/transformer/SubsystemBuilder.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
 
@@ -117,20 +119,11 @@ namespace storm {
                             exitRates[state] = storm::utility::zero<ValueType>();
                         }
                     }
-                    // Remove the Markovian choices for the different model ingredients
-                    this->getTransitionMatrix() = this->getTransitionMatrix().restrictRows(keptChoices);
-                    for(auto& rewModel : this->getRewardModels()) {
-                        if(rewModel.second.hasStateActionRewards()) {
-                            storm::utility::vector::filterVectorInPlace(rewModel.second.getStateActionRewardVector(), keptChoices);
-                        }
-                        if(rewModel.second.hasTransitionRewards()) {
-                            rewModel.second.getTransitionRewardMatrix() = rewModel.second.getTransitionRewardMatrix().restrictRows(keptChoices);
-                        }
+                    
+                    if (!keptChoices.full()) {
+                        *this = std::move(*storm::transformer::buildSubsystem(*this, storm::storage::BitVector(this->getNumberOfStates(), true), keptChoices, false).model->template as<MarkovAutomaton<ValueType, RewardModelType>>());
                     }
-                    if(this->hasChoiceLabeling()) {
-                        this->getOptionalChoiceLabeling() = this->getChoiceLabeling().getSubLabeling(keptChoices);
-                    }
-
+                    
                     // Mark the automaton as closed.
                     closed = true;
                 }

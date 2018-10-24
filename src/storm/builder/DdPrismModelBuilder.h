@@ -3,6 +3,7 @@
 
 #include <map>
 #include <boost/optional.hpp>
+#include <boost/variant.hpp>
 
 #include "storm/storage/prism/Program.h"
 

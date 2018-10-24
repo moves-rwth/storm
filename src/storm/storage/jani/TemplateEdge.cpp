@@ -1,18 +1,20 @@
 #include "storm/storage/jani/TemplateEdge.h"
 
 #include "storm/storage/jani/Model.h"
+#include "storm/storage/jani/LValue.h"
 
 #include "storm/storage/expressions/LinearityCheckVisitor.h"
+#include "storm/storage/jani/expressions/JaniExpressionSubstitutionVisitor.h"
 
 namespace storm {
     namespace jani {
         
-        TemplateEdge::TemplateEdge(storm::expressions::Expression const& guard) : guard(guard) {
+        TemplateEdge::TemplateEdge(storm::expressions::Expression const& guard) : guard(guard), lowestAssignmentLevel(std::numeric_limits<int64_t>::max()), highestAssignmentLevel(std::numeric_limits<int64_t>::min()) {
             // Intentionally left empty.
         }
 
         TemplateEdge::TemplateEdge(storm::expressions::Expression const& guard, OrderedAssignments const& assignments, std::vector<TemplateEdgeDestination> const& destinations)
-                : guard(guard), destinations(destinations), assignments(assignments) {
+                : guard(guard), destinations(destinations), assignments(assignments), lowestAssignmentLevel(std::numeric_limits<int64_t>::max()), highestAssignmentLevel(std::numeric_limits<int64_t>::min()) {
             // Intentionally left empty.
         }
         
@@ -25,10 +27,17 @@ namespace storm {
         }
         
         void TemplateEdge::finalize(Model const& containingModel) {
+            lowestAssignmentLevel = std::numeric_limits<int64_t>::max();
+            highestAssignmentLevel = std::numeric_limits<int64_t>::min();
             for (auto const& destination : getDestinations()) {
+                if (!destination.getOrderedAssignments().empty()) {
+                    lowestAssignmentLevel = std::min(lowestAssignmentLevel, destination.getOrderedAssignments().getLowestLevel());
+                    highestAssignmentLevel = std::max(highestAssignmentLevel, destination.getOrderedAssignments().getHighestLevel());
+                }
                 for (auto const& assignment : destination.getOrderedAssignments().getAllAssignments()) {
-                    if (containingModel.getGlobalVariables().hasVariable(assignment.getExpressionVariable())) {
-                        writtenGlobalVariables.insert(assignment.getExpressionVariable());
+                    Variable const& var = assignment.getLValue().isVariable() ? assignment.getLValue().getVariable() : assignment.getLValue().getArray();
+                    if (containingModel.getGlobalVariables().hasVariable(var.getExpressionVariable())) {
+                        writtenGlobalVariables.insert(var.getExpressionVariable());
                     }
                 }
             }
@@ -42,11 +51,19 @@ namespace storm {
             return guard;
         }
         
+        void TemplateEdge::setGuard(storm::expressions::Expression const& newGuard) {
+            guard = newGuard;
+        }
+        
         std::size_t TemplateEdge::getNumberOfDestinations() const {
             return destinations.size();
         }
         
         std::vector<TemplateEdgeDestination> const& TemplateEdge::getDestinations() const {
+            return destinations;
+        }
+        
+        std::vector<TemplateEdgeDestination>& TemplateEdge::getDestinations() {
             return destinations;
         }
         
@@ -57,9 +74,13 @@ namespace storm {
         OrderedAssignments const& TemplateEdge::getAssignments() const {
             return assignments;
         }
+
+        OrderedAssignments& TemplateEdge::getAssignments() {
+            return assignments;
+        }
         
         void TemplateEdge::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {
-            guard = guard.substitute(substitution);
+            guard = substituteJaniExpression(guard, substitution);
 
             for (auto& assignment : assignments) {
                 assignment.substitute(substitution);
@@ -77,26 +98,36 @@ namespace storm {
             assignments.changeAssignmentVariables(remapping);
         }
 
-        void TemplateEdge::liftTransientDestinationAssignments() {
+        void TemplateEdge::liftTransientDestinationAssignments(int64_t maxLevel) {
             if (!destinations.empty()) {
                 auto const& destination = *destinations.begin();
                 
+                std::vector<std::shared_ptr<Assignment>> assignmentsToLift;
+                
                 for (auto const& assignment : destination.getOrderedAssignments().getTransientAssignments()) {
                     // Check if we can lift the assignment to the edge.
-                    bool canBeLifted = true;
-                    for (auto const& destination : destinations) {
-                        if (!destination.hasAssignment(assignment)) {
-                            canBeLifted = false;
-                            break;
+                    bool canBeLifted = assignment.getLevel() <= maxLevel;
+                    if (canBeLifted) {
+                        for (auto const& destination : destinations) {
+                            if (!destination.hasAssignment(assignment)) {
+                                canBeLifted = false;
+                                break;
+                            }
                         }
                     }
                     
-                    // If so, remove the assignment from all destinations.
                     if (canBeLifted) {
-                        this->addTransientAssignment(assignment);
-                        for (auto& destination : destinations) {
-                            destination.removeAssignment(assignment);
-                        }
+                        // Do not remove the assignment now, as we currently iterate over them.
+                        // Also we need to make a copy of the assignment since we are about to delete it
+                        assignmentsToLift.push_back(std::make_shared<Assignment>(assignment));
+                    }
+                }
+                
+                // now actually lift the assignments
+                for (auto const& assignment : assignmentsToLift) {
+                    this->addTransientAssignment(*assignment);
+                    for (auto& destination : destinations) {
+                        destination.removeAssignment(*assignment);
                     }
                 }
             }
@@ -132,18 +163,25 @@ namespace storm {
             return false;
         }
         
-        bool TemplateEdge::usesAssignmentLevels() const {
-            if (assignments.hasMultipleLevels()) {
+        bool TemplateEdge::usesAssignmentLevels(bool onlyTransient) const {
+            if (assignments.hasMultipleLevels(onlyTransient)) {
                 return true;
             }
             for (auto const& destination : this->getDestinations()) {
-                if (destination.usesAssignmentLevels()) {
+                if (destination.usesAssignmentLevels(onlyTransient)) {
                     return true;
                 }
             }
             return false;
         }
-
+        
+        int64_t const& TemplateEdge::getLowestAssignmentLevel() const {
+            return lowestAssignmentLevel;
+        }
+        
+        int64_t const& TemplateEdge::getHighestAssignmentLevel() const {
+            return highestAssignmentLevel;
+        }
 
         bool TemplateEdge::hasEdgeDestinationAssignments() const {
             for (auto const& destination : destinations) {

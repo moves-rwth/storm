@@ -53,9 +53,9 @@ namespace storm {
                     if(isRewardVariable(assignment.first)) {
                         std::unordered_map<storm::expressions::Variable, storm::expressions::Expression> eval;
                         eval.emplace((variables.at(assignment.first))->getExpressionVariable(), expManager->integer(0));
-                        vec.emplace_back(*(variables.at(assignment.first)), assignment.second.substitute(eval).simplify(), level);
+                        vec.emplace_back(storm::jani::LValue(*(variables.at(assignment.first))), assignment.second.substitute(eval).simplify(), level);
                     } else {
-                        vec.emplace_back(*(variables.at(assignment.first)), assignment.second, level);
+                        vec.emplace_back(storm::jani::LValue(*(variables.at(assignment.first))), assignment.second, level);
                     }
                 }
                 ++level;
@@ -67,7 +67,7 @@ namespace storm {
             storm::ppg::ProbabilisticProgramAction const& act = static_cast<storm::ppg::ProbabilisticProgramAction const&>(edge.getAction());
             std::vector<std::pair<uint64_t, storm::expressions::Expression>> vec;
             for(auto const& assign : act) {
-                storm::jani::Assignment assignment(automaton.getVariables().getVariable(act.getVariableName()), expManager->integer(assign.value), 0);
+                storm::jani::Assignment assignment(storm::jani::LValue(automaton.getVariables().getVariable(act.getVariableName())), expManager->integer(assign.value), 0);
                 templateEdge.addDestination(storm::jani::TemplateEdgeDestination(storm::jani::OrderedAssignments(assignment)));
                 vec.emplace_back(janiLocId.at(edge.getTargetId()), assign.probability);
             }

@@ -28,7 +28,8 @@ namespace storm {
             DTMC,
             CTMC,
             MDP,
-            MA
+            MA,
+            POMDP
         };
         
         template<typename ValueType, typename StateType = uint32_t>
@@ -50,6 +51,7 @@ namespace storm {
             virtual ModelType getModelType() const = 0;
             virtual bool isDeterministicModel() const = 0;
             virtual bool isDiscreteTimeModel() const = 0;
+            virtual bool isPartiallyObservable() const = 0;
             virtual std::vector<StateType> getInitialStates(StateToIdCallback const& stateToIdCallback) = 0;
             
             void load(CompressedState const& state);
@@ -60,9 +62,11 @@ namespace storm {
             virtual storm::builder::RewardModelInformation getRewardModelInformation(uint64_t const& index) const = 0;
             
             storm::expressions::SimpleValuation toValuation(CompressedState const& state) const;
-            
+
+            uint32 observabilityClass(CompressedState const& state) const;
+
             virtual storm::models::sparse::StateLabeling label(storm::storage::sparse::StateStorage<StateType> const& stateStorage, std::vector<StateType> const& initialStateIndices = {}, std::vector<StateType> const& deadlockStateIndices = {}) = 0;
-            
+
             NextStateGeneratorOptions const& getOptions() const;
             
             virtual std::shared_ptr<storm::storage::sparse::ChoiceOrigins> generateChoiceOrigins(std::vector<boost::any>& dataForChoiceOrigins) const;
@@ -103,11 +107,18 @@ namespace storm {
             /// A comparator used to compare constants.
             storm::utility::ConstantsComparator<ValueType> comparator;
 
+            /// The mask to compute the observability class (Constructed upon first use)
+            mutable storm::storage::BitVector mask;
+
+            /// The observability classes handed out so far.
+            // TODO consider using a BitVectorHashMap for this?
+            mutable std::unordered_map<storm::storage::BitVector, uint32_t> observabilityMap;
             /// A state that encodes the outOfBoundsState
             CompressedState outOfBoundsState;
 
             /// A map that stores the indices of states with overlapping guards.
             boost::optional<std::vector<uint64_t>> overlappingGuardStates;
+
         };
     }
 }

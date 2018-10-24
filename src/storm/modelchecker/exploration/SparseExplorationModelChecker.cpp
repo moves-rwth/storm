@@ -37,7 +37,7 @@ namespace storm {
     namespace modelchecker {
         
         template<typename ModelType, typename StateType>
-        SparseExplorationModelChecker<ModelType, StateType>::SparseExplorationModelChecker(storm::prism::Program const& program) : program(program.substituteConstants()), randomGenerator(std::chrono::system_clock::now().time_since_epoch().count()), comparator(storm::settings::getModule<storm::settings::modules::ExplorationSettings>().getPrecision()) {
+        SparseExplorationModelChecker<ModelType, StateType>::SparseExplorationModelChecker(storm::prism::Program const& program) : program(program.substituteConstantsFormulas()), randomGenerator(std::chrono::system_clock::now().time_since_epoch().count()), comparator(storm::settings::getModule<storm::settings::modules::ExplorationSettings>().getPrecision()) {
             // Intentionally left empty.
         }
         

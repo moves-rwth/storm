@@ -80,8 +80,9 @@ namespace storm {
             
             void copyElements(std::vector<size_t> elements, storm::builder::DFTBuilder<ValueType> builder) const;
             
-            size_t stateVectorSize() const {
-                return mStateVectorSize;
+            size_t stateBitVectorSize() const {
+                // Ensure multiple of 64
+                return (mStateVectorSize / 64 + (mStateVectorSize % 64 != 0)) * 64;
             }
             
             size_t nrElements() const {

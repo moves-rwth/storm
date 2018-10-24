@@ -18,6 +18,8 @@
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "storm/storage/jani/Property.h"
+
 
 TEST(ModelInstantiatorTest, BrpProb) {
     carl::VariablePool::getInstance().clear();

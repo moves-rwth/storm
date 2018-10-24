@@ -63,7 +63,7 @@ namespace storm {
                 // stores for each choice from which parts of the input model description it originates
                 boost::optional<std::shared_ptr<storm::storage::sparse::ChoiceOrigins>> choiceOrigins;
 
-                
+                boost::optional<std::vector<uint32_t>> observabilityClasses;
                 // Continuous time specific components (CTMCs, Markov Automata):
                 
                 // True iff the transition values (for Markovian choices) are interpreted as rates.

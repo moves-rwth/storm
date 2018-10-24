@@ -5,8 +5,8 @@ configs_linux = [
     # OS, compiler, build type
     ("debian-9", "gcc", "DefaultDebug"),
     ("debian-9", "gcc", "DefaultRelease"),
-    ("ubuntu-17.10", "gcc", "DefaultDebugTravis"),
-    ("ubuntu-17.10", "gcc", "DefaultReleaseTravis"),
+    ("ubuntu-18.04", "gcc", "DefaultDebugTravis"),
+    ("ubuntu-18.04", "gcc", "DefaultReleaseTravis"),
     ("ubuntu-18.04", "gcc", "DefaultDebug"),
     ("ubuntu-18.04", "gcc", "DefaultRelease"),
 ]
@@ -91,6 +91,8 @@ if __name__ == "__main__":
             buildConfig += "      env: CONFIG={} LINUX={} COMPILER={}\n".format(build_type, linux, compiler)
             buildConfig += "      install:\n"
             buildConfig += "        - travis/install_linux.sh\n"
+            buildConfig += "      before_script:\n"
+            buildConfig += '        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode\n'
             buildConfig += "      script:\n"
             buildConfig += "        - travis/build_carl.sh\n"
             # Upload to DockerHub
@@ -129,6 +131,8 @@ if __name__ == "__main__":
             if stage[1] == "Build1":
                 buildConfig += "        - rm -rf build\n"
             buildConfig += "        - travis/install_osx.sh\n"
+            buildConfig += "      before_script:\n"
+            buildConfig += '        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode\n'
             buildConfig += "      script:\n"
             buildConfig += "        - travis/build.sh {}\n".format(stage[1])
             buildConfig += "      after_failure:\n"
@@ -154,6 +158,8 @@ if __name__ == "__main__":
             if stage[1] == "Build1":
                 buildConfig += "        - rm -rf build\n"
             buildConfig += "        - travis/install_linux.sh\n"
+            buildConfig += "      before_script:\n"
+            buildConfig += '        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode\n'
             buildConfig += "      script:\n"
             buildConfig += "        - travis/build.sh {}\n".format(stage[1])
             buildConfig += "      before_cache:\n"

@@ -76,6 +76,8 @@ namespace storm {
                 addEdges(mainAutomaton);
                 model->addAutomaton(mainAutomaton);
                 model->setStandardSystemComposition();
+                model->getModelFeatures().add(storm::jani::ModelFeature::DerivedOperators);
+                model->finalize();
                 return model;
             }
             
@@ -140,7 +142,7 @@ namespace storm {
                     storm::jani::Location janiLoc(janiLocationName(it->second.id()));
                     for(auto const& label : programGraph.getLabels(it->second.id())) {
                         assert(labelVars.count(label) > 0);
-                        janiLoc.addTransientAssignment(storm::jani::Assignment(*(labelVars.at(label)), expManager->boolean(true)));
+                        janiLoc.addTransientAssignment(storm::jani::Assignment(storm::jani::LValue(*(labelVars.at(label))), expManager->boolean(true)));
                     }
                     result[it->second.id()] = automaton.addLocation(janiLoc);
                     if (it->second.isInitial()) {

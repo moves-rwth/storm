@@ -8,6 +8,7 @@
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
+#include "storm/models/sparse/Pomdp.h"
 
 #include "storm/models/sparse/StandardRewardModel.h"
 
@@ -83,6 +84,10 @@ namespace storm {
                     os << "]";
                 }
 
+                if (sparseModel->getType() == storm::models::ModelType::Pomdp) {
+                    os << " {" << sparseModel->template as<storm::models::sparse::Pomdp<ValueType>>()->getObservation(group) << "}";
+                }
+
                 // Write labels
                 for(auto const& label : sparseModel->getStateLabeling().getLabelsOfState(group)) {
                     os << " " << label;
@@ -145,7 +150,7 @@ namespace storm {
         }
 
         template<typename ValueType>
-        std::vector<std::string> getParameters(std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel) {
+        std::vector<std::string> getParameters(std::shared_ptr<storm::models::sparse::Model<ValueType>>) {
             return {};
         }
 

@@ -56,7 +56,7 @@ namespace storm {
         public:
             ConstantsComparator();
             
-            ConstantsComparator(double precision);
+            ConstantsComparator(double precision, bool relative = false);
             
             bool isOne(double const& value) const;
             
@@ -73,6 +73,34 @@ namespace storm {
         private:
             // The precision used for comparisons.
             double precision;
+            
+            // Whether to use relative comparison for equality.
+            bool relative;
+        };
+        
+        // For rational numbers we specialize this class and consider the comparison modulo some predefined precision.
+        template<>
+        class ConstantsComparator<storm::RationalNumber> {
+        public:
+            ConstantsComparator();
+            
+            ConstantsComparator(storm::RationalNumber precision, bool relative);
+            
+            bool isOne(storm::RationalNumber const& value) const;
+            
+            bool isZero(storm::RationalNumber const& value) const;
+            
+            bool isEqual(storm::RationalNumber const& value1, storm::RationalNumber const& value2) const;
+            
+            bool isConstant(storm::RationalNumber const& value) const;
+            
+            bool isInfinity(storm::RationalNumber const& value) const;
+            
+            bool isLess(storm::RationalNumber const& value1, storm::RationalNumber const& value2) const;
+            
+        private:
+            storm::RationalNumber precision;
+            bool relative;
         };
     }
 }

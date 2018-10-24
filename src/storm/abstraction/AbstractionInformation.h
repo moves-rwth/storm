@@ -27,6 +27,16 @@ namespace storm {
     
     namespace abstraction {
         
+        struct AbstractionInformationOptions {
+            AbstractionInformationOptions() = default;
+            
+            AbstractionInformationOptions(std::vector<storm::expressions::Expression> const& constraints) : constraints(constraints) {
+                // Intentionally left empty.
+            }
+            
+            std::vector<storm::expressions::Expression> constraints;
+        };
+        
         template<storm::dd::DdType DdType>
         class AbstractionInformation {
         public:
@@ -38,7 +48,7 @@ namespace storm {
              * @param smtSolver An SMT solver that is used to detect equivalent predicates.
              * @param ddManager The manager responsible for the DDs.
              */
-            AbstractionInformation(storm::expressions::ExpressionManager& expressionManager, std::set<storm::expressions::Variable> const& abstractedVariables, std::unique_ptr<storm::solver::SmtSolver>&& smtSolver, std::shared_ptr<storm::dd::DdManager<DdType>> ddManager = std::make_shared<storm::dd::DdManager<DdType>>());
+            AbstractionInformation(storm::expressions::ExpressionManager& expressionManager, std::set<storm::expressions::Variable> const& abstractedVariables, std::unique_ptr<storm::solver::SmtSolver>&& smtSolver, AbstractionInformationOptions const& options = AbstractionInformationOptions(), std::shared_ptr<storm::dd::DdManager<DdType>> ddManager = std::make_shared<storm::dd::DdManager<DdType>>());
 
             /*!
              * Adds the given variable.
@@ -139,7 +149,13 @@ namespace storm {
              * Retrieves a list of expression that corresponds to the given predicate valuation.
              */
             std::vector<storm::expressions::Expression> getPredicates(storm::storage::BitVector const& predicateValuation) const;
-            
+
+            /*!
+             * Retrieves a list of expression that corresponds to the given predicate valuation that mentions all of the
+             * predicates' truth values *and* the value of the bottom variable (at the first index).
+             */
+            std::vector<storm::expressions::Expression> getPredicatesExcludingBottom(storm::storage::BitVector const& predicateValuation) const;
+
             /*!
              * Retrieves the predicate with the given index.
              *
@@ -451,6 +467,13 @@ namespace storm {
             std::map<uint_fast64_t, std::pair<storm::storage::BitVector, ValueType>> decodeChoiceToUpdateSuccessorMapping(storm::dd::Bdd<DdType> const& choice) const;
             
             /*!
+             * Decodes the choices in the form of BDD over the destination variables where the choices are distinguished
+             * by player 2 variables.
+             */
+            template<typename ValueType>
+            std::vector<std::map<uint_fast64_t, std::pair<storm::storage::BitVector, ValueType>>> decodeChoicesToUpdateSuccessorMapping(std::set<storm::expressions::Variable> const& player2Variables, storm::dd::Bdd<DdType> const& choices) const;
+            
+            /*!
              * Decodes the given BDD (over source, player 1 and aux variables) into a bit vector indicating the truth
              * values of the predicates in the state and the choice/update indices.
              */
@@ -479,7 +502,12 @@ namespace storm {
             /*!
              * Retrieves the DD variable for the given location expression variable.
              */
-            storm::expressions::Variable const& getDdLocationVariable(storm::expressions::Variable const& locationExpressionVariable, bool source);
+            storm::expressions::Variable const& getDdLocationMetaVariable(storm::expressions::Variable const& locationExpressionVariable, bool source);
+            
+            /*!
+             * Retrieves the number of DD variables associated with the source location variables.
+             */
+            uint64_t getNumberOfDdSourceLocationVariables() const;
             
             /*!
              * Retrieves the source location variables.

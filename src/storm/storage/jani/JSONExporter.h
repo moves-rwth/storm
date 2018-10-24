@@ -2,6 +2,7 @@
 
 
 #include "storm/storage/expressions/ExpressionVisitor.h"
+#include "storm/storage/jani/expressions/JaniExpressionVisitor.h"
 #include "storm/logic/FormulaVisitor.h"
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/Property.h"
@@ -15,10 +16,10 @@ namespace modernjson {
 namespace storm {
     namespace jani {
         
-        class ExpressionToJson : public storm::expressions::ExpressionVisitor {
+        class ExpressionToJson : public storm::expressions::ExpressionVisitor, public storm::expressions::JaniExpressionVisitor {
             
         public:
-            static modernjson::json translate(storm::expressions::Expression const& expr, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables);
+            static modernjson::json translate(storm::expressions::Expression const& expr, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables, std::unordered_set<std::string> const& auxiliaryVariables);
             
             virtual boost::any visit(storm::expressions::IfThenElseExpression const& expression, boost::any const& data);
             virtual boost::any visit(storm::expressions::BinaryBooleanFunctionExpression const& expression, boost::any const& data);
@@ -30,18 +31,25 @@ namespace storm {
             virtual boost::any visit(storm::expressions::BooleanLiteralExpression const& expression, boost::any const& data);
             virtual boost::any visit(storm::expressions::IntegerLiteralExpression const& expression, boost::any const& data);
             virtual boost::any visit(storm::expressions::RationalLiteralExpression const& expression, boost::any const& data);
+            virtual boost::any visit(storm::expressions::ValueArrayExpression const& expression, boost::any const& data);
+            virtual boost::any visit(storm::expressions::ConstructorArrayExpression const& expression, boost::any const& data);
+            virtual boost::any visit(storm::expressions::ArrayAccessExpression const& expression, boost::any const& data);
+            virtual boost::any visit(storm::expressions::FunctionCallExpression const& expression, boost::any const& data);
+
         private:
 
-            ExpressionToJson(std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables) : constants(constants), globalVariables(globalVariables), localVariables(localVariables) {}
+            ExpressionToJson(std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables, std::unordered_set<std::string> const& auxiliaryVariables) : constants(constants), globalVariables(globalVariables), localVariables(localVariables), auxiliaryVariables(auxiliaryVariables) {}
             std::vector<storm::jani::Constant> const& constants;
             VariableSet const& globalVariables;
             VariableSet const& localVariables;
+            std::unordered_set<std::string> auxiliaryVariables;
         };
         
         class FormulaToJaniJson : public storm::logic::FormulaVisitor {
             
         public:
-            static modernjson::json translate(storm::logic::Formula const& formula, storm::jani::Model const& modeln);
+            static modernjson::json translate(storm::logic::Formula const& formula, storm::jani::Model const& model, storm::jani::ModelFeatures& modelFeatures);
+            bool containsStateExitRewards() const; // Returns true iff the  previously translated formula contained state exit rewards
             virtual boost::any visit(storm::logic::AtomicExpressionFormula const& f, boost::any const& data) const;
             virtual boost::any visit(storm::logic::AtomicLabelFormula const& f, boost::any const& data) const;
             virtual boost::any visit(storm::logic::BinaryBooleanStateFormula const& f, boost::any const& data) const;
@@ -64,19 +72,24 @@ namespace storm {
             virtual boost::any visit(storm::logic::UntilFormula const& f, boost::any const& data) const;
       
         private:
-            FormulaToJaniJson(storm::jani::Model const& model) : model(model) { }
+            FormulaToJaniJson(storm::jani::Model const& model) : model(model), stateExitRewards(false) { }
 
             modernjson::json constructPropertyInterval(boost::optional<storm::expressions::Expression> const& lower, boost::optional<bool> const& lowerExclusive, boost::optional<storm::expressions::Expression> const& upper, boost::optional<bool> const& upperExclusive) const;
+            
+            modernjson::json constructRewardAccumulation(storm::logic::RewardAccumulation const& rewardAccumulation) const;
+            modernjson::json constructRewardAccumulation(storm::logic::RewardAccumulation const& rewardAccumulation, std::string const& rewardModelName) const;
+            modernjson::json constructStandardRewardAccumulation(std::string const& rewardModelName) const;
 
             storm::jani::Model const& model;
+            mutable bool stateExitRewards;
         };
         
         class JsonExporter {
             JsonExporter() = default;
             
         public:
-            static void toFile(storm::jani::Model const& janiModel, std::vector<storm::jani::Property> const& formulas, std::string const& filepath, bool checkValid = true);
-            static void toStream(storm::jani::Model const& janiModel, std::vector<storm::jani::Property> const& formulas, std::ostream& ostream, bool checkValid = false);
+            static void toFile(storm::jani::Model const& janiModel, std::vector<storm::jani::Property> const& formulas, std::string const& filepath, bool checkValid = true, bool compact = false);
+            static void toStream(storm::jani::Model const& janiModel, std::vector<storm::jani::Property> const& formulas, std::ostream& ostream, bool checkValid = false, bool compact = false);
             
             
         private:
@@ -84,12 +97,10 @@ namespace storm {
             void convertProperties(std::vector<storm::jani::Property> const& formulas, storm::jani::Model const& model);
             void appendVariableDeclaration(storm::jani::Variable const& variable);
             
-            modernjson::json finalize() {
-                return jsonStruct;
-            }
+            modernjson::json finalize();
             
             modernjson::json jsonStruct;
-            
+            storm::jani::ModelFeatures modelFeatures;
             
         };
     }

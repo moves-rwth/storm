@@ -53,6 +53,11 @@ namespace storm {
             rationalNumberVisitor.setMapping(variable, storm::utility::convertNumber<RationalNumber>(value));
         }
 
+        void ExpressionEvaluator<RationalNumber>::setRationalValue(storm::expressions::Variable const& variable, RationalNumber const& value) {
+            ExprtkExpressionEvaluatorBase<RationalNumber>::setRationalValue(variable, storm::utility::convertNumber<double>(value));
+            rationalNumberVisitor.setMapping(variable, value);
+        }
+
         RationalNumber ExpressionEvaluator<RationalNumber>::asRational(Expression const& expression) const {
             RationalNumber result = this->rationalNumberVisitor.toRationalNumber(expression);
             return result;
@@ -76,6 +81,12 @@ namespace storm {
         void ExpressionEvaluator<RationalFunction>::setRationalValue(storm::expressions::Variable const& variable, double value) {
             ExprtkExpressionEvaluatorBase<RationalFunction>::setRationalValue(variable, value);
             rationalFunctionVisitor.setMapping(variable, storm::utility::convertNumber<RationalFunction>(value));
+        }
+        
+        void ExpressionEvaluator<RationalFunction>::setRationalValue(storm::expressions::Variable const& variable, RationalFunction const& value) {
+            STORM_LOG_ASSERT(storm::utility::isConstant(value), "Value for rational variable is not a constant.");
+            ExprtkExpressionEvaluatorBase<RationalFunction>::setRationalValue(variable, storm::utility::convertNumber<double>(value));
+            rationalFunctionVisitor.setMapping(variable, value);
         }
         
         RationalFunction ExpressionEvaluator<RationalFunction>::asRational(Expression const& expression) const {

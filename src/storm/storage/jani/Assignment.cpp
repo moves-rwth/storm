@@ -1,5 +1,8 @@
 #include "storm/storage/jani/Assignment.h"
 
+#include "storm/storage/jani/LValue.h"
+#include "storm/storage/jani/expressions/JaniExpressionSubstitutionVisitor.h"
+
 #include "storm/storage/expressions/LinearityCheckVisitor.h"
 
 #include "storm/utility/macros.h"
@@ -8,20 +11,36 @@
 namespace storm  {
     namespace jani {
         
-        Assignment::Assignment(storm::jani::Variable const& variable, storm::expressions::Expression const& expression, uint64_t level) : variable(variable), expression(expression), level(level) {
-
+        Assignment::Assignment(storm::jani::LValue const& lValue, storm::expressions::Expression const& expression, int64_t level) : lValue(lValue), expression(expression), level(level) {
+            // Intentionally left empty
         }
         
         bool Assignment::operator==(Assignment const& other) const {
-            return this->isTransient() == other.isTransient() && this->getExpressionVariable() == other.getExpressionVariable() && this->getAssignedExpression().isSyntacticallyEqual(other.getAssignedExpression()) && this->getLevel() == other.getLevel();
+            return this->isTransient() == other.isTransient() && this->getLValue() == other.getLValue() && this->getAssignedExpression().isSyntacticallyEqual(other.getAssignedExpression()) && this->getLevel() == other.getLevel();
+        }
+        
+        bool Assignment::lValueIsVariable() const {
+            return lValue.isVariable();
+        }
+        
+        bool Assignment::lValueIsArrayAccess() const {
+            return lValue.isArrayAccess();
+        }
+        
+        storm::jani::LValue& Assignment::getLValue() {
+            return lValue;
+        }
+        
+        storm::jani::LValue const& Assignment::getLValue() const {
+            return lValue;
         }
         
         storm::jani::Variable const& Assignment::getVariable() const {
-            return variable.get();
+            return lValue.getVariable();
         }
         
         storm::expressions::Variable const& Assignment::getExpressionVariable() const {
-            return variable.get().getExpressionVariable();
+            return getVariable().getExpressionVariable();
         }
         
         storm::expressions::Expression const& Assignment::getAssignedExpression() const {
@@ -33,11 +52,14 @@ namespace storm  {
         }
         
         bool Assignment::isTransient() const {
-            return this->variable.get().isTransient();
+            return lValue.isTransient();
         }
         
         void Assignment::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {
-            this->setAssignedExpression(this->getAssignedExpression().substitute(substitution).simplify());
+            this->setAssignedExpression(substituteJaniExpression(this->getAssignedExpression(), substitution).simplify());
+            if (lValue.isArrayAccess()) {
+                lValue = LValue(LValue(lValue.getArray()), substituteJaniExpression(lValue.getArrayIndex(), substitution).simplify());
+            }
         }
         
         int64_t Assignment::getLevel() const {
@@ -54,24 +76,24 @@ namespace storm  {
         }
         
         std::ostream& operator<<(std::ostream& stream, Assignment const& assignment) {
-            stream << assignment.getVariable().getName() << " := " << assignment.getAssignedExpression();
+            stream << assignment.getLValue() << " := " << assignment.getAssignedExpression();
             return stream;
         }
         
-        bool AssignmentPartialOrderByLevelAndVariable::operator()(Assignment const& left, Assignment const& right) const {
-            return left.getLevel() < right.getLevel() || (left.getLevel() == right.getLevel() && left.getExpressionVariable() < right.getExpressionVariable());
+        bool AssignmentPartialOrderByLevelAndLValue::operator()(Assignment const& left, Assignment const& right) const {
+            return left.getLevel() < right.getLevel() || (left.getLevel() == right.getLevel() && left.getLValue() < right.getLValue());
         }
 
-        bool AssignmentPartialOrderByLevelAndVariable::operator()(Assignment const& left, std::shared_ptr<Assignment> const& right) const {
-            return left.getLevel() < right->getLevel() || (left.getLevel() == right->getLevel() && left.getExpressionVariable() < right->getExpressionVariable());
+        bool AssignmentPartialOrderByLevelAndLValue::operator()(Assignment const& left, std::shared_ptr<Assignment> const& right) const {
+            return left.getLevel() < right->getLevel() || (left.getLevel() == right->getLevel() && left.getLValue() < right->getLValue());
         }
         
-        bool AssignmentPartialOrderByLevelAndVariable::operator()(std::shared_ptr<Assignment> const& left, std::shared_ptr<Assignment> const& right) const {
-            return left->getLevel() < right->getLevel() || (left->getLevel() == right->getLevel() && left->getExpressionVariable() < right->getExpressionVariable());
+        bool AssignmentPartialOrderByLevelAndLValue::operator()(std::shared_ptr<Assignment> const& left, std::shared_ptr<Assignment> const& right) const {
+            return left->getLevel() < right->getLevel() || (left->getLevel() == right->getLevel() && left->getLValue() < right->getLValue());
         }
         
-        bool AssignmentPartialOrderByLevelAndVariable::operator()(std::shared_ptr<Assignment> const& left, Assignment const& right) const {
-            return left->getLevel() < right.getLevel() || (left->getLevel() == right.getLevel() && left->getExpressionVariable() < right.getExpressionVariable());
+        bool AssignmentPartialOrderByLevelAndLValue::operator()(std::shared_ptr<Assignment> const& left, Assignment const& right) const {
+            return left->getLevel() < right.getLevel() || (left->getLevel() == right.getLevel() && left->getLValue() < right.getLValue());
         }
     }
 }

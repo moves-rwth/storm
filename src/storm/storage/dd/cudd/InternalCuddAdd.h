@@ -550,6 +550,18 @@ namespace storm {
             void composeWithExplicitVector(Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<ValueType>& targetVector, std::function<ValueType (ValueType const&, ValueType const&)> const& function) const;
             
             /*!
+             * Composes the ADD with an explicit vector by performing a specified function between the entries of this
+             * ADD and the explicit vector.
+             *
+             * @param odd The ODD to use for the translation from symbolic to explicit positions.
+             * @param ddVariableIndices The indices of the DD variables present in this ADD.
+             * @param targetVector The explicit vector that is to be composed with the ADD. The results are written to
+             * this vector again.
+             * @param function The function to perform in the composition.
+             */
+            void forEach(Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::function<void (uint64_t const&, ValueType const&)> const& function) const;
+            
+            /*!
              * Composes the (row-grouped) ADD with an explicit vector by performing a specified function between the
              * entries of this ADD and the explicit vector.
              *
@@ -569,6 +581,16 @@ namespace storm {
              * @return A vector of ADDs that are the separate groups (wrt. to the encoding of the given variables).
              */
             std::vector<InternalAdd<DdType::CUDD, ValueType>> splitIntoGroups(std::vector<uint_fast64_t> const& ddGroupVariableIndices) const;
+            
+            /*!
+             * Splits the ADD into several ADDs that differ in the encoding of the given group variables (given via indices).
+             * The labeling is then made by interpreting the group encodings as binary encodings.
+             *
+             * @param ddGroupVariableIndices The indices of the variables that are used to distinguish the groups.
+             * @param ddLabelVariableIndices The indices of variables that are considered as labels.
+             * @return A vector of ADDs that are the separate groups (wrt. to the encoding of the given variables).
+             */
+            std::vector<uint64_t> decodeGroupLabels(std::vector<uint_fast64_t> const& ddGroupVariableIndices, storm::storage::BitVector const& ddLabelVariableIndices) const;
             
             /*!
              * Simultaneously splits the ADD and the given vector ADD into several ADDs that differ in the encoding of
@@ -636,18 +658,18 @@ namespace storm {
             
         private:
             /*!
-             * Performs a recursive step to perform the given function between the given DD-based vector and the given
-             * explicit vector.
+             * Performs a recursive step for forEach.
              *
-             * @param dd The DD to add to the explicit vector.
+             * @param dd The DD to traverse.
              * @param currentLevel The currently considered level in the DD.
              * @param maxLevel The number of levels that need to be considered.
              * @param currentOffset The current offset.
              * @param odd The ODD used for the translation.
              * @param ddVariableIndices The (sorted) indices of all DD variables that need to be considered.
-             * @param targetVector The vector to which the translated DD-based vector is to be added.
+             * @param function The callback invoked for every element. The first argument is the offset and the second
+             * is the value.
              */
-            void composeWithExplicitVectorRec(DdNode const* dd, std::vector<uint_fast64_t> const* offsets, uint_fast64_t currentLevel, uint_fast64_t maxLevel, uint_fast64_t currentOffset, Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<ValueType>& targetVector, std::function<ValueType (ValueType const&, ValueType const&)> const& function) const;
+            void forEachRec(DdNode const* dd, uint_fast64_t currentLevel, uint_fast64_t maxLevel, uint_fast64_t currentOffset, Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::function<void (uint64_t const&, ValueType const&)> const& function) const;
             
             /*!
              * Splits the given matrix DD into the groups using the given group variables.
@@ -660,6 +682,20 @@ namespace storm {
              * @param remainingMetaVariables The meta variables that remain in the DDs after the groups have been split.
              */
             void splitIntoGroupsRec(DdNode* dd, std::vector<InternalAdd<DdType::CUDD, ValueType>>& groups, std::vector<uint_fast64_t> const& ddGroupVariableIndices, uint_fast64_t currentLevel, uint_fast64_t maxLevel) const;
+            
+            /*!
+             * Splits the given matrix DD into the labelings of the gropus using the given group variables.
+             *
+             * @param dd The DD to split.
+             * @param labels A vector that is to be filled with the labels of the individual groups.
+             * @param ddGroupVariableIndices The (sorted) indices of all DD group variables that need to be considered.
+             * @param ddLabelVariableIndices A bit vector indicating which variables are considered label variables.
+             * @param currentLevel The currently considered level in the DD.
+             * @param maxLevel The number of levels that need to be considered.
+             * @param remainingMetaVariables The meta variables that remain in the DDs after the groups have been split.
+             * @param label The currently followed label.
+             */
+            void decodeGroupLabelsRec(DdNode* dd, std::vector<uint64_t>& labels, std::vector<uint_fast64_t> const& ddGroupVariableIndices, storm::storage::BitVector const& ddLabelVariableIndices, uint_fast64_t currentLevel, uint_fast64_t maxLevel, uint64_t label) const;
             
             /*!
              * Splits the given DDs into the groups using the given group variables.

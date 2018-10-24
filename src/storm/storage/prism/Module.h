@@ -10,6 +10,7 @@
 
 #include "storm/storage/prism/BooleanVariable.h"
 #include "storm/storage/prism/IntegerVariable.h"
+#include "storm/storage/prism/ClockVariable.h"
 #include "storm/storage/prism/Command.h"
 #include "storm/utility/OsDetection.h"
 
@@ -23,11 +24,13 @@ namespace storm {
              * @param moduleName The name of the module.
              * @param booleanVariables The boolean variables defined by the module.
              * @param integerVariables The integer variables defined by the module.
+             * @param clockVariables The clock variables defined by the module (only for PTA models).
+             * @param invariant An invariant that is used to restrict the values of the clock variables (only for PTA models).
              * @param commands The commands of the module.
              * @param filename The filename in which the module is defined.
              * @param lineNumber The line number in which the module is defined.
              */
-            Module(std::string const& moduleName, std::vector<storm::prism::BooleanVariable> const& booleanVariables, std::vector<storm::prism::IntegerVariable> const& integerVariables, std::vector<storm::prism::Command> const& commands, std::string const& filename = "", uint_fast64_t lineNumber = 0);
+            Module(std::string const& moduleName, std::vector<storm::prism::BooleanVariable> const& booleanVariables, std::vector<storm::prism::IntegerVariable> const& integerVariables, std::vector<storm::prism::ClockVariable> const& clockVariables, storm::expressions::Expression const& invariant, std::vector<storm::prism::Command> const& commands, std::string const& filename = "", uint_fast64_t lineNumber = 0);
 
             /*!
              * Creates a module with the given name, variables and commands that is marked as being renamed from the
@@ -36,13 +39,15 @@ namespace storm {
              * @param moduleName The name of the module.
              * @param booleanVariables The boolean variables defined by the module.
              * @param integerVariables The integer variables defined by the module.
+             * @param clockVariables The clock variables defined by the module (only for PTA models).
+             * @param invariant An invariant that is used to restrict the values of the clock variables (only for PTA models).
              * @param commands The commands of the module.
              * @param renamedFromModule The name of the module from which this module was renamed.
              * @param renaming The renaming of identifiers used to create this module.
              * @param filename The filename in which the module is defined.
              * @param lineNumber The line number in which the module is defined.
              */
-            Module(std::string const& moduleName, std::vector<storm::prism::BooleanVariable> const& booleanVariables, std::vector<storm::prism::IntegerVariable> const& integerVariables, std::vector<storm::prism::Command> const& commands, std::string const& renamedFromModule, std::map<std::string, std::string> const& renaming, std::string const& filename = "", uint_fast64_t lineNumber = 0);
+            Module(std::string const& moduleName, std::vector<storm::prism::BooleanVariable> const& booleanVariables, std::vector<storm::prism::IntegerVariable> const& integerVariables, std::vector<storm::prism::ClockVariable> const& clockVariables, storm::expressions::Expression const& invariant, std::vector<storm::prism::Command> const& commands, std::string const& renamedFromModule, std::map<std::string, std::string> const& renaming, std::string const& filename = "", uint_fast64_t lineNumber = 0);
 
             // Create default implementations of constructors/assignment.
             Module() = default;
@@ -94,7 +99,29 @@ namespace storm {
              * @return The integer variables of the module.
              */
             std::vector<storm::prism::IntegerVariable> const& getIntegerVariables() const;
-
+            
+            /*!
+             * Retrieves the number of clock variables in the module.
+             *
+             * @return the number of clock variables in the module.
+             */
+            std::size_t getNumberOfClockVariables() const;
+            
+            /*!
+             * Retrieves a reference to the clock variable with the given name.
+             *
+             * @param variableName The name of the clock variable to retrieve.
+             * @return A reference to the clock variable with the given name.
+             */
+            storm::prism::ClockVariable const& getClockVariable(std::string const& variableName) const;
+            
+            /*!
+             * Retrieves the clock variables of the module.
+             *
+             * @return The clock variables of the module.
+             */
+            std::vector<storm::prism::ClockVariable> const& getClockVariables() const;
+            
             /*!
              * Retrieves all expression variables used by this module.
              *
@@ -236,6 +263,16 @@ namespace storm {
              */
             void createMissingInitialValues();
             
+            /*!
+             * Returns true, if an invariant was specified (only relevant for PTA models)
+             */
+            bool hasInvariant() const;
+            
+            /*!
+             * Returns the specified invariant (only relevant for PTA models)
+             */
+             storm::expressions::Expression const& getInvariant() const;
+            
             friend std::ostream& operator<<(std::ostream& stream, Module const& module);
 
         private:
@@ -258,6 +295,15 @@ namespace storm {
 
             // A mapping from integer variables to the corresponding indices in the vector.
             std::map<std::string, uint_fast64_t> integerVariableToIndexMap;
+            
+            // A list of clock variables.
+            std::vector<storm::prism::ClockVariable> clockVariables;
+
+            // A mapping from clock variables to the corresponding indices in the vector.
+            std::map<std::string, uint_fast64_t> clockVariableToIndexMap;
+            
+            // An invariant (only for PTA models)
+            storm::expressions::Expression invariant;
 
             // The commands associated with the module.
             std::vector<storm::prism::Command> commands;

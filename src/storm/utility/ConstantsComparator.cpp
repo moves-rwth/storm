@@ -72,11 +72,11 @@ namespace storm {
             return std::abs(value1 - value2) < precision;
         }
         
-        ConstantsComparator<double>::ConstantsComparator() : precision(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision()) {
+        ConstantsComparator<double>::ConstantsComparator() : precision(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision()), relative(false) {
             // Intentionally left empty.
         }
         
-        ConstantsComparator<double>::ConstantsComparator(double precision) : precision(precision) {
+        ConstantsComparator<double>::ConstantsComparator(double precision, bool relative) : precision(precision), relative(relative) {
             // Intentionally left empty.
         }
         
@@ -93,7 +93,11 @@ namespace storm {
         }
         
         bool ConstantsComparator<double>::isEqual(double const& value1, double const& value2) const {
-            return std::abs(value1 - value2) <= precision;
+            if (relative) {
+                return value1 == value2 || std::abs(value1 - value2)/std::abs(value1 + value2) <= precision;
+            } else {
+                return std::abs(value1 - value2) <= precision;
+            }
         }
         
         bool ConstantsComparator<double>::isConstant(double const&) const {
@@ -101,6 +105,52 @@ namespace storm {
         }
         
         bool ConstantsComparator<double>::isLess(double const& value1, double const& value2) const {
+            return value1 < value2 - precision;
+        }
+        
+        ConstantsComparator<storm::RationalNumber>::ConstantsComparator() : precision(storm::utility::zero<storm::RationalNumber>()), relative(false) {
+            // Intentionally left empty.
+        }
+        
+        ConstantsComparator<storm::RationalNumber>::ConstantsComparator(storm::RationalNumber precision, bool relative) : precision(precision), relative(relative) {
+            // Intentionally left empty.
+        }
+        
+        bool ConstantsComparator<storm::RationalNumber>::isOne(storm::RationalNumber const& value) const {
+            if (storm::utility::isZero(precision)) {
+                return storm::utility::isOne(value);
+            }
+            return storm::utility::abs(storm::RationalNumber(value - one<storm::RationalNumber>())) <= precision;
+        }
+        
+        bool ConstantsComparator<storm::RationalNumber>::isZero(storm::RationalNumber const& value) const {
+            if (storm::utility::isZero(precision)) {
+                return storm::utility::isOne(value);
+            }
+            return storm::utility::abs(value) <= precision;
+        }
+        
+        bool ConstantsComparator<storm::RationalNumber>::isEqual(storm::RationalNumber const& value1, storm::RationalNumber const& value2) const {
+            if (storm::utility::isZero(precision)) {
+                return value1 == value2;
+            }
+            
+            if (relative) {
+                return value1 == value2 || storm::utility::abs(storm::RationalNumber(value1 - value2))/storm::utility::abs(storm::RationalNumber(value1 + value2)) <= precision;
+            } else {
+                return storm::utility::abs(storm::RationalNumber(value1 - value2)) <= precision;
+            }
+        }
+        
+        bool ConstantsComparator<storm::RationalNumber>::isConstant(storm::RationalNumber const&) const {
+            return true;
+        }
+        
+        bool ConstantsComparator<storm::RationalNumber>::isInfinity(storm::RationalNumber const&) const {
+            return false;
+        }
+        
+        bool ConstantsComparator<storm::RationalNumber>::isLess(storm::RationalNumber const& value1, storm::RationalNumber const& value2) const {
             return value1 < value2 - precision;
         }
         

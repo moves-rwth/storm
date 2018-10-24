@@ -423,6 +423,21 @@ namespace storm {
                                                   hint);
             }
             
+            template<typename ValueType, typename RewardModelType>
+            std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeReachabilityTimes(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& targetStates, bool qualitative, ModelCheckerHint const& hint) {
+                
+                return computeReachabilityRewards(env, std::move(goal), transitionMatrix, backwardTransitions,
+                                                  [&] (uint_fast64_t numberOfRows, storm::storage::SparseMatrix<ValueType> const&, storm::storage::BitVector const&) {
+                                                      return std::vector<ValueType>(numberOfRows, storm::utility::one<ValueType>());
+                                                  },
+                                                  targetStates, qualitative,
+                                                  [&] () {
+                                                      return storm::storage::BitVector(transitionMatrix.getRowGroupCount(), false);
+                                                  },
+                                                  hint);
+            }
+
+            
             // This function computes an upper bound on the reachability rewards (see Baier et al, CAV'17).
             template<typename ValueType>
             std::vector<ValueType> computeUpperRewardBounds(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& rewards, std::vector<ValueType> const& oneStepTargetProbabilities) {
