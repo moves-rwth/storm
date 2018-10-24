@@ -85,17 +85,13 @@ namespace storm {
             assert(!addedStates[state]);
             auto res = compare(above, below);
             assert(res == ABOVE || res == UNKNOWN);
+
             Node *newNode = new Node();
             newNode->states = storm::storage::BitVector(numberOfStates);
             newNode->states.set(state);
-
             setStatesAbove(newNode, above->statesAbove | above->states, false);
             setStatesBelow(newNode, below->statesBelow | below->states, false);
 
-            newNode->statesAbove = above->statesAbove | above->states;
-            newNode->statesBelow = below->statesBelow | below->states;
-            newNode->recentlyAddedAbove = storm::storage::BitVector(above->statesAbove | above->states);
-            newNode->recentlyAddedBelow = storm::storage::BitVector(below->statesBelow | below->states);
             setStatesBelow(above, state);
             setStatesAbove(below, state);
 
@@ -134,8 +130,8 @@ namespace storm {
         }
 
         void Lattice::addRelationNodes(storm::analysis::Lattice::Node *above, storm::analysis::Lattice::Node * below) {
-            above->statesBelow |= below->states;
-            below->statesAbove |= above->states;
+            setStatesBelow(above, below->states, true);
+            setStatesAbove(below, above->states, true);
             auto nodesBelow = getNodesBelow(below);
             for (auto itr = nodesBelow.begin(); itr != nodesBelow.end(); ++itr) {
                 setStatesAbove((*itr), above->states, true);
@@ -207,8 +203,6 @@ namespace storm {
         storm::storage::BitVector Lattice::getAddedStates() {
             return addedStates;
         }
-
-
 
         void Lattice::toString(std::ostream &out) {
             std::vector<Node*> printedNodes = std::vector<Node*>({});
@@ -342,9 +336,5 @@ namespace storm {
                 node->recentlyAddedBelow = storm::storage::BitVector(states);
             }
         }
-
-
-
-
     }
 }
