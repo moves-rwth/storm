@@ -4,6 +4,7 @@
 #include "storm/storage/jani/Property.h"
 #include "storm/storage/jani/Constant.h"
 #include "storm/storage/jani/JaniLocationExpander.h"
+#include "storm/storage/jani/JaniScopeChanger.h"
 #include "storm/storage/jani/JSONExporter.h"
 
 #include "storm/settings/SettingsManager.h"
@@ -18,7 +19,26 @@ namespace storm {
                 janiModel = janiModel.substituteConstants();
             }
             
+            if (options.localVars) {
+                STORM_LOG_WARN_COND(!options.globalVars, "Ignoring 'globalvars' option, since 'localvars' is also set.");
+                storm::jani::JaniScopeChanger().makeVariablesLocal(janiModel, properties);
+            } else if (options.globalVars) {
+                storm::jani::JaniScopeChanger().makeVariablesGlobal(janiModel);
+            }
+            
             if (!options.locationVariables.empty()) {
+                // Make variables local if necessary/possible
+                for (auto const& pair : options.locationVariables) {
+                    if (janiModel.hasGlobalVariable(pair.second)) {
+                        auto var = janiModel.getGlobalVariable(pair.second).getExpressionVariable();
+                        if (storm::jani::JaniScopeChanger().canMakeVariableLocal(var, janiModel, properties, janiModel.getAutomatonIndex(pair.first)).first) {
+                            storm::jani::JaniScopeChanger().makeVariableLocal(var, janiModel, janiModel.getAutomatonIndex(pair.first));
+                        } else {
+                            STORM_LOG_ERROR("Can not transform variable " << pair.second << " into locations since it can not be made local to automaton " << pair.first << ".");
+                        }
+                    }
+                }
+                
                 for (auto const& pair : options.locationVariables) {
                     storm::jani::JaniLocationExpander expander(janiModel);
                     expander.transform(pair.first, pair.second);

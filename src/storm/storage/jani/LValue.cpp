@@ -50,14 +50,23 @@ namespace storm {
         
         LValue LValue::changeAssignmentVariables(std::map<Variable const*, std::reference_wrapper<Variable const>> const& remapping) const {
             if (isVariable()) {
-                return LValue(remapping.at(variable));
+                auto it = remapping.find(variable);
+                if (it == remapping.end()) {
+                    return *this;
+                } else {
+                    return LValue(it->second);
+                }
             } else {
                 STORM_LOG_ASSERT(isArrayAccess(), "Unhandled LValue.");
-                return LValue(LValue(remapping.at(variable)), arrayIndex);
+                auto it = remapping.find(variable);
+                if (it == remapping.end()) {
+                    return *this;
+                } else {
+                    return LValue(LValue(it->second), arrayIndex);
+                }
             }
         }
 
-        
         bool LValue::operator<(LValue const& other) const {
             if (isVariable()) {
                 return !other.isVariable() || variable->getExpressionVariable() < other.getVariable().getExpressionVariable();

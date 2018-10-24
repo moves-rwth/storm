@@ -196,6 +196,51 @@ namespace storm {
             return getVariable(it->second);
         }
 
+        template <typename VarType>
+        void eraseFromVariableVector(std::vector<std::shared_ptr<VarType>>& varVec, storm::expressions::Variable const& variable) {
+            for (auto vIt = varVec.begin(); vIt != varVec.end(); ++vIt) {
+                if ((*vIt)->getExpressionVariable() == variable) {
+                    varVec.erase(vIt);
+                    break;
+                }
+            }
+        }
+        
+        std::shared_ptr<Variable> VariableSet::eraseVariable(storm::expressions::Variable const& variable) {
+            auto vToVIt = variableToVariable.find(variable);
+            STORM_LOG_THROW(vToVIt != variableToVariable.end(), storm::exceptions::InvalidArgumentException, "Unable to erase unknown variable '" << variable.getName() << "'.");
+            std::shared_ptr<Variable> janiVar = std::move(vToVIt->second);
+            variableToVariable.erase(vToVIt);
+            
+            nameToVariable.erase(variable.getName());
+            eraseFromVariableVector(variables, variable);
+            if (janiVar->isBooleanVariable()) {
+                eraseFromVariableVector(booleanVariables, variable);
+            }
+            if (janiVar->isBooleanVariable()) {
+                eraseFromVariableVector(booleanVariables, variable);
+            }
+            if (janiVar->isBoundedIntegerVariable()) {
+                eraseFromVariableVector(boundedIntegerVariables, variable);
+            }
+            if (janiVar->isUnboundedIntegerVariable()) {
+                eraseFromVariableVector(unboundedIntegerVariables, variable);
+            }
+            if (janiVar->isRealVariable()) {
+                eraseFromVariableVector(realVariables, variable);
+            }
+            if (janiVar->isArrayVariable()) {
+                eraseFromVariableVector(arrayVariables, variable);
+            }
+            if (janiVar->isClockVariable()) {
+                eraseFromVariableVector(clockVariables, variable);
+            }
+            if (janiVar->isTransient()) {
+                eraseFromVariableVector(transientVariables, variable);
+            }
+            return janiVar;
+        }
+
         typename detail::Variables<Variable>::iterator VariableSet::begin() {
             return detail::Variables<Variable>::make_iterator(variables.begin());
         }

@@ -70,6 +70,26 @@ namespace storm {
         bool Property::containsUndefinedConstants() const {
             return !undefinedConstants.empty();
         }
+ 
+        std::set<storm::expressions::Variable> Property::getUsedVariablesAndConstants() const {
+            auto res = getUndefinedConstants();
+            getFilter().getFormula()->gatherUsedVariables(res);
+            getFilter().getStatesFormula()->gatherUsedVariables(res);
+            return res;
+        }
+ 
+        std::set<std::string> Property::getUsedLabels() const {
+            std::set<std::string> res;
+            auto labFormSet = getFilter().getFormula()->getAtomicLabelFormulas();
+            for (auto const& f : labFormSet) {
+                res.insert(f->getLabel());
+            }
+            labFormSet = getFilter().getStatesFormula()->getAtomicLabelFormulas();
+            for (auto const& f : labFormSet) {
+                res.insert(f->getLabel());
+            }
+            return res;
+        }
         
         std::ostream& operator<<(std::ostream& os, Property const& p) {
             return os << "(" << p.getName() << "): " << p.getFilter();
