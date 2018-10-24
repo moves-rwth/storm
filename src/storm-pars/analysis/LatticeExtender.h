@@ -54,7 +54,7 @@ namespace storm {
 
             std::map<uint_fast64_t, storm::storage::BitVector> stateMap;
 
-            storm::storage::BitVector initialMiddleStates;
+//            storm::storage::BitVector initialMiddleStates;
         };
     }
 }

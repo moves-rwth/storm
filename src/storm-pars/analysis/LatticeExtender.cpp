@@ -31,19 +31,6 @@ namespace storm {
         template<typename ValueType>
         LatticeExtender<ValueType>::LatticeExtender(std::shared_ptr<storm::models::sparse::Model<ValueType>> model) {
             this->model = model;
-
-            initialMiddleStates = storm::storage::BitVector(model->getNumberOfStates());
-            // Check if MC is acyclic
-            auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<ValueType>(model->getTransitionMatrix(), false, false);
-            for (auto i = 0; i < decomposition.size(); ++i) {
-                auto scc = decomposition.getBlock(i);
-                if (scc.size() > 1) {
-                    auto states = scc.getStates();
-                    // TODO: Smarter state picking
-                    // Add one of the states of the scc
-                    initialMiddleStates.set(*(states.begin()));
-                }
-            }
         }
 
         template <typename ValueType>
@@ -91,6 +78,34 @@ namespace storm {
                 }
             }
 
+            auto initialMiddleStates = storm::storage::BitVector(model->getNumberOfStates());
+            // Check if MC is acyclic
+            auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<ValueType>(model->getTransitionMatrix(), false, false);
+            for (auto i = 0; i < decomposition.size(); ++i) {
+                auto scc = decomposition.getBlock(i);
+                if (scc.size() > 1) {
+                    auto states = scc.getStates();
+                    // check if the state has already one successor in bottom of top, in that case pick it
+                    bool found = false;
+                    for (auto stateItr = states.begin(); !found && stateItr < states.end(); ++stateItr) {
+                        auto successors = stateMap[*stateItr];
+                        if (successors.getNumberOfSetBits() == 2) {
+                            auto succ1 = successors.getNextSetIndex(0);
+                            auto succ2 = successors.getNextSetIndex(succ1 + 1);
+                            auto intersection = bottomStates | topStates;
+                            if ((intersection[succ1] && ! intersection[succ2])
+                                    || (intersection[succ2] && !intersection[succ1])) {
+                                initialMiddleStates.set(*stateItr);
+                                found = true;
+                            } else if (intersection[succ1] && intersection[succ2]) {
+                                found = true;
+                            }
+                        }
+
+                    }
+                }
+            }
+
             // Create the Lattice
             storm::analysis::Lattice *lattice = new storm::analysis::Lattice(topStates, bottomStates, numberOfStates);
             for (auto state = initialMiddleStates.getNextSetIndex(0); state != numberOfStates; state = initialMiddleStates.getNextSetIndex(state + 1)) {
@@ -127,7 +142,8 @@ namespace storm {
                     storm::analysis::Lattice::Node *n2 = lattice->getNode(val2);
 
                         if (n1 != nullptr && n2 != nullptr) {
-                            lattice->mergeNodes(n1, n2);
+                            assert(false);
+//                            lattice->mergeNodes(n1, n2);
                         } else if (n1 != nullptr) {
                             lattice->addToNode(val2, n1);
                         } else if (n2 != nullptr) {
