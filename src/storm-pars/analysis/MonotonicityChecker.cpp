@@ -69,7 +69,7 @@ namespace storm {
         std::map<storm::analysis::Lattice*, std::map<carl::Variable, std::pair<bool, bool>>> MonotonicityChecker<ValueType>::checkMonotonicity(std::map<storm::analysis::Lattice*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> map, storm::storage::SparseMatrix<ValueType> matrix) {
             storm::utility::Stopwatch finalCheckWatch(true);
             std::map<storm::analysis::Lattice *, std::map<carl::Variable, std::pair<bool, bool>>> result;
-            
+
             if (map.size() == 0) {
                 STORM_PRINT(std::endl << "Do not know about monotonicity" << std::endl);
             } else {
@@ -78,11 +78,11 @@ namespace storm {
                 for (auto itr = map.begin(); i < map.size() && itr != map.end(); ++itr) {
                     auto lattice = itr->first;
                     auto assumptions = itr->second;
-                    std::ofstream myfile;
-                    std::string filename = "lattice" + std::to_string(i) + ".dot";
-                    myfile.open(filename);
-                    lattice->toDotFile(myfile);
-                    myfile.close();
+//                    std::ofstream myfile;
+//                    std::string filename = "lattice" + std::to_string(i) + ".dot";
+//                    myfile.open(filename);
+//                    lattice->toDotFile(myfile);
+//                    myfile.close();
 
                     if (assumptions.size() > 0) {
                         STORM_PRINT("Given assumptions: " << std::endl);
@@ -196,7 +196,6 @@ namespace storm {
                 auto assumption2 = *itr;
 
                 if (!assumption1.second && !assumption2.second) {
-                    // TODO check op lattice of er nog monotonicity is
                     auto assumptionsCopy = std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>(assumptions);
                     auto latticeCopy = new storm::analysis::Lattice(lattice);
                     assumptions.push_back(assumption1.first);
@@ -207,7 +206,6 @@ namespace storm {
                         auto map = extendLatticeWithAssumptions(std::get<0>(criticalTuple), assumptionMaker, std::get<1>(criticalTuple), std::get<2>(criticalTuple), assumptions);
                         result.insert(map.begin(), map.end());
                     }
-
 
                     criticalTuple = extender->extendLattice(latticeCopy, assumption2.first);
                     if (somewhereMonotonicity(std::get<0>(criticalTuple))) {
@@ -258,16 +256,16 @@ namespace storm {
             storm::utility::Stopwatch analyseWatch(true);
 
             std::map<carl::Variable, std::pair<bool, bool>> varsMonotone;
-            std::ofstream myfile;
-            std::string filename = "mc" + std::to_string(j) + ".dot";
-            myfile.open (filename);
-            myfile << "digraph \"MC\" {" << std::endl;
-            myfile << "\t" << "node [shape=ellipse]" << std::endl;
+//            std::ofstream myfile;
+//            std::string filename = "mc" + std::to_string(j) + ".dot";
+//            myfile.open (filename);
+//            myfile << "digraph \"MC\" {" << std::endl;
+//            myfile << "\t" << "node [shape=ellipse]" << std::endl;
 
             // print all nodes
-            for (uint_fast64_t i = 0; i < matrix.getColumnCount(); ++i) {
-                myfile << "\t\"" << i << "\" [label = \"" << i << "\"]" << std::endl;
-            }
+//            for (uint_fast64_t i = 0; i < matrix.getColumnCount(); ++i) {
+//                myfile << "\t\"" << i << "\" [label = \"" << i << "\"]" << std::endl;
+//            }
 
             for (uint_fast64_t i = 0; i < matrix.getColumnCount(); ++i) {
                 // go over all rows
@@ -280,7 +278,7 @@ namespace storm {
                         transitions.insert(std::pair<uint_fast64_t, ValueType>((*itr).getColumn(), (*itr).getValue()));
                     }
 
-                    std::string color = "";
+//                    std::string color = "";
                     auto val = first.getValue();
                     auto vars = val.gatherVariables();
                     for (auto itr = vars.begin(); itr != vars.end(); ++itr) {
@@ -290,7 +288,7 @@ namespace storm {
                                 varsMonotone[*itr].first = false;
                                 varsMonotone[*itr].second = false;
                             }
-                            color = "color = red, ";
+//                            color = "color = red, ";
                         } else {
                             if (varsMonotone.find(*itr) == varsMonotone.end()) {
                                 varsMonotone[*itr].first = true;
@@ -328,40 +326,40 @@ namespace storm {
                                 }
                             }
 
-                            if ((value->first != old.first) && (value->second != old.second)) {
-                                color = "color = red, ";
-                            } else if ((value->first != old.first)) {
-                                myfile << "\t edge[style=dashed];" << std::endl;
-                                color = "color = blue, ";
-                            } else if ((value->second != old.second)) {
-                                myfile << "\t edge[style=dotted];" << std::endl;
-                                color = "color = blue, ";
-                            }
+//                            if ((value->first != old.first) && (value->second != old.second)) {
+//                                color = "color = red, ";
+//                            } else if ((value->first != old.first)) {
+//                                myfile << "\t edge[style=dashed];" << std::endl;
+//                                color = "color = blue, ";
+//                            } else if ((value->second != old.second)) {
+//                                myfile << "\t edge[style=dotted];" << std::endl;
+//                                color = "color = blue, ";
+//                            }
                         }
                     }
 
-                    for (auto itr = transitions.begin(); itr != transitions.end(); ++itr) {
-                        myfile << "\t" << i << " -> " << itr->first << "[" << color << "label=\"" << itr->second << "\"];"
-                               << std::endl;
-                    }
-
-                    myfile << "\t edge[style=\"\"];" << std::endl;
-                } else {
-                    myfile << "\t" << i << " -> " << first.getColumn() << "[label=\"" << first.getValue() << "\"];"
-                           << std::endl;
+//                    for (auto itr = transitions.begin(); itr != transitions.end(); ++itr) {
+//                        myfile << "\t" << i << " -> " << itr->first << "[" << color << "label=\"" << itr->second << "\"];"
+//                               << std::endl;
+//                    }
+//
+//                    myfile << "\t edge[style=\"\"];" << std::endl;
+//                } else {
+//                    myfile << "\t" << i << " -> " << first.getColumn() << "[label=\"" << first.getValue() << "\"];"
+//                           << std::endl;
                 }
             }
 
-            myfile << "\tsubgraph legend {" << std::endl;
-            myfile << "\t\tnode [color=white];" << std::endl;
-            myfile << "\t\tedge [style=invis];" << std::endl;
-            myfile << "\t\tt0 [label=\"incr? and decr?\", fontcolor=red];" << std::endl;
-            myfile << "\t\tt1 [label=\"incr? (dashed)\", fontcolor=blue];" << std::endl;
-            myfile << "\t\tt2 [label=\"decr? (dotted)\", fontcolor=blue];" << std::endl;
-
-            myfile << "\t}" << std::endl;
-            myfile << "}" << std::endl;
-            myfile.close();
+//            myfile << "\tsubgraph legend {" << std::endl;
+//            myfile << "\t\tnode [color=white];" << std::endl;
+//            myfile << "\t\tedge [style=invis];" << std::endl;
+//            myfile << "\t\tt0 [label=\"incr? and decr?\", fontcolor=red];" << std::endl;
+//            myfile << "\t\tt1 [label=\"incr? (dashed)\", fontcolor=blue];" << std::endl;
+//            myfile << "\t\tt2 [label=\"decr? (dotted)\", fontcolor=blue];" << std::endl;
+//
+//            myfile << "\t}" << std::endl;
+//            myfile << "}" << std::endl;
+//            myfile.close();
 
             analyseWatch.stop();
             STORM_PRINT(std::endl << "Time to check monotonicity based on the lattice: " << analyseWatch << "." << std::endl << std::endl);
@@ -491,7 +489,9 @@ namespace storm {
                     for (auto i = initialStates.getNextSetIndex(0); i < model->getNumberOfStates(); i = initialStates.getNextSetIndex(i+1)) {
                         initial += values[i];
                     }
-                    if (previous != -1) {
+                    float diff = previous - initial;
+                    // TODO: define precission
+                    if (previous != -1 && diff > 0.000005 && diff < -0.000005) {
                         monDecr &= previous >= initial;
                         monIncr &= previous <= initial;
                     }
