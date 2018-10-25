@@ -296,7 +296,7 @@ namespace storm {
             
             auto expTimeDeadlock = std::make_shared<storm::logic::TimeOperatorFormula>(
                     std::make_shared<storm::logic::EventuallyFormula>(deadlock, storm::logic::FormulaContext::Time),
-                    storm::logic::OperatorInformation(storm::solver::OptimizationDirection::Maximize));
+                    storm::logic::OperatorInformation(storm::solver::OptimizationDirection::Minimize));
             standardProperties.emplace_back("MinExpTimeDeadlock", expTimeDeadlock, emptyVariableSet, "The minimal expected time to reach a deadlock.");
             
         }
