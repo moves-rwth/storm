@@ -61,6 +61,7 @@ namespace storm {
         
         void parseSymbolicModelDescription(storm::settings::modules::IOSettings const& ioSettings, SymbolicInput& input, storm::builder::BuilderType const& builderType) {
             if (ioSettings.isPrismOrJaniInputSet()) {
+                storm::utility::Stopwatch modelParsingWatch(true);
                 if (ioSettings.isPrismInputSet()) {
                     input.model = storm::api::parseProgram(ioSettings.getPrismInputFilename(), storm::settings::getModule<storm::settings::modules::BuildSettings>().isPrismCompatibilityEnabled());
                 } else {
@@ -81,6 +82,8 @@ namespace storm {
                         input.properties = std::move(janiInput.second);
                     }
                 }
+                modelParsingWatch.stop();
+                STORM_PRINT("Time for model input parsing: " << modelParsingWatch << "." << std::endl << std::endl);
             }
         }
         
