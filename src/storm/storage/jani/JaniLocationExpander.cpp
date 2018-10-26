@@ -98,8 +98,8 @@ namespace storm {
                         int64_t value;
                         for (auto const& assignment : oa) {
                             if (assignment.getVariable() == *variable) {
-                                oa.remove(assignment);
                                 value = assignment.getAssignedExpression().evaluateAsInt();
+                                oa.remove(assignment);
                                 break;
                             }
                         }
