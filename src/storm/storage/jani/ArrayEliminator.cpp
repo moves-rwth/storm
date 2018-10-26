@@ -614,7 +614,6 @@ namespace storm {
                 }
                 
                 void insertLValueArrayAccessReplacements(std::vector<Assignment const*> const& arrayAccesses, std::vector<storm::jani::Variable const*> const& arrayVariableReplacements, int64_t level, std::vector<Assignment>& newAssignments) const {
-                    storm::expressions::Variable const& arrayVariable = arrayAccesses.front()->getLValue().getArray().getExpressionVariable();
                     bool onlyConstantIndices = true;
                     for (auto const& aa : arrayAccesses) {
                         if (aa->getLValue().getArrayIndex().containsVariables()) {
