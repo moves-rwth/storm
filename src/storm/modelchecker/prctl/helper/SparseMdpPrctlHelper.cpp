@@ -1279,8 +1279,8 @@ namespace storm {
                 // Sanity check for created scheduler.
                 STORM_LOG_ASSERT(!produceScheduler || scheduler, "Expected that a scheduler was obtained.");
                 STORM_LOG_ASSERT((!produceScheduler && !scheduler) || !scheduler->isPartialScheduler(), "Expected a fully defined scheduler");
-                STORM_LOG_ASSERT((!produceScheduler && !scheduler) || !scheduler->isDeterministicScheduler(), "Expected a deterministic scheduler");
-                STORM_LOG_ASSERT((!produceScheduler && !scheduler) || !scheduler->isMemorylessScheduler(), "Expected a memoryless scheduler");
+                STORM_LOG_ASSERT((!produceScheduler && !scheduler) || scheduler->isDeterministicScheduler(), "Expected a deterministic scheduler");
+                STORM_LOG_ASSERT((!produceScheduler && !scheduler) || scheduler->isMemorylessScheduler(), "Expected a memoryless scheduler");
 
 
                 return MDPSparseModelCheckingHelperReturnType<ValueType>(std::move(result), std::move(scheduler));
