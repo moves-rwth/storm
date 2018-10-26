@@ -130,7 +130,8 @@ namespace storm {
             
             // Let the generator create all initial states.
             this->stateStorage.initialStateIndices = generator->getInitialStates(stateToIdCallback);
-            
+            STORM_LOG_THROW(!this->stateStorage.initialStateIndices.empty(), storm::exceptions::WrongFormatException, "The model does not have a single initial state.");
+
             // Now explore the current state until there is no more reachable state.
             uint_fast64_t currentRowGroup = 0;
             uint_fast64_t currentRow = 0;
