@@ -1416,7 +1416,7 @@ namespace storm {
 
 
             STORM_LOG_THROW(automatonStructure.count("edges") > 0, storm::exceptions::InvalidJaniException, "Automaton '" << name << "' must have a list of edges");
-            for(auto const& edgeEntry : automatonStructure.at("edges")) {
+            for (auto const& edgeEntry : automatonStructure.at("edges")) {
                 // source location
                 STORM_LOG_THROW(edgeEntry.count("location") == 1, storm::exceptions::InvalidJaniException, "Each edge in automaton '" << name << "' must have a source");
                 std::string sourceLoc = getString(edgeEntry.at("location"), "source location for edge in automaton '" + name + "'");
@@ -1441,15 +1441,35 @@ namespace storm {
                 // guard
                 STORM_LOG_THROW(edgeEntry.count("guard") <= 1, storm::exceptions::InvalidJaniException, "Guard can be given at most once in edge from '" << sourceLoc << "' in automaton '" << name << "'");
                 storm::expressions::Expression guardExpr = expressionManager->boolean(true);
-                if(edgeEntry.count("guard") == 1) {
+                if (edgeEntry.count("guard") == 1) {
                     STORM_LOG_THROW(edgeEntry.at("guard").count("exp") == 1, storm::exceptions::InvalidJaniException, "Guard  in edge from '" + sourceLoc + "' in automaton '" + name + "' must have one expression");
                     guardExpr = parseExpression(edgeEntry.at("guard").at("exp"), scope.refine("guard expression in edge from '" + sourceLoc));
                     STORM_LOG_THROW(guardExpr.hasBooleanType(), storm::exceptions::InvalidJaniException, "Guard " << guardExpr << " does not have Boolean type.");
                 }
                 assert(guardExpr.isInitialized());
-                
                 std::shared_ptr<storm::jani::TemplateEdge> templateEdge = std::make_shared<storm::jani::TemplateEdge>(guardExpr);
+
+                // edge assignments
+                if (edgeEntry.count("assignments") > 0) {
+                    STORM_LOG_THROW(edgeEntry.count("assignments") == 1, storm::exceptions::InvalidJaniException, "Multiple edge assignments  in edge from '" + sourceLoc + "' in automaton '" + name + "'.");
+                    for (auto const& assignmentEntry : edgeEntry.at("assignments")) {
+                        // ref
+                        STORM_LOG_THROW(assignmentEntry.count("ref") == 1, storm::exceptions::InvalidJaniException, "Assignment in edge from '" << sourceLoc << "' in automaton '" << name << "'  must have one ref field");
+                        storm::jani::LValue lValue = parseLValue(assignmentEntry.at("ref"), scope.refine("Assignment variable in edge from '" + sourceLoc + "' in automaton '" + name + "'"));
+                        // value
+                        STORM_LOG_THROW(assignmentEntry.count("value") == 1, storm::exceptions::InvalidJaniException, "Assignment in edge from '" << sourceLoc << "' in automaton '" << name << "'  must have one value field");
+                        storm::expressions::Expression assignmentExpr = parseExpression(assignmentEntry.at("value"), scope.refine("assignment in edge from '" + sourceLoc + "' in automaton '" + name + "'"));
+                        // TODO check types
+                        // index
+                        int64_t assignmentIndex = 0; // default.
+                        if(assignmentEntry.count("index") > 0) {
+                            assignmentIndex = getSignedInt(assignmentEntry.at("index"), "assignment index in edge from '" + sourceLoc + "' in automaton '" + name + "'");
+                        }
+                        templateEdge->getAssignments().add(storm::jani::Assignment(lValue, assignmentExpr, assignmentIndex));
+                    }
+                }
                 
+                // destinations
                 STORM_LOG_THROW(edgeEntry.count("destinations") == 1, storm::exceptions::InvalidJaniException, "A single list of destinations must be given in edge from '" << sourceLoc << "' in automaton '" << name << "'");
                 std::vector<std::pair<uint64_t, storm::expressions::Expression>> destinationLocationsAndProbabilities;
                 for(auto const& destEntry : edgeEntry.at("destinations")) {
