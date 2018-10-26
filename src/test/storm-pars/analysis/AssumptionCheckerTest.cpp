@@ -62,7 +62,11 @@ TEST(AssumptionCheckerTest, Brp_no_bisimulation) {
                                                          storm::expressions::BinaryRelationExpression::RelationType::GreaterOrEqual));
     EXPECT_TRUE(checker.checkOnSamples(assumption));
 
-    auto dummyLattice = new storm::analysis::Lattice(storm::storage::BitVector(8), storm::storage::BitVector(8), 8);
+    storm::storage::BitVector above(8);
+    above.set(0);
+    storm::storage::BitVector below(8);
+    below.set(1);
+    auto dummyLattice = new storm::analysis::Lattice(above, below, 8);
     // Validate assumption
     EXPECT_FALSE(checker.validateAssumption(assumption, dummyLattice));
     EXPECT_FALSE(checker.validated(assumption));
@@ -74,9 +78,9 @@ TEST(AssumptionCheckerTest, Brp_no_bisimulation) {
                                                          expressionManager->getVariable("6").getExpression().getBaseExpressionPointer(),
                                                          expressionManager->getVariable("8").getExpression().getBaseExpressionPointer(),
                                                          storm::expressions::BinaryRelationExpression::RelationType::GreaterOrEqual));
-    storm::storage::BitVector above(13);
+    above = storm::storage::BitVector(13);
     above.set(12);
-    storm::storage::BitVector below(13);
+    below = storm::storage::BitVector(13);
     below.set(9);
     dummyLattice = new storm::analysis::Lattice(above, below, 13);
     EXPECT_TRUE(checker.checkOnSamples(assumption));
