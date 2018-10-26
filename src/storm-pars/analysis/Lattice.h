@@ -20,10 +20,8 @@ namespace storm {
                         storm::storage::BitVector states;
                         storm::storage::BitVector statesAbove;
                         storm::storage::BitVector statesBelow;
-                        storm::storage::BitVector recentlyAddedAbove;
-                        storm::storage::BitVector recentlyAddedBelow;
-                        std::set<Lattice::Node*> above;
-                        std::set<Lattice::Node*> below;
+                        std::set<Lattice::Node*>* above;
+                        std::set<Lattice::Node*>* below;
                     };
 
                     /*!
@@ -109,9 +107,6 @@ namespace storm {
                      */
                     std::vector<Node*> getNodes();
 
-                    std::set<Node*> getNodesBelow(Node* node);
-                    std::set<Node*> getNodesAbove(Node* node);
-
                     /*!
                      * Returns a BitVector in which all added states are set.
                      *
@@ -154,13 +149,13 @@ namespace storm {
 
                     uint_fast64_t numberOfStates;
 
-                    bool above(Node * node1, Node * node2, std::shared_ptr<std::set<Node *>> seenNodes);
+                    bool above(Node * node1, Node * node2);
 
                     int compare(Node* node1, Node* node2);
 
-                    void setStatesAbove(Node* node, uint_fast64_t state);
+                    void setStatesAbove(Node* node, uint_fast64_t state, bool alreadyInitialized);
 
-                    void setStatesBelow(Node* node, uint_fast64_t state);
+                    void setStatesBelow(Node* node, uint_fast64_t state, bool alreadyInitialized);
 
                     void setStatesAbove(storm::analysis::Lattice::Node *node, storm::storage::BitVector states, bool alreadyInitialized);
 
