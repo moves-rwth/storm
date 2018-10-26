@@ -27,25 +27,19 @@ namespace storm {
                 nodes.at(i) = bottom;
             }
 
-            top->above = new std::set<Lattice::Node*>({});
             top->statesAbove = storm::storage::BitVector(numberOfStates);
             setStatesBelow(top, bottomStates, false);
             assert(top->statesAbove.size() == numberOfStates);
             assert(top->statesBelow.size() == numberOfStates);
             assert(top->statesAbove.getNumberOfSetBits() == 0);
             assert(top->statesBelow.getNumberOfSetBits() == bottomStates.getNumberOfSetBits());
-            assert(top->above->size() == 0);
-            assert(top->below->size() == bottomStates.getNumberOfSetBits());
 
-            bottom->below = new std::set<Lattice::Node*>({});
             bottom->statesBelow = storm::storage::BitVector(numberOfStates);
             setStatesAbove(bottom, topStates, false);
             assert(bottom->statesAbove.size() == numberOfStates);
             assert(bottom->statesBelow.size() == numberOfStates);
             assert(bottom->statesBelow.getNumberOfSetBits() == 0);
             assert(bottom->statesAbove.getNumberOfSetBits() == topStates.getNumberOfSetBits());
-            assert(bottom->below->size() == 0);
-            assert(bottom->above->size() == topStates.getNumberOfSetBits());
 
             this->numberOfStates = numberOfStates;
             this->addedStates = storm::storage::BitVector(numberOfStates);
@@ -56,34 +50,24 @@ namespace storm {
         Lattice::Lattice(Lattice* lattice) {
             numberOfStates = lattice->getAddedStates().size();
             nodes = std::vector<Node *>(numberOfStates);
-
-            top = new Node();
-            top->states = storm::storage::BitVector(lattice->getTop()->states);
-            for (auto i = top->states.getNextSetIndex(0); i < top->states.size(); i = top->states.getNextSetIndex(i+1)) {
-                nodes.at(i) = top;
-            }
-
-            bottom = new Node();
-            bottom->states = storm::storage::BitVector(lattice->getBottom()->states);
-            for (auto i =  bottom->states.getNextSetIndex(0); i < bottom->states.size(); i =  bottom->states.getNextSetIndex(i+1)) {
-                nodes.at(i) = bottom;
-            }
-
             addedStates = storm::storage::BitVector(numberOfStates);
-            addedStates |= (top->states);
-            addedStates |= (bottom->states);
 
             auto oldNodes = lattice->getNodes();
             // Create nodes
             for (auto itr = oldNodes.begin(); itr != oldNodes.end(); ++itr) {
                 Node *oldNode = (*itr);
-                if (oldNode != nullptr && oldNode != lattice->getTop() && oldNode != lattice->getBottom()) {
+                if (oldNode != nullptr) {
                     Node *newNode = new Node();
                     newNode->states = storm::storage::BitVector(oldNode->states);
                     for (auto i = newNode->states.getNextSetIndex(0);
                          i < newNode->states.size(); i = newNode->states.getNextSetIndex(i + 1)) {
                         addedStates.set(i);
                         nodes.at(i) = newNode;
+                    }
+                    if (oldNode == lattice->getTop()) {
+                        top = newNode;
+                    } else if (oldNode == lattice->getBottom()) {
+                        bottom = newNode;
                     }
                 }
             }
@@ -98,27 +82,18 @@ namespace storm {
                     setStatesBelow(newNode, oldNode->statesBelow, false);
                 } else if (oldNode != nullptr && oldNode == lattice->getBottom()) {
                     setStatesAbove(bottom, lattice->getBottom()->statesAbove, false);
-                    assert(lattice->getBottom()->statesBelow.getNumberOfSetBits() == 0);
-                    bottom->below = new std::set<Lattice::Node*>({});
                     bottom->statesBelow = storm::storage::BitVector(numberOfStates);
-                    assert(bottom->statesAbove.size() == numberOfStates);
-                    assert(bottom->statesBelow.size() == numberOfStates);
                 } else if (oldNode != nullptr && oldNode == lattice->getTop()) {
-                    top->above = new std::set<Lattice::Node*>({});
                     top->statesAbove = storm::storage::BitVector(numberOfStates);
-                    assert(lattice->getTop()->statesAbove.getNumberOfSetBits() == 0);
                     setStatesBelow(top, lattice->getTop()->statesBelow, false);
-                    assert(top->statesAbove.size() == numberOfStates);
-                    assert(top->statesBelow.size() == numberOfStates);
                 }
 
+                // To check if everything went well
                 if (oldNode!= nullptr) {
                     Node *newNode = getNode(oldNode->states.getNextSetIndex(0));
                     assert((newNode->statesAbove & newNode->statesBelow).getNumberOfSetBits() == 0);
                     assert(newNode->statesAbove == oldNode->statesAbove);
                     assert(newNode->statesBelow == oldNode->statesBelow);
-                    assert(newNode->above->size() == oldNode->above->size());
-                    assert(newNode->below->size() == oldNode->below->size());
                 }
             }
         }
@@ -166,18 +141,17 @@ namespace storm {
         }
 
         void Lattice::addRelationNodes(Lattice::Node *above, Lattice::Node * below) {
-            assert(compare(above, below) == UNKNOWN);
-            assert((above->statesAbove & below->statesBelow).getNumberOfSetBits() == 0);
+            assert (compare(above, below) == UNKNOWN);
 
-            setStatesBelow(above, below->states, true);
-            setStatesAbove(below, above->states, true);
+            setStatesBelow(above, below->states | below->statesBelow, true);
+            setStatesAbove(below, above->states | above->statesAbove, true);
 
             for (auto i = below->statesBelow.getNextSetIndex(0); i < below->statesBelow.size(); i = below->statesBelow.getNextSetIndex(i + 1)) {
-                setStatesAbove(getNode(i), above->states, true);
+                setStatesAbove(getNode(i), above->states | above->statesAbove, true);
             }
 
             for (auto i = above->statesAbove.getNextSetIndex(0); i < above->statesAbove.size(); i = above->statesAbove.getNextSetIndex(i + 1)) {
-                setStatesBelow(getNode(i), below->states, true);
+                setStatesBelow(getNode(i), below->states | below->statesBelow, true);
             }
         }
 
@@ -223,6 +197,30 @@ namespace storm {
             return addedStates;
         }
 
+        std::set<Lattice::Node*> Lattice::getAbove(uint_fast64_t state) {
+            return getAbove(getNode(state));
+        }
+
+        std::set<Lattice::Node*> Lattice::getBelow(uint_fast64_t state) {
+            return getBelow(getNode(state));
+        }
+
+        std::set<Lattice::Node*> Lattice::getAbove(Lattice::Node* node) {
+            std::set<Lattice::Node*> result({});
+            for (auto i = node->statesAbove.getNextSetIndex(0); i < node->statesAbove.size(); i = node->statesAbove.getNextSetIndex(i + 1)) {
+             result.insert(getNode(i));
+            }
+            return result;
+        }
+
+        std::set<Lattice::Node*> Lattice::getBelow(Lattice::Node* node) {
+            std::set<Lattice::Node*> result({});
+            for (auto i = node->statesBelow.getNextSetIndex(0); i < node->statesBelow.size(); i = node->statesBelow.getNextSetIndex(i + 1)) {
+                result.insert(getNode(i));
+            }
+            return result;
+        }
+
         void Lattice::toString(std::ostream &out) {
             std::vector<Node*> printedNodes = std::vector<Node*>({});
             for (auto itr = nodes.begin(); itr != nodes.end(); ++itr) {
@@ -243,7 +241,8 @@ namespace storm {
                     out << "  Address: " << node << "\n";
                     out << "    Above: {";
 
-                    for (auto itr2 = node->above->begin(); itr2 != node->above->end(); ++itr2) {
+                    auto statesAbove = getAbove(node);
+                    for (auto itr2 = statesAbove.begin(); itr2 != statesAbove.end(); ++itr2) {
                         Node *above = *itr2;
                         index = above->states.getNextSetIndex(0);
                         out << "{";
@@ -261,7 +260,8 @@ namespace storm {
 
 
                     out << "    Below: {";
-                    for (auto itr2 = node->below->begin(); itr2 != node->below->end(); ++itr2) {
+                    auto statesBelow = getBelow(node);
+                    for (auto itr2 = statesBelow.begin(); itr2 != statesBelow.end(); ++itr2) {
                         Node *below = *itr2;
                         out << "{";
                         index = below->states.getNextSetIndex(0);
@@ -308,8 +308,8 @@ namespace storm {
             printed.clear();
             for (auto itr = nodes.begin(); itr != nodes.end(); ++itr) {
                 if ((*itr) != nullptr && find(printed.begin(), printed.end(), (*itr)) == printed.end()) {
-                    auto below = (*itr)->below;
-                    for (auto itr2 = below->begin(); itr2 != below->end(); ++itr2) {
+                    auto below = getBelow(*itr);
+                    for (auto itr2 = below.begin(); itr2 != below.end(); ++itr2) {
                         out << "\t\"" << (*itr) << "\" -> \"" << (*itr2) << "\";" << std::endl;
                     }
                     printed.push_back(*itr);
@@ -320,6 +320,21 @@ namespace storm {
         }
 
         bool Lattice::above(Node *node1, Node *node2) {
+            bool check = node1->statesBelow.get(node2->states.getNextSetIndex(0));
+            for (auto i = node2->states.getNextSetIndex(0); i < node2->states.size(); i = node2->states.getNextSetIndex(i+1)) {
+                if (check) {
+                    assert(node1->statesBelow.get(i));
+                } else {
+                    assert(!node1->statesBelow.get(i));
+                }
+            }
+            for (auto i = node1->states.getNextSetIndex(0); i < node1->states.size(); i = node1->states.getNextSetIndex(i+1)) {
+                if (check) {
+                    assert(node2->statesAbove.get(i));
+                } else {
+                    assert(!node2->statesAbove.get(i));
+                }
+            }
             return node1->statesBelow.get(node2->states.getNextSetIndex(0));
         }
 
@@ -327,20 +342,16 @@ namespace storm {
             assert (!node->states.get(state));
             if (!alreadyInitialized) {
                 node->statesAbove = storm::storage::BitVector(numberOfStates);
-                node->above = new std::set<Lattice::Node*>({});
             }
             node->statesAbove.set(state);
-            node->above->insert(getNode(state));
         }
 
         void Lattice::setStatesBelow(Lattice::Node *node, uint_fast64_t state, bool alreadyInitialized) {
             assert (!node->states.get(state));
             if (!alreadyInitialized) {
                 node->statesBelow = storm::storage::BitVector(numberOfStates);
-                node->below = new std::set<Lattice::Node*>({});
             }
             node->statesBelow.set(state);
-            node->below->insert(getNode(state));
         }
 
         void Lattice::setStatesAbove(Lattice::Node *node, storm::storage::BitVector states, bool alreadyInitialized) {
@@ -350,13 +361,10 @@ namespace storm {
                 node->statesAbove |= states;
             } else {
                 node->statesAbove = storm::storage::BitVector(states);
-                node->above = new std::set<Lattice::Node*>({});
             }
             for (auto i = states.getNextSetIndex(0); i < states.size(); i = states.getNextSetIndex(i + 1)) {
                 if (node->states.get(i)) {
                     node->statesAbove.set(i, false);
-                } else {
-                    node->above->insert(getNode(i));
                 }
             }
         }
@@ -367,13 +375,10 @@ namespace storm {
                 node->statesBelow |= states;
             } else {
                 node->statesBelow = storm::storage::BitVector(states);
-                node->below = new std::set<Lattice::Node*>({});
             }
             for (auto i = states.getNextSetIndex(0); i < states.size(); i = states.getNextSetIndex(i + 1)) {
                 if (node->states.get(i)) {
                     node->statesBelow.set(i, false);
-                } else {
-                    node->below->insert(getNode(i));
                 }
             }
         }

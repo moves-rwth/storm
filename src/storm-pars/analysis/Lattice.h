@@ -20,8 +20,6 @@ namespace storm {
                         storm::storage::BitVector states;
                         storm::storage::BitVector statesAbove;
                         storm::storage::BitVector statesBelow;
-                        std::set<Lattice::Node*>* above;
-                        std::set<Lattice::Node*>* below;
                     };
 
                     /*!
@@ -113,6 +111,14 @@ namespace storm {
                      * @return The BitVector with all added states.
                      */
                     storm::storage::BitVector getAddedStates();
+
+                    std::set<Lattice::Node*> getAbove(uint_fast64_t state);
+
+                    std::set<Lattice::Node*> getBelow(uint_fast64_t state);
+
+                    std::set<Lattice::Node*> getAbove(Lattice::Node* node);
+
+                    std::set<Lattice::Node*> getBelow(Lattice::Node* node);
 
                     /*!
                      * Prints a string representation of the lattice to the output stream.

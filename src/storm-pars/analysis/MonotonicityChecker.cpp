@@ -196,6 +196,7 @@ namespace storm {
                 auto assumption2 = *itr;
 
                 if (!assumption1.second && !assumption2.second) {
+                    // TODO: hier niet verder gaan als je iets gevonden hebt?
                     auto assumptionsCopy = std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>(assumptions);
                     auto latticeCopy = new storm::analysis::Lattice(lattice);
                     assumptions.push_back(assumption1.first);

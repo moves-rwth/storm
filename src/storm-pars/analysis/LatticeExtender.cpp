@@ -34,7 +34,7 @@ namespace storm {
         }
 
         template <typename ValueType>
-        std::tuple<storm::analysis::Lattice*, uint_fast64_t, uint_fast64_t> LatticeExtender<ValueType>::toLattice(std::vector<std::shared_ptr<storm::logic::Formula const>> formulas) {
+        std::tuple<Lattice*, uint_fast64_t, uint_fast64_t> LatticeExtender<ValueType>::toLattice(std::vector<std::shared_ptr<storm::logic::Formula const>> formulas) {
             storm::utility::Stopwatch latticeWatch(true);
 
             STORM_LOG_THROW((++formulas.begin()) == formulas.end(), storm::exceptions::NotSupportedException, "Only one formula allowed for monotonicity analysis");
@@ -107,7 +107,7 @@ namespace storm {
             }
 
             // Create the Lattice
-            storm::analysis::Lattice *lattice = new storm::analysis::Lattice(topStates, bottomStates, numberOfStates);
+            Lattice *lattice = new Lattice(topStates, bottomStates, numberOfStates);
             for (auto state = initialMiddleStates.getNextSetIndex(0); state != numberOfStates; state = initialMiddleStates.getNextSetIndex(state + 1)) {
                 lattice->add(state);
             }
@@ -119,7 +119,7 @@ namespace storm {
         }
 
         template <typename ValueType>
-        std::tuple<storm::analysis::Lattice*, uint_fast64_t, uint_fast64_t> LatticeExtender<ValueType>::extendLattice(storm::analysis::Lattice* lattice, std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption) {
+        std::tuple<Lattice*, uint_fast64_t, uint_fast64_t> LatticeExtender<ValueType>::extendLattice(Lattice* lattice, std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption) {
             // TODO: split up
             auto numberOfStates = this->model->getNumberOfStates();
             // First handle assumption
@@ -137,9 +137,9 @@ namespace storm {
                     auto val1 = std::stoul(var1.getName(), nullptr, 0);
                     auto val2 = std::stoul(var2.getName(), nullptr, 0);
                     auto comp = lattice->compare(val1, val2);
-                    assert (comp == storm::analysis::Lattice::UNKNOWN || comp == storm::analysis::Lattice::SAME);
-                    storm::analysis::Lattice::Node *n1 = lattice->getNode(val1);
-                    storm::analysis::Lattice::Node *n2 = lattice->getNode(val2);
+                    assert (comp == Lattice::UNKNOWN || comp == Lattice::SAME);
+                    Lattice::Node *n1 = lattice->getNode(val1);
+                    Lattice::Node *n2 = lattice->getNode(val2);
 
                         if (n1 != nullptr && n2 != nullptr) {
                             assert(false);
@@ -157,12 +157,13 @@ namespace storm {
                     assert (expr.getFirstOperand()->isVariable() && expr.getSecondOperand()->isVariable());
                     storm::expressions::Variable largest = expr.getFirstOperand()->asVariableExpression().getVariable();
                     storm::expressions::Variable smallest = expr.getSecondOperand()->asVariableExpression().getVariable();
-                    if (lattice->compare(std::stoul(largest.getName(), nullptr, 0),
-                                         std::stoul(smallest.getName(), nullptr, 0)) !=
-                        storm::analysis::Lattice::ABOVE) {
-                        storm::analysis::Lattice::Node *n1 = lattice->getNode(
+                    auto compareRes = lattice->compare(std::stoul(largest.getName(), nullptr, 0),
+                                                       std::stoul(smallest.getName(), nullptr, 0));
+                    assert(compareRes == Lattice::UNKNOWN);
+                    if (compareRes != Lattice::ABOVE) {
+                        Lattice::Node *n1 = lattice->getNode(
                                 std::stoul(largest.getName(), nullptr, 0));
-                        storm::analysis::Lattice::Node *n2 = lattice->getNode(
+                        Lattice::Node *n2 = lattice->getNode(
                                 std::stoul(smallest.getName(), nullptr, 0));
 
                         if (n1 != nullptr && n2 != nullptr) {
@@ -209,24 +210,25 @@ namespace storm {
                         uint_fast64_t successor2 = successors.getNextSetIndex(successor1 + 1);
 
                         int compareResult = lattice->compare(successor1, successor2);
-                        if (compareResult == storm::analysis::Lattice::ABOVE) {
+                        if (compareResult == Lattice::ABOVE) {
                             // successor 1 is closer to top than successor 2
                             lattice->addBetween(stateNumber, lattice->getNode(successor1),
                                                 lattice->getNode(successor2));
-                        } else if (compareResult == storm::analysis::Lattice::BELOW) {
+                        } else if (compareResult == Lattice::BELOW) {
                             // successor 2 is closer to top than successor 1
                             lattice->addBetween(stateNumber, lattice->getNode(successor2),
                                                 lattice->getNode(successor1));
-                        } else if (compareResult == storm::analysis::Lattice::SAME) {
+                        } else if (compareResult == Lattice::SAME) {
                             // the successors are at the same level
                             lattice->addToNode(stateNumber, lattice->getNode(successor1));
                         } else {
+                            assert(lattice->compare(successor1, successor2) == Lattice::UNKNOWN);
                             return std::make_tuple(lattice, successor1, successor2);
                         }
                     } else if (check && successors.getNumberOfSetBits() > 2) {
                         for (auto i = successors.getNextSetIndex(0); i < successors.size(); i = successors.getNextSetIndex(i+1)) {
                             for (auto j = successors.getNextSetIndex(i+1); j < successors.size(); j = successors.getNextSetIndex(j+1)) {
-                                if (lattice->compare(i,j) == storm::analysis::Lattice::UNKNOWN) {
+                                if (lattice->compare(i,j) == Lattice::UNKNOWN) {
                                     return std::make_tuple(lattice, i, j);
                                 }
                             }
@@ -235,16 +237,18 @@ namespace storm {
                         auto highest = successors.getNextSetIndex(0);
                         auto lowest = highest;
                         for (auto i = successors.getNextSetIndex(highest+1); i < successors.size(); i = successors.getNextSetIndex(i+1)) {
-                            if (lattice->compare(i, highest) == storm::analysis::Lattice::ABOVE) {
+                            if (lattice->compare(i, highest) == Lattice::ABOVE) {
                                 highest = i;
                             }
-                            if (lattice->compare(lowest, i) == storm::analysis::Lattice::ABOVE) {
+                            if (lattice->compare(lowest, i) == Lattice::ABOVE) {
                                 lowest = i;
                             }
                         }
                         lattice->addBetween(stateNumber, lattice->getNode(highest), lattice->getNode(lowest));
                     }
 
+
+                    // Checking for states which are already added to the lattice, and only have one successor left which haven't been added yet
                     bool checkOneSuccLeft = seenStates[stateNumber] && successors.getNumberOfSetBits() <= 2;
                     bool helper = true;
                     for (auto succIndex = successors.getNextSetIndex(0); (check || checkOneSuccLeft) && succIndex != numberOfStates; succIndex = successors.getNextSetIndex(++succIndex)) {
@@ -268,9 +272,9 @@ namespace storm {
                             assert (seenStates[succ1]);
                             auto nodeSucc = lattice->getNode(succ1);
                             auto compare = lattice->compare(stateNumber, succ1);
-                            if (compare == storm::analysis::Lattice::ABOVE) {
+                            if (compare == Lattice::ABOVE) {
                                 lattice->addBetween(succ2, lattice->getTop(), lattice->getNode(stateNumber));
-                            } else if (compare == storm::analysis::Lattice::BELOW) {
+                            } else if (compare == Lattice::BELOW) {
                                 lattice->addBetween(succ2, lattice->getNode(stateNumber), lattice->getBottom());
                             }
                         }
