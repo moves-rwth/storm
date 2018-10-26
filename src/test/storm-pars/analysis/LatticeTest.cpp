@@ -51,6 +51,10 @@ TEST(LatticeTest, Simple) {
     EXPECT_EQ(storm::analysis::Lattice::ABOVE, lattice.compare(6,3));
     EXPECT_EQ(storm::analysis::Lattice::UNKNOWN, lattice.compare(6,4));
     EXPECT_EQ(storm::analysis::Lattice::BELOW, lattice.compare(6,5));
+
+    lattice.addRelationNodes(lattice.getNode(6), lattice.getNode(4));
+    EXPECT_EQ(storm::analysis::Lattice::ABOVE, lattice.compare(6,4));
+
 }
 
 TEST(LatticeTest, copy_lattice) {
@@ -66,6 +70,7 @@ TEST(LatticeTest, copy_lattice) {
     lattice.addToNode(4, lattice.getNode(2));
     lattice.addBetween(5, lattice.getNode(0), lattice.getNode(3));
     lattice.addBetween(6, lattice.getNode(5), lattice.getNode(3));
+
 
 
     auto latticeCopy = storm::analysis::Lattice(lattice);
@@ -90,10 +95,12 @@ TEST(LatticeTest, copy_lattice) {
     EXPECT_EQ(storm::analysis::Lattice::UNKNOWN, latticeCopy.compare(5,2));
     EXPECT_EQ(storm::analysis::Lattice::UNKNOWN, latticeCopy.compare(5,4));
 
+    lattice.addRelationNodes(lattice.getNode(6), lattice.getNode(4));
+    latticeCopy = storm::analysis::Lattice(lattice);
     EXPECT_EQ(storm::analysis::Lattice::BELOW, latticeCopy.compare(6,0));
     EXPECT_EQ(storm::analysis::Lattice::ABOVE, latticeCopy.compare(6,1));
-    EXPECT_EQ(storm::analysis::Lattice::UNKNOWN, latticeCopy.compare(6,2));
+    EXPECT_EQ(storm::analysis::Lattice::ABOVE, latticeCopy.compare(6,2));
     EXPECT_EQ(storm::analysis::Lattice::ABOVE, latticeCopy.compare(6,3));
-    EXPECT_EQ(storm::analysis::Lattice::UNKNOWN, latticeCopy.compare(6,4));
+    EXPECT_EQ(storm::analysis::Lattice::ABOVE, latticeCopy.compare(6,4));
     EXPECT_EQ(storm::analysis::Lattice::BELOW, latticeCopy.compare(6,5));
 }
