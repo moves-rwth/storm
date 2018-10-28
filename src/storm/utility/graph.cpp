@@ -402,6 +402,8 @@ namespace storm {
                 std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = transitionMatrix.getRowGroupIndices();
                 
                 for (auto const& state : states) {
+                    bool setValue = false;
+                    STORM_LOG_ASSERT(nondeterministicChoiceIndices[state+1] - nondeterministicChoiceIndices[state] > 0, "Expected at least one action enabled in state " << state);
                     for (uint_fast64_t choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1]; ++choice) {
                         bool allSuccessorsInStates = true;
                         for (auto const& element : transitionMatrix.getRow(choice)) {
@@ -414,9 +416,11 @@ namespace storm {
                             for (uint_fast64_t memState = 0; memState < scheduler.getNumberOfMemoryStates(); ++memState) {
                                 scheduler.setChoice(choice - nondeterministicChoiceIndices[state], state, memState);
                             }
+                            setValue = true;
                             break;
                         }
                     }
+                    STORM_LOG_ASSERT(setValue, "Expected that at least one action for state " <<  state << " stays within the selected state");
                 }
             }
             
