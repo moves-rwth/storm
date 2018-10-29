@@ -15,8 +15,9 @@ TEST(LatticeTest, Simple) {
     above.set(0);
     auto below = storm::storage::BitVector(numberOfStates);
     below.set(1);
+    auto initialMiddle = storm::storage::BitVector(numberOfStates);
 
-    auto lattice = storm::analysis::Lattice(above, below, numberOfStates);
+    auto lattice = storm::analysis::Lattice(above, below, initialMiddle, numberOfStates);
     EXPECT_EQ(storm::analysis::Lattice::ABOVE, lattice.compare(0,1));
     EXPECT_EQ(storm::analysis::Lattice::BELOW, lattice.compare(1,0));
     EXPECT_EQ(nullptr, lattice.getNode(2));
@@ -80,8 +81,9 @@ TEST(LatticeTest, copy_lattice) {
     above.set(0);
     auto below = storm::storage::BitVector(numberOfStates);
     below.set(1);
+    auto initialMiddle = storm::storage::BitVector(numberOfStates);
 
-    auto lattice = storm::analysis::Lattice(above, below, numberOfStates);
+    auto lattice = storm::analysis::Lattice(above, below, initialMiddle, numberOfStates);
     lattice.add(2);
     lattice.add(3);
     lattice.addToNode(4, lattice.getNode(2));

@@ -78,8 +78,8 @@ namespace storm {
                 }
             }
 
-            auto initialMiddleStates = storm::storage::BitVector(model->getNumberOfStates());
-            // Check if MC is acyclic
+            auto initialMiddleStates = storm::storage::BitVector(numberOfStates);
+            // Check if MC contains cycles
             auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<ValueType>(model->getTransitionMatrix(), false, false);
             for (auto i = 0; i < decomposition.size(); ++i) {
                 auto scc = decomposition.getBlock(i);
@@ -93,25 +93,17 @@ namespace storm {
                             auto succ1 = successors.getNextSetIndex(0);
                             auto succ2 = successors.getNextSetIndex(succ1 + 1);
                             auto intersection = bottomStates | topStates;
-                            if ((intersection[succ1] && ! intersection[succ2])
-                                    || (intersection[succ2] && !intersection[succ1])) {
+                            if (intersection[succ1] || intersection[succ2]) {
                                 initialMiddleStates.set(*stateItr);
-                                found = true;
-                            } else if (intersection[succ1] && intersection[succ2]) {
                                 found = true;
                             }
                         }
-
                     }
                 }
             }
 
             // Create the Lattice
-            Lattice *lattice = new Lattice(topStates, bottomStates, numberOfStates);
-            for (auto state = initialMiddleStates.getNextSetIndex(0); state != numberOfStates; state = initialMiddleStates.getNextSetIndex(state + 1)) {
-                lattice->add(state);
-            }
-
+            Lattice *lattice = new Lattice(topStates, bottomStates, initialMiddleStates, numberOfStates);
 
             latticeWatch.stop();
             STORM_PRINT(std::endl << "Time for initialization of lattice: " << latticeWatch << "." << std::endl << std::endl);
@@ -119,164 +111,169 @@ namespace storm {
         }
 
         template <typename ValueType>
-        std::tuple<Lattice*, uint_fast64_t, uint_fast64_t> LatticeExtender<ValueType>::extendLattice(Lattice* lattice, std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption) {
-            // TODO: split up
-            auto numberOfStates = this->model->getNumberOfStates();
-            // First handle assumption
-            if (assumption != nullptr) {
-                storm::expressions::BinaryRelationExpression expr = *assumption;
-                STORM_LOG_THROW(expr.getRelationType() ==
-                                storm::expressions::BinaryRelationExpression::RelationType::GreaterOrEqual
-                                || expr.getRelationType() ==
-                                   storm::expressions::BinaryRelationExpression::RelationType::Equal,
-                                storm::exceptions::NotImplementedException, "Only GreaterOrEqual or Equal assumptions allowed");
-                if (expr.getRelationType() == storm::expressions::BinaryRelationExpression::RelationType::Equal) {
-                    assert (expr.getFirstOperand()->isVariable() && expr.getSecondOperand()->isVariable());
-                    storm::expressions::Variable var1 = expr.getFirstOperand()->asVariableExpression().getVariable();
-                    storm::expressions::Variable var2 = expr.getSecondOperand()->asVariableExpression().getVariable();
-                    auto val1 = std::stoul(var1.getName(), nullptr, 0);
-                    auto val2 = std::stoul(var2.getName(), nullptr, 0);
-                    auto comp = lattice->compare(val1, val2);
-                    assert (comp == Lattice::UNKNOWN || comp == Lattice::SAME);
-                    Lattice::Node *n1 = lattice->getNode(val1);
-                    Lattice::Node *n2 = lattice->getNode(val2);
+        void LatticeExtender<ValueType>::handleAssumption(Lattice* lattice, std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption) {
+            assert (assumption != nullptr);
 
-                        if (n1 != nullptr && n2 != nullptr) {
-                            assert(false);
-//                            lattice->mergeNodes(n1, n2);
-                        } else if (n1 != nullptr) {
-                            lattice->addToNode(val2, n1);
-                        } else if (n2 != nullptr) {
-                            lattice->addToNode(val1, n2);
-                        } else {
-                            lattice->add(val1);
-                            lattice->addToNode(val2, lattice->getNode(val1));
+            storm::expressions::BinaryRelationExpression expr = *assumption;
+            assert (expr.getRelationType() == storm::expressions::BinaryRelationExpression::RelationType::GreaterOrEqual
+                || expr.getRelationType() == storm::expressions::BinaryRelationExpression::RelationType::Equal);
 
-                        }
+            if (expr.getRelationType() == storm::expressions::BinaryRelationExpression::RelationType::Equal) {
+                assert (expr.getFirstOperand()->isVariable() && expr.getSecondOperand()->isVariable());
+                storm::expressions::Variable var1 = expr.getFirstOperand()->asVariableExpression().getVariable();
+                storm::expressions::Variable var2 = expr.getSecondOperand()->asVariableExpression().getVariable();
+                auto val1 = std::stoul(var1.getName(), nullptr, 0);
+                auto val2 = std::stoul(var2.getName(), nullptr, 0);
+                auto comp = lattice->compare(val1, val2);
+
+                assert (comp == Lattice::UNKNOWN);
+                Lattice::Node *n1 = lattice->getNode(val1);
+                Lattice::Node *n2 = lattice->getNode(val2);
+
+                if (n1 != nullptr && n2 != nullptr) {
+                    // TODO: mergeNode method
+                    assert(false);
+                } else if (n1 != nullptr) {
+                    lattice->addToNode(val2, n1);
+                } else if (n2 != nullptr) {
+                    lattice->addToNode(val1, n2);
                 } else {
-                    assert (expr.getFirstOperand()->isVariable() && expr.getSecondOperand()->isVariable());
-                    storm::expressions::Variable largest = expr.getFirstOperand()->asVariableExpression().getVariable();
-                    storm::expressions::Variable smallest = expr.getSecondOperand()->asVariableExpression().getVariable();
-                    auto compareRes = lattice->compare(std::stoul(largest.getName(), nullptr, 0),
-                                                       std::stoul(smallest.getName(), nullptr, 0));
-                    assert(compareRes == Lattice::UNKNOWN);
-                    if (compareRes != Lattice::ABOVE) {
-                        Lattice::Node *n1 = lattice->getNode(
-                                std::stoul(largest.getName(), nullptr, 0));
-                        Lattice::Node *n2 = lattice->getNode(
-                                std::stoul(smallest.getName(), nullptr, 0));
+                    lattice->add(val1);
+                    lattice->addToNode(val2, lattice->getNode(val1));
+                }
+            } else {
+                assert (expr.getFirstOperand()->isVariable() && expr.getSecondOperand()->isVariable());
+                storm::expressions::Variable largest = expr.getFirstOperand()->asVariableExpression().getVariable();
+                storm::expressions::Variable smallest = expr.getSecondOperand()->asVariableExpression().getVariable();
+                auto val1 = std::stoul(largest.getName(), nullptr, 0);
+                auto val2 = std::stoul(smallest.getName(), nullptr, 0);
+                auto compareRes = lattice->compare(val1, val2);
 
-                        if (n1 != nullptr && n2 != nullptr) {
-                            lattice->addRelationNodes(n1, n2);
-                        } else if (n1 != nullptr) {
-                            lattice->addBetween(std::stoul(smallest.getName(), nullptr, 0), n1,
-                                                lattice->getBottom());
-                        } else if (n2 != nullptr) {
-                            lattice->addBetween(std::stoul(largest.getName(), nullptr, 0), lattice->getTop(), n2);
-                        } else {
-                            lattice->add(std::stoul(largest.getName(), nullptr, 0));
-                            lattice->addBetween(std::stoul(smallest.getName(), nullptr, 0),
-                                                lattice->getNode(std::stoul(largest.getName(), nullptr, 0)),
-                                                lattice->getBottom());
+                assert(compareRes == Lattice::UNKNOWN);
+                Lattice::Node *n1 = lattice->getNode(val1);
+                Lattice::Node *n2 = lattice->getNode(val2);
+
+                if (n1 != nullptr && n2 != nullptr) {
+                    lattice->addRelationNodes(n1, n2);
+                } else if (n1 != nullptr) {
+                    lattice->addBetween(val2, n1, lattice->getBottom());
+                } else if (n2 != nullptr) {
+                    lattice->addBetween(val1, lattice->getTop(), n2);
+                } else {
+                    lattice->add(val1);
+                    lattice->addBetween(val2, lattice->getNode(val1), lattice->getBottom());
+                }
+            }
+        }
+
+        template <typename ValueType>
+        std::tuple<Lattice*, uint_fast64_t, uint_fast64_t> LatticeExtender<ValueType>::extendAllSuccAdded(Lattice* lattice, uint_fast64_t stateNumber, storm::storage::BitVector successors) {
+            auto numberOfStates = successors.size();
+            assert (lattice->getAddedStates().size() == numberOfStates);
+
+            if (successors.getNumberOfSetBits() == 1) {
+                // As there is only one successor the current state and its successor must be at the same nodes.
+                lattice->addToNode(stateNumber, lattice->getNode(successors.getNextSetIndex(0)));
+            } else if (successors.getNumberOfSetBits() == 2) {
+                // Otherwise, check how the two states compare, and add if the comparison is possible.
+                uint_fast64_t successor1 = successors.getNextSetIndex(0);
+                uint_fast64_t successor2 = successors.getNextSetIndex(successor1 + 1);
+
+                int compareResult = lattice->compare(successor1, successor2);
+                if (compareResult == Lattice::ABOVE) {
+                    // successor 1 is closer to top than successor 2
+                    lattice->addBetween(stateNumber, lattice->getNode(successor1),
+                                        lattice->getNode(successor2));
+                } else if (compareResult == Lattice::BELOW) {
+                    // successor 2 is closer to top than successor 1
+                    lattice->addBetween(stateNumber, lattice->getNode(successor2),
+                                        lattice->getNode(successor1));
+                } else if (compareResult == Lattice::SAME) {
+                    // the successors are at the same level
+                    lattice->addToNode(stateNumber, lattice->getNode(successor1));
+                } else {
+                    assert(lattice->compare(successor1, successor2) == Lattice::UNKNOWN);
+                    return std::make_tuple(lattice, successor1, successor2);
+                }
+            } else if (successors.getNumberOfSetBits() > 2) {
+                for (auto i = successors.getNextSetIndex(0); i < numberOfStates; i = successors.getNextSetIndex(i+1)) {
+                    for (auto j = successors.getNextSetIndex(i+1); j < numberOfStates; j = successors.getNextSetIndex(j+1)) {
+                        if (lattice->compare(i,j) == Lattice::UNKNOWN) {
+                            return std::make_tuple(lattice, i, j);
                         }
                     }
                 }
+
+                auto highest = successors.getNextSetIndex(0);
+                auto lowest = highest;
+                for (auto i = successors.getNextSetIndex(highest+1); i < numberOfStates; i = successors.getNextSetIndex(i+1)) {
+                    if (lattice->compare(i, highest) == Lattice::ABOVE) {
+                        highest = i;
+                    }
+                    if (lattice->compare(lowest, i) == Lattice::ABOVE) {
+                        lowest = i;
+                    }
+                }
+                lattice->addBetween(stateNumber, lattice->getNode(highest), lattice->getNode(lowest));
+            }
+            return std::make_tuple(lattice, numberOfStates, numberOfStates);
+        }
+
+        template <typename ValueType>
+        std::tuple<Lattice*, uint_fast64_t, uint_fast64_t> LatticeExtender<ValueType>::extendLattice(Lattice* lattice, std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption) {
+            auto numberOfStates = this->model->getNumberOfStates();
+
+            if (assumption != nullptr) {
+                handleAssumption(lattice, assumption);
             }
 
             auto oldNumberSet = numberOfStates;
             while (oldNumberSet != lattice->getAddedStates().getNumberOfSetBits()) {
                 oldNumberSet = lattice->getAddedStates().getNumberOfSetBits();
+                // TODO: kan dit niet efficienter
                 for (auto stateItr = stateMap.begin(); stateItr != stateMap.end(); ++stateItr) {
-                    storm::storage::BitVector seenStates = (lattice->getAddedStates());
                     // Iterate over all states
                     auto stateNumber = stateItr->first;
                     storm::storage::BitVector successors = stateItr->second;
 
+                    auto seenStates = (lattice->getAddedStates());
+
                     // Check if current state has not been added yet, and all successors have
                     bool check = !seenStates[stateNumber];
-                    for (auto succIndex = successors.getNextSetIndex(0); check && succIndex != numberOfStates; succIndex = successors.getNextSetIndex(++succIndex)) {
+                    for (auto succIndex = successors.getNextSetIndex(0); check && succIndex != successors.size(); succIndex = successors.getNextSetIndex(++succIndex)) {
+                        // if the stateNumber equals succIndex we have a self-loop, ignoring selfloop as seenStates[stateNumber] = false
                         if (succIndex != stateNumber) {
                             check &= seenStates[succIndex];
                         }
-                        // if the stateNumber equals succIndex we have a self-loop
                     }
 
-                    if (check && successors.getNumberOfSetBits() == 1) {
-                        // As there is only one successor the current state and its successor must be at the same nodes.
-                        lattice->addToNode(stateNumber, lattice->getNode(successors.getNextSetIndex(0)));
-                    } else if (check && successors.getNumberOfSetBits() == 2) {
-                        // Otherwise, check how the two states compare, and add if the comparison is possible.
-                        uint_fast64_t successor1 = successors.getNextSetIndex(0);
-                        uint_fast64_t successor2 = successors.getNextSetIndex(successor1 + 1);
-
-                        int compareResult = lattice->compare(successor1, successor2);
-                        if (compareResult == Lattice::ABOVE) {
-                            // successor 1 is closer to top than successor 2
-                            lattice->addBetween(stateNumber, lattice->getNode(successor1),
-                                                lattice->getNode(successor2));
-                        } else if (compareResult == Lattice::BELOW) {
-                            // successor 2 is closer to top than successor 1
-                            lattice->addBetween(stateNumber, lattice->getNode(successor2),
-                                                lattice->getNode(successor1));
-                        } else if (compareResult == Lattice::SAME) {
-                            // the successors are at the same level
-                            lattice->addToNode(stateNumber, lattice->getNode(successor1));
-                        } else {
-                            assert(lattice->compare(successor1, successor2) == Lattice::UNKNOWN);
-                            return std::make_tuple(lattice, successor1, successor2);
+                    if (check) {
+                        auto result = extendAllSuccAdded(lattice, stateNumber, successors);
+                        if (std::get<1>(result) != successors.size()) {
+                            return result;
                         }
-                    } else if (check && successors.getNumberOfSetBits() > 2) {
-                        for (auto i = successors.getNextSetIndex(0); i < successors.size(); i = successors.getNextSetIndex(i+1)) {
-                            for (auto j = successors.getNextSetIndex(i+1); j < successors.size(); j = successors.getNextSetIndex(j+1)) {
-                                if (lattice->compare(i,j) == Lattice::UNKNOWN) {
-                                    return std::make_tuple(lattice, i, j);
-                                }
-                            }
-                        }
-
-                        auto highest = successors.getNextSetIndex(0);
-                        auto lowest = highest;
-                        for (auto i = successors.getNextSetIndex(highest+1); i < successors.size(); i = successors.getNextSetIndex(i+1)) {
-                            if (lattice->compare(i, highest) == Lattice::ABOVE) {
-                                highest = i;
-                            }
-                            if (lattice->compare(lowest, i) == Lattice::ABOVE) {
-                                lowest = i;
-                            }
-                        }
-                        lattice->addBetween(stateNumber, lattice->getNode(highest), lattice->getNode(lowest));
                     }
-
 
                     // Checking for states which are already added to the lattice, and only have one successor left which haven't been added yet
-                    bool checkOneSuccLeft = seenStates[stateNumber] && successors.getNumberOfSetBits() <= 2;
-                    bool helper = true;
-                    for (auto succIndex = successors.getNextSetIndex(0); (check || checkOneSuccLeft) && succIndex != numberOfStates; succIndex = successors.getNextSetIndex(++succIndex)) {
-                        checkOneSuccLeft &= !(!helper && !seenStates[succIndex]);
-                        helper &= seenStates[succIndex];
-                    }
+                    auto succ1 = successors.getNextSetIndex(0);
+                    auto succ2 = successors.getNextSetIndex(succ1 + 1);
 
-                    checkOneSuccLeft &= !helper;
+                    if (seenStates[stateNumber] && successors.size() == 2
+                            && (seenStates[succ1] || seenStates[succ2])
+                            && (!seenStates[succ1] || !seenStates[succ2])) {
 
+                        if (!seenStates[succ1]) {
+                            std::swap(succ1, succ2);
+                        }
 
-                    if (checkOneSuccLeft) {
-                        // at most 2 successors
-                        auto succ1 = successors.getNextSetIndex(0);
-                        auto succ2 = successors.getNextSetIndex(succ1+1);
-                        // Otherwise there is just one transition, this is already handled above
-                        if (succ2 != numberOfStates) {
-                            auto nodeCurr = lattice->getNode(stateNumber);
-                            if (!seenStates[succ1]) {
-                                std::swap(succ1, succ2);
-                            }
-                            assert (seenStates[succ1]);
-                            auto nodeSucc = lattice->getNode(succ1);
-                            auto compare = lattice->compare(stateNumber, succ1);
-                            if (compare == Lattice::ABOVE) {
-                                lattice->addBetween(succ2, lattice->getTop(), lattice->getNode(stateNumber));
-                            } else if (compare == Lattice::BELOW) {
-                                lattice->addBetween(succ2, lattice->getNode(stateNumber), lattice->getBottom());
-                            }
+                        auto compare = lattice->compare(stateNumber, succ1);
+                        if (compare == Lattice::ABOVE) {
+                            lattice->addBetween(succ2, lattice->getTop(), lattice->getNode(stateNumber));
+                        } else if (compare == Lattice::BELOW) {
+                            lattice->addBetween(succ2, lattice->getNode(stateNumber), lattice->getBottom());
+                        } else {
+                            // TODO: implement?
+                            assert(false);
                         }
                     }
                 }

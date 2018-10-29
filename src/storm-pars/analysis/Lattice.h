@@ -29,7 +29,9 @@ namespace storm {
                      * @param bottomNode The bottom node of the resulting lattice.
                      */
                     Lattice(storm::storage::BitVector topStates,
-                            storm::storage::BitVector bottomStates, uint_fast64_t numberOfStates);
+                            storm::storage::BitVector bottomStates,
+                            storm::storage::BitVector initialMiddleStates,
+                            uint_fast64_t numberOfStates);
 
                     /*!
                      * Constructs a copy of the given lattice.

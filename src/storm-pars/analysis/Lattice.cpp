@@ -9,7 +9,9 @@
 namespace storm {
     namespace analysis {
         Lattice::Lattice(storm::storage::BitVector topStates,
-                         storm::storage::BitVector bottomStates, uint_fast64_t numberOfStates) {
+                         storm::storage::BitVector bottomStates,
+                         storm::storage::BitVector initialMiddleStates,
+                         uint_fast64_t numberOfStates) {
             assert(topStates.getNumberOfSetBits() != 0);
             assert(bottomStates.getNumberOfSetBits() != 0);
             assert((topStates & bottomStates).getNumberOfSetBits() == 0);
@@ -37,6 +39,10 @@ namespace storm {
             this->addedStates = storm::storage::BitVector(numberOfStates);
             this->addedStates |= (topStates);
             this->addedStates |= (bottomStates);
+
+            for (auto state = initialMiddleStates.getNextSetIndex(0); state < numberOfStates; state = initialMiddleStates.getNextSetIndex(state + 1)) {
+                add(state);
+            }
         }
 
         Lattice::Lattice(Lattice* lattice) {

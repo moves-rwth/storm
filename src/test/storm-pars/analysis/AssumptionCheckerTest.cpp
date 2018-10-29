@@ -66,7 +66,9 @@ TEST(AssumptionCheckerTest, Brp_no_bisimulation) {
     above.set(0);
     storm::storage::BitVector below(8);
     below.set(1);
-    auto dummyLattice = new storm::analysis::Lattice(above, below, 8);
+    storm::storage::BitVector initialMiddle(8);
+
+    auto dummyLattice = new storm::analysis::Lattice(above, below, initialMiddle, 8);
     // Validate assumption
     EXPECT_FALSE(checker.validateAssumption(assumption, dummyLattice));
     EXPECT_FALSE(checker.validated(assumption));
@@ -82,7 +84,8 @@ TEST(AssumptionCheckerTest, Brp_no_bisimulation) {
     above.set(12);
     below = storm::storage::BitVector(13);
     below.set(9);
-    dummyLattice = new storm::analysis::Lattice(above, below, 13);
+    initialMiddle = storm::storage::BitVector(13);
+    dummyLattice = new storm::analysis::Lattice(above, below, initialMiddle, 13);
     EXPECT_TRUE(checker.checkOnSamples(assumption));
     EXPECT_TRUE(checker.validateAssumption(assumption, dummyLattice));
     EXPECT_TRUE(checker.validated(assumption));
