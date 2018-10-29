@@ -132,6 +132,10 @@ namespace storm {
 
             }
             for (auto const& trans : gspn.getTimedTransitions()) {
+                if(storm::utility::isZero(trans.getRate())) {
+                    STORM_LOG_WARN("Transitions with rate zero are not allowed in JANI. Skipping this transition");
+                    continue;
+                }
                 storm::expressions::Expression guard = expressionManager->boolean(true);
                 
                 std::vector<storm::jani::Assignment> assignments;
