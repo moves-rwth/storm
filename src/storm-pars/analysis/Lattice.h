@@ -31,6 +31,11 @@ namespace storm {
                     Lattice(storm::storage::BitVector topStates,
                             storm::storage::BitVector bottomStates, uint_fast64_t numberOfStates);
 
+                    /*!
+                     * Constructs a copy of the given lattice.
+                     *
+                     * @param lattice The original lattice.
+                     */
                     Lattice(Lattice* lattice);
 
                     /*!
@@ -112,12 +117,36 @@ namespace storm {
                      */
                     storm::storage::BitVector getAddedStates();
 
+                    /*!
+                     * Returns a set with the nodes which are above the state.
+                     *
+                     * @param state The state number.
+                     * @return The set with all nodes which are above the state.
+                     */
                     std::set<Lattice::Node*> getAbove(uint_fast64_t state);
 
+                    /*!
+                     * Returns a set with the nodes which are below the state.
+                     *
+                     * @param state The state number.
+                     * @return The set with all nodes which are below the state.
+                     */
                     std::set<Lattice::Node*> getBelow(uint_fast64_t state);
 
+                    /*!
+                     * Returns a set with the nodes which are above the node.
+                     *
+                     * @param node The node.
+                     * @return The set with all nodes which are above the node.
+                     */
                     std::set<Lattice::Node*> getAbove(Lattice::Node* node);
 
+                    /*!
+                     * Returns a set with the nodes which are below the node.
+                     *
+                     * @param node The node.
+                     * @return The set with all nodes which are below the node.
+                     */
                     std::set<Lattice::Node*> getBelow(Lattice::Node* node);
 
                     /*!
