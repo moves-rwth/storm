@@ -141,6 +141,10 @@ namespace storm {
 
             }
             for (auto const& trans : gspn.getTimedTransitions()) {
+                if(storm::utility::isZero(trans.getRate())) {
+                    STORM_LOG_WARN("Transitions with rate zero are not allowed in JANI. Skipping this transition");
+                    continue;
+                }
                 storm::expressions::Expression guard = expressionManager->boolean(true);
                 
                 std::vector<storm::jani::Assignment> assignments;
@@ -296,7 +300,7 @@ namespace storm {
             
             auto expTimeDeadlock = std::make_shared<storm::logic::TimeOperatorFormula>(
                     std::make_shared<storm::logic::EventuallyFormula>(deadlock, storm::logic::FormulaContext::Time),
-                    storm::logic::OperatorInformation(storm::solver::OptimizationDirection::Maximize));
+                    storm::logic::OperatorInformation(storm::solver::OptimizationDirection::Minimize));
             standardProperties.emplace_back("MinExpTimeDeadlock", expTimeDeadlock, emptyVariableSet, "The minimal expected time to reach a deadlock.");
             
         }

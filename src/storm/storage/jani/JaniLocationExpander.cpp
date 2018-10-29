@@ -67,10 +67,8 @@ namespace storm {
                 for (int64_t i = variableLowerBound; i <= variableUpperBound; i++) {
                     std::string newLocationName = loc.getName() + "_" + variableName + "_" + std::to_string(i);
                     substitutionMap[eliminatedExpressionVariable] = original.getExpressionManager().integer(i);
-                    std::cout << "eliminate " << eliminatedExpressionVariable.getName() << " with " << i << std::endl;
                     OrderedAssignments newAssignments = loc.getAssignments().clone();
                     newAssignments.substitute(substitutionMap);
-                    std::cout << newAssignments << std::endl;
                     uint64_t newLocationIndex = newAutomaton.addLocation(Location(newLocationName, newAssignments));
 
                     locationVariableValueMap[origIndex][i] = newLocationIndex;
@@ -100,8 +98,8 @@ namespace storm {
                         int64_t value;
                         for (auto const& assignment : oa) {
                             if (assignment.getVariable() == *variable) {
-                                oa.remove(assignment);
                                 value = assignment.getAssignedExpression().evaluateAsInt();
+                                oa.remove(assignment);
                                 break;
                             }
                         }

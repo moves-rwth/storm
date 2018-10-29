@@ -153,6 +153,11 @@ namespace storm {
              * Retrieves the variable object associated with the given expression variable (if any).
              */
             Variable const& getVariable(storm::expressions::Variable const& variable) const;
+            
+            /*!
+             * Erases the given variable from this set.
+             */
+             std::shared_ptr<Variable> eraseVariable(storm::expressions::Variable const& variable);
 
             /*!
              * Retrieves whether this variable set contains a transient variable.

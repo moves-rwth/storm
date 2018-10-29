@@ -22,6 +22,8 @@ namespace storm {
                 
                 bool isGlobalVarsSet() const;
                 
+                bool isLocalVarsSet() const;
+                
                 bool isCompactJsonSet() const;
                 
                 bool isEliminateArraysSet() const;
@@ -40,6 +42,7 @@ namespace storm {
                 static const std::string exportFlattenOptionName;
                 static const std::string locationVariablesOptionName;
                 static const std::string globalVariablesOptionName;
+                static const std::string localVariablesOptionName;
                 static const std::string compactJsonOptionName;
                 static const std::string eliminateArraysOptionName;
                 static const std::string eliminateFunctionsOptionName;

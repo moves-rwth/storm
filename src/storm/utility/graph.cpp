@@ -402,6 +402,8 @@ namespace storm {
                 std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = transitionMatrix.getRowGroupIndices();
                 
                 for (auto const& state : states) {
+                    bool setValue = false;
+                    STORM_LOG_ASSERT(nondeterministicChoiceIndices[state+1] - nondeterministicChoiceIndices[state] > 0, "Expected at least one action enabled in state " << state);
                     for (uint_fast64_t choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1]; ++choice) {
                         bool allSuccessorsInStates = true;
                         for (auto const& element : transitionMatrix.getRow(choice)) {
@@ -414,9 +416,11 @@ namespace storm {
                             for (uint_fast64_t memState = 0; memState < scheduler.getNumberOfMemoryStates(); ++memState) {
                                 scheduler.setChoice(choice - nondeterministicChoiceIndices[state], state, memState);
                             }
+                            setValue = true;
                             break;
                         }
                     }
+                    STORM_LOG_ASSERT(setValue, "Expected that at least one action for state " <<  state << " stays within the selected state");
                 }
             }
             
@@ -425,6 +429,7 @@ namespace storm {
                 std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = transitionMatrix.getRowGroupIndices();
                 
                 for (auto const& state : states) {
+                    bool setValue = false;
                     for (uint_fast64_t choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1]; ++choice) {
                         bool oneSuccessorInStates = false;
                         for (auto const& element : transitionMatrix.getRow(choice)) {
@@ -437,9 +442,11 @@ namespace storm {
                             for (uint_fast64_t memState = 0; memState < scheduler.getNumberOfMemoryStates(); ++memState) {
                                 scheduler.setChoice(choice - nondeterministicChoiceIndices[state], state, memState);
                             }
+                            setValue = true;
                             break;
                         }
                     }
+                    STORM_LOG_ASSERT(setValue, "Expected that at least one action for state " <<  state << " leads with positive probability to the selected state");
                 }
             }
             
@@ -489,6 +496,11 @@ namespace storm {
             template <typename T>
             void computeSchedulerProb0E(storm::storage::BitVector const& prob0EStates, storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::Scheduler<T>& scheduler) {
                 computeSchedulerStayingInStates(prob0EStates, transitionMatrix, scheduler);
+            }
+
+            template <typename T>
+            void computeSchedulerRewInf(storm::storage::BitVector const& rewInfStates, storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::Scheduler<T>& scheduler) {
+                computeSchedulerWithOneSuccessorInStates(rewInfStates, transitionMatrix, scheduler);
             }
             
             template <typename T>
@@ -1661,7 +1673,10 @@ namespace storm {
             template void computeSchedulerProbGreater0E(storm::storage::SparseMatrix<double> const& transitionMatrix, storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::Scheduler<double>& scheduler, boost::optional<storm::storage::BitVector> const& rowFilter);
             
             template void computeSchedulerProb0E(storm::storage::BitVector const& prob0EStates, storm::storage::SparseMatrix<double> const& transitionMatrix, storm::storage::Scheduler<double>& scheduler);
-            
+
+            template void computeSchedulerRewInf(storm::storage::BitVector const& rewInfStates, storm::storage::SparseMatrix<double> const& transitionMatrix, storm::storage::Scheduler<double>& scheduler);
+
+
             template void computeSchedulerProb1E(storm::storage::BitVector const& prob1EStates, storm::storage::SparseMatrix<double> const& transitionMatrix, storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::Scheduler<double>& scheduler, boost::optional<storm::storage::BitVector> const& rowFilter = boost::none);
             
             template storm::storage::BitVector performProbGreater0E(storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool useStepBound = false, uint_fast64_t maximalSteps = 0) ;
@@ -1730,7 +1745,9 @@ namespace storm {
             template void computeSchedulerProbGreater0E(storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::Scheduler<storm::RationalNumber>& scheduler, boost::optional<storm::storage::BitVector> const& rowFilter);
             
             template void computeSchedulerProb0E(storm::storage::BitVector const& prob0EStates, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::storage::Scheduler<storm::RationalNumber>& scheduler);
-            
+
+            template void computeSchedulerRewInf(storm::storage::BitVector const& rewInfStates, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::storage::Scheduler<storm::RationalNumber>& scheduler);
+
             template void computeSchedulerProb1E(storm::storage::BitVector const& prob1EStates, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::Scheduler<storm::RationalNumber>& scheduler, boost::optional<storm::storage::BitVector> const& rowFilter = boost::none);
             
             template storm::storage::BitVector performProbGreater0E(storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool useStepBound = false, uint_fast64_t maximalSteps = 0) ;

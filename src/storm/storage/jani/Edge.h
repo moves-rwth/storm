@@ -163,7 +163,7 @@ namespace storm {
             std::vector<EdgeDestination> destinations;
 
             /// The color of the edge, used to persistently mark and identify specific edges (by the user)
-            uint64_t color;
+            uint64_t color = 0;
         };
         
         std::ostream& operator<<(std::ostream& stream, Edge const& edge);

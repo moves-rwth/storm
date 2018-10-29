@@ -129,8 +129,11 @@ namespace storm {
             
             std::set<storm::expressions::Variable> const& getUndefinedConstants() const;
             bool containsUndefinedConstants() const;
+            std::set<storm::expressions::Variable> getUsedVariablesAndConstants() const;
+            std::set<std::string> getUsedLabels() const;
             
             std::shared_ptr<storm::logic::Formula const> getRawFormula() const;
+            
         private:
             std::string name;
             std::string comment;

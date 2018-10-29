@@ -94,6 +94,11 @@ namespace storm {
                 storm::solver::LraMethod getLraMethod() const;
                 
                 /*!
+                 * Retrieves whether the LraMethod was set from a default value.
+                 */
+                bool isLraMethodSetFromDefaultValue() const;
+                
+                /*!
                  * Retrieves the method to be used for bounded reachability on MAs.
                  *
                  * @return The selected method.

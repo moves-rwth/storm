@@ -27,6 +27,12 @@ namespace storm {
             /// If set, constants in expressions are substituted with their definition
             bool substituteConstants;
             
+            /// If set, variables will be made local wherever possible
+            bool localVars;
+            
+            /// If set, variables will be made global wherever possible
+            bool globalVars;
+            
             /// If given, the model will get this name
             boost::optional<std::string> modelName;
             

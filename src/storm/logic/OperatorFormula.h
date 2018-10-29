@@ -30,18 +30,23 @@ namespace storm {
 
             // Bound-related accessors.
             bool hasBound() const;
+            Bound const& getBound() const;
+            void setBound(Bound const& newBound);
+            void removeBound();
+
             ComparisonType getComparisonType() const;
             void setComparisonType(ComparisonType newComparisonType);
             storm::expressions::Expression const& getThreshold() const;
             template <typename ValueType>
             ValueType getThresholdAs() const;
             void setThreshold(storm::expressions::Expression const& newThreshold);
-            Bound const& getBound() const;
-            void setBound(Bound const& newBound);
+
             
             // Optimality-type-related accessors.
             bool hasOptimalityType() const;
             storm::solver::OptimizationDirection const& getOptimalityType() const;
+            void setOptimalityType(storm::solver::OptimizationDirection newOptimalityType);
+            void removeOptimalityType();
             virtual bool isOperatorFormula() const override;
             
             OperatorInformation const& getOperatorInformation() const;

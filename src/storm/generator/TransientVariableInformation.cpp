@@ -175,9 +175,9 @@ namespace storm {
             }
         }
         
-        template class TransientVariableInformation<double>;
-        template class TransientVariableInformation<storm::RationalNumber>;
-        template class TransientVariableInformation<storm::RationalFunction>;
+        template struct TransientVariableInformation<double>;
+        template struct TransientVariableInformation<storm::RationalNumber>;
+        template struct TransientVariableInformation<storm::RationalFunction>;
         
     }
 }
