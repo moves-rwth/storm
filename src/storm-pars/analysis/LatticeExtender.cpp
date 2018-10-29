@@ -258,7 +258,7 @@ namespace storm {
                     auto succ1 = successors.getNextSetIndex(0);
                     auto succ2 = successors.getNextSetIndex(succ1 + 1);
 
-                    if (seenStates[stateNumber] && successors.size() == 2
+                    if (seenStates[stateNumber] && successors.getNumberOfSetBits() == 2
                             && (seenStates[succ1] || seenStates[succ2])
                             && (!seenStates[succ1] || !seenStates[succ2])) {
 
