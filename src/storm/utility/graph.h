@@ -285,6 +285,16 @@ namespace storm {
             void computeSchedulerProbGreater0E(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::Scheduler<T>& scheduler, boost::optional<storm::storage::BitVector> const& rowFilter = boost::none);
 
             /*!
+             * Computes a scheduler for the given states that have a scheduler that has a reward infinity.
+             *
+             * @param rewInfStates The states that have a scheduler achieving reward infinity.
+             * @param transitionMatrix The transition matrix of the system.
+             * @param scheduler The resulting scheduler for the rewInf States. The scheduler is not set at other states.
+             */
+            template <typename T>
+            void computeSchedulerRewInf(storm::storage::BitVector const& rewInfStates, storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::Scheduler<T>& scheduler);
+
+            /*!
              * Computes a scheduler for the given states that have a scheduler that has a probability 0.
              *
              * @param prob0EStates The states that have a scheduler achieving probablity 0.

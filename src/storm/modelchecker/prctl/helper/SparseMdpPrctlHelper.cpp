@@ -1053,7 +1053,7 @@ namespace storm {
                         scheduler.setChoice(0, state);
                     }
                 } else {
-                    storm::utility::graph::computeSchedulerProb0E(qualitativeStateSets.infinityStates, transitionMatrix, scheduler);
+                    storm::utility::graph::computeSchedulerRewInf(qualitativeStateSets.infinityStates, transitionMatrix, scheduler);
                     for (auto const& state : qualitativeStateSets.rewardZeroStates) {
                         scheduler.setChoice(0, state);
                     }
