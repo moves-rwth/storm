@@ -105,10 +105,12 @@ namespace storm {
         std::shared_ptr<storm::storage::sparse::ModelComponents<ValueType, RewardModelType>> DirectEncodingParser<ValueType, RewardModelType>::parseStates(std::istream& file, storm::models::ModelType type, size_t stateSize, ValueParser<ValueType> const& valueParser, std::vector<std::string> const& rewardModelNames) {
             // Initialize
             auto modelComponents = std::make_shared<storm::storage::sparse::ModelComponents<ValueType, RewardModelType>>();
-            bool nonDeterministic = (type == storm::models::ModelType::Mdp || type == storm::models::ModelType::MarkovAutomaton);
+            bool nonDeterministic = (type == storm::models::ModelType::Mdp || type == storm::models::ModelType::MarkovAutomaton || type == storm::models::ModelType::Pomdp);
             bool continousTime = (type == storm::models::ModelType::Ctmc || type == storm::models::ModelType::MarkovAutomaton);
             storm::storage::SparseMatrixBuilder<ValueType> builder = storm::storage::SparseMatrixBuilder<ValueType>(0, 0, 0, false, nonDeterministic, 0);
             modelComponents->stateLabeling = storm::models::sparse::StateLabeling(stateSize);
+            modelComponents->observabilityClasses = std::vector<uint32_t>();
+            modelComponents->observabilityClasses->resize(stateSize);
             std::vector<std::vector<ValueType>> stateRewards;
             if (continousTime) {
                 modelComponents->exitRates = std::vector<ValueType>(stateSize);
@@ -126,7 +128,7 @@ namespace storm {
             size_t row = 0;
             size_t state = 0;
             bool firstState = true;
-            bool firstAction = true;
+            bool firstActionForState = true;
             while (std::getline(file, line)) {
                 STORM_LOG_TRACE("Parsing: " << line);
                 if (boost::starts_with(line, "state ")) {
@@ -135,7 +137,9 @@ namespace storm {
                         firstState = false;
                     } else {
                         ++state;
+                        ++row;
                     }
+                    firstActionForState = true;
                     STORM_LOG_TRACE("New state " << state);
 
                     // Parse state id
@@ -191,7 +195,21 @@ namespace storm {
                             (*stateRewardsIt)[state] = valueParser.parseValue(rew);
                             ++stateRewardsIt;
                         }
+
                         line = line.substr(posEndReward+1);
+                    }
+
+
+                    if (type == storm::models::ModelType::Pomdp) {
+                        if (boost::starts_with(line, "{")) {
+                            size_t posEndObservation = line.find("}");
+                            std::string observation = line.substr(1, posEndObservation-1);
+                            STORM_LOG_TRACE("State observation " << observation);
+                            modelComponents->observabilityClasses.get()[state] = std::stoi(observation);
+                            line = line.substr(posEndObservation+1);
+                        } else {
+                            STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Expected an observation for state " << state << ".");
+                        }
                     }
 
                     // Parse labels
@@ -209,8 +227,8 @@ namespace storm {
 
                 } else if (boost::starts_with(line, "\taction ")) {
                     // New action
-                    if (firstAction) {
-                        firstAction = false;
+                    if (firstActionForState) {
+                        firstActionForState = false;
                     } else {
                         ++row;
                     }
@@ -232,7 +250,7 @@ namespace storm {
                 } else {
                     // New transition
                     size_t posColon = line.find(":");
-                    STORM_LOG_ASSERT(posColon != std::string::npos, "':' not found.");
+                    STORM_LOG_THROW(posColon != std::string::npos, storm::exceptions::WrongFormatException, "':' not found.");
                     size_t target = NumberParser<size_t>::parse(line.substr(2, posColon-3));
                     std::string valueStr = line.substr(posColon+2);
                     ValueType value = valueParser.parseValue(valueStr);

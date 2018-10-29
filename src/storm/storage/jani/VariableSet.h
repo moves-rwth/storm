@@ -9,6 +9,8 @@
 #include "storm/storage/jani/UnboundedIntegerVariable.h"
 #include "storm/storage/jani/BoundedIntegerVariable.h"
 #include "storm/storage/jani/RealVariable.h"
+#include "storm/storage/jani/ArrayVariable.h"
+#include "storm/storage/jani/ClockVariable.h"
 
 namespace storm {
     namespace jani {
@@ -67,6 +69,26 @@ namespace storm {
              * Retrieves the real variables in this set.
              */
             detail::ConstVariables<RealVariable> getRealVariables() const;
+            
+            /*!
+             * Retrieves the Array variables in this set.
+             */
+            detail::Variables<ArrayVariable> getArrayVariables();
+            
+            /*!
+             * Retrieves the Array variables in this set.
+             */
+            detail::ConstVariables<ArrayVariable> getArrayVariables() const;
+            
+            /*!
+             * Retrieves the clock variables in this set.
+             */
+            detail::Variables<ClockVariable> getClockVariables();
+            
+            /*!
+             * Retrieves the clock variables in this set.
+             */
+            detail::ConstVariables<ClockVariable> getClockVariables() const;
 
             /*!
              * Adds the given variable to this set.
@@ -94,6 +116,21 @@ namespace storm {
             RealVariable const& addVariable(RealVariable const& variable);
 
             /*!
+             * Adds the given array variable to this set.
+             */
+            ArrayVariable const& addVariable(ArrayVariable const& variable);
+
+            /*!
+             * Removes all array variables in this set
+             */
+            std::vector<std::shared_ptr<ArrayVariable>> dropAllArrayVariables();
+ 
+            /*!
+             * Adds the given clock variable to this set.
+             */
+            ClockVariable const& addVariable(ClockVariable const& variable);
+            
+            /*!
              * Retrieves whether this variable set contains a variable with the given name.
              */
             bool hasVariable(std::string const& name) const;
@@ -116,6 +153,11 @@ namespace storm {
              * Retrieves the variable object associated with the given expression variable (if any).
              */
             Variable const& getVariable(storm::expressions::Variable const& variable) const;
+            
+            /*!
+             * Erases the given variable from this set.
+             */
+             std::shared_ptr<Variable> eraseVariable(storm::expressions::Variable const& variable);
 
             /*!
              * Retrieves whether this variable set contains a transient variable.
@@ -163,6 +205,16 @@ namespace storm {
             bool containsRealVariables() const;
 
             /*!
+             * Retrieves whether the set of variables contains a Array variable.
+             */
+            bool containsArrayVariables() const;
+
+            /*!
+             * Retrieves whether the set of variables contains a clock variable.
+             */
+            bool containsClockVariables() const;
+
+            /*!
              * Retrieves whether the set of variables contains a non-transient real variable.
              */
             bool containsNonTransientRealVariables() const;
@@ -191,6 +243,11 @@ namespace storm {
              * Retrieves the number of unbounded integer transient variables in this variable set.
              */
             uint_fast64_t getNumberOfUnboundedIntegerTransientVariables() const;
+
+            /*!
+             * Retrieves the number of numerical (i.e. real, or integer) transient variables in this variable set.
+             */
+            uint_fast64_t getNumberOfNumericalTransientVariables() const;
 
             /*!
              * Retrieves the transient variables in this variable set.
@@ -223,6 +280,12 @@ namespace storm {
             
             /// The real variables in this set.
             std::vector<std::shared_ptr<RealVariable>> realVariables;
+            
+            /// The array variables in this set.
+            std::vector<std::shared_ptr<ArrayVariable>> arrayVariables;
+            
+            /// The clock variables in this set.
+            std::vector<std::shared_ptr<ClockVariable>> clockVariables;
             
             /// The transient variables in this set.
             std::vector<std::shared_ptr<Variable>> transientVariables;

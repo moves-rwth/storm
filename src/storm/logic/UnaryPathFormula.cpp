@@ -26,6 +26,10 @@ namespace storm {
             this->getSubformula().gatherReferencedRewardModels(referencedRewardModels);
         }
         
+        void UnaryPathFormula::gatherUsedVariables(std::set<storm::expressions::Variable>& usedVariables) const {
+            this->getSubformula().gatherUsedVariables(usedVariables);
+        }
+        
         bool UnaryPathFormula::hasQualitativeResult() const {
             return false;
         }

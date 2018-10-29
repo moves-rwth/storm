@@ -133,7 +133,7 @@ namespace storm {
             formulaName = qi::lit("\"") >> identifier >> qi::lit("\"") >> qi::lit(":");
             formulaName.name("formula name");
             
-            constantDefinition = (qi::lit("const") > qi::eps[qi::_a = true] > -(qi::lit("int") | qi::lit("double")[qi::_a = false]) >> identifier)[phoenix::bind(&FormulaParserGrammar::addConstant, phoenix::ref(*this), qi::_1, qi::_a)];
+            constantDefinition = (qi::lit("const") > -(qi::lit("int")[qi::_a = ConstantDataType::Integer] | qi::lit("bool")[qi::_a = ConstantDataType::Bool] | qi::lit("double")[qi::_a = ConstantDataType::Rational]) >> identifier >> -(qi::lit("=") > expressionParser))[phoenix::bind(&FormulaParserGrammar::addConstant, phoenix::ref(*this), qi::_1, qi::_a, qi::_2)];
             constantDefinition.name("constant definition");
             
 #pragma clang diagnostic push
@@ -208,15 +208,25 @@ namespace storm {
             this->identifiers_.add(identifier, expression);
         }
         
-        void FormulaParserGrammar::addConstant(std::string const& name, bool integer) {
+        void FormulaParserGrammar::addConstant(std::string const& name, ConstantDataType type, boost::optional<storm::expressions::Expression> const& expression) {
             STORM_LOG_ASSERT(manager, "Mutable expression manager required to define new constants.");
             storm::expressions::Variable newVariable;
-            if (integer) {
+            STORM_LOG_THROW(!manager->hasVariable(name), storm::exceptions::WrongFormatException, "Invalid constant definition '" << name << "' in property: variable already exists.");
+            
+            if (type == ConstantDataType::Bool) {
+                newVariable = manager->declareBooleanVariable(name);
+            } else if (type == ConstantDataType::Integer)  {
                 newVariable = manager->declareIntegerVariable(name);
             } else {
                 newVariable = manager->declareRationalVariable(name);
             }
-            addIdentifierExpression(name, newVariable);
+            
+            if (expression) {
+                addIdentifierExpression(name, expression.get());
+            } else {
+                undefinedConstants.insert(newVariable);
+                addIdentifierExpression(name, newVariable);
+            }
         }
         
         bool FormulaParserGrammar::areConstantDefinitionsAllowed() const {
@@ -408,24 +418,31 @@ namespace storm {
                 return std::shared_ptr<storm::logic::Formula const>(new storm::logic::MultiObjectiveFormula(subformulas));
             }
         }
-                                               
+        
+        std::set<storm::expressions::Variable> FormulaParserGrammar::getUndefinedConstants(std::shared_ptr<storm::logic::Formula const> const& formula) const {
+            std::set<storm::expressions::Variable> result;
+            std::set<storm::expressions::Variable> usedVariables = formula->getUsedVariables();
+            std::set_intersection(usedVariables.begin(), usedVariables.end(), undefinedConstants.begin(), undefinedConstants.end(), std::inserter(result, result.begin()));
+            return result;
+        }
+        
         storm::jani::Property FormulaParserGrammar::createProperty(boost::optional<std::string> const& propertyName, storm::modelchecker::FilterType const& filterType, std::shared_ptr<storm::logic::Formula const> const& formula, std::shared_ptr<storm::logic::Formula const> const& states) {
             storm::jani::FilterExpression filterExpression(formula, filterType, states);
             
             ++propertyCount;
             if (propertyName) {
-                return storm::jani::Property(propertyName.get(), filterExpression);
+                return storm::jani::Property(propertyName.get(), filterExpression, this->getUndefinedConstants(formula));
             } else {
-                return storm::jani::Property(std::to_string(propertyCount -1 ), filterExpression);
+                return storm::jani::Property(std::to_string(propertyCount - 1), filterExpression, this->getUndefinedConstants(formula));
             }
         }
                                                
         storm::jani::Property FormulaParserGrammar::createPropertyWithDefaultFilterTypeAndStates(boost::optional<std::string> const& propertyName, std::shared_ptr<storm::logic::Formula const> const& formula) {
             ++propertyCount;
             if (propertyName) {
-                return storm::jani::Property(propertyName.get(), formula);
+                return storm::jani::Property(propertyName.get(), formula, this->getUndefinedConstants(formula));
             } else {
-                return storm::jani::Property(std::to_string(propertyCount), formula);
+                return storm::jani::Property(std::to_string(propertyCount), formula, this->getUndefinedConstants(formula));
             }
         }
 

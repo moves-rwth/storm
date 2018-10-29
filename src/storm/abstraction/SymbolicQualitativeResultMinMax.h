@@ -14,7 +14,7 @@ namespace storm {
     
     namespace abstraction {
         template<storm::dd::DdType Type>
-        class QualitativeResult;
+        class SymbolicQualitativeResult;
         
         template<storm::dd::DdType Type>
         class SymbolicQualitativeResultMinMax : public QualitativeResultMinMax {
@@ -23,13 +23,13 @@ namespace storm {
             
             virtual bool isSymbolic() const override;
             
-            QualitativeResult<Type> const& getProb0Min() const;
-            QualitativeResult<Type> const& getProb1Min() const;
-            QualitativeResult<Type> const& getProb0Max() const;
-            QualitativeResult<Type> const& getProb1Max() const;
+            SymbolicQualitativeResult<Type> const& getProb0Min() const;
+            SymbolicQualitativeResult<Type> const& getProb1Min() const;
+            SymbolicQualitativeResult<Type> const& getProb0Max() const;
+            SymbolicQualitativeResult<Type> const& getProb1Max() const;
             
-            virtual QualitativeResult<Type> const& getProb0(storm::OptimizationDirection const& dir) const = 0;
-            virtual QualitativeResult<Type> const& getProb1(storm::OptimizationDirection const& dir) const = 0;
+            virtual SymbolicQualitativeResult<Type> const& getProb0(storm::OptimizationDirection const& dir) const = 0;
+            virtual SymbolicQualitativeResult<Type> const& getProb1(storm::OptimizationDirection const& dir) const = 0;
         };
     }
 }

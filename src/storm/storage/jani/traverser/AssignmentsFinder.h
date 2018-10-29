@@ -6,8 +6,13 @@
 #include "storm/storage/jani/traverser/JaniTraverser.h"
 
 namespace storm {
+    
+    namespace expressions {
+        class Variable;
+    }
+    
     namespace jani {
-        class AssignmentsFinder : public JaniTraverser {
+        class AssignmentsFinder : public ConstJaniTraverser {
         public:
             
             struct ResultType {
@@ -16,13 +21,14 @@ namespace storm {
             
             AssignmentsFinder() = default;
             
-            ResultType find(Model const& model, Variable const& variable);
+            ResultType find(Model const& model, storm::jani::Variable const& variable);
+            ResultType find(Model const& model, storm::expressions::Variable const& variable);
             
             virtual ~AssignmentsFinder() = default;
             
-            virtual void traverse(Location const& location, boost::any const& data) const override;
-            virtual void traverse(TemplateEdge const& templateEdge, boost::any const& data) const override;
-            virtual void traverse(TemplateEdgeDestination const& templateEdgeDestination, boost::any const& data) const override;
+            virtual void traverse(Location const& location, boost::any const& data) override;
+            virtual void traverse(TemplateEdge const& templateEdge, boost::any const& data) override;
+            virtual void traverse(TemplateEdgeDestination const& templateEdgeDestination, boost::any const& data) override;
         };
     }
 }

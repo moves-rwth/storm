@@ -38,7 +38,7 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of a long run average computation method.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(lraMethods)).setDefaultValueString("vi").build()).build());
 
                 std::vector<std::string> maMethods = {"imca", "unifplus"};
-                this->addOption(storm::settings::OptionBuilder(moduleName, markovAutomatonBoundedReachabilityMethodOptionName, true, "The method to use to solve bounded reachability queries on MAs.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the method to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(maMethods)).setDefaultValueString("unifplus").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, markovAutomatonBoundedReachabilityMethodOptionName, false, "The method to use to solve bounded reachability queries on MAs.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the method to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(maMethods)).setDefaultValueString("unifplus").build()).build());
                 
                 std::vector<std::string> multiplicationStyles = {"gaussseidel", "regular", "gs", "r"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, valueIterationMultiplicationStyleOptionName, false, "Sets which method multiplication style to prefer for value iteration.")
@@ -109,6 +109,10 @@ namespace storm {
                     return storm::solver::LraMethod::LinearProgramming;
                 }
                 STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown lra solving technique '" << lraMethodString << "'.");
+            }
+            
+            bool MinMaxEquationSolverSettings::isLraMethodSetFromDefaultValue() const {
+                return !this->getOption(lraMethodOptionName).getArgumentByName("name").getHasBeenSet() || this->getOption(lraMethodOptionName).getArgumentByName("name").wasSetFromDefaultValue();
             }
             
             MinMaxEquationSolverSettings::MarkovAutomatonBoundedReachabilityMethod MinMaxEquationSolverSettings::getMarkovAutomatonBoundedReachabilityMethod() const {

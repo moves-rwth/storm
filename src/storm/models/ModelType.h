@@ -7,7 +7,7 @@ namespace storm {
     namespace models {
         // All supported model types.
         enum class ModelType {
-            Dtmc, Ctmc, Mdp, MarkovAutomaton, S2pg
+            Dtmc, Ctmc, Mdp, MarkovAutomaton, S2pg, Pomdp
         };
 
         ModelType getModelType(std::string const& type);

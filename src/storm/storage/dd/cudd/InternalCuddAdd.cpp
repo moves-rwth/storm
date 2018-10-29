@@ -6,6 +6,7 @@
 #include "storm/storage/dd/Odd.h"
 
 #include "storm/storage/SparseMatrix.h"
+#include "storm/storage/BitVector.h"
 
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
@@ -493,16 +494,24 @@ namespace storm {
         
         template<typename ValueType>
         void InternalAdd<DdType::CUDD, ValueType>::composeWithExplicitVector(storm::dd::Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<ValueType>& targetVector, std::function<ValueType (ValueType const&, ValueType const&)> const& function) const {
-            composeWithExplicitVectorRec(this->getCuddDdNode(), nullptr, 0, ddVariableIndices.size(), 0, odd, ddVariableIndices, targetVector, function);
+            forEachRec(this->getCuddDdNode(), 0, ddVariableIndices.size(), 0, odd, ddVariableIndices, [&function, &targetVector] (uint64_t const& offset, ValueType const& value) { targetVector[offset] = function(targetVector[offset], value); });
+        }
+        
+        template<typename ValueType>
+        void InternalAdd<DdType::CUDD, ValueType>::forEach(Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::function<void (uint64_t const&, ValueType const&)> const& function) const {
+            forEachRec(this->getCuddDdNode(), 0, ddVariableIndices.size(), 0, odd, ddVariableIndices, function);
         }
         
         template<typename ValueType>
         void InternalAdd<DdType::CUDD, ValueType>::composeWithExplicitVector(storm::dd::Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<uint_fast64_t> const& offsets, std::vector<ValueType>& targetVector, std::function<ValueType (ValueType const&, ValueType const&)> const& function) const {
-            composeWithExplicitVectorRec(this->getCuddDdNode(), &offsets, 0, ddVariableIndices.size(), 0, odd, ddVariableIndices, targetVector, function);
+            forEachRec(this->getCuddDdNode(), 0, ddVariableIndices.size(), 0, odd, ddVariableIndices, [&function, &targetVector, &offsets] (uint64_t const& offset, ValueType const& value) {
+                ValueType& targetValue = targetVector[offsets[offset]];
+                targetValue = function(targetValue, value);
+            });
         }
 
         template<typename ValueType>
-        void InternalAdd<DdType::CUDD, ValueType>::composeWithExplicitVectorRec(DdNode const* dd, std::vector<uint_fast64_t> const* offsets, uint_fast64_t currentLevel, uint_fast64_t maxLevel, uint_fast64_t currentOffset, Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<ValueType>& targetVector, std::function<ValueType (ValueType const&, ValueType const&)> const& function) const {
+        void InternalAdd<DdType::CUDD, ValueType>::forEachRec(DdNode const* dd, uint_fast64_t currentLevel, uint_fast64_t maxLevel, uint_fast64_t currentOffset, Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::function<void (uint64_t const&, ValueType const&)> const& function) const {
             // For the empty DD, we do not need to add any entries.
             if (dd == Cudd_ReadZero(ddManager->getCuddManager().getManager())) {
                 return;
@@ -510,17 +519,51 @@ namespace storm {
             
             // If we are at the maximal level, the value to be set is stored as a constant in the DD.
             if (currentLevel == maxLevel) {
-                ValueType& targetValue = targetVector[offsets != nullptr ? (*offsets)[currentOffset] : currentOffset];
-                targetValue = function(targetValue, storm::utility::convertNumber<ValueType>(Cudd_V(dd)));
+                function(currentOffset, storm::utility::convertNumber<ValueType>(Cudd_V(dd)));
             } else if (ddVariableIndices[currentLevel] < Cudd_NodeReadIndex(dd)) {
                 // If we skipped a level, we need to enumerate the explicit entries for the case in which the bit is set
                 // and for the one in which it is not set.
-                composeWithExplicitVectorRec(dd, offsets, currentLevel + 1, maxLevel, currentOffset, odd.getElseSuccessor(), ddVariableIndices, targetVector, function);
-                composeWithExplicitVectorRec(dd, offsets, currentLevel + 1, maxLevel, currentOffset + odd.getElseOffset(), odd.getThenSuccessor(), ddVariableIndices, targetVector, function);
+                forEachRec(dd, currentLevel + 1, maxLevel, currentOffset, odd.getElseSuccessor(), ddVariableIndices, function);
+                forEachRec(dd, currentLevel + 1, maxLevel, currentOffset + odd.getElseOffset(), odd.getThenSuccessor(), ddVariableIndices, function);
             } else {
                 // Otherwise, we simply recursively call the function for both (different) cases.
-                composeWithExplicitVectorRec(Cudd_E_const(dd), offsets, currentLevel + 1, maxLevel, currentOffset, odd.getElseSuccessor(), ddVariableIndices, targetVector, function);
-                composeWithExplicitVectorRec(Cudd_T_const(dd), offsets, currentLevel + 1, maxLevel, currentOffset + odd.getElseOffset(), odd.getThenSuccessor(), ddVariableIndices, targetVector, function);
+                forEachRec(Cudd_E_const(dd), currentLevel + 1, maxLevel, currentOffset, odd.getElseSuccessor(), ddVariableIndices, function);
+                forEachRec(Cudd_T_const(dd), currentLevel + 1, maxLevel, currentOffset + odd.getElseOffset(), odd.getThenSuccessor(), ddVariableIndices, function);
+            }
+        }
+        
+        template<typename ValueType>
+        std::vector<uint64_t> InternalAdd<DdType::CUDD, ValueType>::decodeGroupLabels(std::vector<uint_fast64_t> const& ddGroupVariableIndices, storm::storage::BitVector const& ddLabelVariableIndices) const {
+            std::vector<uint64_t> result;
+            decodeGroupLabelsRec(this->getCuddDdNode(), result, ddGroupVariableIndices, ddLabelVariableIndices, 0, ddGroupVariableIndices.size(), 0);
+            return result;
+        }
+        
+        template<typename ValueType>
+        void InternalAdd<DdType::CUDD, ValueType>::decodeGroupLabelsRec(DdNode* dd, std::vector<uint64_t>& labels, std::vector<uint_fast64_t> const& ddGroupVariableIndices, storm::storage::BitVector const& ddLabelVariableIndices, uint_fast64_t currentLevel, uint_fast64_t maxLevel, uint64_t label) const {
+            // For the empty DD, we do not need to create a group.
+            if (dd == Cudd_ReadZero(ddManager->getCuddManager().getManager())) {
+                return;
+            }
+            
+            if (currentLevel == maxLevel) {
+                labels.push_back(label);
+            } else {
+                uint64_t elseLabel = label;
+                uint64_t thenLabel = label;
+
+                if (ddLabelVariableIndices.get(currentLevel)) {
+                    elseLabel <<= 1;
+                    thenLabel = (thenLabel << 1) | 1;
+                }
+                
+                if (ddGroupVariableIndices[currentLevel] < Cudd_NodeReadIndex(dd)) {
+                    decodeGroupLabelsRec(dd, labels, ddGroupVariableIndices, ddLabelVariableIndices, currentLevel + 1, maxLevel, elseLabel);
+                    decodeGroupLabelsRec(dd, labels, ddGroupVariableIndices, ddLabelVariableIndices, currentLevel + 1, maxLevel, thenLabel);
+                } else {
+                    decodeGroupLabelsRec(Cudd_E(dd), labels, ddGroupVariableIndices, ddLabelVariableIndices, currentLevel + 1, maxLevel, elseLabel);
+                    decodeGroupLabelsRec(Cudd_T(dd), labels, ddGroupVariableIndices, ddLabelVariableIndices, currentLevel + 1, maxLevel, thenLabel);
+                }
             }
         }
         

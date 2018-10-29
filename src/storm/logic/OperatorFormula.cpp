@@ -60,6 +60,10 @@ namespace storm {
         void OperatorFormula::setBound(Bound const& newBound) {
             operatorInformation.bound = newBound;
         }
+
+        void OperatorFormula::removeBound() {
+            operatorInformation.bound = boost::none;
+        }
         
         bool OperatorFormula::hasOptimalityType() const {
             return static_cast<bool>(operatorInformation.optimalityType);
@@ -67,6 +71,14 @@ namespace storm {
         
         OptimizationDirection const& OperatorFormula::getOptimalityType() const {
             return operatorInformation.optimalityType.get();
+        }
+
+        void OperatorFormula::setOptimalityType(storm::solver::OptimizationDirection newOptimalityType) {
+            operatorInformation.optimalityType = newOptimalityType;
+        }
+
+        void OperatorFormula::removeOptimalityType() {
+            operatorInformation.optimalityType = boost::none;
         }
         
         bool OperatorFormula::isOperatorFormula() const {
@@ -83,6 +95,13 @@ namespace storm {
         
         bool OperatorFormula::hasQuantitativeResult() const {
             return !this->hasBound();
+        }
+        
+        void OperatorFormula::gatherUsedVariables(std::set<storm::expressions::Variable>& usedVariables) const {
+            UnaryStateFormula::gatherUsedVariables(usedVariables);
+            if (this->hasBound()) {
+                this->getThreshold().gatherVariables(usedVariables);
+            }
         }
         
         std::ostream& OperatorFormula::writeToStream(std::ostream& out) const {

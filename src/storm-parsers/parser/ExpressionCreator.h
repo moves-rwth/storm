@@ -19,11 +19,7 @@ namespace storm {
         public:
             ExpressionCreator(storm::expressions::ExpressionManager const& manager);
             
-            virtual ~ExpressionCreator() {
-                if (deleteIdentifierMapping) {
-                    delete this->identifiers;
-                }
-            }
+            ~ExpressionCreator();
             
             /*!
              * Sets an identifier mapping that is used to determine valid variables in the expression. The mapped-to

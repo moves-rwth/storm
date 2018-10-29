@@ -4,6 +4,9 @@
 #include "storm/storage/jani/BoundedIntegerVariable.h"
 #include "storm/storage/jani/UnboundedIntegerVariable.h"
 #include "storm/storage/jani/RealVariable.h"
+#include "storm/storage/jani/ArrayVariable.h"
+#include "storm/storage/jani/ClockVariable.h"
+#include "storm/storage/jani/expressions/JaniExpressionSubstitutionVisitor.h"
 
 namespace storm {
     namespace jani {
@@ -45,6 +48,14 @@ namespace storm {
         }
 
         bool Variable::isRealVariable() const {
+            return false;
+        }
+        
+        bool Variable::isArrayVariable() const {
+            return false;
+        }
+        
+        bool Variable::isClockVariable() const {
             return false;
         }
         
@@ -96,9 +107,25 @@ namespace storm {
             return static_cast<RealVariable const&>(*this);
         }
         
+        ArrayVariable& Variable::asArrayVariable() {
+            return static_cast<ArrayVariable&>(*this);
+        }
+        
+        ArrayVariable const& Variable::asArrayVariable() const {
+            return static_cast<ArrayVariable const&>(*this);
+        }
+        
+        ClockVariable& Variable::asClockVariable() {
+            return static_cast<ClockVariable&>(*this);
+        }
+        
+        ClockVariable const& Variable::asClockVariable() const {
+            return static_cast<ClockVariable const&>(*this);
+        }
+        
         void Variable::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {
             if (this->hasInitExpression()) {
-                this->setInitExpression(this->getInitExpression().substitute(substitution));
+                this->setInitExpression(substituteJaniExpression(this->getInitExpression(), substitution));
             }
         }
 

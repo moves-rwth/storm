@@ -8,9 +8,15 @@ Version 1.2.x
 -------------
 
 ### Version 1.2.4 (2018/08)
-- New binary `storm-conv` that handles conversions between model files (currently: prism to jani)
+- Heavily extended JANI support, in particular:
+	 * arrays, functions, state-exit-rewards (all engines)
+	 * indexed assignments, complex reward expressions (sparse engine)
+	 * several jani-related bug fixes
+- New binary `storm-conv` that handles conversions between model files
+- New binary `storm-pomdp` that handles the translation of POMDPs to pMCs.
+- Closing a Markov automaton now removes unreachable states
 - Added support for expected time properties for discrete time models
-- Several bug fixes related to jani
+- Bug fix in the parser for DRN (MDPs and MAs might have been affected).
 - `storm-gspn`: Improved .pnpro parser
 - `storm-gspn`: Added support for single/infinite/k-server semantics for GSPNs given in the .pnpro format
 - `storm-gspn`: Added option to set a global capacity for all places

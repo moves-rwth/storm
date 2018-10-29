@@ -27,6 +27,10 @@ namespace storm {
             return assignments;
         }
         
+        OrderedAssignments& TemplateEdgeDestination::getOrderedAssignments() {
+            return assignments;
+        }
+        
         bool TemplateEdgeDestination::removeAssignment(Assignment const& assignment) {
             return assignments.remove(assignment);
         }
@@ -43,8 +47,8 @@ namespace storm {
             return assignments.hasTransientAssignment();
         }
         
-        bool TemplateEdgeDestination::usesAssignmentLevels() const {
-            return assignments.hasMultipleLevels();
+        bool TemplateEdgeDestination::usesAssignmentLevels(bool onlyTransient) const {
+            return assignments.hasMultipleLevels(onlyTransient);
         }
         
         bool TemplateEdgeDestination::isLinear() const {

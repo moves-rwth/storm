@@ -119,7 +119,10 @@ namespace storm {
             integerVariableDefinition = ((identifier >> qi::lit(":") >> qi::lit("[")) > expression_ > qi::lit("..") > expression_ > qi::lit("]") > -(qi::lit("init") > expression_[qi::_a = qi::_1]) > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createIntegerVariable, phoenix::ref(*this), qi::_1, qi::_2, qi::_3, qi::_a)];
             integerVariableDefinition.name("integer variable definition");
             
-            variableDefinition = (booleanVariableDefinition[phoenix::push_back(qi::_r1, qi::_1)] | integerVariableDefinition[phoenix::push_back(qi::_r2, qi::_1)]);
+            clockVariableDefinition = ((identifier >> qi::lit(":") >> qi::lit("clock")) > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createClockVariable, phoenix::ref(*this), qi::_1)];
+            clockVariableDefinition.name("clock variable definition");
+            
+            variableDefinition = (booleanVariableDefinition[phoenix::push_back(qi::_r1, qi::_1)] | integerVariableDefinition[phoenix::push_back(qi::_r2, qi::_1)] | clockVariableDefinition[phoenix::push_back(qi::_r3, qi::_1)]);
             variableDefinition.name("variable declaration");
             
             globalVariableDefinition = (qi::lit("global") > (booleanVariableDefinition[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::globalBooleanVariables, qi::_r1), qi::_1)] | integerVariableDefinition[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::globalIntegerVariables, qi::_r1), qi::_1)]));
@@ -144,7 +147,13 @@ namespace storm {
             
             initialStatesConstruct = (qi::lit("init") > expression_ > qi::lit("endinit"))[qi::_pass = phoenix::bind(&PrismParser::addInitialStatesConstruct, phoenix::ref(*this), qi::_1, qi::_r1)];
             initialStatesConstruct.name("initial construct");
+
+            observablesConstruct = (qi::lit("observables") > (identifier % qi::lit(",") )> qi::lit("endobservables"))[phoenix::bind(&PrismParser::createObservablesList, phoenix::ref(*this), qi::_1)];
+            observablesConstruct.name("observables construct");
             
+            invariantConstruct = (qi::lit("invariant") > expression_ > qi::lit("endinvariant"))[qi::_val = qi::_1];
+            invariantConstruct.name("invariant construct");
+
             systemCompositionConstruct = (qi::lit("system") > parallelComposition > qi::lit("endsystem"))[phoenix::bind(&PrismParser::addSystemCompositionConstruct, phoenix::ref(*this), qi::_1, qi::_r1)];
             systemCompositionConstruct.name("system composition construct");
             
@@ -206,8 +215,8 @@ namespace storm {
                                  > +(qi::char_ - qi::lit(";"))
                                  > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createDummyCommand, phoenix::ref(*this), qi::_1, qi::_r1)];
             commandDefinition.name("command definition");
-            
-            moduleDefinition = ((qi::lit("module") >> identifier >> *(variableDefinition(qi::_a, qi::_b))) > *commandDefinition(qi::_r1) > qi::lit("endmodule"))[qi::_val = phoenix::bind(&PrismParser::createModule, phoenix::ref(*this), qi::_1, qi::_a, qi::_b, qi::_2, qi::_r1)];
+
+            moduleDefinition = ((qi::lit("module") >> identifier >> *(variableDefinition(qi::_a, qi::_b, qi::_c))) > -invariantConstruct > (*commandDefinition(qi::_r1)) > qi::lit("endmodule"))[qi::_val = phoenix::bind(&PrismParser::createModule, phoenix::ref(*this), qi::_1, qi::_a, qi::_b, qi::_c, qi::_2, qi::_3, qi::_r1)];
             moduleDefinition.name("module definition");
             
             moduleRenaming = ((qi::lit("module") >> identifier >> qi::lit("=")) > identifier > qi::lit("[")
@@ -219,8 +228,9 @@ namespace storm {
             moduleDefinitionList.name("module list");
             
             start = (qi::eps[phoenix::bind(&PrismParser::removeInitialConstruct, phoenix::ref(*this), phoenix::ref(globalProgramInformation))]
-                     > *(modelTypeDefinition[phoenix::bind(&PrismParser::setModelType, phoenix::ref(*this), phoenix::ref(globalProgramInformation), qi::_1)]
-                         | definedConstantDefinition[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::constants, phoenix::ref(globalProgramInformation)), qi::_1)]
+                     > modelTypeDefinition[phoenix::bind(&PrismParser::setModelType, phoenix::ref(*this), phoenix::ref(globalProgramInformation), qi::_1)]
+                     > -observablesConstruct
+                     >  *( definedConstantDefinition[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::constants, phoenix::ref(globalProgramInformation)), qi::_1)]
                          | undefinedConstantDefinition[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::constants, phoenix::ref(globalProgramInformation)), qi::_1)]
                          | formulaDefinition[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::formulas, phoenix::ref(globalProgramInformation)), qi::_1)]
                          | globalVariableDefinition(phoenix::ref(globalProgramInformation))
@@ -243,6 +253,7 @@ namespace storm {
             qi::on_success(definedDoubleConstantDefinition, setLocationInfoFunction);
             qi::on_success(booleanVariableDefinition, setLocationInfoFunction);
             qi::on_success(integerVariableDefinition, setLocationInfoFunction);
+            qi::on_success(clockVariableDefinition, setLocationInfoFunction);
             qi::on_success(moduleDefinition, setLocationInfoFunction);
             qi::on_success(moduleRenaming, setLocationInfoFunction);
             qi::on_success(formulaDefinition, setLocationInfoFunction);
@@ -259,6 +270,8 @@ namespace storm {
         void PrismParser::moveToSecondRun() {
             // In the second run, we actually need to parse the commands instead of just skipping them,
             // so we adapt the rule for parsing commands.
+            STORM_LOG_THROW(observables.empty(), storm::exceptions::WrongFormatException, "Some variables marked as observable, but never declared");
+
             commandDefinition = (((qi::lit("[") > -identifier > qi::lit("]"))
                                  |
                                   (qi::lit("<") > -identifier > qi::lit(">")[qi::_a = true]))
@@ -428,13 +441,32 @@ namespace storm {
         }
         
         storm::prism::Formula PrismParser::createFormula(std::string const& formulaName, storm::expressions::Expression expression) {
-            // Only register formula in second run. This prevents the parser from accepting formulas that depend on future
-            // formulas.
+            // Only register formula in second run.
+            // This is necessary because the resulting type of the formula is only known in the second run.
+            // This prevents the parser from accepting formulas that depend on future formulas.
             if (this->secondRun) {
-                STORM_LOG_THROW(this->identifiers_.find(formulaName) == nullptr, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": Duplicate identifier '" << formulaName << "'.");
-                this->identifiers_.add(formulaName, expression);
+                storm::expressions::Variable variable;
+                try {
+                    if (expression.hasIntegerType()) {
+                         variable = manager->declareIntegerVariable(formulaName);
+                    } else if (expression.hasBooleanType()) {
+                         variable = manager->declareBooleanVariable(formulaName);
+                    } else {
+                        STORM_LOG_ASSERT(expression.hasNumericalType(), "Unexpected type for formula expression of formula " << formulaName);
+                         variable = manager->declareRationalVariable(formulaName);
+                    }
+                    this->identifiers_.add(formulaName, variable.getExpression());
+                } catch (storm::exceptions::InvalidArgumentException const& e) {
+                    if (manager->hasVariable(formulaName)) {
+                        STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": Duplicate identifier '" << formulaName << "'.");
+                    } else {
+                        STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": illegal identifier '" << formulaName << "'.");
+                    }
+                }
+                return storm::prism::Formula(variable, expression, this->getFilename());
+            } else {
+                return storm::prism::Formula(formulaName, expression, this->getFilename());
             }
-            return storm::prism::Formula(formulaName, expression, this->getFilename());
         }
         
         storm::prism::Label PrismParser::createLabel(std::string const& labelName, storm::expressions::Expression expression) const {
@@ -531,7 +563,11 @@ namespace storm {
                     }
                 }
             }
-            return storm::prism::BooleanVariable(manager->getVariable(variableName), initialValueExpression, this->getFilename());
+            bool observable = this->observables.count(variableName) > 0;
+            if(observable) {
+                this->observables.erase(variableName);
+            }
+            return storm::prism::BooleanVariable(manager->getVariable(variableName), initialValueExpression, observable, this->getFilename());
         }
         
         storm::prism::IntegerVariable PrismParser::createIntegerVariable(std::string const& variableName, storm::expressions::Expression lowerBoundExpression, storm::expressions::Expression upperBoundExpression, storm::expressions::Expression initialValueExpression) const {
@@ -547,12 +583,43 @@ namespace storm {
                     }
                 }
             }
-            return storm::prism::IntegerVariable(manager->getVariable(variableName), lowerBoundExpression, upperBoundExpression, initialValueExpression, this->getFilename());
+            bool observable = this->observables.count(variableName) > 0;
+            if(observable) {
+                this->observables.erase(variableName);
+            }
+
+            return storm::prism::IntegerVariable(manager->getVariable(variableName), lowerBoundExpression, upperBoundExpression, initialValueExpression, observable, this->getFilename());
         }
         
-        storm::prism::Module PrismParser::createModule(std::string const& moduleName, std::vector<storm::prism::BooleanVariable> const& booleanVariables, std::vector<storm::prism::IntegerVariable> const& integerVariables, std::vector<storm::prism::Command> const& commands, GlobalProgramInformation& globalProgramInformation) const {
+        storm::prism::ClockVariable PrismParser::createClockVariable(std::string const& variableName) const {
+            if (!this->secondRun) {
+                try {
+                    storm::expressions::Variable newVariable = manager->declareRationalVariable(variableName);
+                    this->identifiers_.add(variableName, newVariable.getExpression());
+                } catch (storm::exceptions::InvalidArgumentException const& e) {
+                    if (manager->hasVariable(variableName)) {
+                        STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": Duplicate identifier '" << variableName << "'.");
+                    } else {
+                        STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": illegal identifier '" << variableName << "'.");
+                    }
+                }
+            }
+            bool observable = this->observables.count(variableName) > 0;
+            if(observable) {
+                this->observables.erase(variableName);
+            }
+
+            return storm::prism::ClockVariable(manager->getVariable(variableName), observable, this->getFilename());
+        }
+
+        void PrismParser::createObservablesList(std::vector<std::string> const& observables) {
+            this->observables.insert(observables.begin(), observables.end());
+            // We need this list to be filled in both runs.
+        }
+        
+        storm::prism::Module PrismParser::createModule(std::string const& moduleName, std::vector<storm::prism::BooleanVariable> const& booleanVariables, std::vector<storm::prism::IntegerVariable> const& integerVariables, std::vector<storm::prism::ClockVariable> const& clockVariables, boost::optional<storm::expressions::Expression> const& invariant, std::vector<storm::prism::Command> const& commands, GlobalProgramInformation& globalProgramInformation) const {
             globalProgramInformation.moduleToIndexMap[moduleName] = globalProgramInformation.modules.size();
-            return storm::prism::Module(moduleName, booleanVariables, integerVariables, commands, this->getFilename());
+            return storm::prism::Module(moduleName, booleanVariables, integerVariables, clockVariables, invariant.is_initialized()? invariant.get() : storm::expressions::Expression(), commands, this->getFilename());
         }
         
         storm::prism::Module PrismParser::createRenamedModule(std::string const& newModuleName, std::string const& oldModuleName, std::map<std::string, std::string> const& renaming, GlobalProgramInformation& globalProgramInformation) const {
@@ -568,12 +635,27 @@ namespace storm {
                     STORM_LOG_THROW(renamingPair != renaming.end(), storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": Boolean variable '" << variable.getName() << " was not renamed.");
                     storm::expressions::Variable renamedVariable = manager->declareBooleanVariable(renamingPair->second);
                     this->identifiers_.add(renamingPair->second, renamedVariable.getExpression());
+                    if(this->observables.count(renamingPair->second) > 0) {
+                        this->observables.erase(renamingPair->second);
+                    }
                 }
                 for (auto const& variable : moduleToRename.getIntegerVariables()) {
                     auto const& renamingPair = renaming.find(variable.getName());
                     STORM_LOG_THROW(renamingPair != renaming.end(), storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": Integer variable '" << variable.getName() << " was not renamed.");
                     storm::expressions::Variable renamedVariable = manager->declareIntegerVariable(renamingPair->second);
                     this->identifiers_.add(renamingPair->second, renamedVariable.getExpression());
+                    if(this->observables.count(renamingPair->second) > 0) {
+                        this->observables.erase(renamingPair->second);
+                    }
+                }
+                for (auto const& variable : moduleToRename.getClockVariables()) {
+                    auto const& renamingPair = renaming.find(variable.getName());
+                    STORM_LOG_THROW(renamingPair != renaming.end(), storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": Clock variable '" << variable.getName() << " was not renamed.");
+                    storm::expressions::Variable renamedVariable = manager->declareRationalVariable(renamingPair->second);
+                    this->identifiers_.add(renamingPair->second, renamedVariable.getExpression());
+                    if(this->observables.count(renamingPair->second) > 0) {
+                        this->observables.erase(renamingPair->second);
+                    }
                 }
                 
                 for (auto const& command : moduleToRename.getCommands()) {
@@ -612,8 +694,11 @@ namespace storm {
                 for (auto const& variable : moduleToRename.getBooleanVariables()) {
                     auto const& renamingPair = renaming.find(variable.getName());
                     STORM_LOG_THROW(renamingPair != renaming.end(), storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": Boolean variable '" << variable.getName() << " was not renamed.");
-                    
-                    booleanVariables.push_back(storm::prism::BooleanVariable(manager->getVariable(renamingPair->second), variable.hasInitialValue() ? variable.getInitialValueExpression().substitute(expressionRenaming) : variable.getInitialValueExpression(), this->getFilename(), get_line(qi::_1)));
+                    bool observable = this->observables.count(renamingPair->second) > 0;
+                    if(observable) {
+                        this->observables.erase(renamingPair->second);
+                    }
+                    booleanVariables.push_back(storm::prism::BooleanVariable(manager->getVariable(renamingPair->second), variable.hasInitialValue() ? variable.getInitialValueExpression().substitute(expressionRenaming) : variable.getInitialValueExpression(), observable, this->getFilename(), get_line(qi::_1)));
                 }
                 
                 // Rename the integer variables.
@@ -621,8 +706,29 @@ namespace storm {
                 for (auto const& variable : moduleToRename.getIntegerVariables()) {
                     auto const& renamingPair = renaming.find(variable.getName());
                     STORM_LOG_THROW(renamingPair != renaming.end(), storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": Integer variable '" << variable.getName() << " was not renamed.");
-                    
-                    integerVariables.push_back(storm::prism::IntegerVariable(manager->getVariable(renamingPair->second), variable.getLowerBoundExpression().substitute(expressionRenaming), variable.getUpperBoundExpression().substitute(expressionRenaming), variable.hasInitialValue() ? variable.getInitialValueExpression().substitute(expressionRenaming) : variable.getInitialValueExpression(), this->getFilename(), get_line(qi::_1)));
+                    bool observable = this->observables.count(renamingPair->second) > 0;
+                    if(observable) {
+                        this->observables.erase(renamingPair->second);
+                    }
+                    integerVariables.push_back(storm::prism::IntegerVariable(manager->getVariable(renamingPair->second), variable.getLowerBoundExpression().substitute(expressionRenaming), variable.getUpperBoundExpression().substitute(expressionRenaming), variable.hasInitialValue() ? variable.getInitialValueExpression().substitute(expressionRenaming) : variable.getInitialValueExpression(), observable, this->getFilename(), get_line(qi::_1)));
+                }
+
+                // Rename the clock variables.
+                std::vector<storm::prism::ClockVariable> clockVariables;
+                for (auto const& variable : moduleToRename.getClockVariables()) {
+                    auto const& renamingPair = renaming.find(variable.getName());
+                    STORM_LOG_THROW(renamingPair != renaming.end(), storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": Clock variable '" << variable.getName() << " was not renamed.");
+                    bool observable = this->observables.count(renamingPair->second) > 0;
+                    if (observable) {
+                        this->observables.erase(renamingPair->second);
+                    }
+                    clockVariables.push_back(storm::prism::ClockVariable(manager->getVariable(renamingPair->second), observable, this->getFilename(), get_line(qi::_1)));
+                }
+                
+                // Rename invariant (if present)
+                storm::expressions::Expression invariant;
+                if (moduleToRename.hasInvariant()) {
+                    invariant = moduleToRename.getInvariant().substitute(expressionRenaming);
                 }
                 
                 // Rename commands.
@@ -663,7 +769,7 @@ namespace storm {
                     ++globalProgramInformation.currentCommandIndex;
                 }
                 
-                return storm::prism::Module(newModuleName, booleanVariables, integerVariables, commands, oldModuleName, renaming);
+                return storm::prism::Module(newModuleName, booleanVariables, integerVariables, clockVariables, invariant, commands, oldModuleName, renaming);
             }
         }
         

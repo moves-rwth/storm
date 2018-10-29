@@ -57,6 +57,14 @@ namespace storm {
         bool RationalType::isRationalType() const {
             return true;
         }
+
+        bool BaseType::isArrayType() const {
+            return false;
+        }
+        
+        bool ArrayType::isArrayType() const {
+            return true;
+        }
         
         uint64_t BooleanType::getMask() const {
             return BooleanType::mask;
@@ -102,6 +110,26 @@ namespace storm {
             return "rational";
         }
         
+        ArrayType::ArrayType(Type elementType) : elementType(elementType) {
+            // Intentionally left empty
+        }
+        
+        Type ArrayType::getElementType() const {
+            return elementType;
+        }
+        
+        bool ArrayType::operator==(BaseType const& other) const {
+            return BaseType::operator==(other) && this->elementType == static_cast<ArrayType const&>(other).getElementType();
+        }
+        
+        uint64_t ArrayType::getMask() const {
+            return ArrayType::mask;
+        }
+        
+        std::string ArrayType::getStringRepresentation() const {
+            return "array[" + elementType.getStringRepresentation() + "]";
+        }
+        
         bool operator<(BaseType const& first, BaseType const& second) {
             if (first.getMask() < second.getMask()) {
                 return true;
@@ -109,8 +137,11 @@ namespace storm {
             if (first.isBitVectorType() && second.isBitVectorType()) {
                 return static_cast<BitVectorType const&>(first).getWidth() < static_cast<BitVectorType const&>(second).getWidth();
             }
+            if (first.isArrayType() && second.isArrayType()) {
+                return static_cast<ArrayType const&>(first).getElementType() < static_cast<ArrayType const&>(second).getElementType();
+            }
             return false;
-         }
+        }
         
         Type::Type() : manager(nullptr), innerType(nullptr) {
             // Intentionally left empty.
@@ -144,12 +175,20 @@ namespace storm {
             return this->isIntegerType() || this->isRationalType();
         }
         
+        bool Type::isArrayType() const {
+            return this->innerType->isArrayType();
+        }
+        
         std::string Type::getStringRepresentation() const {
             return this->innerType->getStringRepresentation();
         }
         
         std::size_t Type::getWidth() const {
             return static_cast<BitVectorType const&>(*this->innerType).getWidth();
+        }
+        
+        Type Type::getElementType() const {
+            return static_cast<ArrayType const&>(*this->innerType).getElementType();
         }
 
         bool Type::isRationalType() const {

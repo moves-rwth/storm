@@ -31,7 +31,7 @@ namespace storm {
             /*!
              * An enum for the different model types.
              */
-            enum class ModelType {UNDEFINED, DTMC, CTMC, MDP, CTMDP, MA};
+            enum class ModelType {UNDEFINED, DTMC, CTMC, MDP, CTMDP, MA, POMDP, PTA};
             
             enum class ValidityCheckLevel  : unsigned {VALIDINPUT = 0, READYFORPROCESSING = 1};
             
@@ -86,6 +86,11 @@ namespace storm {
             bool isDeterministicModel() const;
 
             /*!
+             * Retrieves whether the model has restricted observability
+             */
+            bool isPartiallyObservable() const;
+
+            /*!
              * Retrieves whether there are undefined constants of any type in the program.
              *
              * @return True iff there are undefined constants of any type in the program.
@@ -138,6 +143,31 @@ namespace storm {
              */
             std::map<storm::expressions::Variable, storm::expressions::Expression> getConstantsSubstitution() const;
             
+            /*!
+             * Retrieves a mapping of all formula variables to their defining expressions.
+             *
+             * @return A mapping from constants to their 'values'.
+             */
+            std::map<storm::expressions::Variable, storm::expressions::Expression> getFormulasSubstitution() const;
+            
+            /*!
+             * Retrieves a mapping of all defined constants and formula variables to their defining expressions
+             *
+             * @return A mapping from constants and formulas to their expressions.
+             */
+            std::map<storm::expressions::Variable, storm::expressions::Expression> getConstantsFormulasSubstitution(bool getConstantsSubstitution = true, bool getFormulasSubstitution = true) const;
+            
+            /*!
+             * Applies the renaming of a renamed module to the given substitution.
+             */
+            std::map<storm::expressions::Variable, storm::expressions::Expression> getSubstitutionForRenamedModule(Module const& renamedModule, std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const;
+            
+            /*!
+             * Gets the renaming of a module after flattening all renamings.
+             * Note that the base of a renamed module might again be a renamed module.
+             */
+            std::map<std::string, std::string> getFinalRenamingOfModule(Module const& renamedModule) const;
+
             /*!
              * Retrieves all constants defined in the program.
              *
@@ -566,9 +596,25 @@ namespace storm {
              * Substitutes all constants appearing in the expressions of the program by their defining expressions. For
              * this to work, all constants need to be defined prior to calling this.
              *
-             * @return The resulting program that only contains expressions over variables of the program.
+             * @return The resulting program that only contains expressions over variables of the program (and maybe formulas).
              */
             Program substituteConstants() const;
+            
+            /*!
+             * Substitutes all formulas appearing in the expressions of the program by their defining expressions.
+             *
+             * The resulting program still contains the function definition, but does not apply them.
+             * @return The resulting program that only contains expressions over variables of the program (and maybe constants).
+             */
+            Program substituteFormulas() const;
+            
+            /*!
+             * Substitutes all constants and/or formulas appearing in the expressions of the program by their defining expressions. For
+             * this to work, all constants need to be defined prior to calling this.
+             *
+             * @return The resulting program that only contains expressions over variables of the program.
+             */
+            Program substituteConstantsFormulas(bool substituteConstants = true, bool substituteFormulas = true) const;
             
             /**
              * Entry point for static analysis for simplify. As we use the same expression manager, we recommend to not use the original program any further. 
@@ -608,13 +654,14 @@ namespace storm {
             /*!
              * Converts the PRISM model into an equivalent JANI model.
              */
-            storm::jani::Model toJani(bool allVariablesGlobal = true, std::string suffix = "", bool standardCompliant = false) const;
+            storm::jani::Model toJani(bool allVariablesGlobal = true, std::string suffix = "") const;
             
             /*!
-             * Converts the PRISM model into an equivalent JANI model and retrieves possible label renamings that had
-             * to be performed in the process.
+             * Converts the PRISM model into an equivalent JANI model and if labels or reward models had
+             * to be renamed in the process, the renamings are applied to the given properties
+             * @return The jani model of this and either the new set of properties or an empty vector if no renamings were necessary
              */
-            std::pair<storm::jani::Model, std::map<std::string, std::string>> toJaniWithLabelRenaming(bool allVariablesGlobal = true, std::string suffix = "", bool standardCompliant = false) const;
+            std::pair<storm::jani::Model, std::vector<storm::jani::Property>> toJani(std::vector<storm::jani::Property> const& properties, bool allVariablesGlobal = true, std::string suffix = "") const;
             
         private:
             /*!

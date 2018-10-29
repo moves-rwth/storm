@@ -96,7 +96,7 @@ TEST(GameBasedDtmcModelCheckerTest, SynchronousLeader_Cudd) {
 TEST(GameBasedDtmcModelCheckerTest, DISABLED_SynchronousLeader_Cudd) {
 #endif
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/leader-3-5.pm");
-    program = program.substituteConstants();
+    program = program.substituteConstantsFormulas();
     
     // A parser that we use for conveniently constructing the formulas.
     storm::parser::FormulaParser formulaParser;
@@ -118,7 +118,7 @@ TEST(GameBasedDtmcModelCheckerTest, SynchronousLeader_Sylvan) {
 TEST(GameBasedDtmcModelCheckerTest, DISABLED_SynchronousLeader_Sylvan) {
 #endif
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/leader-3-5.pm");
-    program = program.substituteConstants();
+    program = program.substituteConstantsFormulas();
 
     // A parser that we use for conveniently constructing the formulas.
     storm::parser::FormulaParser formulaParser;

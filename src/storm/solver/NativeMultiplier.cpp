@@ -97,7 +97,6 @@ namespace storm {
             }
         }
 
-
         template<typename ValueType>
         void NativeMultiplier<ValueType>::multAdd(std::vector<ValueType> const& x, std::vector<ValueType> const* b, std::vector<ValueType>& result) const {
             this->matrix.multiplyWithVector(x, result, b);

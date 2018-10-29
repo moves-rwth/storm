@@ -21,6 +21,7 @@ namespace storm {
             virtual void gatherAtomicExpressionFormulas(std::vector<std::shared_ptr<AtomicExpressionFormula const>>& atomicExpressionFormulas) const override;
             virtual void gatherAtomicLabelFormulas(std::vector<std::shared_ptr<AtomicLabelFormula const>>& atomicLabelFormulas) const override;
             virtual void gatherReferencedRewardModels(std::set<std::string>& referencedRewardModels) const override;
+            virtual void gatherUsedVariables(std::set<storm::expressions::Variable>& usedVariables) const override;
 
         private:
             std::shared_ptr<Formula const> leftSubformula;

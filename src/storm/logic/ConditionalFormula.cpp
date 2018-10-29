@@ -49,6 +49,11 @@ namespace storm {
             this->getConditionFormula().gatherReferencedRewardModels(referencedRewardModels);
         }
         
+        void ConditionalFormula::gatherUsedVariables(std::set<storm::expressions::Variable>& usedVariables) const {
+            this->getSubformula().gatherUsedVariables(usedVariables);
+            this->getConditionFormula().gatherUsedVariables(usedVariables);
+        }
+        
         bool ConditionalFormula::hasQualitativeResult() const {
             return false;
         }

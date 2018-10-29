@@ -86,9 +86,9 @@ namespace storm {
             edges.clear();
         }
 
-        void EdgeContainer::liftTransientDestinationAssignments() {
+        void EdgeContainer::liftTransientDestinationAssignments(int64_t maxLevel) {
             for (auto& templateEdge : templates) {
-                templateEdge->liftTransientDestinationAssignments();
+                templateEdge->liftTransientDestinationAssignments(maxLevel);
             }
         }
 
@@ -111,9 +111,9 @@ namespace storm {
         }
 
 
-        bool EdgeContainer::usesAssignmentLevels() const {
+        bool EdgeContainer::usesAssignmentLevels(bool onlyTransient) const {
             for (auto const& edge : edges) {
-                if (edge.usesAssignmentLevels()) {
+                if (edge.usesAssignmentLevels(onlyTransient)) {
                     return true;
                 }
             }

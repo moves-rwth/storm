@@ -412,6 +412,32 @@ namespace storm {
             }
         }
         
+        std::vector<InternalBdd<DdType::CUDD>> InternalBdd<DdType::CUDD>::splitIntoGroups(std::vector<uint_fast64_t> const& ddGroupVariableIndices) const {
+            std::vector<InternalBdd<DdType::CUDD>> result;
+            splitIntoGroupsRec(Cudd_Regular(this->getCuddDdNode()), Cudd_IsComplement(this->getCuddDdNode()), result, ddGroupVariableIndices, 0, ddGroupVariableIndices.size());
+            return result;
+        }
+        
+        void InternalBdd<DdType::CUDD>::splitIntoGroupsRec(DdNode* dd, bool negated, std::vector<InternalBdd<DdType::CUDD>>& groups, std::vector<uint_fast64_t> const& ddGroupVariableIndices, uint_fast64_t currentLevel, uint_fast64_t maxLevel) const {
+            // For the empty DD, we do not need to create a group.
+            if (negated && dd == Cudd_ReadOne(ddManager->getCuddManager().getManager())) {
+                return;
+            }
+            
+            if (currentLevel == maxLevel) {
+                groups.push_back(InternalBdd<DdType::CUDD>(ddManager, cudd::BDD(ddManager->getCuddManager(), negated ? Cudd_Complement(dd) : dd)));
+            } else if (ddGroupVariableIndices[currentLevel] < Cudd_NodeReadIndex(dd)) {
+                splitIntoGroupsRec(dd, negated, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
+                splitIntoGroupsRec(dd, negated, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
+            } else {
+                DdNode* elseNode = Cudd_E(dd);
+                DdNode* thenNode = Cudd_T(dd);
+
+                splitIntoGroupsRec(elseNode, negated ^ Cudd_IsComplement(elseNode), groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
+                splitIntoGroupsRec(thenNode, negated ^ Cudd_IsComplement(thenNode), groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
+            }
+        }
+        
         void InternalBdd<DdType::CUDD>::filterExplicitVector(Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, storm::storage::BitVector const& sourceValues, storm::storage::BitVector& targetValues) const {
             uint_fast64_t currentIndex = 0;
             filterExplicitVectorRec(Cudd_Regular(this->getCuddDdNode()), ddManager->getCuddManager(), 0, Cudd_IsComplement(this->getCuddDdNode()), ddVariableIndices.size(), ddVariableIndices, 0, odd, targetValues, currentIndex, sourceValues);

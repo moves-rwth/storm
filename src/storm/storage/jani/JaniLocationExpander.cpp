@@ -1,5 +1,7 @@
 #include "storm/storage/jani/JaniLocationExpander.h"
 
+#include "storm/storage/jani/expressions/JaniExpressionSubstitutionVisitor.h"
+
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/IllegalArgumentException.h"
@@ -65,10 +67,8 @@ namespace storm {
                 for (int64_t i = variableLowerBound; i <= variableUpperBound; i++) {
                     std::string newLocationName = loc.getName() + "_" + variableName + "_" + std::to_string(i);
                     substitutionMap[eliminatedExpressionVariable] = original.getExpressionManager().integer(i);
-                    std::cout << "eliminate " << eliminatedExpressionVariable.getName() << " with " << i << std::endl;
                     OrderedAssignments newAssignments = loc.getAssignments().clone();
                     newAssignments.substitute(substitutionMap);
-                    std::cout << newAssignments << std::endl;
                     uint64_t newLocationIndex = newAutomaton.addLocation(Location(newLocationName, newAssignments));
 
                     locationVariableValueMap[origIndex][i] = newLocationIndex;
@@ -83,7 +83,7 @@ namespace storm {
                     substitutionMap[eliminatedExpressionVariable] = original.getExpressionManager().integer(newValueAndLocation.first);
 
                     uint64_t newSourceIndex = newValueAndLocation.second;
-                    storm::expressions::Expression newGuard = edge.getGuard().substitute(substitutionMap).simplify();
+                    storm::expressions::Expression newGuard = substituteJaniExpression(edge.getGuard(), substitutionMap).simplify();
                     if (!newGuard.containsVariables() && !newGuard.evaluateAsBool()) {
                         continue;
                     }
@@ -98,16 +98,16 @@ namespace storm {
                         int64_t value;
                         for (auto const& assignment : oa) {
                             if (assignment.getVariable() == *variable) {
-                                oa.remove(assignment);
                                 value = assignment.getAssignedExpression().evaluateAsInt();
+                                oa.remove(assignment);
                                 break;
                             }
                         }
                         TemplateEdgeDestination ted(oa);
                         templateEdge->addDestination(ted);
-                        destinationLocationsAndProbabilities.emplace_back(locationVariableValueMap[destination.getLocationIndex()][value], destination.getProbability().substitute((substitutionMap)));
+                        destinationLocationsAndProbabilities.emplace_back(locationVariableValueMap[destination.getLocationIndex()][value], substituteJaniExpression(destination.getProbability(), substitutionMap));
                     }
-                    newAutomaton.addEdge(storm::jani::Edge(newSourceIndex, edge.getActionIndex(), edge.hasRate() ? boost::optional<storm::expressions::Expression>(edge.getRate().substitute(substitutionMap)) : boost::none, templateEdge, destinationLocationsAndProbabilities));
+                    newAutomaton.addEdge(storm::jani::Edge(newSourceIndex, edge.getActionIndex(), edge.hasRate() ? boost::optional<storm::expressions::Expression>(substituteJaniExpression(edge.getRate(), substitutionMap)) : boost::none, templateEdge, destinationLocationsAndProbabilities));
 
                 }
             }

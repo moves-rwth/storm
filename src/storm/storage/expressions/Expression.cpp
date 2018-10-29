@@ -127,6 +127,10 @@ namespace storm {
             return result;
 		}
         
+        void Expression::gatherVariables(std::set<storm::expressions::Variable>& variables) const {
+            this->getBaseExpression().gatherVariables(variables);
+        }
+        
         bool Expression::containsVariable(std::set<storm::expressions::Variable> const& variables) const {
             std::set<storm::expressions::Variable> appearingVariables = this->getVariables();
             std::set<storm::expressions::Variable> intersection;
@@ -451,8 +455,5 @@ namespace storm {
             
             return result;
         }
-
-
-
     }
 }

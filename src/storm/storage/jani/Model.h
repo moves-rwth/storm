@@ -12,8 +12,10 @@
 #include "storm/storage/jani/Constant.h"
 #include "storm/storage/jani/Composition.h"
 #include "storm/storage/jani/Edge.h"
+#include "storm/storage/jani/FunctionDefinition.h"
 #include "storm/storage/jani/Location.h"
 #include "storm/storage/jani/TemplateEdge.h"
+#include "storm/storage/jani/ModelFeatures.h"
 
 #include "storm/utility/solver.h"
 #include "storm/utility/vector.h"
@@ -33,6 +35,8 @@ namespace storm {
         class Automaton;
         class Exporter;
         class SynchronizationVector;
+        struct ArrayEliminatorData;
+        class Property;
         
         class Model {
         public:
@@ -75,6 +79,22 @@ namespace storm {
              * Retrieves the type of the model.
              */
             ModelType const& getModelType() const;
+
+            /*!
+             * Changes (only) the type declaration of the model. Notice that this operation should be applied with great care, as it may break several algorithms.
+             * The operation is useful to e.g. make a deterministic model into a non-deterministic one.
+             */
+            void setModelType(ModelType const&);
+
+            /*!
+             * Retrieves the enabled model features
+             */
+            ModelFeatures const& getModelFeatures() const;
+            
+            /*!
+             * Retrieves the enabled model features
+             */
+            ModelFeatures& getModelFeatures();
             
             /*!
              * Retrieves the name of the model.
@@ -143,12 +163,17 @@ namespace storm {
             /*!
              * Adds the given constant to the model.
              */
-            uint64_t addConstant(Constant const& constant);
+            void addConstant(Constant const& constant);
             
             /*!
              * Retrieves whether the model has a constant with the given name.
              */
             bool hasConstant(std::string const& name) const;
+
+            /*!
+             * Removes (without checks) a constant from the model.
+             */
+            void removeConstant(std::string const& name);
             
             /*!
              * Retrieves the constants of the model.
@@ -162,6 +187,7 @@ namespace storm {
 
             /*!
              * Retrieves the constant with the given name (if any).
+             * @note the reference to the constant is invalidated whenever a new constant is added.
              */
             Constant const& getConstant(std::string const& name) const;
             
@@ -189,6 +215,16 @@ namespace storm {
              * Adds the given real variable to this model.
              */
             RealVariable const& addVariable(RealVariable const& variable);
+
+            /*!
+             * Adds the given array variable to this model.
+             */
+            ArrayVariable const& addVariable(ArrayVariable const& variable);
+
+            /*!
+             * Adds the given array variable to this model.
+             */
+            ClockVariable const& addVariable(ClockVariable const& variable);
 
             /*!
              * Retrieves the variables of this automaton.
@@ -231,10 +267,52 @@ namespace storm {
             bool hasNonGlobalTransientVariable() const;
             
             /*!
+             * Adds the given function definition
+             */
+            FunctionDefinition const& addFunctionDefinition(FunctionDefinition const& functionDefinition);
+            
+            /*!
+             * Retrieves all global function definitions
+             */
+            std::unordered_map<std::string, FunctionDefinition> const& getGlobalFunctionDefinitions() const;
+            
+            /*!
+             * Retrieves all global function definitions
+             */
+            std::unordered_map<std::string, FunctionDefinition>& getGlobalFunctionDefinitions();
+            
+            /*!
              * Retrieves the manager responsible for the expressions in the JANI model.
              */
             storm::expressions::ExpressionManager& getExpressionManager() const;
 
+            /*!
+             * Adds a (non-trivial) reward model, i.e., a reward model that does not consist of a single, global, numerical variable.
+             * @return true if a new reward model was added and false if a reward model with this identifier is already present in the model (in which case no reward model is added)
+             */
+            bool addNonTrivialRewardExpression(std::string const& identifier, storm::expressions::Expression const& rewardExpression);
+            
+            /*!
+             * Retrieves the defining reward expression of the reward model with the given identifier.
+             */
+             storm::expressions::Expression getRewardModelExpression(std::string const& identifier) const;
+            
+            /*!
+             * Retrieves all available reward model names and expressions of the model.
+             * This includes defined non-trivial reward expressions as well as transient, global, numerical variables
+             */
+             std::vector<std::pair<std::string, storm::expressions::Expression>> getAllRewardModelExpressions() const;
+            
+            /*!
+             * Retrieves all available non-trivial reward model names and expressions of the model.
+             */
+             std::unordered_map<std::string, storm::expressions::Expression> const& getNonTrivialRewardExpressions() const;
+            
+            /*!
+             * Retrieves all available non-trivial reward model names and expressions of the model.
+             */
+             std::unordered_map<std::string, storm::expressions::Expression>& getNonTrivialRewardExpressions();
+            
             /*!
              * Adds the given automaton to the automata of this model.
              */
@@ -353,9 +431,63 @@ namespace storm {
             std::map<storm::expressions::Variable, storm::expressions::Expression> getConstantsSubstitution() const;
             
             /*!
+             * Substitutes all expression variables in all expressions of the model. The original model is not modified, but
+             * instead a new model is created.
+             */
+            void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution);
+            
+            /*!
+             * Substitutes all function calls with the corresponding function definition
+             * @param properties also eliminates function call expressions in the given properties
+             */
+            void substituteFunctions();
+            void substituteFunctions(std::vector<Property>& properties);
+            
+            /*!
+             * Substitutes all constants in all expressions of the model. The original model is not modified, but
+             * instead a new model is created. Afterwards, all function calls are substituted with the defining expression.
+             */
+            Model substituteConstantsFunctions() const;
+
+            /*!
+             * Returns true if at least one array variable occurs in the model.
+             */
+            bool containsArrayVariables() const;
+            
+            /*!
+             * Eliminates occurring array variables and expressions by replacing array variables by multiple basic variables.
+             * @param keepNonTrivialArrayAccess if set, array access expressions in LValues and expressions are only replaced, if the index expression is constant.
+             * @return data from the elimination. If non-trivial array accesses are kept, pointers to remaining array variables point to this data.
+             */
+            ArrayEliminatorData eliminateArrays(bool keepNonTrivialArrayAccess = false);
+
+            /*!
+             * Eliminates occurring array variables and expressions by replacing array variables by multiple basic variables.
+             * @param properties also eliminates array expressions in the given properties
+             */
+            void eliminateArrays(std::vector<Property>& properties);
+            
+            /*!
+             * Attempts to eliminate all features of this model that are not in the given set of features.
+             * @return The model features that could not be eliminated.
+             */
+            ModelFeatures restrictToFeatures(ModelFeatures const& modelFeatures);
+            
+            /*!
+             * Attempts to eliminate all features of this model and the given properties that are not in the given set of features.
+             * @return The model features that could not be eliminated.
+             */
+            ModelFeatures restrictToFeatures(ModelFeatures const& modelFeatures, std::vector<Property>& properties);
+            
+            /*!
              * Retrieves whether there is an expression restricting the legal initial values of the global variables.
              */
             bool hasInitialStatesRestriction() const;
+            
+            /*!
+             * Retrieves whether there are non-trivial initial states in the model or any of the contained automata.
+             */
+            bool hasNonTrivialInitialStates() const;
             
             /*!
              * Sets the expression restricting the legal initial values of the global variables.
@@ -372,6 +504,12 @@ namespace storm {
              */
             storm::expressions::Expression getInitialStatesExpression() const;
 
+            /*!
+             * Retrieves whether the initial states expression is trivial in the sense that no automaton has an initial
+             * states restriction and all variables have initial values.
+             */
+            bool hasTrivialInitialStatesExpression() const;
+            
             /*!
              * Retrieves the expression defining the legal initial values of the variables.
              *
@@ -440,8 +578,9 @@ namespace storm {
             
             /*!
              * Lifts the common edge destination assignments to edge assignments.
+             * @param maxLevel the maximum level of assignments that are to be lifted.
              */
-            void liftTransientEdgeDestinationAssignments();
+            void liftTransientEdgeDestinationAssignments(int64_t maxLevel = 0);
             
             /*!
              * Retrieves whether there is any transient edge destination assignment in the model.
@@ -450,8 +589,9 @@ namespace storm {
             
             /*!
              * Retrieves whether the model uses an assignment level other than zero.
+             * @param onlyTransient if set, only transient assignments are considered
              */
-            bool usesAssignmentLevels() const;
+            bool usesAssignmentLevels(bool onlyTransient = false) const;
             
             /*!
              * Checks the model for linearity. A model is linear if all expressions appearing in guards and assignments
@@ -461,6 +601,9 @@ namespace storm {
             
             void makeStandardJaniCompliant();
 
+            // Pushes all edge assignments to their destination
+            void pushEdgeAssignmentsToDestinations();
+            
             /*!
              * Checks whether in the composition, actions are reused: That is, if the model is put in parallel composition and the same action potentially leads to multiple edges from the same state.
              * @return
@@ -502,6 +645,9 @@ namespace storm {
             /// The JANI-version used to specify the model.
             uint64_t version;
             
+            /// The features enabled for this model.
+            ModelFeatures modelFeatures;
+            
             /// The manager responsible for the expressions in this model.
             std::shared_ptr<storm::expressions::ExpressionManager> expressionManager;
             
@@ -510,6 +656,10 @@ namespace storm {
             
             /// A mapping from names to action indices.
             std::unordered_map<std::string, uint64_t> actionToIndex;
+            
+            /// A mapping from non-trivial reward model names to their defining expression.
+            /// (A reward model is trivial, if it is represented by a single, global, numeric variable)
+            std::unordered_map<std::string, storm::expressions::Expression> nonTrivialRewardModels;
             
             /// The set of non-silent action indices.
             boost::container::flat_set<uint64_t> nonsilentActionIndices;
@@ -522,6 +672,10 @@ namespace storm {
             
             /// The global variables of the model.
             VariableSet globalVariables;
+            
+            /// A mapping from names to function definitions
+            /// Since we use an unordered_map, references to function definitions will not get invalidated when more function definitions are added
+            std::unordered_map<std::string, FunctionDefinition> globalFunctions;
             
             /// The list of automata.
             std::vector<Automaton> automata;

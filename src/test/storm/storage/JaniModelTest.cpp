@@ -14,6 +14,7 @@ TEST(JaniModelTest, FlattenComposition) {
     
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
     
+    janiModel.substituteFunctions();
     ASSERT_NO_THROW(janiModel = janiModel.flattenComposition(smtSolverFactory));
     EXPECT_EQ(1ull, janiModel.getNumberOfAutomata());
     EXPECT_EQ(74ull, janiModel.getAutomaton(0).getNumberOfEdges());
@@ -26,6 +27,7 @@ TEST(JaniModelTest, FlattenComposition_Wlan_Mathsat) {
     
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
     
+    janiModel.substituteFunctions();
     ASSERT_NO_THROW(janiModel = janiModel.flattenComposition(smtSolverFactory));
     EXPECT_EQ(1ull, janiModel.getNumberOfAutomata());
     EXPECT_EQ(179ull, janiModel.getAutomaton(0).getNumberOfEdges());
@@ -38,6 +40,7 @@ TEST(JaniModelTest, FlattenComposition_Csma_Mathsat) {
     
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
     
+    janiModel.substituteFunctions();
     ASSERT_NO_THROW(janiModel = janiModel.flattenComposition(smtSolverFactory));
     EXPECT_EQ(1ull, janiModel.getNumberOfAutomata());
     EXPECT_EQ(70ull, janiModel.getAutomaton(0).getNumberOfEdges());
@@ -50,6 +53,7 @@ TEST(JaniModelTest, FlattenComposition_Firewire_Mathsat) {
     
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
     
+    janiModel.substituteFunctions();
     ASSERT_NO_THROW(janiModel = janiModel.flattenComposition(smtSolverFactory));
     EXPECT_EQ(1ull, janiModel.getNumberOfAutomata());
     EXPECT_EQ(5024ull, janiModel.getAutomaton(0).getNumberOfEdges());
@@ -62,6 +66,7 @@ TEST(JaniModelTest, FlattenComposition_Coin_Mathsat) {
     
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
     
+    janiModel.substituteFunctions();
     ASSERT_NO_THROW(janiModel = janiModel.flattenComposition(smtSolverFactory));
     EXPECT_EQ(1ull, janiModel.getNumberOfAutomata());
     EXPECT_EQ(13ull, janiModel.getAutomaton(0).getNumberOfEdges());
@@ -74,6 +79,7 @@ TEST(JaniModelTest, FlattenComposition_Dice_Mathsat) {
     
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
     
+    janiModel.substituteFunctions();
     ASSERT_NO_THROW(janiModel = janiModel.flattenComposition(smtSolverFactory));
     EXPECT_EQ(1ull, janiModel.getNumberOfAutomata());
     EXPECT_EQ(16ull, janiModel.getAutomaton(0).getNumberOfEdges());
@@ -88,6 +94,7 @@ TEST(JaniModelTest, FlattenComposition_Leader_Z3) {
     
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::Z3SmtSolverFactory>();
     
+    janiModel.substituteFunctions();
     ASSERT_NO_THROW(janiModel = janiModel.flattenComposition(smtSolverFactory));
     EXPECT_EQ(1ull, janiModel.getNumberOfAutomata());
     EXPECT_EQ(74ull, janiModel.getAutomaton(0).getNumberOfEdges());
@@ -100,6 +107,7 @@ TEST(JaniModelTest, FlattenComposition_Wlan_Z3) {
     
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::Z3SmtSolverFactory>();
     
+    janiModel.substituteFunctions();
     ASSERT_NO_THROW(janiModel = janiModel.flattenComposition(smtSolverFactory));
     EXPECT_EQ(1ull, janiModel.getNumberOfAutomata());
     EXPECT_EQ(179ull, janiModel.getAutomaton(0).getNumberOfEdges());
@@ -112,6 +120,7 @@ TEST(JaniModelTest, FlattenComposition_Csma_Z3) {
 
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::Z3SmtSolverFactory>();
     
+    janiModel.substituteFunctions();
     ASSERT_NO_THROW(janiModel = janiModel.flattenComposition(smtSolverFactory));
     EXPECT_EQ(1ull, janiModel.getNumberOfAutomata());
     EXPECT_EQ(70ull, janiModel.getAutomaton(0).getNumberOfEdges());
@@ -124,6 +133,7 @@ TEST(JaniModelTest, FlattenComposition_Firewire_Z3) {
 
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::Z3SmtSolverFactory>();
     
+    janiModel.substituteFunctions();
     ASSERT_NO_THROW(janiModel = janiModel.flattenComposition(smtSolverFactory));
     EXPECT_EQ(1ull, janiModel.getNumberOfAutomata());
     EXPECT_EQ(5024ull, janiModel.getAutomaton(0).getNumberOfEdges());
@@ -136,6 +146,7 @@ TEST(JaniModelTest, FlattenComposition_Coin_Z3) {
 
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::Z3SmtSolverFactory>();
     
+    janiModel.substituteFunctions();
     ASSERT_NO_THROW(janiModel = janiModel.flattenComposition(smtSolverFactory));
     EXPECT_EQ(1ull, janiModel.getNumberOfAutomata());
     EXPECT_EQ(13ull, janiModel.getAutomaton(0).getNumberOfEdges());
@@ -148,6 +159,7 @@ TEST(JaniModelTest, FlattenComposition_Dice_Z3) {
 
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::Z3SmtSolverFactory>();
     
+    janiModel.substituteFunctions();
     ASSERT_NO_THROW(janiModel = janiModel.flattenComposition(smtSolverFactory));
     EXPECT_EQ(1ull, janiModel.getNumberOfAutomata());
     EXPECT_EQ(16ull, janiModel.getAutomaton(0).getNumberOfEdges());

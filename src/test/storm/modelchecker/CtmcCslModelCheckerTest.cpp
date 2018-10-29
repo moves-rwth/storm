@@ -5,6 +5,7 @@
 #include "storm/api/builder.h"
 #include "storm-parsers/api/model_descriptions.h"
 #include "storm/api/properties.h"
+#include "storm-conv/api/storm-conv.h"
 #include "storm-parsers/api/properties.h"
 #include "storm-parsers/parser/FormulaParser.h"
 #include "storm/logic/Formulas.h"
@@ -28,10 +29,46 @@
 
 namespace {
     
+    enum class CtmcEngine {PrismSparse, JaniSparse, JitSparse, PrismHybrid, JaniHybrid};
+    
     class SparseGmmxxGmresIluEnvironment {
     public:
         static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan; // unused for sparse models
-        static const storm::settings::modules::CoreSettings::Engine engine = storm::settings::modules::CoreSettings::Engine::Sparse;
+        static const CtmcEngine engine = CtmcEngine::PrismSparse;
+        static const bool isExact = false;
+        typedef double ValueType;
+        typedef storm::models::sparse::Ctmc<ValueType> ModelType;
+        static storm::Environment createEnvironment() {
+            storm::Environment env;
+            env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Gmmxx);
+            env.solver().gmmxx().setMethod(storm::solver::GmmxxLinearEquationSolverMethod::Gmres);
+            env.solver().gmmxx().setPreconditioner(storm::solver::GmmxxLinearEquationSolverPreconditioner::Ilu);
+            env.solver().gmmxx().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
+            return env;
+        }
+    };
+    
+    class JaniSparseGmmxxGmresIluEnvironment {
+    public:
+        static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan; // unused for sparse models
+        static const CtmcEngine engine = CtmcEngine::JaniSparse;
+        static const bool isExact = false;
+        typedef double ValueType;
+        typedef storm::models::sparse::Ctmc<ValueType> ModelType;
+        static storm::Environment createEnvironment() {
+            storm::Environment env;
+            env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Gmmxx);
+            env.solver().gmmxx().setMethod(storm::solver::GmmxxLinearEquationSolverMethod::Gmres);
+            env.solver().gmmxx().setPreconditioner(storm::solver::GmmxxLinearEquationSolverPreconditioner::Ilu);
+            env.solver().gmmxx().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
+            return env;
+        }
+    };
+    
+    class JitSparseGmmxxGmresIluEnvironment {
+    public:
+        static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan; // unused for sparse models
+        static const CtmcEngine engine = CtmcEngine::JitSparse;
         static const bool isExact = false;
         typedef double ValueType;
         typedef storm::models::sparse::Ctmc<ValueType> ModelType;
@@ -48,7 +85,7 @@ namespace {
     class SparseEigenDGmresEnvironment {
     public:
         static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan; // unused for sparse models
-        static const storm::settings::modules::CoreSettings::Engine engine = storm::settings::modules::CoreSettings::Engine::Sparse;
+        static const CtmcEngine engine = CtmcEngine::PrismSparse;
         static const bool isExact = false;
         typedef double ValueType;
         typedef storm::models::sparse::Ctmc<ValueType> ModelType;
@@ -65,7 +102,7 @@ namespace {
     class SparseEigenDoubleLUEnvironment {
     public:
         static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan; // unused for sparse models
-        static const storm::settings::modules::CoreSettings::Engine engine = storm::settings::modules::CoreSettings::Engine::Sparse;
+        static const CtmcEngine engine = CtmcEngine::PrismSparse;
         static const bool isExact = false;
         typedef double ValueType;
         typedef storm::models::sparse::Ctmc<ValueType> ModelType;
@@ -80,7 +117,7 @@ namespace {
     class SparseNativeSorEnvironment {
     public:
         static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan; // unused for sparse models
-        static const storm::settings::modules::CoreSettings::Engine engine = storm::settings::modules::CoreSettings::Engine::Sparse;
+        static const CtmcEngine engine = CtmcEngine::PrismSparse;
         static const bool isExact = false;
         typedef double ValueType;
         typedef storm::models::sparse::Ctmc<ValueType> ModelType;
@@ -98,7 +135,23 @@ namespace {
     class HybridCuddGmmxxGmresEnvironment {
     public:
         static const storm::dd::DdType ddType = storm::dd::DdType::CUDD;
-        static const storm::settings::modules::CoreSettings::Engine engine = storm::settings::modules::CoreSettings::Engine::Hybrid;
+        static const CtmcEngine engine = CtmcEngine::PrismHybrid;
+        static const bool isExact = false;
+        typedef double ValueType;
+        typedef storm::models::symbolic::Ctmc<ddType, ValueType> ModelType;
+        static storm::Environment createEnvironment() {
+            storm::Environment env;
+            env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Gmmxx);
+            env.solver().gmmxx().setMethod(storm::solver::GmmxxLinearEquationSolverMethod::Gmres);
+            env.solver().gmmxx().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
+            return env;
+        }
+    };
+    
+    class JaniHybridCuddGmmxxGmresEnvironment {
+    public:
+        static const storm::dd::DdType ddType = storm::dd::DdType::CUDD;
+        static const CtmcEngine engine = CtmcEngine::JaniHybrid;
         static const bool isExact = false;
         typedef double ValueType;
         typedef storm::models::symbolic::Ctmc<ddType, ValueType> ModelType;
@@ -114,7 +167,7 @@ namespace {
     class HybridSylvanGmmxxGmresEnvironment {
     public:
         static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan;
-        static const storm::settings::modules::CoreSettings::Engine engine = storm::settings::modules::CoreSettings::Engine::Hybrid;
+        static const CtmcEngine engine = CtmcEngine::PrismHybrid;
         static const bool isExact = false;
         typedef double ValueType;
         typedef storm::models::symbolic::Ctmc<ddType, ValueType> ModelType;
@@ -140,7 +193,7 @@ namespace {
         ValueType precision() const { return TestType::isExact ? parseNumber("0") : parseNumber("1e-6");}
         bool isSparseModel() const { return std::is_same<typename TestType::ModelType, SparseModelType>::value; }
         bool isSymbolicModel() const { return std::is_same<typename TestType::ModelType, SymbolicModelType>::value; }
-        storm::settings::modules::CoreSettings::Engine getEngine() const { return TestType::engine; }
+        CtmcEngine getEngine() const { return TestType::engine; }
         
         template <typename MT = typename TestType::ModelType>
         typename std::enable_if<std::is_same<MT, SparseModelType>::value, std::pair<std::shared_ptr<MT>, std::vector<std::shared_ptr<storm::logic::Formula const>>>>::type
@@ -148,8 +201,15 @@ namespace {
             std::pair<std::shared_ptr<MT>, std::vector<std::shared_ptr<storm::logic::Formula const>>> result;
             storm::prism::Program program = storm::api::parseProgram(pathToPrismFile, true);
             program = storm::utility::prism::preprocess(program, constantDefinitionString);
-            result.second = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
-            result.first = storm::api::buildSparseModel<ValueType>(program, result.second)->template as<MT>();
+            if (TestType::engine == CtmcEngine::PrismSparse) {
+                result.second = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
+                result.first = storm::api::buildSparseModel<ValueType>(program, result.second)->template as<MT>();
+            } else if (TestType::engine == CtmcEngine::JaniSparse || TestType::engine == CtmcEngine::JitSparse) {
+                auto janiData = storm::api::convertPrismToJani(program, storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
+                janiData.first.substituteFunctions();
+                result.second = storm::api::extractFormulasFromProperties(janiData.second);
+                result.first = storm::api::buildSparseModel<ValueType>(janiData.first, result.second, TestType::engine == CtmcEngine::JitSparse)->template as<MT>();
+            }
             return result;
         }
         
@@ -159,8 +219,15 @@ namespace {
             std::pair<std::shared_ptr<MT>, std::vector<std::shared_ptr<storm::logic::Formula const>>> result;
             storm::prism::Program program = storm::api::parseProgram(pathToPrismFile, true);
             program = storm::utility::prism::preprocess(program, constantDefinitionString);
-            result.second = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
-            result.first = storm::api::buildSymbolicModel<TestType::ddType, ValueType>(program, result.second)->template as<MT>();
+            if (TestType::engine == CtmcEngine::PrismHybrid) {
+                result.second = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
+                result.first = storm::api::buildSymbolicModel<TestType::ddType, ValueType>(program, result.second)->template as<MT>();
+            } else if (TestType::engine == CtmcEngine::JaniHybrid) {
+                auto janiData = storm::api::convertPrismToJani(program, storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
+                janiData.first.substituteFunctions();
+                result.second = storm::api::extractFormulasFromProperties(janiData.second);
+                result.first = storm::api::buildSymbolicModel<TestType::ddType, ValueType>(janiData.first, result.second)->template as<MT>();
+            }
             return result;
         }
         
@@ -175,7 +242,7 @@ namespace {
         template <typename MT = typename TestType::ModelType>
         typename std::enable_if<std::is_same<MT, SparseModelType>::value, std::shared_ptr<storm::modelchecker::AbstractModelChecker<MT>>>::type
         createModelChecker(std::shared_ptr<MT> const& model) const {
-            if (TestType::engine == storm::settings::modules::CoreSettings::Engine::Sparse) {
+            if (TestType::engine == CtmcEngine::PrismSparse || TestType::engine == CtmcEngine::JaniSparse || TestType::engine == CtmcEngine::JitSparse) {
                 return std::make_shared<storm::modelchecker::SparseCtmcCslModelChecker<SparseModelType>>(*model);
             }
         }
@@ -183,7 +250,7 @@ namespace {
         template <typename MT = typename TestType::ModelType>
         typename std::enable_if<std::is_same<MT, SymbolicModelType>::value, std::shared_ptr<storm::modelchecker::AbstractModelChecker<MT>>>::type
         createModelChecker(std::shared_ptr<MT> const& model) const {
-            if (TestType::engine == storm::settings::modules::CoreSettings::Engine::Hybrid) {
+            if (TestType::engine == CtmcEngine::PrismHybrid || TestType::engine == CtmcEngine::JaniHybrid) {
                 return std::make_shared<storm::modelchecker::HybridCtmcCslModelChecker<SymbolicModelType>>(*model);
             }
         }
@@ -214,10 +281,13 @@ namespace {
   
     typedef ::testing::Types<
             SparseGmmxxGmresIluEnvironment,
+            JaniSparseGmmxxGmresIluEnvironment,
+            JitSparseGmmxxGmresIluEnvironment,
             SparseEigenDGmresEnvironment,
             SparseEigenDoubleLUEnvironment,
             SparseNativeSorEnvironment,
             HybridCuddGmmxxGmresEnvironment,
+            JaniHybridCuddGmmxxGmresEnvironment,
             HybridSylvanGmmxxGmresEnvironment
         > TestingTypes;
     

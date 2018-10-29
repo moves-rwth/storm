@@ -100,6 +100,11 @@ namespace storm {
 
             }
             
+            template<storm::dd::DdType Type, typename ValueType>
+            uint64_t StochasticTwoPlayerGame<Type, ValueType>::getNumberOfPlayer2States() const {
+                return this->getQualitativeTransitionMatrix().existsAbstract(this->getColumnVariables()).getNonZeroCount();
+            }
+            
             // Explicitly instantiate the template class.
 			template class StochasticTwoPlayerGame<storm::dd::DdType::CUDD, double>;
 			template class StochasticTwoPlayerGame<storm::dd::DdType::Sylvan, double>;

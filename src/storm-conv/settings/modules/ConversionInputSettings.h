@@ -31,7 +31,7 @@ namespace storm {
                  */
                 std::string getPropertyInputFilter() const;
                 
-                /*!
+                 /*!
                  * Retrieves whether constant definition option was set.
                  *
                  * @return True if the constant definition option was set.
@@ -63,6 +63,35 @@ namespace storm {
                  */
                 bool isPrismCompatibilityEnabled() const;
                 
+                /*!
+                 * Retrieves whether the Jani option was set.
+                 */
+                bool isJaniInputSet() const;
+                
+                /*!
+                 * Retrieves the name of the file that contains the jani model specification if the model was given.
+                 */
+                std::string getJaniInputFilename() const;
+                
+                /*!
+                 * Retrieves whether the jani-property option was set
+                 * @return
+                 */
+                bool isJaniPropertiesSet() const;
+
+                /*!
+                 * Retrieves whether one or more jani-properties have been selected
+                 * @return
+                 */
+                bool areJaniPropertiesSelected() const;
+                
+                /*!
+                 * @return  The names of the jani properties to check
+                 */
+                std::vector<std::string> getSelectedJaniProperties() const;
+
+
+                
                 bool check() const override;
                 void finalize() override;
 
@@ -78,6 +107,9 @@ namespace storm {
                 static const std::string prismInputOptionName;
                 static const std::string prismCompatibilityOptionName;
                 static const std::string prismCompatibilityOptionShortName;
+                static const std::string janiInputOptionName;
+                static const std::string janiPropertyOptionName;
+                static const std::string janiPropertyOptionShortName;
             };
             
                 

@@ -1,7 +1,7 @@
 #include "storm/abstraction/prism/ModuleAbstractor.h"
 
-#include "storm/abstraction/AbstractionInformation.h"
 #include "storm/abstraction/BottomStateResult.h"
+#include "storm/abstraction/AbstractionInformation.h"
 #include "storm/abstraction/GameBddResult.h"
 
 #include "storm/storage/dd/DdManager.h"
@@ -23,11 +23,11 @@ namespace storm {
             using storm::settings::modules::AbstractionSettings;
             
             template <storm::dd::DdType DdType, typename ValueType>
-            ModuleAbstractor<DdType, ValueType>::ModuleAbstractor(storm::prism::Module const& module, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool useDecomposition) : smtSolverFactory(smtSolverFactory), abstractionInformation(abstractionInformation), commands(), module(module) {
+            ModuleAbstractor<DdType, ValueType>::ModuleAbstractor(storm::prism::Module const& module, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool useDecomposition, bool addPredicatesForValidBlocks, bool debug) : smtSolverFactory(smtSolverFactory), abstractionInformation(abstractionInformation), commands(), module(module) {
                 
                 // For each concrete command, we create an abstract counterpart.
                 for (auto const& command : module.getCommands()) {
-                    commands.emplace_back(command, abstractionInformation, smtSolverFactory, useDecomposition);
+                    commands.emplace_back(command, abstractionInformation, smtSolverFactory, useDecomposition, addPredicatesForValidBlocks, debug);
                 }
             }
             
@@ -35,8 +35,7 @@ namespace storm {
             void ModuleAbstractor<DdType, ValueType>::refine(std::vector<uint_fast64_t> const& predicates) {
                 for (uint_fast64_t index = 0; index < commands.size(); ++index) {
                     STORM_LOG_TRACE("Refining command with index " << index << ".");
-                    CommandAbstractor<DdType, ValueType>& command = commands[index];
-                    command.refine(predicates);
+                    commands[index].refine(predicates);
                 }
             }
             
@@ -46,8 +45,18 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
+            uint64_t ModuleAbstractor<DdType, ValueType>::getNumberOfUpdates(uint64_t player1Choice) const {
+                return commands[player1Choice].getNumberOfUpdates(player1Choice);
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
             std::map<storm::expressions::Variable, storm::expressions::Expression> ModuleAbstractor<DdType, ValueType>::getVariableUpdates(uint64_t player1Choice, uint64_t auxiliaryChoice) const {
                 return commands[player1Choice].getVariableUpdates(auxiliaryChoice);
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
+            std::set<storm::expressions::Variable> const& ModuleAbstractor<DdType, ValueType>::getAssignedVariables(uint64_t player1Choice) const {
+                return commands[player1Choice].getAssignedVariables();
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
@@ -106,10 +115,17 @@ namespace storm {
                 return abstractionInformation.get();
             }
             
+            template <storm::dd::DdType DdType, typename ValueType>
+            void ModuleAbstractor<DdType, ValueType>::notifyGuardsArePredicates() {
+                for (auto& command : commands) {
+                    command.notifyGuardIsPredicate();
+                }
+            }
+            
             template class ModuleAbstractor<storm::dd::DdType::CUDD, double>;
             template class ModuleAbstractor<storm::dd::DdType::Sylvan, double>;
 #ifdef STORM_HAVE_CARL
-			template class ModuleAbstractor<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+			template class ModuleAbstractor<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 #endif
         }
     }

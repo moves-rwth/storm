@@ -47,6 +47,8 @@ jobs:
       env: CONFIG=DefaultDebugTravis LINUX=ubuntu-18.04 COMPILER=gcc
       install:
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build_carl.sh
       after_success:
@@ -60,6 +62,8 @@ jobs:
       env: CONFIG=DefaultReleaseTravis LINUX=ubuntu-18.04 COMPILER=gcc
       install:
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build_carl.sh
       after_success:
@@ -79,6 +83,8 @@ jobs:
       install:
         - rm -rf build
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build.sh Build1
       before_cache:
@@ -93,6 +99,8 @@ jobs:
       install:
         - rm -rf build
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build.sh Build1
       before_cache:
@@ -107,6 +115,8 @@ jobs:
       install:
         - rm -rf build
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build.sh Build1
       before_cache:
@@ -121,6 +131,8 @@ jobs:
       install:
         - rm -rf build
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build.sh Build1
       before_cache:
@@ -135,6 +147,8 @@ jobs:
       install:
         - rm -rf build
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build.sh Build1
       before_cache:
@@ -149,6 +163,8 @@ jobs:
       install:
         - rm -rf build
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build.sh Build1
       before_cache:
@@ -167,6 +183,8 @@ jobs:
       env: CONFIG=DefaultDebug LINUX=debian-9 COMPILER=gcc
       install:
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build.sh Build2
       before_cache:
@@ -180,6 +198,8 @@ jobs:
       env: CONFIG=DefaultRelease LINUX=debian-9 COMPILER=gcc
       install:
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build.sh Build2
       before_cache:
@@ -193,6 +213,8 @@ jobs:
       env: CONFIG=DefaultDebugTravis LINUX=ubuntu-18.04 COMPILER=gcc
       install:
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build.sh Build2
       before_cache:
@@ -206,6 +228,8 @@ jobs:
       env: CONFIG=DefaultReleaseTravis LINUX=ubuntu-18.04 COMPILER=gcc
       install:
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build.sh Build2
       before_cache:
@@ -219,6 +243,8 @@ jobs:
       env: CONFIG=DefaultDebug LINUX=ubuntu-18.04 COMPILER=gcc
       install:
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build.sh Build2
       before_cache:
@@ -232,6 +258,8 @@ jobs:
       env: CONFIG=DefaultRelease LINUX=ubuntu-18.04 COMPILER=gcc
       install:
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build.sh Build2
       before_cache:
@@ -250,6 +278,8 @@ jobs:
       env: CONFIG=DefaultDebug LINUX=debian-9 COMPILER=gcc
       install:
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build.sh Build3
       before_cache:
@@ -263,6 +293,8 @@ jobs:
       env: CONFIG=DefaultRelease LINUX=debian-9 COMPILER=gcc
       install:
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build.sh Build3
       before_cache:
@@ -276,6 +308,8 @@ jobs:
       env: CONFIG=DefaultDebugTravis LINUX=ubuntu-18.04 COMPILER=gcc
       install:
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build.sh Build3
       before_cache:
@@ -289,6 +323,8 @@ jobs:
       env: CONFIG=DefaultReleaseTravis LINUX=ubuntu-18.04 COMPILER=gcc
       install:
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build.sh Build3
       before_cache:
@@ -302,6 +338,8 @@ jobs:
       env: CONFIG=DefaultDebug LINUX=ubuntu-18.04 COMPILER=gcc
       install:
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build.sh Build3
       before_cache:
@@ -315,6 +353,8 @@ jobs:
       env: CONFIG=DefaultRelease LINUX=ubuntu-18.04 COMPILER=gcc
       install:
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build.sh Build3
       before_cache:
@@ -333,6 +373,8 @@ jobs:
       env: CONFIG=DefaultDebug LINUX=debian-9 COMPILER=gcc
       install:
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build.sh BuildLast
       before_cache:
@@ -346,6 +388,8 @@ jobs:
       env: CONFIG=DefaultRelease LINUX=debian-9 COMPILER=gcc
       install:
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build.sh BuildLast
       before_cache:
@@ -359,6 +403,8 @@ jobs:
       env: CONFIG=DefaultDebugTravis LINUX=ubuntu-18.04 COMPILER=gcc
       install:
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build.sh BuildLast
       before_cache:
@@ -372,6 +418,8 @@ jobs:
       env: CONFIG=DefaultReleaseTravis LINUX=ubuntu-18.04 COMPILER=gcc
       install:
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build.sh BuildLast
       before_cache:
@@ -385,6 +433,8 @@ jobs:
       env: CONFIG=DefaultDebug LINUX=ubuntu-18.04 COMPILER=gcc
       install:
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build.sh BuildLast
       before_cache:
@@ -398,6 +448,8 @@ jobs:
       env: CONFIG=DefaultRelease LINUX=ubuntu-18.04 COMPILER=gcc
       install:
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build.sh BuildLast
       before_cache:
@@ -416,6 +468,8 @@ jobs:
       env: CONFIG=DefaultDebug LINUX=debian-9 COMPILER=gcc
       install:
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build.sh TestAll
       before_cache:
@@ -429,6 +483,8 @@ jobs:
       env: CONFIG=DefaultRelease LINUX=debian-9 COMPILER=gcc
       install:
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build.sh TestAll
       before_cache:
@@ -442,6 +498,8 @@ jobs:
       env: CONFIG=DefaultDebugTravis LINUX=ubuntu-18.04 COMPILER=gcc
       install:
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build.sh TestAll
       before_cache:
@@ -459,6 +517,8 @@ jobs:
       env: CONFIG=DefaultReleaseTravis LINUX=ubuntu-18.04 COMPILER=gcc
       install:
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build.sh TestAll
       before_cache:
@@ -476,6 +536,8 @@ jobs:
       env: CONFIG=DefaultDebug LINUX=ubuntu-18.04 COMPILER=gcc
       install:
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build.sh TestAll
       before_cache:
@@ -489,6 +551,8 @@ jobs:
       env: CONFIG=DefaultRelease LINUX=ubuntu-18.04 COMPILER=gcc
       install:
         - travis/install_linux.sh
+      before_script:
+        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
         - travis/build.sh TestAll
       before_cache:

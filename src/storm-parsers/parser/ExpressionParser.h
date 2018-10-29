@@ -1,6 +1,7 @@
 #pragma once
 
 #include <sstream>
+#include <memory>
 
 #include "storm-parsers/parser/SpiritParserDefinitions.h"
 #include "storm-parsers/parser/SpiritErrorHandler.h"
@@ -46,6 +47,7 @@ namespace storm {
              * also parses boolean conjuncts that are erroneously consumed by the expression parser.
              */
             ExpressionParser(storm::expressions::ExpressionManager const& manager, qi::symbols<char, uint_fast64_t> const& invalidIdentifiers_ = qi::symbols<char, uint_fast64_t>(), bool enableErrorHandling = true, bool allowBacktracking = false);
+            ~ExpressionParser();
             
             ExpressionParser(ExpressionParser const& other) = default;
             ExpressionParser& operator=(ExpressionParser const& other) = default;
@@ -207,7 +209,7 @@ namespace storm {
             prefixPowerModuloOperatorStruct prefixPowerModuloOperator_;
             
             
-            ExpressionCreator* expressionCreator;
+            std::unique_ptr<ExpressionCreator> expressionCreator;
             
             
             // The symbol table of invalid identifiers.

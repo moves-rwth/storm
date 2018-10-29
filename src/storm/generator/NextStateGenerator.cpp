@@ -67,11 +67,7 @@ namespace storm {
         template<typename ValueType, typename StateType>
         storm::models::sparse::StateLabeling NextStateGenerator<ValueType, StateType>::label(storm::storage::sparse::StateStorage<StateType> const& stateStorage, std::vector<StateType> const& initialStateIndices, std::vector<StateType> const& deadlockStateIndices, std::vector<std::pair<std::string, storm::expressions::Expression>> labelsAndExpressions) {
             
-            for (auto const& expression : this->options.getExpressionLabels()) {
-                std::stringstream stream;
-                stream << expression;
-                labelsAndExpressions.push_back(std::make_pair(stream.str(), expression));
-            }
+            labelsAndExpressions.insert(labelsAndExpressions.end(), this->options.getExpressionLabels().begin(), this->options.getExpressionLabels().end());
             
             // Make the labels unique.
             std::sort(labelsAndExpressions.begin(), labelsAndExpressions.end(), [] (std::pair<std::string, storm::expressions::Expression> const& a, std::pair<std::string, storm::expressions::Expression> const& b) { return a.first < b.first; } );
@@ -183,10 +179,20 @@ namespace storm {
         }
 
         template<typename ValueType, typename StateType>
+        uint32_t NextStateGenerator<ValueType, StateType>::observabilityClass(CompressedState const &state) const {
+            if (this->mask.size() == 0) {
+                this->mask = computeObservabilityMask(variableInformation);
+            }
+
+            return unpackStateToObservabilityClass(state, observabilityMap, mask);
+        }
+
+        template<typename ValueType, typename StateType>
         void NextStateGenerator<ValueType, StateType>::remapStateIds(std::function<StateType(StateType const&)> const& remapping) {
             if (overlappingGuardStates != boost::none) {
                 STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Remapping of Ids during model building is not supported for overlapping guard statements.");
             }
+            // Nothing to be done.
         }
 
         template class NextStateGenerator<double>;

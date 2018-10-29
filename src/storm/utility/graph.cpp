@@ -9,6 +9,7 @@
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/DdManager.h"
 
+#include "storm/abstraction/ExplicitGameStrategyPair.h"
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
 
 #include "storm/models/symbolic/DeterministicModel.h"
@@ -30,7 +31,7 @@ namespace storm {
         namespace graph {
             
             template<typename T>
-            storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, bool useStepBound, uint_fast64_t maximalSteps) {
+            storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, bool useStepBound, uint_fast64_t maximalSteps, boost::optional<storm::storage::BitVector> const& choiceFilter) {
                 storm::storage::BitVector reachableStates(initialStates);
                 
                 uint_fast64_t numberOfStates = transitionMatrix.getRowGroupCount();
@@ -64,25 +65,37 @@ namespace storm {
                             continue;
                         }
                     }
-                
-                    for (auto const& successor : transitionMatrix.getRowGroup(currentState)) {
-                        // Only explore the state if the transition was actually there and the successor has not yet
-                        // been visited.
-                        if (!storm::utility::isZero(successor.getValue()) && (!reachableStates.get(successor.getColumn()) || (useStepBound && remainingSteps[successor.getColumn()] < currentStepBound - 1))) {
-                            // If the successor is one of the target states, we need to include it, but must not explore
-                            // it further.
-                            if (targetStates.get(successor.getColumn())) {
-                                reachableStates.set(successor.getColumn());
-                            } else if (constraintStates.get(successor.getColumn())) {
-                                // However, if the state is in the constrained set of states, we potentially need to follow it.
-                                if (useStepBound) {
-                                    // As there is at least one more step to go, we need to push the state and the new number of steps.
-                                    remainingSteps[successor.getColumn()] = currentStepBound - 1;
-                                    stepStack.push_back(currentStepBound - 1);
+                    
+                    
+                    uint64_t row = transitionMatrix.getRowGroupIndices()[currentState];
+                    if (choiceFilter) {
+                        row = choiceFilter->getNextSetIndex(row);
+                    }
+                    uint64_t const rowGroupEnd = transitionMatrix.getRowGroupIndices()[currentState + 1];
+                    while (row < rowGroupEnd) {
+                        for (auto const& successor : transitionMatrix.getRow(row)) {
+                            // Only explore the state if the transition was actually there and the successor has not yet
+                            // been visited.
+                            if (!storm::utility::isZero(successor.getValue()) && (!reachableStates.get(successor.getColumn()) || (useStepBound && remainingSteps[successor.getColumn()] < currentStepBound - 1))) {
+                                // If the successor is one of the target states, we need to include it, but must not explore
+                                // it further.
+                                if (targetStates.get(successor.getColumn())) {
+                                    reachableStates.set(successor.getColumn());
+                                } else if (constraintStates.get(successor.getColumn())) {
+                                    // However, if the state is in the constrained set of states, we potentially need to follow it.
+                                    if (useStepBound) {
+                                        // As there is at least one more step to go, we need to push the state and the new number of steps.
+                                        remainingSteps[successor.getColumn()] = currentStepBound - 1;
+                                        stepStack.push_back(currentStepBound - 1);
+                                    }
+                                    reachableStates.set(successor.getColumn());
+                                    stack.push_back(successor.getColumn());
                                 }
-                                reachableStates.set(successor.getColumn());
-                                stack.push_back(successor.getColumn());
                             }
+                        }
+                        ++row;
+                        if (choiceFilter) {
+                            row = choiceFilter->getNextSetIndex(row);
                         }
                     }
                 }
@@ -389,6 +402,8 @@ namespace storm {
                 std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = transitionMatrix.getRowGroupIndices();
                 
                 for (auto const& state : states) {
+                    bool setValue = false;
+                    STORM_LOG_ASSERT(nondeterministicChoiceIndices[state+1] - nondeterministicChoiceIndices[state] > 0, "Expected at least one action enabled in state " << state);
                     for (uint_fast64_t choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1]; ++choice) {
                         bool allSuccessorsInStates = true;
                         for (auto const& element : transitionMatrix.getRow(choice)) {
@@ -401,9 +416,11 @@ namespace storm {
                             for (uint_fast64_t memState = 0; memState < scheduler.getNumberOfMemoryStates(); ++memState) {
                                 scheduler.setChoice(choice - nondeterministicChoiceIndices[state], state, memState);
                             }
+                            setValue = true;
                             break;
                         }
                     }
+                    STORM_LOG_ASSERT(setValue, "Expected that at least one action for state " <<  state << " stays within the selected state");
                 }
             }
             
@@ -412,6 +429,7 @@ namespace storm {
                 std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = transitionMatrix.getRowGroupIndices();
                 
                 for (auto const& state : states) {
+                    bool setValue = false;
                     for (uint_fast64_t choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1]; ++choice) {
                         bool oneSuccessorInStates = false;
                         for (auto const& element : transitionMatrix.getRow(choice)) {
@@ -424,9 +442,11 @@ namespace storm {
                             for (uint_fast64_t memState = 0; memState < scheduler.getNumberOfMemoryStates(); ++memState) {
                                 scheduler.setChoice(choice - nondeterministicChoiceIndices[state], state, memState);
                             }
+                            setValue = true;
                             break;
                         }
                     }
+                    STORM_LOG_ASSERT(setValue, "Expected that at least one action for state " <<  state << " leads with positive probability to the selected state");
                 }
             }
             
@@ -476,6 +496,11 @@ namespace storm {
             template <typename T>
             void computeSchedulerProb0E(storm::storage::BitVector const& prob0EStates, storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::Scheduler<T>& scheduler) {
                 computeSchedulerStayingInStates(prob0EStates, transitionMatrix, scheduler);
+            }
+
+            template <typename T>
+            void computeSchedulerRewInf(storm::storage::BitVector const& rewInfStates, storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::Scheduler<T>& scheduler) {
+                computeSchedulerWithOneSuccessorInStates(rewInfStates, transitionMatrix, scheduler);
             }
             
             template <typename T>
@@ -1083,8 +1108,142 @@ namespace storm {
                 return result;
             }
 
+            template <typename ValueType>
+            ExplicitGameProb01Result performProb0(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint64_t> const& player1Groups, storm::storage::SparseMatrix<ValueType> const& player1BackwardTransitions, std::vector<uint64_t> const& player2BackwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::OptimizationDirection const& player1Direction, storm::OptimizationDirection const& player2Direction, storm::abstraction::ExplicitGameStrategyPair* strategyPair) {
+             
+                ExplicitGameProb01Result result(psiStates, storm::storage::BitVector(transitionMatrix.getRowGroupCount()));
+                
+                // Initialize the stack used for the DFS with the states
+                std::vector<uint_fast64_t> stack(psiStates.begin(), psiStates.end());
+
+                // Perform the actual DFS.
+                uint_fast64_t currentState;
+                while (!stack.empty()) {
+                    currentState = stack.back();
+                    stack.pop_back();
+
+                    // Check which player 2 predecessors of the current player 1 state to add.
+                    for (auto const& player2PredecessorEntry : player1BackwardTransitions.getRow(currentState)) {
+                        uint64_t player2Predecessor = player2PredecessorEntry.getColumn();
+                        if (!result.player2States.get(player2Predecessor)) {
+                            bool addPlayer2State = false;
+                            if (player2Direction == OptimizationDirection::Minimize) {
+                                bool allChoicesHavePlayer1State = true;
+                                for (uint64_t row = transitionMatrix.getRowGroupIndices()[player2Predecessor]; row < transitionMatrix.getRowGroupIndices()[player2Predecessor + 1]; ++row) {
+                                    bool choiceHasPlayer1State = false;
+                                    for (auto const& entry : transitionMatrix.getRow(row)) {
+                                        if (result.player1States.get(entry.getColumn())) {
+                                            choiceHasPlayer1State = true;
+                                            break;
+                                        }
+                                    }
+                                    if (!choiceHasPlayer1State) {
+                                        allChoicesHavePlayer1State = false;
+                                    }
+                                }
+                                if (allChoicesHavePlayer1State) {
+                                    addPlayer2State = true;
+                                }
+                            } else {
+                                addPlayer2State = true;
+                            }
+                            
+                            if (addPlayer2State) {
+                                result.player2States.set(player2Predecessor);
+                                
+                                // Now check whether adding the player 2 state changes something with respect to the
+                                // (single) player 1 predecessor.
+                                uint64_t player1Predecessor = player2BackwardTransitions[player2Predecessor];
+                                
+                                if (!result.player1States.get(player1Predecessor)) {
+                                    bool addPlayer1State = false;
+                                    if (player1Direction == OptimizationDirection::Minimize) {
+                                        bool allPlayer2Successors = true;
+                                        for (uint64_t player2State = player1Groups[player1Predecessor]; player2State < player1Groups[player1Predecessor + 1]; ++player2State) {
+                                            if (!result.player2States.get(player2State)) {
+                                                allPlayer2Successors = false;
+                                                break;
+                                            }
+                                        }
+                                        if (allPlayer2Successors) {
+                                            addPlayer1State = true;
+                                        }
+                                    } else {
+                                        addPlayer1State = true;
+                                    }
+                                    
+                                    if (addPlayer1State) {
+                                        result.player1States.set(player1Predecessor);
+                                        stack.emplace_back(player1Predecessor);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Since we have determined the complements of the desired sets, we need to complement it now.
+                result.player1States.complement();
+                result.player2States.complement();
+                
+                // Generate player 1 strategy if required.
+                if (strategyPair) {
+                    for (auto player1State : result.player1States) {
+                        if (player1Direction == storm::OptimizationDirection::Minimize) {
+                            // At least one player 2 successor is a state with probability 0, find it.
+                            bool foundProb0Successor = false;
+                            uint64_t player2State;
+                            for (player2State = player1Groups[player1State]; player2State < player1Groups[player1State + 1]; ++player2State) {
+                                if (result.player2States.get(player2State)) {
+                                    foundProb0Successor = true;
+                                    break;
+                                }
+                            }
+                            STORM_LOG_ASSERT(foundProb0Successor, "Expected at least one state 2 successor with probability 0.");
+                            strategyPair->getPlayer1Strategy().setChoice(player1State, player2State);
+                        } else {
+                            // Since all player 2 successors are states with probability 0, just pick any.
+                            strategyPair->getPlayer1Strategy().setChoice(player1State, player1Groups[player1State]);
+                        }
+                    }
+                }
+
+                // Generate player 2 strategy if required.
+                if (strategyPair) {
+                    for (auto player2State : result.player2States) {
+                        if (player2Direction == storm::OptimizationDirection::Minimize) {
+                            // At least one distribution only has successors with probability 0, find it.
+                            bool foundProb0SuccessorDistribution = false;
+                            
+                            uint64_t row;
+                            for (row = transitionMatrix.getRowGroupIndices()[player2State]; row < transitionMatrix.getRowGroupIndices()[player2State + 1]; ++row) {
+                                bool distributionHasOnlyProb0Successors = true;
+                                for (auto const& player1SuccessorEntry : transitionMatrix.getRow(row)) {
+                                    if (!result.player1States.get(player1SuccessorEntry.getColumn())) {
+                                        distributionHasOnlyProb0Successors = false;
+                                        break;
+                                    }
+                                }
+                                if (distributionHasOnlyProb0Successors) {
+                                    foundProb0SuccessorDistribution = true;
+                                    break;
+                                }
+                            }
+                            
+                            STORM_LOG_ASSERT(foundProb0SuccessorDistribution, "Expected at least one distribution with only successors with probability 0.");
+                            strategyPair->getPlayer2Strategy().setChoice(player2State, row);
+                        } else {
+                            // Since all player 1 successors are states with probability 0, just pick any.
+                            strategyPair->getPlayer2Strategy().setChoice(player2State, transitionMatrix.getRowGroupIndices()[player2State]);
+                        }
+                    }
+                }
+
+                return result;
+            }
+            
             template <storm::dd::DdType Type, typename ValueType>
-            GameProb01Result<Type> performProb0(storm::models::symbolic::StochasticTwoPlayerGame<Type, ValueType> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool producePlayer1Strategy, bool producePlayer2Strategy) {
+            SymbolicGameProb01Result<Type> performProb0(storm::models::symbolic::StochasticTwoPlayerGame<Type, ValueType> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool producePlayer1Strategy, bool producePlayer2Strategy) {
 
                 // The solution sets.
                 storm::dd::Bdd<Type> player1States = psiStates;
@@ -1147,11 +1306,132 @@ namespace storm {
                     player1StrategyBdd = onlyProb0Successors.existsAbstractRepresentative(model.getPlayer1Variables());
                 }
                 
-                return GameProb01Result<Type>(player1States, player2States, player1StrategyBdd, player2StrategyBdd);
+                return SymbolicGameProb01Result<Type>(player1States, player2States, player1StrategyBdd, player2StrategyBdd);
+            }
+            
+            template <typename ValueType>
+            ExplicitGameProb01Result performProb1(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint64_t> const& player1Groups, storm::storage::SparseMatrix<ValueType> const& player1BackwardTransitions, std::vector<uint64_t> const& player2BackwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::OptimizationDirection const& player1Direction, storm::OptimizationDirection const& player2Direction, storm::abstraction::ExplicitGameStrategyPair* strategyPair, boost::optional<storm::storage::BitVector> const& player1Candidates) {
+                
+                // During the execution, the two state sets in the result hold the potential player 1/2 states.
+                ExplicitGameProb01Result result;
+                if (player1Candidates) {
+                    result = ExplicitGameProb01Result(player1Candidates.get(), storm::storage::BitVector(transitionMatrix.getRowGroupCount()));
+                } else {
+                    result = ExplicitGameProb01Result(storm::storage::BitVector(phiStates.size(), true), storm::storage::BitVector(transitionMatrix.getRowGroupCount()));
+                }
+                
+                // A flag that governs whether strategies are produced in the current iteration.
+                bool produceStrategiesInIteration = false;
+
+                // Initialize the stack used for the DFS with the states
+                std::vector<uint_fast64_t> stack;
+                bool maybeStatesDone = false;
+                uint_fast64_t maybeStateIterations = 0;
+                while (!maybeStatesDone || produceStrategiesInIteration) {
+                    storm::storage::BitVector player1Solution = psiStates;
+                    storm::storage::BitVector player2Solution(result.player2States.size());
+                    
+                    stack.clear();
+                    stack.insert(stack.end(), psiStates.begin(), psiStates.end());
+                    
+                    // Perform the actual DFS.
+                    uint_fast64_t currentState;
+                    while (!stack.empty()) {
+                        currentState = stack.back();
+                        stack.pop_back();
+
+                        for (auto player2PredecessorEntry : player1BackwardTransitions.getRow(currentState)) {
+                            uint64_t player2Predecessor = player2PredecessorEntry.getColumn();
+                            if (!player2Solution.get(player2PredecessorEntry.getColumn())) {
+                                bool addPlayer2State = player2Direction == storm::OptimizationDirection::Minimize ? true : false;
+                                
+                                uint64_t validChoice = transitionMatrix.getRowGroupIndices()[player2Predecessor];
+                                for (uint64_t row = validChoice; row < transitionMatrix.getRowGroupIndices()[player2Predecessor + 1]; ++row) {
+                                    bool choiceHasSolutionSuccessor = false;
+                                    bool choiceStaysInMaybeStates = true;
+                                    for (auto const& entry : transitionMatrix.getRow(row)) {
+                                        if (player1Solution.get(entry.getColumn())) {
+                                            choiceHasSolutionSuccessor = true;
+                                        }
+                                        if (!result.player1States.get(entry.getColumn())) {
+                                            choiceStaysInMaybeStates = false;
+                                            break;
+                                        }
+                                    }
+                                    
+                                    if (choiceHasSolutionSuccessor && choiceStaysInMaybeStates) {
+                                        if (player2Direction == storm::OptimizationDirection::Maximize) {
+                                            validChoice = row;
+                                            addPlayer2State = true;
+                                            break;
+                                        }
+                                    } else if (player2Direction == storm::OptimizationDirection::Minimize) {
+                                        addPlayer2State = false;
+                                        break;
+                                    }
+                                }
+                                
+                                if (addPlayer2State) {
+                                    player2Solution.set(player2Predecessor);
+                                    if (produceStrategiesInIteration) {
+                                        strategyPair->getPlayer2Strategy().setChoice(player2Predecessor, validChoice);
+                                    }
+                                    
+                                    // Check whether the addition of the player 2 state changes the state of the (single)
+                                    // player 1 predecessor.
+                                    uint64_t player1Predecessor = player2BackwardTransitions[player2Predecessor];
+                                    
+                                    if (!player1Solution.get(player1Predecessor)) {
+                                        bool addPlayer1State = player1Direction == storm::OptimizationDirection::Minimize ? true : false;
+                                        
+                                        validChoice = player1Groups[player1Predecessor];
+                                        for (uint64_t player2Successor = validChoice; player2Successor < player1Groups[player1Predecessor + 1]; ++player2Successor) {
+                                            if (player2Solution.get(player2Successor)) {
+                                                if (player1Direction == storm::OptimizationDirection::Maximize) {
+                                                    validChoice = player2Successor;
+                                                    addPlayer1State = true;
+                                                    break;
+                                                }
+                                            } else if (player1Direction == storm::OptimizationDirection::Minimize) {
+                                                addPlayer1State = false;
+                                                break;
+                                            }
+                                        }
+                                        
+                                        if (addPlayer1State) {
+                                            player1Solution.set(player1Predecessor);
+                                            
+                                            if (produceStrategiesInIteration) {
+                                                strategyPair->getPlayer1Strategy().setChoice(player1Predecessor, validChoice);
+                                            }
+                                            
+                                            stack.emplace_back(player1Predecessor);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    
+                    if (result.player1States == player1Solution) {
+                        maybeStatesDone = true;
+                        result.player2States = player2Solution;
+                        
+                        // If we were asked to produce strategies, we propagate that by triggering another iteration.
+                        // We only do this if at least one strategy will be produced.
+                        produceStrategiesInIteration = !produceStrategiesInIteration && strategyPair;
+                    } else {
+                        result.player1States = player1Solution;
+                        result.player2States = player2Solution;
+                    }
+                    ++maybeStateIterations;
+                }
+                
+                return result;
             }
             
             template <storm::dd::DdType Type, typename ValueType>
-            GameProb01Result<Type> performProb1(storm::models::symbolic::StochasticTwoPlayerGame<Type, ValueType> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool producePlayer1Strategy, bool producePlayer2Strategy, boost::optional<storm::dd::Bdd<Type>> const& player1Candidates) {
+            SymbolicGameProb01Result<Type> performProb1(storm::models::symbolic::StochasticTwoPlayerGame<Type, ValueType> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool producePlayer1Strategy, bool producePlayer2Strategy, boost::optional<storm::dd::Bdd<Type>> const& player1Candidates) {
                 
                 // Create the potential prob1 states of player 1.
                 storm::dd::Bdd<Type> maybePlayer1States = model.getReachableStates();
@@ -1284,11 +1564,58 @@ namespace storm {
                     }
                 }
                 
-                return GameProb01Result<Type>(maybePlayer1States, maybePlayer2States, player1StrategyBdd, player2StrategyBdd);
+                return SymbolicGameProb01Result<Type>(maybePlayer1States, maybePlayer2States, player1StrategyBdd, player2StrategyBdd);
             }
-            
+
+
+            template<typename T>
+            void topologicalSortHelper(storm::storage::SparseMatrix<T> const& matrix, uint64_t state, std::vector<uint_fast64_t>& topologicalSort, std::vector<uint_fast64_t>& recursionStack, std::vector<typename storm::storage::SparseMatrix<T>::const_iterator>& iteratorRecursionStack, storm::storage::BitVector& visitedStates) {
+                if (!visitedStates.get(state)) {
+                    recursionStack.push_back(state);
+                    iteratorRecursionStack.push_back(matrix.begin(state));
+
+                    recursionStepForward:
+                        while (!recursionStack.empty()) {
+                            uint_fast64_t currentState = recursionStack.back();
+                            typename storm::storage::SparseMatrix<T>::const_iterator successorIterator = iteratorRecursionStack.back();
+
+                            visitedStates.set(currentState, true);
+
+                            recursionStepBackward:
+                                for (; successorIterator != matrix.end(currentState); ++successorIterator) {
+                                    if (!visitedStates.get(successorIterator->getColumn())) {
+                                        // Put unvisited successor on top of our recursion stack and remember that.
+                                        recursionStack.push_back(successorIterator->getColumn());
+
+                                        // Also, put initial value for iterator on corresponding recursion stack.
+                                        iteratorRecursionStack.push_back(matrix.begin(successorIterator->getColumn()));
+
+                                        goto recursionStepForward;
+                                    }
+                                }
+
+                                topologicalSort.push_back(currentState);
+
+                                // If we reach this point, we have completed the recursive descent for the current state.
+                                // That is, we need to pop it from the recursion stacks.
+                                recursionStack.pop_back();
+                                iteratorRecursionStack.pop_back();
+
+                                // If there is at least one state under the current one in our recursion stack, we need
+                                // to restore the topmost state as the current state and jump to the part after the
+                                // original recursive call.
+                                if (recursionStack.size() > 0) {
+                                    currentState = recursionStack.back();
+                                    successorIterator = iteratorRecursionStack.back();
+
+                                    goto recursionStepBackward;
+                                }
+                        }
+                }
+            }
+
             template <typename T>
-            std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<T> const& matrix) {
+            std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<T> const& matrix, std::vector<uint64_t> const& firstStates) {
                 if (matrix.getRowCount() != matrix.getColumnCount()) {
                     STORM_LOG_ERROR("Provided matrix is required to be square.");
                     throw storm::exceptions::InvalidArgumentException() << "Provided matrix is required to be square.";
@@ -1308,56 +1635,18 @@ namespace storm {
                 
                 // Perform a depth-first search over the given transitions and record states in the reverse order they were visited.
                 storm::storage::BitVector visitedStates(numberOfStates);
+                for (auto const state : firstStates ) {
+                    topologicalSortHelper<T>(matrix, state, topologicalSort, recursionStack, iteratorRecursionStack, visitedStates);
+                }
                 for (uint_fast64_t state = 0; state < numberOfStates; ++state) {
-                    if (!visitedStates.get(state)) {
-                        recursionStack.push_back(state);
-                        iteratorRecursionStack.push_back(matrix.begin(state));
-                        
-                    recursionStepForward:
-                        while (!recursionStack.empty()) {
-                            uint_fast64_t currentState = recursionStack.back();
-                            typename storm::storage::SparseMatrix<T>::const_iterator successorIterator = iteratorRecursionStack.back();
-                            
-                            visitedStates.set(currentState, true);
-                            
-                        recursionStepBackward:
-                            for (; successorIterator != matrix.end(currentState); ++successorIterator) {
-                                if (!visitedStates.get(successorIterator->getColumn())) {
-                                    // Put unvisited successor on top of our recursion stack and remember that.
-                                    recursionStack.push_back(successorIterator->getColumn());
-                                    
-                                    // Also, put initial value for iterator on corresponding recursion stack.
-                                    iteratorRecursionStack.push_back(matrix.begin(successorIterator->getColumn()));
-                                    
-                                    goto recursionStepForward;
-                                }
-                            }
-                            
-                            topologicalSort.push_back(currentState);
-                            
-                            // If we reach this point, we have completed the recursive descent for the current state.
-                            // That is, we need to pop it from the recursion stacks.
-                            recursionStack.pop_back();
-                            iteratorRecursionStack.pop_back();
-                            
-                            // If there is at least one state under the current one in our recursion stack, we need
-                            // to restore the topmost state as the current state and jump to the part after the
-                            // original recursive call.
-                            if (recursionStack.size() > 0) {
-                                currentState = recursionStack.back();
-                                successorIterator = iteratorRecursionStack.back();
-                                
-                                goto recursionStepBackward;
-                            }
-                        }
-                    }
+                    topologicalSortHelper<T>(matrix, state, topologicalSort, recursionStack, iteratorRecursionStack, visitedStates);
                 }
                 
                 return topologicalSort;
             }
 
 
-            template storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<double> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, bool useStepBound, uint_fast64_t maximalSteps);
+            template storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<double> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, bool useStepBound, uint_fast64_t maximalSteps, boost::optional<storm::storage::BitVector> const& choiceFilter);
             
             template storm::storage::BitVector getBsccCover(storm::storage::SparseMatrix<double> const& transitionMatrix);
            
@@ -1384,7 +1673,10 @@ namespace storm {
             template void computeSchedulerProbGreater0E(storm::storage::SparseMatrix<double> const& transitionMatrix, storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::Scheduler<double>& scheduler, boost::optional<storm::storage::BitVector> const& rowFilter);
             
             template void computeSchedulerProb0E(storm::storage::BitVector const& prob0EStates, storm::storage::SparseMatrix<double> const& transitionMatrix, storm::storage::Scheduler<double>& scheduler);
-            
+
+            template void computeSchedulerRewInf(storm::storage::BitVector const& rewInfStates, storm::storage::SparseMatrix<double> const& transitionMatrix, storm::storage::Scheduler<double>& scheduler);
+
+
             template void computeSchedulerProb1E(storm::storage::BitVector const& prob1EStates, storm::storage::SparseMatrix<double> const& transitionMatrix, storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::Scheduler<double>& scheduler, boost::optional<storm::storage::BitVector> const& rowFilter = boost::none);
             
             template storm::storage::BitVector performProbGreater0E(storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool useStepBound = false, uint_fast64_t maximalSteps = 0) ;
@@ -1424,11 +1716,15 @@ namespace storm {
 			template std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01Min(storm::models::sparse::NondeterministicModel<double, storm::models::sparse::StandardRewardModel<storm::Interval>> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
 #endif
             
-            template std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<double> const& matrix) ;
+            template ExplicitGameProb01Result performProb0(storm::storage::SparseMatrix<double> const& transitionMatrix, std::vector<uint64_t> const& player1RowGrouping, storm::storage::SparseMatrix<double> const& player1BackwardTransitions, std::vector<uint64_t> const& player2BackwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::OptimizationDirection const& player1Direction, storm::OptimizationDirection const& player2Direction, storm::abstraction::ExplicitGameStrategyPair* strategyPair);
+            
+            template ExplicitGameProb01Result performProb1(storm::storage::SparseMatrix<double> const& transitionMatrix, std::vector<uint64_t> const& player1RowGrouping, storm::storage::SparseMatrix<double> const& player1BackwardTransitions, std::vector<uint64_t> const& player2BackwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::OptimizationDirection const& player1Direction, storm::OptimizationDirection const& player2Direction, storm::abstraction::ExplicitGameStrategyPair* strategyPair, boost::optional<storm::storage::BitVector> const& player1Candidates);
+            
+            template std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<double> const& matrix,  std::vector<uint64_t> const& firstStates) ;
             
             // Instantiations for storm::RationalNumber.
 #ifdef STORM_HAVE_CARL
-            template storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, bool useStepBound, uint_fast64_t maximalSteps);
+            template storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, bool useStepBound, uint_fast64_t maximalSteps, boost::optional<storm::storage::BitVector> const& choiceFilter);
             
             template storm::storage::BitVector getBsccCover(storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix);
            
@@ -1449,7 +1745,9 @@ namespace storm {
             template void computeSchedulerProbGreater0E(storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::Scheduler<storm::RationalNumber>& scheduler, boost::optional<storm::storage::BitVector> const& rowFilter);
             
             template void computeSchedulerProb0E(storm::storage::BitVector const& prob0EStates, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::storage::Scheduler<storm::RationalNumber>& scheduler);
-            
+
+            template void computeSchedulerRewInf(storm::storage::BitVector const& rewInfStates, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::storage::Scheduler<storm::RationalNumber>& scheduler);
+
             template void computeSchedulerProb1E(storm::storage::BitVector const& prob1EStates, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::Scheduler<storm::RationalNumber>& scheduler, boost::optional<storm::storage::BitVector> const& rowFilter = boost::none);
             
             template storm::storage::BitVector performProbGreater0E(storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool useStepBound = false, uint_fast64_t maximalSteps = 0) ;
@@ -1476,10 +1774,14 @@ namespace storm {
             
             template std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01Min(storm::models::sparse::NondeterministicModel<storm::RationalNumber> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
             
-            template std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<storm::RationalNumber> const& matrix);
+            template ExplicitGameProb01Result performProb0(storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, std::vector<uint64_t> const& player1RowGrouping, storm::storage::SparseMatrix<storm::RationalNumber> const& player1BackwardTransitions, std::vector<uint64_t> const& player2BackwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::OptimizationDirection const& player1Direction, storm::OptimizationDirection const& player2Direction, storm::abstraction::ExplicitGameStrategyPair* strategyPair);
+            
+            template ExplicitGameProb01Result performProb1(storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, std::vector<uint64_t> const& player1RowGrouping, storm::storage::SparseMatrix<storm::RationalNumber> const& player1BackwardTransitions, std::vector<uint64_t> const& player2BackwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::OptimizationDirection const& player1Direction, storm::OptimizationDirection const& player2Direction, storm::abstraction::ExplicitGameStrategyPair* strategyPair, boost::optional<storm::storage::BitVector> const& player1Candidates);
+            
+            template std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<storm::RationalNumber> const& matrix,  std::vector<uint64_t> const& firstStates);
             // End of instantiations for storm::RationalNumber.
             
-            template storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<storm::RationalFunction> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, bool useStepBound, uint_fast64_t maximalSteps);
+            template storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<storm::RationalFunction> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, bool useStepBound, uint_fast64_t maximalSteps, boost::optional<storm::storage::BitVector> const& choiceFilter);
             
             template storm::storage::BitVector getBsccCover(storm::storage::SparseMatrix<storm::RationalFunction> const& transitionMatrix);
             
@@ -1528,7 +1830,7 @@ namespace storm {
             template std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01Min(storm::models::sparse::NondeterministicModel<storm::RationalFunction> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
             
             
-            template std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<storm::RationalFunction> const& matrix);
+            template std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<storm::RationalFunction> const& matrix,  std::vector<uint64_t> const& firstStates);
             
 #endif
             
@@ -1568,9 +1870,9 @@ namespace storm {
 
             template std::pair<storm::dd::Bdd<storm::dd::DdType::CUDD>, storm::dd::Bdd<storm::dd::DdType::CUDD>> performProb01Min(storm::models::symbolic::NondeterministicModel<storm::dd::DdType::CUDD, double> const& model, storm::dd::Bdd<storm::dd::DdType::CUDD> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::CUDD> const& phiStates, storm::dd::Bdd<storm::dd::DdType::CUDD> const& psiStates);
 
-            template GameProb01Result<storm::dd::DdType::CUDD> performProb0(storm::models::symbolic::StochasticTwoPlayerGame<storm::dd::DdType::CUDD, double> const& model, storm::dd::Bdd<storm::dd::DdType::CUDD> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::CUDD> const& phiStates, storm::dd::Bdd<storm::dd::DdType::CUDD> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool producePlayer1Strategy, bool producePlayer2Strategy);
+            template SymbolicGameProb01Result<storm::dd::DdType::CUDD> performProb0(storm::models::symbolic::StochasticTwoPlayerGame<storm::dd::DdType::CUDD, double> const& model, storm::dd::Bdd<storm::dd::DdType::CUDD> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::CUDD> const& phiStates, storm::dd::Bdd<storm::dd::DdType::CUDD> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool producePlayer1Strategy, bool producePlayer2Strategy);
             
-            template GameProb01Result<storm::dd::DdType::CUDD> performProb1(storm::models::symbolic::StochasticTwoPlayerGame<storm::dd::DdType::CUDD, double> const& model, storm::dd::Bdd<storm::dd::DdType::CUDD> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::CUDD> const& phiStates, storm::dd::Bdd<storm::dd::DdType::CUDD> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool producePlayer1Strategy, bool producePlayer2Strategy, boost::optional<storm::dd::Bdd<storm::dd::DdType::CUDD>> const& player1Candidates);
+            template SymbolicGameProb01Result<storm::dd::DdType::CUDD> performProb1(storm::models::symbolic::StochasticTwoPlayerGame<storm::dd::DdType::CUDD, double> const& model, storm::dd::Bdd<storm::dd::DdType::CUDD> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::CUDD> const& phiStates, storm::dd::Bdd<storm::dd::DdType::CUDD> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool producePlayer1Strategy, bool producePlayer2Strategy, boost::optional<storm::dd::Bdd<storm::dd::DdType::CUDD>> const& player1Candidates);
 
             // Instantiations for Sylvan (double).
             
@@ -1608,9 +1910,9 @@ namespace storm {
 
             template std::pair<storm::dd::Bdd<storm::dd::DdType::Sylvan>, storm::dd::Bdd<storm::dd::DdType::Sylvan>> performProb01Min(storm::models::symbolic::NondeterministicModel<storm::dd::DdType::Sylvan, double> const& model, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& phiStates, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& psiStates);
 
-            template GameProb01Result<storm::dd::DdType::Sylvan> performProb0(storm::models::symbolic::StochasticTwoPlayerGame<storm::dd::DdType::Sylvan> const& model, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& phiStates, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool producePlayer1Strategy, bool producePlayer2Strategy);
-
-            template GameProb01Result<storm::dd::DdType::Sylvan> performProb1(storm::models::symbolic::StochasticTwoPlayerGame<storm::dd::DdType::Sylvan> const& model, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& phiStates, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool producePlayer1Strategy, bool producePlayer2Strategy, boost::optional<storm::dd::Bdd<storm::dd::DdType::Sylvan>> const& player1Candidates);
+            template SymbolicGameProb01Result<storm::dd::DdType::Sylvan> performProb0(storm::models::symbolic::StochasticTwoPlayerGame<storm::dd::DdType::Sylvan> const& model, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& phiStates, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool producePlayer1Strategy, bool producePlayer2Strategy);
+            
+            template SymbolicGameProb01Result<storm::dd::DdType::Sylvan> performProb1(storm::models::symbolic::StochasticTwoPlayerGame<storm::dd::DdType::Sylvan> const& model, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& phiStates, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool producePlayer1Strategy, bool producePlayer2Strategy, boost::optional<storm::dd::Bdd<storm::dd::DdType::Sylvan>> const& player1Candidates);
 
             // Instantiations for Sylvan (rational number).
             
@@ -1647,6 +1949,10 @@ namespace storm {
             template std::pair<storm::dd::Bdd<storm::dd::DdType::Sylvan>, storm::dd::Bdd<storm::dd::DdType::Sylvan>> performProb01Min(storm::models::symbolic::NondeterministicModel<storm::dd::DdType::Sylvan, storm::RationalNumber> const& model, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& phiStates, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& psiStates);
 
             template std::pair<storm::dd::Bdd<storm::dd::DdType::Sylvan>, storm::dd::Bdd<storm::dd::DdType::Sylvan>> performProb01Min(storm::models::symbolic::NondeterministicModel<storm::dd::DdType::Sylvan, storm::RationalNumber> const& model, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& phiStates, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& psiStates);
+
+            template SymbolicGameProb01Result<storm::dd::DdType::Sylvan> performProb0(storm::models::symbolic::StochasticTwoPlayerGame<storm::dd::DdType::Sylvan, storm::RationalNumber> const& model, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& phiStates, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool producePlayer1Strategy, bool producePlayer2Strategy);
+
+            template SymbolicGameProb01Result<storm::dd::DdType::Sylvan> performProb1(storm::models::symbolic::StochasticTwoPlayerGame<storm::dd::DdType::Sylvan, storm::RationalNumber> const& model, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& phiStates, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool producePlayer1Strategy, bool producePlayer2Strategy, boost::optional<storm::dd::Bdd<storm::dd::DdType::Sylvan>> const& player1Candidates);
 
             // Instantiations for Sylvan (rational function).
             

@@ -16,6 +16,7 @@
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/CoreSettings.h"
+#include "storm-counterexamples/settings/modules/CounterexampleGeneratorSettings.h"
 
 #include "storm/utility/macros.h"
 #include "storm/exceptions/NotSupportedException.h"

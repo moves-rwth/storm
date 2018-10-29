@@ -9,7 +9,7 @@
 #include "storm/storage/jani/VariableSet.h"
 #include "storm/storage/jani/TemplateEdgeContainer.h"
 #include "storm/storage/jani/EdgeContainer.h"
-
+#include "storm/storage/jani/FunctionDefinition.h"
 
 namespace storm {
     namespace jani {
@@ -71,6 +71,16 @@ namespace storm {
             RealVariable const& addVariable(RealVariable const& variable);
 
             /*!
+             * Adds the given array variable to this automaton.
+             */
+            ArrayVariable const& addVariable(ArrayVariable const& variable);
+
+            /*!
+             * Adds the given array variable to this automaton.
+             */
+            ClockVariable const& addVariable(ClockVariable const& variable);
+
+            /*!
              * Retrieves the variables of this automaton.
              */
             VariableSet& getVariables();
@@ -94,6 +104,21 @@ namespace storm {
              */
             bool hasTransientVariable() const;
             
+            /*!
+             * Adds the given function definition
+             */
+            FunctionDefinition const& addFunctionDefinition(FunctionDefinition const& functionDefinition);
+            
+            /*!
+             * Retrieves all function definitions of this automaton
+             */
+            std::unordered_map<std::string, FunctionDefinition> const& getFunctionDefinitions() const;
+            
+            /*!
+             * Retrieves all function definitions of this automaton
+             */
+            std::unordered_map<std::string, FunctionDefinition>& getFunctionDefinitions();
+
             /*!
              * Retrieves whether the automaton has a location with the given name.
              */
@@ -192,7 +217,15 @@ namespace storm {
              */
             ConstEdges getEdgesFromLocation(uint64_t locationIndex, uint64_t actionIndex) const;
             
+            /*!
+             * Retrieves the container of all edges of this automaton.
+             */
             EdgeContainer const& getEdgeContainer() const;
+
+            /*!
+             * Retrieves the container of all edges of this automaton.
+             */
+            EdgeContainer& getEdgeContainer();
             
             /*!
              * Adds the template edge to the list of edges
@@ -242,6 +275,11 @@ namespace storm {
             bool hasInitialStatesRestriction() const;
             
             /*!
+             * Retrieves whether this automaton has non-trivial initial states.
+             */
+            bool hasNonTrivialInitialStates() const;
+            
+            /*!
              * Gets the expression restricting the legal initial values of the automaton's variables.
              */
             storm::expressions::Expression const& getInitialStatesRestriction() const;
@@ -255,6 +293,12 @@ namespace storm {
              * Retrieves the expression defining the legal initial values of the automaton's variables.
              */
             storm::expressions::Expression getInitialStatesExpression() const;
+            
+            /*!
+             * Retrieves whether the initial states expression is trivial in the sense that the automaton has no initial
+             * states restriction and all non-transient variables have initial values.
+             */
+            bool hasTrivialInitialStatesExpression() const;
             
             /*!
              * Retrieves whether there is an edge labeled with the action with the given index in this automaton.
@@ -312,12 +356,12 @@ namespace storm {
             /*!
              * Lifts the common edge destination assignments to edge assignments.
              */
-            void liftTransientEdgeDestinationAssignments();
+            void liftTransientEdgeDestinationAssignments(int64_t maxLevel = 0);
             
             /*!
              * Retrieves whether the automaton uses an assignment level other than zero.
              */
-            bool usesAssignmentLevels() const;
+            bool usesAssignmentLevels(bool onlyTransient = false) const;
 
             void simplifyIndexedAssignments();
             
@@ -342,6 +386,10 @@ namespace storm {
 
             /// The set of variables of this automaton.
             VariableSet variables;
+            
+            /// A mapping from names to function definitions
+            /// Since we use an unordered_map, references to function definitions will not get invalidated when more function definitions are added
+            std::unordered_map<std::string, FunctionDefinition> functionDefinitions;
             
             /// The locations of the automaton.
             std::vector<Location> locations;

@@ -34,6 +34,7 @@
 #include "storm/utility/Stopwatch.h"
 #include "storm/utility/ProgressMeasurement.h"
 #include "storm/utility/export.h"
+#include "storm/utility/NumberTraits.h"
 
 #include "storm/transformer/EndComponentEliminator.h"
 
@@ -426,7 +427,7 @@ namespace storm {
             }
             
             template<typename ValueType>
-            SparseMdpHintType<ValueType> computeHints(Environment const& env, SolutionType const& type, ModelCheckerHint const& hint, storm::OptimizationDirection const& dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& maybeStates, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& targetStates, boost::optional<storm::storage::BitVector> const& selectedChoices = boost::none) {
+            SparseMdpHintType<ValueType> computeHints(Environment const& env, SolutionType const& type, ModelCheckerHint const& hint, storm::OptimizationDirection const& dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& maybeStates, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& targetStates, bool produceScheduler, boost::optional<storm::storage::BitVector> const& selectedChoices = boost::none) {
                 SparseMdpHintType<ValueType> result;
 
                 // The solution to the min-max equation system is unique if we minimize until probabilities or
@@ -438,7 +439,7 @@ namespace storm {
                 // Check for requirements of the solver.
                 bool hasSchedulerHint = hint.isExplicitModelCheckerHint() && hint.template asExplicitModelCheckerHint<ValueType>().hasSchedulerHint();
                 storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType> minMaxLinearEquationSolverFactory;
-                storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(env, result.uniqueSolution, dir, hasSchedulerHint);
+                storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(env, result.uniqueSolution, dir, hasSchedulerHint, produceScheduler);
                 if (requirements.hasEnabledRequirement()) {
                     // If the solver still requires no end-components, we have to eliminate them later.
                     if (requirements.noEndComponents()) {
@@ -737,7 +738,7 @@ namespace storm {
                         // In this case we have have to compute the remaining probabilities.
                         
                         // Obtain proper hint information either from the provided hint or from requirements of the solver.
-                        SparseMdpHintType<ValueType> hintInformation = computeHints(env, SolutionType::UntilProbabilities, hint, goal.direction(), transitionMatrix, backwardTransitions, qualitativeStateSets.maybeStates, phiStates, qualitativeStateSets.statesWithProbability1);
+                        SparseMdpHintType<ValueType> hintInformation = computeHints(env, SolutionType::UntilProbabilities, hint, goal.direction(), transitionMatrix, backwardTransitions, qualitativeStateSets.maybeStates, phiStates, qualitativeStateSets.statesWithProbability1, produceScheduler);
                         
                         // Declare the components of the equation system we will solve.
                         storm::storage::SparseMatrix<ValueType> submatrix;
@@ -778,8 +779,11 @@ namespace storm {
                 }
                 
                 // Sanity check for created scheduler.
-                STORM_LOG_ASSERT((!produceScheduler && !scheduler) || (!scheduler->isPartialScheduler() && scheduler->isDeterministicScheduler() && scheduler->isMemorylessScheduler()), "Unexpected format of obtained scheduler.");
-                
+                STORM_LOG_ASSERT(!produceScheduler || scheduler, "Expected that a scheduler was obtained.");
+                STORM_LOG_ASSERT((!produceScheduler && !scheduler) || !scheduler->isPartialScheduler(), "Expected a fully defined scheduler");
+                STORM_LOG_ASSERT((!produceScheduler && !scheduler) || scheduler->isDeterministicScheduler(), "Expected a deterministic scheduler");
+                STORM_LOG_ASSERT((!produceScheduler && !scheduler) || scheduler->isMemorylessScheduler(), "Expected a memoryless scheduler");
+
                 // Return result.
                 return MDPSparseModelCheckingHelperReturnType<ValueType>(std::move(result), std::move(scheduler));
             }
@@ -918,7 +922,7 @@ namespace storm {
             template<typename RewardModelType>
             MDPSparseModelCheckingHelperReturnType<ValueType> SparseMdpPrctlHelper<ValueType>::computeReachabilityRewards(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, RewardModelType const& rewardModel, storm::storage::BitVector const& targetStates, bool qualitative, bool produceScheduler, ModelCheckerHint const& hint) {
                 // Only compute the result if the model has at least one reward this->getModel().
-                STORM_LOG_THROW(!rewardModel.empty(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
+                STORM_LOG_THROW(!rewardModel.empty(), storm::exceptions::InvalidPropertyException, "Reward model for formula is empty. Skipping formula.");
                 return computeReachabilityRewardsHelper(env, std::move(goal), transitionMatrix, backwardTransitions,
                                                         [&rewardModel] (uint_fast64_t rowCount, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& maybeStates) {
                                                             return rewardModel.getTotalRewardVector(rowCount, transitionMatrix, maybeStates);
@@ -1049,7 +1053,7 @@ namespace storm {
                         scheduler.setChoice(0, state);
                     }
                 } else {
-                    storm::utility::graph::computeSchedulerProb0E(qualitativeStateSets.infinityStates, transitionMatrix, scheduler);
+                    storm::utility::graph::computeSchedulerRewInf(qualitativeStateSets.infinityStates, transitionMatrix, scheduler);
                     for (auto const& state : qualitativeStateSets.rewardZeroStates) {
                         scheduler.setChoice(0, state);
                     }
@@ -1222,7 +1226,7 @@ namespace storm {
                         }
                         
                         // Obtain proper hint information either from the provided hint or from requirements of the solver.
-                        SparseMdpHintType<ValueType> hintInformation = computeHints(env, SolutionType::ExpectedRewards, hint, goal.direction(), transitionMatrix, backwardTransitions, qualitativeStateSets.maybeStates, ~qualitativeStateSets.rewardZeroStates, qualitativeStateSets.rewardZeroStates, selectedChoices);
+                        SparseMdpHintType<ValueType> hintInformation = computeHints(env, SolutionType::ExpectedRewards, hint, goal.direction(), transitionMatrix, backwardTransitions, qualitativeStateSets.maybeStates, ~qualitativeStateSets.rewardZeroStates, qualitativeStateSets.rewardZeroStates, produceScheduler, selectedChoices);
                         
                         // Declare the components of the equation system we will solve.
                         storm::storage::SparseMatrix<ValueType> submatrix;
@@ -1276,7 +1280,11 @@ namespace storm {
                 }
                 
                 // Sanity check for created scheduler.
-                STORM_LOG_ASSERT((!produceScheduler && !scheduler) || (!scheduler->isPartialScheduler() && scheduler->isDeterministicScheduler() && scheduler->isMemorylessScheduler()), "Unexpected format of obtained scheduler.");
+                STORM_LOG_ASSERT(!produceScheduler || scheduler, "Expected that a scheduler was obtained.");
+                STORM_LOG_ASSERT((!produceScheduler && !scheduler) || !scheduler->isPartialScheduler(), "Expected a fully defined scheduler");
+                STORM_LOG_ASSERT((!produceScheduler && !scheduler) || scheduler->isDeterministicScheduler(), "Expected a deterministic scheduler");
+                STORM_LOG_ASSERT((!produceScheduler && !scheduler) || scheduler->isMemorylessScheduler(), "Expected a memoryless scheduler");
+
 
                 return MDPSparseModelCheckingHelperReturnType<ValueType>(std::move(result), std::move(scheduler));
             }
@@ -1478,7 +1486,12 @@ namespace storm {
                 }
                 
                 // Solve MEC with the method specified in the settings
-                storm::solver::LraMethod method = storm::settings::getModule<storm::settings::modules::MinMaxEquationSolverSettings>().getLraMethod();
+                auto minMaxSettings = storm::settings::getModule<storm::settings::modules::MinMaxEquationSolverSettings>();
+                storm::solver::LraMethod method = minMaxSettings.getLraMethod();
+                if (storm::NumberTraits<ValueType>::IsExact && minMaxSettings.isLraMethodSetFromDefaultValue() && method != storm::solver::LraMethod::LinearProgramming) {
+                    STORM_LOG_INFO("Selecting 'LP' as the solution technique for long-run properties to guarantee exact results. If you want to override this, please explicitly specify a different LRA method.");
+                    method = storm::solver::LraMethod::LinearProgramming;
+                }
                 if (method == storm::solver::LraMethod::LinearProgramming) {
                     return computeLraForMaximalEndComponentLP(env, dir, transitionMatrix, rewardModel, mec);
                 } else if (method == storm::solver::LraMethod::ValueIteration) {
