@@ -1,5 +1,4 @@
 
-
 #include "storm-pars/analysis/MonotonicityChecker.h"
 
 #include "storm-cli-utilities/cli.h"
@@ -527,6 +526,10 @@ namespace storm {
                 std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(input.properties);
 
                 // Monotonicity
+                std::ofstream outfile;
+                outfile.open("results.txt", std::ios_base::app);
+                outfile << std::endl << ioSettings.getPrismInputFilename() << "; ";
+                outfile.close();
                 storm::utility::Stopwatch monotonicityWatch(true);
                 auto monotonicityChecker = storm::analysis::MonotonicityChecker<ValueType>(model, formulas, parSettings.isValidateAssumptionsSet());
                 monotonicityChecker.checkMonotonicity();

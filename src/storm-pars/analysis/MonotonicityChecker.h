@@ -37,9 +37,6 @@ namespace storm {
 
             /*!
              * TODO
-             * @param model
-             * @param formulas
-             * @param validate
              * @return
              */
             std::map<storm::analysis::Lattice*, std::map<carl::Variable, std::pair<bool, bool>>> checkMonotonicity();
@@ -73,6 +70,12 @@ namespace storm {
             std::map<carl::Variable, std::pair<bool, bool>> resultCheckOnSamples;
 
             storm::analysis::LatticeExtender<ValueType> *extender;
+
+            std::ofstream outfile;
+
+            std::string filename = "results.txt";
+
+            storm::utility::Stopwatch totalWatch;
         };
     }
 }

@@ -23,6 +23,7 @@ namespace storm {
     namespace analysis {
         template <typename ValueType>
         MonotonicityChecker<ValueType>::MonotonicityChecker(std::shared_ptr<storm::models::ModelBase> model, std::vector<std::shared_ptr<storm::logic::Formula const>> formulas, bool validate) {
+            outfile.open(filename, std::ios_base::app);
             this->model = model;
             this->formulas = formulas;
             this->validate = validate;
@@ -30,39 +31,20 @@ namespace storm {
             if (model != nullptr) {
                 std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel = model->as<storm::models::sparse::Model<ValueType>>();
                 this->extender = new storm::analysis::LatticeExtender<ValueType>(sparseModel);
+                outfile << model->getNumberOfStates() << "; " << model->getNumberOfTransitions() << "; ";
             }
+            outfile.close();
+            totalWatch = storm::utility::Stopwatch(true);
         }
 
         template <typename ValueType>
         std::map<storm::analysis::Lattice*, std::map<carl::Variable, std::pair<bool, bool>>> MonotonicityChecker<ValueType>::checkMonotonicity() {
-            std::map<carl::Variable, std::pair<bool, bool>> maybeMonotone;
-            if (model->isOfType(storm::models::ModelType::Dtmc)) {
-                auto dtmc = model->as<storm::models::sparse::Dtmc<ValueType>>();
-                maybeMonotone = checkOnSamples(dtmc,3);
-            } else if (model->isOfType(storm::models::ModelType::Mdp)) {
-                auto mdp = model->as<storm::models::sparse::Mdp<ValueType>>();
-                maybeMonotone = checkOnSamples(mdp,3);
-            } else {
-                STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Unable to perform monotonicity analysis on the provided model type.");
-            }
-
-            bool allNotMonotone = true;
-            for (auto itr = maybeMonotone.begin(); itr != maybeMonotone.end(); ++itr) {
-                if (itr->second.first || itr->second.second) {
-                    allNotMonotone = false;
-                }
-            }
-
-            if (!allNotMonotone) {
-                auto map = createLattice();
-                std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel = model->as<storm::models::sparse::Model<ValueType>>();
-                auto matrix = sparseModel->getTransitionMatrix();
-                return checkMonotonicity(map, matrix);
-            } else {
-                std::map<storm::analysis::Lattice*, std::map<carl::Variable, std::pair<bool, bool>>> result;
-                STORM_PRINT(std::endl << "Not monotone in all parameters" << std::endl);
-                return result;
-            }
+            totalWatch = storm::utility::Stopwatch(true);
+            // TODO: check on samples or not?
+            auto map = createLattice();
+            std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel = model->as<storm::models::sparse::Model<ValueType>>();
+            auto matrix = sparseModel->getTransitionMatrix();
+            return checkMonotonicity(map, matrix);
         }
 
         template <typename ValueType>
@@ -70,26 +52,31 @@ namespace storm {
             storm::utility::Stopwatch finalCheckWatch(true);
             std::map<storm::analysis::Lattice *, std::map<carl::Variable, std::pair<bool, bool>>> result;
 
+
             if (map.size() == 0) {
+                outfile.open(filename, std::ios_base::app);
+                outfile << " | No assumptions, ? | ;";
+                outfile.close();
                 STORM_PRINT(std::endl << "Do not know about monotonicity" << std::endl);
             } else {
                 auto i = 0;
-
                 for (auto itr = map.begin(); i < map.size() && itr != map.end(); ++itr) {
                     auto lattice = itr->first;
-                    auto assumptions = itr->second;
-//                    std::ofstream myfile;
-//                    std::string filename = "lattice" + std::to_string(i) + ".dot";
-//                    myfile.open(filename);
-//                    lattice->toDotFile(myfile);
-//                    myfile.close();
+                    outfile.open(filename, std::ios_base::app);
+                    outfile << "|";
+                    outfile.close();
+                    std::map<carl::Variable, std::pair<bool, bool>> varsMonotone = analyseMonotonicity(i, lattice,
+                                                                                                      matrix);
 
+                    outfile.open(filename, std::ios_base::app);
+                    auto assumptions = itr->second;
                     if (assumptions.size() > 0) {
                         STORM_PRINT("Given assumptions: " << std::endl);
                         bool first = true;
                         for (auto itr2 = assumptions.begin(); itr2 != assumptions.end(); ++itr2) {
                             if (!first) {
                                 STORM_PRINT(" ^ ");
+                                outfile << (" ^ ");
                             } else {
                                 STORM_PRINT("    ");
                                 first = false;
@@ -99,45 +86,63 @@ namespace storm {
                             auto var1 = expression->getFirstOperand();
                             auto var2 = expression->getSecondOperand();
                             STORM_PRINT(*expression);
+                            outfile << (*expression);
                         }
                         STORM_PRINT(std::endl);
+                        outfile << ", ";
+                    } else {
+                        outfile << "No assumptions, ";
                     }
 
-                    std::map<carl::Variable, std::pair<bool, bool>> varsMonotone = analyseMonotonicity(i, lattice,
-                                                                                                       matrix);
+
                     if (varsMonotone.size() == 0) {
                         STORM_PRINT("Result is constant" << std::endl);
+                        outfile << "No params";
                     } else {
-                        for (auto itr2 = varsMonotone.begin(); itr2 != varsMonotone.end(); ++itr2) {
+                        auto itr2 = varsMonotone.begin();
+                        while (itr2 != varsMonotone.end()) {
                             if (resultCheckOnSamples.find(itr2->first) != resultCheckOnSamples.end() &&
                                 (!resultCheckOnSamples[itr2->first].first &&
                                  !resultCheckOnSamples[itr2->first].second)) {
                                 STORM_PRINT("  - Not monotone in: " << itr2->first << std::endl);
+                                outfile << "X " << itr2->first;
                             } else {
-                                if (itr2->second.first) {
+                                if (itr2->second.first && itr2->second.second) {
+                                    STORM_PRINT("  - Constant in" << itr2->first);
+                                    outfile << "C " << itr2->first;
+                                } else if (itr2->second.first) {
                                     STORM_PRINT("  - Monotone increasing in: " << itr2->first << std::endl);
-                                } else {
-                                    STORM_PRINT(
-                                            "  - Do not know if monotone increasing in: " << itr2->first << std::endl);
-                                }
-                                if (itr2->second.second) {
+                                    outfile << "I " << itr2->first;
+                                } else if (itr2->second.second) {
                                     STORM_PRINT("  - Monotone decreasing in: " << itr2->first << std::endl);
+                                    outfile << "D " << itr2->first;
                                 } else {
                                     STORM_PRINT(
-                                            "  - Do not know if monotone decreasing in: " << itr2->first << std::endl);
+                                            "  - Do not know if monotone incr/decreasing in: " << itr2->first << std::endl);
+                                    outfile << "? " << itr2->first;
                                 }
+                            }
+                            ++itr2;
+                            if (itr2 != varsMonotone.end()) {
+                                outfile << ", ";
                             }
                         }
                         result.insert(
                                 std::pair<storm::analysis::Lattice *, std::map<carl::Variable, std::pair<bool, bool>>>(
                                         lattice, varsMonotone));
                     }
+                    outfile << "| ";
+                    outfile.close();
                     ++i;
                 }
             }
 
             finalCheckWatch.stop();
             STORM_PRINT(std::endl << "Time for monotonicity check on lattice: " << finalCheckWatch << "." << std::endl << std::endl);
+            outfile.open(filename, std::ios_base::app);
+            totalWatch.stop();
+            outfile << totalWatch << "; ";
+            outfile.close();
             return result;
         }
 
@@ -176,6 +181,7 @@ namespace storm {
             }
             latticeWatch.stop();
             STORM_PRINT(std::endl << "Total time for lattice creation: " << latticeWatch << "." << std::endl << std::endl);
+            outfile << latticeWatch << "; ";
             return result;
         }
 
@@ -257,16 +263,6 @@ namespace storm {
             storm::utility::Stopwatch analyseWatch(true);
 
             std::map<carl::Variable, std::pair<bool, bool>> varsMonotone;
-//            std::ofstream myfile;
-//            std::string filename = "mc" + std::to_string(j) + ".dot";
-//            myfile.open (filename);
-//            myfile << "digraph \"MC\" {" << std::endl;
-//            myfile << "\t" << "node [shape=ellipse]" << std::endl;
-
-            // print all nodes
-//            for (uint_fast64_t i = 0; i < matrix.getColumnCount(); ++i) {
-//                myfile << "\t\"" << i << "\" [label = \"" << i << "\"]" << std::endl;
-//            }
 
             for (uint_fast64_t i = 0; i < matrix.getColumnCount(); ++i) {
                 // go over all rows
@@ -279,7 +275,6 @@ namespace storm {
                         transitions.insert(std::pair<uint_fast64_t, ValueType>((*itr).getColumn(), (*itr).getValue()));
                     }
 
-//                    std::string color = "";
                     auto val = first.getValue();
                     auto vars = val.gatherVariables();
                     for (auto itr = vars.begin(); itr != vars.end(); ++itr) {
@@ -289,7 +284,6 @@ namespace storm {
                                 varsMonotone[*itr].first = false;
                                 varsMonotone[*itr].second = false;
                             }
-//                            color = "color = red, ";
                         } else {
                             if (varsMonotone.find(*itr) == varsMonotone.end()) {
                                 varsMonotone[*itr].first = true;
@@ -326,44 +320,14 @@ namespace storm {
                                     }
                                 }
                             }
-
-//                            if ((value->first != old.first) && (value->second != old.second)) {
-//                                color = "color = red, ";
-//                            } else if ((value->first != old.first)) {
-//                                myfile << "\t edge[style=dashed];" << std::endl;
-//                                color = "color = blue, ";
-//                            } else if ((value->second != old.second)) {
-//                                myfile << "\t edge[style=dotted];" << std::endl;
-//                                color = "color = blue, ";
-//                            }
                         }
                     }
-
-//                    for (auto itr = transitions.begin(); itr != transitions.end(); ++itr) {
-//                        myfile << "\t" << i << " -> " << itr->first << "[" << color << "label=\"" << itr->second << "\"];"
-//                               << std::endl;
-//                    }
-//
-//                    myfile << "\t edge[style=\"\"];" << std::endl;
-//                } else {
-//                    myfile << "\t" << i << " -> " << first.getColumn() << "[label=\"" << first.getValue() << "\"];"
-//                           << std::endl;
                 }
             }
 
-//            myfile << "\tsubgraph legend {" << std::endl;
-//            myfile << "\t\tnode [color=white];" << std::endl;
-//            myfile << "\t\tedge [style=invis];" << std::endl;
-//            myfile << "\t\tt0 [label=\"incr? and decr?\", fontcolor=red];" << std::endl;
-//            myfile << "\t\tt1 [label=\"incr? (dashed)\", fontcolor=blue];" << std::endl;
-//            myfile << "\t\tt2 [label=\"decr? (dotted)\", fontcolor=blue];" << std::endl;
-//
-//            myfile << "\t}" << std::endl;
-//            myfile << "}" << std::endl;
-//            myfile.close();
-
             analyseWatch.stop();
             STORM_PRINT(std::endl << "Time to check monotonicity based on the lattice: " << analyseWatch << "." << std::endl << std::endl);
+            outfile << analyseWatch << "; ";
             return varsMonotone;
         }
 
