@@ -2,6 +2,7 @@
 
 #include "storm-dft/settings/modules/FaultTreeSettings.h"
 #include "storm-dft/settings/modules/DftGspnSettings.h"
+#include "storm-conv/settings/modules/JaniExportSettings.h"
 #include "storm-conv/api/storm-conv.h"
 
 namespace storm {
@@ -81,7 +82,8 @@ namespace storm {
             // Export Jani to file
             storm::settings::modules::DftGspnSettings const& dftGspnSettings = storm::settings::getModule<storm::settings::modules::DftGspnSettings>();
             if (dftGspnSettings.isWriteToJaniSet()) {
-                storm::api::exportJaniToFile(*model, properties, dftGspnSettings.getWriteToJaniFilename());
+                auto const& jani = storm::settings::getModule<storm::settings::modules::JaniExportSettings>();
+                storm::api::exportJaniToFile(*model, properties, dftGspnSettings.getWriteToJaniFilename(), jani.isCompactJsonSet());
             }
 
             return model;
