@@ -115,6 +115,7 @@ namespace storm {
                 if(newState->isInvalid() || (nextBE->isTransient() && !newState->hasFailed(mDft.getTopLevelIndex()))) {
                     // Continue with next possible state
                     ++currentFailable;
+                    STORM_LOG_TRACE("State is ignored because " << (newState->isInvalid() ? "it is invalid" : "the transient fault is ignored"));
                     continue;
                 }
 
