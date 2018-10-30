@@ -22,6 +22,8 @@ namespace storm {
             addEdges(mainAutomaton, locId);
             model->addAutomaton(mainAutomaton);
             model->setStandardSystemComposition();
+            model->getModelFeatures().add(storm::jani::ModelFeature::DerivedOperators);
+            model->finalize();
             return model;
         }
 
