@@ -59,6 +59,8 @@ namespace storm {
 
             std::map<carl::Variable, std::pair<bool, bool>> checkOnSamples(std::shared_ptr<storm::models::sparse::Mdp<ValueType>> model, uint_fast64_t numberOfSamples);
 
+            std::pair<bool, bool> checkDerivative(ValueType derivative);
+
             std::map<storm::analysis::Lattice*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> extendLatticeWithAssumptions(storm::analysis::Lattice* lattice, storm::analysis::AssumptionMaker<ValueType>* assumptionMaker, uint_fast64_t val1, uint_fast64_t val2, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>> assumptions);
 
             std::shared_ptr<storm::models::ModelBase> model;
