@@ -273,12 +273,13 @@ namespace storm {
             std::string dirShort = maximal ? "Max" : "Min";
             std::string dirLong = maximal ? "maximal" : "minimal";
             storm::solver::OptimizationDirection optimizationDirection = maximal ? storm::solver::OptimizationDirection::Maximize : storm::solver::OptimizationDirection::Minimize;
+            std::set<storm::expressions::Variable> emptySet;
 
             // Build reachability property
             auto reachFormula = std::make_shared<storm::logic::ProbabilityOperatorFormula>(
                     std::make_shared<storm::logic::EventuallyFormula>(atomicFormula, storm::logic::FormulaContext::Probability),
                     storm::logic::OperatorInformation(optimizationDirection));
-            standardProperties.emplace_back(dirShort + "PrReach" + name, reachFormula, "The " + dirLong + " probability to eventually reach " + description + ".");
+            standardProperties.emplace_back(dirShort + "PrReach" + name, reachFormula, emptySet, "The " + dirLong + " probability to eventually reach " + description + ".");
 
             // Build time bounded reachability property
             // Add variable for time bound
@@ -292,7 +293,7 @@ namespace storm {
             auto reachTimeBoundFormula = std::make_shared<storm::logic::ProbabilityOperatorFormula>(
                     std::make_shared<storm::logic::BoundedUntilFormula>(trueFormula, atomicFormula, boost::none, tb, tbr),
                     storm::logic::OperatorInformation(optimizationDirection));
-            standardProperties.emplace_back(dirShort + "PrReach" + name + "TB", reachTimeBoundFormula, "The " + dirLong + " probability to reach " + description + " within 'TIME_BOUND' steps.");
+            standardProperties.emplace_back(dirShort + "PrReach" + name + "TB", reachTimeBoundFormula, emptySet, "The " + dirLong + " probability to reach " + description + " within 'TIME_BOUND' steps.");
 
             // Use complementary direction for expected time
             dirShort = maximal ? "Min" : "Max";
@@ -303,7 +304,7 @@ namespace storm {
             auto expTimeFormula = std::make_shared<storm::logic::TimeOperatorFormula>(
                     std::make_shared<storm::logic::EventuallyFormula>(atomicFormula, storm::logic::FormulaContext::Time),
                     storm::logic::OperatorInformation(optimizationDirection));
-            standardProperties.emplace_back(dirShort + "ExpTime" + name, expTimeFormula, "The " + dirLong + " expected time to reach " + description + ".");
+            standardProperties.emplace_back(dirShort + "ExpTime" + name, expTimeFormula, emptySet, "The " + dirLong + " expected time to reach " + description + ".");
             return standardProperties;
         }
 
