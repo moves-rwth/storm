@@ -97,7 +97,7 @@ $ sudo apt-get install git cmake libboost-all-dev libcln-dev libgmp-dev libginac
 
 - Recommended
 ``` console
-$ sudo apt-get install libz3-dev libxerces-c-dev
+$ sudo apt-get install libz3-dev z3 libxerces-c-dev
 ```
 
 ### <i class="icon-ubuntu"></i> Ubuntu 16.10 "Yakkety Yak"
@@ -109,5 +109,5 @@ $ sudo apt-get install git cmake libboost-all-dev libcln-dev libgmp-dev libginac
 
 - Recommended:
 ``` console
-$ sudo apt-get install libz3-dev libxerces-c-dev
+$ sudo apt-get install libz3-dev z3 libxerces-c-dev
 ```
