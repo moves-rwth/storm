@@ -59,33 +59,42 @@ namespace storm {
         }
         
         InternalBdd<DdType::CUDD> InternalDdManager<DdType::CUDD>::getBddEncodingLessOrEqualThan(uint64_t bound, InternalBdd<DdType::CUDD> const& cube, uint64_t numberOfDdVariables) const {
-            return InternalBdd<DdType::CUDD>(this, cudd::BDD(cuddManager, this->getBddEncodingLessOrEqualThanRec(0, (1ull << numberOfDdVariables) - 1, bound, cube.getCuddDdNode(), numberOfDdVariables)));
-        }
-        
-        DdNodePtr InternalDdManager<DdType::CUDD>::getBddEncodingLessOrEqualThanRec(uint64_t minimalValue, uint64_t maximalValue, uint64_t bound, DdNodePtr cube, uint64_t remainingDdVariables) const {
-            if (maximalValue <= bound) {
-                return Cudd_ReadOne(cuddManager.getManager());
-            } else if (minimalValue > bound) {
-                return Cudd_ReadLogicZero(cuddManager.getManager());
-            }
-            
-            STORM_LOG_ASSERT(remainingDdVariables > 0, "Expected more remaining DD variables.");
-            STORM_LOG_ASSERT(!Cudd_IsConstant(cube), "Expected non-constant cube.");
-            uint64_t newRemainingDdVariables = remainingDdVariables - 1;
-            DdNodePtr elseResult = getBddEncodingLessOrEqualThanRec(minimalValue, maximalValue & ~(1ull << newRemainingDdVariables), bound, Cudd_T(cube), newRemainingDdVariables);
-            Cudd_Ref(elseResult);
-            DdNodePtr thenResult = getBddEncodingLessOrEqualThanRec(minimalValue | (1ull << newRemainingDdVariables), maximalValue, bound, Cudd_T(cube), newRemainingDdVariables);
-            Cudd_Ref(thenResult);
-            STORM_LOG_ASSERT(thenResult != elseResult, "Expected different results.");
-            
-            bool complemented = Cudd_IsComplement(thenResult);
-            DdNodePtr result = cuddUniqueInter(cuddManager.getManager(), Cudd_NodeReadIndex(cube), Cudd_Regular(thenResult), complemented ? Cudd_Not(elseResult) : elseResult);
-            if (complemented) {
-                result = Cudd_Not(result);
-            }
-            Cudd_Deref(thenResult);
-            Cudd_Deref(elseResult);
-            return result;
+
+            struct Recursion {
+                Recursion(cudd::Cudd const& cuddManager, uint64_t bound) : cuddManager(cuddManager), bound(bound) {}
+
+                DdNodePtr rec(uint64_t minimalValue, uint64_t maximalValue, DdNodePtr cube, uint64_t remainingDdVariables) const {
+                    if (maximalValue <= bound) {
+                        return Cudd_ReadOne(cuddManager.getManager());
+                    } else if (minimalValue > bound) {
+                        return Cudd_ReadLogicZero(cuddManager.getManager());
+                    }
+
+                    STORM_LOG_ASSERT(remainingDdVariables > 0, "Expected more remaining DD variables.");
+                    STORM_LOG_ASSERT(!Cudd_IsConstant(cube), "Expected non-constant cube.");
+                    uint64_t newRemainingDdVariables = remainingDdVariables - 1;
+                    DdNodePtr elseResult = rec(minimalValue, maximalValue & ~(1ull << newRemainingDdVariables), Cudd_T(cube), newRemainingDdVariables);
+                    Cudd_Ref(elseResult);
+                    DdNodePtr thenResult = rec(minimalValue | (1ull << newRemainingDdVariables), maximalValue, Cudd_T(cube), newRemainingDdVariables);
+                    Cudd_Ref(thenResult);
+                    STORM_LOG_ASSERT(thenResult != elseResult, "Expected different results.");
+
+                    bool complemented = Cudd_IsComplement(thenResult);
+                    DdNodePtr result = cuddUniqueInter(cuddManager.getManager(), Cudd_NodeReadIndex(cube), Cudd_Regular(thenResult), complemented ? Cudd_Not(elseResult) : elseResult);
+                    if (complemented) {
+                        result = Cudd_Not(result);
+                    }
+                    Cudd_Deref(thenResult);
+                    Cudd_Deref(elseResult);
+                    return result;
+                }
+
+                cudd::Cudd const& cuddManager;
+                uint64_t bound;
+            };
+
+            Recursion rec(cuddManager, bound);
+            return InternalBdd<DdType::CUDD>(this, cudd::BDD(cuddManager, rec.rec(0, (1ull << numberOfDdVariables) - 1, cube.getCuddDdNode(), numberOfDdVariables)));
         }
         
         template<typename ValueType>

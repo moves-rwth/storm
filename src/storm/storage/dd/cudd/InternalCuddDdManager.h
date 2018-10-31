@@ -177,12 +177,9 @@ namespace storm {
             cudd::Cudd const& getCuddManager() const;
 
         private:
-            // Helper function to create the BDD whose encodings are below a given bound.
-            DdNodePtr getBddEncodingLessOrEqualThanRec(uint64_t minimalValue, uint64_t maximalValue, uint64_t bound, DdNodePtr cube, uint64_t remainingDdVariables) const;
-
             // Communicate to CUDD whether currently dynamic reordering is allowed.
             void setDynamicReorderingState();
-            
+
             // The manager responsible for the DDs created/modified with this DdManager.
             cudd::Cudd cuddManager;
             
