@@ -61,26 +61,60 @@ namespace storm {
         InternalBdd<DdType::CUDD> InternalDdManager<DdType::CUDD>::getBddEncodingLessOrEqualThan(uint64_t bound, InternalBdd<DdType::CUDD> const& cube, uint64_t numberOfDdVariables) const {
 
             struct Recursion {
-                Recursion(cudd::Cudd const& cuddManager, uint64_t bound) : cuddManager(cuddManager), bound(bound) {}
+                Recursion(cudd::Cudd const& cuddManager, uint64_t bound, DdNodePtr cube, uint64_t numberOfDdVariables) : cuddManager(cuddManager), bound(bound) {
+                    // As initialisation, we first obtain the index and the level (i.e., the position in the current variable order)
+                    // for each variable in the cube. We assume here that the highest bit in the encoding corresponds to the
+                    // variable with the lowest index, etc
+                    std::map<uint64_t, uint64_t> indicesAndLevels;
+                    DdNodePtr cur = cube;
+                    while (!Cudd_IsConstant(cur)) {
+                        uint64_t index = Cudd_NodeReadIndex(cur);
+                        uint64_t level = Cudd_ReadPerm(cuddManager.getManager(), index);
+                        indicesAndLevels[index]=level;
+                        cur = Cudd_T(cur);
+                    }
+                    STORM_LOG_ASSERT(indicesAndLevels.size() == numberOfDdVariables, "Fewer/more variables in cube than expected.");
 
-                DdNodePtr rec(uint64_t minimalValue, uint64_t maximalValue, DdNodePtr cube, uint64_t remainingDdVariables) const {
+                    // now, we are iterating over the indicesAndLevels map
+                    // in increasing index order and store the the corresponding
+                    // bit (mask) in the levelToBitMap, which is indexed by the level
+                    uint64_t bit = 1ull << (numberOfDdVariables-1);
+                    for (auto& element : indicesAndLevels) {
+                        STORM_LOG_ASSERT(bit != 0, "More variables in cube than expected.");
+                        // ordered with ascending index, lower index = more significant bit
+                        levelToBit[element.second] = bit;
+                        bit = bit >> 1;
+                    }
+                }
+
+                DdNodePtr rec(uint64_t minimalValue, uint64_t maximalValue, DdNodePtr cube) const {
                     if (maximalValue <= bound) {
                         return Cudd_ReadOne(cuddManager.getManager());
                     } else if (minimalValue > bound) {
                         return Cudd_ReadLogicZero(cuddManager.getManager());
                     }
 
-                    STORM_LOG_ASSERT(remainingDdVariables > 0, "Expected more remaining DD variables.");
                     STORM_LOG_ASSERT(!Cudd_IsConstant(cube), "Expected non-constant cube.");
-                    uint64_t newRemainingDdVariables = remainingDdVariables - 1;
-                    DdNodePtr elseResult = rec(minimalValue, maximalValue & ~(1ull << newRemainingDdVariables), Cudd_T(cube), newRemainingDdVariables);
+                    // get index and current level in the ordering
+                    uint64_t index = Cudd_NodeReadIndex(cube);
+                    uint64_t level = Cudd_ReadPerm(cuddManager.getManager(), index);
+                    // get the corresponding bit mask
+                    uint64_t bit = levelToBit.at(level);
+
+                    // for else, we have to delete the bit from maximalValue
+                    // and recurse to the next variable in the cube
+                    DdNodePtr elseResult = rec(minimalValue, maximalValue & ~bit, Cudd_T(cube));
                     Cudd_Ref(elseResult);
-                    DdNodePtr thenResult = rec(minimalValue | (1ull << newRemainingDdVariables), maximalValue, Cudd_T(cube), newRemainingDdVariables);
+
+                    // for then, we have to set the bit in minimalValue
+                    // and recurse to the next variable in the cube
+                    DdNodePtr thenResult = rec(minimalValue | bit, maximalValue, Cudd_T(cube));
                     Cudd_Ref(thenResult);
                     STORM_LOG_ASSERT(thenResult != elseResult, "Expected different results.");
 
+                    // construct the result node for this level using cuddUniqueInter
                     bool complemented = Cudd_IsComplement(thenResult);
-                    DdNodePtr result = cuddUniqueInter(cuddManager.getManager(), Cudd_NodeReadIndex(cube), Cudd_Regular(thenResult), complemented ? Cudd_Not(elseResult) : elseResult);
+                    DdNodePtr result = cuddUniqueInter(cuddManager.getManager(), index, Cudd_Regular(thenResult), complemented ? Cudd_Not(elseResult) : elseResult);
                     if (complemented) {
                         result = Cudd_Not(result);
                     }
@@ -90,11 +124,17 @@ namespace storm {
                 }
 
                 cudd::Cudd const& cuddManager;
+                std::map<uint64_t, uint64_t> levelToBit;
                 uint64_t bound;
             };
 
-            Recursion rec(cuddManager, bound);
-            return InternalBdd<DdType::CUDD>(this, cudd::BDD(cuddManager, rec.rec(0, (1ull << numberOfDdVariables) - 1, cube.getCuddDdNode(), numberOfDdVariables)));
+            // inhibit reordering until end of function, so that we don't confuse the variable levels
+            auto inhibitReorder = getDynamicReorderingInhibitor();
+
+            // setup recursion
+            Recursion rec(cuddManager, bound, cube.getCuddDdNode(), numberOfDdVariables);
+            // do recursion and return result as a BDD
+            return InternalBdd<DdType::CUDD>(this, cudd::BDD(cuddManager, rec.rec(0, (1ull << numberOfDdVariables) - 1, cube.getCuddDdNode())));
         }
         
         template<typename ValueType>
