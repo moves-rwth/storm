@@ -431,7 +431,12 @@ namespace storm {
         void DdManager<LibraryType>::triggerReordering() {
             internalDdManager.triggerReordering();
         }
-        
+
+        template<DdType LibraryType>
+        std::unique_ptr<typename DdManager<LibraryType>::DynamicReorderingInhibitor> DdManager<LibraryType>::getDynamicReorderingInhibitor() {
+             return internalDdManager.getDynamicReorderingInhibitor();
+        }
+      
         template<DdType LibraryType>
         std::set<storm::expressions::Variable> DdManager<LibraryType>::getAllMetaVariables() const {
             std::set<storm::expressions::Variable> result;

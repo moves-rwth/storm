@@ -30,7 +30,9 @@ namespace storm {
 
             template<DdType LibraryTypePrime, typename ValueType>
             friend class AddIterator;
-            
+
+            typedef typename InternalDdManager<LibraryType>::DynamicReorderingInhibitor DynamicReorderingInhibitor;
+
             /*!
              * Creates an empty manager without any meta variables.
              */
@@ -271,6 +273,12 @@ namespace storm {
             void triggerReordering();
             
             /*!
+             * Requests an object that inhibits dynamic reordering as long as it is
+             * in scope.
+             */
+            std::unique_ptr<DynamicReorderingInhibitor> getDynamicReorderingInhibitor();
+            
+            /*!
              * Retrieves the meta variable with the given name if it exists.
              *
              * @param variable The expression variable associated with the meta variable.
@@ -385,7 +393,7 @@ namespace storm {
             
             // The manager responsible for the variables.
             std::shared_ptr<storm::expressions::ExpressionManager> manager;
-        };
+	};
     }
 }
 

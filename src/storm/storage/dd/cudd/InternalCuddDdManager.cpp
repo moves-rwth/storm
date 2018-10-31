@@ -4,11 +4,12 @@
 #include "storm/settings/modules/CuddSettings.h"
 
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/InvalidOperationException.h"
 
 namespace storm {
     namespace dd {
         
-        InternalDdManager<DdType::CUDD>::InternalDdManager() : cuddManager(), reorderingTechnique(CUDD_REORDER_NONE), numberOfDdVariables(0) {
+        InternalDdManager<DdType::CUDD>::InternalDdManager() : cuddManager(), reorderingTechnique(CUDD_REORDER_NONE), numberOfDdVariables(0), allowReorder(false), reorderingInhibitionCounter(0) {
             this->cuddManager.SetMaxMemory(static_cast<unsigned long>(storm::settings::getModule<storm::settings::modules::CuddSettings>().getMaximalMemory() * 1024ul * 1024ul));
             
             auto const& settings = storm::settings::getModule<storm::settings::modules::CuddSettings>();
@@ -136,7 +137,12 @@ namespace storm {
         }
         
         void InternalDdManager<DdType::CUDD>::allowDynamicReordering(bool value) {
-            if (value) {
+            allowReorder = value;
+            setDynamicReorderingState();
+        }
+
+        void InternalDdManager<DdType::CUDD>::setDynamicReorderingState() {
+            if (allowReorder && reorderingInhibitionCounter == 0) {
                 this->getCuddManager().AutodynEnable(this->reorderingTechnique);
             } else {
                 this->getCuddManager().AutodynDisable();
@@ -144,13 +150,17 @@ namespace storm {
         }
         
         bool InternalDdManager<DdType::CUDD>::isDynamicReorderingAllowed() const {
-            Cudd_ReorderingType type;
-            return this->getCuddManager().ReorderingStatus(&type);
+            return allowReorder;
         }
         
         void InternalDdManager<DdType::CUDD>::triggerReordering() {
             this->getCuddManager().ReduceHeap(this->reorderingTechnique, 0);
         }
+
+        std::unique_ptr<InternalDdManager<DdType::CUDD>::DynamicReorderingInhibitor> InternalDdManager<DdType::CUDD>::getDynamicReorderingInhibitor() const {
+            return std::make_unique<DynamicReorderingInhibitor>(const_cast<InternalDdManager&>(*this));
+        }
+
         
         void InternalDdManager<DdType::CUDD>::debugCheck() const {
             this->getCuddManager().CheckKeys();
@@ -168,6 +178,24 @@ namespace storm {
         uint_fast64_t InternalDdManager<DdType::CUDD>::getNumberOfDdVariables() const {
             return numberOfDdVariables;
         }
+        
+        InternalDdManager<DdType::CUDD>::DynamicReorderingInhibitor::DynamicReorderingInhibitor(InternalDdManager<DdType::CUDD>& manager) : manager(manager) {
+            manager.reorderingInhibitionCounter++;
+            if (manager.allowReorder && manager.reorderingInhibitionCounter == 1) {
+                // edge from allow reorder to inhibit
+                manager.setDynamicReorderingState();
+            }
+        }
+
+        InternalDdManager<DdType::CUDD>::DynamicReorderingInhibitor::~DynamicReorderingInhibitor() {
+            STORM_LOG_THROW(manager.reorderingInhibitionCounter > 0, storm::exceptions::InvalidOperationException, "Invalid value of dynamic reordering inhibition counter");
+            --manager.reorderingInhibitionCounter;
+            if (manager.allowReorder && manager.reorderingInhibitionCounter == 0) {
+                // edge from inhibit reorder to allow
+                manager.setDynamicReorderingState();
+            }
+        }
+
 
         template InternalAdd<DdType::CUDD, double> InternalDdManager<DdType::CUDD>::getAddOne() const;
         template InternalAdd<DdType::CUDD, uint_fast64_t> InternalDdManager<DdType::CUDD>::getAddOne() const;

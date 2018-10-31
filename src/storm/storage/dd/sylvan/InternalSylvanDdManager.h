@@ -27,7 +27,12 @@ namespace storm {
             
             template<DdType LibraryType, typename ValueType>
             friend class InternalAdd;
-            
+
+            // helper class to inhibit dynamic reordering as long as the object is in scope
+            class DynamicReorderingInhibitor {
+                // empty, nothing to do (no reordering in sylvan at the moment)
+            };
+	    
             /*!
              * Creates a new internal manager for Sylvan DDs.
              */
@@ -126,6 +131,8 @@ namespace storm {
              * Triggers a reordering of the DDs managed by this manager.
              */
             void triggerReordering();
+
+            std::unique_ptr<DynamicReorderingInhibitor> getDynamicReorderingInhibitor() const;
             
             /*!
              * Performs a debug check if available.

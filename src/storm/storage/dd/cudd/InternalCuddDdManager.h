@@ -27,6 +27,24 @@ namespace storm {
             template<DdType LibraryType, typename ValueType>
             friend class InternalAdd;
 
+            // helper class to inhibit dynamic reordering as long as the object is in scope
+            // increments reorderingInhibitionCounter on construction for the given manager,
+            // decrements on destruction
+            class DynamicReorderingInhibitor {
+            public:
+                DynamicReorderingInhibitor(InternalDdManager<DdType::CUDD>& manager);
+                ~DynamicReorderingInhibitor();
+
+                // inhibit implicit copy, assignment and move
+                DynamicReorderingInhibitor(DynamicReorderingInhibitor const&) = delete;
+                DynamicReorderingInhibitor(DynamicReorderingInhibitor&&) = delete;
+                DynamicReorderingInhibitor& operator=(DynamicReorderingInhibitor const&) = delete;
+
+            private:
+                InternalDdManager<DdType::CUDD>& manager;
+            };
+
+	    
             /*!
              * Creates a new internal manager for CUDD DDs.
              */
@@ -125,6 +143,12 @@ namespace storm {
              * Triggers a reordering of the DDs managed by this manager.
              */
             void triggerReordering();
+
+            /*!
+             * Requests an object that inhibits dynamic reordering as long as it is
+             * in scope.
+             */
+            std::unique_ptr<DynamicReorderingInhibitor> getDynamicReorderingInhibitor() const;
             
             /*!
              * Performs a debug check if available.
@@ -155,6 +179,9 @@ namespace storm {
         private:
             // Helper function to create the BDD whose encodings are below a given bound.
             DdNodePtr getBddEncodingLessOrEqualThanRec(uint64_t minimalValue, uint64_t maximalValue, uint64_t bound, DdNodePtr cube, uint64_t remainingDdVariables) const;
+
+            // Communicate to CUDD whether currently dynamic reordering is allowed.
+            void setDynamicReorderingState();
             
             // The manager responsible for the DDs created/modified with this DdManager.
             cudd::Cudd cuddManager;
@@ -164,6 +191,12 @@ namespace storm {
             
             // Keeps track of the number of registered DD variables.
             uint_fast64_t numberOfDdVariables;
+
+            // Flag: Is reordering allowed in principle?
+            bool allowReorder;
+
+            // Counter to inhibit reordering: 0 = may occur, >0 = one or more DynamicReorderingInhibitors are active
+            uint32_t reorderingInhibitionCounter;
         };        
     }
 }

@@ -242,16 +242,24 @@ namespace storm {
             return false;
         }
         
-        void InternalDdManager<DdType::Sylvan>::allowDynamicReordering(bool) {
-            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation is not supported by sylvan.");
+        void InternalDdManager<DdType::Sylvan>::allowDynamicReordering(bool value) {
+            if (value)
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Dynamic reordering is not supported by sylvan.");
+            // nothing to do for 'false', as reordering is not supported
+            return;
         }
         
         bool InternalDdManager<DdType::Sylvan>::isDynamicReorderingAllowed() const {
-            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation is not supported by sylvan.");
+            return false;
         }
         
         void InternalDdManager<DdType::Sylvan>::triggerReordering() {
-            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation is not supported by sylvan.");
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Reordering is not supported by sylvan.");
+        }
+
+        std::unique_ptr<InternalDdManager<DdType::Sylvan>::DynamicReorderingInhibitor> InternalDdManager<DdType::Sylvan>::getDynamicReorderingInhibitor() const {
+            // return the no-op inhibitor
+            return std::make_unique<DynamicReorderingInhibitor>();
         }
         
         void InternalDdManager<DdType::Sylvan>::debugCheck() const {
