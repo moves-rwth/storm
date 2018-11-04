@@ -144,7 +144,7 @@ namespace storm {
                             ValueType probability = valueParser.parseValue(type.substr(5));
                             success = builder.addDepElement(name, childNames, probability);
                         } else if (type.find("=") != std::string::npos) {
-                            success = parseBasicElement(tokens, builder, valueParser);
+                            success = parseBasicElement(name, line, builder, valueParser);
                         } else {
                             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Type name: " << type << " in line " << lineNo << " not recognized.");
                             success = false;
@@ -168,52 +168,112 @@ namespace storm {
         }
 
         template<typename ValueType>
-        bool DFTGalileoParser<ValueType>::parseBasicElement(std::vector<std::string> const& tokens, storm::builder::DFTBuilder<ValueType>& builder, ValueParser<ValueType>& valueParser) {
+        std::pair<bool, ValueType> DFTGalileoParser<ValueType>::parseValue(std::string name, std::string& line, ValueParser<ValueType>& valueParser) {
+            // Build regex for: name=(value)
+            std::regex lambdaRegex(name + "\\s*=\\s*([^\\s]*)");
+            std::smatch match;
+            if (std::regex_search(line, match, lambdaRegex)) {
+                std::string value = match.str(1);
+                // Remove matched part
+                line = std::regex_replace(line, lambdaRegex, "");
+                return std::make_pair(true, valueParser.parseValue(value));
+            } else {
+                // No match found
+                return std::make_pair(false, storm::utility::zero<ValueType>());
+            }
+        }
+
+        template<typename ValueType>
+        std::pair<bool, unsigned> DFTGalileoParser<ValueType>::parseNumber(std::string name, std::string& line) {
+            // Build regex for: name=(number)
+            std::regex lambdaRegex(name + "\\s*=\\s*([[:digit:]]+)");
+            std::smatch match;
+            if (std::regex_search(line, match, lambdaRegex)) {
+                std::string value = match.str(1);
+                // Remove matched part
+                line = std::regex_replace(line, lambdaRegex, "");
+                return std::make_pair(true, NumberParser<unsigned>::parse(value));
+            } else {
+                // No match found
+                return std::make_pair(false, 0);
+            }
+        }
+
+        template<typename ValueType>
+        bool DFTGalileoParser<ValueType>::parseBasicElement(std::string const& name, std::string const& input, storm::builder::DFTBuilder<ValueType>& builder, ValueParser<ValueType>& valueParser) {
             // Default values
             Distribution distribution = Distribution::None;
             ValueType firstValDistribution = storm::utility::zero<ValueType>();
             ValueType secondValDistribution = storm::utility::zero<ValueType>();
             ValueType dormancyFactor = storm::utility::one<ValueType>();
             size_t replication = 1;
+            // Remove name from input
+            std::regex regexName("\"?" + name + "\"?");
+            std::string line = std::regex_replace(input, regexName, "");
 
             // Parse properties and determine distribution
-            for (size_t i = 1; i < tokens.size(); ++i) {
-                std::string token = tokens[i];
-                if (boost::starts_with(token, "prob=")) {
-                    STORM_LOG_THROW(distribution == Distribution::None, storm::exceptions::WrongFormatException, "A different distribution was already defined for this basic element.");
-                    firstValDistribution = valueParser.parseValue(token.substr(5));
-                    distribution = Distribution::Constant;
-                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Constant distribution is not supported.");
-                } else if (boost::starts_with(token, "lambda=")) {
-                    STORM_LOG_THROW(distribution == Distribution::None, storm::exceptions::WrongFormatException, "A different distribution was already defined for this basic element.");
-                    firstValDistribution = valueParser.parseValue(token.substr(7));
-                    distribution = Distribution::Exponential;
-                } else if (boost::starts_with(token, "rate=")) {
-                    STORM_LOG_THROW(distribution == Distribution::None || distribution == Distribution::Weibull, storm::exceptions::WrongFormatException, "A different distribution was already defined for this basic element.");
-                    firstValDistribution = valueParser.parseValue(token.substr(5));
-                    distribution = Distribution::Weibull;
-                } else if (boost::starts_with(token, "shape=")) {
-                    STORM_LOG_THROW(distribution == Distribution::None || distribution == Distribution::Weibull, storm::exceptions::WrongFormatException, "A different distribution was already defined for this basic element.");
-                    secondValDistribution = valueParser.parseValue(token.substr(6));
-                    distribution = Distribution::Weibull;
-                } else if (boost::starts_with(token, "mean=")) {
-                    STORM_LOG_THROW(distribution == Distribution::None || distribution == Distribution::LogNormal, storm::exceptions::WrongFormatException, "A different distribution was already defined for this basic element.");
-                    firstValDistribution = valueParser.parseValue(token.substr(5));
-                    distribution = Distribution::LogNormal;
-                } else if (boost::starts_with(token, "stddev=")) {
-                    STORM_LOG_THROW(distribution == Distribution::None || distribution == Distribution::LogNormal, storm::exceptions::WrongFormatException, "A different distribution was already defined for this basic element.");
-                    secondValDistribution = valueParser.parseValue(token.substr(7));
-                    distribution = Distribution::LogNormal;
-                } else if (boost::starts_with(token, "cov=")) {
-                    STORM_LOG_WARN("Coverage is not supported and will be ignored.");
-                } else if (boost::starts_with(token, "res=")) {
-                    STORM_LOG_WARN("Restoration is not supported and will be ignored.");
-                } else if (boost::starts_with(token, "repl=")) {
-                    replication = NumberParser<unsigned>::parse(token.substr(5));
-                    STORM_LOG_THROW(replication == 1, storm::exceptions::NotSupportedException, "Replication > 1 is not supported.");
-                } else if (boost::starts_with(token, "dorm=")) {
-                    dormancyFactor = valueParser.parseValue(token.substr(5));
-                }
+            // Constant distribution
+            std::pair<bool, ValueType> result = parseValue("prob", line, valueParser);
+            if (result.first) {
+                STORM_LOG_THROW(distribution == Distribution::None, storm::exceptions::WrongFormatException, "A different distribution was already defined for this basic element.");
+                firstValDistribution = result.second;
+                distribution = Distribution::Constant;
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Constant distribution is not supported.");
+            }
+            // Exponential distribution
+            result = parseValue("lambda", line, valueParser);
+            if (result.first) {
+                STORM_LOG_THROW(distribution == Distribution::None, storm::exceptions::WrongFormatException, "A different distribution was already defined for this basic element.");
+                firstValDistribution = result.second;
+                distribution = Distribution::Exponential;
+            }
+            // Weibull distribution
+            result = parseValue("rate", line, valueParser);
+            if (result.first) {
+                STORM_LOG_THROW(distribution == Distribution::None || distribution == Distribution::Weibull, storm::exceptions::WrongFormatException, "A different distribution was already defined for this basic element.");
+                firstValDistribution = result.second;
+                distribution = Distribution::Weibull;
+            }
+            result = parseValue("shape", line, valueParser);
+            if (result.first) {
+                STORM_LOG_THROW(distribution == Distribution::None || distribution == Distribution::Weibull, storm::exceptions::WrongFormatException, "A different distribution was already defined for this basic element.");
+                secondValDistribution = result.second;
+                distribution = Distribution::Weibull;
+            }
+            // Lognormal distribution
+            result = parseValue("mean", line, valueParser);
+            if (result.first) {
+                STORM_LOG_THROW(distribution == Distribution::None || distribution == Distribution::LogNormal, storm::exceptions::WrongFormatException, "A different distribution was already defined for this basic element.");
+                firstValDistribution = result.second;
+                distribution = Distribution::LogNormal;
+            }
+            result = parseValue("stddev", line, valueParser);
+            if (result.first) {
+                STORM_LOG_THROW(distribution == Distribution::None || distribution == Distribution::LogNormal, storm::exceptions::WrongFormatException, "A different distribution was already defined for this basic element.");
+                secondValDistribution = result.second;
+                distribution = Distribution::LogNormal;
+            }
+            // Additional arguments
+            result = parseValue("cov", line, valueParser);
+            if (result.first) {
+                STORM_LOG_WARN("Coverage is not supported and will be ignored.");
+            }
+            result = parseValue("res", line, valueParser);
+            if (result.first) {
+                STORM_LOG_WARN("Restoration is not supported and will be ignored.");
+            }
+            std::pair<bool, unsigned> resultNum = parseNumber("repl", line);
+            if (result.first) {
+                replication = resultNum.second;
+                STORM_LOG_THROW(replication == 1, storm::exceptions::NotSupportedException, "Replication > 1 is not supported.");
+            }
+            result = parseValue("dorm", line, valueParser);
+            if (result.first) {
+                dormancyFactor = result.second;
+            }
+            boost::trim(line);
+            if (line != "") {
+                STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Unknown arguments: " << line << ".");
             }
 
             switch (distribution) {
@@ -221,7 +281,7 @@ namespace storm {
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Constant distribution is not supported.");
                     break;
                 case Exponential:
-                    return builder.addBasicElement(parseName(tokens[0]), firstValDistribution, dormancyFactor, false); // TODO set transient BEs
+                    return builder.addBasicElement(parseName(name), firstValDistribution, dormancyFactor, false); // TODO set transient BEs
                     break;
                 case Weibull:
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Weibull distribution is not supported.");
