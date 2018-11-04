@@ -46,113 +46,115 @@ namespace storm {
             size_t lineNo = 0;
             std::string toplevelId = "";
             bool comment = false; // Indicates whether the current line is part of a multiline comment
-
-            while (std::getline(file, line)) {
-                ++lineNo;
-                // First consider comments
-                if (comment) {
-                    // Line is part of multiline comment -> search for end of this comment
-                    size_t commentEnd = line.find("*/");
-                    if (commentEnd == std::string::npos) {
-                        continue;
-                    } else {
+            try {
+                while (std::getline(file, line)) {
+                    ++lineNo;
+                    // First consider comments
+                    if (comment) {
+                        // Line is part of multiline comment -> search for end of this comment
+                        size_t commentEnd = line.find("*/");
+                        if (commentEnd == std::string::npos) {
+                            continue;
+                        } else {
+                            // Remove comment
+                            line = line.substr(commentEnd + 2);
+                            comment = false;
+                        }
+                    }
+                    // Remove comments
+                    line = std::regex_replace(line, commentRegex, "");
+                    // Check if multiline comment starts
+                    size_t commentStart = line.find("/*");
+                    if (commentStart != std::string::npos) {
                         // Remove comment
-                        line = line.substr(commentEnd + 2);
-                        comment = false;
+                        line = line.substr(0, commentStart);
+                        comment = true;
                     }
-                }
-                // Remove comments
-                line = std::regex_replace(line, commentRegex, "");
-                // Check if multiline comment starts
-                size_t commentStart = line.find("/*");
-                if (commentStart != std::string::npos) {
-                    // Remove comment
-                    line = line.substr(0, commentStart);
-                    comment = true;
-                }
 
-                boost::trim(line);
-                if (line.empty()) {
-                    // Empty line
-                    continue;
-                }
-
-                // Remove semicolon
-                STORM_LOG_THROW(line.back() == ';', storm::exceptions::WrongFormatException, "Semicolon expected at the end of line " << lineNo << ".");
-                line.pop_back();
-
-                // Split line into tokens
-                boost::trim(line);
-                std::vector<std::string> tokens;
-                boost::split(tokens, line, boost::is_any_of(" \t"), boost::token_compress_on);
-
-                if (tokens[0] == "toplevel") {
-                    // Top level indicator
-                    STORM_LOG_THROW(toplevelId == "", storm::exceptions::WrongFormatException, "Toplevel element already defined.");
-                    STORM_LOG_THROW(tokens.size() == 2, storm::exceptions::WrongFormatException, "Expected element id after 'toplevel' in line " << lineNo << ".");
-                    toplevelId = parseName(tokens[1]);
-                } else if (tokens[0] == "param") {
-                    // Parameters
-                    STORM_LOG_THROW(tokens.size() == 2, storm::exceptions::WrongFormatException, "Expected parameter name after 'param' in line " << lineNo << ".");
-                    STORM_LOG_THROW((std::is_same<ValueType, storm::RationalFunction>::value), storm::exceptions::NotSupportedException, "Parameters only allowed when using rational functions.");
-                    valueParser.addParameter(parseName(tokens[1]));
-                } else {
-                    // DFT element
-                    std::string name = parseName(tokens[0]);
-
-                    std::vector<std::string> childNames;
-                    for(unsigned i = 2; i < tokens.size(); ++i) {
-                        childNames.push_back(parseName(tokens[i]));
+                    boost::trim(line);
+                    if (line.empty()) {
+                        // Empty line
+                        continue;
                     }
-                    bool success = true;
 
-                    // Add element according to type
-                    std::string type = tokens[1];
-                    if (type == "and") {
-                        success = builder.addAndElement(name, childNames);
-                    } else if (type == "or") {
-                        success = builder.addOrElement(name, childNames);
-                    } else if (boost::starts_with(type, "vot")) {
-                        unsigned threshold = NumberParser<unsigned>::parse(type.substr(3));
-                        success = builder.addVotElement(name, threshold, childNames);
-                    } else if (type.find("of") != std::string::npos) {
-                        size_t pos = type.find("of");
-                        unsigned threshold = NumberParser<unsigned>::parse(type.substr(0, pos));
-                        unsigned count = NumberParser<unsigned>::parse(type.substr(pos + 2));
-                        STORM_LOG_THROW(count == childNames.size(), storm::exceptions::WrongFormatException, "Voting gate number " << count << " does not correspond to number of children " << childNames.size() << "in line " << lineNo << ".");
-                        success = builder.addVotElement(name, threshold, childNames);
-                    } else if (type == "pand") {
-                        success = builder.addPandElement(name, childNames, defaultInclusive);
-                    } else if (type == "pand-inc") {
-                        success = builder.addPandElement(name, childNames, true);
-                    } else if (type == "pand-ex") {
-                        success = builder.addPandElement(name, childNames, false);
-                    } else if (type == "por") {
-                        success = builder.addPorElement(name, childNames, defaultInclusive);
-                    } else if (type == "por-ex") {
-                        success = builder.addPorElement(name, childNames, false);
-                    } else if (type == "por-inc") {
-                        success = builder.addPorElement(name, childNames, true);
-                    } else if (type == "wsp" || type == "csp" || type == "hsp") {
-                        success = builder.addSpareElement(name, childNames);
-                    } else if (type == "seq") {
-                        success = builder.addSequenceEnforcer(name, childNames);
-                    } else if (type == "fdep") {
-                        STORM_LOG_THROW(childNames.size() >= 2, storm::exceptions::WrongFormatException, "FDEP gate needs at least two children in line " << lineNo << ".");
-                        success = builder.addDepElement(name, childNames, storm::utility::one<ValueType>());
-                    } else if (boost::starts_with(type, "pdep=")) {
-                        ValueType probability = valueParser.parseValue(type.substr(5));
-                        success = builder.addDepElement(name, childNames, probability);
-                    } else if (type.find("=") != std::string::npos) {
-                        success = parseBasicElement(tokens, builder, valueParser);
+                    // Remove semicolon
+                    STORM_LOG_THROW(line.back() == ';', storm::exceptions::WrongFormatException, "Semicolon expected at the end of line " << lineNo << ".");
+                    line.pop_back();
+
+                    // Split line into tokens
+                    boost::trim(line);
+                    std::vector<std::string> tokens;
+                    boost::split(tokens, line, boost::is_any_of(" \t"), boost::token_compress_on);
+
+                    if (tokens[0] == "toplevel") {
+                        // Top level indicator
+                        STORM_LOG_THROW(toplevelId == "", storm::exceptions::WrongFormatException, "Toplevel element already defined.");
+                        STORM_LOG_THROW(tokens.size() == 2, storm::exceptions::WrongFormatException, "Expected element id after 'toplevel' in line " << lineNo << ".");
+                        toplevelId = parseName(tokens[1]);
+                    } else if (tokens[0] == "param") {
+                        // Parameters
+                        STORM_LOG_THROW(tokens.size() == 2, storm::exceptions::WrongFormatException, "Expected parameter name after 'param' in line " << lineNo << ".");
+                        STORM_LOG_THROW((std::is_same<ValueType, storm::RationalFunction>::value), storm::exceptions::NotSupportedException, "Parameters only allowed when using rational functions.");
+                        valueParser.addParameter(parseName(tokens[1]));
                     } else {
-                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Type name: " << type << " in line " << lineNo << " not recognized.");
-                        success = false;
-                    }
-                    STORM_LOG_THROW(success, storm::exceptions::FileIoException, "Error while adding element '" << name << "' in line " << lineNo << ".");
-                }
-            }
+                        // DFT element
+                        std::string name = parseName(tokens[0]);
 
+                        std::vector<std::string> childNames;
+                        for(unsigned i = 2; i < tokens.size(); ++i) {
+                            childNames.push_back(parseName(tokens[i]));
+                        }
+                        bool success = true;
+
+                        // Add element according to type
+                        std::string type = tokens[1];
+                        if (type == "and") {
+                            success = builder.addAndElement(name, childNames);
+                        } else if (type == "or") {
+                            success = builder.addOrElement(name, childNames);
+                        } else if (boost::starts_with(type, "vot")) {
+                            unsigned threshold = NumberParser<unsigned>::parse(type.substr(3));
+                            success = builder.addVotElement(name, threshold, childNames);
+                        } else if (type.find("of") != std::string::npos) {
+                            size_t pos = type.find("of");
+                            unsigned threshold = NumberParser<unsigned>::parse(type.substr(0, pos));
+                            unsigned count = NumberParser<unsigned>::parse(type.substr(pos + 2));
+                            STORM_LOG_THROW(count == childNames.size(), storm::exceptions::WrongFormatException, "Voting gate number " << count << " does not correspond to number of children " << childNames.size() << "in line " << lineNo << ".");
+                            success = builder.addVotElement(name, threshold, childNames);
+                        } else if (type == "pand") {
+                            success = builder.addPandElement(name, childNames, defaultInclusive);
+                        } else if (type == "pand-inc") {
+                            success = builder.addPandElement(name, childNames, true);
+                        } else if (type == "pand-ex") {
+                            success = builder.addPandElement(name, childNames, false);
+                        } else if (type == "por") {
+                            success = builder.addPorElement(name, childNames, defaultInclusive);
+                        } else if (type == "por-ex") {
+                            success = builder.addPorElement(name, childNames, false);
+                        } else if (type == "por-inc") {
+                            success = builder.addPorElement(name, childNames, true);
+                        } else if (type == "wsp" || type == "csp" || type == "hsp") {
+                            success = builder.addSpareElement(name, childNames);
+                        } else if (type == "seq") {
+                            success = builder.addSequenceEnforcer(name, childNames);
+                        } else if (type == "fdep") {
+                            STORM_LOG_THROW(childNames.size() >= 2, storm::exceptions::WrongFormatException, "FDEP gate needs at least two children in line " << lineNo << ".");
+                            success = builder.addDepElement(name, childNames, storm::utility::one<ValueType>());
+                        } else if (boost::starts_with(type, "pdep=")) {
+                            ValueType probability = valueParser.parseValue(type.substr(5));
+                            success = builder.addDepElement(name, childNames, probability);
+                        } else if (type.find("=") != std::string::npos) {
+                            success = parseBasicElement(tokens, builder, valueParser);
+                        } else {
+                            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Type name: " << type << " in line " << lineNo << " not recognized.");
+                            success = false;
+                        }
+                        STORM_LOG_THROW(success, storm::exceptions::FileIoException, "Error while adding element '" << name << "' in line " << lineNo << ".");
+                    }
+                }
+            } catch (storm::exceptions::BaseException const& exception) {
+                STORM_LOG_THROW(false, storm::exceptions::FileIoException, "A parsing exception occurred in line " << lineNo << ": " << exception.what());
+            }
             if (!builder.setTopLevel(toplevelId)) {
                 STORM_LOG_THROW(false, storm::exceptions::FileIoException, "Top level id '" << toplevelId << "' unknown.");
             }
