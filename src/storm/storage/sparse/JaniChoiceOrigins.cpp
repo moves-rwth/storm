@@ -36,7 +36,20 @@ namespace storm {
             }
             
             void JaniChoiceOrigins::computeIdentifierInfos() const {
-                STORM_LOG_ASSERT(false, "Jani choice origins not properly implemented");
+                this->identifierToInfo.clear();
+                this->identifierToInfo.reserve(this->getNumberOfIdentifiers());
+
+                for(auto const& edgeSet : identifierToEdgeIndexSet) {
+                    std::stringstream ss;
+
+                    for(auto const& edgeIndex : edgeSet) {
+                        auto autAndEdgeOffset = model->decodeAutomatonAndEdgeIndices(edgeIndex);
+                        ss << model->getAutomaton(autAndEdgeOffset.first).getEdge(autAndEdgeOffset.second).toString();
+                        ss << "," << std::endl;
+                    }
+                    this->identifierToInfo.emplace_back(ss.str());
+                    ss.clear();
+                }
             }
             
         }
