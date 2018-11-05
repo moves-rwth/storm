@@ -151,6 +151,12 @@ namespace storm {
             destinations = newdestinations;
         }
 
+        std::string Edge::toString() const {
+            std::stringstream ss;
+            ss << *this;
+            return ss.str();
+        }
+
         std::shared_ptr<TemplateEdge> const& Edge::getTemplateEdge() {
             return templateEdge;
         }
@@ -180,6 +186,9 @@ namespace storm {
                     }
                 }
                 stream << "]";
+            }
+            if (edge.getColor() != 0) {
+                stream << " color: " << edge.getColor();
             }
             return stream;
         }

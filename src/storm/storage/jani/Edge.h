@@ -141,7 +141,8 @@ namespace storm {
              * If no assignment exists, this value is always zero
              */
             int64_t const& getHighestAssignmentLevel() const;
-            
+
+            std::string toString() const;
 
             void assertValid() const;
             
