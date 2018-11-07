@@ -41,7 +41,7 @@ namespace storm {
         modernjson::json anyToJson(boost::any&& input) {
             boost::any tmp(std::move(input));
             modernjson::json res = std::move(*boost::any_cast<modernjson::json>(&tmp));
-            return std::move(res);
+            return res;
         }
         
         modernjson::json buildExpression(storm::expressions::Expression const& exp,  std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables = VariableSet(), VariableSet const& localVariables = VariableSet(), std::unordered_set<std::string> const& auxiliaryVariables = {}) {
