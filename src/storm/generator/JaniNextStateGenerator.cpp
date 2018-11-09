@@ -495,8 +495,10 @@ namespace storm {
                 
                 std::vector<ValueType> stateActionRewards(rewardExpressions.size(), storm::utility::zero<ValueType>());
                 for (auto const& choice : allChoices) {
-                    for (uint_fast64_t rewardVariableIndex = 0; rewardVariableIndex < rewardExpressions.size(); ++rewardVariableIndex) {
-                        stateActionRewards[rewardVariableIndex] += choice.getRewards()[rewardVariableIndex] * choice.getTotalMass() / totalExitRate;
+                    if (hasStateActionRewards) {
+                        for (uint_fast64_t rewardVariableIndex = 0; rewardVariableIndex < rewardExpressions.size(); ++rewardVariableIndex) {
+                            stateActionRewards[rewardVariableIndex] += choice.getRewards()[rewardVariableIndex] * choice.getTotalMass() / totalExitRate;
+                        }
                     }
                     
                     if (this->options.isBuildChoiceOriginsSet() && choice.hasOriginData()) {
