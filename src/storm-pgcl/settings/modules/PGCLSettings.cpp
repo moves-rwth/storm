@@ -22,13 +22,18 @@ namespace storm {
             const std::string PGCLSettings::programGraphToDotShortOptionName = "pg";
             const std::string PGCLSettings::programVariableRestrictionsOptionName = "variable-restrictions";
             const std::string PGCLSettings::programVariableRestrictionShortOptionName = "rvar";
-            
+            const std::string PGCLSettings::propertyOptionName = "prop";
+            const std::string PGCLSettings::propertyOptionShortName = "prop";
             
             PGCLSettings::PGCLSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, pgclFileOptionName, false, "Parses the pgcl program.").setShortName(pgclFileOptionShortName).addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "path to file").addValidatorString(ArgumentValidatorFactory::createExistingFileValidator()).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, pgclToJaniOptionName, false, "Transform to JANI.").setShortName(pgclToJaniOptionShortName).addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "path to file").addValidatorString(ArgumentValidatorFactory::createWritableFileValidator()).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, programGraphToDotOptionName, false, "Destination for the program graph dot output.").setShortName(programGraphToDotShortOptionName).addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "path to file").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, programVariableRestrictionsOptionName, false, "Restrictions of program variables").setShortName(programVariableRestrictionShortOptionName).addArgument(storm::settings::ArgumentBuilder::createStringArgument("description", "description of the variable restrictions").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, propertyOptionName, false, "Specifies the properties to be checked on the model.").setShortName(propertyOptionShortName)
+                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("property or filename", "The formula or the file containing the formulas.").build())
+                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filter", "The names of the properties to check.").setDefaultValueString("all").build())
+                        .build());
             }
             
             bool PGCLSettings::isPgclFileSet() const {
@@ -62,6 +67,18 @@ namespace storm {
             
             std::string PGCLSettings::getProgramVariableRestrictions() const {
                 return this->getOption(programVariableRestrictionsOptionName).getArgumentByName("description").getValueAsString();
+            }
+            
+            bool PGCLSettings::isPropertyInputSet() const {
+                return this->getOption(propertyOptionName).getHasOptionBeenSet();
+            }
+
+            std::string PGCLSettings::getPropertyInput() const {
+                return this->getOption(propertyOptionName).getArgumentByName("property or filename").getValueAsString();
+            }
+
+            std::string PGCLSettings::getPropertyInputFilter() const {
+                return this->getOption(propertyOptionName).getArgumentByName("filter").getValueAsString();
             }
             
             void PGCLSettings::finalize() {
