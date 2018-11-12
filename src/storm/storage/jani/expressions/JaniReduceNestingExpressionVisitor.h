@@ -15,7 +15,8 @@ namespace storm {
         class JaniReduceNestingExpressionVisitor : public ReduceNestingVisitor, public JaniExpressionVisitor {
         public:
             JaniReduceNestingExpressionVisitor();
-            
+            using ReduceNestingVisitor::visit;
+
             virtual boost::any visit(ValueArrayExpression const& expression, boost::any const& data) override;
             virtual boost::any visit(ConstructorArrayExpression const& expression, boost::any const& data) override;
             virtual boost::any visit(ArrayAccessExpression const& expression, boost::any const& data) override;
