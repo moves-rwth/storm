@@ -280,7 +280,7 @@ namespace storm {
 
         template<typename ValueType>
         bool DFTState<ValueType>::isActive(size_t id) const {
-            STORM_LOG_ASSERT(mDft.isRepresentative(id), "Element is no representative.");
+            STORM_LOG_ASSERT(mDft.isRepresentative(id), "Element " << mDft.getElement(id)->toString() << " is no representative.");
             return mStatus[mStateGenerationInfo.getSpareActivationIndex(id)];
         }
             
