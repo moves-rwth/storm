@@ -268,11 +268,7 @@ namespace storm {
                 case storm::storage::DFTElementType::BE:
                 {
                     std::shared_ptr<storm::storage::DFTBE<ValueType>> be = std::static_pointer_cast<storm::storage::DFTBE<ValueType>>(element);
-                    ValueType dormancyFactor = storm::utility::zero<ValueType>();
-                    if (be->canFail()) {
-                        dormancyFactor = be->passiveFailureRate() / be->activeFailureRate();
-                    }
-                    addBasicElement(be->name(), be->activeFailureRate(), dormancyFactor, be->isTransient());
+                    addBasicElement(be->name(), be->activeFailureRate(), be->dormancyFactor(), be->isTransient());
                     break;
                 }
                 case storm::storage::DFTElementType::CONSTF:

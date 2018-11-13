@@ -88,8 +88,7 @@ namespace storm {
                 stream << be->activeFailureRate();
                 nodeData["rate"] = stream.str();
                 stream.str(std::string()); // Clear stringstream
-                ValueType dormancy = be->passiveFailureRate() / be->activeFailureRate();
-                stream << dormancy;
+                stream << be->dormancyFactor();
                 nodeData["dorm"] = stream.str();
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Element of type '" << element->type() << "' is not supported.");
