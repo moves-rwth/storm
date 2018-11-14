@@ -60,6 +60,13 @@ namespace storm {
             std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ParametricType>> performRegionRefinement(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, boost::optional<ParametricType> const& coverageThreshold, boost::optional<uint64_t> depthThreshold = boost::none, RegionResultHypothesis const& hypothesis = RegionResultHypothesis::Unknown);
             
             /*!
+             * Finds the extremal value within the given region and with the given precision.
+             * The returned value v corresponds to the value at the returned valuation.
+             * The actual maximum (minimum) lies in the interval [v, v+precision] ([v-precision, v])
+             */
+            virtual std::pair<ParametricType, typename storm::storage::ParameterRegion<ParametricType>::Valuation> computeExtremalValue(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dir, ParametricType const& precision);
+            
+            /*!
              * Returns true if region split estimation (a) was enabled when model and check task have been specified and (b) is supported by this region model checker.
              */
             virtual bool isRegionSplitEstimateSupported() const;

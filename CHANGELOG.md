@@ -21,6 +21,7 @@ Version 1.2.x
 - `storm-gspn`: Added support for single/infinite/k-server semantics for GSPNs given in the .pnpro format
 - `storm-gspn`: Added option to set a global capacity for all places
 - `storm-gspn`: Added option to include a set of standard properties when converting GSPNs to jani
+- `storm-pars`: Added possibility to compute the extremal value within a given region using parameter lifting
 
 ### Version 1.2.3 (2018/07)
 - Fix in version parsing

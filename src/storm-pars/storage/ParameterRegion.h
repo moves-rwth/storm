@@ -16,8 +16,9 @@ namespace storm {
             ParameterRegion();
             ParameterRegion(Valuation const& lowerBoundaries, Valuation const& upperBoundaries);
             ParameterRegion(Valuation&& lowerBoundaries, Valuation&& upperBoundaries);
-            ParameterRegion(ParameterRegion const& other) = default;
-            ParameterRegion(ParameterRegion&& other) = default;
+            ParameterRegion(ParameterRegion<ParametricType> const& other) = default;
+            ParameterRegion(ParameterRegion<ParametricType>&& other) = default;
+            ParameterRegion<ParametricType>& operator=(ParameterRegion<ParametricType> const& other) = default;
             
             virtual ~ParameterRegion() = default;
 
