@@ -79,7 +79,7 @@ namespace storm {
                 if (!storm::utility::isOne<ValueType>(dependency->probability())) {
                     std::stringstream stream;
                     stream << dependency->probability();
-                    nodeData["prob"] = stream.str();
+                    nodeData["probability"] = stream.str();
                 }
             } else if (element->isBasicElement()) {
                 // Set BE specific data
