@@ -69,7 +69,7 @@ namespace storm {
         typename storm::modelchecker::DFTModelChecker<ValueType>::dft_results
         analyzeDFT(storm::storage::DFT<ValueType> const& dft, std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties, bool symred, bool allowModularisation,
                    bool enableDC, bool printOutput) {
-            storm::modelchecker::DFTModelChecker<ValueType> modelChecker;
+            storm::modelchecker::DFTModelChecker<ValueType> modelChecker(printOutput);
             typename storm::modelchecker::DFTModelChecker<ValueType>::dft_results results = modelChecker.check(dft, properties, symred, allowModularisation, enableDC, 0.0);
             if (printOutput) {
                 modelChecker.printTimings();
@@ -95,7 +95,7 @@ namespace storm {
         typename storm::modelchecker::DFTModelChecker<ValueType>::dft_results
         analyzeDFTApprox(storm::storage::DFT<ValueType> const& dft, std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties, bool symred,
                          bool allowModularisation, bool enableDC, double approximationError, bool printOutput) {
-            storm::modelchecker::DFTModelChecker<ValueType> modelChecker;
+            storm::modelchecker::DFTModelChecker<ValueType> modelChecker(printOutput);
             typename storm::modelchecker::DFTModelChecker<ValueType>::dft_results results = modelChecker.check(dft, properties, symred, allowModularisation, enableDC,
                                                                                                                approximationError);
             if (printOutput) {

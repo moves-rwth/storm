@@ -348,8 +348,12 @@ namespace storm {
                 typename storm::builder::ExplicitDFTModelBuilder<ValueType>::LabelOptions labeloptions(properties, ioSettings.isExportExplicitSet() || ioSettings.isExportDotSet());
                 builder.buildModel(labeloptions, 0, 0.0);
                 std::shared_ptr<storm::models::sparse::Model<ValueType>> model = builder.getModel();
-                model->printModelInformationToStream(std::cout);
                 explorationTimer.stop();
+
+                // Print model information
+                if (printInfo) {
+                    model->printModelInformationToStream(std::cout);
+                }
 
                 // Export the model if required
                 // TODO move this outside of the model checker?
