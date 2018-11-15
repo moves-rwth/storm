@@ -366,6 +366,35 @@ namespace storm {
         }
         
         template <typename ValueType>
+        void computeRegionExtremumWithSparseEngine(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, SymbolicInput const& input, std::vector<storm::storage::ParameterRegion<ValueType>> const& regions) {
+            STORM_LOG_ASSERT(!regions.empty(), "Can not analyze an empty set of regions.");
+            auto regionSettings = storm::settings::getModule<storm::settings::modules::RegionSettings>();
+            auto engine = regionSettings.getRegionCheckEngine();
+            storm::solver::OptimizationDirection direction = regionSettings.getExtremumDirection();
+            ValueType precision = storm::utility::convertNumber<ValueType>(regionSettings.getExtremumValuePrecision());
+            for (auto const& property : input.properties) {
+                for (auto const& region : regions) {
+                    STORM_PRINT_AND_LOG("Computing extremal value for property " << property.getName() << ": " << *property.getRawFormula() << " within region " << region << "..." << std::endl);
+                    storm::utility::Stopwatch watch(true);
+                    auto valueValuation = storm::api::computeExtremalValue<ValueType>(model, storm::api::createTask<ValueType>(property.getRawFormula(), true), region, engine, direction, precision);
+                    watch.stop();
+                    std::stringstream valuationStr;
+                    bool first = true;
+                    for (auto const& v : valueValuation.second) {
+                        if (first) {
+                            first = false;
+                        } else {
+                            valuationStr << ", ";
+                        }
+                        valuationStr << v.first << "=" << v.second;
+                    }
+                    STORM_PRINT_AND_LOG("Result at initial state: " << valueValuation.first << " ( approx. " << storm::utility::convertNumber<double>(valueValuation.first) << ") at [" << valuationStr.str() << "]." << std::endl)
+                    STORM_PRINT_AND_LOG("Time for model checking: " << watch << "." << std::endl);
+                }
+            }
+        }
+        
+        template <typename ValueType>
         void verifyRegionsWithSparseEngine(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, SymbolicInput const& input, std::vector<storm::storage::ParameterRegion<ValueType>> const& regions) {
             STORM_LOG_ASSERT(!regions.empty(), "Can not analyze an empty set of regions.");
             
@@ -424,7 +453,12 @@ namespace storm {
             if (regions.empty()) {
                 storm::pars::verifyPropertiesWithSparseEngine(model, input, samples);
             } else {
-                storm::pars::verifyRegionsWithSparseEngine(model, input, regions);
+                auto regionSettings = storm::settings::getModule<storm::settings::modules::RegionSettings>();
+                if (regionSettings.isExtremumSet()) {
+                    storm::pars::computeRegionExtremumWithSparseEngine(model, input, regions);
+                } else {
+                    storm::pars::verifyRegionsWithSparseEngine(model, input, regions);
+                }
             }
         }
         
