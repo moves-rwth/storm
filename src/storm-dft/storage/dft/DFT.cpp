@@ -4,6 +4,7 @@
 #include <map>
 
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/WrongFormatException.h"
 #include "storm/utility/iota_n.h"
 #include "storm/utility/vector.h"
 
@@ -25,11 +26,12 @@ namespace storm {
                 }
                 if(elem->isBasicElement()) {
                     ++mNrOfBEs;
-                }
-                else if (elem->isSpareGate()) {
+                } else if (elem->isSpareGate()) {
+                    // Build spare modules by setting representatives and representants
                     ++mNrOfSpares;
                     mMaxSpareChildCount = std::max(mMaxSpareChildCount, std::static_pointer_cast<DFTSpare<ValueType>>(elem)->children().size());
                     for(auto const& spareReprs : std::static_pointer_cast<DFTSpare<ValueType>>(elem)->children()) {
+                        STORM_LOG_THROW(spareReprs->isGate() || spareReprs->isBasicElement(), storm::exceptions::WrongFormatException, "Child '" << spareReprs->name() << "' of spare '" << elem->name() << "' must be gate or BE.");
                         std::set<size_t> module = {spareReprs->id()};
                         spareReprs->extendSpareModule(module);
                         std::vector<size_t> sparesAndBes;
@@ -41,12 +43,22 @@ namespace storm {
                         }
                         mSpareModules.insert(std::make_pair(spareReprs->id(), sparesAndBes));
                     }
-
                 } else if (elem->isDependency()) {
                     mDependencies.push_back(elem->id());
                 }
             }
-          
+
+            // Check independence of spare modules
+            // TODO: comparing one element of each spare module sufficient?
+            for (auto module1 = mSpareModules.begin() ; module1 != mSpareModules.end() ; ++module1) {
+                size_t firstElement = module1->second.front();
+                for (auto module2 = std::next(module1) ; module2 != mSpareModules.end() ; ++module2) {
+                    if (std::find(module2->second.begin(), module2->second.end(), firstElement) != module2->second.end()) {
+                        STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Spare modules of '" << getElement(module1->first)->name() << "' and '" << getElement(module2->first)->name() << "' should not overlap.");
+                    }
+                }
+            }
+
             // For the top module, we assume, contrary to [Jun15], that we have all spare gates and basic elements which are not in another module.
             std::set<size_t> topModuleSet;
             // Initialize with all ids.
@@ -64,10 +76,13 @@ namespace storm {
             // Extend top module and insert those elements which are part of the top module and a spare module
             mElements[mTopLevelIndex]->extendSpareModule(topModuleSet);
             mTopModule = std::vector<size_t>(topModuleSet.begin(), topModuleSet.end());
-            // Clear all spare modules where at least one element is also in the top module
+
+            // Clear all spare modules where at least one element is also in the top module.
+            // These spare modules will be activated from the beginning.
             if (!mTopModule.empty()) {
                 for (auto& module : mSpareModules) {
                     if (std::find(module.second.begin(), module.second.end(), mTopModule.front()) != module.second.end()) {
+                        STORM_LOG_WARN("Elements of spare module '" << getElement(module.first)->name() << "' also contained in top module. All elements of this spare module will be activated from the beginning on.");
                         module.second.clear();
                     }
                 }
