@@ -89,7 +89,7 @@ namespace storm {
                 } else if (type== "fdep") {
                     success = builder.addDepElement(name, childNames, storm::utility::one<ValueType>());
                 } else if (type== "pdep") {
-                    ValueType probability = parseRationalExpression(parseJsonNumber(data.at("prob")));
+                    ValueType probability = parseRationalExpression(parseJsonNumber(data.at("probability")));
                     success = builder.addDepElement(name, childNames, probability);
                 } else if (type == "be") {
                     ValueType failureRate = parseRationalExpression(parseJsonNumber(data.at("rate")));
