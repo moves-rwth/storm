@@ -359,7 +359,10 @@ namespace storm {
                     storm::api::exportSparseModelAsDrn(model, ioSettings.getExportExplicitFilename(), parameterNames);
                 }
                 if (ioSettings.isExportDotSet()) {
-                    storm::api::exportSparseModelAsDot(model, ioSettings.getExportDotFilename());
+                    std::ofstream stream;
+                    storm::utility::openFile(ioSettings.getExportDotFilename(), stream);
+                    model->writeDotToStream(stream, true, true);
+                    storm::utility::closeFile(stream);
                 }
 
                 // Model checking
