@@ -42,9 +42,7 @@ void processOptions() {
     }
 
     if (dftIOSettings.isDisplayStatsSet()) {
-        std::cout << "=============DFT Statistics==============" << std::endl;
         dft->writeStatsToStream(std::cout);
-        std::cout << "=========================================" << std::endl;
     }
 
     if (dftIOSettings.isExportToJson()) {

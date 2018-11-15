@@ -94,6 +94,8 @@ namespace storm {
             }
 
             size_t nrDynamicElements() const;
+
+            size_t nrStaticElements() const;
             
             size_t getTopLevelIndex() const {
                 return mTopLevelIndex;
