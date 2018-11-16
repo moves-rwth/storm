@@ -61,6 +61,21 @@ run() {
     travis_fold end test_all
     ;;
 
+     # Check correctness of build types
+    case "$CONFIG" in
+    DefaultDebug*)
+        ./bin/storm --version | grep "with flags .* -g"
+        ;;
+    DefaultRelease*)
+        ./bin/storm --version | grep "with flags .* -O3"
+        ./bin/storm --version | grep "with flags .* -DNDEBUG"
+        ;;
+    *)
+        echo "Unrecognized value of CONFIG: $CONFIG"; exit 1
+        ;;
+    esac
+    ;;
+
   *)
     echo "Unrecognized value of run: $1"
     exit 1
