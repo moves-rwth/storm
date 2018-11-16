@@ -22,7 +22,7 @@ include(CheckCSourceCompiles)
 ##	CMake options of Storm
 ##
 #############################################################
-option(STORM_DEVELOPER "Sets whether the development mode is used." ON)
+option(STORM_DEVELOPER "Sets whether the development mode is used." OFF)
 option(STORM_ALLWARNINGS "Compile with even more warnings" OFF)
 option(STORM_USE_LTO "Sets whether link-time optimizations are enabled." ON)
 MARK_AS_ADVANCED(STORM_USE_LTO)
@@ -89,7 +89,17 @@ endforeach()
 message(STATUS "Storm - CMake install dir: ${CMAKE_INSTALL_DIR}")
 
 # If the STORM_DEVELOPER option was turned on, by default we target a debug version, otherwise a release version.
-set(CMAKE_BUILD_TYPE "DEBUG")
+if (STORM_DEVELOPER)
+    if (NOT CMAKE_BUILD_TYPE)
+        set(CMAKE_BUILD_TYPE "DEBUG")
+    endif()
+    add_definitions(-DSTORM_DEV)
+else()
+    set(STORM_LOG_DISABLE_DEBUG ON)
+    if (NOT CMAKE_BUILD_TYPE)
+        set(CMAKE_BUILD_TYPE "RELEASE")
+    endif()
+endif()
 
 message(STATUS "Storm - Building ${CMAKE_BUILD_TYPE} version.")
 
