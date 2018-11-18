@@ -59,9 +59,8 @@ run() {
     cd build
     ctest test --output-on-failure
     travis_fold end test_all
-    ;;
 
-     # Check correctness of build types
+    # Check correctness of build types
     case "$CONFIG" in
     DefaultDebug*)
         ./bin/storm --version | grep "with flags .* -g"
