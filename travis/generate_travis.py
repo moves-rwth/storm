@@ -97,15 +97,7 @@ if __name__ == "__main__":
             buildConfig += "        - travis/build_carl.sh\n"
             # Upload to DockerHub
             buildConfig += "      after_success:\n"
-            buildConfig += '        - docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD";\n'
-            if "Debug" in build_type:
-                buildConfig += "        - docker commit carl movesrwth/carl:travis-debug;\n"
-                buildConfig += "        - docker push movesrwth/carl:travis-debug;\n"
-            elif "Release" in build_type:
-                buildConfig += "        - docker commit carl movesrwth/carl:travis;\n"
-                buildConfig += "        - docker push movesrwth/carl:travis;\n"
-            else:
-                assert False
+            buildConfig += "        - travis/deploy_carl.sh\n"
             s += buildConfig
 
     # Generate all configurations
@@ -169,15 +161,7 @@ if __name__ == "__main__":
             # Upload to DockerHub
             if stage[1] == "TestAll" and "Travis" in build_type:
                 buildConfig += "      after_success:\n"
-                buildConfig += '        - docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD";\n'
-                if "Debug" in build_type:
-                    buildConfig += "        - docker commit storm movesrwth/storm:travis-debug;\n"
-                    buildConfig += "        - docker push movesrwth/storm:travis-debug;\n"
-                elif "Release" in build_type:
-                    buildConfig += "        - docker commit storm movesrwth/storm:travis;\n"
-                    buildConfig += "        - docker push movesrwth/storm:travis;\n"
-                else:
-                    assert False
+                buildConfig += "        - travis/deploy_storm.sh\n"
             s += buildConfig
             if "Travis" in build_type and "Release" in build_type:
                 allow_failures.append(allow_fail)

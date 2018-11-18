@@ -52,9 +52,7 @@ jobs:
       script:
         - travis/build_carl.sh
       after_success:
-        - docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD";
-        - docker commit carl movesrwth/carl:travis-debug;
-        - docker push movesrwth/carl:travis-debug;
+        - travis/deploy_carl.sh
     # ubuntu-18.04 - DefaultReleaseTravis
     - stage: Build Carl
       os: linux
@@ -67,9 +65,7 @@ jobs:
       script:
         - travis/build_carl.sh
       after_success:
-        - docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD";
-        - docker commit carl movesrwth/carl:travis;
-        - docker push movesrwth/carl:travis;
+        - travis/deploy_carl.sh
 
     ###
     # Stage: Build (1st run)
@@ -507,9 +503,7 @@ jobs:
       after_failure:
         - find build -iname '*err*.log' -type f -print -exec cat {} \;
       after_success:
-        - docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD";
-        - docker commit storm movesrwth/storm:travis-debug;
-        - docker push movesrwth/storm:travis-debug;
+        - travis/deploy_storm.sh
     # ubuntu-18.04 - DefaultReleaseTravis
     - stage: Test all
       os: linux
@@ -526,9 +520,7 @@ jobs:
       after_failure:
         - find build -iname '*err*.log' -type f -print -exec cat {} \;
       after_success:
-        - docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD";
-        - docker commit storm movesrwth/storm:travis;
-        - docker push movesrwth/storm:travis;
+        - travis/deploy_storm.sh
     # ubuntu-18.04 - DefaultDebug
     - stage: Test all
       os: linux
