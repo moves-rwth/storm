@@ -16,8 +16,18 @@ namespace storm {
             std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> model;
             // Gives for each state in the resulting model the corresponding state in the original model.
             std::vector<uint_fast64_t> newToOldStateIndexMapping;
+            // Gives for each action in the resulting model the corresponding action in the original model.
+            std::vector<uint64_t> newToOldActionIndexMapping;
             // marks the actions of the original model that are still available in the subsystem
             storm::storage::BitVector keptActions;
+        };
+
+        struct SubsystemBuilderOptions {
+            bool checkTransitionsOutside = true;
+            bool buildStateMapping = true;
+            bool buildActionMapping = false;
+            bool buildKeptActions = true;
+            bool fixDeadlocks = true;
         };
         
         /*
@@ -38,6 +48,6 @@ namespace storm {
          * @param keepUnreachableStates if true, states that are not reachable from the initial state are kept
          */
         template <typename ValueType, typename RewardModelType = storm::models::sparse::StandardRewardModel<ValueType>>
-        SubsystemBuilderReturnType<ValueType, RewardModelType> buildSubsystem(storm::models::sparse::Model<ValueType, RewardModelType> const& originalModel, storm::storage::BitVector const& subsystemStates, storm::storage::BitVector const& subsystemActions, bool keepUnreachableStates = true);
+        SubsystemBuilderReturnType<ValueType, RewardModelType> buildSubsystem(storm::models::sparse::Model<ValueType, RewardModelType> const& originalModel, storm::storage::BitVector const& subsystemStates, storm::storage::BitVector const& subsystemActions, bool keepUnreachableStates = true, SubsystemBuilderOptions options = SubsystemBuilderOptions());
     }
 }
