@@ -61,13 +61,14 @@ run() {
     travis_fold end test_all
 
     # Check correctness of build types
+    echo "Checking correctness of build types"
     case "$CONFIG" in
     DefaultDebug*)
-        ./bin/storm --version | grep "with flags .* -g"
+        ./bin/storm --version | grep "with flags .* -g" || (echo "Error: Missing flag '-g' for debug build." && return 1)
         ;;
     DefaultRelease*)
-        ./bin/storm --version | grep "with flags .* -O3"
-        ./bin/storm --version | grep "with flags .* -DNDEBUG"
+        ./bin/storm --version | grep "with flags .* -O3" || (echo "Error: Missing flag '-O3' for release build." && return 1)
+        ./bin/storm --version | grep "with flags .* -DNDEBUG" || (echo "Error: Missing flag '-DNDEBUG' for release build." && return 1)
         ;;
     *)
         echo "Unrecognized value of CONFIG: $CONFIG"; exit 1
