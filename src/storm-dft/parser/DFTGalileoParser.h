@@ -75,7 +75,7 @@ namespace storm {
              */
             static std::pair<bool, unsigned> parseNumber(std::string name, std::string& line);
 
-            enum Distribution { None, Constant, Exponential, Weibull, LogNormal };
+            enum Distribution { None, Constant, Exponential, Erlang, Weibull, LogNormal };
         };
     }
 }

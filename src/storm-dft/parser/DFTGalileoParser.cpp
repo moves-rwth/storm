@@ -119,7 +119,7 @@ namespace storm {
                             size_t pos = type.find("of");
                             unsigned threshold = NumberParser<unsigned>::parse(type.substr(0, pos));
                             unsigned count = NumberParser<unsigned>::parse(type.substr(pos + 2));
-                            STORM_LOG_THROW(count == childNames.size(), storm::exceptions::WrongFormatException, "Voting gate number " << count << " does not correspond to number of children " << childNames.size() << "in line " << lineNo << ".");
+                            STORM_LOG_THROW(count == childNames.size(), storm::exceptions::WrongFormatException, "Voting gate number " << count << " does not correspond to number of children " << childNames.size() << " in line " << lineNo << ".");
                             success = builder.addVotElement(name, threshold, childNames);
                         } else if (type == "pand") {
                             success = builder.addPandElement(name, childNames, defaultInclusive);
@@ -218,14 +218,22 @@ namespace storm {
                 STORM_LOG_THROW(distribution == Distribution::None, storm::exceptions::WrongFormatException, "A different distribution was already defined for this basic element.");
                 firstValDistribution = result.second;
                 distribution = Distribution::Constant;
-                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Constant distribution is not supported.");
             }
             // Exponential distribution
             result = parseValue("lambda", line, valueParser);
             if (result.first) {
-                STORM_LOG_THROW(distribution == Distribution::None, storm::exceptions::WrongFormatException, "A different distribution was already defined for this basic element.");
+                STORM_LOG_THROW(distribution == Distribution::None || distribution == Distribution::Erlang, storm::exceptions::WrongFormatException, "A different distribution was already defined for this basic element.");
                 firstValDistribution = result.second;
-                distribution = Distribution::Exponential;
+                if (distribution == Distribution::None) {
+                    distribution = Distribution::Exponential;
+                }
+            }
+            // Erlang distribution
+            result = parseValue("phases", line, valueParser);
+            if (result.first) {
+                STORM_LOG_THROW(distribution == Distribution::None || distribution == Distribution::Exponential, storm::exceptions::WrongFormatException, "A different distribution was already defined for this basic element.");
+                secondValDistribution = result.second;
+                distribution = Distribution::Erlang;
             }
             // Weibull distribution
             result = parseValue("rate", line, valueParser);
@@ -263,9 +271,13 @@ namespace storm {
                 STORM_LOG_WARN("Restoration is not supported and will be ignored.");
             }
             std::pair<bool, unsigned> resultNum = parseNumber("repl", line);
-            if (result.first) {
+            if (resultNum.first) {
                 replication = resultNum.second;
                 STORM_LOG_THROW(replication == 1, storm::exceptions::NotSupportedException, "Replication > 1 is not supported.");
+            }
+            result = parseValue("interval", line, valueParser);
+            if (result.first) {
+                STORM_LOG_WARN("Interval is not supported and will be ignored.");
             }
             result = parseValue("dorm", line, valueParser);
             if (result.first) {
@@ -283,8 +295,21 @@ namespace storm {
                 case Exponential:
                     return builder.addBasicElement(parseName(name), firstValDistribution, dormancyFactor, false); // TODO set transient BEs
                     break;
+                case Erlang:
+                    if (storm::utility::isOne<ValueType>(secondValDistribution)) {
+                        // Erlang distribution reduces to exponential distribution
+                        return builder.addBasicElement(parseName(name), firstValDistribution, dormancyFactor, false); // TODO set transient BEs
+                    } else {
+                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Erlang distribution is not supported.");
+                    }
+                    break;
                 case Weibull:
-                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Weibull distribution is not supported.");
+                    if (storm::utility::isOne<ValueType>(secondValDistribution)) {
+                        // Weibull distribution reduces to exponential distribution
+                        return builder.addBasicElement(parseName(name), firstValDistribution, dormancyFactor, false); // TODO set transient BEs
+                    } else {
+                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Weibull distribution is not supported.");
+                    }
                     break;
                 case LogNormal:
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "LogNormal distribution is not supported.");
