@@ -14,6 +14,10 @@ namespace storm  {
         Assignment::Assignment(storm::jani::LValue const& lValue, storm::expressions::Expression const& expression, int64_t level) : lValue(lValue), expression(expression), level(level) {
             // Intentionally left empty
         }
+
+        Assignment::Assignment(storm::jani::Variable const& lValue, storm::expressions::Expression const& expression, int64_t level) : lValue(lValue), expression(expression), level(level) {
+            // Intentionally left empty
+        }
         
         bool Assignment::operator==(Assignment const& other) const {
             return this->isTransient() == other.isTransient() && this->getLValue() == other.getLValue() && this->getAssignedExpression().isSyntacticallyEqual(other.getAssignedExpression()) && this->getLevel() == other.getLevel();

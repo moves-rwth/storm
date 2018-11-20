@@ -15,6 +15,11 @@ namespace storm {
              */
             Assignment(storm::jani::LValue const& lValue, storm::expressions::Expression const& expression, int64_t level = 0);
 
+            /*!
+             * Creates an assignment of the given expression to the given Variable.
+             */
+            Assignment(storm::jani::Variable const& lValue, storm::expressions::Expression const&, int64_t level = 0);
+
             Assignment(Assignment const&) = default;
             bool operator==(Assignment const& other) const;
             
