@@ -5,6 +5,7 @@
 #include "storm/storage/Scheduler.h"
 #include "storm/storage/memorystructure/MemoryStructureBuilder.h"
 #include "storm/storage/memorystructure/SparseModelMemoryProduct.h"
+#include "storm/transformer/SubsystemBuilder.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 
@@ -46,11 +47,21 @@ namespace storm {
             
             template<typename ValueType, typename RewardModelType>
             std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> NondeterministicModel<ValueType, RewardModelType>::applyScheduler(storm::storage::Scheduler<ValueType> const& scheduler, bool dropUnreachableStates) const {
-                storm::storage::SparseModelMemoryProduct<ValueType, RewardModelType> memoryProduct(*this, scheduler);
-                if (!dropUnreachableStates) {
-                    memoryProduct.setBuildFullProduct();
+                if (scheduler.isMemorylessScheduler() && scheduler.isDeterministicScheduler() && !scheduler.isPartialScheduler()) {
+                    // Special case with improved handling.
+                    storm::storage::BitVector actionSelection = scheduler.computeActionSupport(getNondeterministicChoiceIndices());
+                    storm::storage::BitVector allStates(this->getNumberOfStates(), true);
+                    auto res = storm::transformer::buildSubsystem(*this, allStates, actionSelection, !dropUnreachableStates);
+                    return res.model;
+                } else {
+                    storm::storage::SparseModelMemoryProduct<ValueType, RewardModelType> memoryProduct(*this, scheduler);
+                    if (!dropUnreachableStates) {
+                        memoryProduct.setBuildFullProduct();
+                    }
+                    return memoryProduct.build();
                 }
-                return memoryProduct.build();
+
+
             }
             
             template<typename ValueType, typename RewardModelType>
