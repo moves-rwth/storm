@@ -145,6 +145,9 @@ namespace storm {
                             success = builder.addDepElement(name, childNames, probability);
                         } else if (type.find("=") != std::string::npos) {
                             success = parseBasicElement(name, line, builder, valueParser);
+                        } else if (type.find("insp") != std::string::npos) {
+                            // Inspection as defined by DFTCalc
+                            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Inspections (defined in line " << lineNo << ") are not supported.");
                         } else {
                             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Type name: " << type << " in line " << lineNo << " not recognized.");
                             success = false;
@@ -294,7 +297,6 @@ namespace storm {
                     break;
                 case Exponential:
                     return builder.addBasicElement(parseName(name), firstValDistribution, dormancyFactor, false); // TODO set transient BEs
-                    break;
                 case Erlang:
                     if (storm::utility::isOne<ValueType>(secondValDistribution)) {
                         // Erlang distribution reduces to exponential distribution
