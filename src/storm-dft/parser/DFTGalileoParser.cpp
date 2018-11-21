@@ -141,6 +141,7 @@ namespace storm {
                             STORM_LOG_THROW(childNames.size() >= 2, storm::exceptions::WrongFormatException, "FDEP gate needs at least two children in line " << lineNo << ".");
                             success = builder.addDepElement(name, childNames, storm::utility::one<ValueType>());
                         } else if (boost::starts_with(type, "pdep=")) {
+                            STORM_LOG_THROW(childNames.size() >= 2, storm::exceptions::WrongFormatException, "PDEP gate needs at least two children in line " << lineNo << ".");
                             ValueType probability = valueParser.parseValue(type.substr(5));
                             success = builder.addDepElement(name, childNames, probability);
                         } else if (type.find("=") != std::string::npos) {
@@ -210,6 +211,7 @@ namespace storm {
             ValueType secondValDistribution = storm::utility::zero<ValueType>();
             ValueType dormancyFactor = storm::utility::one<ValueType>();
             size_t replication = 1;
+            size_t erlangPhases = 1;
             // Remove name from input
             std::regex regexName("\"?" + name + "\"?");
             std::string line = std::regex_replace(input, regexName, "");
@@ -232,10 +234,10 @@ namespace storm {
                 }
             }
             // Erlang distribution
-            result = parseValue("phases", line, valueParser);
+            std::pair<bool, unsigned> resultNum = parseNumber("phases", line);
             if (result.first) {
                 STORM_LOG_THROW(distribution == Distribution::None || distribution == Distribution::Exponential, storm::exceptions::WrongFormatException, "A different distribution was already defined for this basic element.");
-                secondValDistribution = result.second;
+                erlangPhases = resultNum.second;
                 distribution = Distribution::Erlang;
             }
             // Weibull distribution
@@ -273,7 +275,7 @@ namespace storm {
             if (result.first) {
                 STORM_LOG_WARN("Restoration is not supported and will be ignored.");
             }
-            std::pair<bool, unsigned> resultNum = parseNumber("repl", line);
+            resultNum = parseNumber("repl", line);
             if (resultNum.first) {
                 replication = resultNum.second;
                 STORM_LOG_THROW(replication == 1, storm::exceptions::NotSupportedException, "Replication > 1 is not supported.");
@@ -297,12 +299,25 @@ namespace storm {
                     break;
                 case Exponential:
                     return builder.addBasicElement(parseName(name), firstValDistribution, dormancyFactor, false); // TODO set transient BEs
+                    break;
                 case Erlang:
-                    if (storm::utility::isOne<ValueType>(secondValDistribution)) {
+                    if (erlangPhases == 1) {
                         // Erlang distribution reduces to exponential distribution
                         return builder.addBasicElement(parseName(name), firstValDistribution, dormancyFactor, false); // TODO set transient BEs
                     } else {
-                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Erlang distribution is not supported.");
+                        // Model Erlang distribution by using SEQ over BEs instead.
+                        // For each phase a BE is added, then the SEQ ensures the ordered failure.
+                        STORM_LOG_WARN("Erlang distribution is modelled by SEQ gate and BEs.");
+                        std::string origName = parseName(name);
+                        std::vector<std::string> childNames;
+                        bool success = builder.addBasicElement(origName, firstValDistribution, dormancyFactor, false); // TODO set transient BEs
+                        for (size_t i = 0; i < erlangPhases - 1; ++i) {
+                            std::string beName = origName + "_" + std::to_string(i);
+                            childNames.push_back(beName);
+                            success = success && builder.addBasicElement(beName, firstValDistribution, dormancyFactor, false); // TODO set transient BEs
+                        }
+                        childNames.push_back(origName);
+                        return success && builder.addSequenceEnforcer(origName + "_seq", childNames);
                     }
                     break;
                 case Weibull:
