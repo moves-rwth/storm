@@ -174,7 +174,7 @@ namespace storm {
                 //TODO Matthias: collect constraints for SMT solving
                 //failureRate > 0
                 //0 <= dormancyFactor <= 1
-
+                STORM_LOG_ASSERT(mElements.find(name) == mElements.end(), "Element '" << name << "' already exists.");
                 mElements[name] = std::make_shared<storm::storage::DFTBE<ValueType>>(mNextId++, name, failureRate, dormancyFactor, transient);
                 return true;
             }
