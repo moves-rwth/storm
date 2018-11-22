@@ -7,6 +7,7 @@
 #include "storm/utility/constants.h"
 #include "storm/utility/vector.h"
 #include "storm/utility/bitoperations.h"
+#include "storm/utility/ProgressMeasurement.h"
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/logic/AtomicLabelFormula.h"
@@ -319,6 +320,8 @@ namespace storm {
         void ExplicitDFTModelBuilder<ValueType, StateType>::exploreStateSpace(double approximationThreshold) {
             size_t nrExpandedStates = 0;
             size_t nrSkippedStates = 0;
+            storm::utility::ProgressMeasurement progress("explored states");
+            progress.startNewMeasurement(0);
             // TODO Matthias: do not empty queue every time but break before
             while (!explorationQueue.empty()) {
                 // Get the first state in the queue
@@ -415,6 +418,10 @@ namespace storm {
                         }
                         matrixBuilder.finishRow();
                     }
+                }
+                // Output number of currently explored states
+                if (nrExpandedStates % 100 == 0) {
+                    progress.updateProgress(nrExpandedStates);
                 }
             } // end exploration
 
