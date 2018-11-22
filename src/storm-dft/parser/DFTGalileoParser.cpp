@@ -235,7 +235,7 @@ namespace storm {
             }
             // Erlang distribution
             std::pair<bool, unsigned> resultNum = parseNumber("phases", line);
-            if (result.first) {
+            if (resultNum.first) {
                 STORM_LOG_THROW(distribution == Distribution::None || distribution == Distribution::Exponential, storm::exceptions::WrongFormatException, "A different distribution was already defined for this basic element.");
                 erlangPhases = resultNum.second;
                 distribution = Distribution::Erlang;
