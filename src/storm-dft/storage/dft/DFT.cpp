@@ -48,17 +48,6 @@ namespace storm {
                 }
             }
 
-            // Check independence of spare modules
-            // TODO: comparing one element of each spare module sufficient?
-            for (auto module1 = mSpareModules.begin() ; module1 != mSpareModules.end() ; ++module1) {
-                size_t firstElement = module1->second.front();
-                for (auto module2 = std::next(module1) ; module2 != mSpareModules.end() ; ++module2) {
-                    if (std::find(module2->second.begin(), module2->second.end(), firstElement) != module2->second.end()) {
-                        STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Spare modules of '" << getElement(module1->first)->name() << "' and '" << getElement(module2->first)->name() << "' should not overlap.");
-                    }
-                }
-            }
-
             // For the top module, we assume, contrary to [Jun15], that we have all spare gates and basic elements which are not in another module.
             std::set<size_t> topModuleSet;
             // Initialize with all ids.
@@ -615,6 +604,26 @@ namespace storm {
         template<typename ValueType>
         bool DFT<ValueType>::canHaveNondeterminism() const {
             return !getDependencies().empty();
+        }
+
+        template<typename ValueType>
+        bool DFT<ValueType>::checkWellFormedness(std::ostream& stream) const {
+            bool wellformed = true;
+            // Check independence of spare modules
+            // TODO: comparing one element of each spare module sufficient?
+            for (auto module1 = mSpareModules.begin() ; module1 != mSpareModules.end() ; ++module1) {
+                size_t firstElement = module1->second.front();
+                for (auto module2 = std::next(module1); module2 != mSpareModules.end(); ++module2) {
+                    if (std::find(module2->second.begin(), module2->second.end(), firstElement) != module2->second.end()) {
+                        if (!wellformed) {
+                            stream << std::endl;
+                        }
+                        stream << "Spare modules of '" << getElement(module1->first)->name() << "' and '" << getElement(module2->first)->name() << "' should not overlap.";
+                        wellformed = false;
+                    }
+                }
+            }
+            return wellformed;
         }
 
         template<typename ValueType>

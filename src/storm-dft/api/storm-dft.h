@@ -53,6 +53,13 @@ namespace storm {
                 return std::make_shared<storm::storage::DFT<ValueType>>(parser.parseJsonFromFile(file));
         }
 
+        template<typename ValueType>
+        bool isWellFormed(storm::storage::DFT<ValueType> const& dft) {
+            std::stringstream stream;
+            return dft.checkWellFormedness(stream);
+        }
+
+
         /*!
          * Analyse the given DFT according to the given properties.
          * First the Markov model is built from the DFT and then this model is checked against the given properties.

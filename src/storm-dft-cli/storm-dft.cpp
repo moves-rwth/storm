@@ -51,6 +51,12 @@ void processOptions() {
         return;
     }
 
+    // Check well-formedness of DFT
+    std::stringstream stream;
+    if (!dft->checkWellFormedness(stream)) {
+        STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "DFT is not well-formed: " << stream.str());
+    }
+
     if (dftGspnSettings.isTransformToGspn()) {
         // Transform to GSPN
         std::pair<std::shared_ptr<storm::gspn::GSPN>, uint64_t> pair = storm::api::transformToGSPN(*dft);
