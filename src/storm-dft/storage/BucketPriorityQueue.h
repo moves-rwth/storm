@@ -16,7 +16,7 @@ namespace storm {
             using HeuristicPointer = std::shared_ptr<storm::builder::DFTExplorationHeuristicDepth<ValueType>>;
 
         public:
-            explicit BucketPriorityQueue(size_t nrBuckets, double lowerValue, double ratio);
+            explicit BucketPriorityQueue(size_t nrBuckets, double lowerValue, double ratio, bool higher);
 
             void fix();
 
@@ -44,7 +44,7 @@ namespace storm {
 
             const double lowerValue;
 
-            const bool HIGHER = true;
+            const bool higher;
 
             const bool AUTOSORT = false;
 

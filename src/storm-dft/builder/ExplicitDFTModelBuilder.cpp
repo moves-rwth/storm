@@ -62,7 +62,7 @@ namespace storm {
                 stateStorage(dft.stateBitVectorSize()),
                 // TODO Matthias: make choosable
                 //explorationQueue(dft.nrElements()+1, 0, 1)
-                explorationQueue(200, 0, 0.9)
+                explorationQueue(200, 0, 0.9, false)
         {
             // Intentionally left empty.
             // TODO Matthias: remove again
