@@ -174,12 +174,12 @@ namespace storm {
         template<typename ValueType>
         std::pair<bool, ValueType> DFTGalileoParser<ValueType>::parseValue(std::string name, std::string& line, ValueParser<ValueType>& valueParser) {
             // Build regex for: name=(value)
-            std::regex lambdaRegex(name + "\\s*=\\s*([^\\s]*)");
+            std::regex nameRegex(name + "\\s*=\\s*([^\\s]*)");
             std::smatch match;
-            if (std::regex_search(line, match, lambdaRegex)) {
+            if (std::regex_search(line, match, nameRegex)) {
                 std::string value = match.str(1);
                 // Remove matched part
-                line = std::regex_replace(line, lambdaRegex, "");
+                line = std::regex_replace(line, nameRegex, "");
                 return std::make_pair(true, valueParser.parseValue(value));
             } else {
                 // No match found
@@ -190,12 +190,12 @@ namespace storm {
         template<typename ValueType>
         std::pair<bool, unsigned> DFTGalileoParser<ValueType>::parseNumber(std::string name, std::string& line) {
             // Build regex for: name=(number)
-            std::regex lambdaRegex(name + "\\s*=\\s*([[:digit:]]+)");
+            std::regex nameRegex(name + "\\s*=\\s*([[:digit:]]+)");
             std::smatch match;
-            if (std::regex_search(line, match, lambdaRegex)) {
+            if (std::regex_search(line, match, nameRegex)) {
                 std::string value = match.str(1);
                 // Remove matched part
-                line = std::regex_replace(line, lambdaRegex, "");
+                line = std::regex_replace(line, nameRegex, "");
                 return std::make_pair(true, NumberParser<unsigned>::parse(value));
             } else {
                 // No match found
