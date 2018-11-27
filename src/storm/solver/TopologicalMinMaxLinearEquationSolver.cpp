@@ -78,7 +78,7 @@ namespace storm {
                 storm::storage::BitVector sccRowGroupsAsBitVector(x.size(), false);
                 storm::storage::BitVector sccRowsAsBitVector(b.size(), false);
                 for (auto const& scc : *this->sortedSccDecomposition) {
-                    if (scc.isTrivial()) {
+                    if (scc.size() == 1) {
                         returnValue = solveTrivialScc(*scc.begin(), dir, x, b) && returnValue;
                     } else {
                         sccRowGroupsAsBitVector.clear();
@@ -142,7 +142,17 @@ namespace storm {
                     }
                 }
                 if (hasDiagonalEntry) {
-                    rowValue /= denominator;
+                    if (storm::utility::isZero(denominator)) {
+                        if (!storm::utility::isZero(rowValue)) {
+                            if (rowValue > storm::utility::zero<ValueType>()) {
+                                rowValue = storm::utility::infinity<ValueType>();
+                            } else {
+                                rowValue = -storm::utility::infinity<ValueType>();
+                            }
+                        }
+                    } else {
+                        rowValue /= denominator;
+                    }
                 }
                 if (firstRow) {
                     xi = std::move(rowValue);
