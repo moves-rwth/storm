@@ -1572,7 +1572,7 @@ namespace storm {
                 STORM_LOG_ASSERT(mecTransitions.isProbabilistic(), "The MEC-Matrix is not probabilistic.");
                 
                 // start the iterations
-                ValueType precision = storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision());
+                ValueType precision = storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()) / scalingFactor;
                 bool relative = env.solver().minMax().getRelativeTerminationCriterion();
                 std::vector<ValueType> x(mecTransitions.getRowGroupCount(), storm::utility::zero<ValueType>());
                 std::vector<ValueType> xPrime = x;
@@ -1600,7 +1600,7 @@ namespace storm {
                         *xPrimeIt = *xIt;
                     }
 
-                    if ((maxDiff - minDiff) <= relative ? (precision * minDiff) : precision) {
+                    if ((maxDiff - minDiff) <= (relative ? (precision * minDiff) : precision)) {
                         break;
                     }
                 }

@@ -1030,7 +1030,7 @@ namespace storm {
                     }
 
                     // Check for convergence
-                    if (maxDiff - minDiff <= relative ? (precision * minDiff) : precision) {
+                    if ((maxDiff - minDiff) <= (relative ? (precision * minDiff) : precision)) {
                         break;
                     }
                     
