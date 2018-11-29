@@ -15,12 +15,18 @@
 #include "storm/utility/Stopwatch.h"
 #include "storm/models/ModelType.h"
 
+#include "storm/api/verification.h"
+#include "storm-pars/api/storm-pars.h"
+
 #include "storm/modelchecker/results/CheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "storm-pars/modelchecker/region/SparseDtmcParameterLiftingModelChecker.h"
+
 #include "storm/solver/Z3SmtSolver.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 
 #include "storm/storage/expressions/RationalFunctionToExpression.h"
+
 
 
 namespace storm {
@@ -52,6 +58,73 @@ namespace storm {
         }
 
         template <typename ValueType>
+        std::vector<storm::storage::ParameterRegion<ValueType>> MonotonicityChecker<ValueType>::checkAssumptionsOnRegion(std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>> assumptions) {
+            assert (formulas[0]->isProbabilityOperatorFormula());
+            assert (formulas[0]->asProbabilityOperatorFormula().getSubformula().isUntilFormula() || formulas[0]->asProbabilityOperatorFormula().getSubformula().isEventuallyFormula());
+            Environment env = Environment();
+            std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel = model->as<storm::models::sparse::Model<ValueType>>();
+            bool generateSplitEstimates = false;
+            bool allowModelSimplification = false;
+            auto task = storm::api::createTask<ValueType>(formulas[0], true);
+            // TODO: storm::RationalNumber or double?
+
+            // TODO: Also allow different models
+            STORM_LOG_THROW (sparseModel->isOfType(storm::models::ModelType::Dtmc), storm::exceptions::NotImplementedException,
+                             "Checking assumptions on a region not implemented for this type of model");
+            auto modelChecker = storm::api::initializeParameterLiftingDtmcModelChecker<ValueType, storm::RationalNumber>(env, sparseModel, task, generateSplitEstimates, allowModelSimplification);
+
+            std::stack<std::pair<storm::storage::ParameterRegion<ValueType>, int>> regions;
+            std::vector<storm::storage::ParameterRegion<ValueType>> satRegions;
+            std::string regionText = "";
+            auto parameters = storm::models::sparse::getProbabilityParameters(*sparseModel);
+            for (auto itr = parameters.begin(); itr != parameters.end(); ++itr) {
+                if (regionText != "") {
+                    regionText += ",";
+                }
+                // TODO: region bounds
+                regionText += "0.1 <= " + itr->name() + " <= 0.9";
+            }
+
+            auto initialRegion = storm::api::parseRegion<ValueType>(regionText, parameters);
+            regions.push(std::pair<storm::storage::ParameterRegion<ValueType>, int>(initialRegion,0));
+            while (!regions.empty()) {
+                auto lastElement = regions.top();
+                regions.pop();
+                storm::storage::ParameterRegion<ValueType> currentRegion = lastElement.first;
+
+                // TODO: depth
+                if (lastElement.second < 5) {
+                    auto upperBound = modelChecker->getBound(env, currentRegion, storm::solver::OptimizationDirection::Maximize);
+                    auto lowerBound = modelChecker->getBound(env, currentRegion, storm::solver::OptimizationDirection::Minimize);
+                    std::vector<storm::RationalNumber> valuesUpper = upperBound->template asExplicitQuantitativeCheckResult<storm::RationalNumber>().getValueVector();
+                    std::vector<storm::RationalNumber> valuesLower = lowerBound->template asExplicitQuantitativeCheckResult<storm::RationalNumber>().getValueVector();
+                    bool assumptionsHold = true;
+                    for (auto itr = assumptions.begin(); assumptionsHold && itr != assumptions.end(); ++itr) {
+                        auto assumption = *itr;
+                        assert (assumption->getRelationType() == storm::expressions::BinaryRelationExpression::RelationType::GreaterOrEqual);
+                        auto state1 = std::stoi(assumption->getFirstOperand()->asVariableExpression().getVariableName());
+                        auto state2 = std::stoi(assumption->getSecondOperand()->asVariableExpression().getVariableName());
+                        assumptionsHold &= valuesLower[state1] >= valuesUpper[state2];
+                    }
+                    if (!assumptionsHold) {
+                        std::vector<storm::storage::ParameterRegion<ValueType>> newRegions;
+                        currentRegion.split(currentRegion.getCenterPoint(), newRegions);
+                        for (auto itr = newRegions.begin(); itr != newRegions.end(); ++itr) {
+                            regions.push(std::pair<storm::storage::ParameterRegion<ValueType>, int>(*itr,
+                                                                                                    lastElement.second +
+                                                                                                    1));
+                        }
+                    } else {
+                        satRegions.push_back(currentRegion);
+                    }
+                }
+            }
+            return satRegions;
+        }
+
+
+
+        template <typename ValueType>
         std::map<storm::analysis::Lattice*, std::map<carl::Variable, std::pair<bool, bool>>> MonotonicityChecker<ValueType>::checkMonotonicity(std::map<storm::analysis::Lattice*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> map, storm::storage::SparseMatrix<ValueType> matrix) {
             storm::utility::Stopwatch finalCheckWatch(true);
             std::map<storm::analysis::Lattice *, std::map<carl::Variable, std::pair<bool, bool>>> result;
@@ -74,35 +147,36 @@ namespace storm {
 
                     outfile.open(filename, std::ios_base::app);
                     auto assumptions = itr->second;
+                    bool validSomewhere = true;
                     if (assumptions.size() > 0) {
-                        STORM_PRINT("Given assumptions: " << std::endl);
+                        auto regions = checkAssumptionsOnRegion(assumptions);
+                        if (regions.size() > 0) {
+                            STORM_PRINT("For regions: " << std::endl);
+                        }
                         bool first = true;
-                        for (auto itr2 = assumptions.begin(); itr2 != assumptions.end(); ++itr2) {
-                            if (!first) {
-                                STORM_PRINT(" ^ ");
-                                outfile << (" ^ ");
-                            } else {
+                        for (auto itr2 = regions.begin(); itr2 != regions.end(); ++itr2) {
+                            if (first) {
                                 STORM_PRINT("    ");
                                 first = false;
                             }
-
-                            std::shared_ptr<storm::expressions::BinaryRelationExpression> expression = *itr2;
-                            auto var1 = expression->getFirstOperand();
-                            auto var2 = expression->getSecondOperand();
-                            STORM_PRINT(*expression);
-                            outfile << (*expression);
+                            STORM_PRINT(*itr2);
+                            outfile << (*itr2);
                         }
-                        STORM_PRINT(std::endl);
-                        outfile << ", ";
-                    } else {
+                        if (regions.size() > 0) {
+                            STORM_PRINT(std::endl);
+                            outfile << ", ";
+                        }
+                    }
+
+                    if (validSomewhere && assumptions.size() == 0) {
                         outfile << "No assumptions, ";
                     }
 
 
-                    if (varsMonotone.size() == 0) {
+                    if (validSomewhere && varsMonotone.size() == 0) {
                         STORM_PRINT("Result is constant" << std::endl);
                         outfile << "No params";
-                    } else {
+                    } else if (validSomewhere) {
                         auto itr2 = varsMonotone.begin();
                         while (itr2 != varsMonotone.end()) {
                             if (resultCheckOnSamples.find(itr2->first) != resultCheckOnSamples.end() &&
@@ -121,6 +195,7 @@ namespace storm {
                                     STORM_PRINT("  - Monotone decreasing in: " << itr2->first << std::endl);
                                     outfile << "D " << itr2->first;
                                 } else {
+
                                     STORM_PRINT(
                                             "  - Do not know if monotone incr/decreasing in: " << itr2->first << std::endl);
                                     outfile << "? " << itr2->first;
