@@ -134,7 +134,6 @@ namespace storm {
                 ValueType denominator;
                 for (auto const& entry : this->A->getRow(row)) {
                     if (entry.getColumn() == sccState) {
-                        STORM_LOG_ASSERT(!storm::utility::isOne(entry.getValue()), "Diagonal entry of fix point system has value 1.");
                         hasDiagonalEntry = true;
                         denominator = storm::utility::one<ValueType>() - entry.getValue();
                     } else {
@@ -143,13 +142,10 @@ namespace storm {
                 }
                 if (hasDiagonalEntry) {
                     if (storm::utility::isZero(denominator)) {
-                        if (!storm::utility::isZero(rowValue)) {
-                            if (rowValue > storm::utility::zero<ValueType>()) {
-                                rowValue = storm::utility::infinity<ValueType>();
-                            } else {
-                                rowValue = -storm::utility::infinity<ValueType>();
-                            }
-                        }
+                        // In this case we have a selfloop on this state. This can never an optimal choice:
+                        // When minimizing, we are looking for the largest fixpoint (which will never be attained by this action)
+                        // When maximizing, this choice reflects probability zero (non-optimal) or reward infinity (should already be handled during preprocessing).
+                        continue;
                     } else {
                         rowValue /= denominator;
                     }
@@ -175,6 +171,7 @@ namespace storm {
             if (this->isTrackSchedulerSet()) {
                 this->schedulerChoices.get()[sccState] = bestRow - this->A->getRowGroupIndices()[sccState];
             }
+            STORM_LOG_THROW(!firstRow, storm::exceptions::UnexpectedException, "Empty row group in MinMax equation system.");
             //std::cout << "Solved trivial scc " << sccState << " with result " << globalX[sccState] << std::endl;
             return true;
         }
