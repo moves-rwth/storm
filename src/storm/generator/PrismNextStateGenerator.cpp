@@ -279,11 +279,26 @@ namespace storm {
 
             // Get all choices for the state.
             result.setExpanded();
-            std::vector<Choice<ValueType>> allChoices = getUnlabeledChoices(*this->state, stateToIdCallback);
-            std::vector<Choice<ValueType>> allLabeledChoices = getLabeledChoices(*this->state, stateToIdCallback);
-            for (auto& choice : allLabeledChoices) {
-                allChoices.push_back(std::move(choice));
+            
+            std::vector<Choice<ValueType>> allChoices;
+            std::vector<Choice<ValueType>> allLabeledChoices;
+            if (this->getOptions().isApplyMaximalProgressAssumptionSet()) {
+                // First explore only edges without a rate
+                allChoices = getUnlabeledChoices(*this->state, stateToIdCallback, CommandFilter::Probabilistic);
+                allLabeledChoices = getLabeledChoices(*this->state, stateToIdCallback, CommandFilter::Probabilistic);
+                if (allChoices.empty() && allLabeledChoices.empty()) {
+                    // Expand the Markovian edges if there are no probabilistic ones.
+                    allChoices = getUnlabeledChoices(*this->state, stateToIdCallback, CommandFilter::Markovian);
+                    allLabeledChoices = getLabeledChoices(*this->state, stateToIdCallback, CommandFilter::Markovian);
+                }
+            } else {
+                allChoices = getUnlabeledChoices(*this->state, stateToIdCallback);
+                allLabeledChoices = getLabeledChoices(*this->state, stateToIdCallback);
             }
+            for (auto& choice : allLabeledChoices) {
+                    allChoices.push_back(std::move(choice));
+            }
+            
             std::size_t totalNumberOfChoices = allChoices.size();
             
             // If there is not a single choice, we return immediately, because the state has no behavior (other than
@@ -407,7 +422,7 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
-        boost::optional<std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>>> PrismNextStateGenerator<ValueType, StateType>::getActiveCommandsByActionIndex(uint_fast64_t const& actionIndex) {
+        boost::optional<std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>>> PrismNextStateGenerator<ValueType, StateType>::getActiveCommandsByActionIndex(uint_fast64_t const& actionIndex, CommandFilter const& commandFilter) {
             boost::optional<std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>>> result((std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>>()));
                         
             // Iterate over all modules.
@@ -432,6 +447,12 @@ namespace storm {
                 // Look up commands by their indices and add them if the guard evaluates to true in the given state.
                 for (uint_fast64_t commandIndex : commandIndices) {
                     storm::prism::Command const& command = module.getCommand(commandIndex);
+                    if (commandFilter != CommandFilter::All) {
+                        STORM_LOG_ASSERT(commandFilter == CommandFilter::Markovian || commandFilter == CommandFilter::Probabilistic, "Unexpected command filter.");
+                        if ((commandFilter == CommandFilter::Markovian) != command.isMarkovian()) {
+                            continue;
+                        }
+                    }
                     if (this->evaluator->asBool(command.getGuardExpression())) {
                         commands.push_back(command);
                     }
@@ -451,7 +472,7 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
-        std::vector<Choice<ValueType>> PrismNextStateGenerator<ValueType, StateType>::getUnlabeledChoices(CompressedState const& state, StateToIdCallback stateToIdCallback) {
+        std::vector<Choice<ValueType>> PrismNextStateGenerator<ValueType, StateType>::getUnlabeledChoices(CompressedState const& state, StateToIdCallback stateToIdCallback, CommandFilter const& commandFilter) {
             std::vector<Choice<ValueType>> result;
             
             // Iterate over all modules.
@@ -465,6 +486,13 @@ namespace storm {
                     // Only consider unlabeled commands.
                     if (command.isLabeled()) continue;
                     
+                    if (commandFilter != CommandFilter::All) {
+                        STORM_LOG_ASSERT(commandFilter == CommandFilter::Markovian || commandFilter == CommandFilter::Probabilistic, "Unexpected command filter.");
+                        if ((commandFilter == CommandFilter::Markovian) != command.isMarkovian()) {
+                            continue;
+                        }
+                    }
+
                     // Skip the command, if it is not enabled.
                     if (!this->evaluator->asBool(command.getGuardExpression())) {
                         continue;
@@ -541,11 +569,11 @@ namespace storm {
         }
             
         template<typename ValueType, typename StateType>
-        std::vector<Choice<ValueType>> PrismNextStateGenerator<ValueType, StateType>::getLabeledChoices(CompressedState const& state, StateToIdCallback stateToIdCallback) {
+        std::vector<Choice<ValueType>> PrismNextStateGenerator<ValueType, StateType>::getLabeledChoices(CompressedState const& state, StateToIdCallback stateToIdCallback, CommandFilter const& commandFilter) {
             std::vector<Choice<ValueType>> result;
 
             for (uint_fast64_t actionIndex : program.getSynchronizingActionIndices()) {
-                boost::optional<std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>>> optionalActiveCommandLists = getActiveCommandsByActionIndex(actionIndex);
+                boost::optional<std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>>> optionalActiveCommandLists = getActiveCommandsByActionIndex(actionIndex, commandFilter);
 
                 // Only process this action label, if there is at least one feasible solution.
                 if (optionalActiveCommandLists) {

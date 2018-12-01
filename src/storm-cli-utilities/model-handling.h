@@ -232,11 +232,12 @@ namespace storm {
             } else {
                 options.setBuildChoiceOrigins(false);
             }
-            options.setBuildAllLabels(buildSettings.isBuildFullModelSet());
-            options.setBuildAllRewardModels(buildSettings.isBuildFullModelSet());
             options.setAddOutOfBoundsState(buildSettings.isBuildOutOfBoundsStateSet());
             if (buildSettings.isBuildFullModelSet()) {
                 options.clearTerminalStates();
+                options.setApplyMaximalProgressAssumption(false);
+                options.setBuildAllLabels(true);
+                options.setBuildAllRewardModels(true);
             }
             return storm::api::buildSparseModel<ValueType>(input.model.get(), options, buildSettings.isJitSet(), storm::settings::getModule<storm::settings::modules::JitBuilderSettings>().isDoctorSet());
         }

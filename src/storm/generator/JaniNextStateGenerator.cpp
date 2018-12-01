@@ -457,7 +457,17 @@ namespace storm {
             
             // Get all choices for the state.
             result.setExpanded();
-            std::vector<Choice<ValueType>> allChoices = getActionChoices(locations, *this->state, stateToIdCallback);
+            std::vector<Choice<ValueType>> allChoices;
+            if (this->getOptions().isApplyMaximalProgressAssumptionSet()) {
+                // First explore only edges without a rate
+                allChoices = getActionChoices(locations, *this->state, stateToIdCallback, EdgeFilter::WithoutRate);
+                if (allChoices.empty()) {
+                    // Expand the Markovian edges if there are no probabilistic ones.
+                    allChoices = getActionChoices(locations, *this->state, stateToIdCallback, EdgeFilter::WithRate);
+                }
+            } else {
+                allChoices = getActionChoices(locations, *this->state, stateToIdCallback);
+            }
             std::size_t totalNumberOfChoices = allChoices.size();
             
             // If there is not a single choice, we return immediately, because the state has no behavior (other than
@@ -800,7 +810,7 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
-        std::vector<Choice<ValueType>> JaniNextStateGenerator<ValueType, StateType>::getActionChoices(std::vector<uint64_t> const& locations, CompressedState const& state, StateToIdCallback stateToIdCallback) {
+        std::vector<Choice<ValueType>> JaniNextStateGenerator<ValueType, StateType>::getActionChoices(std::vector<uint64_t> const& locations, CompressedState const& state, StateToIdCallback stateToIdCallback, EdgeFilter const& edgeFilter) {
             std::vector<Choice<ValueType>> result;
             
             for (auto const& outputAndEdges : edges) {
@@ -813,6 +823,12 @@ namespace storm {
                     auto edgesIt = nonsychingEdges.second.find(locations[automatonIndex]);
                     if (edgesIt != nonsychingEdges.second.end()) {
                         for (auto const& indexAndEdge : edgesIt->second) {
+                            if (edgeFilter != EdgeFilter::All) {
+                                STORM_LOG_ASSERT(edgeFilter == EdgeFilter::WithRate || edgeFilter == EdgeFilter::WithoutRate, "Unexpected edge filter.");
+                                if ((edgeFilter == EdgeFilter::WithRate) != indexAndEdge.second->hasRate()) {
+                                    continue;
+                                }
+                            }
                             if (!this->evaluator->asBool(indexAndEdge.second->getGuard())) {
                                 continue;
                             }
@@ -842,6 +858,12 @@ namespace storm {
                         auto edgesIt = automatonAndEdges.second.find(locations[automatonIndex]);
                         if (edgesIt != automatonAndEdges.second.end()) {
                             for (auto const& indexAndEdge : edgesIt->second) {
+                                if (edgeFilter != EdgeFilter::All) {
+                                    STORM_LOG_ASSERT(edgeFilter == EdgeFilter::WithRate || edgeFilter == EdgeFilter::WithoutRate, "Unexpected edge filter.");
+                                    if ((edgeFilter == EdgeFilter::WithRate) != indexAndEdge.second->hasRate()) {
+                                        continue;
+                                    }
+                                }
                                 if (!this->evaluator->asBool(indexAndEdge.second->getGuard())) {
                                     continue;
                                 }

@@ -38,13 +38,12 @@ namespace storm {
         }
         
 
-        BuilderOptions::BuilderOptions(bool buildAllRewardModels, bool buildAllLabels) : buildAllRewardModels(buildAllRewardModels), buildAllLabels(buildAllLabels), buildChoiceLabels(false), buildStateValuations(false), buildChoiceOrigins(false), scaleAndLiftTransitionRewards(true), explorationChecks(false), inferObservationsFromActions(false), addOverlappingGuardsLabel(false), addOutOfBoundsState(false), reservedBitsForUnboundedVariables(32), showProgress(false), showProgressDelay(0) {
+        BuilderOptions::BuilderOptions(bool buildAllRewardModels, bool buildAllLabels) : buildAllRewardModels(buildAllRewardModels), buildAllLabels(buildAllLabels), applyMaximalProgressAssumption(false), buildChoiceLabels(false), buildStateValuations(false), buildChoiceOrigins(false), scaleAndLiftTransitionRewards(true), explorationChecks(false), inferObservationsFromActions(false), addOverlappingGuardsLabel(false), addOutOfBoundsState(false), reservedBitsForUnboundedVariables(32), showProgress(false), showProgressDelay(0) {
             // Intentionally left empty.
         }
         
-        BuilderOptions::BuilderOptions(storm::logic::Formula const& formula, storm::storage::SymbolicModelDescription const& modelDescription) : BuilderOptions() {
-            this->preserveFormula(formula, modelDescription);
-            this->setTerminalStatesFromFormula(formula);
+        BuilderOptions::BuilderOptions(storm::logic::Formula const& formula, storm::storage::SymbolicModelDescription const& modelDescription) : BuilderOptions({formula.asSharedPointer()}, modelDescription) {
+            // Intentionally left empty.
         }
         
         BuilderOptions::BuilderOptions(std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, storm::storage::SymbolicModelDescription const& modelDescription) : BuilderOptions() {
@@ -59,6 +58,7 @@ namespace storm {
             
             auto const& buildSettings = storm::settings::getModule<storm::settings::modules::BuildSettings>();
             auto const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
+            this->setApplyMaximalProgressAssumption(modelDescription.getModelType() == storm::storage::SymbolicModelDescription::ModelType::MA);
             explorationChecks = buildSettings.isExplorationChecksSet();
             reservedBitsForUnboundedVariables = buildSettings.getBitsForUnboundedVariables();
             showProgress = generalSettings.isVerboseSet();
@@ -143,6 +143,10 @@ namespace storm {
         
         void BuilderOptions::clearTerminalStates() {
             terminalStates.clear();
+        }
+        
+        bool BuilderOptions::isApplyMaximalProgressAssumptionSet() const {
+            return applyMaximalProgressAssumption;
         }
         
         bool BuilderOptions::isBuildChoiceLabelsSet() const {
@@ -238,6 +242,11 @@ namespace storm {
         
         BuilderOptions& BuilderOptions::addTerminalLabel(std::string const& label, bool value) {
             terminalStates.push_back(std::make_pair(LabelOrExpression(label), value));
+            return *this;
+        }
+        
+        BuilderOptions& BuilderOptions::setApplyMaximalProgressAssumption(bool newValue) {
+            applyMaximalProgressAssumption = newValue;
             return *this;
         }
         

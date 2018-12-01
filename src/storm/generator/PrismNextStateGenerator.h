@@ -22,7 +22,8 @@ namespace storm {
         public:
             typedef typename NextStateGenerator<ValueType, StateType>::StateToIdCallback StateToIdCallback;
             typedef boost::container::flat_set<uint_fast64_t> CommandSet;
-            
+            enum class CommandFilter {All, Markovian, Probabilistic};
+
             PrismNextStateGenerator(storm::prism::Program const& program, NextStateGeneratorOptions const& options = NextStateGeneratorOptions());
 
             virtual ModelType getModelType() const override;
@@ -75,7 +76,7 @@ namespace storm {
              * @param actionIndex The index of the action label to select.
              * @return A list of lists of active commands or nothing.
              */
-            boost::optional<std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>>> getActiveCommandsByActionIndex(uint_fast64_t const& actionIndex);
+            boost::optional<std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>>> getActiveCommandsByActionIndex(uint_fast64_t const& actionIndex, CommandFilter const& commandFilter = CommandFilter::All);
             
             /*!
              * Retrieves all unlabeled choices possible from the given state.
@@ -83,7 +84,7 @@ namespace storm {
              * @param state The state for which to retrieve the unlabeled choices.
              * @return The unlabeled choices of the state.
              */
-            std::vector<Choice<ValueType>> getUnlabeledChoices(CompressedState const& state, StateToIdCallback stateToIdCallback);
+            std::vector<Choice<ValueType>> getUnlabeledChoices(CompressedState const& state, StateToIdCallback stateToIdCallback, CommandFilter const& commandFilter = CommandFilter::All);
             
             /*!
              * Retrieves all labeled choices possible from the given state.
@@ -91,7 +92,7 @@ namespace storm {
              * @param state The state for which to retrieve the unlabeled choices.
              * @return The labeled choices of the state.
              */
-            std::vector<Choice<ValueType>> getLabeledChoices(CompressedState const& state, StateToIdCallback stateToIdCallback);
+            std::vector<Choice<ValueType>> getLabeledChoices(CompressedState const& state, StateToIdCallback stateToIdCallback, CommandFilter const& commandFilter = CommandFilter::All);
             
             /*!
              * A recursive helper function to generate a synchronziing distribution.
