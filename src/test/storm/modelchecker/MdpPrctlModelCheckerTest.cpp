@@ -157,6 +157,21 @@ namespace {
             return env;
         }
     };
+    
+    class SparseRationalViToPiEnvironment {
+    public:
+        static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan; // Unused for sparse models
+        static const MdpEngine engine = MdpEngine::PrismSparse;
+        static const bool isExact = true;
+        typedef storm::RationalNumber ValueType;
+        typedef storm::models::sparse::Mdp<ValueType> ModelType;
+        static storm::Environment createEnvironment() {
+            storm::Environment env;
+            env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ViToPi);
+            return env;
+        }
+    };
+    
     class SparseRationalRationalSearchEnvironment {
     public:
         static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan; // Unused for sparse models
@@ -406,6 +421,7 @@ namespace {
             SparseDoubleTopologicalValueIterationEnvironment,
             SparseDoubleTopologicalSoundValueIterationEnvironment,
             SparseRationalPolicyIterationEnvironment,
+            SparseRationalViToPiEnvironment,
             SparseRationalRationalSearchEnvironment,
             HybridCuddDoubleValueIterationEnvironment,
             HybridSylvanDoubleValueIterationEnvironment,
