@@ -115,9 +115,35 @@ namespace storm {
                 } else if (left.isAtomicLabelFormula()) {
                     addTerminalLabel(left.asAtomicLabelFormula().getLabel(), false);
                 }
+            } else if (formula.isBoundedUntilFormula()) {
+                storm::logic::BoundedUntilFormula const& boundedUntil = formula.asBoundedUntilFormula();
+                bool hasLowerBound = false;
+                for (uint64_t i = 0; i < boundedUntil.getDimension(); ++i) {
+                    if (boundedUntil.hasLowerBound(i) && (boundedUntil.getLowerBound(i).containsVariables() || !storm::utility::isZero(boundedUntil.getLowerBound(i).evaluateAsRational()))) {
+                        hasLowerBound = true;
+                        break;
+                    }
+                }
+                if (!hasLowerBound) {
+                    storm::logic::Formula const& right = boundedUntil.getRightSubformula();
+                    if (right.isAtomicExpressionFormula() || right.isAtomicLabelFormula()) {
+                        this->setTerminalStatesFromFormula(right);
+                    }
+                }
+                storm::logic::Formula const& left = boundedUntil.getLeftSubformula();
+                if (left.isAtomicExpressionFormula()) {
+                    addTerminalExpression(left.asAtomicExpressionFormula().getExpression(), false);
+                } else if (left.isAtomicLabelFormula()) {
+                    addTerminalLabel(left.asAtomicLabelFormula().getLabel(), false);
+                }
             } else if (formula.isProbabilityOperatorFormula()) {
                 storm::logic::Formula const& sub = formula.asProbabilityOperatorFormula().getSubformula();
-                if (sub.isEventuallyFormula() || sub.isUntilFormula()) {
+                if (sub.isEventuallyFormula() || sub.isUntilFormula() || sub.isBoundedUntilFormula()) {
+                    this->setTerminalStatesFromFormula(sub);
+                }
+            } else if (formula.isRewardOperatorFormula() || formula.isTimeOperatorFormula()) {
+                storm::logic::Formula const& sub = formula.asOperatorFormula().getSubformula();
+                if (sub.isEventuallyFormula()) {
                     this->setTerminalStatesFromFormula(sub);
                 }
             }
