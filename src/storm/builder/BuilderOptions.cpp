@@ -58,7 +58,9 @@ namespace storm {
             
             auto const& buildSettings = storm::settings::getModule<storm::settings::modules::BuildSettings>();
             auto const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
-            this->setApplyMaximalProgressAssumption(modelDescription.getModelType() == storm::storage::SymbolicModelDescription::ModelType::MA);
+            if (modelDescription.hasModel()) {
+                this->setApplyMaximalProgressAssumption(modelDescription.getModelType() == storm::storage::SymbolicModelDescription::ModelType::MA);
+            }
             explorationChecks = buildSettings.isExplorationChecksSet();
             reservedBitsForUnboundedVariables = buildSettings.getBitsForUnboundedVariables();
             showProgress = generalSettings.isVerboseSet();
