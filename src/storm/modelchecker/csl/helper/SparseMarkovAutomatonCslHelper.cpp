@@ -932,7 +932,7 @@ namespace storm {
                 storm::storage::BitVector probabilisticMecStates = mecStates & ~markovianStates;
                 storm::storage::BitVector probabilisticMecChoices = transitionMatrix.getRowFilter(probabilisticMecStates) & mecChoices;
                 STORM_LOG_THROW(!markovianMecStates.empty(), storm::exceptions::InvalidOperationException, "Markov Automaton has Zeno behavior. Computation of Long Run Average values not supported.");
-                
+                bool hasProbabilisticStates = !probabilisticMecStates.empty();
                 // Get the uniformization rate
                 
                 ValueType uniformizationRate = storm::utility::vector::max_if(exitRateVector, markovianMecStates);
@@ -946,15 +946,21 @@ namespace storm {
                 // * a matrix aProbabilistic with all transitions from probabilistic mec states to other probabilistic mec states.
                 // * a matrix aProbabilisticToMarkovian with all  transitions from probabilistic mec states to all Markovian mec states.
                 typename storm::storage::SparseMatrix<ValueType> aMarkovian = transitionMatrix.getSubmatrix(true, markovianMecStates, markovianMecStates, true);
-                typename storm::storage::SparseMatrix<ValueType> aMarkovianToProbabilistic = transitionMatrix.getSubmatrix(true, markovianMecStates, probabilisticMecStates);
-                typename storm::storage::SparseMatrix<ValueType> aProbabilistic = transitionMatrix.getSubmatrix(false, probabilisticMecChoices, probabilisticMecStates);
-                typename storm::storage::SparseMatrix<ValueType> aProbabilisticToMarkovian = transitionMatrix.getSubmatrix(false, probabilisticMecChoices, markovianMecStates);
+                typename storm::storage::SparseMatrix<ValueType> aMarkovianToProbabilistic, aProbabilistic, aProbabilisticToMarkovian;
+                if (hasProbabilisticStates) {
+                    aMarkovianToProbabilistic = transitionMatrix.getSubmatrix(true, markovianMecStates, probabilisticMecStates);
+                    aProbabilistic = transitionMatrix.getSubmatrix(false, probabilisticMecChoices, probabilisticMecStates);
+                    aProbabilisticToMarkovian = transitionMatrix.getSubmatrix(false, probabilisticMecChoices, markovianMecStates);
+                }
+                
                 // The matrices with transitions from Markovian states need to be uniformized.
                 uint64_t subState = 0;
                 for (auto state : markovianMecStates) {
                     ValueType uniformizationFactor = exitRateVector[state] / uniformizationRate;
-                    for (auto& entry : aMarkovianToProbabilistic.getRow(subState)) {
-                        entry.setValue(entry.getValue() * uniformizationFactor);
+                    if (hasProbabilisticStates) {
+                        for (auto& entry : aMarkovianToProbabilistic.getRow(subState)) {
+                            entry.setValue(entry.getValue() * uniformizationFactor);
+                        }
                     }
                     for (auto& entry : aMarkovian.getRow(subState)) {
                         if (entry.getColumn() == subState) {
@@ -979,12 +985,14 @@ namespace storm {
                 }
                 
                 std::vector<ValueType> probabilisticChoiceRewards;
-                probabilisticChoiceRewards.reserve(aProbabilistic.getRowCount());
-                for (auto const& state : probabilisticMecStates) {
-                    uint64_t groupStart = transitionMatrix.getRowGroupIndices()[state];
-                    uint64_t groupEnd = transitionMatrix.getRowGroupIndices()[state + 1];
-                    for (uint64_t choice = probabilisticMecChoices.getNextSetIndex(groupStart); choice < groupEnd; choice = probabilisticMecChoices.getNextSetIndex(choice + 1)) {
-                        probabilisticChoiceRewards.push_back(rewardModel.getTotalStateActionReward(state, choice, transitionMatrix, storm::utility::zero<ValueType>()));
+                if (hasProbabilisticStates) {
+                    probabilisticChoiceRewards.reserve(aProbabilistic.getRowCount());
+                    for (auto const& state : probabilisticMecStates) {
+                        uint64_t groupStart = transitionMatrix.getRowGroupIndices()[state];
+                        uint64_t groupEnd = transitionMatrix.getRowGroupIndices()[state + 1];
+                        for (uint64_t choice = probabilisticMecChoices.getNextSetIndex(groupStart); choice < groupEnd; choice = probabilisticMecChoices.getNextSetIndex(choice + 1)) {
+                            probabilisticChoiceRewards.push_back(rewardModel.getTotalStateActionReward(state, choice, transitionMatrix, storm::utility::zero<ValueType>()));
+                        }
                     }
                 }
                 
@@ -994,35 +1002,46 @@ namespace storm {
                 bool relative = env.solver().minMax().getRelativeTerminationCriterion();
                 std::vector<ValueType> v(aMarkovian.getRowCount(), storm::utility::zero<ValueType>());
                 std::vector<ValueType> w = v;
-                std::vector<ValueType> x(aProbabilistic.getRowGroupCount(), storm::utility::zero<ValueType>());
-                std::vector<ValueType> b = probabilisticChoiceRewards;
-                
-                // Check for requirements of the solver.
-                // The solution is unique as we assume non-zeno MAs.
-                storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType> minMaxLinearEquationSolverFactory;
-                storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(env, true, dir);
-                requirements.clearLowerBounds();
-                STORM_LOG_THROW(!requirements.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + requirements.getEnabledRequirementsAsString() + " not checked.");
-
-                auto solver = minMaxLinearEquationSolverFactory.create(env, std::move(aProbabilistic));
-                solver->setLowerBound(storm::utility::zero<ValueType>());
-                solver->setHasUniqueSolution(true);
-                solver->setRequirementsChecked(true);
-                solver->setCachingEnabled(true);
+                std::vector<ValueType> x, b;
+                std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver;
+                if (hasProbabilisticStates) {
+                    x.resize(aProbabilistic.getRowGroupCount(), storm::utility::zero<ValueType>());
+                    b = probabilisticChoiceRewards;
+                    
+                    // Check for requirements of the solver.
+                    // The solution is unique as we assume non-zeno MAs.
+                    storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType> minMaxLinearEquationSolverFactory;
+                    storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(env, true, dir);
+                    requirements.clearLowerBounds();
+                    STORM_LOG_THROW(!requirements.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + requirements.getEnabledRequirementsAsString() + " not checked.");
+    
+                    solver = minMaxLinearEquationSolverFactory.create(env, std::move(aProbabilistic));
+                    solver->setLowerBound(storm::utility::zero<ValueType>());
+                    solver->setHasUniqueSolution(true);
+                    solver->setRequirementsChecked(true);
+                    solver->setCachingEnabled(true);
+                }
                 
                 while (true) {
                     // Compute the expected total rewards for the probabilistic states
-                    solver->solveEquations(env, dir, x, b);
-                    
+                    if (hasProbabilisticStates) {
+                        solver->solveEquations(env, dir, x, b);
+                    }
                     // now compute the values for the markovian states. We also keep track of the maximal and minimal difference between two values (for convergence checking)
                     auto vIt = v.begin();
                     uint64_t row = 0;
-                    ValueType newValue = markovianChoiceRewards[row] + aMarkovianToProbabilistic.multiplyRowWithVector(row, x) + aMarkovian.multiplyRowWithVector(row, w);
+                    ValueType newValue = markovianChoiceRewards[row] + aMarkovian.multiplyRowWithVector(row, w);
+                    if (hasProbabilisticStates) {
+                        newValue += aMarkovianToProbabilistic.multiplyRowWithVector(row, x);
+                    }
                     ValueType maxDiff = newValue - *vIt;
                     ValueType minDiff = maxDiff;
                     *vIt = newValue;
                     for (++vIt, ++row; row < aMarkovian.getRowCount(); ++vIt, ++row) {
-                        newValue = markovianChoiceRewards[row] + aMarkovianToProbabilistic.multiplyRowWithVector(row, x) + aMarkovian.multiplyRowWithVector(row, w);
+                        newValue = markovianChoiceRewards[row] + aMarkovian.multiplyRowWithVector(row, w);
+                        if (hasProbabilisticStates) {
+                            newValue += aMarkovianToProbabilistic.multiplyRowWithVector(row, x);
+                        }
                         ValueType diff = newValue - *vIt;
                         maxDiff = std::max(maxDiff, diff);
                         minDiff = std::min(minDiff, diff);
@@ -1037,9 +1056,10 @@ namespace storm {
                     // update the rhs of the MinMax equation system
                     ValueType referenceValue = v.front();
                     storm::utility::vector::applyPointwise<ValueType, ValueType>(v, w, [&referenceValue] (ValueType const& v_i) -> ValueType { return v_i - referenceValue; });
-                    aProbabilisticToMarkovian.multiplyWithVector(w, b);
-                    storm::utility::vector::addVectors(b, probabilisticChoiceRewards, b);
-
+                    if (hasProbabilisticStates) {
+                        aProbabilisticToMarkovian.multiplyWithVector(w, b);
+                        storm::utility::vector::addVectors(b, probabilisticChoiceRewards, b);
+                    }
                 }
                 return v.front() * uniformizationRate;
             
