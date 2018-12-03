@@ -264,6 +264,11 @@ namespace storm {
                  * @return The property filter.
                  */
                 std::string getPropertyFilter() const;
+                
+                /*!
+                 * Retrieves whether a DTMC/CTMC should be converted to an MDP/MA
+                 */
+                bool isToNondeterministicModelSet() const;
 
                 bool check() const override;
                 void finalize() override;
@@ -296,6 +301,8 @@ namespace storm {
                 static const std::string janiPropertyOptionShortName;
                 static const std::string propertyOptionName;
                 static const std::string propertyOptionShortName;
+                static const std::string toNondetOptionName;
+
             };
 
         } // namespace modules

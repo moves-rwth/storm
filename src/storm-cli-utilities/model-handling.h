@@ -41,6 +41,7 @@
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/settings/modules/AbstractionSettings.h"
 #include "storm/settings/modules/ResourceSettings.h"
+#include "storm/settings/modules/ModelCheckerSettings.h"
 
 #include "storm/utility/Stopwatch.h"
 
@@ -319,6 +320,11 @@ namespace storm {
             
             if (generalSettings.isBisimulationSet()) {
                 result.first = preprocessSparseModelBisimulation(result.first, input, bisimulationSettings);
+                result.second = true;
+            }
+            
+            if (ioSettings.isToNondeterministicModelSet()) {
+                result.first = storm::api::transformToNondeterministicModel<ValueType>(std::move(*result.first));
                 result.second = true;
             }
             
