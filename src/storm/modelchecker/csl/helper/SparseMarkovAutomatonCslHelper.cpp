@@ -263,17 +263,22 @@ namespace storm {
 
                 // (1) define/declare horizon, epsilon, kappa, N, lambda, maxNorm
                 uint64_t numberOfStates = fullTransitionMatrix.getRowGroupCount();
-                double T = boundsPair.second;
+                // 'Unpack' the bounds to make them more easily accessible.
+                double lowerBound = boundsPair.first;
+                double upperBound = boundsPair.second;
+                // Lower bound > 0 is not implemented!
+                STORM_LOG_THROW(lowerBound == 0, storm::exceptions::NotImplementedException, "Support for lower bound > 0 not implemented in Unif+.");
+                // Truncation error
                 // TODO: make kappa a parameter.
                 ValueType kappa = storm::utility::one<ValueType>() / 10;
+                // Approximation error
                 ValueType epsilon = storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision();
+                // Lambda is largest exit rate
                 ValueType lambda = exitRateVector[0];
                 for (ValueType const& rate : exitRateVector) {
                     lambda = std::max(rate, lambda);
                 }
                 STORM_LOG_TRACE("Initial lambda is " << lambda << ".");
-                uint64_t N;
-                ValueType maxNorm = storm::utility::zero<ValueType>();
 
                 // Compute the relative reachability vectors and create solver for models with SCCs.
                 std::vector<std::vector<ValueType>> relativeReachabilities(transitionMatrix.getRowCount());
@@ -308,16 +313,17 @@ namespace storm {
                     }
                 }
 
-                // Loop until result is within precision bound.
                 std::vector<ValueType> init(numberOfStates, -1);
+                ValueType maxNorm = storm::utility::zero<ValueType>();
+                // Maximal step size
+                uint64_t N;
+                // Loop until result is within precision bound.
                 do {
-                    maxNorm = storm::utility::zero<ValueType>();
-
                     // (2) update parameter
-                    N = storm::utility::ceil(lambda * T * std::exp(2) - storm::utility::log(kappa * epsilon));
+                    N = storm::utility::ceil(lambda * upperBound * std::exp(2) - storm::utility::log(kappa * epsilon));
 
                     // (3) uniform  - just applied to Markovian states.
-                    for (uint64_t i = 0; i < fullTransitionMatrix.getRowGroupCount(); i++) {
+                    for (uint64_t i = 0; i < numberOfStates; i++) {
                         if (!markovianAndGoalStates[i] || psiStates[i]) {
                             continue;
                         }
@@ -348,7 +354,7 @@ namespace storm {
                     }
 
                     // Compute poisson distribution.
-                    storm::utility::numerical::FoxGlynnResult<ValueType> foxGlynnResult = storm::utility::numerical::foxGlynn(lambda * T, epsilon * kappa / 100);
+                    storm::utility::numerical::FoxGlynnResult<ValueType> foxGlynnResult = storm::utility::numerical::foxGlynn(lambda * upperBound, epsilon * kappa / 100);
 
                     // Scale the weights so they sum to one.
                     for (auto& element : foxGlynnResult.weights) {
@@ -371,6 +377,7 @@ namespace storm {
                     }
 
                     // Only iterate over result vector, as the results can only get more precise.
+                    maxNorm = storm::utility::zero<ValueType>();
                     for (uint64_t i = 0; i < numberOfStates; i++){
                         ValueType diff = storm::utility::abs(unifVectors.resUpper[0][i] - unifVectors.resLower[0][i]);
                         maxNorm = std::max(maxNorm, diff);
