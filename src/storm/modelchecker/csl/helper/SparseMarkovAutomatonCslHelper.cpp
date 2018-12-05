@@ -217,7 +217,7 @@ namespace storm {
             }
 
             template<typename ValueType>
-            std::vector<ValueType> computeBoundedUntilProbabilitiesUnifPlus(Environment const& env, OptimizationDirection dir, std::pair<double, double> const& boundsPair, std::vector<ValueType> const& exitRateVector, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates) {
+            std::vector<ValueType> computeBoundedUntilProbabilitiesUnifPlus(Environment const& env, OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& exitRateVector, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates, std::pair<double, double> const& boundsPair) {
                 STORM_LOG_TRACE("Using UnifPlus to compute bounded until probabilities.");
 
                 // Obtain bit vectors to identify different kind of states.
@@ -564,14 +564,12 @@ namespace storm {
             
             template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
             std::vector<ValueType> SparseMarkovAutomatonCslHelper::computeBoundedUntilProbabilities(Environment const& env, OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& exitRateVector, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates, std::pair<double, double> const& boundsPair) {
-                
                 auto const& settings = storm::settings::getModule<storm::settings::modules::MinMaxEquationSolverSettings>();
                 if (settings.getMarkovAutomatonBoundedReachabilityMethod() == storm::settings::modules::MinMaxEquationSolverSettings::MarkovAutomatonBoundedReachabilityMethod::Imca) {
                     return computeBoundedUntilProbabilitiesImca(env, dir, transitionMatrix, exitRateVector, markovianStates, psiStates, boundsPair);
                 } else {
                     STORM_LOG_ASSERT(settings.getMarkovAutomatonBoundedReachabilityMethod() == storm::settings::modules::MinMaxEquationSolverSettings::MarkovAutomatonBoundedReachabilityMethod::UnifPlus, "Unknown solution method.");
-                    
-                    return computeBoundedUntilProbabilitiesUnifPlus(env, dir, boundsPair, exitRateVector, transitionMatrix, markovianStates, psiStates);
+                    return computeBoundedUntilProbabilitiesUnifPlus(env, dir, transitionMatrix, exitRateVector, markovianStates, psiStates, boundsPair);
                 }
             }
               
