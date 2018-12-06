@@ -35,11 +35,23 @@ namespace storm {
     namespace modelchecker {
         namespace helper {
 
+            /**
+             * Data structure holding result vectors (vLower, vUpper, wUpper) for Unif+.
+             */
             template<typename ValueType>
             struct UnifPlusVectors {
-                UnifPlusVectors(uint64_t steps, uint64_t noStates) : numberOfStates(noStates), resLowerOld(numberOfStates, -1), resLowerNew(numberOfStates, -1), resUpperOld(numberOfStates, -1), resUpperNew(numberOfStates, -1) {
-                    // Intentionally empty.
-                    wUpper = std::vector<std::vector<ValueType>>(steps, std::vector<ValueType>(numberOfStates, -1));
+                UnifPlusVectors() {
+                    // Intentionally empty
+                }
+
+                /**
+                 * Initialize results vectors. vLowerOld, vUpperOld and wUpper[k=N] are initialized with zeros.
+                 */
+                UnifPlusVectors(uint64_t steps, uint64_t noStates) : numberOfStates(noStates), resLowerOld(numberOfStates, storm::utility::zero<ValueType>()), resLowerNew(numberOfStates, -1), resUpperOld(numberOfStates, storm::utility::zero<ValueType>()), resUpperNew(numberOfStates, storm::utility::zero<ValueType>()) {
+                    // For wUpper we have to keep track of all previous results
+                    wUpper = std::vector<std::vector<ValueType>>(steps+1, std::vector<ValueType>(numberOfStates, -1));
+                    // Initialize entries for step N with zeros
+                    std::fill(wUpper[steps].begin(), wUpper[steps].end(), storm::utility::zero<ValueType>());
                 }
 
                 /**
@@ -49,7 +61,7 @@ namespace storm {
                     resLowerOld.swap(resLowerNew);
                     std::fill(resLowerNew.begin(), resLowerNew.end(), -1);
                     resUpperOld.swap(resUpperNew);
-                    std::fill(resUpperNew.begin(), resUpperNew.end(), -1);
+                    std::fill(resUpperNew.begin(), resUpperNew.end(), storm::utility::zero<ValueType>());
                 }
 
                 uint64_t numberOfStates;
@@ -62,6 +74,7 @@ namespace storm {
             
             template<typename ValueType>
             void calculateUnifPlusVector(Environment const& env, uint64_t k, uint64_t state, bool calcLower, ValueType lambda, uint64_t numberOfProbabilisticChoices, std::vector<std::vector<ValueType>> const & relativeReachability, OptimizationDirection dir, UnifPlusVectors<ValueType>& unifVectors, storm::storage::SparseMatrix<ValueType> const& fullTransitionMatrix, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates, std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> const& solver, storm::utility::numerical::FoxGlynnResult<ValueType> const& poisson, bool cycleFree) {
+                // Set reference to acutal vector
                 std::vector<ValueType>& resVectorOld = calcLower ? unifVectors.resLowerOld : unifVectors.wUpper[k+1];
                 std::vector<ValueType>& resVectorNew = calcLower ? unifVectors.resLowerNew : unifVectors.wUpper[k];
 
@@ -188,29 +201,6 @@ namespace storm {
                 // Expand the solution for the probabilistic states to all states.
                 storm::utility::vector::setVectorValues(resVectorNew, ~markovianStates, x);
             }
-            
-            template <typename ValueType>
-            void calculateResUpper(Environment const& env, std::vector<std::vector<ValueType>> const& relativeReachability, OptimizationDirection dir, uint64_t k, uint64_t state, ValueType lambda, uint64_t numberOfProbabilisticStates, UnifPlusVectors<ValueType>& unifVectors, storm::storage::SparseMatrix<ValueType> const& fullTransitionMatrix, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates, std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> const& solver, storm::utility::numerical::FoxGlynnResult<ValueType> const & poisson, bool cycleFree) {
-                
-                // Avoiding multiple computation of the same value.
-                if (unifVectors.resUpperNew[state] != -1) {
-                    STORM_LOG_ASSERT(false, "Result was already calculated.");
-                    return;
-                }
-                uint64_t N = unifVectors.wUpper.size() - 1;
-
-                ValueType res = storm::utility::zero<ValueType>();
-                for (uint64_t i = k; i < N; ++i) {
-                    if (unifVectors.wUpper[N-1-(i-k)][state] == -1) {
-                        STORM_LOG_ASSERT(false, "Need to calculate previous result.");
-                        calculateUnifPlusVector(env, N-1-(i-k), state, false, lambda, numberOfProbabilisticStates, relativeReachability, dir, unifVectors, fullTransitionMatrix, markovianStates, psiStates, solver, poisson, cycleFree);
-                    }
-                    if (i >= poisson.left && i <= poisson.right) {
-                        res += poisson.weights[i - poisson.left] * unifVectors.wUpper[N-1-(i-k)][state];
-                    }
-                }
-                unifVectors.resUpperNew[state] = res;
-            }
 
             template <typename ValueType>
             void eliminateProbabilisticSelfLoops(storm::storage::SparseMatrix<ValueType>& transitionMatrix, storm::storage::BitVector const& markovianStates) {
@@ -259,7 +249,7 @@ namespace storm {
                 bool cycleFree = sccDecomposition.empty();
 
                 // Vectors to store computed vectors.
-                UnifPlusVectors<ValueType> unifVectors(0, 0);
+                UnifPlusVectors<ValueType> unifVectors;
 
                 // Transitions from goal states will be ignored. However, we mark them as non-probabilistic to make sure
                 // we do not apply the MDP algorithm to them.
@@ -383,22 +373,39 @@ namespace storm {
                     }
 
                     // (4) Define vectors/matrices.
-                    unifVectors = UnifPlusVectors<ValueType>(N+1, numberOfStates);
+                    // Initialize result vectors and already insert zeros for iteration N
+                    unifVectors = UnifPlusVectors<ValueType>(N, numberOfStates);
 
                     // (5) Compute vectors and maxNorm.
-                    for (int64_t k = N; k >= 0; --k) {
-                        for (uint64_t i = 0; i < numberOfStates; ++i) {
-                            calculateUnifPlusVector(env, k, i, true, lambda, numberOfProbabilisticChoices, relativeReachabilities, dir, unifVectors, fullTransitionMatrix, markovianAndGoalStates, psiStates, solver, foxGlynnResult, cycleFree);
-                            calculateUnifPlusVector(env, k, i, false, lambda, numberOfProbabilisticChoices, relativeReachabilities, dir, unifVectors, fullTransitionMatrix, markovianAndGoalStates, psiStates, solver, foxGlynnResult, cycleFree);
-                            calculateResUpper(env, relativeReachabilities, dir, k, i, lambda, numberOfProbabilisticChoices, unifVectors, fullTransitionMatrix, markovianAndGoalStates, psiStates, solver, foxGlynnResult, cycleFree);
+                    // Iteration k = N was already performed by initializing with zeros.
+
+                    // Iterations k < N
+                    for (int64_t k = N-1; k >= 0; --k) {
+                        if (k < (int64_t)(N-1)) {
+                            unifVectors.prepareNewIteration();
                         }
-                        unifVectors.prepareNewIteration();
+                        for (uint64_t state = 0; state < numberOfStates; ++state) {
+                            // Calculate results for lower bound and wUpper
+                            calculateUnifPlusVector(env, k, state, true, lambda, numberOfProbabilisticChoices, relativeReachabilities, dir, unifVectors, fullTransitionMatrix, markovianAndGoalStates, psiStates, solver, foxGlynnResult, cycleFree);
+                            calculateUnifPlusVector(env, k, state, false, lambda, numberOfProbabilisticChoices, relativeReachabilities, dir, unifVectors, fullTransitionMatrix, markovianAndGoalStates, psiStates, solver, foxGlynnResult, cycleFree);
+                        }
+
+                        // Calculate result for upper bound
+                        // resUpperNew was already initialized with zeros
+                        uint64_t left = std::max(foxGlynnResult.left, (uint64_t)(k));
+                        uint64_t right = std::min(foxGlynnResult.right, N-1);
+                        for (uint64_t state = 0; state < numberOfStates; ++state) {
+                            for (uint64_t i = left; i <= right; ++i) {
+                                STORM_LOG_ASSERT(unifVectors.wUpper[N-1-(i-k)][state] != -1, "wUpper was not computed before.");
+                                unifVectors.resUpperNew[state] += foxGlynnResult.weights[i - foxGlynnResult.left] * unifVectors.wUpper[N-1-(i-k)][state];
+                            }
+                        }
                     }
 
                     // Only iterate over result vector, as the results can only get more precise.
                     maxNorm = storm::utility::zero<ValueType>();
                     for (uint64_t i = 0; i < numberOfStates; i++){
-                        ValueType diff = storm::utility::abs(unifVectors.resUpperOld[i] - unifVectors.resLowerOld[i]);
+                        ValueType diff = storm::utility::abs(unifVectors.resUpperNew[i] - unifVectors.resLowerNew[i]);
                         maxNorm = std::max(maxNorm, diff);
                     }
 
@@ -408,7 +415,7 @@ namespace storm {
 
                 } while (maxNorm > epsilon * (1 - kappa));
 
-                return unifVectors.resLowerOld;
+                return unifVectors.resLowerNew;
             }
 
             template <typename ValueType>
