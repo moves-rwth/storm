@@ -368,8 +368,8 @@ namespace storm {
                     unifVectors.wUpper = v;
 
                     // (5) Compute vectors and maxNorm.
-                    for (uint64_t i = 0; i < numberOfStates; ++i) {
-                        for (int64_t k = N; k >= 0; --k) {
+                    for (int64_t k = N; k >= 0; --k) {
+                        for (uint64_t i = 0; i < numberOfStates; ++i) {
                             calculateUnifPlusVector(env, k, i, true, lambda, numberOfProbabilisticChoices, relativeReachabilities, dir, unifVectors, fullTransitionMatrix, markovianAndGoalStates, psiStates, solver, foxGlynnResult, cycleFree);
                             calculateUnifPlusVector(env, k, i, false, lambda, numberOfProbabilisticChoices, relativeReachabilities, dir, unifVectors, fullTransitionMatrix, markovianAndGoalStates, psiStates, solver, foxGlynnResult, cycleFree);
                             calculateResUpper(env, relativeReachabilities, dir, k, i, lambda, numberOfProbabilisticChoices, unifVectors, fullTransitionMatrix, markovianAndGoalStates, psiStates, solver, foxGlynnResult, cycleFree);
