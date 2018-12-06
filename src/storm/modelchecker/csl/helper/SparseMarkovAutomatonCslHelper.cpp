@@ -47,11 +47,8 @@ namespace storm {
                 /**
                  * Initialize results vectors. vLowerOld, vUpperOld and wUpper[k=N] are initialized with zeros.
                  */
-                UnifPlusVectors(uint64_t steps, uint64_t noStates) : numberOfStates(noStates), resLowerOld(numberOfStates, storm::utility::zero<ValueType>()), resLowerNew(numberOfStates, -1), resUpperOld(numberOfStates, storm::utility::zero<ValueType>()), resUpperNew(numberOfStates, storm::utility::zero<ValueType>()) {
-                    // For wUpper we have to keep track of all previous results
-                    wUpper = std::vector<std::vector<ValueType>>(steps+1, std::vector<ValueType>(numberOfStates, -1));
-                    // Initialize entries for step N with zeros
-                    std::fill(wUpper[steps].begin(), wUpper[steps].end(), storm::utility::zero<ValueType>());
+                UnifPlusVectors(uint64_t steps, uint64_t noStates) : numberOfStates(noStates), steps(steps), resLowerOld(numberOfStates, storm::utility::zero<ValueType>()), resLowerNew(numberOfStates, -1), resUpper(numberOfStates, storm::utility::zero<ValueType>()), wUpperOld(numberOfStates, storm::utility::zero<ValueType>()), wUpperNew(numberOfStates, -1) {
+                    // Intentionally left empty
                 }
 
                 /**
@@ -60,23 +57,24 @@ namespace storm {
                 void prepareNewIteration() {
                     resLowerOld.swap(resLowerNew);
                     std::fill(resLowerNew.begin(), resLowerNew.end(), -1);
-                    resUpperOld.swap(resUpperNew);
-                    std::fill(resUpperNew.begin(), resUpperNew.end(), storm::utility::zero<ValueType>());
+                    wUpperOld.swap(wUpperNew);
+                    std::fill(wUpperNew.begin(), wUpperNew.end(), -1);
                 }
 
                 uint64_t numberOfStates;
+                uint64_t steps;
                 std::vector<ValueType> resLowerOld;
                 std::vector<ValueType> resLowerNew;
-                std::vector<ValueType> resUpperOld;
-                std::vector<ValueType> resUpperNew;
-                std::vector<std::vector<ValueType>> wUpper;
+                std::vector<ValueType> resUpper;
+                std::vector<ValueType> wUpperOld;
+                std::vector<ValueType> wUpperNew;
             };
             
             template<typename ValueType>
             void calculateUnifPlusVector(Environment const& env, uint64_t k, uint64_t state, bool calcLower, ValueType lambda, uint64_t numberOfProbabilisticChoices, std::vector<std::vector<ValueType>> const & relativeReachability, OptimizationDirection dir, UnifPlusVectors<ValueType>& unifVectors, storm::storage::SparseMatrix<ValueType> const& fullTransitionMatrix, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates, std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> const& solver, storm::utility::numerical::FoxGlynnResult<ValueType> const& poisson, bool cycleFree) {
                 // Set reference to acutal vector
-                std::vector<ValueType>& resVectorOld = calcLower ? unifVectors.resLowerOld : unifVectors.wUpper[k+1];
-                std::vector<ValueType>& resVectorNew = calcLower ? unifVectors.resLowerNew : unifVectors.wUpper[k];
+                std::vector<ValueType>& resVectorOld = calcLower ? unifVectors.resLowerOld : unifVectors.wUpperOld;
+                std::vector<ValueType>& resVectorNew = calcLower ? unifVectors.resLowerNew : unifVectors.wUpperNew;
 
                 if (resVectorNew[state] != -1) {
                     // Result already calculated.
@@ -84,7 +82,7 @@ namespace storm {
                 }
                 
                 auto numberOfStates = fullTransitionMatrix.getRowGroupCount();
-                uint64_t N = unifVectors.wUpper.size() - 1;
+                uint64_t N = unifVectors.steps;
                 auto const& rowGroupIndices = fullTransitionMatrix.getRowGroupIndices();
                 ValueType res;
                 
@@ -389,26 +387,20 @@ namespace storm {
                             // Calculate results for lower bound and wUpper
                             calculateUnifPlusVector(env, k, state, true, lambda, numberOfProbabilisticChoices, relativeReachabilities, dir, unifVectors, fullTransitionMatrix, markovianAndGoalStates, psiStates, solver, foxGlynnResult, cycleFree);
                             calculateUnifPlusVector(env, k, state, false, lambda, numberOfProbabilisticChoices, relativeReachabilities, dir, unifVectors, fullTransitionMatrix, markovianAndGoalStates, psiStates, solver, foxGlynnResult, cycleFree);
-                        }
-
-                        if (k == 0) {
                             // Calculate result for upper bound
-                            // resUpperNew was already initialized with zeros
-                            uint64_t left = std::max(foxGlynnResult.left, (uint64_t)(k));
-                            uint64_t right = std::min(foxGlynnResult.right, N-1);
-                            for (uint64_t state = 0; state < numberOfStates; ++state) {
-                                for (uint64_t i = left; i <= right; ++i) {
-                                    STORM_LOG_ASSERT(unifVectors.wUpper[N-1-(i-k)][state] != -1, "wUpper was not computed before.");
-                                    unifVectors.resUpperNew[state] += foxGlynnResult.weights[i - foxGlynnResult.left] * unifVectors.wUpper[N-1-(i-k)][state];
-                                }
+                            uint64_t index = N-1-k;
+                            if (index >= foxGlynnResult.left && index <= foxGlynnResult.right) {
+                                STORM_LOG_ASSERT(unifVectors.wUpperNew[state] != -1, "wUpper was not computed before.");
+                                unifVectors.resUpper[state] += foxGlynnResult.weights[index - foxGlynnResult.left] * unifVectors.wUpperNew[state];
                             }
                         }
+
                     }
 
                     // Only iterate over result vector, as the results can only get more precise.
                     maxNorm = storm::utility::zero<ValueType>();
                     for (uint64_t i = 0; i < numberOfStates; i++){
-                        ValueType diff = storm::utility::abs(unifVectors.resUpperNew[i] - unifVectors.resLowerNew[i]);
+                        ValueType diff = storm::utility::abs(unifVectors.resUpper[i] - unifVectors.resLowerNew[i]);
                         maxNorm = std::max(maxNorm, diff);
                     }
 
