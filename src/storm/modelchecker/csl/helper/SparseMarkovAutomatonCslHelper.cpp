@@ -90,6 +90,7 @@ namespace storm {
                 
                 // First case, k==N, independent from kind of state.
                 if (k == N) {
+                    STORM_LOG_ASSERT(false, "Result for k=N was already calculated.");
                     resVectorNew[state] = storm::utility::zero<ValueType>();
                     return;
                 }
@@ -290,7 +291,7 @@ namespace storm {
                 for (ValueType const& rate : exitRateVector) {
                     lambda = std::max(rate, lambda);
                 }
-                STORM_LOG_TRACE("Initial lambda is " << lambda << ".");
+                STORM_LOG_DEBUG("Initial lambda is " << lambda << ".");
 
                 // Compute the relative reachability vectors and create solver for models with SCCs.
                 std::vector<std::vector<ValueType>> relativeReachabilities(transitionMatrix.getRowCount());
@@ -411,7 +412,7 @@ namespace storm {
 
                     // (6) Double lambda.
                     lambda *= 2;
-                    STORM_LOG_TRACE("Increased lambda to " << lambda << ", max diff is " << maxNorm << ".");
+                    STORM_LOG_DEBUG("Increased lambda to " << lambda << ", max diff is " << maxNorm << ".");
 
                 } while (maxNorm > epsilon * (1 - kappa));
 
