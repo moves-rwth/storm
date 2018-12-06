@@ -391,14 +391,16 @@ namespace storm {
                             calculateUnifPlusVector(env, k, state, false, lambda, numberOfProbabilisticChoices, relativeReachabilities, dir, unifVectors, fullTransitionMatrix, markovianAndGoalStates, psiStates, solver, foxGlynnResult, cycleFree);
                         }
 
-                        // Calculate result for upper bound
-                        // resUpperNew was already initialized with zeros
-                        uint64_t left = std::max(foxGlynnResult.left, (uint64_t)(k));
-                        uint64_t right = std::min(foxGlynnResult.right, N-1);
-                        for (uint64_t state = 0; state < numberOfStates; ++state) {
-                            for (uint64_t i = left; i <= right; ++i) {
-                                STORM_LOG_ASSERT(unifVectors.wUpper[N-1-(i-k)][state] != -1, "wUpper was not computed before.");
-                                unifVectors.resUpperNew[state] += foxGlynnResult.weights[i - foxGlynnResult.left] * unifVectors.wUpper[N-1-(i-k)][state];
+                        if (k == 0) {
+                            // Calculate result for upper bound
+                            // resUpperNew was already initialized with zeros
+                            uint64_t left = std::max(foxGlynnResult.left, (uint64_t)(k));
+                            uint64_t right = std::min(foxGlynnResult.right, N-1);
+                            for (uint64_t state = 0; state < numberOfStates; ++state) {
+                                for (uint64_t i = left; i <= right; ++i) {
+                                    STORM_LOG_ASSERT(unifVectors.wUpper[N-1-(i-k)][state] != -1, "wUpper was not computed before.");
+                                    unifVectors.resUpperNew[state] += foxGlynnResult.weights[i - foxGlynnResult.left] * unifVectors.wUpper[N-1-(i-k)][state];
+                                }
                             }
                         }
                     }
