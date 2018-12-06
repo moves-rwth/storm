@@ -65,31 +65,31 @@ namespace storm {
                 // Goal state, independent from kind of state.
                 if (psiStates[state]) {
                     if (calcLower) {
-                        // Vd
+                        // v lower
                         res = storm::utility::zero<ValueType>();
                         for (uint64_t i = k; i < N; ++i){
                             if (i >= poisson.left && i <= poisson.right) {
-                                ValueType between = poisson.weights[i - poisson.left];
-                                res += between;
+                                res += poisson.weights[i - poisson.left];
                             }
                         }
                         resVector[k][state] = res;
                     } else {
-                        // WU
+                        // w upper
                         resVector[k][state] = storm::utility::one<ValueType>();
                     }
                     return;
                 }
-                
+
+
                 // Markovian non-goal state.
                 if (markovianStates[state]) {
                     res = storm::utility::zero<ValueType>();
                     for (auto const& element : fullTransitionMatrix.getRow(rowGroupIndices[state])) {
-                        uint64_t to = element.getColumn();
-                        if (resVector[k+1][to] == -1) {
-                            calculateUnifPlusVector(env, k+1, to, calcLower, lambda, numberOfProbabilisticChoices, relativeReachability, dir, unifVectors, fullTransitionMatrix, markovianStates, psiStates, solver, poisson, cycleFree);
+                        uint64_t successor = element.getColumn();
+                        if (resVector[k+1][successor] == -1) {
+                            calculateUnifPlusVector(env, k+1, successor, calcLower, lambda, numberOfProbabilisticChoices, relativeReachability, dir, unifVectors, fullTransitionMatrix, markovianStates, psiStates, solver, poisson, cycleFree);
                         }
-                        res += element.getValue()*resVector[k+1][to];
+                        res += element.getValue() * resVector[k+1][successor];
                     }
                     resVector[k][state]=res;
                     return;
@@ -101,7 +101,7 @@ namespace storm {
                     res = -1;
                     for (uint64_t i = rowGroupIndices[state]; i < rowGroupIndices[state + 1]; ++i) {
                         auto row = fullTransitionMatrix.getRow(i);
-                        ValueType between = 0;
+                        ValueType between = storm::utility::zero<ValueType>();
                         for (auto const& element : row) {
                             uint64_t successor = element.getColumn();
                             
@@ -129,7 +129,7 @@ namespace storm {
                     return;
                 }
                 
-                // If we arrived at this point, the model is not cycle free. Use the solver to solve the unterlying equation system.
+                // If we arrived at this point, the model is not cycle free. Use the solver to solve the underlying equation system.
                 uint64_t numberOfProbabilisticStates = numberOfStates - markovianStates.getNumberOfSetBits();
                 std::vector<ValueType> b(numberOfProbabilisticChoices, storm::utility::zero<ValueType>());
                 std::vector<ValueType> x(numberOfProbabilisticStates, storm::utility::zero<ValueType>());
@@ -153,7 +153,7 @@ namespace storm {
                             if (resVector[k][successor] == -1) {
                                 calculateUnifPlusVector(env, k, successor, calcLower, lambda, numberOfProbabilisticStates, relativeReachability, dir, unifVectors, fullTransitionMatrix, markovianStates, psiStates, solver,  poisson, cycleFree);
                             }
-                            res = res + relativeReachability[j][stateCount] * resVector[k][successor];
+                            res += relativeReachability[j][stateCount] * resVector[k][successor];
                             ++stateCount;
                         }
                         
