@@ -146,8 +146,7 @@ namespace storm {
                                     // Start by computing the transient probabilities of reaching a psi state in time t' - t.
                                     std::vector<ValueType> values(statesWithProbabilityGreater0NonPsi.getNumberOfSetBits(), storm::utility::zero<ValueType>());
                                     std::vector<ValueType> subresult = computeTransientProbabilities(env, uniformizedMatrix, &b, upperBound - lowerBound, uniformizationRate, values);
-                                    newSubresult = std::vector<ValueType>(relevantStates.getNumberOfSetBits());
-                                   storm::utility::vector::setVectorValues(newSubresult, statesWithProbabilityGreater0NonPsi % relevantStates, subresult);
+                                    storm::utility::vector::setVectorValues(newSubresult, statesWithProbabilityGreater0NonPsi % relevantStates, subresult);
                                 }
                                 
                                 // Then compute the transient probabilities of being in such a state after t time units. For this,
