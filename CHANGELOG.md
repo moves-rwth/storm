@@ -18,6 +18,7 @@ Version 1.3.x
 - New binary `storm-conv` that handles conversions between model files
 - New binary `storm-pomdp` that handles the translation of POMDPs to pMCs.
 - Maximal progress assumption is now applied while building Markov Automata (sparse engine).
+- Improved Unif+ implementation for Markov Automata, significantly reduced memory consumption.
 - Added support for expected time properties for discrete time models
 - Bug fix in the parser for DRN (MDPs and MAs might have been affected).
 - `storm-gspn`: Improved .pnpro parser
