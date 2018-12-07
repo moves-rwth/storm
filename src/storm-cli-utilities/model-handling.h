@@ -148,7 +148,9 @@ namespace storm {
                 bool transformToJani = ioSettings.isPrismToJaniSet();
                 bool transformToJaniForJit = builderType == storm::builder::BuilderType::Jit;
                 STORM_LOG_WARN_COND(transformToJani || !transformToJaniForJit, "The JIT-based model builder is only available for JANI models, automatically converting the PRISM input model.");
-                transformToJani |= transformToJaniForJit;
+                bool transformToJaniForDdMA = (builderType == storm::builder::BuilderType::Dd) && (input.model->getModelType() == storm::storage::SymbolicModelDescription::ModelType::MA);
+                STORM_LOG_WARN_COND(transformToJani || !transformToJaniForDdMA, "Dd-based model builder for Markov Automata is only available for JANI models, automatically converting the PRISM input model.");
+                transformToJani |= (transformToJaniForJit || transformToJaniForDdMA);
                 
                 if (transformToJani) {
                     storm::prism::Program const& model = output.model.get().asPrismProgram();
