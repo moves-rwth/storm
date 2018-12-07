@@ -25,6 +25,11 @@ Version 1.3.x
 - `storm-gspn`: Added option to set a global capacity for all places
 - `storm-gspn`: Added option to include a set of standard properties when converting GSPNs to jani
 - `storm-pars`: Added possibility to compute the extremal value within a given region using parameter lifting
+- `storm-dft`: DFT translation to GSPN supports Don't Care propagation
+- `storm-dft`: Support DFT analysis via transformation from DFT to GSPN to JANI
+- `storm-dft`: Added SMT encoding for DFTs
+- `storm-dft`: Improved Galileo and JSON parser
+- Several bug fixes
 
 ### Comparison with Version 1.2.0 (details see below)
 - Heavily extended JANI-support
