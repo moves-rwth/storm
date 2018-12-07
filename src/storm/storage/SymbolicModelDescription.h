@@ -11,7 +11,7 @@ namespace storm {
         class SymbolicModelDescription {
         public:
             enum class ModelType {
-                DTMC, CTMC, MDP, MA
+                DTMC, CTMC, MDP, MA, POMDP
             };
             
             SymbolicModelDescription() = default;
