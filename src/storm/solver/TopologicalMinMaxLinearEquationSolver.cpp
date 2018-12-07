@@ -51,6 +51,7 @@ namespace storm {
             if (!this->sortedSccDecomposition || (needAdaptPrecision && !this->longestSccChainSize)) {
                 STORM_LOG_TRACE("Creating SCC decomposition.");
                 createSortedSccDecomposition(needAdaptPrecision);
+                STORM_LOG_INFO("Found " << this->sortedSccDecomposition->size() << " SCC(s). Average size is " << static_cast<double>(this->A->getRowGroupCount()) / static_cast<double>(this->sortedSccDecomposition->size()) << ".");
             }
             
             // We do not need to adapt the precision if all SCCs are trivial (i.e., the system is acyclic)
@@ -58,7 +59,6 @@ namespace storm {
             
             storm::Environment sccSolverEnvironment = getEnvironmentForUnderlyingSolver(env, needAdaptPrecision);
             
-            STORM_LOG_INFO("Found " << this->sortedSccDecomposition->size() << " SCC(s). Average size is " << static_cast<double>(this->A->getRowGroupCount()) / static_cast<double>(this->sortedSccDecomposition->size()) << ".");
             if (this->longestSccChainSize) {
                 STORM_LOG_INFO("Longest SCC chain size is " << this->longestSccChainSize.get());
             }
