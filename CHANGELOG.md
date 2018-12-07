@@ -4,17 +4,20 @@ Changelog
 This changelog lists only the most important changes. Smaller (bug)fixes as well as non-mature features are not part of the changelog.
 The releases of major and minor versions contain an overview of changes since the last major/minor update.
 
-Version 1.2.x
+Version 1.3.x
 -------------
 
-### Version 1.2.4 (2018/08)
+
+### Version 1.3.0 (2018/12)
+- Slightly improved scheduler extraction
+- Environments are now part of the c++ API
 - Heavily extended JANI support, in particular:
 	 * arrays, functions, state-exit-rewards (all engines)
 	 * indexed assignments, complex reward expressions (sparse engine)
 	 * several jani-related bug fixes
 - New binary `storm-conv` that handles conversions between model files
 - New binary `storm-pomdp` that handles the translation of POMDPs to pMCs.
-- Closing a Markov automaton now removes unreachable states
+- Maximal progress assumption is now applied while building Markov Automata (sparse engine).
 - Added support for expected time properties for discrete time models
 - Bug fix in the parser for DRN (MDPs and MAs might have been affected).
 - `storm-gspn`: Improved .pnpro parser
@@ -22,6 +25,21 @@ Version 1.2.x
 - `storm-gspn`: Added option to set a global capacity for all places
 - `storm-gspn`: Added option to include a set of standard properties when converting GSPNs to jani
 - `storm-pars`: Added possibility to compute the extremal value within a given region using parameter lifting
+- `storm-dft`: DFT translation to GSPN supports Don't Care propagation
+- `storm-dft`: Support DFT analysis via transformation from DFT to GSPN to JANI
+- `storm-dft`: Added SMT encoding for DFTs
+- `storm-dft`: Improved Galileo and JSON parser
+- Several bug fixes
+
+### Comparison with Version 1.2.0 (details see below)
+- Heavily extended JANI-support
+- New binary `storm-conv` that handles conversion between model files
+- New binary `storm-pomdp` that  handles the translation of POMDPs to pMCs.
+- `storm-gspn` improved
+- Sound value iteration
+
+Version 1.2.x
+-------------
 
 ### Version 1.2.3 (2018/07)
 - Fix in version parsing
