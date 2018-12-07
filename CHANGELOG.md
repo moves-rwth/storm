@@ -4,6 +4,22 @@ Changelog
 This changelog lists only the most important changes. Smaller (bug)fixes as well as non-mature features are not part of the changelog.
 The releases of major and minor versions contain an overview of changes since the last major/minor update.
 
+Version 1.3.x
+-------------
+
+
+### Version 1.3.0 (2018/12)
+- Slightly improved scheduler extraction
+- Environments are now part of the c++ API
+
+
+### Comparison with Version 1.2.0 (details see below)
+- Heavily extended JANI-support
+- New binary `storm-conv` that handles conversion between model files
+- New binary `storm-pomdp` that  handles the translation of POMDPs to pMCs.
+- `storm-gspn` improved
+- Sound value iteration
+
 Version 1.2.x
 -------------
 
