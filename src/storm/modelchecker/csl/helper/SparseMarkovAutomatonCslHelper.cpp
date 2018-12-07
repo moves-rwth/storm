@@ -603,7 +603,12 @@ namespace storm {
                     return computeBoundedUntilProbabilitiesImca(env, dir, transitionMatrix, exitRateVector, markovianStates, psiStates, boundsPair);
                 } else {
                     STORM_LOG_ASSERT(settings.getMarkovAutomatonBoundedReachabilityMethod() == storm::settings::modules::MinMaxEquationSolverSettings::MarkovAutomatonBoundedReachabilityMethod::UnifPlus, "Unknown solution method.");
-                    return computeBoundedUntilProbabilitiesUnifPlus(env, dir, transitionMatrix, exitRateVector, markovianStates, psiStates, boundsPair);
+                    if (!storm::utility::isZero(boundsPair.first)) {
+                        STORM_LOG_WARN("Using IMCA method because Unif+ does not support a lower bound > 0.");
+                        return computeBoundedUntilProbabilitiesImca(env, dir, transitionMatrix, exitRateVector, markovianStates, psiStates, boundsPair);
+                    } else {
+                        return computeBoundedUntilProbabilitiesUnifPlus(env, dir, transitionMatrix, exitRateVector, markovianStates, psiStates, boundsPair);
+                    }
                 }
             }
               
