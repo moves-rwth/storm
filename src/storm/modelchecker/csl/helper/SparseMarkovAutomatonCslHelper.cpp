@@ -327,6 +327,9 @@ namespace storm {
                 ValueType maxNorm = storm::utility::zero<ValueType>();
                 // Maximal step size
                 uint64_t N;
+                storm::utility::ProgressMeasurement progressIterations("iterations");
+                size_t iteration = 0;
+                progressIterations.startNewMeasurement(iteration);
                 // Loop until result is within precision bound.
                 do {
                     // (2) update parameter
@@ -379,6 +382,9 @@ namespace storm {
                     // Iteration k = N was already performed by initializing with zeros.
 
                     // Iterations k < N
+                    storm::utility::ProgressMeasurement progressSteps("steps in iteration " + std::to_string(iteration));
+                    progressSteps.setMaxCount(N);
+                    progressSteps.startNewMeasurement(0);
                     for (int64_t k = N-1; k >= 0; --k) {
                         if (k < (int64_t)(N-1)) {
                             unifVectors.prepareNewIteration();
@@ -394,7 +400,7 @@ namespace storm {
                                 unifVectors.resUpper[state] += foxGlynnResult.weights[index - foxGlynnResult.left] * unifVectors.wUpperNew[state];
                             }
                         }
-
+                        progressSteps.updateProgress(N-k);
                     }
 
                     // Only iterate over result vector, as the results can only get more precise.
@@ -407,7 +413,7 @@ namespace storm {
                     // (6) Double lambda.
                     lambda *= 2;
                     STORM_LOG_DEBUG("Increased lambda to " << lambda << ", max diff is " << maxNorm << ".");
-
+                    progressIterations.updateProgress(++iteration);
                 } while (maxNorm > epsilon * (1 - kappa));
 
                 return unifVectors.resLowerNew;
