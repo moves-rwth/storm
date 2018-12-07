@@ -31,6 +31,7 @@ Version 1.3.x
 - `storm-dft`: Added SMT encoding for DFTs
 - `storm-dft`: Improved Galileo and JSON parser
 - Several bug fixes
+- Storm uses the `master14` branch of carl from now on
 
 ### Comparison with Version 1.2.0 (details see below)
 - Heavily extended JANI-support
