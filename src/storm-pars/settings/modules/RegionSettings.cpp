@@ -137,7 +137,9 @@ namespace storm {
             bool RegionSettings::check() const {
                 if (isRefineSet() && isExtremumSet()) {
                     STORM_LOG_ERROR("Can not compute extremum values AND perform region refinement.");
+                    return false;
                 }
+                return true;
             }
 
             bool RegionSettings::isPrintNoIllustrationSet() const {
