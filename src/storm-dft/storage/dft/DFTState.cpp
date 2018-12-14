@@ -202,8 +202,10 @@ namespace storm {
                 assert(dependency->dependentEvents().size() == 1);
                 if (getElementState(dependency->dependentEvents()[0]->id()) == DFTElementState::Operational) {
                     STORM_LOG_ASSERT(!isFailsafe(dependency->dependentEvents()[0]->id()), "Dependent event is failsafe.");
-                    mFailableDependencies.push_back(dependency->id());
-                    STORM_LOG_TRACE("New dependency failure: " << dependency->toString());
+                    if (std::find(mFailableDependencies.begin(), mFailableDependencies.end(), dependency->id()) == mFailableDependencies.end()) {
+                        mFailableDependencies.push_back(dependency->id());
+                        STORM_LOG_TRACE("New dependency failure: " << dependency->toString());
+                    }
                 }
             }
             return nrFailableDependencies() > 0;
