@@ -253,6 +253,7 @@ namespace storm {
                 mFailableDependencies.erase(mFailableDependencies.begin() + index);
                 setFailed(res.first->id());
                 setDependencySuccessful(dependency->id());
+                beNoLongerFailable(res.first->id());
                 return res;
             } else {
                 // Consider "normal" failure
