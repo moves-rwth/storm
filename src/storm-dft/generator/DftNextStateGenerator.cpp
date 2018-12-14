@@ -161,6 +161,7 @@ namespace storm {
                         ValueType remainingProbability = storm::utility::one<ValueType>() - probability;
                         choice.addProbability(unsuccessfulStateId, remainingProbability);
                         STORM_LOG_TRACE("Added transition to " << unsuccessfulStateId << " with remaining probability " << remainingProbability);
+                        STORM_LOG_ASSERT(unsuccessfulStateId != state->getId(), "Self loop was added (through PDEP) for " << unsuccessfulStateId << " and failure of " << nextBE->name());
                     }
                     result.addChoice(std::move(choice));
                 } else {
@@ -176,6 +177,7 @@ namespace storm {
                     choice.addProbability(newStateId, rate);
                     STORM_LOG_TRACE("Added transition to " << newStateId << " with " << (isActive ? "active" : "passive") << " failure rate " << rate);
                 }
+                STORM_LOG_ASSERT(newStateId != state->getId(), "Self loop was added for " << newStateId << " and failure of " << nextBE->name());
 
                 ++currentFailable;
             } // end while failing BE

@@ -249,6 +249,7 @@ namespace storm {
                 std::shared_ptr<DFTDependency<ValueType> const> dependency = mDft.getDependency(mFailableDependencies[index]);
                 assert(dependency->dependentEvents().size() == 1);
                 std::pair<std::shared_ptr<DFTBE<ValueType> const>,bool> res(mDft.getBasicElement(dependency->dependentEvents()[0]->id()), true);
+                STORM_LOG_ASSERT(!hasFailed(res.first->id()), "Element " << res.first->toString() << " has already failed.");
                 mFailableDependencies.erase(mFailableDependencies.begin() + index);
                 setFailed(res.first->id());
                 setDependencySuccessful(dependency->id());
@@ -257,6 +258,7 @@ namespace storm {
                 // Consider "normal" failure
                 STORM_LOG_ASSERT(index < nrFailableBEs(), "Index invalid.");
                 std::pair<std::shared_ptr<DFTBE<ValueType> const>,bool> res(mDft.getBasicElement(mCurrentlyFailableBE[index]), false);
+                STORM_LOG_ASSERT(!hasFailed(res.first->id()), "Element " << res.first->toString() << " has already failed.");
                 STORM_LOG_ASSERT(res.first->canFail(), "Element " << *(res.first) << " cannot fail.");
                 mCurrentlyFailableBE.erase(mCurrentlyFailableBE.begin() + index);
                 setFailed(res.first->id());
