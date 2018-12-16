@@ -387,7 +387,7 @@ namespace storm {
                                     // Initialize heuristic values
                                     ExplorationHeuristicPointer heuristic = std::make_shared<ExplorationHeuristic>(stateProbabilityPair.first, *currentExplorationHeuristic, stateProbabilityPair.second, choice.getTotalMass());
                                     iter->second.second = heuristic;
-                                    if (state->hasFailed(dft.getTopLevelIndex()) || state->isFailsafe(dft.getTopLevelIndex()) || state->nrFailableDependencies() > 0 || (state->nrFailableDependencies() == 0 && state->nrFailableBEs() == 0)) {
+                                    if (state->hasFailed(dft.getTopLevelIndex()) || state->isFailsafe(dft.getTopLevelIndex()) || state->getFailableElements().hasDependencies() || (!state->getFailableElements().hasDependencies() && state->getFailableElements().hasBEs())) {
                                         // Do not skip absorbing state or if reached by dependencies
                                         iter->second.second->markExpand();
                                     }
@@ -642,8 +642,8 @@ namespace storm {
         ValueType ExplicitDFTModelBuilder<ValueType, StateType>::getLowerBound(DFTStatePointer const& state) const {
             // Get the lower bound by considering the failure of all possible BEs
             ValueType lowerBound = storm::utility::zero<ValueType>();
-            for (size_t index = 0; index < state->nrFailableBEs(); ++index) {
-                lowerBound += state->getFailableBERate(index);
+            for (state->getFailableElements().init(false); !state->getFailableElements().isEnd(); state->getFailableElements().next()) {
+                lowerBound += state->getBERate(state->getFailableElements().get());
             }
             return lowerBound;
         }

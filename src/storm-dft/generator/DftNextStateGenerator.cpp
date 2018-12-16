@@ -51,12 +51,13 @@ namespace storm {
             StateBehavior<ValueType, StateType> result;
 
             // Initialization
-            bool hasDependencies = state->nrFailableDependencies() > 0;
-            size_t failableCount = hasDependencies ? state->nrFailableDependencies() : state->nrFailableBEs();
-            size_t currentFailable = 0;
+            bool hasDependencies = state->getFailableElements().hasDependencies();
+            //size_t failableCount = hasDependencies ? state->nrFailableDependencies() : state->nrFailableBEs();
+            //size_t currentFailable = 0;
+            state->getFailableElements().init(hasDependencies);
 
             // Check for absorbing state
-            if (mDft.hasFailed(state) || mDft.isFailsafe(state) || failableCount == 0) {
+            if (mDft.hasFailed(state) || mDft.isFailsafe(state) || state->getFailableElements().isEnd()) {
                 Choice<ValueType, StateType> choice(0, true);
                 // Add self loop
                 choice.addProbability(state->getId(), storm::utility::one<ValueType>());
@@ -70,16 +71,18 @@ namespace storm {
             Choice<ValueType, StateType> choice(0, !hasDependencies);
 
             // Let BE fail
-            while (currentFailable < failableCount) {
-                if (storm::settings::getModule<storm::settings::modules::FaultTreeSettings>().isTakeFirstDependency() && hasDependencies && currentFailable > 0) {
+            bool isFirst = true;
+            while (!state->getFailableElements().isEnd()) {
+                if (storm::settings::getModule<storm::settings::modules::FaultTreeSettings>().isTakeFirstDependency() && hasDependencies && !isFirst) {
                     // We discard further exploration as we already chose one dependent event
                     break;
                 }
                 STORM_LOG_ASSERT(!mDft.hasFailed(state), "Dft has failed.");
+                isFirst = false;
 
                 // Construct new state as copy from original one
                 DFTStatePointer newState = state->copy();
-                std::pair<std::shared_ptr<storm::storage::DFTBE<ValueType> const>, bool> nextBEPair = newState->letNextBEFail(currentFailable);
+                std::pair<std::shared_ptr<storm::storage::DFTBE<ValueType> const>, bool> nextBEPair = newState->letNextBEFail(state->getFailableElements().get());
                 std::shared_ptr<storm::storage::DFTBE<ValueType> const>& nextBE = nextBEPair.first;
                 STORM_LOG_ASSERT(nextBE, "NextBE is null.");
                 STORM_LOG_ASSERT(nextBEPair.second == hasDependencies, "Failure due to dependencies does not match.");
@@ -114,7 +117,7 @@ namespace storm {
 
                 if(newState->isInvalid() || (nextBE->isTransient() && !newState->hasFailed(mDft.getTopLevelIndex()))) {
                     // Continue with next possible state
-                    ++currentFailable;
+                    state->getFailableElements().next();
                     STORM_LOG_TRACE("State is ignored because " << (newState->isInvalid() ? "it is invalid" : "the transient fault is ignored"));
                     continue;
                 }
@@ -148,14 +151,14 @@ namespace storm {
                 // Set transitions
                 if (hasDependencies) {
                     // Failure is due to dependency -> add non-deterministic choice
-                    ValueType probability = mDft.getDependency(state->getDependencyId(currentFailable))->probability();
+                    ValueType probability = mDft.getDependency(state->getFailableElements().get())->probability();
                     choice.addProbability(newStateId, probability);
                     STORM_LOG_TRACE("Added transition to " << newStateId << " with probability " << probability);
 
                     if (!storm::utility::isOne(probability)) {
                         // Add transition to state where dependency was unsuccessful
                         DFTStatePointer unsuccessfulState = state->copy();
-                        unsuccessfulState->letDependencyBeUnsuccessful(currentFailable);
+                        unsuccessfulState->letDependencyBeUnsuccessful(state->getFailableElements().get());
                         // Add state
                         StateType unsuccessfulStateId = stateToIdCallback(unsuccessfulState);
                         ValueType remainingProbability = storm::utility::one<ValueType>() - probability;
@@ -179,7 +182,7 @@ namespace storm {
                 }
                 STORM_LOG_ASSERT(newStateId != state->getId(), "Self loop was added for " << newStateId << " and failure of " << nextBE->name());
 
-                ++currentFailable;
+                state->getFailableElements().next();
             } // end while failing BE
             
             if (!hasDependencies) {

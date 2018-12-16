@@ -22,12 +22,102 @@ namespace storm {
         template<typename ValueType>
         class DFTState {
             friend struct std::hash<DFTState>;
+
+            struct FailableElements {
+
+                FailableElements(size_t nrElements) : currentlyFailableBE(nrElements), it(currentlyFailableBE.begin()) {
+                    // Intentionally left empty
+                }
+
+                void addBE(size_t id) {
+                    currentlyFailableBE.set(id);
+                }
+
+                void addDependency(size_t id) {
+                    if (std::find(mFailableDependencies.begin(), mFailableDependencies.end(), id) == mFailableDependencies.end()) {
+                        mFailableDependencies.push_back(id);
+                    }
+                }
+
+                void removeBE(size_t id) {
+                    currentlyFailableBE.set(id, false);
+                }
+
+                void removeDependency(size_t id) {
+                    auto it = std::find(mFailableDependencies.begin(), mFailableDependencies.end(), id);
+                    if (it != mFailableDependencies.end()) {
+                        mFailableDependencies.erase(it);
+                    }
+                }
+
+                void clear() {
+                    currentlyFailableBE.clear();
+                    mFailableDependencies.clear();
+                }
+
+                void init(bool dependency) const {
+                    this->dependency = dependency;
+                    if (this->dependency) {
+                        itDep = mFailableDependencies.begin();
+                    } else {
+                        it = currentlyFailableBE.begin();
+                    }
+                }
+
+                /**
+                 * Increment iterator.
+                 */
+                void next() const {
+                    if (dependency) {
+                        ++itDep;
+                    } else {
+                        ++it;
+                    }
+                }
+
+                bool isEnd() const {
+                    if (dependency) {
+                        return itDep == mFailableDependencies.end();
+                    } else {
+                        return it == currentlyFailableBE.end();
+                    }
+                }
+
+                /**
+                 * Get underlying element of iterator.
+                 * @return Id of element.
+                 */
+                size_t get() const {
+                    if (dependency) {
+                        return *itDep;
+                    } else {
+                        return *it;
+                    }
+                };
+
+                bool hasDependencies() const {
+                    return !mFailableDependencies.empty();
+                }
+
+                bool hasBEs() const {
+                    return !currentlyFailableBE.empty();
+                }
+
+                mutable bool dependency;
+
+                storm::storage::BitVector currentlyFailableBE;
+                std::vector<size_t> mFailableDependencies;
+
+                mutable storm::storage::BitVector::const_iterator it;
+                mutable std::vector<size_t>::const_iterator itDep;
+            };
+
+
         private:
             // Status is bitvector where each element has two bits with the meaning according to DFTElementState
             storm::storage::BitVector mStatus;
             size_t mId;
-            std::vector<size_t> mCurrentlyFailableBE;
-            std::vector<size_t> mFailableDependencies;
+            FailableElements failableElements;
             std::vector<size_t> mUsedRepresentants;
             bool mPseudoState;
             bool mValid = true;
@@ -124,6 +214,10 @@ namespace storm {
             storm::storage::BitVector const& status() const {
                 return mStatus;
             }
+
+            FailableElements& getFailableElements() {
+                return failableElements;
+            }
            
             /**
              * This method returns the id of the used child for a spare. If no element is used, it returns the given id.
@@ -170,15 +264,6 @@ namespace storm {
              * @return True, if claiming was successful.
              */
             bool claimNew(size_t spareId, size_t currentlyUses, std::vector<std::shared_ptr<DFTElement<ValueType>>> const& children);
-            
-            /**
-             * Get number of currently failable BEs.
-             *
-             * @return Number of failable BEs.
-             */
-            size_t nrFailableBEs() const {
-                return mCurrentlyFailableBE.size();
-            }
 
             /**
              * Get the failure rate of the currently failable BE on the given index.
@@ -197,24 +282,6 @@ namespace storm {
              * @return Failure rate of the BE.
              */
             ValueType getBERate(size_t id) const;
-
-            /** Get number of currently failable dependencies.
-             *
-             * @return Number of failable dependencies.
-             */
-            size_t nrFailableDependencies() const {
-                return mFailableDependencies.size();
-            }
-            
-            /**
-             * Gets the id of the dependency at index in the list of failable dependencies.
-             * @param index Index in list of failable dependencies.
-             * @return Id of the dependency
-             */
-            size_t getDependencyId(size_t index) const {
-                STORM_LOG_ASSERT(index < nrFailableDependencies(), "Index invalid.");
-                return mFailableDependencies[index];
-            }
 
             /**
              * Sets all failable BEs due to dependencies from newly failed element
@@ -257,28 +324,26 @@ namespace storm {
             
             std::string getCurrentlyFailableString() const {
                 std::stringstream stream;
-                if (nrFailableDependencies() > 0) {
-                    auto it = mFailableDependencies.begin();
+                if (failableElements.hasDependencies()) {
+                    failableElements.init(true);
                     stream << "{Dependencies: ";
-                    if (it != mFailableDependencies.end()) {
-                        stream << *it;
-                    }
-                    ++it;
-                    while(it != mFailableDependencies.end()) {
-                        stream << ", " << *it;
-                        ++it;
+                    stream << failableElements.get();
+                    failableElements.next();
+                    while(!failableElements.isEnd()) {
+                        stream << ", " << failableElements.get();
+                        failableElements.next();
                     }
                     stream << "} ";
                 } else {
-                    auto it = mCurrentlyFailableBE.begin();
+                    failableElements.init(false);
                     stream << "{";
-                    if(it != mCurrentlyFailableBE.end()) {
-                        stream << *it;
-                    }
-                    ++it;
-                    while(it != mCurrentlyFailableBE.end()) {
-                        stream << ", " << *it;
-                        ++it;
+                    if (!failableElements.isEnd()) {
+                        stream << failableElements.get();
+                        failableElements.next();
+                        while (!failableElements.isEnd()) {
+                            stream << ", " << failableElements.get();
+                            failableElements.next();
+                        }
                     }
                     stream << "}";
                 }
