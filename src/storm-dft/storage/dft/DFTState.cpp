@@ -187,6 +187,7 @@ namespace storm {
         template<typename ValueType>
         void DFTState<ValueType>::beNoLongerFailable(size_t id) {
             failableElements.removeBE(id);
+            updateDontCareDependencies(id);
         }
 
         template<typename ValueType>
@@ -216,6 +217,7 @@ namespace storm {
                 assert(dependency->dependentEvents().size() == 1);
                 STORM_LOG_ASSERT(dependency->dependentEvents()[0]->id() == id, "Ids do not match.");
                 setDependencyDontCare(dependency->id());
+                failableElements.removeDependency(dependency->id());
             }
         }
 
