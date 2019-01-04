@@ -8,7 +8,7 @@ namespace storm {
         namespace bisimulation {
             
             template<storm::dd::DdType DdType, typename ValueType>
-            NondeterministicModelPartitionRefiner<DdType, ValueType>::NondeterministicModelPartitionRefiner(storm::models::symbolic::NondeterministicModel<DdType, ValueType> const& model, Partition<DdType, ValueType> const& initialStatePartition) : PartitionRefiner<DdType, ValueType>(model, initialStatePartition), model(model), choicePartition(Partition<DdType, ValueType>::createTrivialChoicePartition(model, initialStatePartition.getBlockVariables())), stateSignatureRefiner(model.getManager(), this->statePartition.getBlockVariable(), model.getRowVariables(), model.getColumnVariables(), true) {
+            NondeterministicModelPartitionRefiner<DdType, ValueType>::NondeterministicModelPartitionRefiner(storm::models::symbolic::NondeterministicModel<DdType, ValueType> const& model, Partition<DdType, ValueType> const& initialStatePartition) : PartitionRefiner<DdType, ValueType>(model, initialStatePartition), model(model), choicePartition(Partition<DdType, ValueType>::createTrivialChoicePartition(model, initialStatePartition.getBlockVariables())), stateSignatureRefiner(model.getManager(), this->statePartition.getBlockVariable(), model.getRowVariables(), model.getColumnVariables(), true), statePartitonHasBeenRefinedOnce(false) {
 
                 // For Markov automata, we refine the state partition wrt. to their exit rates.
                 if (model.isOfType(storm::models::ModelType::MarkovAutomaton)) {
@@ -29,7 +29,9 @@ namespace storm {
                 STORM_LOG_TRACE("Refining choice partition.");
                 Partition<DdType, ValueType> newChoicePartition = this->internalRefine(this->signatureComputer, this->signatureRefiner, this->choicePartition, this->statePartition, mode);
                 
-                if (newChoicePartition.getNumberOfBlocks() == choicePartition.getNumberOfBlocks()) {
+                // If the choice partition has become stable in an iteration that is not the starting one, we have
+                // reached a fixed point and can return.
+                if (newChoicePartition.getNumberOfBlocks() == choicePartition.getNumberOfBlocks() && statePartitonHasBeenRefinedOnce) {
                     this->status = Status::FixedPoint;
                     return false;
                 } else {
@@ -52,6 +54,7 @@ namespace storm {
                     STORM_LOG_TRACE("Refining state partition.");
                     auto refinementStart = std::chrono::high_resolution_clock::now();
                     Partition<DdType, ValueType> newStatePartition = this->internalRefine(stateSignature, this->stateSignatureRefiner, this->statePartition);
+                    statePartitonHasBeenRefinedOnce = true;
                     auto refinementEnd = std::chrono::high_resolution_clock::now();
                     
                     auto signatureTime = std::chrono::duration_cast<std::chrono::milliseconds>(signatureEnd - signatureStart).count();

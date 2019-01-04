@@ -36,14 +36,17 @@ namespace storm {
                 
                 virtual bool refineWrtStateRewards(storm::dd::Add<DdType, ValueType> const& stateRewards) override;
                 
-                // The model to refine.
+                /// The model to refine.
                 storm::models::symbolic::NondeterministicModel<DdType, ValueType> const& model;
                 
-                // The choice partition in the refinement process.
+                /// The choice partition in the refinement process.
                 Partition<DdType, ValueType> choicePartition;
 
-                // The object used to refine the state partition based on the signatures.
+                /// The object used to refine the state partition based on the signatures.
                 SignatureRefiner<DdType, ValueType> stateSignatureRefiner;
+                
+                /// A flag indicating whether the state partition has been refined at least once.
+                bool statePartitonHasBeenRefinedOnce;
             };
             
         }
