@@ -58,17 +58,18 @@ namespace storm {
                 gspn.writeStatsToStream(fs);
                 storm::utility::closeFile(fs);
             }
-            
+
             if (exportSettings.isWriteToJaniSet()) {
                 auto const& jani = storm::settings::getModule<storm::settings::modules::JaniExportSettings>();
                 storm::converter::JaniConversionOptions options(jani);
-    
+
                 storm::builder::JaniGSPNBuilder builder(gspn);
-                storm::jani::Model* model = builder.build("gspn_automaton", exportSettings.isAddJaniPropertiesSet());
+                storm::jani::Model* model = builder.build("gspn_automaton");
 
                 auto properties = janiProperyGetter(builder);
                 if (exportSettings.isAddJaniPropertiesSet()) {
-                    properties.insert(properties.end(), builder.getStandardProperties().begin(), builder.getStandardProperties().end());
+                    auto deadlockProperties = builder.getDeadlockProperties(model);
+                    properties.insert(properties.end(), deadlockProperties.begin(), deadlockProperties.end());
                 }
                 
                 storm::api::transformJani(*model, properties, options);

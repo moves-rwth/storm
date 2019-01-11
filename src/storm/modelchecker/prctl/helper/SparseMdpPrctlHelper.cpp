@@ -1328,10 +1328,16 @@ namespace storm {
                 std::vector<uint_fast64_t> stateToMecIndexMap(transitionMatrix.getColumnCount());
                 std::vector<ValueType> lraValuesForEndComponents(mecDecomposition.size(), zero);
                 
+                auto underlyingSolverEnvironment = env;
+                if (env.solver().isForceSoundness()) {
+                    // For sound computations, the error in the MECS plus the error in the remaining system should be less then the user defined precsion.
+                    underlyingSolverEnvironment.solver().minMax().setPrecision(env.solver().minMax().getPrecision() / storm::utility::convertNumber<storm::RationalNumber>(2));
+                }
+                
                 for (uint_fast64_t currentMecIndex = 0; currentMecIndex < mecDecomposition.size(); ++currentMecIndex) {
                     storm::storage::MaximalEndComponent const& mec = mecDecomposition[currentMecIndex];
                     
-                    lraValuesForEndComponents[currentMecIndex] = computeLraForMaximalEndComponent(env, goal.direction(), transitionMatrix, rewardModel, mec);
+                    lraValuesForEndComponents[currentMecIndex] = computeLraForMaximalEndComponent(underlyingSolverEnvironment, goal.direction(), transitionMatrix, rewardModel, mec);
                     
                     // Gather information for later use.
                     for (auto const& stateChoicesPair : mec) {
@@ -1438,19 +1444,19 @@ namespace storm {
                 
                 // Check for requirements of the solver.
                 storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType> minMaxLinearEquationSolverFactory;
-                storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(env, true, goal.direction());
+                storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(underlyingSolverEnvironment, true, goal.direction());
                 requirements.clearBounds();
                 STORM_LOG_THROW(!requirements.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + requirements.getEnabledRequirementsAsString() + " not checked.");
 
                 
                 std::vector<ValueType> sspResult(numberOfSspStates);
                 goal.restrictRelevantValues(statesNotContainedInAnyMec);
-                std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = storm::solver::configureMinMaxLinearEquationSolver(env, std::move(goal), minMaxLinearEquationSolverFactory, sspMatrix);
+                std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = storm::solver::configureMinMaxLinearEquationSolver(underlyingSolverEnvironment, std::move(goal), minMaxLinearEquationSolverFactory, sspMatrix);
                 solver->setLowerBound(storm::utility::zero<ValueType>());
                 solver->setUpperBound(*std::max_element(lraValuesForEndComponents.begin(), lraValuesForEndComponents.end()));
                 solver->setHasUniqueSolution();
                 solver->setRequirementsChecked();
-                solver->solveEquations(env, sspResult, b);
+                solver->solveEquations(underlyingSolverEnvironment, sspResult, b);
                 
                 // Prepare result vector.
                 std::vector<ValueType> result(numberOfStates, zero);
@@ -1491,6 +1497,9 @@ namespace storm {
                 if (storm::NumberTraits<ValueType>::IsExact && minMaxSettings.isLraMethodSetFromDefaultValue() && method != storm::solver::LraMethod::LinearProgramming) {
                     STORM_LOG_INFO("Selecting 'LP' as the solution technique for long-run properties to guarantee exact results. If you want to override this, please explicitly specify a different LRA method.");
                     method = storm::solver::LraMethod::LinearProgramming;
+                } else if (env.solver().isForceSoundness() && minMaxSettings.isLraMethodSetFromDefaultValue() && method != storm::solver::LraMethod::ValueIteration) {
+                    STORM_LOG_INFO("Selecting 'VI' as the solution technique for long-run properties to guarantee sound results. If you want to override this, please explicitly specify a different LRA method.");
+                    method = storm::solver::LraMethod::ValueIteration;
                 }
                 if (method == storm::solver::LraMethod::LinearProgramming) {
                     return computeLraForMaximalEndComponentLP(env, dir, transitionMatrix, rewardModel, mec);
@@ -1563,7 +1572,8 @@ namespace storm {
                 STORM_LOG_ASSERT(mecTransitions.isProbabilistic(), "The MEC-Matrix is not probabilistic.");
                 
                 // start the iterations
-                ValueType precision = storm::utility::convertNumber<ValueType>(storm::settings::getModule<storm::settings::modules::MinMaxEquationSolverSettings>().getPrecision());
+                ValueType precision = storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()) / scalingFactor;
+                bool relative = env.solver().minMax().getRelativeTerminationCriterion();
                 std::vector<ValueType> x(mecTransitions.getRowGroupCount(), storm::utility::zero<ValueType>());
                 std::vector<ValueType> xPrime = x;
                 
@@ -1590,7 +1600,7 @@ namespace storm {
                         *xPrimeIt = *xIt;
                     }
 
-                    if ((maxDiff - minDiff) < precision) {
+                    if ((maxDiff - minDiff) <= (relative ? (precision * minDiff) : precision)) {
                         break;
                     }
                 }

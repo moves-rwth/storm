@@ -1,7 +1,7 @@
 #include "DftJsonExporter.h"
 
-#include "storm/exceptions/NotImplementedException.h"
-#include "storm/exceptions/FileIoException.h"
+#include "storm/utility/file.h"
+#include "storm/exceptions/NotSupportedException.h"
 
 #include <algorithm>
 #include <string>
@@ -11,14 +11,10 @@ namespace storm {
 
         template<typename ValueType>
         void DftJsonExporter<ValueType>::toFile(storm::storage::DFT<ValueType> const& dft, std::string const& filepath) {
-            std::ofstream ofs;
-            ofs.open(filepath, std::ofstream::out);
-            if(ofs.is_open()) {
-                toStream(dft, ofs);
-                ofs.close();
-            } else {
-                STORM_LOG_THROW(false, storm::exceptions::FileIoException, "Cannot open " << filepath);
-            }
+            std::ofstream stream;
+            storm::utility::openFile(filepath, stream);
+            toStream(dft, stream);
+            storm::utility::closeFile(stream);
         }
 
         template<typename ValueType>
@@ -58,34 +54,44 @@ namespace storm {
                     children.push_back(std::to_string(child->id()));
                 }
                 nodeData["children"] = children;
-                // Gate dependent export
-                switch (element->type()) {
-                    case storm::storage::DFTElementType::VOT:
-                        nodeData["voting"] = std::static_pointer_cast<storm::storage::DFTVot<ValueType> const>(element)->threshold();
-                        break;
-                    case storm::storage::DFTElementType::PDEP:
-                    {
-                        ValueType probability = std::static_pointer_cast<storm::storage::DFTDependency<ValueType> const>(element)->probability();
-                        if (!storm::utility::isOne<ValueType>(probability)) {
-                            std::stringstream stream;
-                            stream << probability;
-                            nodeData["prob"] = stream.str();
-                        }
-                        break;
-                    }
-                    default:
-                        break;
+
+                // Set threshold for voting gate
+                if (element->type() == storm::storage::DFTElementType::VOT) {
+                    nodeData["voting"] = std::static_pointer_cast<storm::storage::DFTVot<ValueType> const>(element)->threshold();
+                }
+            } else if (element->isRestriction()) {
+                // Set children for restriction
+                auto seq = std::static_pointer_cast<storm::storage::DFTRestriction<ValueType> const>(element);
+                std::vector<std::string> children;
+                for (DFTElementPointer const& child : seq->children()) {
+                    children.push_back(std::to_string(child->id()));
+                }
+                nodeData["children"] = children;
+            } else if (element->isDependency()) {
+                // Set children for dependency
+                auto dependency = std::static_pointer_cast<storm::storage::DFTDependency<ValueType> const>(element);
+                std::vector<std::string> children;
+                children.push_back(std::to_string(dependency->triggerEvent()->id()));
+                for (DFTElementPointer const& child : dependency->dependentEvents()) {
+                    children.push_back(std::to_string(child->id()));
+                }
+                nodeData["children"] = children;
+                if (!storm::utility::isOne<ValueType>(dependency->probability())) {
+                    std::stringstream stream;
+                    stream << dependency->probability();
+                    nodeData["probability"] = stream.str();
                 }
             } else if (element->isBasicElement()) {
-                // Set rates for BE
+                // Set BE specific data
                 std::shared_ptr<DFTBE<ValueType> const> be = std::static_pointer_cast<DFTBE<ValueType> const>(element);
                 std::stringstream stream;
                 stream << be->activeFailureRate();
                 nodeData["rate"] = stream.str();
                 stream.str(std::string()); // Clear stringstream
-                ValueType dormancy = be->passiveFailureRate() / be->activeFailureRate();
-                stream << dormancy;
+                stream << be->dormancyFactor();
                 nodeData["dorm"] = stream.str();
+            } else {
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Element of type '" << element->type() << "' is not supported.");
             }
 
             modernjson::json jsonNode;

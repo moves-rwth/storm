@@ -38,13 +38,12 @@ namespace storm {
         }
         
 
-        BuilderOptions::BuilderOptions(bool buildAllRewardModels, bool buildAllLabels) : buildAllRewardModels(buildAllRewardModels), buildAllLabels(buildAllLabels), buildChoiceLabels(false), buildStateValuations(false), buildChoiceOrigins(false), scaleAndLiftTransitionRewards(true), explorationChecks(false), inferObservationsFromActions(false), addOverlappingGuardsLabel(false), addOutOfBoundsState(false), reservedBitsForUnboundedVariables(32), showProgress(false), showProgressDelay(0) {
+        BuilderOptions::BuilderOptions(bool buildAllRewardModels, bool buildAllLabels) : buildAllRewardModels(buildAllRewardModels), buildAllLabels(buildAllLabels), applyMaximalProgressAssumption(false), buildChoiceLabels(false), buildStateValuations(false), buildChoiceOrigins(false), scaleAndLiftTransitionRewards(true), explorationChecks(false), inferObservationsFromActions(false), addOverlappingGuardsLabel(false), addOutOfBoundsState(false), reservedBitsForUnboundedVariables(32), showProgress(false), showProgressDelay(0) {
             // Intentionally left empty.
         }
         
-        BuilderOptions::BuilderOptions(storm::logic::Formula const& formula, storm::storage::SymbolicModelDescription const& modelDescription) : BuilderOptions() {
-            this->preserveFormula(formula, modelDescription);
-            this->setTerminalStatesFromFormula(formula);
+        BuilderOptions::BuilderOptions(storm::logic::Formula const& formula, storm::storage::SymbolicModelDescription const& modelDescription) : BuilderOptions({formula.asSharedPointer()}, modelDescription) {
+            // Intentionally left empty.
         }
         
         BuilderOptions::BuilderOptions(std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, storm::storage::SymbolicModelDescription const& modelDescription) : BuilderOptions() {
@@ -59,6 +58,9 @@ namespace storm {
             
             auto const& buildSettings = storm::settings::getModule<storm::settings::modules::BuildSettings>();
             auto const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
+            if (modelDescription.hasModel()) {
+                this->setApplyMaximalProgressAssumption(modelDescription.getModelType() == storm::storage::SymbolicModelDescription::ModelType::MA);
+            }
             explorationChecks = buildSettings.isExplorationChecksSet();
             reservedBitsForUnboundedVariables = buildSettings.getBitsForUnboundedVariables();
             showProgress = generalSettings.isVerboseSet();
@@ -113,9 +115,35 @@ namespace storm {
                 } else if (left.isAtomicLabelFormula()) {
                     addTerminalLabel(left.asAtomicLabelFormula().getLabel(), false);
                 }
+            } else if (formula.isBoundedUntilFormula()) {
+                storm::logic::BoundedUntilFormula const& boundedUntil = formula.asBoundedUntilFormula();
+                bool hasLowerBound = false;
+                for (uint64_t i = 0; i < boundedUntil.getDimension(); ++i) {
+                    if (boundedUntil.hasLowerBound(i) && (boundedUntil.getLowerBound(i).containsVariables() || !storm::utility::isZero(boundedUntil.getLowerBound(i).evaluateAsRational()))) {
+                        hasLowerBound = true;
+                        break;
+                    }
+                }
+                if (!hasLowerBound) {
+                    storm::logic::Formula const& right = boundedUntil.getRightSubformula();
+                    if (right.isAtomicExpressionFormula() || right.isAtomicLabelFormula()) {
+                        this->setTerminalStatesFromFormula(right);
+                    }
+                }
+                storm::logic::Formula const& left = boundedUntil.getLeftSubformula();
+                if (left.isAtomicExpressionFormula()) {
+                    addTerminalExpression(left.asAtomicExpressionFormula().getExpression(), false);
+                } else if (left.isAtomicLabelFormula()) {
+                    addTerminalLabel(left.asAtomicLabelFormula().getLabel(), false);
+                }
             } else if (formula.isProbabilityOperatorFormula()) {
                 storm::logic::Formula const& sub = formula.asProbabilityOperatorFormula().getSubformula();
-                if (sub.isEventuallyFormula() || sub.isUntilFormula()) {
+                if (sub.isEventuallyFormula() || sub.isUntilFormula() || sub.isBoundedUntilFormula()) {
+                    this->setTerminalStatesFromFormula(sub);
+                }
+            } else if (formula.isRewardOperatorFormula() || formula.isTimeOperatorFormula()) {
+                storm::logic::Formula const& sub = formula.asOperatorFormula().getSubformula();
+                if (sub.isEventuallyFormula()) {
                     this->setTerminalStatesFromFormula(sub);
                 }
             }
@@ -143,6 +171,10 @@ namespace storm {
         
         void BuilderOptions::clearTerminalStates() {
             terminalStates.clear();
+        }
+        
+        bool BuilderOptions::isApplyMaximalProgressAssumptionSet() const {
+            return applyMaximalProgressAssumption;
         }
         
         bool BuilderOptions::isBuildChoiceLabelsSet() const {
@@ -238,6 +270,11 @@ namespace storm {
         
         BuilderOptions& BuilderOptions::addTerminalLabel(std::string const& label, bool value) {
             terminalStates.push_back(std::make_pair(LabelOrExpression(label), value));
+            return *this;
+        }
+        
+        BuilderOptions& BuilderOptions::setApplyMaximalProgressAssumption(bool newValue) {
+            applyMaximalProgressAssumption = newValue;
             return *this;
         }
         

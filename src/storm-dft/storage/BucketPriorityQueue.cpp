@@ -8,7 +8,7 @@ namespace storm {
     namespace storage {
 
         template<typename ValueType>
-        BucketPriorityQueue<ValueType>::BucketPriorityQueue(size_t nrBuckets, double lowerValue, double ratio) : lowerValue(lowerValue), logBase(std::log(ratio)), nrBuckets(nrBuckets), nrUnsortedItems(0), buckets(nrBuckets), currentBucket(nrBuckets) {
+        BucketPriorityQueue<ValueType>::BucketPriorityQueue(size_t nrBuckets, double lowerValue, double ratio, bool higher) : lowerValue(lowerValue), higher(higher), logBase(std::log(ratio)), nrBuckets(nrBuckets), nrUnsortedItems(0), buckets(nrBuckets), currentBucket(nrBuckets) {
             compare = ([](HeuristicPointer a, HeuristicPointer b) {
                 return *a < *b;
             });
@@ -166,7 +166,7 @@ namespace storm {
             if (newBucket >= nrBuckets) {
                 newBucket = nrBuckets - 1;
             }
-            if (!HIGHER) {
+            if (!higher) {
                 newBucket = nrBuckets-1 - newBucket;
             }
             //std::cout << "get Bucket: " << priority << ", " << newBucket << std::endl;

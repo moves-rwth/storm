@@ -103,6 +103,7 @@ namespace storm {
             std::vector<std::pair<LabelOrExpression, bool>> const& getTerminalStates() const;
             bool hasTerminalStates() const;
             void clearTerminalStates();
+            bool isApplyMaximalProgressAssumptionSet() const;
             bool isBuildChoiceLabelsSet() const;
             bool isBuildStateValuationsSet() const;
             bool isBuildChoiceOriginsSet() const;
@@ -139,6 +140,13 @@ namespace storm {
             BuilderOptions& addLabel(std::string const& labelName);
             BuilderOptions& addTerminalExpression(storm::expressions::Expression const& expression, bool value);
             BuilderOptions& addTerminalLabel(std::string const& label, bool value);
+            /**
+             * Should the maximal progress assumption be applied when building a Markov Automaton?
+             * @param newValue If this is true, Markovian edges are not explored from probabilistic states
+             * @return this
+             */
+            BuilderOptions& setApplyMaximalProgressAssumption(bool newValue = true);
+            
             /**
              * Should the choice labels be built?
              * @param newValue The new value (default true)
@@ -218,6 +226,10 @@ namespace storm {
             
             /// If one of these labels/expressions evaluates to the given bool, the builder can abort the exploration.
             std::vector<std::pair<LabelOrExpression, bool>> terminalStates;
+            
+            /// A flag indicating whether the maximal progress assumption is applied when building a Markov Automaton.
+            /// If this is true, Markovian edges are not explored from probabilistic states.
+            bool applyMaximalProgressAssumption;
 
             /// A flag indicating whether or not to build choice labels.
             bool buildChoiceLabels;

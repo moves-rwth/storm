@@ -41,6 +41,7 @@
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/settings/modules/AbstractionSettings.h"
 #include "storm/settings/modules/ResourceSettings.h"
+#include "storm/settings/modules/ModelCheckerSettings.h"
 
 #include "storm/utility/Stopwatch.h"
 
@@ -147,7 +148,9 @@ namespace storm {
                 bool transformToJani = ioSettings.isPrismToJaniSet();
                 bool transformToJaniForJit = builderType == storm::builder::BuilderType::Jit;
                 STORM_LOG_WARN_COND(transformToJani || !transformToJaniForJit, "The JIT-based model builder is only available for JANI models, automatically converting the PRISM input model.");
-                transformToJani |= transformToJaniForJit;
+                bool transformToJaniForDdMA = (builderType == storm::builder::BuilderType::Dd) && (input.model->getModelType() == storm::storage::SymbolicModelDescription::ModelType::MA);
+                STORM_LOG_WARN_COND(transformToJani || !transformToJaniForDdMA, "Dd-based model builder for Markov Automata is only available for JANI models, automatically converting the PRISM input model.");
+                transformToJani |= (transformToJaniForJit || transformToJaniForDdMA);
                 
                 if (transformToJani) {
                     storm::prism::Program const& model = output.model.get().asPrismProgram();
@@ -232,11 +235,12 @@ namespace storm {
             } else {
                 options.setBuildChoiceOrigins(false);
             }
-            options.setBuildAllLabels(buildSettings.isBuildFullModelSet());
-            options.setBuildAllRewardModels(buildSettings.isBuildFullModelSet());
             options.setAddOutOfBoundsState(buildSettings.isBuildOutOfBoundsStateSet());
             if (buildSettings.isBuildFullModelSet()) {
                 options.clearTerminalStates();
+                options.setApplyMaximalProgressAssumption(false);
+                options.setBuildAllLabels(true);
+                options.setBuildAllRewardModels(true);
             }
             return storm::api::buildSparseModel<ValueType>(input.model.get(), options, buildSettings.isJitSet(), storm::settings::getModule<storm::settings::modules::JitBuilderSettings>().isDoctorSet());
         }
@@ -318,6 +322,11 @@ namespace storm {
             
             if (generalSettings.isBisimulationSet()) {
                 result.first = preprocessSparseModelBisimulation(result.first, input, bisimulationSettings);
+                result.second = true;
+            }
+            
+            if (ioSettings.isToNondeterministicModelSet()) {
+                result.first = storm::api::transformToNondeterministicModel<ValueType>(std::move(*result.first));
                 result.second = true;
             }
             

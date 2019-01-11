@@ -80,7 +80,7 @@ namespace storm {
             } else {
                 storm::storage::BitVector sccAsBitVector(x.size(), false);
                 for (auto const& scc : *this->sortedSccDecomposition) {
-                    if (scc.isTrivial()) {
+                    if (scc.size() == 1) {
                         returnValue = solveTrivialScc(*scc.begin(), x, b) && returnValue;
                     } else {
                         sccAsBitVector.clear();
@@ -131,7 +131,11 @@ namespace storm {
             }
             
             if (hasDiagonalEntry) {
-                xi /= denominator;
+                    if (storm::utility::isZero(denominator)) {
+                        STORM_LOG_THROW(storm::utility::isZero(xi), storm::exceptions::InvalidOperationException, "The equation system has no solution.");
+                    } else {
+                        xi /= denominator;
+                    }
             }
             return true;
         }

@@ -65,7 +65,8 @@ namespace storm {
                 std::vector<std::string> childNames;
                 if (data.count("children") > 0) {
                     for (std::string const& child : data.at("children")) {
-                        childNames.push_back(nameMapping[child]);
+                        STORM_LOG_THROW(nameMapping.find(child) != nameMapping.end(), storm::exceptions::WrongFormatException, "Child '" << child << "' was not defined.");
+                        childNames.push_back(nameMapping.at(child));
                     }
                 }
 
@@ -89,7 +90,7 @@ namespace storm {
                 } else if (type== "fdep") {
                     success = builder.addDepElement(name, childNames, storm::utility::one<ValueType>());
                 } else if (type== "pdep") {
-                    ValueType probability = parseRationalExpression(parseJsonNumber(data.at("prob")));
+                    ValueType probability = parseRationalExpression(parseJsonNumber(data.at("probability")));
                     success = builder.addDepElement(name, childNames, probability);
                 } else if (type == "be") {
                     ValueType failureRate = parseRationalExpression(parseJsonNumber(data.at("rate")));
@@ -120,7 +121,9 @@ namespace storm {
                 STORM_LOG_THROW(success, storm::exceptions::FileIoException, "Error while adding element '" << element << "'.");
             }
 
-            std::string toplevelName = nameMapping[parseJsonNumber(jsonInput.at("toplevel"))];
+            std::string topLevelId = parseJsonNumber(jsonInput.at("toplevel"));
+            STORM_LOG_THROW(nameMapping.find(topLevelId) != nameMapping.end(), storm::exceptions::WrongFormatException, "Top level element with id '" << topLevelId << "' was not defined.");
+            std::string toplevelName = nameMapping.at(topLevelId);
             if(!builder.setTopLevel(toplevelName)) {
                 STORM_LOG_THROW(false, storm::exceptions::FileIoException, "Top level id unknown.");
             }

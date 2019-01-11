@@ -53,6 +53,17 @@ namespace storm {
         }
 
         template <typename ValueType>
+        bool Scheduler<ValueType>::isChoiceSelected(BitVector const& selectedStates, uint64_t memoryState) const {
+            for (auto const& selectedState : selectedStates) {
+                auto& schedulerChoice = schedulerChoices[memoryState][selectedState];
+                if (!schedulerChoice.isDefined()) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        template <typename ValueType>
         void Scheduler<ValueType>::clearChoice(uint_fast64_t modelState, uint_fast64_t memoryState) {
             STORM_LOG_ASSERT(memoryState < getNumberOfMemoryStates(), "Illegal memory state index");
             STORM_LOG_ASSERT(modelState < schedulerChoices[memoryState].size(), "Illegal model state index");
@@ -64,6 +75,24 @@ namespace storm {
             STORM_LOG_ASSERT(memoryState < getNumberOfMemoryStates(), "Illegal memory state index");
             STORM_LOG_ASSERT(modelState < schedulerChoices[memoryState].size(), "Illegal model state index");
             return schedulerChoices[memoryState][modelState];
+        }
+
+        template<typename ValueType>
+        storm::storage::BitVector Scheduler<ValueType>::computeActionSupport(std::vector<uint_fast64_t> const& nondeterministicChoiceIndices) const {
+            auto nrActions = nondeterministicChoiceIndices.back();
+            storm::storage::BitVector result(nrActions);
+
+            for (auto const& choicesPerMemoryNode : schedulerChoices) {
+
+                STORM_LOG_ASSERT(nondeterministicChoiceIndices.size()-2 < choicesPerMemoryNode.size(), "Illegal model state index");
+                for (uint64_t stateId = 0; stateId < nondeterministicChoiceIndices.size()-1; ++stateId) {
+                    for (auto const& schedChoice : choicesPerMemoryNode[stateId].getChoiceAsDistribution()) {
+                        STORM_LOG_ASSERT(schedChoice.first < nondeterministicChoiceIndices[stateId+1] - nondeterministicChoiceIndices[stateId], "Scheduler chooses action indexed " << schedChoice.first << " in state id "  << stateId << " but state contains only " << nondeterministicChoiceIndices[stateId+1] - nondeterministicChoiceIndices[stateId] << " choices .");
+                        result.set(nondeterministicChoiceIndices[stateId] + schedChoice.first);
+                    }
+                }
+            }
+            return result;
         }
         
         template <typename ValueType>

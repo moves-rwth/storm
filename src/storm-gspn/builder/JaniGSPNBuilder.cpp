@@ -8,7 +8,7 @@
 namespace storm {
     namespace builder {
 
-        storm::jani::Model* JaniGSPNBuilder::build(std::string const& automatonName, bool buildStandardProperties) {
+        storm::jani::Model* JaniGSPNBuilder::build(std::string const& automatonName) {
             storm::jani::ModelType modelType = storm::jani::ModelType::MA;
             if (gspn.getNumberOfTimedTransitions() == 0) {
                 modelType = storm::jani::ModelType::MDP;
@@ -22,16 +22,9 @@ namespace storm {
             addEdges(mainAutomaton, locId);
             model->addAutomaton(mainAutomaton);
             model->setStandardSystemComposition();
-            if (buildStandardProperties) {
-                buildProperties(model);
-            }
             model->getModelFeatures().add(storm::jani::ModelFeature::DerivedOperators);
             model->finalize();
             return model;
-        }
-        
-        std::vector<storm::jani::Property> const& JaniGSPNBuilder::getStandardProperties() const {
-            return standardProperties;
         }
 
         void JaniGSPNBuilder::addVariables(storm::jani::Model* model) {
@@ -194,11 +187,10 @@ namespace storm {
 
             }
         }
-        
+
         storm::jani::Variable const& JaniGSPNBuilder::addDeadlockTransientVariable(storm::jani::Model* model, std::string name, bool ignoreCapacities, bool ignoreInhibitorArcs, bool ignoreEmptyPlaces) {
-            
             storm::expressions::Expression transientValue = expressionManager->boolean(true);
-            
+
             // build the conjunction over all transitions
             std::vector<storm::gspn::Transition const*> transitions;
             transitions.reserve(gspn.getNumberOfImmediateTransitions() + gspn.getNumberOfTimedTransitions());
@@ -210,7 +202,7 @@ namespace storm {
             }
             bool firstTransition = true;
             for (auto const& transition : transitions) {
-                
+
                 // build the disjunction over all in/out places and inhibitor arcs
                 storm::expressions::Expression transitionDisabled = expressionManager->boolean(false);
                 bool firstPlace = true;
@@ -250,7 +242,7 @@ namespace storm {
                         }
                     }
                 }
-                
+
                 if (firstTransition) {
                     transientValue = transitionDisabled;
                     firstTransition = false;
@@ -258,15 +250,18 @@ namespace storm {
                     transientValue = transientValue && transitionDisabled;
                 }
             }
-            
+
+            return addTransientVariable(model, name, transientValue);
+        }
+
+        storm::jani::Variable const& JaniGSPNBuilder::addTransientVariable(storm::jani::Model* model, std::string name, storm::expressions::Expression expression) {
             auto exprVar = expressionManager->declareBooleanVariable(name);
             auto const& janiVar = model->addVariable(*storm::jani::makeBooleanVariable(name, exprVar, expressionManager->boolean(false), true));
-            storm::jani::Assignment assignment(storm::jani::LValue(janiVar), transientValue);
+            storm::jani::Assignment assignment(storm::jani::LValue(janiVar), expression);
             model->getAutomata().front().getLocations().front().addTransientAssignment(assignment);
             return janiVar;
         }
-        
-        
+
         std::string getUniqueVarName(storm::expressions::ExpressionManager const& manager, std::string name) {
             std::string res = name;
             while (manager.hasVariable(res)) {
@@ -274,37 +269,52 @@ namespace storm {
             }
             return res;
         }
-        
-        void JaniGSPNBuilder::buildProperties(storm::jani::Model* model) {
-            standardProperties.clear();
-            
-            auto const& deadlockVar = addDeadlockTransientVariable(model, getUniqueVarName(*expressionManager, "deadl"));
-            auto deadlock = std::make_shared<storm::logic::AtomicExpressionFormula>(deadlockVar.getExpressionVariable().getExpression());
-            auto trueFormula = std::make_shared<storm::logic::BooleanLiteralFormula>(true);
-            std::set<storm::expressions::Variable> emptyVariableSet;
-            
-            auto maxReachDeadlock = std::make_shared<storm::logic::ProbabilityOperatorFormula>(
-                    std::make_shared<storm::logic::EventuallyFormula>(deadlock, storm::logic::FormulaContext::Probability),
-                    storm::logic::OperatorInformation(storm::solver::OptimizationDirection::Maximize));
-            standardProperties.emplace_back("MaxPrReachDeadlock", maxReachDeadlock, emptyVariableSet, "The maximal probability to eventually reach a deadlock.");
-            
+
+        std::vector<storm::jani::Property> JaniGSPNBuilder::getStandardProperties(storm::jani::Model* model, std::shared_ptr<storm::logic::AtomicExpressionFormula> atomicFormula, std::string name, std::string description, bool maximal) {
+            std::vector<storm::jani::Property> standardProperties;
+            std::string dirShort = maximal ? "Max" : "Min";
+            std::string dirLong = maximal ? "maximal" : "minimal";
+            storm::solver::OptimizationDirection optimizationDirection = maximal ? storm::solver::OptimizationDirection::Maximize : storm::solver::OptimizationDirection::Minimize;
+            std::set<storm::expressions::Variable> emptySet;
+
+            // Build reachability property
+            auto reachFormula = std::make_shared<storm::logic::ProbabilityOperatorFormula>(
+                    std::make_shared<storm::logic::EventuallyFormula>(atomicFormula, storm::logic::FormulaContext::Probability),
+                    storm::logic::OperatorInformation(optimizationDirection));
+            standardProperties.emplace_back(dirShort + "PrReach" + name, reachFormula, emptySet, "The " + dirLong + " probability to eventually reach " + description + ".");
+
+            // Build time bounded reachability property
+            // Add variable for time bound
             auto exprTB = expressionManager->declareRationalVariable(getUniqueVarName(*expressionManager, "TIME_BOUND"));
             auto janiTB = storm::jani::Constant(exprTB.getName(), exprTB);
             model->addConstant(janiTB);
             storm::logic::TimeBound tb(false, janiTB.getExpressionVariable().getExpression());
             storm::logic::TimeBoundReference tbr(storm::logic::TimeBoundType::Time);
-            auto maxReachDeadlockTimeBounded = std::make_shared<storm::logic::ProbabilityOperatorFormula>(
-                    std::make_shared<storm::logic::BoundedUntilFormula>(trueFormula, deadlock, boost::none, tb, tbr),
-                    storm::logic::OperatorInformation(storm::solver::OptimizationDirection::Maximize));
-            standardProperties.emplace_back("MaxPrReachDeadlockTB", maxReachDeadlockTimeBounded, emptyVariableSet, "The maximal probability to reach a deadlock within 'TIME_BOUND' steps.");
-            
-            auto expTimeDeadlock = std::make_shared<storm::logic::TimeOperatorFormula>(
-                    std::make_shared<storm::logic::EventuallyFormula>(deadlock, storm::logic::FormulaContext::Time),
-                    storm::logic::OperatorInformation(storm::solver::OptimizationDirection::Minimize));
-            standardProperties.emplace_back("MinExpTimeDeadlock", expTimeDeadlock, emptyVariableSet, "The minimal expected time to reach a deadlock.");
-            
+
+            auto trueFormula = std::make_shared<storm::logic::BooleanLiteralFormula>(true);
+            auto reachTimeBoundFormula = std::make_shared<storm::logic::ProbabilityOperatorFormula>(
+                    std::make_shared<storm::logic::BoundedUntilFormula>(trueFormula, atomicFormula, boost::none, tb, tbr),
+                    storm::logic::OperatorInformation(optimizationDirection));
+            standardProperties.emplace_back(dirShort + "PrReach" + name + "TB", reachTimeBoundFormula, emptySet, "The " + dirLong + " probability to reach " + description + " within 'TIME_BOUND' steps.");
+
+            // Use complementary direction for expected time
+            dirShort = maximal ? "Min" : "Max";
+            dirLong = maximal ? "minimal" : "maximal";
+            optimizationDirection = maximal ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize;
+
+            // Build expected time property
+            auto expTimeFormula = std::make_shared<storm::logic::TimeOperatorFormula>(
+                    std::make_shared<storm::logic::EventuallyFormula>(atomicFormula, storm::logic::FormulaContext::Time),
+                    storm::logic::OperatorInformation(optimizationDirection));
+            standardProperties.emplace_back(dirShort + "ExpTime" + name, expTimeFormula, emptySet, "The " + dirLong + " expected time to reach " + description + ".");
+            return standardProperties;
         }
 
-        
+        std::vector<storm::jani::Property> JaniGSPNBuilder::getDeadlockProperties(storm::jani::Model* model) {
+            auto const& deadlockVar = addDeadlockTransientVariable(model, getUniqueVarName(*expressionManager, "deadl"));
+            auto deadlockFormula = std::make_shared<storm::logic::AtomicExpressionFormula>(deadlockVar.getExpressionVariable().getExpression());
+            return getStandardProperties(model, deadlockFormula, "Deadlock", "a deadlock", true);
+        }
+
     }
 }

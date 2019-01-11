@@ -20,6 +20,8 @@ namespace storm {
                     return "soundvalueiteration";
                 case MinMaxMethod::TopologicalCuda:
                     return "topologicalcuda";
+                case MinMaxMethod::ViToPi:
+                    return "vi-to-pi";
             }
             return "invalid";
         }

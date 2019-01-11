@@ -52,7 +52,7 @@ namespace storm {
                 storm::storage::BitVector statesWithProbabilityGreater0NonPsi = statesWithProbabilityGreater0 & ~psiStates;
                 STORM_LOG_INFO("Found " << statesWithProbabilityGreater0NonPsi.getNumberOfSetBits() << " 'maybe' states.");
                 
-                if (!statesWithProbabilityGreater0NonPsi.empty()) {
+                if (!statesWithProbabilityGreater0.empty()) {
                     if (storm::utility::isZero(upperBound)) {
                         // In this case, the interval is of the form [0, 0].
                         result = std::vector<ValueType>(numberOfStates, storm::utility::zero<ValueType>());
@@ -62,30 +62,31 @@ namespace storm {
                             // In this case, the interval is of the form [0, t].
                             // Note that this excludes [0, inf] since this is untimed reachability and we considered this case earlier.
                             
-                            // Find the maximal rate of all 'maybe' states to take it as the uniformization rate.
-                            ValueType uniformizationRate = 0;
-                            for (auto const& state : statesWithProbabilityGreater0NonPsi) {
-                                uniformizationRate = std::max(uniformizationRate, exitRates[state]);
-                            }
-                            uniformizationRate *= 1.02;
-                            STORM_LOG_THROW(uniformizationRate > 0, storm::exceptions::InvalidStateException, "The uniformization rate must be positive.");
-                            
-                            // Compute the uniformized matrix.
-                            storm::storage::SparseMatrix<ValueType> uniformizedMatrix = computeUniformizedMatrix(rateMatrix, statesWithProbabilityGreater0NonPsi, uniformizationRate, exitRates);
-                            
-                            // Compute the vector that is to be added as a compensation for removing the absorbing states.
-                            std::vector<ValueType> b = rateMatrix.getConstrainedRowSumVector(statesWithProbabilityGreater0NonPsi, psiStates);
-                            for (auto& element : b) {
-                                element /= uniformizationRate;
-                            }
-                            
-                            // Finally compute the transient probabilities.
-                            std::vector<ValueType> values(statesWithProbabilityGreater0NonPsi.getNumberOfSetBits(), storm::utility::zero<ValueType>());
-                            std::vector<ValueType> subresult = computeTransientProbabilities(env, uniformizedMatrix, &b, upperBound, uniformizationRate, values);
                             result = std::vector<ValueType>(numberOfStates, storm::utility::zero<ValueType>());
-                            
-                            storm::utility::vector::setVectorValues(result, statesWithProbabilityGreater0NonPsi, subresult);
-                            storm::utility::vector::setVectorValues(result, psiStates, storm::utility::one<ValueType>());
+                            storm::utility::vector::setVectorValues<ValueType>(result, psiStates, storm::utility::one<ValueType>());
+                            if (!statesWithProbabilityGreater0NonPsi.empty()) {
+                                // Find the maximal rate of all 'maybe' states to take it as the uniformization rate.
+                                ValueType uniformizationRate = 0;
+                                for (auto const& state : statesWithProbabilityGreater0NonPsi) {
+                                    uniformizationRate = std::max(uniformizationRate, exitRates[state]);
+                                }
+                                uniformizationRate *= 1.02;
+                                STORM_LOG_THROW(uniformizationRate > 0, storm::exceptions::InvalidStateException, "The uniformization rate must be positive.");
+                                
+                                // Compute the uniformized matrix.
+                                storm::storage::SparseMatrix<ValueType> uniformizedMatrix = computeUniformizedMatrix(rateMatrix, statesWithProbabilityGreater0NonPsi, uniformizationRate, exitRates);
+                                
+                                // Compute the vector that is to be added as a compensation for removing the absorbing states.
+                                std::vector<ValueType> b = rateMatrix.getConstrainedRowSumVector(statesWithProbabilityGreater0NonPsi, psiStates);
+                                for (auto& element : b) {
+                                    element /= uniformizationRate;
+                                }
+                                
+                                // Finally compute the transient probabilities.
+                                std::vector<ValueType> values(statesWithProbabilityGreater0NonPsi.getNumberOfSetBits(), storm::utility::zero<ValueType>());
+                                std::vector<ValueType> subresult = computeTransientProbabilities(env, uniformizedMatrix, &b, upperBound, uniformizationRate, values);
+                                storm::utility::vector::setVectorValues(result, statesWithProbabilityGreater0NonPsi, subresult);
+                            }
                         } else if (upperBound == storm::utility::infinity<ValueType>()) {
                             // In this case, the interval is of the form [t, inf] with t != 0.
                             
@@ -120,35 +121,37 @@ namespace storm {
                             if (lowerBound != upperBound) {
                                 // In this case, the interval is of the form [t, t'] with t != 0, t' != inf and t != t'.
                                 
-                                // Find the maximal rate of all 'maybe' states to take it as the uniformization rate.
-                                ValueType uniformizationRate = storm::utility::zero<ValueType>();
-                                for (auto const& state : statesWithProbabilityGreater0NonPsi) {
-                                    uniformizationRate = std::max(uniformizationRate, exitRates[state]);
-                                }
-                                uniformizationRate *= 1.02;
-                                STORM_LOG_THROW(uniformizationRate > 0, storm::exceptions::InvalidStateException, "The uniformization rate must be positive.");
-                                
-                                // Compute the (first) uniformized matrix.
-                                storm::storage::SparseMatrix<ValueType> uniformizedMatrix = computeUniformizedMatrix(rateMatrix, statesWithProbabilityGreater0NonPsi, uniformizationRate, exitRates);
-                                
-                                // Compute the vector that is to be added as a compensation for removing the absorbing states.
-                                std::vector<ValueType> b = rateMatrix.getConstrainedRowSumVector(statesWithProbabilityGreater0NonPsi, psiStates);
-                                for (auto& element : b) {
-                                    element /= uniformizationRate;
-                                }
-                                
-                                // Start by computing the transient probabilities of reaching a psi state in time t' - t.
-                                std::vector<ValueType> values(statesWithProbabilityGreater0NonPsi.getNumberOfSetBits(), storm::utility::zero<ValueType>());
-                                std::vector<ValueType> subresult = computeTransientProbabilities(env, uniformizedMatrix, &b, upperBound - lowerBound, uniformizationRate, values);
                                 
                                 storm::storage::BitVector relevantStates = statesWithProbabilityGreater0 & phiStates;
-                                std::vector<ValueType> newSubresult = std::vector<ValueType>(relevantStates.getNumberOfSetBits());
-                                storm::utility::vector::setVectorValues(newSubresult, statesWithProbabilityGreater0NonPsi % relevantStates, subresult);
+                                std::vector<ValueType> newSubresult(relevantStates.getNumberOfSetBits(), storm::utility::zero<ValueType>());
                                 storm::utility::vector::setVectorValues(newSubresult, psiStates % relevantStates, storm::utility::one<ValueType>());
+                                if (!statesWithProbabilityGreater0NonPsi.empty()) {
+                                    // Find the maximal rate of all 'maybe' states to take it as the uniformization rate.
+                                    ValueType uniformizationRate = storm::utility::zero<ValueType>();
+                                    for (auto const& state : statesWithProbabilityGreater0NonPsi) {
+                                        uniformizationRate = std::max(uniformizationRate, exitRates[state]);
+                                    }
+                                    uniformizationRate *= 1.02;
+                                    STORM_LOG_THROW(uniformizationRate > 0, storm::exceptions::InvalidStateException, "The uniformization rate must be positive.");
+                                    
+                                    // Compute the (first) uniformized matrix.
+                                    storm::storage::SparseMatrix<ValueType> uniformizedMatrix = computeUniformizedMatrix(rateMatrix, statesWithProbabilityGreater0NonPsi, uniformizationRate, exitRates);
+                                    
+                                    // Compute the vector that is to be added as a compensation for removing the absorbing states.
+                                    std::vector<ValueType> b = rateMatrix.getConstrainedRowSumVector(statesWithProbabilityGreater0NonPsi, psiStates);
+                                    for (auto& element : b) {
+                                        element /= uniformizationRate;
+                                    }
+                                    
+                                    // Start by computing the transient probabilities of reaching a psi state in time t' - t.
+                                    std::vector<ValueType> values(statesWithProbabilityGreater0NonPsi.getNumberOfSetBits(), storm::utility::zero<ValueType>());
+                                    std::vector<ValueType> subresult = computeTransientProbabilities(env, uniformizedMatrix, &b, upperBound - lowerBound, uniformizationRate, values);
+                                    storm::utility::vector::setVectorValues(newSubresult, statesWithProbabilityGreater0NonPsi % relevantStates, subresult);
+                                }
                                 
                                 // Then compute the transient probabilities of being in such a state after t time units. For this,
                                 // we must re-uniformize the CTMC, so we need to compute the second uniformized matrix.
-                                uniformizationRate = storm::utility::zero<ValueType>();
+                                ValueType uniformizationRate = storm::utility::zero<ValueType>();
                                 for (auto const& state : relevantStates) {
                                     uniformizationRate = std::max(uniformizationRate, exitRates[state]);
                                 }
@@ -156,7 +159,7 @@ namespace storm {
                                 STORM_LOG_THROW(uniformizationRate > 0, storm::exceptions::InvalidStateException, "The uniformization rate must be positive.");
                                 
                                 // Finally, we compute the second set of transient probabilities.
-                                uniformizedMatrix = computeUniformizedMatrix(rateMatrix, relevantStates, uniformizationRate, exitRates);
+                                storm::storage::SparseMatrix<ValueType> uniformizedMatrix = computeUniformizedMatrix(rateMatrix, relevantStates, uniformizationRate, exitRates);
                                 newSubresult = computeTransientProbabilities<ValueType>(env, uniformizedMatrix, nullptr, lowerBound, uniformizationRate, newSubresult);
                                 
                                 // Fill in the correct values.

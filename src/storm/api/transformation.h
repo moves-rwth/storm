@@ -4,6 +4,7 @@
 #include "storm/transformer/SymbolicToSparseTransformer.h"
 
 #include "storm/utility/macros.h"
+#include "storm/utility/builder.h"
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/NotSupportedException.h"
 
@@ -74,6 +75,23 @@ namespace storm {
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Transformation of symbolic " << symbolicModel->getType() << " to sparse model is not supported.");
             }
             return nullptr;
+        }
+        
+        template <typename ValueType>
+        std::shared_ptr<storm::models::sparse::Model<ValueType>> transformToNondeterministicModel(storm::models::sparse::Model<ValueType>&& model) {
+            storm::storage::sparse::ModelComponents<ValueType> components(std::move(model.getTransitionMatrix()), std::move(model.getStateLabeling()), std::move(model.getRewardModels()));
+            components.choiceLabeling = std::move(model.getOptionalChoiceLabeling());
+            components.stateValuations = std::move(model.getOptionalStateValuations());
+            components.choiceOrigins = std::move(model.getOptionalChoiceOrigins());
+            if (model.isOfType(storm::models::ModelType::Dtmc)) {
+                return storm::utility::builder::buildModelFromComponents(storm::models::ModelType::Mdp, std::move(components));
+            } else if (model.isOfType(storm::models::ModelType::Ctmc)) {
+                components.rateTransitions = true;
+                components.markovianStates = storm::storage::BitVector(components.transitionMatrix.getRowGroupCount(), true);
+                return storm::utility::builder::buildModelFromComponents(storm::models::ModelType::MarkovAutomaton, std::move(components));
+            } else {
+                STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot transform model of type " << model.getType() << " to a nondeterministic model.");
+            }
         }
         
     }

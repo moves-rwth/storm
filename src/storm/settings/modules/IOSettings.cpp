@@ -42,7 +42,7 @@ namespace storm {
             const std::string IOSettings::janiPropertyOptionShortName = "jprop";
             const std::string IOSettings::propertyOptionName = "prop";
             const std::string IOSettings::propertyOptionShortName = "prop";
-
+            const std::string IOSettings::toNondetOptionName = "to-nondet";
             
             IOSettings::IOSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportDotOptionName, "", "If given, the loaded model will be written to the specified file in the dot format.")
@@ -81,6 +81,7 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("values", "A comma separated list of constants and their value, e.g. a=1,b=2,c=3.").setDefaultValueString("").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, janiPropertyOptionName, false, "Specifies the properties from the jani model (given by --" + janiInputOptionName + ")  to be checked.").setShortName(janiPropertyOptionShortName)
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("values", "A comma separated list of properties to be checked").setDefaultValueString("").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, toNondetOptionName, false, "If set, DTMCs/CTMCs are converted to MDPs/MAs (without actual nondeterminism) before model checking.").build());
             }
 
             bool IOSettings::isExportDotSet() const {
@@ -226,7 +227,11 @@ namespace storm {
             std::string IOSettings::getPropertyFilter() const {
                 return this->getOption(propertyOptionName).getArgumentByName("filter").getValueAsString();
             }
-
+            
+            bool IOSettings::isToNondeterministicModelSet() const {
+                return this->getOption(toNondetOptionName).getHasOptionBeenSet();
+            }
+            
 			void IOSettings::finalize() {
                 // Intentionally left empty.
             }

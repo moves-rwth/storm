@@ -54,13 +54,7 @@ namespace storm {
             virtual void checkFailsafe(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const = 0;
 
             virtual void extendSpareModule(std::set<size_t>& elementsInSpareModule) const override {
-                DFTElement<ValueType>::extendSpareModule(elementsInSpareModule);
-                for(auto const& child : mChildren) {
-                    if(elementsInSpareModule.count(child->id()) == 0) {
-                        elementsInSpareModule.insert(child->id());
-                        child->extendSpareModule(elementsInSpareModule);
-                    }
-                }
+                // Do nothing
             }
 
             virtual std::vector<size_t> independentUnit() const override {

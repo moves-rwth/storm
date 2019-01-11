@@ -41,7 +41,7 @@ namespace storm {
         modernjson::json anyToJson(boost::any&& input) {
             boost::any tmp(std::move(input));
             modernjson::json res = std::move(*boost::any_cast<modernjson::json>(&tmp));
-            return std::move(res);
+            return res;
         }
         
         modernjson::json buildExpression(storm::expressions::Expression const& exp,  std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables = VariableSet(), VariableSet const& localVariables = VariableSet(), std::unordered_set<std::string> const& auxiliaryVariables = {}) {
@@ -253,7 +253,7 @@ namespace storm {
                 modernjson::json propertyInterval = constructPropertyInterval(lower, lowerExclusive, upper, upperExclusive);
     
                 auto tbr = f.getTimeBoundReference(i);
-                if (tbr.isStepBound()) {
+                if (tbr.isStepBound() || (model.isDiscreteTimeModel() && tbr.isTimeBound())) {
                     STORM_LOG_THROW(!hasStepBounds, storm::exceptions::NotSupportedException, "Jani export of until formulas with multiple step bounds is not supported.");
                     hasStepBounds = true;
                     opDecl["step-bounds"] = propertyInterval;
@@ -268,7 +268,7 @@ namespace storm {
                     rewbound["bounds"] = propertyInterval;
                     rewardBounds.push_back(std::move(rewbound));
                 } else {
-                    STORM_LOG_THROW(!hasTimeBounds, storm::exceptions::NotSupportedException, "Jani export of until formulas with multiple step bounds is not supported.");
+                    STORM_LOG_THROW(!hasTimeBounds, storm::exceptions::NotSupportedException, "Jani export of until formulas with multiple time bounds is not supported.");
                     hasTimeBounds = true;
                     opDecl["time-bounds"] = propertyInterval;
                 }

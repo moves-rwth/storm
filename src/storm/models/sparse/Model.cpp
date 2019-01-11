@@ -57,7 +57,7 @@ namespace storm {
                     STORM_LOG_THROW(stateCount == this->getTransitionMatrix().getColumnCount(), storm::exceptions::IllegalArgumentException, "Can not create deterministic model: Number of columns of transition matrix does not match state count.");
                     STORM_LOG_ERROR_COND(!components.player1Matrix.is_initialized(), "Player 1 matrix given for a model that is no stochastic game (will be ignored).");
                 } else if (this->isOfType(ModelType::Mdp) || this->isOfType(ModelType::MarkovAutomaton) || this->isOfType(ModelType::Pomdp)) {
-                    STORM_LOG_THROW(stateCount == this->getTransitionMatrix().getRowGroupCount(), storm::exceptions::IllegalArgumentException, "Can not create nondeterministic model: Number of row groups of transition matrix does not match state count.");
+                    STORM_LOG_THROW(stateCount == this->getTransitionMatrix().getRowGroupCount(), storm::exceptions::IllegalArgumentException, "Can not create nondeterministic model: Number of row groups (" << this->getTransitionMatrix().getRowGroupCount() << ") of transition matrix does not match state count (" << stateCount << ").");
                     STORM_LOG_THROW(stateCount == this->getTransitionMatrix().getColumnCount(), storm::exceptions::IllegalArgumentException, "Can not create nondeterministic model: Number of columns of transition matrix does not match state count.");
                     STORM_LOG_ERROR_COND(!components.player1Matrix.is_initialized(), "Player 1 matrix given for a model that is no stochastic game (will be ignored).");
                 } else {
@@ -334,9 +334,9 @@ namespace storm {
             }
             
             template<typename ValueType, typename RewardModelType>
-            void Model<ValueType, RewardModelType>::writeDotToStream(std::ostream& outStream, bool includeLabeling, storm::storage::BitVector const* subsystem, std::vector<ValueType> const* firstValue, std::vector<ValueType> const* secondValue, std::vector<uint_fast64_t> const* stateColoring, std::vector<std::string> const* colors, std::vector<uint_fast64_t>*, bool finalizeOutput) const {
+            void Model<ValueType, RewardModelType>::writeDotToStream(std::ostream& outStream, bool includeLabeling, bool linebreakLabel, storm::storage::BitVector const* subsystem, std::vector<ValueType> const* firstValue, std::vector<ValueType> const* secondValue, std::vector<uint_fast64_t> const* stateColoring, std::vector<std::string> const* colors, std::vector<uint_fast64_t>*, bool finalizeOutput) const {
                 outStream << "digraph model {" << std::endl;
-                
+
                 // Write all states to the stream.
                 for (uint_fast64_t state = 0, highestStateIndex = this->getNumberOfStates() - 1; state <= highestStateIndex; ++state) {
                     if (subsystem == nullptr || subsystem->get(state)) {
@@ -358,7 +358,11 @@ namespace storm {
                                     bool includeComma = false;
                                     for (std::string const& label : this->getLabelsOfState(state)) {
                                         if (includeComma) {
-                                            outStream << ", ";
+                                            if (linebreakLabel) {
+                                                outStream << ",\n";
+                                            } else {
+                                                outStream << ", ";
+                                            }
                                         } else {
                                             includeComma = true;
                                         }

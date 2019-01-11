@@ -42,12 +42,12 @@ namespace storm {
             // Adjust the method if none was specified and we want exact or sound computations.
             auto method = env.solver().minMax().getMethod();
             
-            if (isExactMode && method != MinMaxMethod::PolicyIteration && method != MinMaxMethod::RationalSearch) {
+            if (isExactMode && method != MinMaxMethod::PolicyIteration && method != MinMaxMethod::RationalSearch && method != MinMaxMethod::ViToPi) {
                 if (env.solver().minMax().isMethodSetFromDefault()) {
                     STORM_LOG_INFO("Selecting 'Policy iteration' as the solution technique to guarantee exact results. If you want to override this, please explicitly specify a different method.");
                     method = MinMaxMethod::PolicyIteration;
                 } else {
-                    STORM_LOG_WARN("The selected solution method does not guarantee exact results.");
+                    STORM_LOG_WARN("The selected solution method " << toString(method) << " does not guarantee exact results.");
                 }
             } else if (env.solver().isForceSoundness() && method != MinMaxMethod::SoundValueIteration && method != MinMaxMethod::IntervalIteration && method != MinMaxMethod::PolicyIteration && method != MinMaxMethod::RationalSearch) {
                 if (env.solver().minMax().isMethodSetFromDefault()) {
@@ -57,7 +57,7 @@ namespace storm {
                     STORM_LOG_WARN("The selected solution method does not guarantee sound results.");
                 }
             }
-            STORM_LOG_THROW(method == MinMaxMethod::ValueIteration || method == MinMaxMethod::PolicyIteration || method == MinMaxMethod::RationalSearch || method == MinMaxMethod::SoundValueIteration || method == MinMaxMethod::IntervalIteration, storm::exceptions::InvalidEnvironmentException, "This solver does not support the selected method.");
+            STORM_LOG_THROW(method == MinMaxMethod::ValueIteration || method == MinMaxMethod::PolicyIteration || method == MinMaxMethod::RationalSearch || method == MinMaxMethod::SoundValueIteration || method == MinMaxMethod::IntervalIteration || method == MinMaxMethod::ViToPi, storm::exceptions::InvalidEnvironmentException, "This solver does not support the selected method.");
             return method;
         }
         
@@ -79,6 +79,9 @@ namespace storm {
                     break;
                 case MinMaxMethod::SoundValueIteration:
                     result = solveEquationsSoundValueIteration(env, dir, x, b);
+                    break;
+                case MinMaxMethod::ViToPi:
+                    result = solveEquationsViToPi(env, dir, x, b);
                     break;
                 default:
                     STORM_LOG_THROW(false, storm::exceptions::InvalidEnvironmentException, "This solver does not implement the selected solution method");
@@ -117,7 +120,12 @@ namespace storm {
         bool IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsPolicyIteration(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             // Create the initial scheduler.
             std::vector<storm::storage::sparse::state_type> scheduler = this->hasInitialScheduler() ? this->getInitialScheduler() : std::vector<storm::storage::sparse::state_type>(this->A->getRowGroupCount());
-            
+            return performPolicyIteration(env, dir, x, b, std::move(scheduler));
+        }
+        
+        template<typename ValueType>
+        bool IterativeMinMaxLinearEquationSolver<ValueType>::performPolicyIteration(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<storm::storage::sparse::state_type>&& initialPolicy) const {
+            std::vector<storm::storage::sparse::state_type> scheduler = std::move(initialPolicy);
             // Get a vector for storing the right-hand side of the inner equation system.
             if (!auxiliaryRowGroupVector) {
                 auxiliaryRowGroupVector = std::make_unique<std::vector<ValueType>>(this->A->getRowGroupCount());
@@ -226,6 +234,7 @@ namespace storm {
             bool needsLinEqSolver = false;
             needsLinEqSolver |= method == MinMaxMethod::PolicyIteration;
             needsLinEqSolver |= method == MinMaxMethod::ValueIteration && (this->hasInitialScheduler() || hasInitialScheduler);
+            needsLinEqSolver |= method == MinMaxMethod::ViToPi;
             MinMaxLinearEquationSolverRequirements requirements = needsLinEqSolver ? MinMaxLinearEquationSolverRequirements(this->linearEquationSolverFactory->getRequirements(env)) : MinMaxLinearEquationSolverRequirements();
 
             if (method == MinMaxMethod::ValueIteration) {
@@ -265,6 +274,12 @@ namespace storm {
                     requirements.requireNoEndComponents();
                 }
                 requirements.requireBounds(false);
+            } else if (method == MinMaxMethod::ViToPi) {
+                // Since we want to use value iteration to extract an initial scheduler, it helps to eliminate all end components first.
+                // TODO: We might get around this, as the initial value iteration scheduler is only a heuristic.
+                if (!this->hasUniqueSolution()) {
+                    requirements.requireNoEndComponents();
+                }
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidEnvironmentException, "Unsupported technique for iterative MinMax linear equation solver.");
             }
@@ -664,6 +679,30 @@ namespace storm {
             }
             
             return status == SolverStatus::Converged;
+        }
+        
+        template<typename ValueType>
+        bool IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsViToPi(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+            // First create an (inprecise) vi solver to get a good initial strategy for the (potentially precise) policy iteration solver.
+            std::vector<storm::storage::sparse::state_type> initialSched;
+            {
+                Environment viEnv = env;
+                viEnv.solver().minMax().setMethod(MinMaxMethod::ValueIteration);
+                auto impreciseSolver = GeneralMinMaxLinearEquationSolverFactory<double>().create(viEnv, this->A->template toValueType<double>());
+                impreciseSolver->setHasUniqueSolution(this->hasUniqueSolution());
+                impreciseSolver->setTrackScheduler(true);
+                if (this->hasInitialScheduler()) {
+                    auto initSched = this->getInitialScheduler();
+                    impreciseSolver->setInitialScheduler(std::move(initSched));
+                }
+                STORM_LOG_THROW(!impreciseSolver->getRequirements(viEnv, dir).hasEnabledCriticalRequirement(), storm::exceptions::UnmetRequirementException, "The value-iteration based solver has an unmet requirement.");
+                auto xVi = storm::utility::vector::convertNumericVector<double>(x);
+                auto bVi = storm::utility::vector::convertNumericVector<double>(b);
+                impreciseSolver->solveEquations(viEnv, dir, xVi, bVi);
+                initialSched = impreciseSolver->getSchedulerChoices();
+            }
+            STORM_LOG_INFO("Found initial policy using Value Iteration. Starting Policy iteration now.");
+            return performPolicyIteration(env, dir, x, b, std::move(initialSched));
         }
         
         template<typename ValueType>

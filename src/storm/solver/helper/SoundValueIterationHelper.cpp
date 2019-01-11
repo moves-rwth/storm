@@ -45,6 +45,8 @@ namespace storm {
             template<typename ValueType>
             SoundValueIterationHelper<ValueType>::SoundValueIterationHelper(SoundValueIterationHelper<ValueType>&& oldHelper, std::vector<ValueType>& x, std::vector<ValueType>& y, bool relative, ValueType const& precision) : x(x), y(y), xTmp(std::move(oldHelper.xTmp)), yTmp(std::move(oldHelper.yTmp)), hasLowerBound(false), hasUpperBound(false), hasDecisionValue(false), convergencePhase1(true), decisionValueBlocks(false), firstIndexViolatingConvergence(0), minIndex(0), maxIndex(0), relative(relative), precision(precision), numRows(std::move(oldHelper.numRows)), matrixValues(std::move(oldHelper.matrixValues)), matrixColumns(std::move(oldHelper.matrixColumns)), rowIndications(std::move(oldHelper.rowIndications)), rowGroupIndices(oldHelper.rowGroupIndices) {
                 
+                // If x0 is the obtained result, we want x0-eps <= x <= x0+eps for the actual solution x. Hence, the difference between the lower and upper bounds can be 2*eps.
+                this->precision *= storm::utility::convertNumber<ValueType>(2.0);
                 x.assign(x.size(), storm::utility::zero<ValueType>());
                 y.assign(x.size(), storm::utility::one<ValueType>());
             }
@@ -349,10 +351,9 @@ namespace storm {
                 return true;
             }
             
-            
             template<typename ValueType>
             bool SoundValueIterationHelper<ValueType>::isPreciseEnough(ValueType const& xi, ValueType const& yi, ValueType const& lb, ValueType const& ub) {
-                return yi * (ub - lb) <= storm::utility::abs<ValueType>((relative ? (precision * xi) : (precision * storm::utility::convertNumber<ValueType>(2.0))));
+                return yi * (ub - lb) <= storm::utility::abs<ValueType>((relative ? (precision * xi) : (precision)));
             }
             
             template<typename ValueType>

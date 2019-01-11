@@ -94,6 +94,8 @@ namespace storm {
             }
 
             size_t nrDynamicElements() const;
+
+            size_t nrStaticElements() const;
             
             size_t getTopLevelIndex() const {
                 return mTopLevelIndex;
@@ -203,7 +205,14 @@ namespace storm {
             }
 
             bool canHaveNondeterminism() const;
-            
+
+            /*!
+             * Check if the DFT is well-formed.
+             * @param stream Output stream where warnings about non-well-formed parts are written.
+             * @return True iff the DFT is well-formed.
+             */
+            bool checkWellFormedness(std::ostream& stream) const;
+
             uint64_t maxRank() const;
             
             std::vector<DFT<ValueType>> topModularisation() const;

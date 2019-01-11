@@ -25,7 +25,7 @@ namespace storm {
             /*!
              * Constructor.
              */
-            DFTModelChecker() {
+            DFTModelChecker(bool printOutput) : printInfo(printOutput) {
             }
 
             /*!
@@ -57,6 +57,8 @@ namespace storm {
             void printResults(std::ostream& os = std::cout);
 
         private:
+
+            bool printInfo;
 
             // Timing values
             storm::utility::Stopwatch buildingTimer;

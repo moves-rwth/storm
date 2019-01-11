@@ -57,24 +57,54 @@ namespace storm {
         }
 
         template <typename ValueType, typename RewardModelType>
-        SubsystemBuilderReturnType<ValueType, RewardModelType> internalBuildSubsystem(storm::models::sparse::Model<ValueType, RewardModelType> const& originalModel, storm::storage::BitVector const& subsystemStates, storm::storage::BitVector const& subsystemActions) {
+        SubsystemBuilderReturnType<ValueType, RewardModelType> internalBuildSubsystem(storm::models::sparse::Model<ValueType, RewardModelType> const& originalModel, storm::storage::BitVector const& subsystemStates, storm::storage::BitVector const& subsystemActions, SubsystemBuilderOptions const& options ) {
 
             SubsystemBuilderReturnType<ValueType, RewardModelType> result;
             uint_fast64_t subsystemStateCount = subsystemStates.getNumberOfSetBits();
-            result.newToOldStateIndexMapping.reserve(subsystemStateCount);
-            result.keptActions = storm::storage::BitVector(originalModel.getTransitionMatrix().getRowCount(), false);
+            if (options.buildStateMapping) {
+                result.newToOldStateIndexMapping.reserve(subsystemStateCount);
+            }
+            if (options.buildActionMapping) {
+                result.newToOldActionIndexMapping.reserve(subsystemActions.getNumberOfSetBits());
+            }
+            if (options.buildKeptActions) {
+                result.keptActions = storm::storage::BitVector(originalModel.getTransitionMatrix().getRowCount(), false);
+
+            }
+
             for (auto subsysState : subsystemStates) {
-                result.newToOldStateIndexMapping.push_back(subsysState);
+                if (options.buildStateMapping) {
+                    result.newToOldStateIndexMapping.push_back(subsysState);
+                }
+                bool keepAtLeastOneAction = !options.checkTransitionsOutside; // For debug mode only.
+                bool atLeastOneActionSelected = false; // For debug mode only.
                 for (uint_fast64_t row = subsystemActions.getNextSetIndex(originalModel.getTransitionMatrix().getRowGroupIndices()[subsysState]); row < originalModel.getTransitionMatrix().getRowGroupIndices()[subsysState+1]; row = subsystemActions.getNextSetIndex(row+1)) {
                     bool allRowEntriesStayInSubsys = true;
-                    for (auto const& entry : originalModel.getTransitionMatrix().getRow(row)) {
-                        if (!subsystemStates.get(entry.getColumn())) {
-                            allRowEntriesStayInSubsys = false;
-                            break;
+                    atLeastOneActionSelected = true;
+
+                    if (options.checkTransitionsOutside) {
+                        for (auto const &entry : originalModel.getTransitionMatrix().getRow(row)) {
+                            if (!subsystemStates.get(entry.getColumn())) {
+                                allRowEntriesStayInSubsys = false;
+                                break;
+                            }
                         }
                     }
-                    result.keptActions.set(row, allRowEntriesStayInSubsys);
+                    if (allRowEntriesStayInSubsys) {
+                        keepAtLeastOneAction = true;
+                    }
+                    if (options.buildActionMapping) {
+                        result.newToOldActionIndexMapping.push_back(row);
+                    }
+                    if (options.buildKeptActions) {
+                        result.keptActions.set(row, allRowEntriesStayInSubsys);
+                    }
                 }
+                if (!atLeastOneActionSelected && options.fixDeadlocks) {
+
+                }
+                STORM_LOG_ASSERT(atLeastOneActionSelected, "Expected that in each state, at least one action is selected. (violated at " <<  subsysState << ")");
+                STORM_LOG_ASSERT(keepAtLeastOneAction, "Expected that in each state, at least one action is preserved at least one action is selected. (violated at " <<  subsysState <<  ")");
             }
             
             // Transform the components of the model
@@ -102,23 +132,23 @@ namespace storm {
         }
         
         template <typename ValueType, typename RewardModelType>
-        SubsystemBuilderReturnType<ValueType, RewardModelType> buildSubsystem(storm::models::sparse::Model<ValueType, RewardModelType> const& originalModel, storm::storage::BitVector const& subsystemStates, storm::storage::BitVector const& subsystemActions, bool keepUnreachableStates) {
+        SubsystemBuilderReturnType<ValueType, RewardModelType> buildSubsystem(storm::models::sparse::Model<ValueType, RewardModelType> const& originalModel, storm::storage::BitVector const& subsystemStates, storm::storage::BitVector const& subsystemActions, bool keepUnreachableStates, SubsystemBuilderOptions options ) {
             STORM_LOG_DEBUG("Invoked subsystem builder on model with " << originalModel.getNumberOfStates() << " states.");
             storm::storage::BitVector initialStates = originalModel.getInitialStates() & subsystemStates;
             STORM_LOG_THROW(!initialStates.empty(), storm::exceptions::InvalidArgumentException, "The subsystem would not contain any initial states");
             
             STORM_LOG_THROW(!subsystemStates.empty(), storm::exceptions::InvalidArgumentException, "Invoked SubsystemBuilder for an empty subsystem.");
             if (keepUnreachableStates) {
-                return internalBuildSubsystem(originalModel, subsystemStates, subsystemActions);
+                return internalBuildSubsystem(originalModel, subsystemStates, subsystemActions, options);
             } else {
                 auto actualSubsystem = storm::utility::graph::getReachableStates(originalModel.getTransitionMatrix(), initialStates, subsystemStates, storm::storage::BitVector(subsystemStates.size(), false), false, 0, subsystemActions);
-                return internalBuildSubsystem(originalModel, actualSubsystem, subsystemActions);
+                return internalBuildSubsystem(originalModel, actualSubsystem, subsystemActions, options);
             }
         }
         
-        template SubsystemBuilderReturnType<double> buildSubsystem(storm::models::sparse::Model<double> const& originalModel, storm::storage::BitVector const& subsystemStates, storm::storage::BitVector const& subsystemActions, bool keepUnreachableStates = true);
-        template SubsystemBuilderReturnType<double, storm::models::sparse::StandardRewardModel<storm::Interval>> buildSubsystem(storm::models::sparse::Model<double, storm::models::sparse::StandardRewardModel<storm::Interval>> const& originalModel, storm::storage::BitVector const& subsystemStates, storm::storage::BitVector const& subsystemActions, bool keepUnreachableStates = true);
-        template SubsystemBuilderReturnType<storm::RationalNumber> buildSubsystem(storm::models::sparse::Model<storm::RationalNumber> const& originalModel, storm::storage::BitVector const& subsystemStates, storm::storage::BitVector const& subsystemActions, bool keepUnreachableStates = true);
-        template SubsystemBuilderReturnType<storm::RationalFunction> buildSubsystem(storm::models::sparse::Model<storm::RationalFunction> const& originalModel, storm::storage::BitVector const& subsystemStates, storm::storage::BitVector const& subsystemActions, bool keepUnreachableStates = true);
+        template SubsystemBuilderReturnType<double> buildSubsystem(storm::models::sparse::Model<double> const& originalModel, storm::storage::BitVector const& subsystemStates, storm::storage::BitVector const& subsystemActions, bool keepUnreachableStates = true,  SubsystemBuilderOptions options = SubsystemBuilderOptions());
+        template SubsystemBuilderReturnType<double, storm::models::sparse::StandardRewardModel<storm::Interval>> buildSubsystem(storm::models::sparse::Model<double, storm::models::sparse::StandardRewardModel<storm::Interval>> const& originalModel, storm::storage::BitVector const& subsystemStates, storm::storage::BitVector const& subsystemActions, bool keepUnreachableStates = true,  SubsystemBuilderOptions options = SubsystemBuilderOptions());
+        template SubsystemBuilderReturnType<storm::RationalNumber> buildSubsystem(storm::models::sparse::Model<storm::RationalNumber> const& originalModel, storm::storage::BitVector const& subsystemStates, storm::storage::BitVector const& subsystemActions, bool keepUnreachableStates = true,  SubsystemBuilderOptions options = SubsystemBuilderOptions());
+        template SubsystemBuilderReturnType<storm::RationalFunction> buildSubsystem(storm::models::sparse::Model<storm::RationalFunction> const& originalModel, storm::storage::BitVector const& subsystemStates, storm::storage::BitVector const& subsystemActions, bool keepUnreachableStates = true,  SubsystemBuilderOptions options = SubsystemBuilderOptions());
     }
 }

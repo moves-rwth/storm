@@ -102,13 +102,6 @@ namespace storm {
                 bool isComputeMaximalValue() const;
 
                 /*!
-                 * Retrieves whether the DFT should be transformed into a GSPN.
-                 *
-                 * @return True iff the option was set.
-                 */
-                bool isTransformToGspn() const;
-
-                /*!
                  * Retrieves whether the export to Json file option was set.
                  *
                  * @return True if the export to json file option was set.
@@ -148,7 +141,6 @@ namespace storm {
                 static const std::string propTimepointsOptionName;
                 static const std::string minValueOptionName;
                 static const std::string maxValueOptionName;
-                static const std::string transformToGspnOptionName;
                 static const std::string exportToJsonOptionName;
                 static const std::string displayStatsOptionName;
 

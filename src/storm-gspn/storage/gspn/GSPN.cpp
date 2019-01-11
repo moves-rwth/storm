@@ -437,7 +437,12 @@ namespace storm {
             for (auto& trans : timedTransitions) {
                 stream << space3 << "<transition name=\"" << trans.getName() << "\" ";
                 stream << "type=\"EXP\" ";
-                stream << "nservers-x=\"" << trans.getRate() << "\" ";
+                //stream << "nservers-x=\"" << trans.getRate() << "\" ";
+                // Use single-server semantics for GSPNs:
+                // timed rates are independent of number of tokens in input places
+                stream << "nservers=\"1\" ";
+                //Note: The rate is translated to a number showing the decimal figures so GreatSPN can process it
+                stream << "delay=\"" << std::showpoint << trans.getRate() << "\" ";
                 if (transitionLayout.count(trans.getID()) > 0) {
                     stream << "x=\"" << transitionLayout.at(trans.getID()).x << "\" ";
                     stream << "y=\"" << transitionLayout.at(trans.getID()).y << "\" ";
@@ -453,6 +458,7 @@ namespace storm {
                 stream << space3 << "<transition name=\"" << trans.getName() << "\" ";
                 stream << "type=\"IMM\" ";
                 stream << "priority=\"" << trans.getPriority() << "\" ";
+                stream << "weight=\"" << trans.getWeight() << "\" ";
                 if (transitionLayout.count(trans.getID()) > 0) {
                     stream << "x=\"" << transitionLayout.at(trans.getID()).x << "\" ";
                     stream << "y=\"" << transitionLayout.at(trans.getID()).y << "\" ";

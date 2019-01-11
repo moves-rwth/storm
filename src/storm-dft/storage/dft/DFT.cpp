@@ -4,6 +4,7 @@
 #include <map>
 
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/WrongFormatException.h"
 #include "storm/utility/iota_n.h"
 #include "storm/utility/vector.h"
 
@@ -25,11 +26,12 @@ namespace storm {
                 }
                 if(elem->isBasicElement()) {
                     ++mNrOfBEs;
-                }
-                else if (elem->isSpareGate()) {
+                } else if (elem->isSpareGate()) {
+                    // Build spare modules by setting representatives and representants
                     ++mNrOfSpares;
                     mMaxSpareChildCount = std::max(mMaxSpareChildCount, std::static_pointer_cast<DFTSpare<ValueType>>(elem)->children().size());
                     for(auto const& spareReprs : std::static_pointer_cast<DFTSpare<ValueType>>(elem)->children()) {
+                        STORM_LOG_THROW(spareReprs->isGate() || spareReprs->isBasicElement(), storm::exceptions::WrongFormatException, "Child '" << spareReprs->name() << "' of spare '" << elem->name() << "' must be gate or BE.");
                         std::set<size_t> module = {spareReprs->id()};
                         spareReprs->extendSpareModule(module);
                         std::vector<size_t> sparesAndBes;
@@ -41,12 +43,11 @@ namespace storm {
                         }
                         mSpareModules.insert(std::make_pair(spareReprs->id(), sparesAndBes));
                     }
-
                 } else if (elem->isDependency()) {
                     mDependencies.push_back(elem->id());
                 }
             }
-          
+
             // For the top module, we assume, contrary to [Jun15], that we have all spare gates and basic elements which are not in another module.
             std::set<size_t> topModuleSet;
             // Initialize with all ids.
@@ -64,10 +65,13 @@ namespace storm {
             // Extend top module and insert those elements which are part of the top module and a spare module
             mElements[mTopLevelIndex]->extendSpareModule(topModuleSet);
             mTopModule = std::vector<size_t>(topModuleSet.begin(), topModuleSet.end());
-            // Clear all spare modules where at least one element is also in the top module
+
+            // Clear all spare modules where at least one element is also in the top module.
+            // These spare modules will be activated from the beginning.
             if (!mTopModule.empty()) {
                 for (auto& module : mSpareModules) {
                     if (std::find(module.second.begin(), module.second.end(), mTopModule.front()) != module.second.end()) {
+                        STORM_LOG_WARN("Elements of spare module '" << getElement(module.first)->name() << "' also contained in top module. All elements of this spare module will be activated from the beginning on.");
                         module.second.clear();
                     }
                 }
@@ -408,6 +412,34 @@ namespace storm {
         }
 
         template<typename ValueType>
+        size_t DFT<ValueType>::nrStaticElements() const {
+            size_t noStatic = 0;
+            for (auto const& elem : mElements) {
+                switch (elem->type()) {
+                    case DFTElementType::AND:
+                    case DFTElementType::OR:
+                    case DFTElementType::VOT:
+                        ++noStatic;
+                        break;
+                    case DFTElementType::BE:
+                    case DFTElementType::CONSTF:
+                    case DFTElementType::CONSTS:
+                    case DFTElementType::PAND:
+                    case DFTElementType::SPARE:
+                    case DFTElementType::POR:
+                    case DFTElementType::SEQ:
+                    case DFTElementType::MUTEX:
+                    case DFTElementType::PDEP:
+                        break;
+                    default:
+                        STORM_LOG_ASSERT(false, "DFT element type " << elem->type() << " not known.");
+                        break;
+                }
+            }
+            return noStatic;
+        }
+
+        template<typename ValueType>
         std::string DFT<ValueType>::getElementsString() const {
             std::stringstream stream;
             for (auto const& elem : mElements) {
@@ -572,6 +604,26 @@ namespace storm {
         template<typename ValueType>
         bool DFT<ValueType>::canHaveNondeterminism() const {
             return !getDependencies().empty();
+        }
+
+        template<typename ValueType>
+        bool DFT<ValueType>::checkWellFormedness(std::ostream& stream) const {
+            bool wellformed = true;
+            // Check independence of spare modules
+            // TODO: comparing one element of each spare module sufficient?
+            for (auto module1 = mSpareModules.begin() ; module1 != mSpareModules.end() ; ++module1) {
+                size_t firstElement = module1->second.front();
+                for (auto module2 = std::next(module1); module2 != mSpareModules.end(); ++module2) {
+                    if (std::find(module2->second.begin(), module2->second.end(), firstElement) != module2->second.end()) {
+                        if (!wellformed) {
+                            stream << std::endl;
+                        }
+                        stream << "Spare modules of '" << getElement(module1->first)->name() << "' and '" << getElement(module2->first)->name() << "' should not overlap.";
+                        wellformed = false;
+                    }
+                }
+            }
+            return wellformed;
         }
 
         template<typename ValueType>
@@ -796,9 +848,99 @@ namespace storm {
 
         template<typename ValueType>
         void DFT<ValueType>::writeStatsToStream(std::ostream& stream) const {
+            // Count individual types of elements
+            size_t noBE = 0;
+            size_t noAnd = 0;
+            size_t noOr = 0;
+            size_t noVot = 0;
+            size_t noPand = 0;
+            size_t noPor = 0;
+            size_t noSpare = 0;
+            size_t noDependency = 0;
+            size_t noRestriction = 0;
+            for (auto const& elem : mElements) {
+                switch (elem->type()) {
+                    case DFTElementType::BE:
+                    case DFTElementType::CONSTF:
+                    case DFTElementType::CONSTS:
+                        ++noBE;
+                        break;
+                    case DFTElementType::AND:
+                        ++noAnd;
+                        break;
+                    case DFTElementType::OR:
+                        ++noOr;
+                        break;
+                    case DFTElementType::VOT:
+                        ++noVot;
+                        break;
+                    case DFTElementType::PAND:
+                        ++noPand;
+                        break;
+                    case DFTElementType::POR:
+                        ++noPor;
+                        break;
+                    case DFTElementType::SPARE:
+                        ++noSpare;
+                        break;
+                    case DFTElementType::PDEP:
+                        ++noDependency;
+                        break;
+                    case DFTElementType::SEQ:
+                    case DFTElementType::MUTEX:
+                        ++noRestriction;
+                        break;
+                    default:
+                        STORM_LOG_ASSERT(false, "DFT element type " << elem->type() << " not known.");
+                        break;
+                }
+            }
+            size_t noStatic = nrStaticElements();
+            size_t noDynamic = nrDynamicElements();
+
+            // Check whether numbers are correct
+            STORM_LOG_ASSERT(noBE == nrBasicElements(), "No. of BEs does not match.");
+            STORM_LOG_ASSERT(noSpare == mNrOfSpares, "No. of SPAREs does not match.");
+            STORM_LOG_ASSERT(noDependency == mDependencies.size(), "No. of Dependencies does not match.");
+            STORM_LOG_ASSERT(noAnd + noOr + noVot == noStatic, "No. of static gates does not match.");
+            STORM_LOG_ASSERT(noPand + noPor + noSpare + noDependency + noRestriction == noDynamic, "No. of dynamic gates does not match.");
+            STORM_LOG_ASSERT(noBE + noStatic + noDynamic == nrElements(), "No. of elements does not match.");
+
+            // Print output
+            stream << "=============DFT Statistics==============" << std::endl;
             stream << "Number of BEs: " << nrBasicElements() << std::endl;
-            stream << "Number of dynamic elements: " << nrDynamicElements() << std::endl;
+            stream << "Number of static elements: " << noStatic << std::endl;
+            stream << "Number of dynamic elements: " << noDynamic << std::endl;
             stream << "Number of elements: " << nrElements() << std::endl;
+            stream << "-----------------------------------------" << std::endl;
+            if (noBE > 0) {
+                stream << "Number of BEs: " << noBE << std::endl;
+            }
+            if (noAnd > 0) {
+                stream << "Number of AND gates: " << noAnd << std::endl;
+            }
+            if (noOr > 0) {
+                stream << "Number of OR gates: " << noOr << std::endl;
+            }
+            if (noVot > 0) {
+                stream << "Number of VOT gates: " << noVot << std::endl;
+            }
+            if (noPand > 0) {
+                stream << "Number of PAND gates: " << noPand << std::endl;
+            }
+            if (noPor > 0) {
+                stream << "Number of POR gates: " << noPor << std::endl;
+            }
+            if (noSpare > 0) {
+                stream << "Number of SPARE gates: " << noSpare << std::endl;
+            }
+            if (noDependency > 0) {
+                stream << "Number of Dependencies: " << noDependency << std::endl;
+            }
+            if (noRestriction > 0) {
+                stream << "Number of Restrictions: " << noRestriction << std::endl;
+            }
+            stream << "=========================================" << std::endl;
         }
         
         // Explicitly instantiate the class.

@@ -2,6 +2,7 @@
 
 #include "storm-dft/settings/modules/DftIOSettings.h"
 #include "storm-dft/settings/modules/FaultTreeSettings.h"
+#include "storm-dft/settings/modules/DftGspnSettings.h"
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GeneralSettings.h"
@@ -33,6 +34,7 @@ namespace storm {
             storm::settings::addModule<storm::settings::modules::GeneralSettings>();
             storm::settings::addModule<storm::settings::modules::DftIOSettings>();
             storm::settings::addModule<storm::settings::modules::FaultTreeSettings>();
+            storm::settings::addModule<storm::settings::modules::DftGspnSettings>();
             storm::settings::addModule<storm::settings::modules::IOSettings>();
             storm::settings::addModule<storm::settings::modules::CoreSettings>();
 

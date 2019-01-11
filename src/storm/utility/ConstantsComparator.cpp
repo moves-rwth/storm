@@ -125,7 +125,7 @@ namespace storm {
         
         bool ConstantsComparator<storm::RationalNumber>::isZero(storm::RationalNumber const& value) const {
             if (storm::utility::isZero(precision)) {
-                return storm::utility::isOne(value);
+                return storm::utility::isZero(value);
             }
             return storm::utility::abs(value) <= precision;
         }

@@ -1,5 +1,7 @@
 #include "storm-pars/modelchecker/region/SparseParameterLiftingModelChecker.h"
 
+#include <queue>
+
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/logic/FragmentSpecification.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
@@ -142,6 +144,74 @@ namespace storm {
             STORM_LOG_THROW(this->parametricModel->getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::NotSupportedException, "Getting a bound at the initial state requires a model with a single initial state.");
             return storm::utility::convertNumber<typename SparseModelType::ValueType>(getBound(env, region, dirForParameters)->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()]);
         }
+        
+        template <typename SparseModelType, typename ConstantType>
+        struct RegionBound {
+            RegionBound(RegionBound<SparseModelType, ConstantType> const& other) = default;
+            RegionBound(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& r, ConstantType const& b) : region(r), bound(b) {}
+            storm::storage::ParameterRegion<typename SparseModelType::ValueType> region;
+            ConstantType bound;
+        };
+        
+        template <typename SparseModelType, typename ConstantType>
+        std::pair<typename SparseModelType::ValueType, typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::Valuation> SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::computeExtremalValue(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dir, typename SparseModelType::ValueType const& precision) {
+            STORM_LOG_THROW(this->parametricModel->getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::NotSupportedException, "Getting extremal values at the initial state requires a model with a single initial state.");
+            boost::optional<ConstantType> value;
+            typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::Valuation valuation;
+
+            for (auto const& v : region.getVerticesOfRegion(region.getVariables())) {
+                auto currValue = getInstantiationChecker().check(env, v)->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
+                if (!value.is_initialized() || (storm::solver::minimize(dir) ? currValue < value.get() : currValue > value.get())) {
+                    value = currValue;
+                    valuation = v;
+                    STORM_LOG_INFO("Current value for extremum: " << value.get() << ".");
+                }
+            }
+            
+            auto cmp = storm::solver::minimize(dir) ?
+                    [](RegionBound<SparseModelType, ConstantType> const& lhs, RegionBound<SparseModelType, ConstantType> const& rhs) { return lhs.bound > rhs.bound; } :
+                    [](RegionBound<SparseModelType, ConstantType> const& lhs, RegionBound<SparseModelType, ConstantType> const& rhs) { return lhs.bound < rhs.bound; };
+            std::priority_queue<RegionBound<SparseModelType, ConstantType>, std::vector<RegionBound<SparseModelType, ConstantType>>, decltype(cmp)> regionQueue(cmp);
+            regionQueue.emplace(region, storm::utility::zero<ConstantType>());
+            auto totalArea = storm::utility::convertNumber<ConstantType>(region.area());
+            auto coveredArea = storm::utility::zero<ConstantType>();
+            while (!regionQueue.empty()) {
+                auto const& currRegion = regionQueue.top().region;
+                
+                // Check whether this region contains a new 'good' value
+                auto currValue = getInstantiationChecker().check(env, currRegion.getCenterPoint())->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
+                if (storm::solver::minimize(dir) ? currValue < value.get() : currValue > value.get()) {
+                    value = currValue;
+                    valuation = currRegion.getCenterPoint();
+                }
+
+                // Check whether this region needs further investigation (i.e. splitting)
+                auto currBound = getBound(env, currRegion, dir)->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
+                std::vector<storm::storage::ParameterRegion<typename SparseModelType::ValueType>> newRegions;
+                if (storm::solver::minimize(dir)) {
+                    if (currBound < value.get() - storm::utility::convertNumber<ConstantType>(precision)) {
+                        currRegion.split(currRegion.getCenterPoint(), newRegions);
+                    }
+                } else {
+                    if (currBound > value.get() + storm::utility::convertNumber<ConstantType>(precision)) {
+                        currRegion.split(currRegion.getCenterPoint(), newRegions);
+                    }
+                }
+                
+                if (newRegions.empty()) {
+                    coveredArea += storm::utility::convertNumber<ConstantType>(currRegion.area());
+                }
+                regionQueue.pop();
+                for (auto const& r : newRegions) {
+                    regionQueue.emplace(r, currBound);
+                }
+                STORM_LOG_INFO("Current value : " << value.get() << ", current bound: " << regionQueue.top().bound << ".");
+                STORM_LOG_INFO("Covered " << (coveredArea * storm::utility::convertNumber<ConstantType>(100.0) / totalArea) << "% of the region.");
+            }
+            
+            return std::make_pair(storm::utility::convertNumber<typename SparseModelType::ValueType>(value.get()), valuation);
+        }
+
         
         template <typename SparseModelType, typename ConstantType>
         SparseModelType const& SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::getConsideredParametricModel() const {
