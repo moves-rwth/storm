@@ -19,6 +19,7 @@
 #include "storm/logic/StateFormula.h"
 #include "storm/logic/LongRunAverageOperatorFormula.h"
 #include "storm/logic/MultiObjectiveFormula.h"
+#include "storm/logic/QuantileFormula.h"
 #include "storm/logic/TimeOperatorFormula.h"
 #include "storm/logic/TotalRewardFormula.h"
 #include "storm/logic/UnaryBooleanStateFormula.h"

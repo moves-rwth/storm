@@ -23,6 +23,10 @@ namespace storm {
             return false;
         }
         
+        bool Formula::isQuantileFormula() const {
+            return false;
+        }
+        
         bool Formula::isBinaryStateFormula() const {
             return false;
         }

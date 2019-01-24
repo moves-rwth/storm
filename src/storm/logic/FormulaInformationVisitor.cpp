@@ -93,6 +93,10 @@ namespace storm {
             return result;
         }
         
+        boost::any FormulaInformationVisitor::visit(QuantileFormula const& f, boost::any const& data) const {
+            return f.getSubformula().accept(*this, data);
+        }
+        
         boost::any FormulaInformationVisitor::visit(NextFormula const& f, boost::any const& data) const {
             return boost::any_cast<FormulaInformation>(f.getSubformula().accept(*this, data)).setContainsNextFormula();
         }
