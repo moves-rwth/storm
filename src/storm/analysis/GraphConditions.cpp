@@ -38,9 +38,10 @@ namespace storm {
                     auto const& transitionVars = entry.gatherVariables();
                     variableSet.insert(transitionVars.begin(), transitionVars.end());
                     if (entry.denominator().isConstant()) {
-                        if (entry.denominatorAsNumber() > 0) {
+                        assert(entry.denominator().constantPart() != 0);
+                        if (entry.denominator().constantPart() > 0) {
                             wellformedConstraintSet.emplace(entry.nominator().polynomialWithCoefficient(), storm::CompareRelation::GEQ);
-                        } else if (entry.denominatorAsNumber() < 0) {
+                        } else if (entry.denominator().constantPart() < 0) {
                             wellformedConstraintSet.emplace(entry.nominator().polynomialWithCoefficient(), storm::CompareRelation::LEQ);
                         } else {
                             assert(false); // Should fail before.
@@ -117,9 +118,10 @@ namespace storm {
                     for (auto const& entry : rewModelEntry.second.getTransitionRewardMatrix()) {
                         if(!entry.getValue().isConstant()) {
                             if (entry.getValue().denominator().isConstant()) {
-                                if (entry.getValue().denominatorAsNumber() > 0) {
+                                assert(entry.getValue().denominator().constantPart() != 0);
+                                if (entry.getValue().denominator().constantPart() > 0) {
                                     wellformedConstraintSet.emplace(entry.getValue().nominator().polynomialWithCoefficient(), storm::CompareRelation::GEQ);
-                                } else if (entry.getValue().denominatorAsNumber() < 0) {
+                                } else if (entry.getValue().denominator().constantPart() < 0) {
                                     wellformedConstraintSet.emplace(entry.getValue().nominator().polynomialWithCoefficient(), storm::CompareRelation::LEQ);
                                 } else {
                                     assert(false); // Should fail before.
