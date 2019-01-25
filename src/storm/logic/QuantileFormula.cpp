@@ -86,7 +86,7 @@ namespace storm {
         std::ostream& QuantileFormula::writeToStream(std::ostream& out) const {
             out << "quantile(";
             for (auto const& bv : boundVariables) {
-                out << bv.first << " " << bv.second.getName() << ", ";
+                out << (storm::solver::minimize(bv.first) ? "min" : "max") << " " << bv.second.getName() << ", ";
             }
             subformula->writeToStream(out);
             out << ")";
