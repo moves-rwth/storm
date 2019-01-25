@@ -3,6 +3,7 @@
 #include <boost/optional.hpp>
 
 #include "storm/storage/BitVector.h"
+#include "storm/solver/OptimizationDirection.h"
 
 namespace storm {
     namespace modelchecker {
@@ -18,6 +19,7 @@ namespace storm {
                     ValueType scalingFactor;
                     storm::storage::BitVector dependentDimensions;
                     boost::optional<uint64_t> maxValue;
+                    boost::optional<storm::solver::OptimizationDirection> optimizationDirection;
                 };
             }
         }

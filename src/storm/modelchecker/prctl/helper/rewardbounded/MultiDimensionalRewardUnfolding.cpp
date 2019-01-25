@@ -88,6 +88,7 @@ namespace storm {
                                 dimension.memoryLabel = memLabel;
                                 dimension.isUpperBounded = subformula.hasUpperBound(dim);
                                 // for simplicity we do not allow intervals or unbounded formulas.
+                                // TODO: Quantiles: allow unbounded formulas
                                 STORM_LOG_THROW(subformula.hasLowerBound(dim) != dimension.isUpperBounded, storm::exceptions::NotSupportedException, "Bounded until formulas are only supported by this method if they consider either an upper bound or a lower bound. Got " << subformula << " instead.");
                                 // lower bounded until formulas with non-trivial left hand side are excluded as this would require some additional effort (in particular the ProductModel::transformMemoryState method).
                                 STORM_LOG_THROW(dimension.isUpperBounded || subformula.getLeftSubformula(dim).isTrueFormula(), storm::exceptions::NotSupportedException, "Lower bounded until formulas are only supported by this method if the left subformula is 'true'. Got " << subformula << " instead.");
@@ -216,20 +217,22 @@ namespace storm {
                             bound = dimFormula.asCumulativeRewardFormula().getBound();
                             isStrict = dimFormula.asCumulativeRewardFormula().isBoundStrict();
                         }
-                        STORM_LOG_THROW(!bound.containsVariables(), storm::exceptions::NotSupportedException, "The bound " << bound << " contains undefined constants.");
-                        ValueType discretizedBound = storm::utility::convertNumber<ValueType>(bound.evaluateAsRational());
-                        STORM_LOG_THROW(dimensions[dim].isUpperBounded || isStrict || !storm::utility::isZero(discretizedBound), storm::exceptions::NotSupportedException, "Lower bounds need to be either strict or greater than zero.");
-                        discretizedBound /= dimensions[dim].scalingFactor;
-                        if (storm::utility::isInteger(discretizedBound)) {
-                            if (isStrict == dimensions[dim].isUpperBounded) {
-                                discretizedBound -= storm::utility::one<ValueType>();
+                        
+                        if (bound.containsVariables()) {
+                            ValueType discretizedBound = storm::utility::convertNumber<ValueType>(bound.evaluateAsRational());
+                            STORM_LOG_THROW(dimensions[dim].isUpperBounded || isStrict || !storm::utility::isZero(discretizedBound), storm::exceptions::NotSupportedException, "Lower bounds need to be either strict or greater than zero.");
+                            discretizedBound /= dimensions[dim].scalingFactor;
+                            if (storm::utility::isInteger(discretizedBound)) {
+                                if (isStrict == dimensions[dim].isUpperBounded) {
+                                    discretizedBound -= storm::utility::one<ValueType>();
+                                }
+                            } else {
+                                discretizedBound = storm::utility::floor(discretizedBound);
                             }
-                        } else {
-                            discretizedBound = storm::utility::floor(discretizedBound);
+                            uint64_t dimensionValue = storm::utility::convertNumber<uint64_t>(discretizedBound);
+                            STORM_LOG_THROW(epochManager.isValidDimensionValue(dimensionValue), storm::exceptions::NotSupportedException, "The bound " << bound << " is too high for the considered number of dimensions.");
+                            dimensions[dim].maxValue = dimensionValue;
                         }
-                        uint64_t dimensionValue = storm::utility::convertNumber<uint64_t>(discretizedBound);
-                        STORM_LOG_THROW(epochManager.isValidDimensionValue(dimensionValue), storm::exceptions::NotSupportedException, "The bound " << bound << " is too high for the considered number of dimensions.");
-                        dimensions[dim].maxValue = dimensionValue;
                     }
                 }
         

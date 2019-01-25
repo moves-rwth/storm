@@ -209,6 +209,14 @@ namespace storm {
             return dynamic_cast<MultiObjectiveFormula const&>(*this);
         }
         
+        QuantileFormula& Formula::asQuantileFormula() {
+            return dynamic_cast<QuantileFormula&>(*this);
+        }
+        
+        QuantileFormula const& Formula::asQuantileFormula() const {
+            return dynamic_cast<QuantileFormula const&>(*this);
+        }
+        
         BinaryStateFormula& Formula::asBinaryStateFormula() {
             return dynamic_cast<BinaryStateFormula&>(*this);
         }

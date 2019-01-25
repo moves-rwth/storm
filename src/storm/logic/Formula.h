@@ -110,6 +110,9 @@ namespace storm {
             MultiObjectiveFormula& asMultiObjectiveFormula();
             MultiObjectiveFormula const& asMultiObjectiveFormula() const;
             
+            QuantileFormula& asQuantileFormula();
+            QuantileFormula const& asQuantileFormula() const;
+            
             BinaryStateFormula& asBinaryStateFormula();
             BinaryStateFormula const& asBinaryStateFormula() const;
             
