@@ -3,6 +3,8 @@
 #include "storm/logic/QuantileFormula.h"
 
 namespace storm {
+    class Environment;
+
     namespace modelchecker {
         namespace helper {
             namespace rewardbounded {
@@ -11,9 +13,17 @@ namespace storm {
                 class QuantileHelper {
                     typedef typename ModelType::ValueType ValueType;
                 public:
-                    QuantileHelper(ModelType const& model, storm::logic::QuantileFormula const& formula) {}
-                    
-                    std::vector<std::vector<ValueType>> computeMultiDimensionalQuantile() { return {{27}};}
+                    QuantileHelper(ModelType const& model, storm::logic::QuantileFormula const& quantileFormula);
+
+                    std::vector<std::vector<ValueType>> computeMultiDimensionalQuantile(Environment const& env);
+
+
+
+                private:
+                    bool computeUnboundedValue(Environment const& env);
+
+                    ModelType const& model;
+                    storm::logic::QuantileFormula const& quantileFormula;
                 };
             }
         }
