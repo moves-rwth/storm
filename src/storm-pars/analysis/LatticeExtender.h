@@ -29,16 +29,6 @@ namespace storm {
             LatticeExtender(std::shared_ptr<storm::models::sparse::Model<ValueType>> model);
 
             /*!
-             * Creates a lattice based on the given formula.
-             *
-             * @param formulas The formulas based on which the lattice is created, only the first is used.
-             * @return A triple with a pointer to the lattice and two states of which the current place in the lattice
-             *         is unknown but needed. When the states have as number the number of states, no states are
-             *         unplaced but needed.
-             */
-            std::tuple<storm::analysis::Lattice*, uint_fast64_t, uint_fast64_t> toLattice(std::vector<std::shared_ptr<storm::logic::Formula const>> formulas);
-
-            /*!
              * Extends the lattice based on the given assumption.
              *
              * @param lattice The lattice.
@@ -49,10 +39,24 @@ namespace storm {
              */
             std::tuple<storm::analysis::Lattice*, uint_fast64_t, uint_fast64_t> extendLattice(storm::analysis::Lattice* lattice, std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption = nullptr);
 
+            /*!
+             * Creates a lattice based on the given formula.
+             *
+             * @param formulas The formulas based on which the lattice is created, only the first is used.
+             * @return A triple with a pointer to the lattice and two states of which the current place in the lattice
+             *         is unknown but needed. When the states have as number the number of states, no states are
+             *         unplaced but needed.
+             */
+            std::tuple<storm::analysis::Lattice*, uint_fast64_t, uint_fast64_t> toLattice(std::vector<std::shared_ptr<storm::logic::Formula const>> formulas);
+
         private:
             std::shared_ptr<storm::models::sparse::Model<ValueType>> model;
 
             std::map<uint_fast64_t, storm::storage::BitVector> stateMap;
+
+            std::vector<uint_fast64_t> states;
+
+            bool acyclic;
 
             void handleAssumption(Lattice* lattice, std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption);
 

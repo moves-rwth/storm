@@ -139,3 +139,37 @@ TEST(LatticeTest, copy_lattice) {
     EXPECT_EQ(storm::analysis::Lattice::BELOW, latticeCopy.compare(6,5));
     EXPECT_EQ(storm::analysis::Lattice::ABOVE, latticeCopy.compare(5,6));
 }
+
+TEST(LatticeTest, merge_nodes) {
+    auto numberOfStates = 7;
+    auto above = storm::storage::BitVector(numberOfStates);
+    above.set(0);
+    auto below = storm::storage::BitVector(numberOfStates);
+    below.set(1);
+    auto initialMiddle = storm::storage::BitVector(numberOfStates);
+
+    auto lattice = storm::analysis::Lattice(above, below, initialMiddle, numberOfStates);
+    lattice.add(2);
+    lattice.add(3);
+    lattice.addToNode(4, lattice.getNode(2));
+    lattice.addBetween(5, lattice.getNode(0), lattice.getNode(3));
+    lattice.addBetween(6, lattice.getNode(5), lattice.getNode(3));
+
+    lattice.mergeNodes(lattice.getNode(4), lattice.getNode(5));
+    EXPECT_EQ(storm::analysis::Lattice::SAME, lattice.compare(2,4));
+    EXPECT_EQ(storm::analysis::Lattice::SAME, lattice.compare(2,5));
+
+    EXPECT_EQ(storm::analysis::Lattice::ABOVE, lattice.compare(0,5));
+    EXPECT_EQ(storm::analysis::Lattice::ABOVE, lattice.compare(0,2));
+    EXPECT_EQ(storm::analysis::Lattice::ABOVE, lattice.compare(0,4));
+
+    EXPECT_EQ(storm::analysis::Lattice::BELOW, lattice.compare(6,2));
+    EXPECT_EQ(storm::analysis::Lattice::BELOW, lattice.compare(6,4));
+    EXPECT_EQ(storm::analysis::Lattice::BELOW, lattice.compare(6,5));
+    EXPECT_EQ(storm::analysis::Lattice::BELOW, lattice.compare(3,2));
+    EXPECT_EQ(storm::analysis::Lattice::BELOW, lattice.compare(3,4));
+    EXPECT_EQ(storm::analysis::Lattice::BELOW, lattice.compare(3,5));
+    EXPECT_EQ(storm::analysis::Lattice::BELOW, lattice.compare(1,2));
+    EXPECT_EQ(storm::analysis::Lattice::BELOW, lattice.compare(1,4));
+    EXPECT_EQ(storm::analysis::Lattice::BELOW, lattice.compare(1,5));
+}

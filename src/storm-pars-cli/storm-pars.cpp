@@ -514,6 +514,11 @@ namespace storm {
                 std::cout << "Hello, Jip1" << std::endl;
                 // Simplify the model
                 storm::utility::Stopwatch simplifyingWatch(true);
+                std::ofstream outfile;
+                outfile.open("results.txt", std::ios_base::app);
+                outfile << ioSettings.getPrismInputFilename() << ", ";
+
+
                 if (model->isOfType(storm::models::ModelType::Dtmc)) {
                     auto consideredModel = (model->as<storm::models::sparse::Dtmc<ValueType>>());
                     auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<ValueType>>(*consideredModel);
@@ -543,6 +548,9 @@ namespace storm {
                 simplifyingWatch.stop();
                 STORM_PRINT(std::endl << "Time for model simplification: " << simplifyingWatch << "." << std::endl << std::endl);
                 model->printModelInformationToStream(std::cout);
+                outfile << simplifyingWatch << ", ";
+                outfile.close();
+
                 std::cout << "Bye, Jip1" << std::endl;
             }
 
@@ -562,8 +570,6 @@ namespace storm {
                 // Monotonicity
                 std::ofstream outfile;
                 outfile.open("results.txt", std::ios_base::app);
-                outfile << std::endl << ioSettings.getPrismInputFilename() << "; ";
-                outfile.close();
                 storm::utility::Stopwatch monotonicityWatch(true);
                 auto monotonicityChecker = storm::analysis::MonotonicityChecker<ValueType>(model, formulas, parSettings.isValidateAssumptionsSet());
                 monotonicityChecker.checkMonotonicity();
@@ -571,7 +577,10 @@ namespace storm {
                 STORM_PRINT(std::endl << "Total time for monotonicity checking: " << monotonicityWatch << "." << std::endl
                                     << std::endl);
 
+                outfile << monotonicityWatch << std::endl;
+                outfile.close();
                 std::cout << "Bye, Jip2" << std::endl;
+
                 return;
             }
 

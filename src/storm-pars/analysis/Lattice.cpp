@@ -112,11 +112,11 @@ namespace storm {
             }
 
             addedStates.set(state);
+
         }
 
         void Lattice::addToNode(uint_fast64_t state, Node *node) {
             assert(!addedStates[state]);
-
             node->states.set(state);
             nodes.at(state) = node;
             addedStates.set(state);
@@ -131,12 +131,13 @@ namespace storm {
         }
 
         void Lattice::add(uint_fast64_t state) {
+            assert(!addedStates[state]);
             addBetween(state, top, bottom);
         }
 
         void Lattice::addRelationNodes(Lattice::Node *above, Lattice::Node * below) {
             assert (compare(above, below) == UNKNOWN);
-
+            assert ((above->statesAbove & below->statesBelow).getNumberOfSetBits() == 0);
             setStatesBelow(above, below->states | below->statesBelow, true);
             setStatesAbove(below, above->states | above->statesAbove, true);
 
@@ -147,6 +148,7 @@ namespace storm {
             for (auto i = above->statesAbove.getNextSetIndex(0); i < above->statesAbove.size(); i = above->statesAbove.getNextSetIndex(i + 1)) {
                 setStatesBelow(getNode(i), below->states | below->statesBelow, true);
             }
+
         }
 
         int Lattice::compare(uint_fast64_t state1, uint_fast64_t state2) {
@@ -314,16 +316,17 @@ namespace storm {
         }
 
         bool Lattice::above(Node *node1, Node *node2) {
-            return node1->statesBelow.get(node2->states.getNextSetIndex(0));
+            return node1->statesBelow[node2->states.getNextSetIndex(0)];
         }
 
         void Lattice::setStatesAbove(Lattice::Node *node, uint_fast64_t state, bool alreadyInitialized) {
-            assert (!node->states.get(state));
+            assert (!node->states[state]);
 
             if (!alreadyInitialized) {
                 node->statesAbove = storm::storage::BitVector(numberOfStates);
             }
 
+            assert (!node->statesBelow[state]);
             node->statesAbove.set(state);
         }
 
@@ -333,32 +336,60 @@ namespace storm {
             if (!alreadyInitialized) {
                 node->statesBelow = storm::storage::BitVector(numberOfStates);
             }
-
+            assert (!node->statesAbove[state]);
             node->statesBelow.set(state);
         }
 
         void Lattice::setStatesAbove(Lattice::Node *node, storm::storage::BitVector states, bool alreadyInitialized) {
             assert((states.getNumberOfSetBits() - (node->states & states).getNumberOfSetBits()) != 0);
+            // the states to add to the above state of the current node shouldnt occur in either statesbelow or states of ndoe
 
-            auto complement = storm::storage::BitVector(node->states);
-            complement.complement();
+            assert ((node->states & states).getNumberOfSetBits() ==0);
             if (alreadyInitialized) {
-                node->statesAbove |= (states & complement);
+                assert ((node->statesBelow & states).getNumberOfSetBits() == 0);
+
+                node->statesAbove |= (states);
             } else {
-                node->statesAbove = (storm::storage::BitVector(states) & complement);
+                node->statesAbove = (storm::storage::BitVector(states));
             }
         }
 
         void Lattice::setStatesBelow(Lattice::Node *node, storm::storage::BitVector states, bool alreadyInitialized) {
             assert((states.getNumberOfSetBits() - (node->states & states).getNumberOfSetBits()) != 0);
 
-            auto complement = storm::storage::BitVector(node->states);
-            complement.complement();
+            assert ((node->states & states).getNumberOfSetBits() ==0);
             if (alreadyInitialized) {
-                node->statesBelow |= (states & complement);
+                assert ((node->statesAbove & states).getNumberOfSetBits() == 0);
+                node->statesBelow |= (states);
             } else {
-                node->statesBelow = (storm::storage::BitVector(states) & complement);
+                node->statesBelow = (storm::storage::BitVector(states));
             }
+        }
+
+        void Lattice::mergeNodes(storm::analysis::Lattice::Node *node1, storm::analysis::Lattice::Node *node2) {
+            // Merges node2 into node 1
+            // everything above n2 also above n1
+            node1->statesAbove |= node2->statesAbove;
+            // everything below node 2 also below node 1
+            node1->statesBelow |= node2->statesBelow;
+
+            // add states of node 2 to node 1
+            node1->states|= node2->states;
+            for(auto i = node2->states.getNextSetIndex(0); i < node2->states.size(); i = node2->states.getNextSetIndex(i+1)) {
+                nodes.at(i) = node1;
+            }
+
+            // TODO hier gaat het op magische wijze nog fout
+            // Add all states of combined node to states Above of all states Below of node1
+            for (auto i = node1->statesBelow.getNextSetIndex(0); i < node1->statesBelow.size(); i= node1->statesBelow.getNextSetIndex(i+1)) {
+                getNode(i)->statesAbove |= node1->states | node1->statesAbove;
+            }
+
+            // Add all states of combined node to states Below of all states Above of node1
+            for (auto i = node1->statesAbove.getNextSetIndex(0); i < node1->statesAbove.size(); i= node1->statesAbove.getNextSetIndex(i+1)) {
+                getNode(i)->statesBelow |= node1->states | node1->statesBelow;
+            }
+
         }
     }
 }

@@ -27,16 +27,23 @@ namespace storm {
             std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption1
                     = std::make_shared<storm::expressions::BinaryRelationExpression>(storm::expressions::BinaryRelationExpression(*expressionManager, expressionManager->getBooleanType(),
                                                                                                                                   var1.getExpression().getBaseExpressionPointer(), var2.getExpression().getBaseExpressionPointer(),
-                                                                                                                                  storm::expressions::BinaryRelationExpression::RelationType::GreaterOrEqual));
+                                                                                                                              storm::expressions::BinaryRelationExpression::RelationType::Greater));
             bool result1 = (validate && assumptionChecker->validateAssumption(assumption1, lattice) && assumptionChecker->valid(assumption1));
             result[assumption1] = result1;
 
             std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption2
                     = std::make_shared<storm::expressions::BinaryRelationExpression>(storm::expressions::BinaryRelationExpression(*expressionManager, expressionManager->getBooleanType(),
                                                                                                                                   var2.getExpression().getBaseExpressionPointer(), var1.getExpression().getBaseExpressionPointer(),
-                                                                                                                                  storm::expressions::BinaryRelationExpression::RelationType::GreaterOrEqual));
+                                                                                                                                  storm::expressions::BinaryRelationExpression::RelationType::Greater));
             bool result2 = (validate && assumptionChecker->validateAssumption(assumption2, lattice) && assumptionChecker->valid(assumption2));
             result[assumption2] = result2;
+
+            std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption3
+                    = std::make_shared<storm::expressions::BinaryRelationExpression>(storm::expressions::BinaryRelationExpression(*expressionManager, expressionManager->getBooleanType(),
+                                                                                                                                  var2.getExpression().getBaseExpressionPointer(), var1.getExpression().getBaseExpressionPointer(),
+                                                                                                                                  storm::expressions::BinaryRelationExpression::RelationType::Equal));
+            bool result3 = (validate && assumptionChecker->validateAssumption(assumption3, lattice) && assumptionChecker->valid(assumption3));
+            result[assumption3] = result3;
 
             return result;
         }

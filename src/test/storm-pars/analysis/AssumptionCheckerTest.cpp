@@ -62,6 +62,20 @@ TEST(AssumptionCheckerTest, Brp_no_bisimulation) {
                                                          storm::expressions::BinaryRelationExpression::RelationType::GreaterOrEqual));
     EXPECT_TRUE(checker.checkOnSamples(assumption));
 
+    assumption = std::make_shared<storm::expressions::BinaryRelationExpression>(
+            storm::expressions::BinaryRelationExpression(*expressionManager, expressionManager->getBooleanType(),
+                                                         expressionManager->getVariable("7").getExpression().getBaseExpressionPointer(),
+                                                         expressionManager->getVariable("5").getExpression().getBaseExpressionPointer(),
+                                                         storm::expressions::BinaryRelationExpression::RelationType::Greater));
+    EXPECT_TRUE(checker.checkOnSamples(assumption));
+
+    assumption = std::make_shared<storm::expressions::BinaryRelationExpression>(
+            storm::expressions::BinaryRelationExpression(*expressionManager, expressionManager->getBooleanType(),
+                                                         expressionManager->getVariable("7").getExpression().getBaseExpressionPointer(),
+                                                         expressionManager->getVariable("5").getExpression().getBaseExpressionPointer(),
+                                                         storm::expressions::BinaryRelationExpression::RelationType::Equal));
+    EXPECT_FALSE(checker.checkOnSamples(assumption));
+
     storm::storage::BitVector above(8);
     above.set(0);
     storm::storage::BitVector below(8);
@@ -79,17 +93,17 @@ TEST(AssumptionCheckerTest, Brp_no_bisimulation) {
             storm::expressions::BinaryRelationExpression(*expressionManager, expressionManager->getBooleanType(),
                                                          expressionManager->getVariable("6").getExpression().getBaseExpressionPointer(),
                                                          expressionManager->getVariable("8").getExpression().getBaseExpressionPointer(),
-                                                         storm::expressions::BinaryRelationExpression::RelationType::GreaterOrEqual));
+                                                         storm::expressions::BinaryRelationExpression::RelationType::Greater));
     above = storm::storage::BitVector(13);
     above.set(12);
     below = storm::storage::BitVector(13);
     below.set(9);
     initialMiddle = storm::storage::BitVector(13);
     dummyLattice = new storm::analysis::Lattice(above, below, initialMiddle, 13);
-    EXPECT_TRUE(checker.checkOnSamples(assumption));
-    EXPECT_TRUE(checker.validateAssumption(assumption, dummyLattice));
+    EXPECT_FALSE(checker.checkOnSamples(assumption));
+    EXPECT_FALSE(checker.validateAssumption(assumption, dummyLattice));
     EXPECT_TRUE(checker.validated(assumption));
-    EXPECT_TRUE(checker.valid(assumption));
+    EXPECT_FALSE(checker.valid(assumption));
 }
 
 

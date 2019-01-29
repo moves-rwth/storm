@@ -27,8 +27,6 @@
 
 #include "storm/storage/expressions/RationalFunctionToExpression.h"
 
-
-
 namespace storm {
     namespace analysis {
         template <typename ValueType>
@@ -41,7 +39,7 @@ namespace storm {
             if (model != nullptr) {
                 std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel = model->as<storm::models::sparse::Model<ValueType>>();
                 this->extender = new storm::analysis::LatticeExtender<ValueType>(sparseModel);
-                outfile << model->getNumberOfStates() << "; " << model->getNumberOfTransitions() << "; ";
+                outfile << model->getNumberOfStates() << ", " << model->getNumberOfTransitions() << ", ";
             }
             outfile.close();
             totalWatch = storm::utility::Stopwatch(true);
@@ -49,9 +47,11 @@ namespace storm {
 
         template <typename ValueType>
         std::map<storm::analysis::Lattice*, std::map<carl::Variable, std::pair<bool, bool>>> MonotonicityChecker<ValueType>::checkMonotonicity() {
-            totalWatch = storm::utility::Stopwatch(true);
             // TODO: check on samples or not?
+            totalWatch = storm::utility::Stopwatch(true);
+            auto latticeWatch = storm::utility::Stopwatch(true);
             auto map = createLattice();
+            // STORM_PRINT(std::endl << "Time for creating lattice: " << latticeWatch << "." << std::endl << std::endl);
             std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel = model->as<storm::models::sparse::Model<ValueType>>();
             auto matrix = sparseModel->getTransitionMatrix();
             return checkMonotonicity(map, matrix);
@@ -101,10 +101,21 @@ namespace storm {
                     bool assumptionsHold = true;
                     for (auto itr = assumptions.begin(); assumptionsHold && itr != assumptions.end(); ++itr) {
                         auto assumption = *itr;
-                        assert (assumption->getRelationType() == storm::expressions::BinaryRelationExpression::RelationType::GreaterOrEqual);
-                        auto state1 = std::stoi(assumption->getFirstOperand()->asVariableExpression().getVariableName());
-                        auto state2 = std::stoi(assumption->getSecondOperand()->asVariableExpression().getVariableName());
-                        assumptionsHold &= valuesLower[state1] >= valuesUpper[state2];
+                        if (assumption->getRelationType() == storm::expressions::BinaryRelationExpression::RelationType::Greater) {
+                            auto state1 = std::stoi(
+                                    assumption->getFirstOperand()->asVariableExpression().getVariableName());
+                            auto state2 = std::stoi(
+                                    assumption->getSecondOperand()->asVariableExpression().getVariableName());
+                            assumptionsHold &= valuesLower[state1] >= valuesUpper[state2];
+                        } else if (assumption->getRelationType() == storm::expressions::BinaryRelationExpression::RelationType::Equal) {
+                            auto state1 = std::stoi(
+                                    assumption->getFirstOperand()->asVariableExpression().getVariableName());
+                            auto state2 = std::stoi(
+                                    assumption->getSecondOperand()->asVariableExpression().getVariableName());
+                            assumptionsHold &= valuesLower[state1] == valuesUpper[state2];
+                        } else {
+                            assert(false);
+                        }
                     }
                     if (!assumptionsHold) {
                         std::vector<storm::storage::ParameterRegion<ValueType>> newRegions;
@@ -126,55 +137,67 @@ namespace storm {
 
         template <typename ValueType>
         std::map<storm::analysis::Lattice*, std::map<carl::Variable, std::pair<bool, bool>>> MonotonicityChecker<ValueType>::checkMonotonicity(std::map<storm::analysis::Lattice*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> map, storm::storage::SparseMatrix<ValueType> matrix) {
-            storm::utility::Stopwatch finalCheckWatch(true);
+            storm::utility::Stopwatch monotonicityCheckWatch(true);
             std::map<storm::analysis::Lattice *, std::map<carl::Variable, std::pair<bool, bool>>> result;
 
+            outfile.open(filename, std::ios_base::app);
 
             if (map.size() == 0) {
-                outfile.open(filename, std::ios_base::app);
-                outfile << " | No assumptions, ? | ;";
-                outfile.close();
-                STORM_PRINT(std::endl << "Do not know about monotonicity" << std::endl);
+                // Nothing is known
+                outfile << " No assumptions; ?";
+                // STORM_PRINT(std::endl << "Do not know about monotonicity" << std::endl);
             } else {
                 auto i = 0;
                 for (auto itr = map.begin(); i < map.size() && itr != map.end(); ++itr) {
                     auto lattice = itr->first;
-                    outfile.open(filename, std::ios_base::app);
-                    outfile << "|";
-                    outfile.close();
+                    if (itr != map.begin()) {
+                        outfile << ";";
+                    }
                     std::map<carl::Variable, std::pair<bool, bool>> varsMonotone = analyseMonotonicity(i, lattice,
                                                                                                       matrix);
 
-                    outfile.open(filename, std::ios_base::app);
                     auto assumptions = itr->second;
                     bool validSomewhere = true;
                     if (assumptions.size() > 0) {
-                        auto regions = checkAssumptionsOnRegion(assumptions);
-                        if (regions.size() > 0) {
-                            STORM_PRINT("For regions: " << std::endl);
-                        }
-                        bool first = true;
-                        for (auto itr2 = regions.begin(); itr2 != regions.end(); ++itr2) {
-                            if (first) {
-                                STORM_PRINT("    ");
-                                first = false;
+//                        auto regions = checkAssumptionsOnRegion(assumptions);
+//                        if (regions.size() > 0) {
+//                            // STORM_PRINT("For regions: " << std::endl);
+//                            bool first = true;
+//                            for (auto itr2 = regions.begin(); itr2 != regions.end(); ++itr2) {
+//                                if (first) {
+//                                    // STORM_PRINT("    ");
+//                                    first = false;
+//                                }
+//                                // STORM_PRINT(*itr2);
+//                                outfile << (*itr2);
+//                            }
+//                            // STORM_PRINT(std::endl);
+//                            outfile << ", ";
+//                        } else {
+                            // STORM_PRINT("Assumption(s): ");
+                            bool first = true;
+                            for (auto itr2 = assumptions.begin(); itr2 != assumptions.end(); ++itr2) {
+                                if (!first) {
+                                    // STORM_PRINT(" ^ ");
+                                    outfile << (" ^ ");
+                                } else {
+                                    first = false;
+                                }
+                                // STORM_PRINT(*(*itr2));
+                                outfile << (*(*itr2));
                             }
-                            STORM_PRINT(*itr2);
-                            outfile << (*itr2);
-                        }
-                        if (regions.size() > 0) {
-                            STORM_PRINT(std::endl);
-                            outfile << ", ";
-                        }
+                            // STORM_PRINT(std::endl);
+                            outfile << " - ";
+//                        }
                     }
 
                     if (validSomewhere && assumptions.size() == 0) {
-                        outfile << "No assumptions, ";
+                        outfile << "No assumptions - ";
                     }
 
 
                     if (validSomewhere && varsMonotone.size() == 0) {
-                        STORM_PRINT("Result is constant" << std::endl);
+                        // STORM_PRINT("Result is constant" << std::endl);
                         outfile << "No params";
                     } else if (validSomewhere) {
                         auto itr2 = varsMonotone.begin();
@@ -182,45 +205,41 @@ namespace storm {
                             if (resultCheckOnSamples.find(itr2->first) != resultCheckOnSamples.end() &&
                                 (!resultCheckOnSamples[itr2->first].first &&
                                  !resultCheckOnSamples[itr2->first].second)) {
-                                STORM_PRINT("  - Not monotone in: " << itr2->first << std::endl);
+                                // STORM_PRINT("  - Not monotone in: " << itr2->first << std::endl);
                                 outfile << "X " << itr2->first;
                             } else {
                                 if (itr2->second.first && itr2->second.second) {
-                                    STORM_PRINT("  - Constant in" << itr2->first << std::endl);
+                                    // STORM_PRINT("  - Constant in" << itr2->first << std::endl);
                                     outfile << "C " << itr2->first;
                                 } else if (itr2->second.first) {
-                                    STORM_PRINT("  - Monotone increasing in: " << itr2->first << std::endl);
+                                    // STORM_PRINT("  - Monotone increasing in: " << itr2->first << std::endl);
                                     outfile << "I " << itr2->first;
                                 } else if (itr2->second.second) {
-                                    STORM_PRINT("  - Monotone decreasing in: " << itr2->first << std::endl);
+                                    // STORM_PRINT("  - Monotone decreasing in: " << itr2->first << std::endl);
                                     outfile << "D " << itr2->first;
                                 } else {
 
-                                    STORM_PRINT(
-                                            "  - Do not know if monotone incr/decreasing in: " << itr2->first << std::endl);
+                                    // STORM_PRINT("  - Do not know if monotone incr/decreasing in: " << itr2->first << std::endl);
                                     outfile << "? " << itr2->first;
                                 }
                             }
                             ++itr2;
                             if (itr2 != varsMonotone.end()) {
-                                outfile << ", ";
+                                outfile << " ";
                             }
                         }
                         result.insert(
                                 std::pair<storm::analysis::Lattice *, std::map<carl::Variable, std::pair<bool, bool>>>(
                                         lattice, varsMonotone));
                     }
-                    outfile << "| ";
-                    outfile.close();
                     ++i;
                 }
             }
+            outfile << ", ";
 
-            finalCheckWatch.stop();
-            STORM_PRINT(std::endl << "Time for monotonicity check on lattice: " << finalCheckWatch << "." << std::endl << std::endl);
-            outfile.open(filename, std::ios_base::app);
-            totalWatch.stop();
-            outfile << totalWatch << "; ";
+            monotonicityCheckWatch.stop();
+            outfile << monotonicityCheckWatch << ", ";
+            // STORM_PRINT(std::endl << "Time for monotonicity check on lattice: " << monotonicityCheckWatch << "." << std::endl << std::endl);
             outfile.close();
             return result;
         }
@@ -259,8 +278,10 @@ namespace storm {
                 assert(false);
             }
             latticeWatch.stop();
-            STORM_PRINT(std::endl << "Total time for lattice creation: " << latticeWatch << "." << std::endl << std::endl);
-            outfile << latticeWatch << "; ";
+            // STORM_PRINT(std::endl << "Total time for lattice creation: " << latticeWatch << "." << std::endl << std::endl);
+            outfile.open(filename, std::ios_base::app);
+            outfile << latticeWatch << ", ";
+            outfile.close();
             return result;
         }
 
@@ -273,19 +294,27 @@ namespace storm {
                 assert (val1 == val2);
                 result.insert(std::pair<storm::analysis::Lattice*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>>(lattice, assumptions));
             } else {
-                auto assumptionPair = assumptionMaker->createAndCheckAssumption(val1, val2, lattice);
-                assert (assumptionPair.size() == 2);
-                auto itr = assumptionPair.begin();
+
+                // TODO: should be triple
+                auto assumptionTriple = assumptionMaker->createAndCheckAssumption(val1, val2, lattice);
+                assert (assumptionTriple.size() == 3);
+                auto itr = assumptionTriple.begin();
                 auto assumption1 = *itr;
                 ++itr;
                 auto assumption2 = *itr;
+                ++itr;
+                auto assumption3 = *itr;
 
                 if (!assumption1.second && !assumption2.second) {
+                    // Both assumption cannot be validated, so we need to keep them both
                     // TODO: hier niet verder gaan als je iets gevonden hebt?
                     auto assumptionsCopy = std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>(assumptions);
+                    auto assumptionsCopy2 = std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>(assumptions);
                     auto latticeCopy = new storm::analysis::Lattice(lattice);
+                    auto latticeCopy2 = new storm::analysis::Lattice(lattice);
                     assumptions.push_back(assumption1.first);
                     assumptionsCopy.push_back(assumption2.first);
+                    assumptionsCopy2.push_back(assumption2.first);
 
                     auto criticalTuple = extender->extendLattice(lattice, assumption1.first);
                     if (somewhereMonotonicity(std::get<0>(criticalTuple))) {
@@ -300,7 +329,16 @@ namespace storm {
                                                            assumptionsCopy);
                         result.insert(map.begin(), map.end());
                     }
+                    // TODO verbeteren
+//                    criticalTuple = extender->extendLattice(latticeCopy2, assumption3.first);
+//                    if (somewhereMonotonicity(std::get<0>(criticalTuple))) {
+//                        auto map = extendLatticeWithAssumptions(std::get<0>(criticalTuple), assumptionMaker,
+//                                                                std::get<1>(criticalTuple), std::get<2>(criticalTuple),
+//                                                                assumptionsCopy2);
+//                        result.insert(map.begin(), map.end());
+//                    }
                 } else if (assumption1.second && assumption2.second) {
+                    //TODO  Both assumptions hold --> should not happen if we change it to < instead of <=
                     auto assumption = assumptionMaker->createEqualAssumption(val1, val2);
                     if (!validate) {
                         assumptions.push_back(assumption);
@@ -312,6 +350,7 @@ namespace storm {
                     }
                 } else if (assumption1.second) {
                     if (!validate) {
+                        assert(false);
                         assumptions.push_back(assumption1.first);
                     }
                     // if validate is true and both hold, then they must be valid, so no need to add to assumptions
@@ -339,7 +378,7 @@ namespace storm {
 
         template <typename ValueType>
         std::map<carl::Variable, std::pair<bool, bool>> MonotonicityChecker<ValueType>::analyseMonotonicity(uint_fast64_t j, storm::analysis::Lattice* lattice, storm::storage::SparseMatrix<ValueType> matrix) {
-            storm::utility::Stopwatch analyseWatch(true);
+//            storm::utility::Stopwatch analyseWatch(true);
 
             std::map<carl::Variable, std::pair<bool, bool>> varsMonotone;
 
@@ -413,9 +452,9 @@ namespace storm {
                 }
             }
 
-            analyseWatch.stop();
-            STORM_PRINT(std::endl << "Time to check monotonicity based on the lattice: " << analyseWatch << "." << std::endl << std::endl);
-            outfile << analyseWatch << "; ";
+//            analyseWatch.stop();
+            // STORM_PRINT(std::endl << "Time to check monotonicity based on the lattice: " << analyseWatch << "." << std::endl << std::endl);
+//            outfile << analyseWatch << "; ";
             return varsMonotone;
         }
 
@@ -609,7 +648,7 @@ namespace storm {
             }
 
             samplesWatch.stop();
-            STORM_PRINT(std::endl << "Time to check monotonicity on samples: " << samplesWatch << "." << std::endl << std::endl);
+            // STORM_PRINT(std::endl << "Time to check monotonicity on samples: " << samplesWatch << "." << std::endl << std::endl);
             resultCheckOnSamples = result;
             return result;
         }
@@ -680,7 +719,7 @@ namespace storm {
             }
 
             samplesWatch.stop();
-            STORM_PRINT(std::endl << "Time to check monotonicity on samples: " << samplesWatch << "." << std::endl << std::endl);
+            // STORM_PRINT(std::endl << "Time to check monotonicity on samples: " << samplesWatch << "." << std::endl << std::endl);
             resultCheckOnSamples = result;
             return result;
         }

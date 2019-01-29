@@ -34,7 +34,8 @@ namespace storm {
                 auto valuation = storm::utility::parametric::Valuation<ValueType>();
                 for (auto itr = variables.begin(); itr != variables.end(); ++itr) {
                     // TODO: Type
-                    auto val = std::pair<storm::RationalFunctionVariable, storm::RationalFunctionCoefficient>((*itr), storm::utility::convertNumber<storm::RationalFunctionCoefficient>(boost::lexical_cast<std::string>((i+1)/(double (numberOfSamples + 1)))));
+                    // Creates samples between 0 and 1, 1/(#samples+2), 2/(#samples+2), ..., (#samples+1)/(#samples+2)
+                    auto val = std::pair<storm::RationalFunctionVariable, storm::RationalFunctionCoefficient>((*itr), storm::utility::convertNumber<storm::RationalFunctionCoefficient>(boost::lexical_cast<std::string>((i+1)/(double (numberOfSamples + 2)))));
                     valuation.insert(val);
                 }
                 storm::models::sparse::Dtmc<double> sampleModel = instantiator.instantiate(valuation);
@@ -127,10 +128,12 @@ namespace storm {
                 assumption->gatherVariables(vars);
 
                 STORM_LOG_THROW(assumption->getRelationType() ==
-                                storm::expressions::BinaryRelationExpression::RelationType::GreaterOrEqual,
+                                storm::expressions::BinaryRelationExpression::RelationType::Greater ||assumption->getRelationType() ==
+                                                                                                             storm::expressions::BinaryRelationExpression::RelationType::Equal,
                                 storm::exceptions::NotSupportedException,
                                 "Only Greater Or Equal assumptions supported");
 
+                // TODO: implement validation of equal/greater equations
                 auto row1 = matrix.getRow(std::stoi(assumption->getFirstOperand()->asVariableExpression().getVariableName()));
                 auto row2 = matrix.getRow(std::stoi(assumption->getSecondOperand()->asVariableExpression().getVariableName()));
 
@@ -239,7 +242,9 @@ namespace storm {
                     result = false;
                 }
             }
-            return result && prob.evaluate(substitutions) >= 0;
+//            return result && prob.evaluate(substitutions) >= 0;
+//TODO check for > and =
+            return false;
         }
 
         template <typename ValueType>
@@ -296,7 +301,9 @@ namespace storm {
             s.add(exprBounds);
             smtResult = s.check();
 
-            return smtResult == storm::solver::SmtSolver::CheckResult::Sat;
+//            return smtResult == storm::solver::SmtSolver::CheckResult::Sat;
+//TODO check for > and =
+            return false;
         }
 
         template <typename ValueType>
@@ -387,8 +394,9 @@ namespace storm {
             assert(s.check() == storm::solver::SmtSolver::CheckResult::Sat);
             s.add(exprToCheck);
             auto smtRes = s.check();
+            //TODO check for > and =
             result = result &&  smtRes == storm::solver::SmtSolver::CheckResult::Sat;
-            return result;
+            return false;
         }
 
         template <typename ValueType>

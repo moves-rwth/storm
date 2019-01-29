@@ -166,6 +166,13 @@ namespace storm {
                     void toDotFile(std::ostream &out);
 
                     /*!
+                     * Merges node2 into node1
+                     * @param node1
+                     * @param node2
+                     */
+                    void mergeNodes(Node* node1, Node* node2);
+
+                    /*!
                      * Constants for comparison of nodes/states
                      */
                      enum {
