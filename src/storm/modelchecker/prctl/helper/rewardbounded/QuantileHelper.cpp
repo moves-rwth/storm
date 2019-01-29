@@ -21,8 +21,8 @@ namespace storm {
                     // Intentionally left empty
                 }
 
-                std::shared_ptr<storm::logic::ProbabilityOperatorFormula> replaceBoundsByGreaterEqZero(std::shared_ptr<storm::logic::ProbabilityOperatorFormula> const& boundedUntilOperator, std::set<uint64_t> dimensionsToReplace) {
-                    auto const& origBoundedUntil = boundedUntilOperator->getSubformula().asBoundedUntilFormula();
+                std::shared_ptr<storm::logic::ProbabilityOperatorFormula> replaceBoundsByGreaterEqZero(storm::logic::ProbabilityOperatorFormula const& boundedUntilOperator, std::set<uint64_t> const& dimensionsToReplace) {
+                    auto const& origBoundedUntil = boundedUntilOperator.getSubformula().asBoundedUntilFormula();
                     STORM_LOG_ASSERT(*(--dimensionsToReplace.end()) < origBoundedUntil.getDimension(), "Tried to replace the bound of a dimension that is higher than the number of dimensions of the formula.");
                     std::vector<std::shared_ptr<storm::logic::Formula const>> leftSubformulas, rightSubformulas;
                     std::vector<boost::optional<storm::logic::TimeBound>> lowerBounds, upperBounds;
@@ -39,7 +39,7 @@ namespace storm {
                                 lowerBounds.push_back(boost::none);
                             }
                             if (origBoundedUntil.hasUpperBound()) {
-                                upperBounds.emplace_back(origBoundedUntil.isUpperBoundStrict(dim), origBoundedUntil.getUpperBound(dim));
+                                lowerBounds.push_back(storm::logic::TimeBound(origBoundedUntil.isUpperBoundStrict(dim), origBoundedUntil.getUpperBound(dim)));
                             } else {
                                 upperBounds.push_back(boost::none);
                             }
@@ -51,12 +51,12 @@ namespace storm {
                                 STORM_LOG_THROW(origBoundedUntil.hasUpperBound(dim), storm::exceptions::InvalidOperationException, "The given bounded until formula has no cost-bound for one dimension.");
                                 zero = origBoundedUntil.getUpperBound(dim).getManager().rational(0.0);
                             }
-                            lowerBounds.emplace_back(false, zero);
+                            lowerBounds.push_back(storm::logic::TimeBound(false, zero));
                             upperBounds.push_back(boost::none);
                         }
                     }
                     auto newBoundedUntil = std::make_shared<storm::logic::BoundedUntilFormula>(leftSubformulas, rightSubformulas, lowerBounds, upperBounds, timeBoundReferences);
-                    return std::make_shared<storm::logic::ProbabilityOperatorFormula>(newBoundedUntil, boundedUntilOperator->getOperatorInformation());
+                    return std::make_shared<storm::logic::ProbabilityOperatorFormula>(newBoundedUntil, boundedUntilOperator.getOperatorInformation());
                 }
 
 
@@ -78,6 +78,7 @@ namespace storm {
 
                 template<typename ModelType>
                 bool QuantileHelper<ModelType>::computeUnboundedValue(Environment const& env) {
+                    auto unboundedFormula = replaceBoundsByGreaterEqZero(quantileFormula.getSubformula().asProbabilityOperatorFormula(), std::set<uint64_t>());
                     return false;
                 }
 
