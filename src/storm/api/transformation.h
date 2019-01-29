@@ -28,9 +28,9 @@ namespace storm {
             STORM_LOG_WARN_COND(newFormulas.size() == formulas.size(), "Transformation of a " << model->getType() << " to a discrete time model does not preserve all properties.");
             
             if (model->isOfType(storm::models::ModelType::Ctmc)) {
-                return std::make_pair(transformer.transform(*model->template as<storm::models::sparse::Ctmc<ValueType>>()), newFormulas);
+                return std::make_pair(transformer.transform(*model->template as<storm::models::sparse::Ctmc<ValueType>>(), timeRewardName), newFormulas);
             } else if (model->isOfType(storm::models::ModelType::MarkovAutomaton)) {
-                return std::make_pair(transformer.transform(*model->template as<storm::models::sparse::MarkovAutomaton<ValueType>>()), newFormulas);
+                return std::make_pair(transformer.transform(*model->template as<storm::models::sparse::MarkovAutomaton<ValueType>>(), timeRewardName), newFormulas);
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Transformation of a " << model->getType() << " to a discrete time model is not supported");
             }
@@ -55,9 +55,9 @@ namespace storm {
             STORM_LOG_WARN_COND(newFormulas.size() == formulas.size(), "Transformation of a " << model.getType() << " to a discrete time model does not preserve all properties.");
            
             if (model.isOfType(storm::models::ModelType::Ctmc)) {
-                return std::make_pair(transformer.transform(std::move(*model.template as<storm::models::sparse::Ctmc<ValueType>>())), newFormulas);
+                return std::make_pair(transformer.transform(std::move(*model.template as<storm::models::sparse::Ctmc<ValueType>>()), timeRewardName), newFormulas);
             } else if (model.isOfType(storm::models::ModelType::MarkovAutomaton)) {
-                return std::make_pair(transformer.transform(std::move(*model.template as<storm::models::sparse::MarkovAutomaton<ValueType>>())), newFormulas);
+                return std::make_pair(transformer.transform(std::move(*model.template as<storm::models::sparse::MarkovAutomaton<ValueType>>()), timeRewardName), newFormulas);
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Transformation of a " << model.getType() << " to a discrete time model is not supported.");
             }
