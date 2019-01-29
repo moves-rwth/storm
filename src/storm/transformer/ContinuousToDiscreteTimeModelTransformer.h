@@ -16,7 +16,7 @@ namespace storm {
         class ContinuousToDiscreteTimeModelTransformer {
         public:
 
-            // If this method returns true, the given formula is preserced by the transformation
+            // If this method returns true, the given formula is preserved by the transformation
             static bool preservesFormula(storm::logic::Formula const& formula);
             
             // Checks whether the given formulas are preserved.
