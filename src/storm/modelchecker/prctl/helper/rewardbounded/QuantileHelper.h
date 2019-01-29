@@ -5,6 +5,10 @@
 namespace storm {
     class Environment;
 
+    namespace storage {
+        class BitVector;
+    }
+
     namespace modelchecker {
         namespace helper {
             namespace rewardbounded {
@@ -21,6 +25,10 @@ namespace storm {
 
                 private:
                     bool computeUnboundedValue(Environment const& env);
+
+                    uint64_t getDimension() const;
+                    storm::storage::BitVector getDimensionsForVariable(storm::expressions::Variable const& var);
+
 
                     ModelType const& model;
                     storm::logic::QuantileFormula const& quantileFormula;

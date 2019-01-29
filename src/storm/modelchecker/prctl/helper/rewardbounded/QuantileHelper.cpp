@@ -6,7 +6,11 @@
 #include <boost/optional.hpp>
 
 #include "storm/models/sparse/Mdp.h"
+#include "storm/modelchecker/prctl/helper/rewardbounded/MultiDimensionalRewardUnfolding.h"
 #include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/storage/expressions/Expressions.h"
+#include "storm/storage/BitVector.h"
+#include "storm/utility/vector.h"
 
 #include "storm/logic/ProbabilityOperatorFormula.h"
 #include "storm/logic/BoundedUntilFormula.h"
@@ -21,9 +25,9 @@ namespace storm {
                     // Intentionally left empty
                 }
 
-                std::shared_ptr<storm::logic::ProbabilityOperatorFormula> replaceBoundsByGreaterEqZero(storm::logic::ProbabilityOperatorFormula const& boundedUntilOperator, std::set<uint64_t> const& dimensionsToReplace) {
+                std::shared_ptr<storm::logic::ProbabilityOperatorFormula> replaceBoundsByGreaterEqZero(storm::logic::ProbabilityOperatorFormula const& boundedUntilOperator, storm::storage::BitVector const& dimensionsToReplace) {
                     auto const& origBoundedUntil = boundedUntilOperator.getSubformula().asBoundedUntilFormula();
-                    STORM_LOG_ASSERT(*(--dimensionsToReplace.end()) < origBoundedUntil.getDimension(), "Tried to replace the bound of a dimension that is higher than the number of dimensions of the formula.");
+                    STORM_LOG_ASSERT(dimensionsToReplace.size() == origBoundedUntil.getDimension(), "Tried to replace the bound of a dimension that is higher than the number of dimensions of the formula.");
                     std::vector<std::shared_ptr<storm::logic::Formula const>> leftSubformulas, rightSubformulas;
                     std::vector<boost::optional<storm::logic::TimeBound>> lowerBounds, upperBounds;
                     std::vector<storm::logic::TimeBoundReference> timeBoundReferences;
@@ -32,7 +36,17 @@ namespace storm {
                         leftSubformulas.push_back(origBoundedUntil.getLeftSubformula(dim).asSharedPointer());
                         rightSubformulas.push_back(origBoundedUntil.getRightSubformula(dim).asSharedPointer());
                         timeBoundReferences.push_back(origBoundedUntil.getTimeBoundReference(dim));
-                        if (dimensionsToReplace.count(dim) == 0) {
+                        if (dimensionsToReplace.get(dim)) {
+                            storm::expressions::Expression zero;
+                            if (origBoundedUntil.hasLowerBound(dim)) {
+                                zero = origBoundedUntil.getLowerBound(dim).getManager().rational(0.0);
+                            } else {
+                                STORM_LOG_THROW(origBoundedUntil.hasUpperBound(dim), storm::exceptions::InvalidOperationException, "The given bounded until formula has no cost-bound for one dimension.");
+                                zero = origBoundedUntil.getUpperBound(dim).getManager().rational(0.0);
+                            }
+                            lowerBounds.push_back(storm::logic::TimeBound(false, zero));
+                            upperBounds.push_back(boost::none);
+                        } else {
                             if (origBoundedUntil.hasLowerBound()) {
                                 lowerBounds.push_back(storm::logic::TimeBound(origBoundedUntil.isLowerBoundStrict(dim), origBoundedUntil.getLowerBound(dim)));
                             } else {
@@ -43,16 +57,6 @@ namespace storm {
                             } else {
                                 upperBounds.push_back(boost::none);
                             }
-                        } else {
-                            storm::expressions::Expression zero;
-                            if (origBoundedUntil.hasLowerBound(dim)) {
-                                zero = origBoundedUntil.getLowerBound(dim).getManager().rational(0.0);
-                            } else {
-                                STORM_LOG_THROW(origBoundedUntil.hasUpperBound(dim), storm::exceptions::InvalidOperationException, "The given bounded until formula has no cost-bound for one dimension.");
-                                zero = origBoundedUntil.getUpperBound(dim).getManager().rational(0.0);
-                            }
-                            lowerBounds.push_back(storm::logic::TimeBound(false, zero));
-                            upperBounds.push_back(boost::none);
                         }
                     }
                     auto newBoundedUntil = std::make_shared<storm::logic::BoundedUntilFormula>(leftSubformulas, rightSubformulas, lowerBounds, upperBounds, timeBoundReferences);
@@ -60,6 +64,26 @@ namespace storm {
                 }
 
 
+
+                template<typename ModelType>
+                uint64_t QuantileHelper<ModelType>::getDimension() const {
+                    return quantileFormula.getSubformula().asProbabilityOperatorFormula().getSubformula().asBoundedUntilFormula().getDimension();
+                }
+
+                template<typename ModelType>
+                storm::storage::BitVector QuantileHelper<ModelType>::getDimensionsForVariable(storm::expressions::Variable const& var) {
+                    auto const& boundedUntil = quantileFormula.getSubformula().asProbabilityOperatorFormula().getSubformula().asBoundedUntilFormula();
+                    storm::storage::BitVector result(boundedUntil.getDimension(), false);
+                    for (uint64_t dim = 0; dim < boundedUntil.getDimension(); ++dim) {
+                        if (boundedUntil.hasLowerBound(dim) && boundedUntil.getLowerBound(dim).isVariable() && boundedUntil.getLowerBound(dim).getBaseExpression().asVariableExpression().getVariable() == var) {
+                            result.set(dim, true);
+                        }
+                        if (boundedUntil.hasUpperBound(dim) && boundedUntil.getUpperBound(dim).isVariable() && boundedUntil.getUpperBound(dim).getBaseExpression().asVariableExpression().getVariable() == var) {
+                            result.set(dim, true);
+                        }
+                    }
+                    return result;
+                }
 
                 template<typename ModelType>
                 std::vector<std::vector<typename ModelType::ValueType>> QuantileHelper<ModelType>::computeMultiDimensionalQuantile(Environment const& env) {
@@ -78,8 +102,37 @@ namespace storm {
 
                 template<typename ModelType>
                 bool QuantileHelper<ModelType>::computeUnboundedValue(Environment const& env) {
-                    auto unboundedFormula = replaceBoundsByGreaterEqZero(quantileFormula.getSubformula().asProbabilityOperatorFormula(), std::set<uint64_t>());
-                    return false;
+                    auto unboundedFormula = replaceBoundsByGreaterEqZero(quantileFormula.getSubformula().asProbabilityOperatorFormula(), storm::storage::BitVector(getDimension(), true));
+                    MultiDimensionalRewardUnfolding<ValueType, true> rewardUnfolding(model, unboundedFormula);
+
+                    // Get lower and upper bounds for the solution.
+                    auto lowerBound = rewardUnfolding.getLowerObjectiveBound();
+                    auto upperBound = rewardUnfolding.getUpperObjectiveBound();
+
+                    // Initialize epoch models
+                    auto initEpoch = rewardUnfolding.getStartEpoch();
+                    auto epochOrder = rewardUnfolding.getEpochComputationOrder(initEpoch);
+                    STORM_LOG_ASSERT(epochOrder.size() == 1, "unexpected epoch order size.");
+                    // initialize data that will be needed for each epoch
+                    std::vector<ValueType> x, b;
+                    std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> minMaxSolver;
+/*
+                    ValueType precision = rewardUnfolding.getRequiredEpochModelPrecision(initEpoch, storm::utility::convertNumber<ValueType>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision()));
+                    Environment preciseEnv = env;
+                    preciseEnv.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(precision));
+
+                    auto& epochModel = rewardUnfolding.setCurrentEpoch(initEpoch);
+                    // If the epoch matrix is empty we do not need to solve a linear equation system
+                    if (epochModel.epochMatrix.getEntryCount() == 0) {
+                        rewardUnfolding.setSolutionForCurrentEpoch(analyzeTrivialMdpEpochModel<ValueType>(dir, epochModel));
+                    } else {
+                        rewardUnfolding.setSolutionForCurrentEpoch(analyzeNonTrivialMdpEpochModel<ValueType>(preciseEnv, dir, epochModel, x, b, minMaxSolver, lowerBound, upperBound));
+                    }
+
+                    ValueType numericResult = rewardUnfolding.getInitialStateResult(initEpoch);
+                    std::cout << "Numeric result is " << numericResult;
+                    return unboundedFormula->getBound().isSatisfied(numericResult);
+  */
                 }
 
 
