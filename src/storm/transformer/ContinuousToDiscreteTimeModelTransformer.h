@@ -18,7 +18,13 @@ namespace storm {
 
             // If this method returns true, the given formula is preserced by the transformation
             static bool preservesFormula(storm::logic::Formula const& formula);
-        
+            
+            // Checks whether the given formulas are preserved.
+            // Expected time formulas are translated to expected reward formulas.
+            // The returned vector only contains formulas that are preserved by the transformation.
+            static std::vector<std::shared_ptr<storm::logic::Formula const>> checkAndTransformFormulas(std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, std::string const& timeRewardName);
+            
+            
             // Transforms the given CTMC to its underlying (aka embedded) DTMC.
             // A reward model for time is added if a corresponding reward model name is given
             static std::shared_ptr<storm::models::sparse::Dtmc<ValueType, RewardModelType>> transform(storm::models::sparse::Ctmc<ValueType, RewardModelType> const& ctmc, boost::optional<std::string> const& timeRewardModelName = boost::none);
