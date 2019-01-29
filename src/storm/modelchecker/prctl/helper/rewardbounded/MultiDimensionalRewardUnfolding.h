@@ -6,6 +6,7 @@
 #include "storm/storage/SparseMatrix.h"
 #include "storm/modelchecker/multiobjective/Objective.h"
 #include "storm/modelchecker/prctl/helper/rewardbounded/EpochManager.h"
+#include "storm/modelchecker/prctl/helper/rewardbounded/EpochModel.h"
 #include "storm/modelchecker/prctl/helper/rewardbounded/ProductModel.h"
 #include "storm/modelchecker/prctl/helper/rewardbounded/Dimension.h"
 #include "storm/models/sparse/Model.h"
@@ -27,17 +28,7 @@ namespace storm {
                     typedef typename EpochManager::EpochClass EpochClass;
                     
                     typedef typename std::conditional<SingleObjectiveMode, ValueType, std::vector<ValueType>>::type SolutionType;
-    
-                    struct EpochModel {
-                        bool epochMatrixChanged;
-                        storm::storage::SparseMatrix<ValueType> epochMatrix;
-                        storm::storage::BitVector stepChoices;
-                        std::vector<SolutionType> stepSolutions;
-                        std::vector<std::vector<ValueType>> objectiveRewards;
-                        std::vector<storm::storage::BitVector> objectiveRewardFilter;
-                        storm::storage::BitVector epochInStates;
-                    };
-                    
+
                     /*
                      *
                      * @param model The (preprocessed) model
@@ -52,7 +43,7 @@ namespace storm {
                     Epoch getStartEpoch();
                     std::vector<Epoch> getEpochComputationOrder(Epoch const& startEpoch);
                     
-                    EpochModel& setCurrentEpoch(Epoch const& epoch);
+                    EpochModel<ValueType, SingleObjectiveMode>& setCurrentEpoch(Epoch const& epoch);
                     
                     void setEquationSystemFormatForEpochModel(storm::solver::LinearEquationSolverProblemFormat eqSysFormat);
                     
@@ -117,13 +108,10 @@ namespace storm {
                     std::vector<uint64_t> epochModelToProductChoiceMap;
                     std::shared_ptr<std::vector<uint64_t> const> productStateToEpochModelInStateMap;
                     std::set<Epoch> possibleEpochSteps;
-                    
-                    EpochModel epochModel;
+
+                    EpochModel<ValueType, SingleObjectiveMode> epochModel;
                     boost::optional<Epoch> currentEpoch;
-                    
-                    // In case of DTMCs we have different options for the equation problem format the epoch model will have.
-                    boost::optional<storm::solver::LinearEquationSolverProblemFormat> equationSolverProblemFormatForEpochModel;
-                    
+
                     EpochManager epochManager;
                     
                     std::vector<Dimension<ValueType>> dimensions;

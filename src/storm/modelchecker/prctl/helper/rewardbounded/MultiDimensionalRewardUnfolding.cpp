@@ -287,7 +287,7 @@ namespace storm {
                 }
                 
                 template<typename ValueType, bool SingleObjectiveMode>
-                typename MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::EpochModel& MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::setCurrentEpoch(Epoch const& epoch) {
+                EpochModel<ValueType, SingleObjectiveMode>& MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::setCurrentEpoch(Epoch const& epoch) {
                     STORM_LOG_DEBUG("Setting model for epoch " << epochManager.toString(epoch));
                     
                     // Check if we need to update the current epoch class
@@ -446,8 +446,8 @@ namespace storm {
                     if (model.isOfType(storm::models::ModelType::Dtmc)) {
                         assert(zeroObjRewardChoices.size() == productModel->getProduct().getNumberOfStates());
                         assert(stepChoices.size() == productModel->getProduct().getNumberOfStates());
-                        STORM_LOG_ASSERT(equationSolverProblemFormatForEpochModel.is_initialized(), "Linear equation problem format was not set.");
-                        bool convertToEquationSystem = equationSolverProblemFormatForEpochModel.get() == storm::solver::LinearEquationSolverProblemFormat::EquationSystem;
+                        STORM_LOG_ASSERT(epochModel.equationSolverProblemFormat.is_initialized(), "Linear equation problem format was not set.");
+                        bool convertToEquationSystem = epochModel.equationSolverProblemFormat.get() == storm::solver::LinearEquationSolverProblemFormat::EquationSystem;
                         // For DTMCs we consider the subsystem induced by the considered states.
                         // The transitions for states with zero reward are filtered out to guarantee a unique solution of the eq-system.
                         auto backwardTransitions = epochModel.epochMatrix.transpose(true);
@@ -547,7 +547,7 @@ namespace storm {
                 template<typename ValueType, bool SingleObjectiveMode>
                 void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::setEquationSystemFormatForEpochModel(storm::solver::LinearEquationSolverProblemFormat eqSysFormat) {
                     STORM_LOG_ASSERT(model.isOfType(storm::models::ModelType::Dtmc), "Trying to set the equation problem format although the model is not deterministic.");
-                    equationSolverProblemFormatForEpochModel = eqSysFormat;
+                    epochModel.equationSolverProblemFormat = eqSysFormat;
                 }
 
                 

@@ -309,7 +309,7 @@ namespace storm {
             }
 
             template <class SparseMdpModelType>
-            void RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::updateCachedData(Environment const& env, typename helper::rewardbounded::MultiDimensionalRewardUnfolding<ValueType, false>::EpochModel const& epochModel, EpochCheckingData& cachedData, std::vector<ValueType> const& weightVector) {
+            void RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::updateCachedData(Environment const& env, helper::rewardbounded::EpochModel<ValueType, false> const& epochModel, EpochCheckingData& cachedData, std::vector<ValueType> const& weightVector) {
                 if (epochModel.epochMatrixChanged) {
                 
                     // Update the cached MinMaxSolver data
