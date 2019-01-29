@@ -24,7 +24,7 @@ namespace storm {
             while(model->hasRewardModel(timeRewardName)) {
                 timeRewardName += "_";
             }
-            auto newFormulas = transformer.checkAndTransformFormulas(formulas, timeRewardName)
+            auto newFormulas = transformer.checkAndTransformFormulas(formulas, timeRewardName);
             STORM_LOG_WARN_COND(newFormulas.size() == formulas.size(), "Transformation of a " << model->getType() << " to a discrete time model does not preserve all properties.");
             
             if (model->isOfType(storm::models::ModelType::Ctmc)) {
@@ -34,7 +34,7 @@ namespace storm {
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Transformation of a " << model->getType() << " to a discrete time model is not supported");
             }
-            return nullptr;
+            return std::make_pair(nullptr, newFormulas);;
         }
 
         /*!
@@ -51,8 +51,8 @@ namespace storm {
             while(model.hasRewardModel(timeRewardName)) {
                 timeRewardName += "_";
             }
-            auto newFormulas = transformer.checkAndTransformFormulas(formulas, timeRewardName)
-            STORM_LOG_WARN_COND(newFormulas.size() == formulas.size(), "Transformation of a " << model->getType() << " to a discrete time model does not preserve all properties.");
+            auto newFormulas = transformer.checkAndTransformFormulas(formulas, timeRewardName);
+            STORM_LOG_WARN_COND(newFormulas.size() == formulas.size(), "Transformation of a " << model.getType() << " to a discrete time model does not preserve all properties.");
            
             if (model.isOfType(storm::models::ModelType::Ctmc)) {
                 return std::make_pair(transformer.transform(std::move(*model.template as<storm::models::sparse::Ctmc<ValueType>>())), newFormulas);
@@ -61,7 +61,7 @@ namespace storm {
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Transformation of a " << model.getType() << " to a discrete time model is not supported.");
             }
-            return nullptr;
+            return std::make_pair(nullptr, newFormulas);;
             
         }
         
