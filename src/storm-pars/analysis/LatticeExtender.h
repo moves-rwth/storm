@@ -58,6 +58,8 @@ namespace storm {
 
             bool acyclic;
 
+            bool assumptionSeen;
+
             void handleAssumption(Lattice* lattice, std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption);
 
             std::tuple<Lattice*, uint_fast64_t, uint_fast64_t> extendAllSuccAdded(Lattice* lattice, uint_fast64_t stateNumber, storm::storage::BitVector successors);

@@ -32,6 +32,7 @@ namespace storm {
         template<typename ValueType>
         LatticeExtender<ValueType>::LatticeExtender(std::shared_ptr<storm::models::sparse::Model<ValueType>> model) {
             this->model = model;
+            assumptionSeen = false;
         }
 
         template <typename ValueType>
@@ -121,6 +122,7 @@ namespace storm {
         template <typename ValueType>
         void LatticeExtender<ValueType>::handleAssumption(Lattice* lattice, std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption) {
             assert (assumption != nullptr);
+            assumptionSeen = true;
 
             storm::expressions::BinaryRelationExpression expr = *assumption;
             assert (expr.getRelationType() == storm::expressions::BinaryRelationExpression::RelationType::Greater
@@ -243,40 +245,82 @@ namespace storm {
             auto oldNumberSet = numberOfStates;
             while (oldNumberSet != lattice->getAddedStates().getNumberOfSetBits()) {
                 oldNumberSet = lattice->getAddedStates().getNumberOfSetBits();
-                auto states = statesSorted;
 
-                if (acyclic && states.size() > 0) {
-                    auto nextState = *(states.begin());
-                    while (lattice->getAddedStates()[nextState] && states.size() > 1) {
-                        // states.size()>1 such that there is at least one state left after erase
-                        states.erase(states.begin());
-                        nextState = *(states.begin());
-                    }
+                if (!assumptionSeen && acyclic) {
 
-                    if (! lattice->getAddedStates()[nextState]) {
-                        auto row = this->model->getTransitionMatrix().getRow(nextState);
-                        auto successors = storm::storage::BitVector(lattice->getAddedStates().size());
-                        for (auto rowItr = row.begin(); rowItr != row.end(); ++rowItr) {
-                            // ignore self-loops when there are more transitions
-                            if (nextState != rowItr->getColumn()) {
-                                successors.set(rowItr->getColumn());
+                    if (statesSorted.size() > 0) {
+                        auto nextState = *(statesSorted.begin());
+                        while (lattice->getAddedStates()[nextState] && statesSorted.size() > 1) {
+                            // states.size()>1 such that there is at least one state left after erase
+                            statesSorted.erase(statesSorted.begin());
+                            nextState = *(statesSorted.begin());
+                        }
+
+                        if (!lattice->getAddedStates()[nextState]) {
+                            auto row = this->model->getTransitionMatrix().getRow(nextState);
+                            auto successors = storm::storage::BitVector(lattice->getAddedStates().size());
+                            for (auto rowItr = row.begin(); rowItr != row.end(); ++rowItr) {
+                                // ignore self-loops when there are more transitions
+                                if (nextState != rowItr->getColumn()) {
+                                    successors.set(rowItr->getColumn());
+                                }
+                            }
+                            auto seenStates = (lattice->getAddedStates());
+
+                            assert ((seenStates & successors) == successors);
+
+                            auto result = extendAllSuccAdded(lattice, nextState, successors);
+                            if (std::get<1>(result) != numberOfStates) {
+                                return result;
+                            } else {
+                                assert (lattice->getNode(nextState) != nullptr);
+                                statesSorted.erase(statesSorted.begin());
                             }
                         }
-                        auto seenStates = (lattice->getAddedStates());
-
-                        assert ((seenStates & successors) == successors);
-
-                        auto result = extendAllSuccAdded(lattice, nextState, successors);
-                        if (std::get<1>(result) != numberOfStates) {
-                            return result;
-                        } else {
-                            assert (lattice->getNode(nextState) != nullptr);
-                            states.erase(states.begin());
-                        }
+                        auto added = lattice->getAddedStates().getNumberOfSetBits();
+                        assert (lattice->getNode(nextState) != nullptr);
+                        assert (lattice->getAddedStates()[nextState]);
                     }
-                    auto added = lattice->getAddedStates().getNumberOfSetBits();
-                    assert (lattice->getNode(nextState) != nullptr);
-                    assert (lattice->getAddedStates()[nextState]);
+                } else if (assumptionSeen && acyclic) {
+                    auto states = statesSorted;
+
+                    if (states.size() > 0) {
+                        auto nextState = *(states.begin());
+                        while (lattice->getAddedStates()[nextState] && states.size() > 1) {
+                            // states.size()>1 such that there is at least one state left after erase
+                            states.erase(states.begin());
+                            nextState = *(states.begin());
+                        }
+
+                        if (!lattice->getAddedStates()[nextState]) {
+                            auto row = this->model->getTransitionMatrix().getRow(nextState);
+                            auto successors = storm::storage::BitVector(lattice->getAddedStates().size());
+                            for (auto rowItr = row.begin(); rowItr != row.end(); ++rowItr) {
+                                // ignore self-loops when there are more transitions
+                                if (nextState != rowItr->getColumn()) {
+                                    successors.set(rowItr->getColumn());
+                                }
+                            }
+                            auto seenStates = (lattice->getAddedStates());
+
+                            assert ((seenStates & successors) == successors);
+
+                            auto result = extendAllSuccAdded(lattice, nextState, successors);
+                            if (std::get<1>(result) != numberOfStates) {
+                                return result;
+                            } else {
+                                assert (lattice->getNode(nextState) != nullptr);
+                                states.erase(states.begin());
+                            }
+                            if (!assumptionSeen) {
+                                statesSorted = states;
+
+                            }
+                        }
+                        auto added = lattice->getAddedStates().getNumberOfSetBits();
+                        assert (lattice->getNode(nextState) != nullptr);
+                        assert (lattice->getAddedStates()[nextState]);
+                    }
 
                 } else if (!acyclic) {
                     // TODO: kan dit niet efficienter
@@ -288,7 +332,6 @@ namespace storm {
 
                         auto seenStates = (lattice->getAddedStates());
 
-                        assert(!acyclic);
                         // Check if current state has not been added yet, and all successors have
                         bool check = !seenStates[stateNumber];
                         for (auto succIndex = successors.getNextSetIndex(0);
@@ -330,7 +373,14 @@ namespace storm {
                                 assert(false);
                             }
                         }
+
                     }
+                    // if nothing changed, then add a state
+                    if (oldNumberSet == lattice->getAddedStates().getNumberOfSetBits() && oldNumberSet != numberOfStates) {
+                        lattice->add(lattice->getAddedStates().getNextUnsetIndex(0));
+                    }
+
+
                 }
             }
             assert (lattice->getAddedStates().getNumberOfSetBits() == numberOfStates);
