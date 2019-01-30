@@ -54,7 +54,7 @@ namespace storm {
 
             std::map<uint_fast64_t, storm::storage::BitVector> stateMap;
 
-            std::vector<uint_fast64_t> states;
+            std::vector<uint_fast64_t> statesSorted;
 
             bool acyclic;
 

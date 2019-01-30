@@ -75,7 +75,7 @@ namespace storm {
                 acyclic &= decomposition.getBlock(i).size() <= 1;
             }
             if (acyclic) {
-                states = storm::utility::graph::getTopologicalSort(matrix);
+                statesSorted = storm::utility::graph::getTopologicalSort(matrix);
             } else {
                 for (uint_fast64_t i = 0; i < numberOfStates; ++i) {
                     stateMap[i] = storm::storage::BitVector(numberOfStates, false);
@@ -221,7 +221,11 @@ namespace storm {
                         lowest = i;
                     }
                 }
-                lattice->addBetween(stateNumber, lattice->getNode(highest), lattice->getNode(lowest));
+                if (lowest == highest) {
+                    lattice->addToNode(stateNumber, lattice->getNode(highest));
+                } else {
+                    lattice->addBetween(stateNumber, lattice->getNode(highest), lattice->getNode(lowest));
+                }
             }
             return std::make_tuple(lattice, numberOfStates, numberOfStates);
         }
@@ -239,16 +243,17 @@ namespace storm {
             auto oldNumberSet = numberOfStates;
             while (oldNumberSet != lattice->getAddedStates().getNumberOfSetBits()) {
                 oldNumberSet = lattice->getAddedStates().getNumberOfSetBits();
+                auto states = statesSorted;
 
                 if (acyclic && states.size() > 0) {
                     auto nextState = *(states.begin());
-                    while (lattice->getAddedStates().get(nextState) && states.size() > 0) {
+                    while (lattice->getAddedStates()[nextState] && states.size() > 1) {
+                        // states.size()>1 such that there is at least one state left after erase
                         states.erase(states.begin());
-
                         nextState = *(states.begin());
                     }
 
-                    if (! lattice->getAddedStates().get(nextState)) {
+                    if (! lattice->getAddedStates()[nextState]) {
                         auto row = this->model->getTransitionMatrix().getRow(nextState);
                         auto successors = storm::storage::BitVector(lattice->getAddedStates().size());
                         for (auto rowItr = row.begin(); rowItr != row.end(); ++rowItr) {
@@ -258,16 +263,20 @@ namespace storm {
                             }
                         }
                         auto seenStates = (lattice->getAddedStates());
+
                         assert ((seenStates & successors) == successors);
 
                         auto result = extendAllSuccAdded(lattice, nextState, successors);
-                        if (std::get<1>(result) != successors.size()) {
+                        if (std::get<1>(result) != numberOfStates) {
                             return result;
                         } else {
+                            assert (lattice->getNode(nextState) != nullptr);
                             states.erase(states.begin());
                         }
                     }
+                    auto added = lattice->getAddedStates().getNumberOfSetBits();
                     assert (lattice->getNode(nextState) != nullptr);
+                    assert (lattice->getAddedStates()[nextState]);
 
                 } else if (!acyclic) {
                     // TODO: kan dit niet efficienter
@@ -324,6 +333,7 @@ namespace storm {
                     }
                 }
             }
+            assert (lattice->getAddedStates().getNumberOfSetBits() == numberOfStates);
             return std::make_tuple(lattice, numberOfStates, numberOfStates);
         }
         template class LatticeExtender<storm::RationalFunction>;
