@@ -17,7 +17,7 @@ namespace storm {
             storm::expressions::Expression threshold;
 
             template <typename ValueType>
-            bool isSatisfied(ValueType const& compareValue) {
+            bool isSatisfied(ValueType const& compareValue) const {
                 ValueType thresholdAsValueType = storm::utility::convertNumber<ValueType>(threshold.evaluateAsRational());
                 switch(comparisonType) {
                     case ComparisonType::Greater:

@@ -86,15 +86,20 @@ namespace storm {
                                     memLabel = "_" + memLabel;
                                 }
                                 dimension.memoryLabel = memLabel;
-                                dimension.isUpperBounded = subformula.hasUpperBound(dim);
-                                // for simplicity we do not allow intervals or unbounded formulas.
-                                // TODO: Quantiles: allow unbounded formulas
-                                STORM_LOG_THROW(subformula.hasLowerBound(dim) != dimension.isUpperBounded, storm::exceptions::NotSupportedException, "Bounded until formulas are only supported by this method if they consider either an upper bound or a lower bound. Got " << subformula << " instead.");
+                                // for simplicity we do not allow interval formulas.
+                                STORM_LOG_THROW(!subformula.hasLowerBound(dim) ||  !subformula.hasUpperBound(dim), storm::exceptions::NotSupportedException, "Bounded until formulas are only supported by this method if they consider either an upper bound or a lower bound. Got " << subformula << " instead.");
                                 // lower bounded until formulas with non-trivial left hand side are excluded as this would require some additional effort (in particular the ProductModel::transformMemoryState method).
                                 STORM_LOG_THROW(dimension.isUpperBounded || subformula.getLeftSubformula(dim).isTrueFormula(), storm::exceptions::NotSupportedException, "Lower bounded until formulas are only supported by this method if the left subformula is 'true'. Got " << subformula << " instead.");
-                                if (subformula.getTimeBoundReference(dim).isTimeBound() || subformula.getTimeBoundReference(dim).isStepBound()) {
+                                dimension.isUpperBounded = subformula.hasUpperBound(dim);
+                                // Treat formulas that aren't acutally bounded differently
+                                if ((!subformula.hasLowerBound(dim) && !subformula.hasUpperBound(dim)) || (subformula.hasLowerBound(dim) && !subformula.isLowerBoundStrict(dim) && !subformula.getLowerBound(dim).containsVariables() && storm::utility::isZero(subformula.getLowerBound(dim).evaluateAsRational()))) {
+                                    dimensionWiseEpochSteps.push_back(std::vector<uint64_t>(model.getTransitionMatrix().getRowCount(), 0));
+                                    dimension.scalingFactor = storm::utility::zero<ValueType>();
+                                    dimension.isNotBounded = true;
+                                } else if (subformula.getTimeBoundReference(dim).isTimeBound() || subformula.getTimeBoundReference(dim).isStepBound()) {
                                     dimensionWiseEpochSteps.push_back(std::vector<uint64_t>(model.getTransitionMatrix().getRowCount(), 1));
                                     dimension.scalingFactor = storm::utility::one<ValueType>();
+                                    dimension.isNotBounded = false;
                                 } else {
                                     STORM_LOG_ASSERT(subformula.getTimeBoundReference(dim).isRewardBound(), "Unexpected type of time bound.");
                                     std::string const& rewardName = subformula.getTimeBoundReference(dim).getRewardName();
@@ -105,6 +110,7 @@ namespace storm {
                                     auto discretizedRewardsAndFactor = storm::utility::vector::toIntegralVector<ValueType, uint64_t>(actionRewards);
                                     dimensionWiseEpochSteps.push_back(std::move(discretizedRewardsAndFactor.first));
                                     dimension.scalingFactor = std::move(discretizedRewardsAndFactor.second);
+                                    dimension.isNotBounded = false;
                                 }
                                 dimensions.emplace_back(std::move(dimension));
                             }
@@ -115,6 +121,7 @@ namespace storm {
                                 dimension.formula = subformula.restrictToDimension(dim);
                                 dimension.objectiveIndex = objIndex;
                                 dimension.isUpperBounded = true;
+                                dimension.isNotBounded = false;
                                 if (subformula.getTimeBoundReference(dim).isTimeBound() || subformula.getTimeBoundReference(dim).isStepBound()) {
                                     dimensionWiseEpochSteps.push_back(std::vector<uint64_t>(model.getTransitionMatrix().getRowCount(), 1));
                                     dimension.scalingFactor = storm::utility::one<ValueType>();
@@ -218,20 +225,23 @@ namespace storm {
                             isStrict = dimFormula.asCumulativeRewardFormula().isBoundStrict();
                         }
                         
-                        if (bound.containsVariables()) {
+                        if (!bound.containsVariables()) {
                             ValueType discretizedBound = storm::utility::convertNumber<ValueType>(bound.evaluateAsRational());
-                            STORM_LOG_THROW(dimensions[dim].isUpperBounded || isStrict || !storm::utility::isZero(discretizedBound), storm::exceptions::NotSupportedException, "Lower bounds need to be either strict or greater than zero.");
-                            discretizedBound /= dimensions[dim].scalingFactor;
-                            if (storm::utility::isInteger(discretizedBound)) {
-                                if (isStrict == dimensions[dim].isUpperBounded) {
-                                    discretizedBound -= storm::utility::one<ValueType>();
+                            // We always consider upper bounds to be non-strict and lower bounds to be strict.
+                            // Thus, >=N would become >N-1. However, note that the case N=0 needs extra treatment
+                            if (!dimensions[dim].isNotBounded) {
+                                discretizedBound /= dimensions[dim].scalingFactor;
+                                if (storm::utility::isInteger(discretizedBound)) {
+                                    if (isStrict == dimensions[dim].isUpperBounded) {
+                                        discretizedBound -= storm::utility::one<ValueType>();
+                                    }
+                                } else {
+                                    discretizedBound = storm::utility::floor(discretizedBound);
                                 }
-                            } else {
-                                discretizedBound = storm::utility::floor(discretizedBound);
+                                uint64_t dimensionValue = storm::utility::convertNumber<uint64_t>(discretizedBound);
+                                STORM_LOG_THROW(epochManager.isValidDimensionValue(dimensionValue), storm::exceptions::NotSupportedException, "The bound " << bound << " is too high for the considered number of dimensions.");
+                                dimensions[dim].maxValue = dimensionValue;
                             }
-                            uint64_t dimensionValue = storm::utility::convertNumber<uint64_t>(discretizedBound);
-                            STORM_LOG_THROW(epochManager.isValidDimensionValue(dimensionValue), storm::exceptions::NotSupportedException, "The bound " << bound << " is too high for the considered number of dimensions.");
-                            dimensions[dim].maxValue = dimensionValue;
                         }
                     }
                 }
@@ -240,8 +250,12 @@ namespace storm {
                 typename MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::Epoch MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::getStartEpoch() {
                     Epoch startEpoch = epochManager.getZeroEpoch();
                     for (uint64_t dim = 0; dim < epochManager.getDimensionCount(); ++dim) {
-                        STORM_LOG_ASSERT(dimensions[dim].maxValue,  "No max-value for dimension " << dim << " was given.");
-                        epochManager.setDimensionOfEpoch(startEpoch, dim, dimensions[dim].maxValue.get());
+                        if (dimensions[dim].isNotBounded) {
+                            epochManager.setBottomDimension(startEpoch, dim);
+                        } else {
+                            STORM_LOG_ASSERT(dimensions[dim].maxValue,  "No max-value for dimension " << dim << " was given.");
+                            epochManager.setDimensionOfEpoch(startEpoch, dim, dimensions[dim].maxValue.get());
+                        }
                     }
                     STORM_LOG_TRACE("Start epoch is " << epochManager.toString(startEpoch));
                     return startEpoch;

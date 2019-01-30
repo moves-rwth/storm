@@ -42,7 +42,7 @@ namespace storm {
              * If addSelfLoopAtSinkStates is true, such rows get a selfloop (with value 1). Otherwise, the row remains empty.
              */
             static EndComponentEliminatorReturnType transform(storm::storage::SparseMatrix<ValueType> const& originalMatrix, storm::storage::BitVector const& subsystemStates, storm::storage::BitVector const& possibleECRows, storm::storage::BitVector const& addSinkRowStates, bool addSelfLoopAtSinkStates = false) {
-                STORM_LOG_DEBUG("Invoked EndComponentEliminator on matrix with " << originalMatrix.getRowGroupCount() << " row groups.");
+                STORM_LOG_DEBUG("Invoked EndComponentEliminator on matrix with " << originalMatrix.getRowGroupCount() << " row groups and " << subsystemStates.getNumberOfSetBits() << " subsystem states.");
                 
                 storm::storage::MaximalEndComponentDecomposition<ValueType> ecs = computeECs(originalMatrix, possibleECRows, subsystemStates);
                 

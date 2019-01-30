@@ -460,8 +460,12 @@ namespace storm {
                     
                     Epoch startEpoch = epochManager.getZeroEpoch();
                     for (uint64_t dim = 0; dim < epochManager.getDimensionCount(); ++dim) {
-                        STORM_LOG_ASSERT(dimensions[dim].maxValue,  "No max-value for dimension " << dim << " was given.");
-                        epochManager.setDimensionOfEpoch(startEpoch, dim, dimensions[dim].maxValue.get());
+                        if (dimensions[dim].isNotBounded) {
+                            epochManager.setBottomDimension(startEpoch, dim);
+                        } else {
+                            STORM_LOG_ASSERT(dimensions[dim].maxValue,  "No max-value for dimension " << dim << " was given.");
+                            epochManager.setDimensionOfEpoch(startEpoch, dim, dimensions[dim].maxValue.get());
+                        }
                     }
                     
                     std::set<Epoch> seenEpochs({startEpoch});

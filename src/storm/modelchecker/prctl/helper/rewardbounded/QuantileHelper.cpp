@@ -116,23 +116,13 @@ namespace storm {
                     // initialize data that will be needed for each epoch
                     std::vector<ValueType> x, b;
                     std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> minMaxSolver;
-/*
-                    ValueType precision = rewardUnfolding.getRequiredEpochModelPrecision(initEpoch, storm::utility::convertNumber<ValueType>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision()));
-                    Environment preciseEnv = env;
-                    preciseEnv.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(precision));
 
                     auto& epochModel = rewardUnfolding.setCurrentEpoch(initEpoch);
-                    // If the epoch matrix is empty we do not need to solve a linear equation system
-                    if (epochModel.epochMatrix.getEntryCount() == 0) {
-                        rewardUnfolding.setSolutionForCurrentEpoch(analyzeTrivialMdpEpochModel<ValueType>(dir, epochModel));
-                    } else {
-                        rewardUnfolding.setSolutionForCurrentEpoch(analyzeNonTrivialMdpEpochModel<ValueType>(preciseEnv, dir, epochModel, x, b, minMaxSolver, lowerBound, upperBound));
-                    }
+                    rewardUnfolding.setSolutionForCurrentEpoch(epochModel.analyzeSingleObjective(env, quantileFormula.getSubformula().asProbabilityOperatorFormula().getOptimalityType(), x, b, minMaxSolver, lowerBound, upperBound));
 
                     ValueType numericResult = rewardUnfolding.getInitialStateResult(initEpoch);
                     std::cout << "Numeric result is " << numericResult;
                     return unboundedFormula->getBound().isSatisfied(numericResult);
-  */
                 }
 
 
