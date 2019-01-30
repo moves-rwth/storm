@@ -173,9 +173,8 @@ namespace storm {
             } else {
                 STORM_LOG_ASSERT(coreSettings.getEngine() == storm::settings::modules::CoreSettings::Engine::Dd, "Expected Dd engine.");
                 if (generalSettings.isBisimulationSet()) {
-                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Bisimulation is not supported for symbolic parametric models.");
-                    //result.first = storm::cli::preprocessDdModelBisimulation(result.first->template as<storm::models::symbolic::Model<DdType, ValueType>>(), input, bisimulationSettings);
-                    //result.second = true;
+                    result.first = storm::cli::preprocessDdModelBisimulation(result.first->template as<storm::models::symbolic::Model<DdType, ValueType>>(), input, bisimulationSettings);
+                    result.second = true;
                 }
             }
             return result;
