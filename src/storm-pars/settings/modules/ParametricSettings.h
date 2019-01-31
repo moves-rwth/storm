@@ -65,6 +65,8 @@ namespace storm {
                 bool isSampleExactSet() const;
 
                 bool isMonotonicityAnalysisSet() const;
+                // TODO: maybe move to other place
+                bool isSccEliminationSet() const;
 
                 bool isValidateAssumptionsSet() const;
 
@@ -80,6 +82,7 @@ namespace storm {
                 const static std::string samplesGraphPreservingOptionName;
                 const static std::string sampleExactOptionName;
                 const static std::string monotonicityAnalysis;
+                const static std::string sccElimination;
                 const static std::string validateAssumptions;
             };
             

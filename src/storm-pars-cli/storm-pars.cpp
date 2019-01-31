@@ -29,7 +29,7 @@
 
 #include "storm/settings/SettingsManager.h"
 
-#include "storm/solver/stateelimination/PrioritizedStateEliminator.h"
+#include "storm/solver/stateelimination/NondeterministicModelStateEliminator.h"
 
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
 #include "storm/storage/SymbolicModelDescription.h"
@@ -562,6 +562,67 @@ namespace storm {
                 }
             }
 
+            if (parSettings.isSccEliminationSet()) {
+                // TODO: check for correct Model type
+                std::cout << "Applying scc elimination" << std::endl;
+                auto sparseModel = model->as<storm::models::sparse::Model<ValueType>>();
+                auto matrix = sparseModel->getTransitionMatrix();
+                auto backwardsTransitionMatrix = matrix.transpose();
+
+                auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<ValueType>(matrix, false, false);
+
+                storm::storage::BitVector selectedStates(matrix.getRowCount());
+                for (auto i = 0; i < decomposition.size(); ++i) {
+                    auto scc = decomposition.getBlock(i);
+                    if (scc.size() > 1) {
+                        auto nrInitial = 0;
+                        auto statesScc = scc.getStates();
+                        std::vector<uint_fast64_t> entryStates;
+                        for (auto state : statesScc) {
+                            auto row = backwardsTransitionMatrix.getRow(state);
+                            bool found = false;
+                            for (auto backState : row) {
+                                if (!scc.containsState(backState.getColumn())) {
+                                    found = true;
+                                }
+                            }
+                            if (found) {
+                                entryStates.push_back(state);
+                            } else {
+                                selectedStates.set(state);
+                            }
+                        }
+
+                        if (entryStates.size() != 1) {
+                            STORM_LOG_THROW(entryStates.size() > 1, storm::exceptions::NotImplementedException,
+                                            "state elimination not implemented for scc with more than 1 entry points");
+                        }
+                    }
+                }
+
+                storm::storage::FlexibleSparseMatrix<ValueType> flexibleMatrix(matrix);
+                storm::storage::FlexibleSparseMatrix<ValueType> flexibleBackwardTransitions(backwardsTransitionMatrix, true);
+                auto actionRewards = std::vector<ValueType>(matrix.getRowCount(), storm::utility::zero<ValueType>());
+                storm::solver::stateelimination::NondeterministicModelStateEliminator<ValueType> stateEliminator(flexibleMatrix, flexibleBackwardTransitions, actionRewards);
+                for(auto state : selectedStates) {
+                    stateEliminator.eliminateState(state, true);
+                }
+                selectedStates.complement();
+                auto keptRows = matrix.getRowFilter(selectedStates);
+                storm::storage::SparseMatrix<ValueType> newTransitionMatrix = flexibleMatrix.createSparseMatrix(keptRows, selectedStates);
+                // TODO: rewards get lost
+                // obtain the reward model for the resulting system
+//                std::unordered_map<std::string, RewardModelType> rewardModels;
+//                if(rewardModelName) {
+//                    storm::utility::vector::filterVectorInPlace(actionRewards, keptRows);
+//                    rewardModels.insert(std::make_pair(*rewardModelName, RewardModelType(boost::none, std::move(actionRewards))));
+//                }
+                model = std::make_shared<storm::models::sparse::Dtmc<ValueType>>(std::move(newTransitionMatrix), sparseModel->getStateLabeling().getSubLabeling(selectedStates));
+
+
+                std::cout << "SCC Elimination applied" << std::endl;
+            }
+
             if (parSettings.isMonotonicityAnalysisSet()) {
                 std::cout << "Hello, Jip2" << std::endl;
 
@@ -571,7 +632,7 @@ namespace storm {
                 std::ofstream outfile;
                 outfile.open("results.txt", std::ios_base::app);
                 storm::utility::Stopwatch monotonicityWatch(true);
-                auto monotonicityChecker = storm::analysis::MonotonicityChecker<ValueType>(model, formulas, parSettings.isValidateAssumptionsSet());
+                auto monotonicityChecker = storm::analysis::MonotonicityChecker<ValueType>(model, formulas, parSettings.isValidateAssumptionsSet(), parSettings.isSccEliminationSet());
                 monotonicityChecker.checkMonotonicity();
                 monotonicityWatch.stop();
                 STORM_PRINT(std::endl << "Total time for monotonicity checking: " << monotonicityWatch << "." << std::endl
@@ -581,7 +642,7 @@ namespace storm {
                 outfile.close();
                 std::cout << "Bye, Jip2" << std::endl;
 
-                return;
+//                return;
             }
 
             std::vector<storm::storage::ParameterRegion<ValueType>> regions = parseRegions<ValueType>(model);

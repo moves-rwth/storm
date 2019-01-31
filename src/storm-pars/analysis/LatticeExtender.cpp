@@ -70,6 +70,7 @@ namespace storm {
 
             auto initialMiddleStates = storm::storage::BitVector(numberOfStates);
             // Check if MC contains cycles
+            // TODO maybe move to other place
             auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<ValueType>(model->getTransitionMatrix(), false, false);
             acyclic = true;
             for (auto i = 0; acyclic && i < decomposition.size(); ++i) {

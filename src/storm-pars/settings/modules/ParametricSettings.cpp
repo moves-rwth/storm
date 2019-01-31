@@ -22,6 +22,7 @@ namespace storm {
             const std::string ParametricSettings::samplesGraphPreservingOptionName = "samples-graph-preserving";
             const std::string ParametricSettings::sampleExactOptionName = "sample-exact";
             const std::string ParametricSettings::monotonicityAnalysis = "monotonicity-analysis";
+            const std::string ParametricSettings::sccElimination = "elim-scc";
             const std::string ParametricSettings::validateAssumptions = "validate-assumptions";
 
             ParametricSettings::ParametricSettings() : ModuleSettings(moduleName) {
@@ -35,6 +36,7 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, samplesGraphPreservingOptionName, false, "Sets whether it can be assumed that the samples are graph-preserving.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, sampleExactOptionName, false, "Sets whether to sample using exact arithmetic.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, monotonicityAnalysis, false, "Sets whether monotonicity analysis is done").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, sccElimination, false, "Sets whether SCCs should be eliminated").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, validateAssumptions, false, "Sets whether assumptions made in monotonicity analysis are validated").build());
             }
             
@@ -72,6 +74,10 @@ namespace storm {
 
             bool ParametricSettings::isMonotonicityAnalysisSet() const {
                 return this->getOption(monotonicityAnalysis).getHasOptionBeenSet();
+            }
+
+            bool ParametricSettings::isSccEliminationSet() const {
+                return this->getOption(sccElimination).getHasOptionBeenSet();
             }
 
             bool ParametricSettings::isValidateAssumptionsSet() const {
