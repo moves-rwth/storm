@@ -498,7 +498,7 @@ namespace storm {
                 storm::expressions::Expression exprBounds = manager->boolean(true);
                 auto managervars = manager->getVariables();
                 for (auto var : managervars) {
-                    exprBounds = exprBounds && manager->rational(0) <= var && manager->rational(1) >= var;
+                    exprBounds = exprBounds && manager->rational(0) < var && var < manager->rational(1);
                 }
 
                 auto converter = storm::expressions::RationalFunctionToExpression<ValueType>(manager);
@@ -518,6 +518,10 @@ namespace storm {
                 s.add(exprToCheck2);
                 smtResult = s.check();
                 monDecr = smtResult == storm::solver::SmtSolver::CheckResult::Sat;
+                if (monIncr && monDecr) {
+                    monIncr = false;
+                    monDecr = false;
+                }
             }
             assert (!(monIncr && monDecr) || derivative.isZero());
 
