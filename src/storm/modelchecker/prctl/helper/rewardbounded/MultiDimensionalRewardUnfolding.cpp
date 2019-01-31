@@ -95,11 +95,11 @@ namespace storm {
                                 if ((!subformula.hasLowerBound(dim) && !subformula.hasUpperBound(dim)) || (subformula.hasLowerBound(dim) && !subformula.isLowerBoundStrict(dim) && !subformula.getLowerBound(dim).containsVariables() && storm::utility::isZero(subformula.getLowerBound(dim).evaluateAsRational()))) {
                                     dimensionWiseEpochSteps.push_back(std::vector<uint64_t>(model.getTransitionMatrix().getRowCount(), 0));
                                     dimension.scalingFactor = storm::utility::zero<ValueType>();
-                                    dimension.isNotBounded = true;
+                                    dimension.isBounded = false;
                                 } else if (subformula.getTimeBoundReference(dim).isTimeBound() || subformula.getTimeBoundReference(dim).isStepBound()) {
                                     dimensionWiseEpochSteps.push_back(std::vector<uint64_t>(model.getTransitionMatrix().getRowCount(), 1));
                                     dimension.scalingFactor = storm::utility::one<ValueType>();
-                                    dimension.isNotBounded = false;
+                                    dimension.isBounded = true;
                                 } else {
                                     STORM_LOG_ASSERT(subformula.getTimeBoundReference(dim).isRewardBound(), "Unexpected type of time bound.");
                                     std::string const& rewardName = subformula.getTimeBoundReference(dim).getRewardName();
@@ -110,7 +110,7 @@ namespace storm {
                                     auto discretizedRewardsAndFactor = storm::utility::vector::toIntegralVector<ValueType, uint64_t>(actionRewards);
                                     dimensionWiseEpochSteps.push_back(std::move(discretizedRewardsAndFactor.first));
                                     dimension.scalingFactor = std::move(discretizedRewardsAndFactor.second);
-                                    dimension.isNotBounded = false;
+                                    dimension.isBounded = true;
                                 }
                                 dimensions.emplace_back(std::move(dimension));
                             }
@@ -121,7 +121,7 @@ namespace storm {
                                 dimension.formula = subformula.restrictToDimension(dim);
                                 dimension.objectiveIndex = objIndex;
                                 dimension.isUpperBounded = true;
-                                dimension.isNotBounded = false;
+                                dimension.isBounded = true;
                                 if (subformula.getTimeBoundReference(dim).isTimeBound() || subformula.getTimeBoundReference(dim).isStepBound()) {
                                     dimensionWiseEpochSteps.push_back(std::vector<uint64_t>(model.getTransitionMatrix().getRowCount(), 1));
                                     dimension.scalingFactor = storm::utility::one<ValueType>();
@@ -229,7 +229,7 @@ namespace storm {
                             ValueType discretizedBound = storm::utility::convertNumber<ValueType>(bound.evaluateAsRational());
                             // We always consider upper bounds to be non-strict and lower bounds to be strict.
                             // Thus, >=N would become >N-1. However, note that the case N=0 needs extra treatment
-                            if (!dimensions[dim].isNotBounded) {
+                            if (dimensions[dim].isBounded) {
                                 discretizedBound /= dimensions[dim].scalingFactor;
                                 if (storm::utility::isInteger(discretizedBound)) {
                                     if (isStrict == dimensions[dim].isUpperBounded) {
@@ -250,11 +250,11 @@ namespace storm {
                 typename MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::Epoch MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::getStartEpoch() {
                     Epoch startEpoch = epochManager.getZeroEpoch();
                     for (uint64_t dim = 0; dim < epochManager.getDimensionCount(); ++dim) {
-                        if (dimensions[dim].isNotBounded) {
-                            epochManager.setBottomDimension(startEpoch, dim);
-                        } else {
+                        if (dimensions[dim].isBounded) {
                             STORM_LOG_ASSERT(dimensions[dim].maxValue,  "No max-value for dimension " << dim << " was given.");
                             epochManager.setDimensionOfEpoch(startEpoch, dim, dimensions[dim].maxValue.get());
+                        } else {
+                            epochManager.setBottomDimension(startEpoch, dim);
                         }
                     }
                     STORM_LOG_TRACE("Start epoch is " << epochManager.toString(startEpoch));
@@ -745,7 +745,6 @@ namespace storm {
                     }
                     predecessorEpochs.erase(currentEpoch.get());
                     successorEpochs.erase(currentEpoch.get());
-                    STORM_LOG_ASSERT(!predecessorEpochs.empty(), "There are no predecessors for the epoch " << epochManager.toString(currentEpoch.get()));
                     
                     // clean up solutions that are not needed anymore
                     for (auto const& successorEpoch : successorEpochs) {
@@ -794,7 +793,6 @@ namespace storm {
                 template<typename ValueType, bool SingleObjectiveMode>
                 typename MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::SolutionType const& MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::getInitialStateResult(Epoch const& epoch) {
                     STORM_LOG_ASSERT(model.getInitialStates().getNumberOfSetBits() == 1, "The model has multiple initial states.");
-                    STORM_LOG_ASSERT(!epochManager.hasBottomDimension(epoch), "Tried to get the initial state result in an epoch that still contains at least one bottom dimension.");
                     return getStateSolution(epoch, productModel->getInitialProductState(*model.getInitialStates().begin(), model.getInitialStates()));
                 }
     

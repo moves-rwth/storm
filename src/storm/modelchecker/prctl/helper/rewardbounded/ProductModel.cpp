@@ -460,11 +460,11 @@ namespace storm {
                     
                     Epoch startEpoch = epochManager.getZeroEpoch();
                     for (uint64_t dim = 0; dim < epochManager.getDimensionCount(); ++dim) {
-                        if (dimensions[dim].isNotBounded) {
-                            epochManager.setBottomDimension(startEpoch, dim);
-                        } else {
+                        if (dimensions[dim].isBounded) {
                             STORM_LOG_ASSERT(dimensions[dim].maxValue,  "No max-value for dimension " << dim << " was given.");
                             epochManager.setDimensionOfEpoch(startEpoch, dim, dimensions[dim].maxValue.get());
+                        } else {
+                            epochManager.setBottomDimension(startEpoch, dim);
                         }
                     }
                     
@@ -491,22 +491,24 @@ namespace storm {
                 void ProductModel<ValueType>::computeReachableStates(EpochClass const& epochClass, std::vector<EpochClass> const& predecessors) {
                     
                     storm::storage::BitVector bottomDimensions(epochManager.getDimensionCount(), false);
+                    bool considerInitialStates = true;
                     for (uint64_t dim = 0; dim < epochManager.getDimensionCount(); ++dim) {
                         if (epochManager.isBottomDimensionEpochClass(epochClass, dim)) {
                             bottomDimensions.set(dim, true);
+                            if (dimensions[dim].isBounded) {
+                                considerInitialStates = false;
+                            }
                         }
                     }
                     storm::storage::BitVector nonBottomDimensions = ~bottomDimensions;
                     
                     storm::storage::BitVector ecInStates(getProduct().getNumberOfStates(), false);
-                    
-                    if (!epochManager.hasBottomDimensionEpochClass(epochClass)) {
+                    if (considerInitialStates) {
                         for (auto const& initState : getProduct().getInitialStates()) {
                             uint64_t transformedInitState = transformProductState(initState, epochClass, memoryStateManager.getInitialMemoryState());
                             ecInStates.set(transformedInitState, true);
                         }
                     }
-                    
                     for (auto const& predecessor : predecessors) {
                         storm::storage::BitVector positiveStepDimensions(epochManager.getDimensionCount(), false);
                         for (uint64_t dim = 0; dim < epochManager.getDimensionCount(); ++dim) {

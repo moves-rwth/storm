@@ -238,10 +238,10 @@ namespace storm {
                     }
                 }
 
-                template class EpochModel<double, true>;
-                template class EpochModel<double, false>;
-                template class EpochModel<storm::RationalNumber, true>;
-                template class EpochModel<storm::RationalNumber, false>;
+                template struct EpochModel<double, true>;
+                template struct EpochModel<double, false>;
+                template struct EpochModel<storm::RationalNumber, true>;
+                template struct EpochModel<storm::RationalNumber, false>;
             }
         }
     }

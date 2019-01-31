@@ -21,8 +21,8 @@ namespace storm {
                     /// A label that indicates the states where this dimension is still relevant (i.e., it is yet unknown whether the corresponding objective holds)
                     boost::optional<std::string> memoryLabel;
 
-                    /// True iff the objective is not bounded at all (i.e., it has lower bound >= 0)
-                    bool isNotBounded;
+                    /// True iff the objective is bounded with either an upper bound or a lower bound which is not >= 0
+                    bool isBounded;
 
                     /// True iff the objective is upper bounded, false if it has a lower bound or no bound at all.
                     bool isUpperBounded;

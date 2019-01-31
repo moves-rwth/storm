@@ -53,7 +53,7 @@ namespace storm {
                          keptStates.set(stateActionsPair.first, false);
                      }
                 }
-                STORM_LOG_DEBUG("Found " << ecs.size() << " end components to eliminate. Keeping " << keptStates.getNumberOfSetBits() << " of " << keptStates.size() << " original states.");
+                STORM_LOG_DEBUG("Found " << ecs.size() << " end components to eliminate. Keeping " << keptStates.getNumberOfSetBits() << " of " << keptStates.size() << " original states plus " << ecs.size() << "new end component states.");
                 
                 EndComponentEliminatorReturnType result;
                 std::vector<uint_fast64_t> newRowGroupIndices;
