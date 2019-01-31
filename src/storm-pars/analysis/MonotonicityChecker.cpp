@@ -30,7 +30,7 @@
 namespace storm {
     namespace analysis {
         template <typename ValueType>
-        MonotonicityChecker<ValueType>::MonotonicityChecker(std::shared_ptr<storm::models::ModelBase> model, std::vector<std::shared_ptr<storm::logic::Formula const>> formulas, bool validate, bool sccElimination) {
+        MonotonicityChecker<ValueType>::MonotonicityChecker(std::shared_ptr<storm::models::ModelBase> model, std::vector<std::shared_ptr<storm::logic::Formula const>> formulas, bool validate) {
             outfile.open(filename, std::ios_base::app);
             this->model = model;
             this->formulas = formulas;

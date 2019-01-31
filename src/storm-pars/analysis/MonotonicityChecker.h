@@ -26,7 +26,7 @@ namespace storm {
         class MonotonicityChecker {
 
         public:
-            MonotonicityChecker(std::shared_ptr<storm::models::ModelBase> model, std::vector<std::shared_ptr<storm::logic::Formula const>> formulas, bool validate, bool sccElimination);
+            MonotonicityChecker(std::shared_ptr<storm::models::ModelBase> model, std::vector<std::shared_ptr<storm::logic::Formula const>> formulas, bool validate);
             /*!
              * Checks for all lattices in the map if they are monotone increasing or monotone decreasing.
              *
@@ -71,7 +71,7 @@ namespace storm {
             std::vector<std::shared_ptr<storm::logic::Formula const>> formulas;
 
             bool validate;
-            
+
             bool sccElimination;
 
             std::map<carl::Variable, std::pair<bool, bool>> resultCheckOnSamples;

@@ -638,7 +638,7 @@ namespace storm {
                 std::ofstream outfile;
                 outfile.open("results.txt", std::ios_base::app);
                 storm::utility::Stopwatch monotonicityWatch(true);
-                auto monotonicityChecker = storm::analysis::MonotonicityChecker<ValueType>(model, formulas, parSettings.isValidateAssumptionsSet(), parSettings.isSccEliminationSet());
+                auto monotonicityChecker = storm::analysis::MonotonicityChecker<ValueType>(model, formulas, parSettings.isValidateAssumptionsSet());
                 monotonicityChecker.checkMonotonicity();
                 monotonicityWatch.stop();
                 STORM_PRINT(std::endl << "Total time for monotonicity checking: " << monotonicityWatch << "." << std::endl
