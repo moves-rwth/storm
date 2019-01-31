@@ -89,8 +89,8 @@ namespace storm {
             }
         }
 
-        void Lattice::addBetween(uint_fast64_t state, Node *above, Node *below) {
-            assert(!addedStates[state]);
+            void Lattice::addBetween(uint_fast64_t state, Node *above, Node *below) {
+                assert(!addedStates[state]);
             assert(compare(above, below) == ABOVE);
 
             Node *newNode = new Node();

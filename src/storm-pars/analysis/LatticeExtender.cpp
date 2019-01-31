@@ -70,7 +70,7 @@ namespace storm {
 
             auto initialMiddleStates = storm::storage::BitVector(numberOfStates);
             // Check if MC contains cycles
-            // TODO maybe move to other place
+            // TODO maybe move to other place?
             auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<ValueType>(model->getTransitionMatrix(), false, false);
             acyclic = true;
             for (auto i = 0; acyclic && i < decomposition.size(); ++i) {
@@ -325,22 +325,21 @@ namespace storm {
 
                 } else if (!acyclic) {
                     // TODO: kan dit niet efficienter
-                    auto addedStates = lattice->getAddedStates();
-                    for (auto stateNumber = addedStates.getNextUnsetIndex(0); stateNumber < addedStates.size(); stateNumber = addedStates.getNextUnsetIndex(stateNumber+1)) {
+                    for (auto stateNumber = 0; stateNumber < numberOfStates; stateNumber++) {
+                        auto addedStates = lattice->getAddedStates();
+
                         // Iterate over all states
 //                        auto stateNumber = i;
                         storm::storage::BitVector successors = stateMap[stateNumber];
 
-                        auto seenStates = (lattice->getAddedStates());
-
                         // Check if current state has not been added yet, and all successors have
-                        bool check = !seenStates[stateNumber];
+                        bool check = !addedStates[stateNumber];
                         for (auto succIndex = successors.getNextSetIndex(0);
                              check && succIndex != successors.size(); succIndex = successors.getNextSetIndex(
                                 ++succIndex)) {
                             // if the stateNumber equals succIndex we have a self-loop, ignoring selfloop as seenStates[stateNumber] = false
                             if (succIndex != stateNumber) {
-                                check &= seenStates[succIndex];
+                                check &= addedStates[succIndex];
                             }
                         }
 
@@ -349,39 +348,35 @@ namespace storm {
                             if (std::get<1>(result) != successors.size()) {
                                 return result;
                             }
-                        }
+                        } else {
+                            // Checking for states which are already added to the lattice, and only have one successor left which haven't been added yet
+                            auto succ1 = successors.getNextSetIndex(0);
+                            auto succ2 = successors.getNextSetIndex(succ1 + 1);
 
-                        // Checking for states which are already added to the lattice, and only have one successor left which haven't been added yet
-                        auto succ1 = successors.getNextSetIndex(0);
-                        auto succ2 = successors.getNextSetIndex(succ1 + 1);
+                            if (addedStates[stateNumber] && successors.getNumberOfSetBits() == 2
+                                && ((addedStates[succ1] && !addedStates[succ2])
+                                        ||(!addedStates[succ1] && addedStates[succ2]))) {
 
-                        if (seenStates[stateNumber] && successors.getNumberOfSetBits() == 2
-                            && (seenStates[succ1] || seenStates[succ2])
-                            && (!seenStates[succ1] || !seenStates[succ2])) {
+                                if (!addedStates[succ1]) {
+                                    std::swap(succ1, succ2);
+                                }
 
-                            if (!seenStates[succ1]) {
-                                std::swap(succ1, succ2);
-                                std::swap(succ1, succ2);
-                            }
-
-                            auto compare = lattice->compare(stateNumber, succ1);
-                            if (compare == Lattice::ABOVE) {
-                                lattice->addBetween(succ2, lattice->getTop(), lattice->getNode(stateNumber));
-                            } else if (compare == Lattice::BELOW) {
-                                lattice->addBetween(succ2, lattice->getNode(stateNumber), lattice->getBottom());
-                            } else {
-                                // TODO: implement?
-                                assert(false);
+                                auto compare = lattice->compare(stateNumber, succ1);
+                                if (compare == Lattice::ABOVE) {
+                                    lattice->addBetween(succ2, lattice->getTop(), lattice->getNode(stateNumber));
+                                } else if (compare == Lattice::BELOW) {
+                                    lattice->addBetween(succ2, lattice->getNode(stateNumber), lattice->getBottom());
+                                } else {
+                                    assert(false);
+                                }
                             }
                         }
 
                     }
-                    // if nothing changed, then add a state
+                    // if nothing changed, then add a state between top and bottom
                     if (oldNumberSet == lattice->getAddedStates().getNumberOfSetBits() && oldNumberSet != numberOfStates) {
                         lattice->add(lattice->getAddedStates().getNextUnsetIndex(0));
                     }
-
-
                 }
             }
             assert (lattice->getAddedStates().getNumberOfSetBits() == numberOfStates);

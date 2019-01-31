@@ -648,7 +648,7 @@ namespace storm {
                 outfile.close();
                 std::cout << "Bye, Jip2" << std::endl;
 
-//                return;
+                return;
             }
 
             std::vector<storm::storage::ParameterRegion<ValueType>> regions = parseRegions<ValueType>(model);
