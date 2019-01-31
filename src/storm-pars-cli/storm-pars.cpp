@@ -564,7 +564,7 @@ namespace storm {
 
             if (parSettings.isSccEliminationSet()) {
                 // TODO: check for correct Model type
-                std::cout << "Applying scc elimination" << std::endl;
+                STORM_PRINT("Applying scc elimination" << std::endl);
                 auto sparseModel = model->as<storm::models::sparse::Model<ValueType>>();
                 auto matrix = sparseModel->getTransitionMatrix();
                 auto backwardsTransitionMatrix = matrix.transpose();
@@ -572,6 +572,7 @@ namespace storm {
                 auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<ValueType>(matrix, false, false);
 
                 storm::storage::BitVector selectedStates(matrix.getRowCount());
+                storm::storage::BitVector selfLoopStates(matrix.getRowCount());
                 for (auto i = 0; i < decomposition.size(); ++i) {
                     auto scc = decomposition.getBlock(i);
                     if (scc.size() > 1) {
@@ -588,6 +589,7 @@ namespace storm {
                             }
                             if (found) {
                                 entryStates.push_back(state);
+                                selfLoopStates.set(state);
                             } else {
                                 selectedStates.set(state);
                             }
@@ -607,6 +609,10 @@ namespace storm {
                 for(auto state : selectedStates) {
                     stateEliminator.eliminateState(state, true);
                 }
+                for (auto state : selfLoopStates) {
+                    auto row = flexibleMatrix.getRow(state);
+                    stateEliminator.eliminateLoop(state);
+                }
                 selectedStates.complement();
                 auto keptRows = matrix.getRowFilter(selectedStates);
                 storm::storage::SparseMatrix<ValueType> newTransitionMatrix = flexibleMatrix.createSparseMatrix(keptRows, selectedStates);
@@ -620,7 +626,7 @@ namespace storm {
                 model = std::make_shared<storm::models::sparse::Dtmc<ValueType>>(std::move(newTransitionMatrix), sparseModel->getStateLabeling().getSubLabeling(selectedStates));
 
 
-                std::cout << "SCC Elimination applied" << std::endl;
+                STORM_PRINT("SCC Elimination applied" << std::endl);
             }
 
             if (parSettings.isMonotonicityAnalysisSet()) {
