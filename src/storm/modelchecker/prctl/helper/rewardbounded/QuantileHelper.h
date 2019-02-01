@@ -19,16 +19,33 @@ namespace storm {
                 public:
                     QuantileHelper(ModelType const& model, storm::logic::QuantileFormula const& quantileFormula);
 
-                    std::vector<std::vector<ValueType>> computeMultiDimensionalQuantile(Environment const& env);
-
-
+                    std::vector<std::vector<ValueType>> computeQuantile(Environment const& env);
 
                 private:
-                    bool computeUnboundedValue(Environment const& env);
-
+                    
+                    /*!
+                     * Computes the infimum over bound values in minimizing dimensions / the supremum over bound values in maximizing dimensions
+                     * @param minimizingDimensions marks dimensions which should be minimized. The remaining dimensions are either not open or maximizing.
+                     */
+                    ValueType computeExtremalValue(Environment const& env, storm::storage::BitVector const& minimizingDimensions) const;
+                    
+                    
+                    /// Computes the quantile with respect to the given dimension
+                    std::pair<uint64_t, typename ModelType::ValueType> computeQuantileForDimension(Environment const& env, uint64_t dim) const;
+                    
+                    /*!
+                     * Gets the number of dimensions of the underlying boudned until formula
+                     */
                     uint64_t getDimension() const;
-                    storm::storage::BitVector getDimensionsForVariable(storm::expressions::Variable const& var);
-
+                    
+                    /*!
+                     * Gets the dimensions that are open, i.e., for which the bound value is not fixed
+                     * @return
+                     */
+                    storm::storage::BitVector getOpenDimensions() const;
+                    
+                    storm::storage::BitVector getDimensionsForVariable(storm::expressions::Variable const& var) const;
+                    storm::solver::OptimizationDirection const& getOptimizationDirForDimension(uint64_t const& dim) const;
 
                     ModelType const& model;
                     storm::logic::QuantileFormula const& quantileFormula;

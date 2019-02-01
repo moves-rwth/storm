@@ -233,7 +233,7 @@ namespace storm {
             uint64_t initialState = *this->getModel().getInitialStates().begin();
 
             helper::rewardbounded::QuantileHelper<SparseMdpModelType> qHelper(this->getModel(), checkTask.getFormula());
-            auto res = qHelper.computeMultiDimensionalQuantile(env);
+            auto res = qHelper.computeQuantile(env);
             
             if (res.size() == 1 && res.front().size() == 1) {
                 return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(initialState, std::move(res.front().front())));
