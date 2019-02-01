@@ -36,11 +36,16 @@ namespace storm {
                      *
                      */
                     MultiDimensionalRewardUnfolding(storm::models::sparse::Model<ValueType> const& model, std::vector<storm::modelchecker::multiobjective::Objective<ValueType>> const& objectives);
-                    MultiDimensionalRewardUnfolding(storm::models::sparse::Model<ValueType> const& model, std::shared_ptr<storm::logic::OperatorFormula const> objectiveFormula);
+                    MultiDimensionalRewardUnfolding(storm::models::sparse::Model<ValueType> const& model, std::shared_ptr<storm::logic::OperatorFormula const> objectiveFormula, std::function<void(std::vector<Epoch>&, EpochManager const&)> const& epochStepsCallback = nullptr);
                     
                     ~MultiDimensionalRewardUnfolding() = default;
                     
-                    Epoch getStartEpoch();
+                    /*!
+                     * Retrieves the desired epoch that needs to be analyzed to compute the reward bounded values.
+                     * @param setUnknownDimsToBottom if true, dimensions for which no maxValue is known are set to the bottom dimension. If false, an exception is thrown if there are unknown maxValues.
+                     */
+                    Epoch getStartEpoch(bool setUnknownDimsToBottom = false);
+                    
                     std::vector<Epoch> getEpochComputationOrder(Epoch const& startEpoch);
                     
                     EpochModel<ValueType, SingleObjectiveMode>& setCurrentEpoch(Epoch const& epoch);
@@ -68,7 +73,7 @@ namespace storm {
                 private:
                 
                     void setCurrentEpochClass(Epoch const& epoch);
-                    void initialize();
+                    void initialize(std::function<void(std::vector<Epoch>&, EpochManager const&)> const& epochStepsCallback = nullptr);
                     
                     void initializeObjectives(std::vector<Epoch>& epochSteps);
                     void computeMaxDimensionValues();

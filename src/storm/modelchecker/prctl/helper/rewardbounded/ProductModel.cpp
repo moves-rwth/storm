@@ -458,10 +458,11 @@ namespace storm {
                 template<typename ValueType>
                 void ProductModel<ValueType>::collectReachableEpochClasses(std::set<EpochClass, std::function<bool(EpochClass const&, EpochClass const&)>>& reachableEpochClasses, std::set<Epoch> const& possibleSteps) const {
                     
+                    // Get the start epoch according to the given bounds.
+                    // For dimensions for which no bound (aka. maxValue) is known, we will later overapproximate the set of reachable classes.
                     Epoch startEpoch = epochManager.getZeroEpoch();
                     for (uint64_t dim = 0; dim < epochManager.getDimensionCount(); ++dim) {
-                        if (dimensions[dim].isBounded) {
-                            STORM_LOG_ASSERT(dimensions[dim].maxValue,  "No max-value for dimension " << dim << " was given.");
+                        if (dimensions[dim].maxValue) {
                             epochManager.setDimensionOfEpoch(startEpoch, dim, dimensions[dim].maxValue.get());
                         } else {
                             epochManager.setBottomDimension(startEpoch, dim);
@@ -482,6 +483,21 @@ namespace storm {
                             if (seenEpochs.insert(successorEpoch).second) {
                                 reachableEpochClasses.insert(epochManager.getEpochClass(successorEpoch));
                                 dfsStack.push_back(std::move(successorEpoch));
+                            }
+                        }
+                    }
+                    
+                    // Also treat dimensions without a priori bound
+                    for (uint64_t dim = 0; dim < epochManager.getDimensionCount(); ++dim) {
+                        if (!dimensions[dim].maxValue) {
+                            std::vector<EpochClass> newClasses;
+                            for (auto const& c : reachableEpochClasses) {
+                                auto newClass = c;
+                                epochManager.setDimensionOfEpochClass(newClass, dim, false);
+                                newClasses.push_back(newClass);
+                            }
+                            for (auto const& c: newClasses) {
+                                reachableEpochClasses.insert(c);
                             }
                         }
                     }

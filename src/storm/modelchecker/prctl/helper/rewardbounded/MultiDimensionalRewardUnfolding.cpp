@@ -31,7 +31,7 @@ namespace storm {
                 }
                 
                 template<typename ValueType, bool SingleObjectiveMode>
-                MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::MultiDimensionalRewardUnfolding(storm::models::sparse::Model<ValueType> const& model, std::shared_ptr<storm::logic::OperatorFormula const> objectiveFormula) : model(model) {
+                MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::MultiDimensionalRewardUnfolding(storm::models::sparse::Model<ValueType> const& model, std::shared_ptr<storm::logic::OperatorFormula const> objectiveFormula, std::function<void(std::vector<Epoch>&, EpochManager const&)> const& epochStepsCallback) : model(model) {
                     
                     if (objectiveFormula->isProbabilityOperatorFormula()) {
                         if (objectiveFormula->getSubformula().isMultiObjectiveFormula()) {
@@ -53,18 +53,28 @@ namespace storm {
                     objective.considersComplementaryEvent = false;
                     objectives.push_back(std::move(objective));
                     
-                    initialize();
+                    initialize(epochStepsCallback);
                 }
         
         
                 template<typename ValueType, bool SingleObjectiveMode>
-                void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::initialize() {
+                void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::initialize(std::function<void(std::vector<Epoch>&, EpochManager const&)> const& epochStepsCallback) {
                     
                     maxSolutionsStored = 0;
                     
                     STORM_LOG_ASSERT(!SingleObjectiveMode || (this->objectives.size() == 1), "Enabled single objective mode but there are multiple objectives.");
                     std::vector<Epoch> epochSteps;
                     initializeObjectives(epochSteps);
+                    
+                    if (epochStepsCallback) {
+                        epochStepsCallback(epochSteps, epochManager);
+                    }
+                    // collect which epoch steps are possible
+                    possibleEpochSteps.clear();
+                    for (auto const& step : epochSteps) {
+                        possibleEpochSteps.insert(step);
+                    }
+                    
                     initializeMemoryProduct(epochSteps);
                 }
                 
@@ -186,12 +196,6 @@ namespace storm {
                         epochSteps.push_back(step);
                     }
                     
-                    // collect which epoch steps are possible
-                    possibleEpochSteps.clear();
-                    for (auto const& step : epochSteps) {
-                        possibleEpochSteps.insert(step);
-                    }
-                    
                     // Set the maximal values we need to consider for each dimension
                     computeMaxDimensionValues();
                     
@@ -247,13 +251,13 @@ namespace storm {
                 }
         
                 template<typename ValueType, bool SingleObjectiveMode>
-                typename MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::Epoch MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::getStartEpoch() {
+                typename MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::Epoch MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::getStartEpoch(bool setUnknownDimsToBottom) {
                     Epoch startEpoch = epochManager.getZeroEpoch();
                     for (uint64_t dim = 0; dim < epochManager.getDimensionCount(); ++dim) {
-                        if (dimensions[dim].isBounded) {
-                            STORM_LOG_ASSERT(dimensions[dim].maxValue,  "No max-value for dimension " << dim << " was given.");
+                        if (dimensions[dim].isBounded && dimensions[dim].maxValue) {
                             epochManager.setDimensionOfEpoch(startEpoch, dim, dimensions[dim].maxValue.get());
                         } else {
+                            STORM_LOG_THROW(setUnknownDimsToBottom || !dimensions[dim].isBounded, storm::exceptions::UnexpectedException, "Tried to obtain the start epoch although not all dimensions are known.");
                             epochManager.setBottomDimension(startEpoch, dim);
                         }
                     }
@@ -799,7 +803,6 @@ namespace storm {
                 template<typename ValueType, bool SingleObjectiveMode>
                 typename MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::SolutionType const& MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::getInitialStateResult(Epoch const& epoch, uint64_t initialStateIndex) {
                     STORM_LOG_ASSERT(model.getInitialStates().get(initialStateIndex), "The given model state is not an initial state.");
-                    STORM_LOG_ASSERT(!epochManager.hasBottomDimension(epoch), "Tried to get the initial state result in an epoch that still contains at least one bottom dimension.");
                     return getStateSolution(epoch, productModel->getInitialProductState(initialStateIndex, model.getInitialStates()));
                 }
     
