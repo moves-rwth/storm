@@ -72,8 +72,6 @@ namespace storm {
 
             bool validate;
 
-            bool sccElimination;
-
             std::map<carl::Variable, std::pair<bool, bool>> resultCheckOnSamples;
 
             storm::analysis::LatticeExtender<ValueType> *extender;

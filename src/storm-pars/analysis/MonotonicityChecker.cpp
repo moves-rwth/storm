@@ -35,7 +35,6 @@ namespace storm {
             this->model = model;
             this->formulas = formulas;
             this->validate = validate;
-            this->sccElimination = sccElimination;
             this->resultCheckOnSamples = std::map<carl::Variable, std::pair<bool, bool>>();
             if (model != nullptr) {
                 std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel = model->as<storm::models::sparse::Model<ValueType>>();

@@ -563,6 +563,7 @@ namespace storm {
             }
 
             if (parSettings.isSccEliminationSet()) {
+                storm::utility::Stopwatch eliminationWatch(true);
                 // TODO: check for correct Model type
                 STORM_PRINT("Applying scc elimination" << std::endl);
                 auto sparseModel = model->as<storm::models::sparse::Model<ValueType>>();
@@ -617,16 +618,11 @@ namespace storm {
                 auto keptRows = matrix.getRowFilter(selectedStates);
                 storm::storage::SparseMatrix<ValueType> newTransitionMatrix = flexibleMatrix.createSparseMatrix(keptRows, selectedStates);
                 // TODO: rewards get lost
-                // obtain the reward model for the resulting system
-//                std::unordered_map<std::string, RewardModelType> rewardModels;
-//                if(rewardModelName) {
-//                    storm::utility::vector::filterVectorInPlace(actionRewards, keptRows);
-//                    rewardModels.insert(std::make_pair(*rewardModelName, RewardModelType(boost::none, std::move(actionRewards))));
-//                }
                 model = std::make_shared<storm::models::sparse::Dtmc<ValueType>>(std::move(newTransitionMatrix), sparseModel->getStateLabeling().getSubLabeling(selectedStates));
 
-
-                STORM_PRINT("SCC Elimination applied" << std::endl);
+                eliminationWatch.stop();
+                STORM_PRINT(std::endl << "Time for scc elimination: " << eliminationWatch << "." << std::endl << std::endl);
+                model->printModelInformationToStream(std::cout);
             }
 
             if (parSettings.isMonotonicityAnalysisSet()) {

@@ -112,6 +112,8 @@ namespace storm {
                 }
             }
 
+            statesToHandle = initialMiddleStates;
+
             // Create the Lattice
             Lattice *lattice = new Lattice(topStates, bottomStates, initialMiddleStates, numberOfStates);
 
@@ -325,57 +327,70 @@ namespace storm {
 
                 } else if (!acyclic) {
                     // TODO: kan dit niet efficienter
-                    for (auto stateNumber = 0; stateNumber < numberOfStates; stateNumber++) {
-                        auto addedStates = lattice->getAddedStates();
+                    auto addedStates = lattice->getAddedStates();
+                    if (assumptionSeen) {
+                        statesToHandle = addedStates;
+                    }
+                    auto stateNumber = statesToHandle.getNextSetIndex(0);
+                    while (stateNumber != numberOfStates) {
+                        addedStates = lattice->getAddedStates();
+                        storm::storage::BitVector successors = stateMap[stateNumber];
+                        // Checking for states which are already added to the lattice, and only have one successor left which haven't been added yet
+                        auto succ1 = successors.getNextSetIndex(0);
+                        auto succ2 = successors.getNextSetIndex(succ1 + 1);
 
-                        // Iterate over all states
-//                        auto stateNumber = i;
+                        assert (addedStates[stateNumber]);
+                        if (successors.getNumberOfSetBits() == 2
+                            && ((addedStates[succ1] && !addedStates[succ2])
+                                || (!addedStates[succ1] && addedStates[succ2]))) {
+
+                            if (!addedStates[succ1]) {
+                                std::swap(succ1, succ2);
+                            }
+
+                            auto compare = lattice->compare(stateNumber, succ1);
+                            if (compare == Lattice::ABOVE) {
+                                lattice->addBetween(succ2, lattice->getTop(), lattice->getNode(stateNumber));
+                            } else if (compare == Lattice::BELOW) {
+                                lattice->addBetween(succ2, lattice->getNode(stateNumber), lattice->getBottom());
+                            } else {
+                                assert(false);
+                            }
+                            statesToHandle.set(succ2);
+                            statesToHandle.set(stateNumber, false);
+                            stateNumber = statesToHandle.getNextSetIndex(0);
+                        } else if (!((addedStates[succ1] && !addedStates[succ2])
+                                     || (!addedStates[succ1] && addedStates[succ2]))) {
+                            stateNumber = statesToHandle.getNextSetIndex(stateNumber + 1);
+                        } else {
+                            assert (successors.getNumberOfSetBits() == 2);
+                            statesToHandle.set(stateNumber, false);
+                            stateNumber = statesToHandle.getNextSetIndex(0);
+                        }
+                    }
+
+                    addedStates = lattice->getAddedStates();
+                    for (auto stateNumber = addedStates.getNextUnsetIndex(0); stateNumber < numberOfStates; stateNumber = addedStates.getNextUnsetIndex(stateNumber + 1)) {
+                        // Iterate over all not yet added states
                         storm::storage::BitVector successors = stateMap[stateNumber];
 
-                        // Check if current state has not been added yet, and all successors have
-                        bool check = !addedStates[stateNumber];
-                        for (auto succIndex = successors.getNextSetIndex(0);
-                             check && succIndex != successors.size(); succIndex = successors.getNextSetIndex(
-                                ++succIndex)) {
-                            // if the stateNumber equals succIndex we have a self-loop, ignoring selfloop as seenStates[stateNumber] = false
-                            if (succIndex != stateNumber) {
-                                check &= addedStates[succIndex];
-                            }
-                        }
-
-                        if (check) {
+                        // Check if current state has not been added yet, and all successors have, ignore selfloop in this
+                        successors.set(stateNumber, false);
+                        if ((successors & addedStates) == successors) {
                             auto result = extendAllSuccAdded(lattice, stateNumber, successors);
                             if (std::get<1>(result) != successors.size()) {
                                 return result;
                             }
-                        } else {
-                            // Checking for states which are already added to the lattice, and only have one successor left which haven't been added yet
-                            auto succ1 = successors.getNextSetIndex(0);
-                            auto succ2 = successors.getNextSetIndex(succ1 + 1);
-
-                            if (addedStates[stateNumber] && successors.getNumberOfSetBits() == 2
-                                && ((addedStates[succ1] && !addedStates[succ2])
-                                        ||(!addedStates[succ1] && addedStates[succ2]))) {
-
-                                if (!addedStates[succ1]) {
-                                    std::swap(succ1, succ2);
-                                }
-
-                                auto compare = lattice->compare(stateNumber, succ1);
-                                if (compare == Lattice::ABOVE) {
-                                    lattice->addBetween(succ2, lattice->getTop(), lattice->getNode(stateNumber));
-                                } else if (compare == Lattice::BELOW) {
-                                    lattice->addBetween(succ2, lattice->getNode(stateNumber), lattice->getBottom());
-                                } else {
-                                    assert(false);
-                                }
-                            }
+                            statesToHandle.set(stateNumber);
                         }
-
                     }
-                    // if nothing changed, then add a state between top and bottom
+
+
+                    // if nothing changed and there are states left, then add a state between top and bottom
                     if (oldNumberSet == lattice->getAddedStates().getNumberOfSetBits() && oldNumberSet != numberOfStates) {
-                        lattice->add(lattice->getAddedStates().getNextUnsetIndex(0));
+                        auto stateNumber = lattice->getAddedStates().getNextUnsetIndex(0);
+                        lattice->add(stateNumber);
+                        statesToHandle.set(stateNumber);
                     }
                 }
             }
