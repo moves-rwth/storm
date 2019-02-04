@@ -52,7 +52,7 @@ namespace storm {
         private:
             std::shared_ptr<storm::models::sparse::Model<ValueType>> model;
 
-            std::map<uint_fast64_t, storm::storage::BitVector> stateMap;
+            std::map<uint_fast64_t, storm::storage::BitVector*> stateMap;
 
             std::vector<uint_fast64_t> statesSorted;
 
@@ -60,11 +60,11 @@ namespace storm {
 
             bool assumptionSeen;
 
-            storm::storage::BitVector statesToHandle;
+            storm::storage::BitVector* statesToHandle;
 
             void handleAssumption(Lattice* lattice, std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption);
 
-            std::tuple<Lattice*, uint_fast64_t, uint_fast64_t> extendAllSuccAdded(Lattice* lattice, uint_fast64_t stateNumber, storm::storage::BitVector successors);
+            std::tuple<Lattice*, uint_fast64_t, uint_fast64_t> extendAllSuccAdded(Lattice* lattice, uint_fast64_t const & stateNumber, storm::storage::BitVector* successors);
         };
     }
 }

@@ -62,6 +62,10 @@ namespace storm {
 
             std::pair<bool, bool> checkDerivative(ValueType derivative);
 
+            std::unordered_map<ValueType, std::unordered_map<carl::Variable, ValueType>> derivatives;
+
+            ValueType getDerivative(ValueType function, carl::Variable var);
+
             std::vector<storm::storage::ParameterRegion<ValueType>> checkAssumptionsOnRegion(std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>> assumptions);
 
             std::map<storm::analysis::Lattice*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> extendLatticeWithAssumptions(storm::analysis::Lattice* lattice, storm::analysis::AssumptionMaker<ValueType>* assumptionMaker, uint_fast64_t val1, uint_fast64_t val2, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>> assumptions);

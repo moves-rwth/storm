@@ -38,7 +38,7 @@ TEST(MonotonicityCheckerTest, Monotone_no_model) {
     auto below = storm::storage::BitVector(numberOfStates);
     below.set(0);
     auto initialMiddle = storm::storage::BitVector(numberOfStates);
-    auto lattice = storm::analysis::Lattice(above, below, initialMiddle, numberOfStates);
+    auto lattice = storm::analysis::Lattice(&above, &below, &initialMiddle, numberOfStates);
     lattice.add(2);
     lattice.add(3);
     // Build map
@@ -84,7 +84,7 @@ TEST(MonotonicityCheckerTest, Not_monotone_no_model) {
     auto below = storm::storage::BitVector(numberOfStates);
     below.set(0);
     auto initialMiddle = storm::storage::BitVector(numberOfStates);
-    auto lattice = storm::analysis::Lattice(above, below, initialMiddle, numberOfStates);
+    auto lattice = storm::analysis::Lattice(&above, &below, &initialMiddle, numberOfStates);
     lattice.add(2);
     lattice.add(3);
     // Build map

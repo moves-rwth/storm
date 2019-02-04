@@ -19,7 +19,7 @@ namespace storm {
                     struct Node {
                         storm::storage::BitVector states;
                         storm::storage::BitVector statesAbove;
-                        storm::storage::BitVector statesBelow;
+//                        storm::storage::BitVector statesBelow;
                     };
 
                     /*!
@@ -28,9 +28,9 @@ namespace storm {
                      * @param topNode The top node of the resulting lattice.
                      * @param bottomNode The bottom node of the resulting lattice.
                      */
-                    Lattice(storm::storage::BitVector topStates,
-                            storm::storage::BitVector bottomStates,
-                            storm::storage::BitVector initialMiddleStates,
+                    Lattice(storm::storage::BitVector* topStates,
+                            storm::storage::BitVector* bottomStates,
+                            storm::storage::BitVector* initialMiddleStates,
                             uint_fast64_t numberOfStates);
 
                     /*!
@@ -117,39 +117,41 @@ namespace storm {
                      *
                      * @return The BitVector with all added states.
                      */
-                    storm::storage::BitVector getAddedStates();
+                    storm::storage::BitVector* getAddedStates();
 
-                    /*!
-                     * Returns a set with the nodes which are above the state.
-                     *
-                     * @param state The state number.
-                     * @return The set with all nodes which are above the state.
-                     */
-                    std::set<Lattice::Node*> getAbove(uint_fast64_t state);
+                    std::vector<uint_fast64_t> sortStates(storm::storage::BitVector* states);
 
-                    /*!
-                     * Returns a set with the nodes which are below the state.
-                     *
-                     * @param state The state number.
-                     * @return The set with all nodes which are below the state.
-                     */
-                    std::set<Lattice::Node*> getBelow(uint_fast64_t state);
-
-                    /*!
-                     * Returns a set with the nodes which are above the node.
-                     *
-                     * @param node The node.
-                     * @return The set with all nodes which are above the node.
-                     */
-                    std::set<Lattice::Node*> getAbove(Lattice::Node* node);
-
-                    /*!
-                     * Returns a set with the nodes which are below the node.
-                     *
-                     * @param node The node.
-                     * @return The set with all nodes which are below the node.
-                     */
-                    std::set<Lattice::Node*> getBelow(Lattice::Node* node);
+//                    /*!
+//                     * Returns a set with the nodes which are above the state.
+//                     *
+//                     * @param state The state number.
+//                     * @return The set with all nodes which are above the state.
+//                     */
+//                    std::set<Lattice::Node*> getAbove(uint_fast64_t state);
+//
+//                    /*!
+//                     * Returns a set with the nodes which are below the state.
+//                     *
+//                     * @param state The state number.
+//                     * @return The set with all nodes which are below the state.
+//                     */
+//                    std::set<Lattice::Node*> getBelow(uint_fast64_t state);
+//
+//                    /*!
+//                     * Returns a set with the nodes which are above the node.
+//                     *
+//                     * @param node The node.
+//                     * @return The set with all nodes which are above the node.
+//                     */
+//                    std::set<Lattice::Node*> getAbove(Lattice::Node* node);
+//
+//                    /*!
+//                     * Returns a set with the nodes which are below the node.
+//                     *
+//                     * @param node The node.
+//                     * @return The set with all nodes which are below the node.
+//                     */
+//                    std::set<Lattice::Node*> getBelow(Lattice::Node* node);
 
                     /*!
                      * Prints a string representation of the lattice to the output stream.
@@ -185,7 +187,7 @@ namespace storm {
                 private:
                     std::vector<Node*> nodes;
 
-                    storm::storage::BitVector addedStates;
+                    storm::storage::BitVector* addedStates;
 
                     Node* top;
 
@@ -195,15 +197,17 @@ namespace storm {
 
                     bool above(Node * node1, Node * node2);
 
+                    bool above(Node * node1, Node * node2, storm::analysis::Lattice::Node *nodePrev, storm::storage::BitVector *statesSeen);
+
                     int compare(Node* node1, Node* node2);
 
-                    void setStatesAbove(Node* node, uint_fast64_t state, bool alreadyInitialized);
+//                    void setStatesAbove(Node* node, uint_fast64_t state, bool alreadyInitialized);
 
-                    void setStatesBelow(Node* node, uint_fast64_t state, bool alreadyInitialized);
+//                    void setStatesBelow(Node* node, uint_fast64_t state, bool alreadyInitialized);
 
-                    void setStatesAbove(storm::analysis::Lattice::Node *node, storm::storage::BitVector states, bool alreadyInitialized);
+//                    void setStatesAbove(storm::analysis::Lattice::Node *node, storm::storage::BitVector states, bool alreadyInitialized);
 
-                    void setStatesBelow(storm::analysis::Lattice::Node *node, storm::storage::BitVector states, bool alreadyInitialized);
+//                    void setStatesBelow(storm::analysis::Lattice::Node *node, storm::storage::BitVector states, bool alreadyInitialized);
                 };
             }
 }

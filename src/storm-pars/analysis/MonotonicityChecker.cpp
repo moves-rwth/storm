@@ -26,6 +26,7 @@
 #include "storm/storage/expressions/ExpressionManager.h"
 
 #include "storm/storage/expressions/RationalFunctionToExpression.h"
+#include "storm/utility/constants.h"
 
 namespace storm {
     namespace analysis {
@@ -151,8 +152,8 @@ namespace storm {
                 for (auto itr = map.begin(); i < map.size() && itr != map.end(); ++itr) {
                     auto lattice = itr->first;
 
-                    auto addedStates = lattice->getAddedStates().getNumberOfSetBits();
-                    assert (addedStates == lattice->getAddedStates().size());
+                    auto addedStates = lattice->getAddedStates()->getNumberOfSetBits();
+                    assert (addedStates == lattice->getAddedStates()->size());
                     std::map<carl::Variable, std::pair<bool, bool>> varsMonotone = analyseMonotonicity(i, lattice,
                                                                                                       matrix);
 
@@ -299,7 +300,7 @@ namespace storm {
             auto numberOfStates = model->getNumberOfStates();
             if (val1 == numberOfStates || val2 == numberOfStates) {
                 assert (val1 == val2);
-                assert (lattice->getAddedStates().size() == lattice->getAddedStates().getNumberOfSetBits());
+                assert (lattice->getAddedStates()->size() == lattice->getAddedStates()->getNumberOfSetBits());
                 result.insert(std::pair<storm::analysis::Lattice*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>>(lattice, assumptions));
             } else {
 
@@ -389,25 +390,54 @@ namespace storm {
         }
 
         template <typename ValueType>
+        ValueType MonotonicityChecker<ValueType>::getDerivative(ValueType function, carl::Variable var) {
+            if (function.isConstant()) {
+                return storm::utility::zero<ValueType>();
+            }
+            if ((derivatives[function]).find(var) == (derivatives[function]).end()) {
+                (derivatives[function])[var] = function.derivative(var);
+            }
+
+            return (derivatives[function])[var];
+        }
+
+        template <typename ValueType>
         std::map<carl::Variable, std::pair<bool, bool>> MonotonicityChecker<ValueType>::analyseMonotonicity(uint_fast64_t j, storm::analysis::Lattice* lattice, storm::storage::SparseMatrix<ValueType> matrix) {
 //            storm::utility::Stopwatch analyseWatch(true);
 
+            std::cout << "Analyzing monotonicity" << std::endl;
             std::map<carl::Variable, std::pair<bool, bool>> varsMonotone;
 
             for (uint_fast64_t i = 0; i < matrix.getColumnCount(); ++i) {
                 // go over all rows
                 auto row = matrix.getRow(i);
-                auto first = (*row.begin());
-                if (first.getValue() != ValueType(1)) {
+                // only enter if you are in a state with at least two successors (so there must be successors,
+                // and first prob shouldnt be 1)
+                if (row.begin() != row.end() && !row.begin()->getValue().isOne()) {
                     std::map<uint_fast64_t, ValueType> transitions;
 
-                    for (auto itr = row.begin(); itr != row.end(); ++itr) {
-                        transitions.insert(std::pair<uint_fast64_t, ValueType>((*itr).getColumn(), (*itr).getValue()));
+                    auto states = new storm::storage::BitVector(matrix.getColumnCount());
+                    std::set<carl::Variable> vars;
+                    for (auto const& entry : row) {
+                        if (!entry.getValue().isConstant()) {
+                            // only analyse take non constant transitions
+                            transitions.insert(std::pair<uint_fast64_t, ValueType>(entry.getColumn(), entry.getValue()));
+                            for (auto const& var:entry.getValue().gatherVariables()) {
+                                vars.insert(var);
+                                states->set(entry.getColumn());
+                            }
+                        }
                     }
 
-                    auto val = first.getValue();
-                    auto vars = val.gatherVariables();
-                    for (auto itr = vars.begin(); itr != vars.end(); ++itr) {
+                    auto sortedStates = lattice->sortStates(states);
+
+                    assert (sortedStates.size() >=2);
+
+                    assert (sortedStates.size() == states->getNumberOfSetBits());
+                    if (sortedStates[sortedStates.size() - 1] == -1) {
+//                    auto val = first.getValue();
+//                    auto vars = val.gatherVariables();
+                        for (auto itr = vars.begin(); itr != vars.end(); ++itr) {
 //                        if (resultCheckOnSamples.find(*itr) != resultCheckOnSamples.end() &&
 //                            (!resultCheckOnSamples[*itr].first && !resultCheckOnSamples[*itr].second)) {
 //                            if (varsMonotone.find(*itr) == varsMonotone.end()) {
@@ -422,42 +452,85 @@ namespace storm {
                             std::pair<bool, bool> *value = &varsMonotone.find(*itr)->second;
                             std::pair<bool, bool> old = *value;
 
+
+                            // states are not properly sorted
                             for (auto itr2 = transitions.begin(); itr2 != transitions.end(); ++itr2) {
                                 for (auto itr3 = transitions.begin(); itr3 != transitions.end(); ++itr3) {
-                                    auto derivative2 = itr2->second.derivative(*itr);
-                                    auto derivative3 = itr3->second.derivative(*itr);
+                                    if (itr2->first < itr3->first) {
 
-                                    auto compare = lattice->compare(itr2->first, itr3->first);
+                                        auto derivative2 = getDerivative(itr2->second, *itr);
+                                        auto derivative3 = getDerivative(itr3->second, *itr);
 
-                                    if (compare == storm::analysis::Lattice::ABOVE) {
-                                        // As the first state (itr2) is above the second state (itr3) it is sufficient to look at the derivative of itr2.
-                                        std::pair<bool,bool> mon2;
-                                        if (derivative2.isConstant()) {
-                                            mon2 = std::pair<bool,bool>(derivative2.constantPart() >= 0, derivative2.constantPart() <=0);
+                                        auto compare = lattice->compare(itr2->first, itr3->first);
+
+                                        if (compare == storm::analysis::Lattice::ABOVE) {
+                                            // As the first state (itr2) is above the second state (itr3) it is sufficient to look at the derivative of itr2.
+                                            std::pair<bool, bool> mon2;
+                                            if (derivative2.isConstant()) {
+                                                mon2 = std::pair<bool, bool>(derivative2.constantPart() >= 0,
+                                                                             derivative2.constantPart() <= 0);
+                                            } else {
+                                                mon2 = checkDerivative(derivative2);
+                                            }
+                                            value->first &= mon2.first;
+                                            value->second &= mon2.second;
+                                        } else if (compare == storm::analysis::Lattice::BELOW) {
+                                            // As the second state (itr3) is above the first state (itr2) it is sufficient to look at the derivative of itr3.
+                                            std::pair<bool, bool> mon3;
+                                            if (derivative2.isConstant()) {
+                                                mon3 = std::pair<bool, bool>(derivative3.constantPart() >= 0,
+                                                                             derivative3.constantPart() <= 0);
+                                            } else {
+                                                mon3 = checkDerivative(derivative3);
+                                            }
+                                            value->first &= mon3.first;
+                                            value->second &= mon3.second;
+                                        } else if (compare == storm::analysis::Lattice::SAME) {
+                                            // TODO: klopt dit
+                                            // Behaviour doesn't matter, as the states are at the same level.
                                         } else {
-                                            mon2 = checkDerivative(derivative2);
+                                            // As the relation between the states is unknown, we can't claim anything about the monotonicity.
+                                            value->first = false;
+                                            value->second = false;
                                         }
-                                        value->first &= mon2.first;
-                                        value->second &= mon2.second;
-                                    } else if (compare == storm::analysis::Lattice::BELOW) {
-                                        // As the second state (itr3) is above the first state (itr2) it is sufficient to look at the derivative of itr3.
-                                        std::pair<bool,bool> mon3;
-                                        if (derivative2.isConstant()) {
-                                            mon3 = std::pair<bool,bool>(derivative3.constantPart() >= 0, derivative3.constantPart() <=0);
-                                        } else {
-                                            mon3 = checkDerivative(derivative3);
-                                        }
-                                        value->first &= mon3.first;
-                                        value->second &= mon3.second;
-                                    } else if (compare == storm::analysis::Lattice::SAME) {
-                                        // TODO: klopt dit
-                                        // Behaviour doesn't matter, as the states are at the same level.
-                                    } else {
-                                        // As the relation between the states is unknown, we can't claim anything about the monotonicity.
-                                        value->first = false;
-                                        value->second = false;
                                     }
 //                                }
+                                }
+                            }
+                        }
+                    } else {
+                        bool change = false;
+                        for (auto var : vars) {
+//                        if (resultCheckOnSamples.find(*itr) != resultCheckOnSamples.end() &&
+//                            (!resultCheckOnSamples[*itr].first && !resultCheckOnSamples[*itr].second)) {
+//                            if (varsMonotone.find(*itr) == varsMonotone.end()) {
+//                                varsMonotone[*itr].first = false;
+//                                varsMonotone[*itr].second = false;
+//                            }
+//                        } else {
+                            if (varsMonotone.find(var) == varsMonotone.end()) {
+                                varsMonotone[var].first = true;
+                                varsMonotone[var].second = true;
+                            }
+                            std::pair<bool, bool> *value = &varsMonotone.find(var)->second;
+
+                            for (auto const &i : sortedStates) {
+//                                auto res = checkDerivative(transitions[i].derivative(var));
+                                auto res = checkDerivative(getDerivative(transitions[i], var));
+                                change = change || (!(value->first && value->second) // they do not hold both
+                                                   && ((value->first && !res.first)
+                                                       || (value->second && !res.second)));
+
+                                if (change) {
+                                    value->first &= res.second;
+                                    value->second &= res.first;
+                                } else {
+                                    value->first &= res.first;
+                                    value->second &= res.second;
+                                }
+                                if (!value->first && !value->second) {
+                                    break;
+                                }
                             }
                         }
                     }
@@ -478,6 +551,9 @@ namespace storm {
             if (derivative.isZero()) {
                 monIncr = true;
                 monDecr = true;
+            } else if (derivative.isConstant()) {
+                monIncr = derivative.constantPart() >= 0;
+                monDecr = derivative.constantPart() <= 0;
             } else {
 
                 std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();

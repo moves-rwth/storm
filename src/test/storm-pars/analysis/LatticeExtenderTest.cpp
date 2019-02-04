@@ -59,7 +59,7 @@ TEST(LatticeExtenderTest, Brp_with_bisimulation) {
 
     auto lattice = std::get<0>(criticalTuple);
     for (auto i = 0; i < dtmc->getNumberOfStates(); ++i) {
-        EXPECT_TRUE(lattice->getAddedStates()[i]);
+        EXPECT_TRUE((*lattice->getAddedStates())[i]);
     }
 
     // Check on some nodes
