@@ -511,7 +511,7 @@ namespace storm {
                     for (uint64_t dim = 0; dim < epochManager.getDimensionCount(); ++dim) {
                         if (epochManager.isBottomDimensionEpochClass(epochClass, dim)) {
                             bottomDimensions.set(dim, true);
-                            if (dimensions[dim].isBounded) {
+                            if (dimensions[dim].isBounded && dimensions[dim].maxValue) {
                                 considerInitialStates = false;
                             }
                         }

@@ -230,10 +230,10 @@ namespace storm {
                         }
                         
                         if (!bound.containsVariables()) {
-                            ValueType discretizedBound = storm::utility::convertNumber<ValueType>(bound.evaluateAsRational());
                             // We always consider upper bounds to be non-strict and lower bounds to be strict.
-                            // Thus, >=N would become >N-1. However, note that the case N=0 needs extra treatment
+                            // Thus, >=N would become >N-1. However, note that the case N=0 is treated separately.
                             if (dimensions[dim].isBounded) {
+                                ValueType discretizedBound = storm::utility::convertNumber<ValueType>(bound.evaluateAsRational());
                                 discretizedBound /= dimensions[dim].scalingFactor;
                                 if (storm::utility::isInteger(discretizedBound)) {
                                     if (isStrict == dimensions[dim].isUpperBounded) {

@@ -22,6 +22,7 @@ namespace storm {
                     std::vector<std::vector<ValueType>> computeQuantile(Environment const& env);
 
                 private:
+                    std::vector<std::vector<ValueType>> computeTwoDimensionalQuantile(Environment const& env);
                     
                     /*!
                      * Computes the infimum over bound values in minimizing dimensions / the supremum over bound values in maximizing dimensions
