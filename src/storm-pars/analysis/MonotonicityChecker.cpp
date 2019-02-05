@@ -404,8 +404,7 @@ namespace storm {
         template <typename ValueType>
         std::map<carl::Variable, std::pair<bool, bool>> MonotonicityChecker<ValueType>::analyseMonotonicity(uint_fast64_t j, storm::analysis::Lattice* lattice, storm::storage::SparseMatrix<ValueType> matrix) {
 //            storm::utility::Stopwatch analyseWatch(true);
-
-            std::cout << "Analyzing monotonicity" << std::endl;
+            lattice->setDoneBuilding(true);
             std::map<carl::Variable, std::pair<bool, bool>> varsMonotone;
 
             for (uint_fast64_t i = 0; i < matrix.getColumnCount(); ++i) {

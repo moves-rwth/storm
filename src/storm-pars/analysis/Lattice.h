@@ -8,6 +8,8 @@
 #include <iostream>
 #include <set>
 #include <vector>
+#include <unordered_map>
+
 
 #include "storm/storage/BitVector.h"
 
@@ -119,6 +121,8 @@ namespace storm {
                      */
                     storm::storage::BitVector* getAddedStates();
 
+                    bool getDoneBuilding();
+
                     std::vector<uint_fast64_t> sortStates(storm::storage::BitVector* states);
 
 //                    /*!
@@ -152,6 +156,7 @@ namespace storm {
 //                     * @return The set with all nodes which are below the node.
 //                     */
 //                    std::set<Lattice::Node*> getBelow(Lattice::Node* node);
+                    void setDoneBuilding(bool done);
 
                     /*!
                      * Prints a string representation of the lattice to the output stream.
@@ -200,6 +205,10 @@ namespace storm {
                     bool above(Node * node1, Node * node2, storm::analysis::Lattice::Node *nodePrev, storm::storage::BitVector *statesSeen);
 
                     int compare(Node* node1, Node* node2);
+
+                    std::unordered_map<uint_fast64_t, std::unordered_map<uint_fast64_t, uint_fast64_t>> comparisons;
+
+                    bool doneBuilding;
 
 //                    void setStatesAbove(Node* node, uint_fast64_t state, bool alreadyInitialized);
 
