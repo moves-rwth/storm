@@ -18,8 +18,9 @@
 #include "storm/exceptions/NotSupportedException.h"
 
 #include <set>
-#include <storm/storage/StronglyConnectedComponentDecomposition.h>
-#include <storm/storage/StronglyConnectedComponent.h>
+#include <boost/container/flat_set.hpp>
+#include "storm/storage/StronglyConnectedComponentDecomposition.h"
+#include "storm/storage/StronglyConnectedComponent.h"
 
 #include "storm/storage/BitVector.h"
 #include "storm/utility/macros.h"

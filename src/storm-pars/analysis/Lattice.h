@@ -9,7 +9,7 @@
 #include <set>
 #include <vector>
 #include <unordered_map>
-
+#include <boost/container/flat_set.hpp>
 
 #include "storm/storage/BitVector.h"
 
@@ -19,7 +19,7 @@ namespace storm {
 
                 public:
                     struct Node {
-                        storm::storage::BitVector states;
+                        boost::container::flat_set<uint_fast64_t> states;
                         storm::storage::BitVector statesAbove;
 //                        storm::storage::BitVector statesBelow;
                     };
