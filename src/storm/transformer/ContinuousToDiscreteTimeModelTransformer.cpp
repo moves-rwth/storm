@@ -5,7 +5,7 @@
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/logic/Formulas.h"
 #include "storm/logic/FragmentSpecification.h"
-#include "storm/logic/CloneVisitor.h"
+#include "storm/logic/ExpectedTimeToExpectedRewardVisitor.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
 
@@ -93,7 +93,22 @@ namespace storm {
             fragment.setReachabilityRewardFormulasAllowed(true);
             return formula.isInFragment(fragment);
         }
-        
+  
+        template <typename ValueType, typename RewardModelType>
+        std::vector<std::shared_ptr<storm::logic::Formula const>> ContinuousToDiscreteTimeModelTransformer<ValueType, RewardModelType>::checkAndTransformFormulas(std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, std::string const& timeRewardName) {
+            std::vector<std::shared_ptr<storm::logic::Formula const>> result;
+            storm::logic::ExpectedTimeToExpectedRewardVisitor v(timeRewardName);
+            for (auto const& f : formulas) {
+                // Translate expected time formulas
+                auto newF = v.substitute(*f);
+                if(preservesFormula(*newF)) {
+                    result.push_back(newF);
+                } else {
+                    STORM_LOG_INFO("Continuous to discrete time transformation does not preserve formula " << *f);
+                }
+            }
+            return result;
+        }
   
         template <typename ValueType, typename RewardModelType>
         std::shared_ptr<storm::models::sparse::Mdp<ValueType, RewardModelType>> ContinuousToDiscreteTimeModelTransformer<ValueType, RewardModelType>::transform(storm::models::sparse::MarkovAutomaton<ValueType, RewardModelType> const& ma, boost::optional<std::string> const& timeRewardModelName) {
