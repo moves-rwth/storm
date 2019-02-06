@@ -404,7 +404,6 @@ namespace storm {
         template <typename ValueType>
         std::map<carl::Variable, std::pair<bool, bool>> MonotonicityChecker<ValueType>::analyseMonotonicity(uint_fast64_t j, storm::analysis::Lattice* lattice, storm::storage::SparseMatrix<ValueType> matrix) {
 //            storm::utility::Stopwatch analyseWatch(true);
-            lattice->setDoneBuilding(true);
             std::map<carl::Variable, std::pair<bool, bool>> varsMonotone;
 
             for (uint_fast64_t i = 0; i < matrix.getColumnCount(); ++i) {
@@ -430,10 +429,12 @@ namespace storm {
 
                     auto sortedStates = lattice->sortStates(states);
 
+                    assert(sortedStates[sortedStates.size() - 1] != matrix.getColumnCount());
+
                     assert (sortedStates.size() >=2);
 
                     assert (sortedStates.size() == states->getNumberOfSetBits());
-                    if (sortedStates[sortedStates.size() - 1] == -1) {
+                    if (sortedStates[sortedStates.size() - 1] == matrix.getColumnCount()) {
 //                    auto val = first.getValue();
 //                    auto vars = val.gatherVariables();
                         for (auto itr = vars.begin(); itr != vars.end(); ++itr) {
@@ -498,7 +499,7 @@ namespace storm {
                             }
                         }
                     } else {
-                        bool change = false;
+
                         for (auto var : vars) {
 //                        if (resultCheckOnSamples.find(*itr) != resultCheckOnSamples.end() &&
 //                            (!resultCheckOnSamples[*itr].first && !resultCheckOnSamples[*itr].second)) {
@@ -512,7 +513,7 @@ namespace storm {
                                 varsMonotone[var].second = true;
                             }
                             std::pair<bool, bool> *value = &varsMonotone.find(var)->second;
-
+                            bool change = false;
                             for (auto const &i : sortedStates) {
 //                                auto res = checkDerivative(transitions[i].derivative(var));
                                 auto res = checkDerivative(getDerivative(transitions[i], var));

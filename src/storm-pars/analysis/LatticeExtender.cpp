@@ -367,7 +367,8 @@ namespace storm {
                     }
 
                     addedStates = lattice->getAddedStates();
-                    for (auto stateNumber : *addedStates) {
+                    auto notAddedStates = addedStates->operator~();
+                    for (auto stateNumber : notAddedStates) {
                         // Iterate over all not yet added states
                         storm::storage::BitVector* successors = stateMap[stateNumber];
 
@@ -392,6 +393,7 @@ namespace storm {
                 }
             }
             assert (lattice->getAddedStates()->getNumberOfSetBits() == numberOfStates);
+                lattice->setDoneBuilding(true);
             return std::make_tuple(lattice, numberOfStates, numberOfStates);
         }
         template class LatticeExtender<storm::RationalFunction>;

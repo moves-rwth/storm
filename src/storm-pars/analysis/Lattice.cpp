@@ -87,11 +87,11 @@ namespace storm {
                 Node *oldNode = (*itr);
                 if (oldNode != nullptr && oldNode != lattice->getTop() && oldNode != lattice->getBottom()) {
                     Node *newNode = getNode(*(oldNode->states.begin()));
-                    newNode->statesAbove = storm::storage::BitVector(oldNode->statesAbove);
+                    newNode->statesAbove = storm::storage::BitVector((oldNode->statesAbove));
 //                    setStatesAbove(newNode, oldNode->statesAbove, false);
 //                    setStatesBelow(newNode, oldNode->statesBelow, false);
                 } else if (oldNode != nullptr && oldNode == lattice->getBottom()) {
-                    bottom->statesAbove = storm::storage::BitVector(oldNode->statesAbove);
+                    bottom->statesAbove = storm::storage::BitVector((oldNode->statesAbove));
 //                    setStatesAbove(bottom, lattice->getBottom()->statesAbove, false);
 //                    bottom->statesBelow = storm::storage::BitVector(numberOfStates);
 //                } else if (oldNode != nullptr && oldNode == lattice->getTop()) {
@@ -110,11 +110,13 @@ namespace storm {
 
 //            newNode->states = storm::storage::BitVector(numberOfStates);
             newNode->states.insert(state);
-            newNode->statesAbove = above->statesAbove;
+            newNode->statesAbove = storm::storage::BitVector((above->statesAbove));
             for (auto const& state : above->states) {
                 newNode->statesAbove.set(state);
             }
             below->statesAbove.set(state);
+            addedStates->set(state);
+
 //            comparisons[state] = comparisons[above->states.getNextSetIndex(0)];
 //            setStatesAbove(newNode, above->statesAbove | above->states, false);
 //            setStatesBelow(newNode, below->statesBelow | below->states, false);
@@ -129,7 +131,6 @@ namespace storm {
 //                setStatesBelow(getNode(i), state, true);
 //            }
 
-            addedStates->set(state);
 
         }
 
@@ -163,7 +164,7 @@ namespace storm {
             for (auto const& state : above->states) {
                 below->statesAbove.set(state);
             }
-            below->statesAbove |= above->statesAbove;
+            below->statesAbove|=((above->statesAbove));
             // TODO: comparisons
 
 //            for (auto i = below->statesBelow.getNextSetIndex(0); i < below->statesBelow.size(); i = below->statesBelow.getNextSetIndex(i + 1)) {
@@ -206,6 +207,20 @@ namespace storm {
 //                    comparisons[state2][state1] = ABOVE;
                     return BELOW;
                 }
+
+                // tweak for cyclic pmcs
+                if (doneBuilding) {
+                    doneBuilding = false;
+                    if (above(node1, node2)) {
+                        assert(!above(node2, node1));
+                        doneBuilding = true;
+                        return ABOVE;
+                    }
+                    if (above(node2, node1)) {
+                        doneBuilding = true;
+                        return BELOW;
+                    }
+                }
             }
             return UNKNOWN;
         }
@@ -240,29 +255,48 @@ namespace storm {
 
         std::vector<uint_fast64_t> Lattice::sortStates(storm::storage::BitVector* states) {
             auto numberOfSetBits = states->getNumberOfSetBits();
-            auto result = std::vector<uint_fast64_t>(numberOfSetBits, -1);
+            auto stateSize = states->size();
+            auto result = std::vector<uint_fast64_t>(numberOfSetBits, stateSize);
             for (auto state : *states) {
-                if (result[0] == -1) {
+                if (result[0] == stateSize) {
                     result[0] = state;
                 } else {
-                    for (auto i = 0; i < numberOfSetBits && result[i] != -1; i++) {
-                        auto compareRes = compare(state, result[i]);
-                        if (compareRes == Lattice::ABOVE) {
-                            for (auto j = i; j < numberOfSetBits -1 && result[j+1] != -1; j++) {
-                                auto temp = result[j];
-                                result[j] = state;
-                                result[j+1] = temp;
-                            }
-                        } else if (compareRes == Lattice::UNKNOWN) {
-                            break;
-                        } else if (compareRes == Lattice::SAME) {
-                            for (auto j = i+1; j < numberOfSetBits -1 && result[j+1] != -1; j++) {
-                                auto temp = result[j];
-                                result[j] = state;
-                                result[j+1] = temp;
+                    auto i = 0;
+                    bool added = false;
+                    while (i < numberOfSetBits && !added) {
+                        if (result[i] == stateSize) {
+                            result[i] = state;
+                            added = true;
+                        } else {
+                            auto compareRes = compare(state, result[i]);
+                            if (compareRes == Lattice::ABOVE) {
+                                auto temp = result[i];
+                                result[i] = state;
+                                for (auto j = i + 1; j < numberOfSetBits && result[j + 1] != stateSize; j++) {
+                                    auto temp2 = result[j];
+                                    result[j] = temp;
+                                    temp = temp2;
+                                }
+                                added = true;
+                            } else if (compareRes == Lattice::UNKNOWN) {
+                                break;
+                            } else if (compareRes == Lattice::SAME) {
+                                ++i;
+                                auto temp = result[i];
+                                result[i] = state;
+                                for (auto j = i + 1; j < numberOfSetBits && result[j + 1] != stateSize; j++) {
+                                    auto temp2 = result[j];
+                                    result[j] = temp;
+                                    temp = temp2;
+                                }
+                                added = true;
                             }
                         }
+                        ++i;
                     }
+//                    if (i < numberOfSetBits && result[i] == stateSize) {
+//                        result[i] = state;
+//                    }
                 }
             }
 
@@ -294,42 +328,26 @@ namespace storm {
 //        }
 
         void Lattice::toString(std::ostream &out) {
-//            assert (false);
-//            std::vector<Node*> printedNodes = std::vector<Node*>({});
-//            for (auto itr = nodes.begin(); itr != nodes.end(); ++itr) {
-//
-//                if ((*itr) != nullptr && std::find(printedNodes.begin(), printedNodes.end(), (*itr)) == printedNodes.end()) {
-//                    Node *node = *itr;
-//                    printedNodes.push_back(*itr);
-//                    out << "Node: {";
-//                    uint_fast64_t index = node->states.getNextSetIndex(0);
-//                    while (index < node->states.size()) {
-//                        out << index;
-//                        index = node->states.getNextSetIndex(index + 1);
-//                        if (index < node->states.size()) {
-//                            out << ", ";
-//                        }
-//                    }
-//                    out << "}" << "\n";
-//                    out << "  Address: " << node << "\n";
-//                    out << "    Above: {";
-//
-//                    auto statesAbove = node->statesAbove;
-//                    for (auto above : statesAbove) {
-//                        Node* nodeAbove = getNode(above);
-//                        index = nodeAbove->states.getNextSetIndex(0);
-//                        out << "{";
-//                        while (index < nodeAbove->states.size()) {
-//                            out << index;
-//                            index = nodeAbove->states.getNextSetIndex(index + 1);
-//                            if (index < nodeAbove->states.size()) {
-//                                out << ", ";
-//                            }
-//                        }
-//
-//                        out << "}";
-//                    }
-//                    out << "}" << "\n";
+            std::vector<Node*> printedNodes = std::vector<Node*>({});
+            for (auto itr = nodes.begin(); itr != nodes.end(); ++itr) {
+
+                if ((*itr) != nullptr && std::find(printedNodes.begin(), printedNodes.end(), (*itr)) == printedNodes.end()) {
+                    Node *node = *itr;
+                    printedNodes.push_back(*itr);
+                    out << "Node: {";
+                    for (auto const & state:node->states) {
+                        out << state << "; ";
+
+                    }
+                    out << "}" << "\n";
+                    out << "  Address: " << node << "\n";
+                    out << "    Above: {";
+
+                    auto statesAbove = node->statesAbove;
+                    for (auto const & state:(node->statesAbove)) {
+                        out << state << "; ";
+                    }
+                    out << "}" << "\n";
 
 
 //                    out << "    Below: {";
@@ -349,8 +367,8 @@ namespace storm {
 //                        out << "}";
 //                    }
 //                    out << "}" << "\n";
-//                }
-//            }
+                }
+            }
         }
 
         void Lattice::toDotFile(std::ostream &out) {
@@ -399,17 +417,17 @@ namespace storm {
             // oftewel is er een state in node2.above die met een state in node1 matched
             bool found = false;
             for (auto const& state : node1->states) {
-                found = node2->statesAbove[state];
+                found = ((node2->statesAbove))[state];
                 if (found) {
                     break;
                 }
             }
 
             if (!found && !doneBuilding) {
-                storm::storage::BitVector statesSeen(node2->statesAbove);
-                for (auto const &i: node2->statesAbove) {
+                storm::storage::BitVector statesSeen((node2->statesAbove));
+                for (auto const &i: (node2->statesAbove)) {
                     auto nodeI = getNode(i);
-                    if ((nodeI->statesAbove & statesSeen) != nodeI->statesAbove) {
+                    if (((nodeI->statesAbove) & statesSeen) != (nodeI->statesAbove)) {
                         found = above(node1, nodeI, node2, &statesSeen);
                     }
                     if (found) {
@@ -428,7 +446,7 @@ namespace storm {
 //            bool found = (node2->statesAbove & node1->states).getNumberOfSetBits() != 0;
             bool found = false;
             for (auto const& state : node1->states) {
-                found = node2->statesAbove[state];
+                found = ((node2->statesAbove))[state];
                 if (found) {
                     break;
                 }
@@ -436,19 +454,20 @@ namespace storm {
 //            bool found = !(node2->statesAbove & node1->states).empty();
             if (!found) {
                 // TODO: kan dit niet anders?
-                nodePrev->statesAbove |= node2->statesAbove;
-                auto complement = (statesSeen->operator~());
+                nodePrev->statesAbove|=((node2->statesAbove));
+//                auto complement = storm::storage::BitVector(statesSeen->operator~());
 
-                storm::storage::BitVector states = storm::storage::BitVector(
-                        (node2->statesAbove & complement));
-                statesSeen->operator|=(node2->statesAbove);
+//                storm::storage::BitVector states = storm::storage::BitVector(node2->statesAbove & complement);
+                statesSeen->operator|=(((node2->statesAbove)));
 
-                for (auto const &i: states) {
+                for (auto const &i: node2->statesAbove) {
 //                assert (!statesSeen[i]);
-                    auto nodeI = getNode(i);
-                if (!(nodeI->statesAbove & complement).empty()) {
-                    found = above(node1, nodeI, node2, statesSeen);
-                }
+                    if (!(*statesSeen)[i]) {
+                        auto nodeI = getNode(i);
+                        if (((nodeI->statesAbove) & *statesSeen) != (nodeI->statesAbove)) {
+                            found = above(node1, nodeI, node2, statesSeen);
+                        }
+                    }
                     if (found) {
                         break;
                     }
@@ -509,7 +528,7 @@ namespace storm {
 //            assert (false);
             // Merges node2 into node 1
             // everything above n2 also above n1
-            node1->statesAbove |= node2->statesAbove;
+            node1->statesAbove|=((node2->statesAbove));
             // everything below node 2 also below node 1
 //            node1->statesBelow |= node2->statesBelow;
 

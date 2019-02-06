@@ -123,6 +123,9 @@ namespace storm {
 
                     bool getDoneBuilding();
 
+                    int compare(Node* node1, Node* node2);
+
+
                     std::vector<uint_fast64_t> sortStates(storm::storage::BitVector* states);
 
 //                    /*!
@@ -204,7 +207,6 @@ namespace storm {
 
                     bool above(Node * node1, Node * node2, storm::analysis::Lattice::Node *nodePrev, storm::storage::BitVector *statesSeen);
 
-                    int compare(Node* node1, Node* node2);
 
                     std::unordered_map<uint_fast64_t, std::unordered_map<uint_fast64_t, uint_fast64_t>> comparisons;
 
