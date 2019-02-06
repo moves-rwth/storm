@@ -375,6 +375,11 @@ namespace storm {
                                                     boost::optional<ValueType> rationalFunction = result->asExplicitQuantitativeCheckResult<ValueType>()[*model->getInitialStates().begin()];
                                                     storm::api::exportParametricResultToFile(rationalFunction, storm::analysis::ConstraintCollector<ValueType>(*dtmc), parametricSettings.exportResultPath());
                                                 }
+                                                else if (parametricSettings.exportResultToFile() && model->isOfType(storm::models::ModelType::Ctmc)) {
+                                                    auto ctmc = model->template as<storm::models::sparse::Ctmc<ValueType>>();
+                                                    boost::optional<ValueType> rationalFunction = result->asExplicitQuantitativeCheckResult<ValueType>()[*model->getInitialStates().begin()];
+                                                    storm::api::exportParametricResultToFile(rationalFunction, storm::analysis::ConstraintCollector<ValueType>(*ctmc), parametricSettings.exportResultPath());
+                                                }
                                             });
             } else {
                 STORM_LOG_TRACE("Sampling the model at given points.");
