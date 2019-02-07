@@ -46,7 +46,9 @@ namespace storm {
                     
                     MemoryState transformMemoryState(MemoryState const& memoryState, EpochClass const& epochClass, MemoryState const& predecessorMemoryState) const;
                     uint64_t transformProductState(uint64_t const& productState, EpochClass const& epochClass, MemoryState const& predecessorMemoryState) const;
-    
+                    
+                    // returns objectives that have probability one, already in the initial state.
+                    storm::storage::BitVector const& getProb1Objectives();
                     
                 private:
                     
@@ -75,7 +77,7 @@ namespace storm {
                     std::vector<uint64_t> productToModelStateMap;
                     std::vector<MemoryState> productToMemoryStateMap;
                     std::vector<uint64_t> choiceToStateMap;
-                    
+                    storm::storage::BitVector prob1Objectives; /// Objectives that are already satisfied in the initial state
                 };
             }
         }

@@ -36,7 +36,15 @@ namespace storm {
                      *
                      */
                     MultiDimensionalRewardUnfolding(storm::models::sparse::Model<ValueType> const& model, std::vector<storm::modelchecker::multiobjective::Objective<ValueType>> const& objectives);
-                    MultiDimensionalRewardUnfolding(storm::models::sparse::Model<ValueType> const& model, std::shared_ptr<storm::logic::OperatorFormula const> objectiveFormula, std::function<void(std::vector<Epoch>&, EpochManager const&)> const& epochStepsCallback = nullptr);
+                    
+                    /*!
+                     * Initializes the reward unfolding with just a single objective.
+                     *
+                     * @param model The input model
+                     * @param objectiveFormula the formula
+                     * @param infinityBoundVariables if non-empty, reward bounds with these variables are assumed to approach infinity
+                     */
+                    MultiDimensionalRewardUnfolding(storm::models::sparse::Model<ValueType> const& model, std::shared_ptr<storm::logic::OperatorFormula const> objectiveFormula, std::set<storm::expressions::Variable> const& infinityBoundVariables = {});
                     
                     ~MultiDimensionalRewardUnfolding() = default;
                     
@@ -73,12 +81,19 @@ namespace storm {
                 private:
                 
                     void setCurrentEpochClass(Epoch const& epoch);
-                    void initialize(std::function<void(std::vector<Epoch>&, EpochManager const&)> const& epochStepsCallback = nullptr);
+                    void initialize(std::set<storm::expressions::Variable> const& infinityBoundVariables = {});
                     
-                    void initializeObjectives(std::vector<Epoch>& epochSteps);
+                    void initializeObjectives(std::vector<Epoch>& epochSteps, std::set<storm::expressions::Variable> const& infinityBoundVariables);
                     void computeMaxDimensionValues();
+                    void translateLowerBoundInfinityDimensions(std::vector<Epoch>& epochSteps);
                     
                     void initializeMemoryProduct(std::vector<Epoch> const& epochSteps);
+                    
+                    // Returns a solution only consisting of one
+                    template<bool SO = SingleObjectiveMode, typename std::enable_if<SO, int>::type = 0>
+                    SolutionType getOneSolution() const;
+                    template<bool SO = SingleObjectiveMode, typename std::enable_if<!SO, int>::type = 0>
+                    SolutionType getOneSolution() const;
                     
                     template<bool SO = SingleObjectiveMode, typename std::enable_if<SO, int>::type = 0>
                     SolutionType getScaledSolution(SolutionType const& solution, ValueType const& scalingFactor) const;

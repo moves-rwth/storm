@@ -21,7 +21,7 @@ namespace storm {
             namespace rewardbounded {
                 
                 template<typename ValueType>
-                ProductModel<ValueType>::ProductModel(storm::models::sparse::Model<ValueType> const& model, std::vector<storm::modelchecker::multiobjective::Objective<ValueType>> const& objectives, std::vector<Dimension<ValueType>> const& dimensions, std::vector<storm::storage::BitVector> const& objectiveDimensions, EpochManager const& epochManager, std::vector<Epoch> const& originalModelSteps) : dimensions(dimensions), objectiveDimensions(objectiveDimensions), epochManager(epochManager), memoryStateManager(dimensions.size()) {
+                ProductModel<ValueType>::ProductModel(storm::models::sparse::Model<ValueType> const& model, std::vector<storm::modelchecker::multiobjective::Objective<ValueType>> const& objectives, std::vector<Dimension<ValueType>> const& dimensions, std::vector<storm::storage::BitVector> const& objectiveDimensions, EpochManager const& epochManager, std::vector<Epoch> const& originalModelSteps) : dimensions(dimensions), objectiveDimensions(objectiveDimensions), epochManager(epochManager), memoryStateManager(dimensions.size()), prob1Objectives(objectives.size(), false) {
                     
                     for (uint64_t dim = 0; dim < dimensions.size(); ++dim) {
                         if (!dimensions[dim].memoryLabel) {
@@ -112,7 +112,7 @@ namespace storm {
                         
                         bool objectiveContainsLowerBound = false;
                         for (auto const& globalDimensionIndex : objectiveDimensions[objIndex]) {
-                            if (!dimensions[globalDimensionIndex].isUpperBounded) {
+                            if (dimensions[globalDimensionIndex].boundType == DimensionBoundType::LowerBound) {
                                 objectiveContainsLowerBound = true;
                                 break;
                             }
@@ -168,8 +168,12 @@ namespace storm {
                                     if (memStateBV.full()) {
                                         storm::storage::BitVector initialTransitionStates = model.getInitialStates() & transitionStates;
                                         // At this point we can check whether there is an initial state that already satisfies all subObjectives.
-                                        // Such a situation is not supported as we can not reduce this (easily) to an expected reward computation.
-                                        STORM_LOG_THROW(!memStatePrimeBV.empty() || initialTransitionStates.empty() || objectiveContainsLowerBound || initialTransitionStates.isDisjointFrom(constraintStates), storm::exceptions::NotSupportedException, "The objective " << *objectives[objIndex].formula << " is already satisfied in an initial state. This special case is not supported.");
+                                        // Such a situation can not be reduced (easily) to an expected reward computation.
+                                        if (memStatePrimeBV.empty() && !initialTransitionStates.empty() && !objectiveContainsLowerBound && !initialTransitionStates.isDisjointFrom(constraintStates)) {
+                                            STORM_LOG_THROW(model.getInitialStates() == initialTransitionStates, storm::exceptions::NotSupportedException, "The objective " << *objectives[objIndex].formula << " is already satisfied in an initial state. This special case is not supported.");
+                                            prob1Objectives.set(objIndex, true);
+                                        }
+                                                
                                         for (auto const& initState : initialTransitionStates) {
                                             objMemoryBuilder.setInitialMemoryState(initState, memStatePrime);
                                         }
@@ -231,14 +235,34 @@ namespace storm {
                     }
                     
                     // Initialize the reachable states with the initial states
-                    EpochClass initEpochClass = epochManager.getEpochClass(epochManager.getZeroEpoch());
-                    auto memStateIt = memory.getInitialMemoryStates().begin();
-                    for (auto const& initState : model.getInitialStates()) {
-                        uint64_t transformedMemoryState = transformMemoryState(memoryStateMap[*memStateIt], initEpochClass, memoryStateManager.getInitialMemoryState());
-                        reachableProductStates[transformedMemoryState].set(initState, true);
-                        ++memStateIt;
+                    // If the bound is not known (e.g., when computing quantiles) we don't know the initial epoch class. Hence, we consider all possibilities.
+                    std::vector<EpochClass> initEpochClasses;
+                    initEpochClasses.push_back(epochManager.getEpochClass(epochManager.getZeroEpoch()));
+                    for (uint64_t dim = 0; dim < dimensions.size(); ++dim) {
+                        Dimension<ValueType> const& dimension = dimensions[dim];
+                        if (dimension.boundType == DimensionBoundType::Unbounded) {
+                            // For unbounded dimensions we are only interested in the bottom class.
+                            for (auto& ec : initEpochClasses) {
+                                epochManager.setDimensionOfEpochClass(ec, dim, true);
+                            }
+                        } else if (!dimension.maxValue) {
+                            // If no max value is known, we have to consider all possibilities
+                            std::vector<EpochClass> newEcs = initEpochClasses;
+                            for (auto& ec : newEcs) {
+                                epochManager.setDimensionOfEpochClass(ec, dim, true);
+                            }
+                            initEpochClasses.insert(initEpochClasses.end(), newEcs.begin(), newEcs.end());
+                        }
                     }
-                    assert(memStateIt == memory.getInitialMemoryStates().end());
+                    for (auto const& initEpochClass : initEpochClasses) {
+                        auto memStateIt = memory.getInitialMemoryStates().begin();
+                        for (auto const& initState : model.getInitialStates()) {
+                            uint64_t transformedMemoryState = transformMemoryState(memoryStateMap[*memStateIt], initEpochClass, memoryStateManager.getInitialMemoryState());
+                            reachableProductStates[transformedMemoryState].set(initState, true);
+                            ++memStateIt;
+                        }
+                        assert(memStateIt == memory.getInitialMemoryStates().end());
+                    }
     
                     // Find the reachable epoch classes
                     std::set<Epoch> possibleSteps(originalModelSteps.begin(), originalModelSteps.end());
@@ -303,7 +327,7 @@ namespace storm {
                 
                 template<typename ValueType>
                 uint64_t ProductModel<ValueType>::getProductState(uint64_t const& modelState, MemoryState const& memoryState) const {
-                    STORM_LOG_ASSERT(productStateExists(modelState, memoryState), "Tried to obtain a state in the model-memory-product that does not exist");
+                    STORM_LOG_ASSERT(productStateExists(modelState, memoryState), "Tried to obtain state (" << modelState << ", " << memoryStateManager.toString(memoryState) << ") in the model-memory-product which does not exist");
                     return modelMemoryToProductStateMap[modelState * memoryStateManager.getUpperMemoryStateBound() + memoryState];
                 }
     
@@ -369,7 +393,7 @@ namespace storm {
                                 // find out whether objective reward should be earned within this epoch class
                                 bool collectRewardInEpoch = true;
                                 for (auto const& subObjIndex : relevantObjectives) {
-                                    if (dimensions[dimensionIndexMap[subObjIndex]].isUpperBounded && epochManager.isBottomDimensionEpochClass(epochClass, dimensionIndexMap[subObjIndex])) {
+                                    if (dimensions[dimensionIndexMap[subObjIndex]].boundType == DimensionBoundType::UpperBound && epochManager.isBottomDimensionEpochClass(epochClass, dimensionIndexMap[subObjIndex])) {
                                         collectRewardInEpoch = false;
                                         break;
                                     }
@@ -487,9 +511,9 @@ namespace storm {
                         }
                     }
                     
-                    // Also treat dimensions without a priori bound
+                    // Also treat dimensions without a priori bound. Unbounded dimensions need no further treatment as for these only the 'bottom' class is relevant.
                     for (uint64_t dim = 0; dim < epochManager.getDimensionCount(); ++dim) {
-                        if (!dimensions[dim].maxValue) {
+                        if (dimensions[dim].boundType != DimensionBoundType::Unbounded && !dimensions[dim].maxValue) {
                             std::vector<EpochClass> newClasses;
                             for (auto const& c : reachableEpochClasses) {
                                 auto newClass = c;
@@ -511,7 +535,7 @@ namespace storm {
                     for (uint64_t dim = 0; dim < epochManager.getDimensionCount(); ++dim) {
                         if (epochManager.isBottomDimensionEpochClass(epochClass, dim)) {
                             bottomDimensions.set(dim, true);
-                            if (dimensions[dim].isBounded && dimensions[dim].maxValue) {
+                            if (dimensions[dim].boundType != DimensionBoundType::Unbounded && dimensions[dim].maxValue) {
                                 considerInitialStates = false;
                             }
                         }
@@ -602,7 +626,7 @@ namespace storm {
                         for (auto const& dim : objDimensions) {
                             auto const& dimension = dimensions[dim];
                             if (dimension.memoryLabel) {
-                                bool dimUpperBounded = dimension.isUpperBounded;
+                                bool dimUpperBounded = dimension.boundType == DimensionBoundType::UpperBound;
                                 bool dimBottom = epochManager.isBottomDimensionEpochClass(epochClass, dim);
                                 if (dimUpperBounded && dimBottom && memoryStateManager.isRelevantDimension(predecessorMemoryState, dim)) {
                                     STORM_LOG_ASSERT(objDimensions == dimension.dependentDimensions, "Unexpected set of dependent dimensions");

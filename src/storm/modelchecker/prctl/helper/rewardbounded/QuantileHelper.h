@@ -25,10 +25,9 @@ namespace storm {
                     std::vector<std::vector<ValueType>> computeTwoDimensionalQuantile(Environment const& env);
                     
                     /*!
-                     * Computes the infimum over bound values in minimizing dimensions / the supremum over bound values in maximizing dimensions
-                     * @param minimizingDimensions marks dimensions which should be minimized. The remaining dimensions are either not open or maximizing.
+                     * Computes the limit probability, where the given dimensions approach infinity and the remaining dimensions are set to zero.
                      */
-                    ValueType computeExtremalValue(Environment const& env, storm::storage::BitVector const& minimizingDimensions) const;
+                    ValueType computeLimitValue(Environment const& env, storm::storage::BitVector const& infDimensions) const;
                     
                     
                     /// Computes the quantile with respect to the given dimension
@@ -47,6 +46,7 @@ namespace storm {
                     
                     storm::storage::BitVector getDimensionsForVariable(storm::expressions::Variable const& var) const;
                     storm::solver::OptimizationDirection const& getOptimizationDirForDimension(uint64_t const& dim) const;
+                    storm::expressions::Variable const& getVariableForDimension(uint64_t const& dim) const;
 
                     ModelType const& model;
                     storm::logic::QuantileFormula const& quantileFormula;

@@ -129,7 +129,7 @@ namespace storm {
                     if (storm::settings::getModule<storm::settings::modules::IOSettings>().isExportCdfSet() && !rewardUnfolding.getEpochManager().hasBottomDimension(epoch)) {
                         std::vector<ValueType> cdfEntry;
                         for (uint64_t i = 0; i < rewardUnfolding.getEpochManager().getDimensionCount(); ++i) {
-                            uint64_t offset = rewardUnfolding.getDimension(i).isUpperBounded ? 0 : 1;
+                            uint64_t offset = rewardUnfolding.getDimension(i).boundType == helper::rewardbounded::DimensionBoundType::LowerBound ? 1 : 0;
                             cdfEntry.push_back(storm::utility::convertNumber<ValueType>(rewardUnfolding.getEpochManager().getDimensionOfEpoch(epoch, i) + offset) * rewardUnfolding.getDimension(i).scalingFactor);
                         }
                         cdfEntry.push_back(rewardUnfolding.getInitialStateResult(epoch));

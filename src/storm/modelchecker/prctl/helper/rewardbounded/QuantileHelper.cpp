@@ -35,7 +35,9 @@ namespace storm {
                     // Only > and <= are supported for upper bounds. This is to make sure that Pr>0.7 [F "goal"] holds iff Pr>0.7 [F<=B "goal"] holds for some B.
                     // Only >= and < are supported for lower bounds. (EC construction..)
                     // TODO
-                    
+                    // Bounds are either constants or variables that are declared in the quantile formula.
+                    // Prop op has optimality type
+                    // No Prmin with lower cost bounds: Ec construction fails. In single obj we would do 1-Prmax[F "nonRewOrNonGoalEC"] but this invalidates other lower/upper cost bounds.
                     /* Todo: Current assumptions:
                      * Subformula is always prob operator with bounded until
                      * Each bound variable occurs at most once (change this?)
@@ -56,18 +58,20 @@ namespace storm {
                     std::vector<std::shared_ptr<storm::logic::Formula const>> leftSubformulas, rightSubformulas;
                     std::vector<boost::optional<storm::logic::TimeBound>> lowerBounds, upperBounds;
                     std::vector<storm::logic::TimeBoundReference> timeBoundReferences;
-
+                    
                     for (uint64_t dim = 0; dim < origBoundedUntil.getDimension(); ++dim) {
-                        leftSubformulas.push_back(origBoundedUntil.getLeftSubformula(dim).asSharedPointer());
-                        rightSubformulas.push_back(origBoundedUntil.getRightSubformula(dim).asSharedPointer());
+                        if (origBoundedUntil.hasMultiDimensionalSubformulas()) {
+                            leftSubformulas.push_back(origBoundedUntil.getLeftSubformula(dim).asSharedPointer());
+                            rightSubformulas.push_back(origBoundedUntil.getRightSubformula(dim).asSharedPointer());
+                        }
                         timeBoundReferences.push_back(origBoundedUntil.getTimeBoundReference(dim));
                         if (transformations[dim] == BoundTransformation::None) {
-                            if (origBoundedUntil.hasLowerBound()) {
+                            if (origBoundedUntil.hasLowerBound(dim)) {
                                 lowerBounds.push_back(storm::logic::TimeBound(origBoundedUntil.isLowerBoundStrict(dim), origBoundedUntil.getLowerBound(dim)));
                             } else {
                                 lowerBounds.push_back(boost::none);
                             }
-                            if (origBoundedUntil.hasUpperBound()) {
+                            if (origBoundedUntil.hasUpperBound(dim)) {
                                 upperBounds.push_back(storm::logic::TimeBound(origBoundedUntil.isUpperBoundStrict(dim), origBoundedUntil.getUpperBound(dim)));
                             } else {
                                 upperBounds.push_back(boost::none);
@@ -91,7 +95,12 @@ namespace storm {
                             }
                         }
                     }
-                    auto newBoundedUntil = std::make_shared<storm::logic::BoundedUntilFormula>(leftSubformulas, rightSubformulas, lowerBounds, upperBounds, timeBoundReferences);
+                    std::shared_ptr<storm::logic::Formula> newBoundedUntil;
+                    if (origBoundedUntil.hasMultiDimensionalSubformulas()) {
+                        newBoundedUntil = std::make_shared<storm::logic::BoundedUntilFormula>(leftSubformulas, rightSubformulas, lowerBounds, upperBounds, timeBoundReferences);
+                    } else {
+                        newBoundedUntil = std::make_shared<storm::logic::BoundedUntilFormula>(origBoundedUntil.getLeftSubformula().asSharedPointer(), origBoundedUntil.getRightSubformula().asSharedPointer(), lowerBounds, upperBounds, timeBoundReferences);
+                    }
                     return std::make_shared<storm::logic::ProbabilityOperatorFormula>(newBoundedUntil, boundedUntilOperator.getOperatorInformation());
                 }
 
@@ -103,17 +112,19 @@ namespace storm {
                 template<typename ModelType>
                 storm::storage::BitVector QuantileHelper<ModelType>::getOpenDimensions() const {
                     auto const& boundedUntil = quantileFormula.getSubformula().asProbabilityOperatorFormula().getSubformula().asBoundedUntilFormula();
-                    storm::storage::BitVector res(getDimension());
+                    storm::storage::BitVector res(getDimension(), false);
                     for (uint64_t dim = 0; dim < getDimension(); ++dim) {
-                        res.set(dim, boundedUntil.hasLowerBound(dim) ? boundedUntil.getLowerBound(dim).containsVariables() : boundedUntil.getUpperBound(dim).containsVariables());
+                        auto const& bound = boundedUntil.hasLowerBound(dim) ? boundedUntil.getLowerBound(dim) : boundedUntil.getUpperBound(dim);
+                        if (bound.containsVariables()) {
+                            res.set(dim, true);
+                        }
                     }
                     return res;
                 }
 
                 template<typename ModelType>
                 storm::solver::OptimizationDirection const& QuantileHelper<ModelType>::getOptimizationDirForDimension(uint64_t const& dim) const {
-                    auto const& boundedUntil = quantileFormula.getSubformula().asProbabilityOperatorFormula().getSubformula().asBoundedUntilFormula();
-                    storm::expressions::Variable const& dimVar = (boundedUntil.hasLowerBound() ? boundedUntil.getLowerBound(dim) : boundedUntil.getUpperBound(dim)).getBaseExpression().asVariableExpression().getVariable();
+                    storm::expressions::Variable const& dimVar = getVariableForDimension(dim);
                     for (auto const& boundVar : quantileFormula.getBoundVariables()) {
                         if (boundVar.second == dimVar) {
                             return boundVar.first;
@@ -121,6 +132,12 @@ namespace storm {
                     }
                     STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "The bound variable '" << dimVar.getName() << "' is not specified within the quantile formula '" << quantileFormula << "'.");
                     return quantileFormula.getOptimizationDirection();
+                }
+
+                template<typename ModelType>
+                storm::expressions::Variable const& QuantileHelper<ModelType>::getVariableForDimension(uint64_t const& dim) const {
+                    auto const& boundedUntil = quantileFormula.getSubformula().asProbabilityOperatorFormula().getSubformula().asBoundedUntilFormula();
+                    return (boundedUntil.hasLowerBound(dim) ? boundedUntil.getLowerBound(dim) : boundedUntil.getUpperBound(dim)).getBaseExpression().asVariableExpression().getVariable();
                 }
                 
                 template<typename ModelType>
@@ -145,13 +162,13 @@ namespace storm {
                         uint64_t dimension = *getOpenDimensions().begin();
                         auto const& boundedUntilOperator = quantileFormula.getSubformula().asProbabilityOperatorFormula();
                         
-                        bool maxProbSatisfiesFormula = boundedUntilOperator.getBound().isSatisfied(computeExtremalValue(env, storm::storage::BitVector(getDimension(), false)));
-                        bool minProbSatisfiesFormula = boundedUntilOperator.getBound().isSatisfied(computeExtremalValue(env, getOpenDimensions()));
-                        if (maxProbSatisfiesFormula != minProbSatisfiesFormula) {
+                        bool zeroSatisfiesFormula = boundedUntilOperator.getBound().isSatisfied(computeLimitValue(env, storm::storage::BitVector(getDimension(), false)));
+                        bool infSatisfiesFormula = boundedUntilOperator.getBound().isSatisfied(computeLimitValue(env, getOpenDimensions()));
+                        if (zeroSatisfiesFormula != infSatisfiesFormula) {
                             auto quantileRes = computeQuantileForDimension(env, dimension);
                             result = {{storm::utility::convertNumber<ValueType>(quantileRes.first) * quantileRes.second}};
-                        } else if (maxProbSatisfiesFormula) {
-                            // i.e., all bound values satisfy the formula
+                        } else if (zeroSatisfiesFormula) {
+                            // thus also infSatisfiesFormula is true, i.e., all bound values satisfy the formula
                             if (storm::solver::minimize(getOptimizationDirForDimension(dimension))) {
                                 result = {{ storm::utility::zero<ValueType>() }};
                             } else {
@@ -223,31 +240,26 @@ namespace storm {
                         if (lowerCostBounds[0] == lowerCostBounds[1]) {
                             // TODO: Assert that we have a reasonable probability bound. STORM_LOG_THROW(storm::solver::minimize(optimizationDirections[0])
                             
-                            bool maxmaxProbSatisfiesFormula = probOpFormula.getBound().isSatisfied(computeExtremalValue(env, storm::storage::BitVector(getDimension(), false)));
-                            bool minminProbSatisfiesFormula = probOpFormula.getBound().isSatisfied(computeExtremalValue(env, dimensionsAsBitVector[0] | dimensionsAsBitVector[1]));
-                            if (maxmaxProbSatisfiesFormula != minminProbSatisfiesFormula) {
+                            bool infInfProbSatisfiesFormula = probOpFormula.getBound().isSatisfied(computeLimitValue(env, storm::storage::BitVector(getDimension(), false)));
+                            bool zeroZeroProbSatisfiesFormula = probOpFormula.getBound().isSatisfied(computeLimitValue(env, dimensionsAsBitVector[0] | dimensionsAsBitVector[1]));
+                            if (infInfProbSatisfiesFormula != zeroZeroProbSatisfiesFormula) {
                                 std::vector<std::pair<int64_t, typename ModelType::ValueType>> singleQuantileValues;
                                 std::vector<std::vector<int64_t>> resultPoints;
                                 const int64_t infinity = std::numeric_limits<int64_t>().max(); // use this value to represent infinity in a result point
                                 for (uint64_t i = 0; i < 2; ++i) {
                                     // find out whether the bounds B_i = 0 and B_1-i = infinity satisfy the formula
-                                    uint64_t indexToMinimizeProb = lowerCostBounds[i] ? (1-i) : i;
-                                    bool zeroInfSatisfiesFormula = probOpFormula.getBound().isSatisfied(computeExtremalValue(env, dimensionsAsBitVector[indexToMinimizeProb]));
+                                    bool zeroInfSatisfiesFormula = probOpFormula.getBound().isSatisfied(computeLimitValue(env, dimensionsAsBitVector[1-i]));
                                     std::cout << "Formula sat is " << zeroInfSatisfiesFormula << " and lower bound is " << storm::logic::isLowerBound(probabilityBound) << std::endl;
                                     if (zeroInfSatisfiesFormula == storm::solver::minimize(optimizationDirections[0])) {
                                         // There is bound value b such that the point B_i=0 and B_1-i = b is part of the result
                                         singleQuantileValues.emplace_back(0, storm::utility::zero<ValueType>());
                                     } else {
-                                        // Compute quantile where 1-i approaches infinity
+                                        // Compute quantile where 1-i is set to infinity
                                         std::cout << "Computing quantile for single dimension " << dimensions[i] << std::endl;
                                         singleQuantileValues.push_back(computeQuantileForDimension(env, dimensions[i]));
                                         std::cout << ".. Result is " << singleQuantileValues.back().first << std::endl;
-                                        // When maximizing bounds, the computed quantile value is sat for all values of the other bound.
                                         if (!storm::solver::minimize(optimizationDirections[i])) {
-                                            std::vector<int64_t> newResultPoint(2);
-                                            newResultPoint[i] = singleQuantileValues.back().first;
-                                            newResultPoint[1-i] = infinity;
-                                            resultPoints.push_back(newResultPoint);
+                                            // When maximizing bounds, the computed single dimensional quantile value is sat for all values of the other bound.
                                             // Increase the computed value so that there is at least one unsat assignment of bounds with B[i] = singleQuantileValues[i]
                                             ++singleQuantileValues.back().first;
                                         }
@@ -334,9 +346,19 @@ namespace storm {
                                         result.push_back(convertedP);
                                     }
                                 }
+                                // When maximizing, there are border cases where one dimension can be arbitrarily large
+                                for (uint64_t i = 0; i < 2; ++i) {
+                                    if (storm::solver::maximize(optimizationDirections[i]) && singleQuantileValues[i].first > 0) {
+                                        std::vector<ValueType> newResultPoint(2);
+                                        newResultPoint[i] = storm::utility::convertNumber<ValueType>(singleQuantileValues[i].first - 1) * singleQuantileValues[i].second;
+                                        newResultPoint[1-i] = storm::utility::infinity<ValueType>();
+                                        result.push_back(newResultPoint);
+                                    }
+                                }
                                 filterDominatedPoints(result, optimizationDirections);
-                            } else if (maxmaxProbSatisfiesFormula) {
-                                // i.e., all bound values satisfy the formula
+                                
+                            } else if (infInfProbSatisfiesFormula) {
+                                // then also zeroZeroProb satisfies the formula, i.e., all bound values satisfy the formula
                                 if (storm::solver::minimize(optimizationDirections[0])) {
                                     result = {{storm::utility::zero<ValueType>(), storm::utility::zero<ValueType>()}};
                                 } else {
@@ -360,48 +382,18 @@ namespace storm {
                     // We assume that there is one bound value that violates the quantile and one bound value that satisfies it.
                     
                     // Let all other open bounds approach infinity
-                    std::vector<BoundTransformation> bts(getDimension(), BoundTransformation::None);
-                    storm::storage::BitVector otherLowerBoundedDimensions(getDimension(), false);
+                    std::set<storm::expressions::Variable> infinityVariables;
                     for (auto const& d : getOpenDimensions()) {
                         if (d != dimension) {
-                            if (quantileFormula.getSubformula().asProbabilityOperatorFormula().getSubformula().asBoundedUntilFormula().hasLowerBound(d)) {
-                                bts[d] = BoundTransformation::GreaterZero;
-                                otherLowerBoundedDimensions.set(d, true);
-                            } else {
-                                bts[d] = BoundTransformation::GreaterEqualZero;
-                            }
+                            infinityVariables.insert(getVariableForDimension(d));
                         }
                     }
+                    auto transformedFormula = transformBoundedUntilOperator(quantileFormula.getSubformula().asProbabilityOperatorFormula(), std::vector<BoundTransformation>(getDimension(), BoundTransformation::None));
+                    MultiDimensionalRewardUnfolding<ValueType, true> rewardUnfolding(model, transformedFormula, infinityVariables);
+                    
                     
                     bool upperCostBound = quantileFormula.getSubformula().asProbabilityOperatorFormula().getSubformula().asBoundedUntilFormula().hasUpperBound(dimension);
                     bool minimizingRewardBound = storm::solver::minimize(getOptimizationDirForDimension(dimension));
-                    
-                    storm::storage::BitVector nonMecChoices;
-                    if (!otherLowerBoundedDimensions.empty()) {
-                        STORM_LOG_ASSERT(!upperCostBound, "It is not possible to let other open dimensions approach infinity if this is an upper cost bound and others are lower cost bounds.");
-                        // Get the choices that do not lie on a mec
-                        nonMecChoices.resize(model.getNumberOfChoices(), true);
-                        auto mecDecomposition = storm::storage::MaximalEndComponentDecomposition<ValueType>(model);
-                        for (auto const& mec : mecDecomposition) {
-                            for (auto const& stateChoicesPair : mec) {
-                                for (auto const& choice : stateChoicesPair.second) {
-                                    nonMecChoices.set(choice, false);
-                                }
-                            }
-                        }
-                    }
-                    
-                    auto transformedFormula = transformBoundedUntilOperator(quantileFormula.getSubformula().asProbabilityOperatorFormula(), bts);
-                    MultiDimensionalRewardUnfolding<ValueType, true> rewardUnfolding(model, transformedFormula, [&](std::vector<EpochManager::Epoch>& epochSteps, EpochManager const& epochManager) {
-                        if (!otherLowerBoundedDimensions.empty()) {
-                            for (auto const& choice : nonMecChoices) {
-                                for (auto const& dim : otherLowerBoundedDimensions) {
-                                    epochManager.setDimensionOfEpoch(epochSteps[choice], dim, 0);
-                                }
-                            }
-                        }
-                    });
-
                     
                     // initialize data that will be needed for each epoch
                     auto lowerBound = rewardUnfolding.getLowerObjectiveBound();
@@ -450,58 +442,27 @@ namespace storm {
                 }
                 
                 template<typename ModelType>
-                typename ModelType::ValueType QuantileHelper<ModelType>::computeExtremalValue(Environment const& env, storm::storage::BitVector const& minimizingDimensions) const {
-                    // For maximizing in a dimension, we can simply 'drop' the bound by replacing it with >=0
-                    // For minimizing an upper-bounded dimension, we can replace it with <=0
-                    // For minimizing a lower-bounded dimension, the lower bound needs to approach infinity.
-                    // To compute this limit probability, we only consider epoch steps that lie in an end component and check for the bound >0 instead.
-                    // Notice, however, that this approach fails if we try to minimize for a lower and an upper bounded dimension
-                    
+                typename ModelType::ValueType QuantileHelper<ModelType>::computeLimitValue(Environment const& env, storm::storage::BitVector const& infDimensions) const {
+                    // To compute the limit for an upper bounded dimension, we can simply drop the bound
+                    // To compute the limit for a lower bounded dimension, we only consider epoch steps that lie in an end component and check for the bound >0 instead.
+                    // Notice, however, that this approach becomes problematic if, at the same time, we consider an upper bounded dimension with bound value zero.
                     std::vector<BoundTransformation> bts(getDimension(), BoundTransformation::None);
-                    storm::storage::BitVector minimizingLowerBoundedDimensions(getDimension(), false);
-
+                    std::set<storm::expressions::Variable> infinityVariables;
                     for (auto const& d : getOpenDimensions()) {
-                        if (minimizingDimensions.get(d)) {
-                            bool upperCostBound = quantileFormula.getSubformula().asProbabilityOperatorFormula().getSubformula().asBoundedUntilFormula().hasUpperBound(d);
+                        bool upperCostBound = quantileFormula.getSubformula().asProbabilityOperatorFormula().getSubformula().asBoundedUntilFormula().hasUpperBound(d);
+                        if (infDimensions.get(d)) {
+                            infinityVariables.insert(getVariableForDimension(d));
+                        } else {
                             if (upperCostBound) {
                                 bts[d] = BoundTransformation::LessEqualZero;
-                                STORM_LOG_ASSERT(std::find(bts.begin(), bts.end(), BoundTransformation::GreaterZero) == bts.end(), "Unable to compute extremal value for minimizing lower and upper bounded dimensions.");
                             } else {
-                                bts[d] = BoundTransformation::GreaterZero;
-                                minimizingLowerBoundedDimensions.set(d, true);
-                                STORM_LOG_ASSERT(std::find(bts.begin(), bts.end(), BoundTransformation::LessEqualZero) == bts.end(), "Unable to compute extremal value for minimizing lower and upper bounded dimensions.");
+                                bts[d] = BoundTransformation::GreaterEqualZero;
                             }
-                        } else {
-                            bts[d] = BoundTransformation::GreaterEqualZero;
                         }
                     }
-
                     auto transformedFormula = transformBoundedUntilOperator(quantileFormula.getSubformula().asProbabilityOperatorFormula(), bts);
                     
-                    storm::storage::BitVector nonMecChoices;
-                    if (!minimizingLowerBoundedDimensions.empty()) {
-                        // Get the choices that do not lie on a mec
-                        nonMecChoices.resize(model.getNumberOfChoices(), true);
-                        auto mecDecomposition = storm::storage::MaximalEndComponentDecomposition<ValueType>(model);
-                        for (auto const& mec : mecDecomposition) {
-                            for (auto const& stateChoicesPair : mec) {
-                                for (auto const& choice : stateChoicesPair.second) {
-                                    nonMecChoices.set(choice, false);
-                                }
-                            }
-                        }
-                    }
-                    std::cout << "nonmec choices are " << nonMecChoices << std::endl;
-
-                    MultiDimensionalRewardUnfolding<ValueType, true> rewardUnfolding(model, transformedFormula, [&](std::vector<EpochManager::Epoch>& epochSteps, EpochManager const& epochManager) {
-                        if (!minimizingLowerBoundedDimensions.empty()) {
-                            for (auto const& choice : nonMecChoices) {
-                                for (auto const& dim : minimizingLowerBoundedDimensions) {
-                                    epochManager.setDimensionOfEpoch(epochSteps[choice], dim, 0);
-                                }
-                            }
-                        }
-                    });
+                    MultiDimensionalRewardUnfolding<ValueType, true> rewardUnfolding(model, transformedFormula, infinityVariables);
 
                     // Get lower and upper bounds for the solution.
                     auto lowerBound = rewardUnfolding.getLowerObjectiveBound();
@@ -520,7 +481,7 @@ namespace storm {
                     }
 
                     ValueType numericResult = rewardUnfolding.getInitialStateResult(initEpoch);
-                    STORM_LOG_TRACE("Extremal probability for minimizing dimensions " << minimizingDimensions << " is " << numericResult << ".");
+                    STORM_LOG_TRACE("Limit probability for infinity dimensions " << infDimensions << " is " << numericResult << ".");
                     return transformedFormula->getBound().isSatisfied(numericResult);
                 }
 

@@ -10,6 +10,14 @@ namespace storm {
         namespace helper {
             namespace rewardbounded {
                 
+
+                enum class DimensionBoundType {
+                    Unbounded, // i.e., >=0 or <=B where B approaches infinity
+                    UpperBound, // i.e., <=B where B is either a constant or a variable
+                    LowerBound, // i.e., >B, where B is either a constant or a variable
+                    LowerBoundInfinity // i.e., >B, where B approaches infinity
+                };
+                
                 template<typename ValueType>
                 struct Dimension {
                     /// The formula describing this dimension
@@ -21,11 +29,8 @@ namespace storm {
                     /// A label that indicates the states where this dimension is still relevant (i.e., it is yet unknown whether the corresponding objective holds)
                     boost::optional<std::string> memoryLabel;
 
-                    /// True iff the objective is bounded with either an upper bound or a lower bound which is not >= 0
-                    bool isBounded;
-
-                    /// True iff the objective is upper bounded, false if it has a lower bound or no bound at all.
-                    bool isUpperBounded;
+                    /// The type of the bound on this dimension.
+                    DimensionBoundType boundType;
 
                     /// Multiplying an epoch value with this factor yields the reward/cost in the original domain.
                     ValueType scalingFactor;
