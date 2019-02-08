@@ -14,6 +14,8 @@
 #include "storm/storage/BitVector.h"
 #include "storm/storage/MaximalEndComponentDecomposition.h"
 #include "storm/utility/vector.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/CoreSettings.h"
 
 #include "storm/logic/ProbabilityOperatorFormula.h"
 #include "storm/logic/BoundedUntilFormula.h"
@@ -185,9 +187,10 @@ namespace storm {
                 }
 
                 template<typename ModelType>
-                std::vector<std::vector<typename ModelType::ValueType>> QuantileHelper<ModelType>::computeQuantile(Environment const& env) {
+                std::vector<std::vector<typename ModelType::ValueType>> QuantileHelper<ModelType>::computeQuantile(Environment const& env) const {
                     std::vector<std::vector<ValueType>> result;
                     Environment envCpy = env; // It might be necessary to increase the precision during the computation
+                    numCheckedEpochs = 0; numPrecisionRefinements = 0;
                     if (getOpenDimensions().getNumberOfSetBits() == 1) {
                         uint64_t dimension = *getOpenDimensions().begin();
                         
@@ -201,6 +204,7 @@ namespace storm {
                                     break;
                                 }
                                 increasePrecision(envCpy);
+                                ++numPrecisionRefinements;
                             }
                         } else if (zeroSatisfiesFormula) {
                             // thus also infSatisfiesFormula is true, i.e., all bound values satisfy the formula
@@ -217,6 +221,10 @@ namespace storm {
                         result = computeTwoDimensionalQuantile(envCpy);
                     } else {
                         STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The quantile formula considers " << getOpenDimensions().getNumberOfSetBits() << " open dimensions. Only one- or two-dimensional quantiles are supported.");
+                    }
+                    if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
+                        std::cout << "Number of checked epochs: " << numCheckedEpochs << std::endl;
+                        std::cout << "Number of required precision refinements: " << numPrecisionRefinements << std::endl;
                     }
                     return result;
                 }
@@ -253,11 +261,10 @@ namespace storm {
                 }
                 
                 template<typename ModelType>
-                std::vector<std::vector<typename ModelType::ValueType>> QuantileHelper<ModelType>::computeTwoDimensionalQuantile(Environment& env) {
+                std::vector<std::vector<typename ModelType::ValueType>> QuantileHelper<ModelType>::computeTwoDimensionalQuantile(Environment& env) const {
                     std::vector<std::vector<ValueType>> result;
 
                     auto const& probOpFormula = quantileFormula.getSubformula().asProbabilityOperatorFormula();
-                    storm::logic::ComparisonType probabilityBound = probOpFormula.getBound().comparisonType;
                     auto const& boundedUntilFormula = probOpFormula.getSubformula().asBoundedUntilFormula();
                     std::vector<storm::storage::BitVector> dimensionsAsBitVector;
                     std::vector<uint64_t> dimensions;
@@ -282,15 +289,12 @@ namespace storm {
                                 for (uint64_t i = 0; i < 2; ++i) {
                                     // find out whether the bounds B_i = 0 and B_1-i = infinity satisfy the formula
                                     bool zeroInfSatisfiesFormula = checkLimitValue(env, dimensionsAsBitVector[1-i]);
-                                    std::cout << "Formula sat is " << zeroInfSatisfiesFormula << " and lower bound is " << storm::logic::isLowerBound(probabilityBound) << std::endl;
                                     if (zeroInfSatisfiesFormula == storm::solver::minimize(optimizationDirections[0])) {
                                         // There is bound value b such that the point B_i=0 and B_1-i = b is part of the result
                                         singleQuantileValues.emplace_back(0, storm::utility::zero<ValueType>());
                                     } else {
                                         // Compute quantile where 1-i is set to infinity
-                                        std::cout << "Computing quantile for single dimension " << dimensions[i] << std::endl;
                                         singleQuantileValues.push_back(computeQuantileForDimension(env, dimensions[i]).get());
-                                        std::cout << ".. Result is " << singleQuantileValues.back().first << std::endl;
                                         if (!storm::solver::minimize(optimizationDirections[i])) {
                                             // When maximizing bounds, the computed single dimensional quantile value is sat for all values of the other bound.
                                             // Increase the computed value so that there is at least one unsat assignment of bounds with B[i] = singleQuantileValues[i]
@@ -302,10 +306,10 @@ namespace storm {
                                         --singleQuantileValues[i].first;
                                     }
                                 }
-                                std::cout << "Found starting point. Beginning 2D exploration" << std::endl;
                                 std::vector<int64_t> currentEpochValues = {(int64_t) singleQuantileValues[0].first, (int64_t) singleQuantileValues[1].first}; // signed int is needed to allow lower bounds >-1 (aka >=0).
                                 while (!exploreTwoDimensionalQuantile(env, singleQuantileValues, currentEpochValues, result)) {
                                     increasePrecision(env);
+                                    ++numPrecisionRefinements;
                                 }
                             } else if (infInfProbSatisfiesFormula) {
                                 // then also zeroZeroProb satisfies the formula, i.e., all bound values satisfy the formula
@@ -354,7 +358,6 @@ namespace storm {
                     std::vector<ValueType> x, b;
                     std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> minMaxSolver;
                     
-                    std::cout << "Starting quantile exploration with: (" << currentEpochValues[0] << ", " << currentEpochValues[1] << ")." << std::endl;
                     if (currentEpochValues[0] < 0 && currentEpochValues[1] < 0) {
                         // This case can only happen in these cases:
                         assert(lowerCostBounds[0]);
@@ -379,11 +382,11 @@ namespace storm {
                             if (exploredEpochs.count(epoch) == 0) {
                                 auto& epochModel = rewardUnfolding.setCurrentEpoch(epoch);
                                 rewardUnfolding.setSolutionForCurrentEpoch(epochModel.analyzeSingleObjective(env, quantileFormula.getSubformula().asProbabilityOperatorFormula().getOptimalityType(), x, b, minMaxSolver, lowerBound, upperBound));
+                                ++numCheckedEpochs;
                                 exploredEpochs.insert(epoch);
                             }
                         }
                         ValueType currValue = rewardUnfolding.getInitialStateResult(currEpoch);
-                        std::cout << "Numeric result for epoch " << rewardUnfolding.getEpochManager().toString(currEpoch) << " is " << currValue << std::endl;
                         bool propertySatisfied;
                         if (env.solver().isForceSoundness()) {
                             auto lowerUpperValue = getLowerUpperBound(env, currValue);
@@ -419,7 +422,6 @@ namespace storm {
                                 convertedPoint.push_back(storm::utility::convertNumber<ValueType>(point[i]) * rewardUnfolding.getDimension(dimensions[i]).scalingFactor);
                             }
                             if (!convertedPoint.empty()) {
-                                std::cout << "Found another result point: (" << convertedPoint[0] << ", " << convertedPoint[1] << ")." << std::endl;
                                 resultPoints.push_back(std::move(convertedPoint));
                             }
                             
@@ -482,11 +484,11 @@ namespace storm {
                             if (exploredEpochs.count(epoch) == 0) {
                                 auto& epochModel = rewardUnfolding.setCurrentEpoch(epoch);
                                 rewardUnfolding.setSolutionForCurrentEpoch(epochModel.analyzeSingleObjective(env, quantileFormula.getSubformula().asProbabilityOperatorFormula().getOptimalityType(), x, b, minMaxSolver, lowerBound, upperBound));
+                                ++numCheckedEpochs;
                                 exploredEpochs.insert(epoch);
                             }
                         }
                         ValueType currValue = rewardUnfolding.getInitialStateResult(currEpoch);
-                        std::cout << "Numeric result for epoch " << rewardUnfolding.getEpochManager().toString(currEpoch) << " is " << currValue << std::endl;
                         
                         bool propertySatisfied;
                         if (env.solver().isForceSoundness()) {
@@ -537,6 +539,7 @@ namespace storm {
                                 return lowerSat;
                             } else {
                                 increasePrecision(env);
+                                ++numPrecisionRefinements;
                             }
                         } else {
                             return probabilityBound.isSatisfied(numericResult);
@@ -585,6 +588,7 @@ namespace storm {
                     for (auto const& epoch : epochOrder) {
                         auto& epochModel = rewardUnfolding.setCurrentEpoch(epoch);
                         rewardUnfolding.setSolutionForCurrentEpoch(epochModel.analyzeSingleObjective(env, quantileFormula.getSubformula().asProbabilityOperatorFormula().getOptimalityType(), x, b, minMaxSolver, lowerBound, upperBound));
+                        ++numCheckedEpochs;
                     }
 
                     ValueType numericResult = rewardUnfolding.getInitialStateResult(initEpoch);

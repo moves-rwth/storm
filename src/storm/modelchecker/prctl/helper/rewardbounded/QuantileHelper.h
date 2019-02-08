@@ -20,10 +20,10 @@ namespace storm {
                 public:
                     QuantileHelper(ModelType const& model, storm::logic::QuantileFormula const& quantileFormula);
 
-                    std::vector<std::vector<ValueType>> computeQuantile(Environment const& env);
+                    std::vector<std::vector<ValueType>> computeQuantile(Environment const& env) const;
 
                 private:
-                    std::vector<std::vector<ValueType>> computeTwoDimensionalQuantile(Environment& env);
+                    std::vector<std::vector<ValueType>> computeTwoDimensionalQuantile(Environment& env) const;
                     bool exploreTwoDimensionalQuantile(Environment const& env, std::vector<std::pair<int64_t, typename ModelType::ValueType>> const& startEpochValues, std::vector<int64_t>& currentEpochValues, std::vector<std::vector<ValueType>>& resultPoints) const;
 
                     /*!
@@ -59,6 +59,10 @@ namespace storm {
 
                     ModelType const& model;
                     storm::logic::QuantileFormula const& quantileFormula;
+                    
+                    /// Statistics
+                    mutable uint64_t numCheckedEpochs;
+                    mutable uint64_t numPrecisionRefinements;
                 };
             }
         }
