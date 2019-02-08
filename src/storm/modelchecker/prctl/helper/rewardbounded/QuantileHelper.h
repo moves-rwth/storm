@@ -1,6 +1,7 @@
 #pragma once
 
 #include "storm/logic/QuantileFormula.h"
+#include "boost/optional.hpp"
 
 namespace storm {
     class Environment;
@@ -22,16 +23,24 @@ namespace storm {
                     std::vector<std::vector<ValueType>> computeQuantile(Environment const& env);
 
                 private:
-                    std::vector<std::vector<ValueType>> computeTwoDimensionalQuantile(Environment const& env);
-                    
+                    std::vector<std::vector<ValueType>> computeTwoDimensionalQuantile(Environment& env);
+                    bool exploreTwoDimensionalQuantile(Environment const& env, std::vector<std::pair<int64_t, typename ModelType::ValueType>> const& startEpochValues, std::vector<int64_t>& currentEpochValues, std::vector<std::vector<ValueType>>& resultPoints) const;
+
                     /*!
                      * Computes the limit probability, where the given dimensions approach infinity and the remaining dimensions are set to zero.
                      */
                     ValueType computeLimitValue(Environment const& env, storm::storage::BitVector const& infDimensions) const;
+
+                    /*!
+                     * Computes the limit probability, where the given dimensions approach infinity and the remaining dimensions are set to zero.
+                     * The computed value is compared to the probability threshold.
+                     * In sound mode, precision is iteratively increased in case of 'inconsistent' results.
+                     */
+                    bool checkLimitValue(Environment& env, storm::storage::BitVector const& infDimensions) const;
                     
-                    
-                    /// Computes the quantile with respect to the given dimension
-                    std::pair<uint64_t, typename ModelType::ValueType> computeQuantileForDimension(Environment const& env, uint64_t dim) const;
+                    /// Computes the quantile with respect to the given dimension.
+                    /// boost::none is returned in case of insufficient precision.
+                    boost::optional<std::pair<uint64_t, typename ModelType::ValueType>> computeQuantileForDimension(Environment const& env, uint64_t dim) const;
                     
                     /*!
                      * Gets the number of dimensions of the underlying boudned until formula

@@ -77,6 +77,12 @@ namespace storm {
                     
                     EpochManager const& getEpochManager() const;
                     Dimension<ValueType> const& getDimension(uint64_t dim) const;
+
+                    /*!
+                     * Returns objectives that are always satisfied (i.e., have probability one) in all initial states.
+                     * These objectives can not be handled by this as they can not be translated into expected rewards.
+                     */
+                    storm::storage::BitVector const& getProb1Objectives() const;
                     
                 private:
                 
@@ -88,12 +94,6 @@ namespace storm {
                     void translateLowerBoundInfinityDimensions(std::vector<Epoch>& epochSteps);
                     
                     void initializeMemoryProduct(std::vector<Epoch> const& epochSteps);
-                    
-                    // Returns a solution only consisting of one
-                    template<bool SO = SingleObjectiveMode, typename std::enable_if<SO, int>::type = 0>
-                    SolutionType getOneSolution() const;
-                    template<bool SO = SingleObjectiveMode, typename std::enable_if<!SO, int>::type = 0>
-                    SolutionType getOneSolution() const;
                     
                     template<bool SO = SingleObjectiveMode, typename std::enable_if<SO, int>::type = 0>
                     SolutionType getScaledSolution(SolutionType const& solution, ValueType const& scalingFactor) const;

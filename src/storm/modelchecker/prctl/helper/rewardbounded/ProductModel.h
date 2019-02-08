@@ -52,7 +52,7 @@ namespace storm {
                     
                 private:
                     
-                    storm::storage::MemoryStructure computeMemoryStructure(storm::models::sparse::Model<ValueType> const& model, std::vector<storm::modelchecker::multiobjective::Objective<ValueType>> const& objectives) const;
+                    storm::storage::MemoryStructure computeMemoryStructure(storm::models::sparse::Model<ValueType> const& model, std::vector<storm::modelchecker::multiobjective::Objective<ValueType>> const& objectives);
                     std::vector<MemoryState> computeMemoryStateMap(storm::storage::MemoryStructure const& memory) const;
     
                     

@@ -92,9 +92,8 @@ namespace storm {
                     computeReachableStatesInEpochClasses();
                 }
                 
-                
                 template<typename ValueType>
-                storm::storage::MemoryStructure ProductModel<ValueType>::computeMemoryStructure(storm::models::sparse::Model<ValueType> const& model, std::vector<storm::modelchecker::multiobjective::Objective<ValueType>> const& objectives) const {
+                storm::storage::MemoryStructure ProductModel<ValueType>::computeMemoryStructure(storm::models::sparse::Model<ValueType> const& model, std::vector<storm::modelchecker::multiobjective::Objective<ValueType>> const& objectives) {
                     
                     storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Model<ValueType>> mc(model);
                     
@@ -647,6 +646,11 @@ namespace storm {
                 template<typename ValueType>
                 uint64_t ProductModel<ValueType>::transformProductState(uint64_t const& productState, EpochClass const& epochClass, MemoryState const& predecessorMemoryState) const {
                     return getProductState(getModelState(productState), transformMemoryState(getMemoryState(productState), epochClass, predecessorMemoryState));
+                }
+                
+                template<typename ValueType>
+                storm::storage::BitVector const& ProductModel<ValueType>::getProb1Objectives() {
+                    return prob1Objectives;
                 }
                 
                 template class ProductModel<double>;
