@@ -255,6 +255,7 @@ namespace storage {
         void colourize(std::shared_ptr<const DFTGate<ValueType>> const& gate) {
              STORM_LOG_TRACE("Colour " << gate->id() << ": "  << gate->type() << " " << gate->nrChildren() << " " << gate->rank() << ".");
              gateColour[gate->id()] = gateColourizer(gate->type(), gate->nrChildren(), gate->nrParents(), 0, gate->rank());
+             STORM_LOG_TRACE("Coloured " << gate->id() << " with " << gateColour[gate->id()] << ".");
         }
         
         void colourize(std::shared_ptr<const DFTDependency<ValueType>> const& dep) {
