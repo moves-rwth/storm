@@ -56,46 +56,69 @@ namespace storm {
 
         template <typename ValueType>
         void ConstraintCollector<ValueType>::process(storm::models::sparse::Model<ValueType> const& model) {
-            for(uint_fast64_t action = 0; action < model.getTransitionMatrix().getRowCount(); ++action) {
-                ValueType sum = storm::utility::zero<ValueType>();
 
-                for (auto transitionIt = model.getTransitionMatrix().begin(action); transitionIt != model.getTransitionMatrix().end(action); ++transitionIt) {
-                    auto const& transition = *transitionIt;
-                    sum += transition.getValue();
-                    if (!storm::utility::isConstant(transition.getValue())) {
-                        auto const& transitionVars = transition.getValue().gatherVariables();
-                        variableSet.insert(transitionVars.begin(), transitionVars.end());
-                        // Assert: 0 <= transition <= 1
+            if (model.getType() != storm::models::ModelType::Ctmc) {
+
+                for(uint_fast64_t action = 0; action < model.getTransitionMatrix().getRowCount(); ++action) {
+                    ValueType sum = storm::utility::zero<ValueType>();
+
+                    for (auto transitionIt = model.getTransitionMatrix().begin(action); transitionIt != model.getTransitionMatrix().end(action); ++transitionIt) {
+                        auto const& transition = *transitionIt;
+                        sum += transition.getValue();
+                        if (!storm::utility::isConstant(transition.getValue())) {
+                            auto const& transitionVars = transition.getValue().gatherVariables();
+                            variableSet.insert(transitionVars.begin(), transitionVars.end());
+                            // Assert: 0 <= transition <= 1
+                            if (transition.getValue().denominator().isConstant()) {
+                                assert(transition.getValue().denominator().constantPart() != 0);
+                                if (transition.getValue().denominator().constantPart() > 0) {
+                                    // Assert: nom <= denom
+                                    wellformedConstraintSet.emplace((transition.getValue().nominator() - transition.getValue().denominator()).polynomialWithCoefficient(), storm::CompareRelation::LEQ);
+                                    // Assert: nom >= 0
+                                    wellformedConstraintSet.emplace(transition.getValue().nominator().polynomialWithCoefficient(), storm::CompareRelation::GEQ);
+                                } else if (transition.getValue().denominator().constantPart() < 0) {
+                                    // Assert nom >= denom
+                                    wellformedConstraintSet.emplace((transition.getValue().nominator() - transition.getValue().denominator()).polynomialWithCoefficient(), storm::CompareRelation::GEQ);
+                                    // Assert: nom <= 0
+                                    wellformedConstraintSet.emplace(transition.getValue().nominator().polynomialWithCoefficient(), storm::CompareRelation::LEQ);
+                                } else {
+                                    STORM_LOG_ASSERT(false, "Denominator must not equal 0.");
+                                }
+                            } else {
+                                // Assert: denom != 0
+                                wellformedConstraintSet.emplace(transition.getValue().denominator().polynomialWithCoefficient(), storm::CompareRelation::NEQ);
+                                 // Assert: transition >= 0 <==> if denom > 0 then nom >= 0 else nom <= 0
+                                wellformedConstraintSet.emplace(carl::FormulaType::ITE, typename ConstraintType<ValueType>::val(transition.getValue().denominator().polynomialWithCoefficient(), storm::CompareRelation::GREATER), typename ConstraintType<ValueType>::val(transition.getValue().nominator().polynomialWithCoefficient(), storm::CompareRelation::GEQ), typename ConstraintType<ValueType>::val(transition.getValue().nominator().polynomialWithCoefficient(), storm::CompareRelation::LEQ));
+                                 // TODO: Assert: transition <= 1 <==> if denom > 0 then nom - denom <= 0 else nom - denom >= 0
+                            }
+                            // Assert: transition > 0
+                            graphPreservingConstraintSet.emplace(transition.getValue().nominator().polynomialWithCoefficient(), storm::CompareRelation::NEQ);
+                        }
+                    }
+                    STORM_LOG_ASSERT(!storm::utility::isConstant(sum) || storm::utility::isOne(sum), "If the sum is a constant, it must be equal to 1.");
+                    if(!storm::utility::isConstant(sum)) {
+                        // Assert: sum == 1
+                        wellformedConstraintSet.emplace((sum.nominator() - sum.denominator()).polynomialWithCoefficient(), storm::CompareRelation::EQ);
+                    }
+                }
+            } else {
+                for (auto const& transition : model.getTransitionMatrix()) {
+                    if(!transition.getValue().isConstant()) {
                         if (transition.getValue().denominator().isConstant()) {
                             assert(transition.getValue().denominator().constantPart() != 0);
                             if (transition.getValue().denominator().constantPart() > 0) {
-                                // Assert: nom <= denom
-                                wellformedConstraintSet.emplace((transition.getValue().nominator() - transition.getValue().denominator()).polynomialWithCoefficient(), storm::CompareRelation::LEQ);
-                                // Assert: nom >= 0
                                 wellformedConstraintSet.emplace(transition.getValue().nominator().polynomialWithCoefficient(), storm::CompareRelation::GEQ);
                             } else if (transition.getValue().denominator().constantPart() < 0) {
-                                // Assert nom >= denom
-                                wellformedConstraintSet.emplace((transition.getValue().nominator() - transition.getValue().denominator()).polynomialWithCoefficient(), storm::CompareRelation::GEQ);
-                                // Assert: nom <= 0
                                 wellformedConstraintSet.emplace(transition.getValue().nominator().polynomialWithCoefficient(), storm::CompareRelation::LEQ);
                             } else {
-                                STORM_LOG_ASSERT(false, "Denominator must not equal 0.");
+                                assert(false); // Should fail before.
                             }
                         } else {
-                            // Assert: denom != 0
                             wellformedConstraintSet.emplace(transition.getValue().denominator().polynomialWithCoefficient(), storm::CompareRelation::NEQ);
-                             // Assert: transition >= 0 <==> if denom > 0 then nom >= 0 else nom <= 0
                             wellformedConstraintSet.emplace(carl::FormulaType::ITE, typename ConstraintType<ValueType>::val(transition.getValue().denominator().polynomialWithCoefficient(), storm::CompareRelation::GREATER), typename ConstraintType<ValueType>::val(transition.getValue().nominator().polynomialWithCoefficient(), storm::CompareRelation::GEQ), typename ConstraintType<ValueType>::val(transition.getValue().nominator().polynomialWithCoefficient(), storm::CompareRelation::LEQ));
-                             // TODO: Assert: transition <= 1 <==> if denom > 0 then nom - denom <= 0 else nom - denom >= 0
                         }
-                        // Assert: transition > 0
                         graphPreservingConstraintSet.emplace(transition.getValue().nominator().polynomialWithCoefficient(), storm::CompareRelation::NEQ);
                     }
-                }
-                STORM_LOG_ASSERT(!storm::utility::isConstant(sum) || storm::utility::isOne(sum), "If the sum is a constant, it must be equal to 1.");
-                if(!storm::utility::isConstant(sum)) {
-                    // Assert: sum == 1
-                    wellformedConstraintSet.emplace((sum.nominator() - sum.denominator()).polynomialWithCoefficient(), storm::CompareRelation::EQ);
                 }
             }
 

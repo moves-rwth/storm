@@ -106,13 +106,13 @@ namespace storm {
             // Initialize
             auto modelComponents = std::make_shared<storm::storage::sparse::ModelComponents<ValueType, RewardModelType>>();
             bool nonDeterministic = (type == storm::models::ModelType::Mdp || type == storm::models::ModelType::MarkovAutomaton || type == storm::models::ModelType::Pomdp);
-            bool continousTime = (type == storm::models::ModelType::Ctmc || type == storm::models::ModelType::MarkovAutomaton);
+            bool continuousTime = (type == storm::models::ModelType::Ctmc || type == storm::models::ModelType::MarkovAutomaton);
             storm::storage::SparseMatrixBuilder<ValueType> builder = storm::storage::SparseMatrixBuilder<ValueType>(0, 0, 0, false, nonDeterministic, 0);
             modelComponents->stateLabeling = storm::models::sparse::StateLabeling(stateSize);
             modelComponents->observabilityClasses = std::vector<uint32_t>();
             modelComponents->observabilityClasses->resize(stateSize);
             std::vector<std::vector<ValueType>> stateRewards;
-            if (continousTime) {
+            if (continuousTime) {
                 modelComponents->exitRates = std::vector<ValueType>(stateSize);
                 if (type == storm::models::ModelType::MarkovAutomaton) {
                     modelComponents->markovianStates = storm::storage::BitVector(stateSize);
