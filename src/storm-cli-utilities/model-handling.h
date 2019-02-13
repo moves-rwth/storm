@@ -579,7 +579,7 @@ namespace storm {
                     STORM_PRINT("Time for model checking: " << *watch << "." << std::endl);
                 }
             } else {
-                STORM_PRINT(" failed, property is unsupported by selected engine/settings." << std::endl);
+                STORM_LOG_ERROR("Property is unsupported by selected engine/settings." << std::endl);
             }
         }
         
