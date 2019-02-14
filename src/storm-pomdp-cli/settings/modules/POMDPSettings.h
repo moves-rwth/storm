@@ -4,20 +4,18 @@
 #include "storm/settings/modules/ModuleSettings.h"
 #include "storm-pomdp/storage/PomdpMemory.h"
 
-#include "storm-dft/builder/DftExplorationHeuristic.h"
-
 namespace storm {
     namespace settings {
         namespace modules {
 
             /*!
-             * This class represents the settings for DFT model checking.
+             * This class represents the settings for POMDP model checking.
              */
             class POMDPSettings : public ModuleSettings {
             public:
 
                 /*!
-                 * Creates a new set of DFT settings.
+                 * Creates a new set of POMDP settings.
                  */
                 POMDPSettings();
 
