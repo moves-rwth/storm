@@ -48,7 +48,7 @@ namespace storm {
                         }
                     } else {
                         wellformedConstraintSet.emplace(entry.denominator().polynomialWithCoefficient(), storm::CompareRelation::NEQ);
-                        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Rational functions at state rewards not yet supported.");
+                        wellformedConstraintSet.emplace(carl::FormulaType::ITE, typename ConstraintType<ValueType>::val(entry.denominator().polynomialWithCoefficient(), storm::CompareRelation::GREATER), typename ConstraintType<ValueType>::val(entry.nominator().polynomialWithCoefficient(), storm::CompareRelation::GEQ), typename ConstraintType<ValueType>::val(entry.nominator().polynomialWithCoefficient(), storm::CompareRelation::LEQ));
                     }
                 }
             }
@@ -151,7 +151,7 @@ namespace storm {
                                 }
                             } else {
                                 wellformedConstraintSet.emplace(entry.getValue().denominator().polynomialWithCoefficient(), storm::CompareRelation::NEQ);
-                                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Rational functions at transition rewards are not yet supported.");
+                                wellformedConstraintSet.emplace(carl::FormulaType::ITE, typename ConstraintType<ValueType>::val(entry.getValue().denominator().polynomialWithCoefficient(), storm::CompareRelation::GREATER), typename ConstraintType<ValueType>::val(entry.getValue().nominator().polynomialWithCoefficient(), storm::CompareRelation::GEQ), typename ConstraintType<ValueType>::val(entry.getValue().nominator().polynomialWithCoefficient(), storm::CompareRelation::LEQ));
                             }
                         }
                     }
