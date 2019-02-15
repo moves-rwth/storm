@@ -473,8 +473,15 @@ namespace storm {
                 }
                 return result;
             }
+
+            std::set<storm::RationalFunctionVariable> getAllParameters(Model<storm::RationalFunction> const& model) {
+                std::set<storm::RationalFunctionVariable> parameters = getProbabilityParameters(model);
+                std::set<storm::RationalFunctionVariable> rewardParameters = getRewardParameters(model);
+                parameters.insert(rewardParameters.begin(), rewardParameters.end());
+                return parameters;
+            }
 #endif
-            
+
             template class Model<double>;
             template class Model<float>;
 
