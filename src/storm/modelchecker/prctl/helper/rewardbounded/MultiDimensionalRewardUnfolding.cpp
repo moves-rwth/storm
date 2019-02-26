@@ -7,6 +7,8 @@
 #include "storm/utility/macros.h"
 #include "storm/logic/Formulas.h"
 
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/CoreSettings.h"
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/prctl/helper/BaierUpperRewardBoundsComputer.h"
@@ -377,6 +379,11 @@ namespace storm {
                     if (!currentEpoch || !epochManager.compareEpochClass(epoch, currentEpoch.get())) {
                         setCurrentEpochClass(epoch);
                         epochModel.epochMatrixChanged = true;
+                        if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
+                            if (storm::utility::graph::hasCycle(epochModel.epochMatrix)) {
+                                std::cout << "Epoch model for epoch " << epochManager.toString(epoch) <<  " is cyclic." << std::endl;
+                            }
+                        }
                     } else {
                         epochModel.epochMatrixChanged = false;
                     }
@@ -690,7 +697,6 @@ namespace storm {
                 
                 template<typename ValueType, bool SingleObjectiveMode>
                 ValueType MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::getRequiredEpochModelPrecision(Epoch const& startEpoch, ValueType const& precision) {
-                    // if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isSoundSet()) {
                     uint64_t sumOfDimensions = 0;
                     for (uint64_t dim = 0; dim < epochManager.getDimensionCount(); ++dim) {
                         sumOfDimensions += epochManager.getDimensionOfEpoch(startEpoch, dim) + 1;
