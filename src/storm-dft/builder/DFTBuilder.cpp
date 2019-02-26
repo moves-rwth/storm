@@ -26,6 +26,9 @@ namespace storm {
                     if (itFind != mElements.end()) {
                         // Child found
                         DFTElementPointer childElement = itFind->second;
+                        STORM_LOG_THROW(!childElement->isRestriction(), storm::exceptions::WrongFormatException,
+                                        "Restictor " << childElement->name() << " is not allowed as child of gate "
+                                                     << gate->name());
                         if(!childElement->isDependency()) {
                             gate->pushBackChild(childElement);
                             childElement->addParent(gate);
@@ -82,14 +85,13 @@ namespace storm {
                 }
                 
             }
-            
 
             // Sort elements topologically
+            DFTElementVector elems = topoSort();
             // compute rank
-            for (auto& elem : mElements) {
+            for (auto &elem : mElements) {
                 computeRank(elem.second);
             }
-            DFTElementVector elems = topoSort();
             // Set ids
             size_t id = 0;
             for(DFTElementPointer e : elems) {
