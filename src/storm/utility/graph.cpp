@@ -134,7 +134,7 @@ namespace storm {
                         uint64_t state = dfsStack.back();
                         if (unexploredStates.get(state)) {
                             unexploredStates.set(state, false);
-                            for (auto const& entry : transitionMatrix.getRowGroup(start)) {
+                            for (auto const& entry : transitionMatrix.getRowGroup(state)) {
                                 if (unexploredStates.get(entry.getColumn())) {
                                     dfsStack.push_back(entry.getColumn());
                                 } else {
