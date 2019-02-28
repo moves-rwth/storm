@@ -81,6 +81,15 @@ namespace storm {
             template<typename T>
             storm::storage::BitVector getBsccCover(storm::storage::SparseMatrix<T> const& transitionMatrix);
         
+            
+            /*!
+             * Returns true if the graph represented by the given matrix has a cycle
+             * @param transitionMatrix
+             * @param subsystem if given, only states in the subsystem are considered for the check.
+             */
+            template<typename T>
+            bool hasCycle(storm::storage::SparseMatrix<T> const& transitionMatrix, boost::optional<storm::storage::BitVector> const& subsystem = boost::none);
+            
             /*!
              * Checks whether there is an End Component that
              * 1. contains at least one of the specified choices and

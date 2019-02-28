@@ -6,6 +6,7 @@
 #include "storm/storage/SparseMatrix.h"
 #include "storm/modelchecker/multiobjective/Objective.h"
 #include "storm/modelchecker/prctl/helper/rewardbounded/EpochManager.h"
+#include "storm/modelchecker/prctl/helper/rewardbounded/EpochModel.h"
 #include "storm/modelchecker/prctl/helper/rewardbounded/ProductModel.h"
 #include "storm/modelchecker/prctl/helper/rewardbounded/Dimension.h"
 #include "storm/models/sparse/Model.h"
@@ -27,17 +28,7 @@ namespace storm {
                     typedef typename EpochManager::EpochClass EpochClass;
                     
                     typedef typename std::conditional<SingleObjectiveMode, ValueType, std::vector<ValueType>>::type SolutionType;
-    
-                    struct EpochModel {
-                        bool epochMatrixChanged;
-                        storm::storage::SparseMatrix<ValueType> epochMatrix;
-                        storm::storage::BitVector stepChoices;
-                        std::vector<SolutionType> stepSolutions;
-                        std::vector<std::vector<ValueType>> objectiveRewards;
-                        std::vector<storm::storage::BitVector> objectiveRewardFilter;
-                        storm::storage::BitVector epochInStates;
-                    };
-                    
+
                     /*
                      *
                      * @param model The (preprocessed) model
@@ -45,14 +36,27 @@ namespace storm {
                      *
                      */
                     MultiDimensionalRewardUnfolding(storm::models::sparse::Model<ValueType> const& model, std::vector<storm::modelchecker::multiobjective::Objective<ValueType>> const& objectives);
-                    MultiDimensionalRewardUnfolding(storm::models::sparse::Model<ValueType> const& model, std::shared_ptr<storm::logic::OperatorFormula const> objectiveFormula);
+                    
+                    /*!
+                     * Initializes the reward unfolding with just a single objective.
+                     *
+                     * @param model The input model
+                     * @param objectiveFormula the formula
+                     * @param infinityBoundVariables if non-empty, reward bounds with these variables are assumed to approach infinity
+                     */
+                    MultiDimensionalRewardUnfolding(storm::models::sparse::Model<ValueType> const& model, std::shared_ptr<storm::logic::OperatorFormula const> objectiveFormula, std::set<storm::expressions::Variable> const& infinityBoundVariables = {});
                     
                     ~MultiDimensionalRewardUnfolding() = default;
                     
-                    Epoch getStartEpoch();
+                    /*!
+                     * Retrieves the desired epoch that needs to be analyzed to compute the reward bounded values.
+                     * @param setUnknownDimsToBottom if true, dimensions for which no maxValue is known are set to the bottom dimension. If false, an exception is thrown if there are unknown maxValues.
+                     */
+                    Epoch getStartEpoch(bool setUnknownDimsToBottom = false);
+                    
                     std::vector<Epoch> getEpochComputationOrder(Epoch const& startEpoch);
                     
-                    EpochModel& setCurrentEpoch(Epoch const& epoch);
+                    EpochModel<ValueType, SingleObjectiveMode>& setCurrentEpoch(Epoch const& epoch);
                     
                     void setEquationSystemFormatForEpochModel(storm::solver::LinearEquationSolverProblemFormat eqSysFormat);
                     
@@ -73,14 +77,21 @@ namespace storm {
                     
                     EpochManager const& getEpochManager() const;
                     Dimension<ValueType> const& getDimension(uint64_t dim) const;
+
+                    /*!
+                     * Returns objectives that are always satisfied (i.e., have probability one) in all initial states.
+                     * These objectives can not be handled by this as they can not be translated into expected rewards.
+                     */
+                    storm::storage::BitVector const& getProb1Objectives() const;
                     
                 private:
                 
                     void setCurrentEpochClass(Epoch const& epoch);
-                    void initialize();
+                    void initialize(std::set<storm::expressions::Variable> const& infinityBoundVariables = {});
                     
-                    void initializeObjectives(std::vector<Epoch>& epochSteps);
+                    void initializeObjectives(std::vector<Epoch>& epochSteps, std::set<storm::expressions::Variable> const& infinityBoundVariables);
                     void computeMaxDimensionValues();
+                    void translateLowerBoundInfinityDimensions(std::vector<Epoch>& epochSteps);
                     
                     void initializeMemoryProduct(std::vector<Epoch> const& epochSteps);
                     
@@ -117,13 +128,10 @@ namespace storm {
                     std::vector<uint64_t> epochModelToProductChoiceMap;
                     std::shared_ptr<std::vector<uint64_t> const> productStateToEpochModelInStateMap;
                     std::set<Epoch> possibleEpochSteps;
-                    
-                    EpochModel epochModel;
+
+                    EpochModel<ValueType, SingleObjectiveMode> epochModel;
                     boost::optional<Epoch> currentEpoch;
-                    
-                    // In case of DTMCs we have different options for the equation problem format the epoch model will have.
-                    boost::optional<storm::solver::LinearEquationSolverProblemFormat> equationSolverProblemFormatForEpochModel;
-                    
+
                     EpochManager epochManager;
                     
                     std::vector<Dimension<ValueType>> dimensions;

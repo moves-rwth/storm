@@ -26,6 +26,7 @@ namespace storm {
             virtual boost::any visit(LongRunAverageOperatorFormula const& f, boost::any const& data) const override;
             virtual boost::any visit(LongRunAverageRewardFormula const& f, boost::any const& data) const override;
             virtual boost::any visit(MultiObjectiveFormula const& f, boost::any const& data) const override;
+            virtual boost::any visit(QuantileFormula const& f, boost::any const& data) const override;
             virtual boost::any visit(NextFormula const& f, boost::any const& data) const override;
             virtual boost::any visit(ProbabilityOperatorFormula const& f, boost::any const& data) const override;
             virtual boost::any visit(RewardOperatorFormula const& f, boost::any const& data) const override;

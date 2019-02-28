@@ -117,6 +117,43 @@ namespace storm {
             }
             
             template <typename T>
+            bool hasCycle(storm::storage::SparseMatrix<T> const& transitionMatrix, boost::optional<storm::storage::BitVector> const& subsystem) {
+                storm::storage::BitVector unexploredStates; // States that have not been visited yet
+                storm::storage::BitVector acyclicStates; // States that are known to not lie on a cycle consisting of subsystem states
+                if (subsystem) {
+                    unexploredStates = subsystem.get();
+                    acyclicStates = ~subsystem.get();
+                } else {
+                    unexploredStates.resize(transitionMatrix.getRowGroupCount(), true);
+                    acyclicStates.resize(transitionMatrix.getRowGroupCount(), false);
+                }
+                std::vector<uint64_t> dfsStack;
+                for (uint64_t start = unexploredStates.getNextSetIndex(0); start < unexploredStates.size(); start = unexploredStates.getNextSetIndex(start + 1)) {
+                    dfsStack.push_back(start);
+                    while (!dfsStack.empty()) {
+                        uint64_t state = dfsStack.back();
+                        if (unexploredStates.get(state)) {
+                            unexploredStates.set(state, false);
+                            for (auto const& entry : transitionMatrix.getRowGroup(state)) {
+                                if (unexploredStates.get(entry.getColumn())) {
+                                    dfsStack.push_back(entry.getColumn());
+                                } else {
+                                    if (!acyclicStates.get(entry.getColumn())) {
+                                        // The state has been visited before but is not known to be acyclic.
+                                        return true;
+                                    }
+                                }
+                            }
+                        } else {
+                            acyclicStates.set(state, true);
+                            dfsStack.pop_back();
+                        }
+                    }
+                }
+                return false;
+            }
+            
+            template <typename T>
             bool checkIfECWithChoiceExists(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& subsystem, storm::storage::BitVector const& choices) {
                 
                 STORM_LOG_THROW(subsystem.size() == transitionMatrix.getRowGroupCount(), storm::exceptions::InvalidArgumentException, "Invalid size of subsystem");
@@ -1650,6 +1687,8 @@ namespace storm {
             
             template storm::storage::BitVector getBsccCover(storm::storage::SparseMatrix<double> const& transitionMatrix);
            
+            template bool hasCycle(storm::storage::SparseMatrix<double> const& transitionMatrix, boost::optional<storm::storage::BitVector> const& subsystem);
+            
             template bool checkIfECWithChoiceExists(storm::storage::SparseMatrix<double> const& transitionMatrix, storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& subsystem, storm::storage::BitVector const& choices);
             
             template std::vector<uint_fast64_t> getDistances(storm::storage::SparseMatrix<double> const& transitionMatrix, storm::storage::BitVector const& initialStates, boost::optional<storm::storage::BitVector> const& subsystem);
@@ -1727,8 +1766,10 @@ namespace storm {
             template storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, bool useStepBound, uint_fast64_t maximalSteps, boost::optional<storm::storage::BitVector> const& choiceFilter);
             
             template storm::storage::BitVector getBsccCover(storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix);
-           
-           template bool checkIfECWithChoiceExists(storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions, storm::storage::BitVector const& subsystem, storm::storage::BitVector const& choices);
+            
+            template bool hasCycle(storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, boost::optional<storm::storage::BitVector> const& subsystem);
+
+            template bool checkIfECWithChoiceExists(storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions, storm::storage::BitVector const& subsystem, storm::storage::BitVector const& choices);
 
             template std::vector<uint_fast64_t> getDistances(storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::storage::BitVector const& initialStates, boost::optional<storm::storage::BitVector> const& subsystem);
             
@@ -1785,6 +1826,8 @@ namespace storm {
             
             template storm::storage::BitVector getBsccCover(storm::storage::SparseMatrix<storm::RationalFunction> const& transitionMatrix);
             
+            template bool hasCycle(storm::storage::SparseMatrix<storm::RationalFunction> const& transitionMatrix, boost::optional<storm::storage::BitVector> const& subsystem);
+
             template bool checkIfECWithChoiceExists(storm::storage::SparseMatrix<storm::RationalFunction> const& transitionMatrix, storm::storage::SparseMatrix<storm::RationalFunction> const& backwardTransitions, storm::storage::BitVector const& subsystem, storm::storage::BitVector const& choices);
             
             template std::vector<uint_fast64_t> getDistances(storm::storage::SparseMatrix<storm::RationalFunction> const& transitionMatrix, storm::storage::BitVector const& initialStates, boost::optional<storm::storage::BitVector> const& subsystem);

@@ -21,6 +21,7 @@ namespace storm {
         class LongRunAverageOperatorFormula;
         class LongRunAverageRewardFormula;
         class MultiObjectiveFormula;
+        class QuantileFormula;
         class NextFormula;
         class OperatorFormula;
         struct OperatorInformation;

@@ -27,6 +27,9 @@ namespace storm {
             if (specification.isMultiObjectiveFormulaAtTopLevelRequired()) {
                 result &= f.isMultiObjectiveFormula();
             }
+            if (specification.isQuantileFormulaAtTopLevelRequired()) {
+                result &= f.isQuantileFormula();
+            }
             
             return result;
         }
@@ -227,6 +230,14 @@ namespace storm {
                 result = result && boost::any_cast<bool>(subF->accept(*this, InheritedInformation(subFormulaFragment)));
             }
             return result;
+        }
+        
+        boost::any FragmentChecker::visit(QuantileFormula const& f, boost::any const& data) const {
+            InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
+            if (!inherited.getSpecification().areQuantileFormulasAllowed()) {
+                return false;
+            }
+            return f.getSubformula().accept(*this, data);
         }
         
         boost::any FragmentChecker::visit(NextFormula const& f, boost::any const& data) const {

@@ -91,7 +91,10 @@ namespace storm {
   
             // The methods to check multi-objective formulas.
             virtual std::unique_ptr<CheckResult> checkMultiObjectiveFormula(Environment const& env, CheckTask<storm::logic::MultiObjectiveFormula, ValueType> const& checkTask);
-                  
+  
+            // The methods to check quantile formulas.
+            virtual std::unique_ptr<CheckResult> checkQuantileFormula(Environment const& env, CheckTask<storm::logic::QuantileFormula, ValueType> const& checkTask);
+            
         };
     }
 }

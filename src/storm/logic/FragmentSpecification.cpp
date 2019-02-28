@@ -110,6 +110,27 @@ namespace storm {
             return multiObjective;
         }
         
+        FragmentSpecification quantiles() {
+            FragmentSpecification quantiles = propositional();
+            
+            quantiles.setQuantileFormulasAllowed(true);
+            quantiles.setQuantileFormulaAtTopLevelRequired(true);
+            quantiles.setProbabilityOperatorsAllowed(true);
+            quantiles.setRewardOperatorsAllowed(true);
+            quantiles.setBoundedUntilFormulasAllowed(true);
+            quantiles.setStepBoundedUntilFormulasAllowed(true);
+            quantiles.setTimeBoundedUntilFormulasAllowed(true);
+            quantiles.setRewardBoundedUntilFormulasAllowed(true);
+            quantiles.setStepBoundedCumulativeRewardFormulasAllowed(true);
+            quantiles.setTimeBoundedCumulativeRewardFormulasAllowed(true);
+            quantiles.setRewardBoundedCumulativeRewardFormulasAllowed(true);
+            quantiles.setCumulativeRewardFormulasAllowed(true);
+            quantiles.setMultiDimensionalBoundedUntilFormulasAllowed(true);
+            quantiles.setMultiDimensionalCumulativeRewardFormulasAllowed(true);
+    
+            return quantiles;
+        }
+        
         FragmentSpecification::FragmentSpecification() {
             probabilityOperator = false;
             rewardOperator = false;
@@ -117,6 +138,7 @@ namespace storm {
             longRunAverageOperator = false;
             
             multiObjectiveFormula = false;
+            quantileFormula = false;
             
             globallyFormula = false;
             reachabilityProbabilityFormula = false;
@@ -162,6 +184,7 @@ namespace storm {
             operatorAtTopLevelRequired = false;
             multiObjectiveFormulaAtTopLevelRequired = false;
             operatorsAtTopLevelOfMultiObjectiveFormulasRequired = false;
+            quantileFormulaAtTopLevelRequired = false;
             
             rewardAccumulation = false;
         }
@@ -212,6 +235,15 @@ namespace storm {
         
         FragmentSpecification& FragmentSpecification::setMultiObjectiveFormulasAllowed( bool newValue) {
             this->multiObjectiveFormula = newValue;
+            return *this;
+        }
+        
+        bool FragmentSpecification::areQuantileFormulasAllowed() const {
+            return quantileFormula;
+        }
+        
+        FragmentSpecification& FragmentSpecification::setQuantileFormulasAllowed( bool newValue) {
+            this->quantileFormula = newValue;
             return *this;
         }
         
@@ -566,7 +598,16 @@ namespace storm {
             operatorsAtTopLevelOfMultiObjectiveFormulasRequired = newValue;
             return *this;
         }
-        
+
+        bool FragmentSpecification::isQuantileFormulaAtTopLevelRequired() const {
+            return quantileFormulaAtTopLevelRequired;
+        }
+
+        FragmentSpecification& FragmentSpecification::setQuantileFormulaAtTopLevelRequired(bool newValue) {
+            quantileFormulaAtTopLevelRequired = newValue;
+            return *this;
+        }
+
         bool FragmentSpecification::isRewardAccumulationAllowed() const {
             return rewardAccumulation;
         }
