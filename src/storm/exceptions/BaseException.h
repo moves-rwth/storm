@@ -42,7 +42,17 @@ namespace storm {
              * @return The message associated with this exception.
              */
             virtual const char* what() const NOEXCEPT override;
-            
+
+            /*!
+             * Returns the type of the exception.
+             */
+            virtual std::string type() const;
+
+            /*!
+             * Returns additional information about the exception.
+             */
+            virtual std::string additionalInfo() const;
+
         protected:
             // This stream stores the message of this exception.
             std::stringstream stream;

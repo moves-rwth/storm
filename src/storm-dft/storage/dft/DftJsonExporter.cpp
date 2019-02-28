@@ -80,6 +80,8 @@ namespace storm {
                     std::stringstream stream;
                     stream << dependency->probability();
                     nodeData["probability"] = stream.str();
+                } else {
+                    nodeData["type"] = "fdep";
                 }
             } else if (element->isBasicElement()) {
                 // Set BE specific data
