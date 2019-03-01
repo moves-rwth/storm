@@ -287,6 +287,8 @@ namespace storm {
             result = parseValue("dorm", line, valueParser);
             if (result.first) {
                 dormancyFactor = result.second;
+            } else {
+                STORM_LOG_WARN("No dormancy factor was provided for basic element '" << name << "' in line " << lineNo << ". Assuming dormancy factor of 1.");
             }
             boost::trim(line);
             if (line != "") {
