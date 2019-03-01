@@ -7,6 +7,9 @@ The releases of major and minor versions contain an overview of changes since th
 Version 1.3.x
 -------------
 
+### Version 1.3.1 (under development)
+- Added support for multi-dimensional quantile queries
+- Fixed sparse bisimulation of MDPs (which failed if all non-absorbing states in the quotient are initial)
 
 ### Version 1.3.0 (2018/12)
 - Slightly improved scheduler extraction

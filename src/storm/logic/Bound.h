@@ -16,6 +16,21 @@ namespace storm {
             ComparisonType comparisonType;
             storm::expressions::Expression threshold;
 
+            template <typename ValueType>
+            bool isSatisfied(ValueType const& compareValue) const {
+                ValueType thresholdAsValueType = storm::utility::convertNumber<ValueType>(threshold.evaluateAsRational());
+                switch(comparisonType) {
+                    case ComparisonType::Greater:
+                        return compareValue > thresholdAsValueType;
+                    case ComparisonType::GreaterEqual:
+                        return compareValue >= thresholdAsValueType;
+                    case ComparisonType::Less:
+                        return compareValue < thresholdAsValueType;
+                    case ComparisonType::LessEqual:
+                        return compareValue <= thresholdAsValueType;
+                }
+            }
+
             friend std::ostream& operator<<(std::ostream& out, Bound const& bound);
         };
 

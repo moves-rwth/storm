@@ -186,6 +186,15 @@ namespace storm {
                     epoch |= (value << (dimension * bitsPerDimension));
                 }
                 
+                void EpochManager::setDimensionOfEpochClass(EpochClass& epochClass, uint64_t const& dimension, bool const& setToBottom) const {
+                    STORM_LOG_ASSERT(dimensionCount > 0, "Invoked EpochManager with zero dimension count.");
+                    if (setToBottom) {
+                        epochClass |= (1 << dimension);
+                    } else {
+                        epochClass &= ~(1 << dimension);
+                    }
+                }
+                
                 bool EpochManager::isBottomDimension(Epoch const& epoch, uint64_t const& dimension) const {
                     STORM_LOG_ASSERT(dimensionCount > 0, "Invoked EpochManager with zero dimension count.");
                     return (epoch | (dimensionBitMask << (dimension * bitsPerDimension))) == epoch;

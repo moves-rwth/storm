@@ -19,14 +19,16 @@ namespace storm {
             virtual bool isParetoCurveCheckResult() const override;
             
             std::vector<point_type> const& getPoints() const;
+            bool hasUnderApproximation() const;
+            bool hasOverApproximation() const;
             polytope_type const& getUnderApproximation() const;
             polytope_type const& getOverApproximation() const;
             
             virtual std::ostream& writeToStream(std::ostream& out) const override;
 
         protected:
-            ParetoCurveCheckResult(std::vector<point_type> const& points, polytope_type const& underApproximation, polytope_type const& overApproximation);
-            ParetoCurveCheckResult(std::vector<point_type>&& points, polytope_type&& underApproximation, polytope_type&& overApproximation);
+            ParetoCurveCheckResult(std::vector<point_type> const& points, polytope_type const& underApproximation = nullptr, polytope_type const& overApproximation = nullptr);
+            ParetoCurveCheckResult(std::vector<point_type>&& points, polytope_type&& underApproximation = nullptr, polytope_type&& overApproximation = nullptr);
 
             // The pareto optimal points that have been found.
             std::vector<point_type> points;

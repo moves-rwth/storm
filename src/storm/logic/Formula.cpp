@@ -23,6 +23,10 @@ namespace storm {
             return false;
         }
         
+        bool Formula::isQuantileFormula() const {
+            return false;
+        }
+        
         bool Formula::isBinaryStateFormula() const {
             return false;
         }
@@ -203,6 +207,14 @@ namespace storm {
         
         MultiObjectiveFormula const& Formula::asMultiObjectiveFormula() const {
             return dynamic_cast<MultiObjectiveFormula const&>(*this);
+        }
+        
+        QuantileFormula& Formula::asQuantileFormula() {
+            return dynamic_cast<QuantileFormula&>(*this);
+        }
+        
+        QuantileFormula const& Formula::asQuantileFormula() const {
+            return dynamic_cast<QuantileFormula const&>(*this);
         }
         
         BinaryStateFormula& Formula::asBinaryStateFormula() {
