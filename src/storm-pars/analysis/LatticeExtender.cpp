@@ -241,6 +241,7 @@ namespace storm {
         std::tuple<Lattice*, uint_fast64_t, uint_fast64_t> LatticeExtender<ValueType>::extendLattice(Lattice* lattice, std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption) {
             auto numberOfStates = this->model->getNumberOfStates();
 
+
             if (assumption != nullptr) {
                 handleAssumption(lattice, assumption);
             }
@@ -337,7 +338,14 @@ namespace storm {
                         auto succ2 = successors->getNextSetIndex(succ1 + 1);
 
                         assert ((*addedStates)[stateNumber]);
-                        if (successors->getNumberOfSetBits() == 2
+                        if (successors->getNumberOfSetBits() == 1) {
+                            if (!(*addedStates)[succ1]) {
+                                lattice->addToNode(succ1, lattice->getNode(stateNumber));
+                                statesToHandle->set(succ1, true);
+                            }
+                            statesToHandle->set(stateNumber, false);
+                            stateNumber = statesToHandle->getNextSetIndex(0);
+                        } else if (successors->getNumberOfSetBits() == 2
                             && (((*(addedStates))[succ1] && !(*(addedStates))[succ2])
                                 || (!(*(addedStates))[succ1] && (*(addedStates))[succ2]))) {
 
@@ -348,19 +356,24 @@ namespace storm {
                             auto compare = lattice->compare(stateNumber, succ1);
                             if (compare == Lattice::ABOVE) {
                                 lattice->addBetween(succ2, lattice->getTop(), lattice->getNode(stateNumber));
+                                statesToHandle->set(succ2);
+                                statesToHandle->set(stateNumber, false);
+                                stateNumber = statesToHandle->getNextSetIndex(0);
                             } else if (compare == Lattice::BELOW) {
                                 lattice->addBetween(succ2, lattice->getNode(stateNumber), lattice->getBottom());
+                                statesToHandle->set(succ2);
+                                statesToHandle->set(stateNumber, false);
+                                stateNumber = statesToHandle->getNextSetIndex(0);
                             } else {
-                                assert(false);
+                                // We don't know positions, so we set the current state number to false
+                                statesToHandle->set(stateNumber, false);
+                                stateNumber = statesToHandle->getNextSetIndex(0);
                             }
-                            statesToHandle->set(succ2);
-                            statesToHandle->set(stateNumber, false);
-                            stateNumber = statesToHandle->getNextSetIndex(0);
+
                         } else if (!(((*(addedStates))[succ1] && !(*(addedStates))[succ2])
                                      || (!(*(addedStates))[succ1] && (*(addedStates))[succ2]))) {
                             stateNumber = statesToHandle->getNextSetIndex(stateNumber + 1);
                         } else {
-                            assert (successors->getNumberOfSetBits() == 2);
                             statesToHandle->set(stateNumber, false);
                             stateNumber = statesToHandle->getNextSetIndex(0);
                         }

@@ -429,14 +429,8 @@ namespace storm {
 
                     auto sortedStates = lattice->sortStates(states);
 
-                    assert(sortedStates[sortedStates.size() - 1] != matrix.getColumnCount());
-
-                    assert (sortedStates.size() >=2);
-
-                    assert (sortedStates.size() == states->getNumberOfSetBits());
-                    if (sortedStates[sortedStates.size() - 1] == matrix.getColumnCount()) {
-//                    auto val = first.getValue();
-//                    auto vars = val.gatherVariables();
+                    if (sortedStates[sortedStates.size() - 1] == matrix.getColumnCount()) {\
+                    // states are not properly sorted
                         for (auto itr = vars.begin(); itr != vars.end(); ++itr) {
 //                        if (resultCheckOnSamples.find(*itr) != resultCheckOnSamples.end() &&
 //                            (!resultCheckOnSamples[*itr].first && !resultCheckOnSamples[*itr].second)) {
@@ -453,7 +447,7 @@ namespace storm {
                             std::pair<bool, bool> old = *value;
 
 
-                            // states are not properly sorted
+
                             for (auto itr2 = transitions.begin(); itr2 != transitions.end(); ++itr2) {
                                 for (auto itr3 = transitions.begin(); itr3 != transitions.end(); ++itr3) {
                                     if (itr2->first < itr3->first) {
@@ -486,6 +480,7 @@ namespace storm {
                                             value->first &= mon3.first;
                                             value->second &= mon3.second;
                                         } else if (compare == storm::analysis::Lattice::SAME) {
+                                            assert (false);
                                             // TODO: klopt dit
                                             // Behaviour doesn't matter, as the states are at the same level.
                                         } else {
