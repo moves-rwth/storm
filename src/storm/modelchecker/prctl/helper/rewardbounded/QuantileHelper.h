@@ -2,6 +2,8 @@
 
 #include "storm/logic/QuantileFormula.h"
 #include "boost/optional.hpp"
+#include "storm/modelchecker/prctl/helper/rewardbounded/CostLimitClosure.h"
+#include "storm/modelchecker/prctl/helper/rewardbounded/MultiDimensionalRewardUnfolding.h"
 
 namespace storm {
     class Environment;
@@ -23,6 +25,11 @@ namespace storm {
                     std::vector<std::vector<ValueType>> computeQuantile(Environment const& env) const;
 
                 private:
+
+                    std::pair<CostLimitClosure, std::vector<ValueType>> computeQuantile(Environment& env, storm::storage::BitVector const& consideredDimensions) const;
+                    bool computeQuantile(Environment& env, storm::storage::BitVector const& consideredDimensions, storm::storage::BitVector const& lowerBoundedDimensions, CostLimitClosure& satCostLimits, CostLimitClosure& unsatCostLimits, MultiDimensionalRewardUnfolding<ValueType, true>& rewardUnfolding);
+
+
                     std::vector<std::vector<ValueType>> computeTwoDimensionalQuantile(Environment& env) const;
                     bool exploreTwoDimensionalQuantile(Environment const& env, std::vector<std::pair<int64_t, typename ModelType::ValueType>> const& startEpochValues, std::vector<int64_t>& currentEpochValues, std::vector<std::vector<ValueType>>& resultPoints) const;
 

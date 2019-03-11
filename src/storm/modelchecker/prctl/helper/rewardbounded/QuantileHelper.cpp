@@ -39,6 +39,8 @@ namespace storm {
                     // Only > and <= are supported for upper bounds. This is to make sure that Pr>0.7 [F "goal"] holds iff Pr>0.7 [F<=B "goal"] holds for some B.
                     // Only >= and < are supported for lower bounds. (EC construction..)
                     // TODO
+                    // Fix precision increasing
+                    // Multiple quantile formulas in the same file yield constants def clash
                     // Bounds are either constants or variables that are declared in the quantile formula.
                     // Prop op has optimality type
                     // No Prmin with lower cost bounds: Ec construction fails. In single obj we would do 1-Prmax[F "nonRewOrNonGoalEC"] but this invalidates other lower/upper cost bounds.
@@ -229,6 +231,184 @@ namespace storm {
                     return result;
                 }
 
+
+                template<typename ModelType>
+                std::pair<CostLimitClosure, std::vector<typename QuantileHelper<ModelType>::ValueType>> QuantileHelper<ModelType>::computeQuantile(Environment& env, storm::storage::BitVector const& consideredDimensions) const {
+                    // Todo: ask the cache first
+
+                    auto boundedUntilOp = transformBoundedUntilOperator(quantileFormula.getSubformula().asProbabilityOperatorFormula(), std::vector<BoundTransformation>(getDimension(), BoundTransformation::None));
+                    std::set<storm::expressions::Variable> infinityVariables;
+                    storm::storage::BitVector lowerBoundedDimensions(getDimension());
+                    storm::storage::BitVector downwardClosedDimensions(getDimension());
+                    for (auto const& d : getOpenDimensions()) {
+                        if (consideredDimensions.get(d)) {
+                            bool hasLowerCostBound = boundedUntilOp->getSubformula().asBoundedUntilFormula().hasLowerBound(d);
+                            lowerBoundedDimensions.set(d, hasLowerCostBound);
+                            bool hasLowerValueBound = storm::logic::isLowerBound(boundedUntilOp->getComparisonType());
+                            downwardClosedDimensions.set(d, hasLowerCostBound == hasLowerValueBound);
+                        } else {
+                            infinityVariables.insert(getVariableForDimension(d));
+                        }
+                    }
+                    downwardClosedDimensions = downwardClosedDimensions % consideredDimensions;
+                    CostLimitClosure satCostLimits(downwardClosedDimensions), unsatCostLimits(~downwardClosedDimensions);
+
+                    // Loop until the goal precision is reached.
+                    while (true) {
+                        // initialize Reward unfolding and data that will be needed for each epoch
+                        MultiDimensionalRewardUnfolding<ValueType, true> rewardUnfolding(model, boundedUntilOp, infinityVariables);
+                        if (computeQuantile(env, consideredDimensions, lowerBoundedDimensions, satCostLimits, unsatCostLimits, rewardUnfolding)) {
+                            std::vector<ValueType> scalingFactors;
+                            for (auto const& dim : consideredDimensions) {
+                                scalingFactors.push_back(rewardUnfolding.getDimension(dim).scalingFactor);
+                            }
+                            return {satCostLimits, scalingFactors};
+                        }
+                        ++numPrecisionRefinements;
+                        increasePrecision(env);
+                    }
+                }
+
+
+                bool getNextCandidateCostLimit(CostLimit const& maxCostLimit, CostLimits& current) {
+                    if (maxCostLimit.get() == 0) {
+                        return false;
+                    }
+                    storm::storage::BitVector nonMaxEntries = storm::utility::vector::filter<CostLimit>(current,  [&maxCostLimit] (CostLimit const& value) -> bool { return value < maxCostLimit; });
+                    bool allZero = true;
+                    for (auto const& entry : nonMaxEntries) {
+                        if (current[entry].get() > 0) {
+                            --current[entry].get();
+                            allZero = false;
+                            break;
+                        } else {
+                            current[entry] = CostLimit(maxCostLimit.get() - 1);
+                        }
+                    }
+                    if (allZero) {
+                        nonMaxEntries.increment();
+                        if (nonMaxEntries.full()) {
+                            return false;
+                        }
+                        current = CostLimits(current.size(), maxCostLimit);
+                        storm::utility::vector::setVectorValues(current, nonMaxEntries, CostLimit(maxCostLimit.get() - 1));
+                    }
+                    return true;
+                }
+
+                bool unionContainsAllCostLimits(CostLimitClosure const& lhs, CostLimitClosure const& rhs) {
+                    // TODO
+                    assert(false);
+                }
+
+
+                bool translateEpochToCostLimits(EpochManager::Epoch const& epoch, EpochManager::Epoch const& startEpoch,storm::storage::BitVector const& consideredDimensions, storm::storage::BitVector const& lowerBoundedDimensions, EpochManager const& epochManager, CostLimits& epochAsCostLimits) {
+                    for (uint64_t dim = 0; dim < consideredDimensions.size(); ++dim) {
+                        if (consideredDimensions.get(dim)) {
+                            if (lowerBoundedDimensions.get(dim)) {
+                                if (epochManager.isBottomDimension(epoch, dim)) {
+                                    epochAsCostLimits.push_back(CostLimit(0));
+                                } else {
+                                    epochAsCostLimits.push_back(CostLimit(epochManager.getDimensionOfEpoch(epoch, dim) + 1));
+                                }
+                            } else {
+                                if (epochManager.isBottomDimension(epoch, dim)) {
+                                    return false;
+                                } else {
+                                    epochAsCostLimits.push_back(CostLimit(epochManager.getDimensionOfEpoch(epoch, dim)));
+                                }
+                            }
+                        } else {
+                            if (epochManager.isBottomDimension(epoch, dim)) {
+                                if (!epochManager.isBottomDimension(startEpoch, dim)) {
+                                    return false;
+                                }
+                            } else if (epochManager.getDimensionOfEpoch(epoch, dim) != epochManager.getDimensionOfEpoch(startEpoch, dim)) {
+                                return false;
+                            }
+                        }
+                    }
+                    return true;
+                }
+
+
+                template<typename ModelType>
+                bool QuantileHelper<ModelType>::computeQuantile(Environment& env, storm::storage::BitVector const& consideredDimensions, storm::storage::BitVector const& lowerBoundedDimensions, CostLimitClosure& satCostLimits, CostLimitClosure& unsatCostLimits, MultiDimensionalRewardUnfolding<ValueType, true>& rewardUnfolding) const {
+
+                    auto lowerBound = rewardUnfolding.getLowerObjectiveBound();
+                    auto upperBound = rewardUnfolding.getUpperObjectiveBound();
+                    std::vector<ValueType> x, b;
+                    std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> minMaxSolver;
+                    std::set<EpochManager::Epoch> checkedEpochs;
+
+
+                    CostLimit currentMaxCostLimit(0);
+                    for (CostLimit currentMaxCostLimit(0); !unionContainsAllCostLimits(satCostLimits, unsatCostLimits); ++currentMaxCostLimit.get()) {
+                        CostLimits currentCandidate(satCostLimits.dimension(), currentMaxCostLimit);
+                        do {
+                            if (!satCostLimits.contains(currentCandidate) && !unsatCostLimits.contains(currentCandidate)) {
+                                // Transform candidate cost limits to an appropriate start epoch
+                                auto startEpoch = rewardUnfolding.getStartEpoch(true);
+                                auto costLimitIt = currentCandidate.begin();
+                                for (auto const& dim : consideredDimensions) {
+                                    if (lowerBoundedDimensions.get(dim)) {
+                                        if (costLimitIt->get() > 0) {
+                                            rewardUnfolding.getEpochManager().setDimensionOfEpoch(startEpoch, dim, costLimitIt->get() - 1);
+                                        } else {
+                                            rewardUnfolding.getEpochManager().setBottomDimension(startEpoch, dim);
+                                        }
+                                    } else {
+                                        rewardUnfolding.getEpochManager().setDimensionOfEpoch(startEpoch, dim, costLimitIt->get());
+                                    }
+                                    ++costLimitIt;
+                                }
+                                auto epochSequence = rewardUnfolding.getEpochComputationOrder(startEpoch);
+                                for (auto const& epoch : epochSequence) {
+                                    if (checkedEpochs.count(epoch) == 0) {
+                                        checkedEpochs.insert(epoch);
+                                        auto& epochModel = rewardUnfolding.setCurrentEpoch(epoch);
+                                        rewardUnfolding.setSolutionForCurrentEpoch(epochModel.analyzeSingleObjective(env, quantileFormula.getSubformula().asProbabilityOperatorFormula().getOptimalityType(), x, b, minMaxSolver, lowerBound, upperBound));
+                                        ++numCheckedEpochs;
+
+                                        CostLimits epochAsCostLimits;
+                                        if (translateEpochToCostLimits(epoch, startEpoch, consideredDimensions, lowerBoundedDimensions, rewardUnfolding.getEpochManager(), epochAsCostLimits)) {
+                                            ValueType currValue = rewardUnfolding.getInitialStateResult(epoch);
+                                            bool propertySatisfied;
+                                            if (env.solver().isForceSoundness()) {
+                                                auto lowerUpperValue = getLowerUpperBound(env, currValue);
+                                                propertySatisfied =  quantileFormula.getSubformula().asProbabilityOperatorFormula().getBound().isSatisfied(lowerUpperValue.first);
+                                                if (propertySatisfied !=  quantileFormula.getSubformula().asProbabilityOperatorFormula().getBound().isSatisfied(lowerUpperValue.second)) {
+                                                    // unclear result due to insufficient precision.
+                                                    return false;
+                                                }
+                                            } else {
+                                                propertySatisfied =  quantileFormula.getSubformula().asProbabilityOperatorFormula().getBound().isSatisfied(currValue);
+                                            }
+
+                                            if (propertySatisfied) {
+                                                satCostLimits.insert(epochAsCostLimits);
+                                            } else {
+                                                unsatCostLimits.insert(epochAsCostLimits);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        } while (getNextCandidateCostLimit(currentMaxCostLimit, currentCandidate));
+                    }
+                    return true;
+                }
+
+
+
+
+
+
+
+
+                ///////
+
+
                 template<typename ValueType>
                 void filterDominatedPoints(std::vector<std::vector<ValueType>>& points, std::vector<storm::solver::OptimizationDirection> const& dirs) {
                     std::vector<std::vector<ValueType>> result;
@@ -351,13 +531,13 @@ namespace storm {
                     
                     
                     MultiDimensionalRewardUnfolding<ValueType, true> rewardUnfolding(model, transformBoundedUntilOperator(quantileFormula.getSubformula().asProbabilityOperatorFormula(), std::vector<BoundTransformation>(getDimension(), BoundTransformation::None)));
-                        
+
                     // initialize data that will be needed for each epoch
                     auto lowerBound = rewardUnfolding.getLowerObjectiveBound();
                     auto upperBound = rewardUnfolding.getUpperObjectiveBound();
                     std::vector<ValueType> x, b;
                     std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> minMaxSolver;
-                    
+
                     if (currentEpochValues[0] < 0 && currentEpochValues[1] < 0) {
                         // This case can only happen in these cases:
                         assert(lowerCostBounds[0]);
