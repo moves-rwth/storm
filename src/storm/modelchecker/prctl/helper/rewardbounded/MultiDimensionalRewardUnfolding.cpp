@@ -278,7 +278,8 @@ namespace storm {
                         STORM_LOG_THROW(SingleObjectiveMode, storm::exceptions::NotSupportedException, "Letting lower bounds approach infinity is only supported in single objective mode."); // It most likely also works with multiple objectives with the same shape. However, we haven't checked this yet.
                         STORM_LOG_THROW(objectives.front().formula->isProbabilityOperatorFormula(), storm::exceptions::NotSupportedException, "Letting lower bounds approach infinity is only supported for probability operator formulas");
                         auto const& probabilityOperatorFormula = objectives.front().formula->asProbabilityOperatorFormula();
-                        STORM_LOG_THROW(probabilityOperatorFormula.getSubformula().isBoundedUntilFormula() && probabilityOperatorFormula.hasOptimalityType() && storm::solver::maximize(probabilityOperatorFormula.getOptimalityType()), storm::exceptions::NotSupportedException, "Letting lower bounds approach infinity is only supported for maximizing bounded until probabilities.");
+                        STORM_LOG_THROW(probabilityOperatorFormula.getSubformula().isBoundedUntilFormula(), storm::exceptions::NotSupportedException, "Letting lower bounds approach infinity is only supported for  bounded until probabilities.");
+                        STORM_LOG_THROW(!model.isNondeterministicModel() || (probabilityOperatorFormula.hasOptimalityType() && storm::solver::maximize(probabilityOperatorFormula.getOptimalityType())), storm::exceptions::NotSupportedException, "Letting lower bounds approach infinity is only supported for maximizing bounded until probabilities.");
                         
                         STORM_LOG_THROW(upperBoundedDimensions.empty() || !probabilityOperatorFormula.getSubformula().asBoundedUntilFormula().hasMultiDimensionalSubformulas(), storm::exceptions::NotSupportedException, "Letting lower bounds approach infinity is only supported if the formula has either only lower bounds or if it has a single goal state."); // This would fail because the upper bounded dimension(s) might be satisfied already. One should erase epoch steps in the epoch model (after applying the goal-unfolding).
                         storm::storage::BitVector choicesWithoutUpperBoundedStep(model.getNumberOfChoices(), true);
@@ -373,7 +374,6 @@ namespace storm {
                 template<typename ValueType, bool SingleObjectiveMode>
                 EpochModel<ValueType, SingleObjectiveMode>& MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::setCurrentEpoch(Epoch const& epoch) {
                     STORM_LOG_DEBUG("Setting model for epoch " << epochManager.toString(epoch));
-                    STORM_LOG_THROW(getProb1Objectives().empty(), storm::exceptions::InvalidOperationException, "The objective " << objectives[*getProb1Objectives().begin()].formula << " is satisfied already in the initial state(s). This special case can not be handled by the reward unfolding."); // This case should have been handled 'from the outside'
                     
                     // Check if we need to update the current epoch class
                     if (!currentEpoch || !epochManager.compareEpochClass(epoch, currentEpoch.get())) {
@@ -671,6 +671,20 @@ namespace storm {
                 
                 template<typename ValueType, bool SingleObjectiveMode>
                 template<bool SO, typename std::enable_if<SO, int>::type>
+                void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::setSolutionEntry(SolutionType& solution, uint64_t objIndex, ValueType const& value) const {
+                    STORM_LOG_ASSERT(objIndex == 0, "Invalid objective index in single objective mode");
+                    solution = value;
+                }
+                
+                template<typename ValueType, bool SingleObjectiveMode>
+                template<bool SO, typename std::enable_if<!SO, int>::type>
+                void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::setSolutionEntry(SolutionType& solution, uint64_t objIndex, ValueType const& value) const {
+                    STORM_LOG_ASSERT(objIndex < solution.size(), "Invalid objective index " << objIndex << ".");
+                    solution[objIndex] = value;
+                }
+                
+                template<typename ValueType, bool SingleObjectiveMode>
+                template<bool SO, typename std::enable_if<SO, int>::type>
                 std::string MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::solutionToString(SolutionType const& solution) const {
                     std::stringstream stringstream;
                     stringstream << solution;
@@ -858,21 +872,39 @@ namespace storm {
                 template<typename ValueType, bool SingleObjectiveMode>
                 typename MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::SolutionType const& MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::getStateSolution(EpochSolution const& epochSolution, uint64_t const& productState) {
                     STORM_LOG_ASSERT(productState < epochSolution.productStateToSolutionVectorMap->size(), "Requested solution at an unexisting product state.");
-                    STORM_LOG_ASSERT((*epochSolution.productStateToSolutionVectorMap)[productState] < epochSolution.solutions.size(), "Requested solution for epoch at a state for which no solution was stored.");
-                    STORM_LOG_ASSERT(getProb1Objectives().empty(), "One of the objectives is already satisfied in the initial state. This special case is not handled."); // This case should have been handled 'from the outside'
+                    STORM_LOG_ASSERT((*epochSolution.productStateToSolutionVectorMap)[productState] < epochSolution.solutions.size(), "Requested solution for epoch at product state " << productState << " for which no solution was stored.");
                     return epochSolution.solutions[(*epochSolution.productStateToSolutionVectorMap)[productState]];
                 }
                 
                 template<typename ValueType, bool SingleObjectiveMode>
-                typename MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::SolutionType const& MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::getInitialStateResult(Epoch const& epoch) {
+                typename MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::SolutionType MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::getInitialStateResult(Epoch const& epoch) {
                     STORM_LOG_ASSERT(model.getInitialStates().getNumberOfSetBits() == 1, "The model has multiple initial states.");
-                    return getStateSolution(epoch, productModel->getInitialProductState(*model.getInitialStates().begin(), model.getInitialStates()));
+                    return getInitialStateResult(epoch, *model.getInitialStates().begin());
                 }
     
                 template<typename ValueType, bool SingleObjectiveMode>
-                typename MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::SolutionType const& MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::getInitialStateResult(Epoch const& epoch, uint64_t initialStateIndex) {
+                typename MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::SolutionType MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::getInitialStateResult(Epoch const& epoch, uint64_t initialStateIndex) {
                     STORM_LOG_ASSERT(model.getInitialStates().get(initialStateIndex), "The given model state is not an initial state.");
-                    return getStateSolution(epoch, productModel->getInitialProductState(initialStateIndex, model.getInitialStates()));
+                    
+                    auto result = getStateSolution(epoch, productModel->getInitialProductState(initialStateIndex, model.getInitialStates(), epochManager.getEpochClass(epoch)));
+                    for (uint64_t objIndex = 0; objIndex < objectives.size(); ++objIndex) {
+                        if (productModel->getProb1InitialStates(objIndex) && productModel->getProb1InitialStates(objIndex)->get(initialStateIndex)) {
+                            // Check whether the objective can actually hold in this epoch
+                            bool objectiveHolds = true;
+                            for (auto const& dim : objectiveDimensions[objIndex]) {
+                                if (dimensions[dim].boundType == DimensionBoundType::LowerBound && !epochManager.isBottomDimension(epoch, dim)) {
+                                    objectiveHolds = false;
+                                } else if (dimensions[dim].boundType == DimensionBoundType::UpperBound && epochManager.isBottomDimension(epoch, dim)) {
+                                    objectiveHolds = false;
+                                }
+                                STORM_LOG_ASSERT(dimensions[dim].boundType != DimensionBoundType::LowerBoundInfinity, "Unexpected bound type at this point.");
+                            }
+                            if (objectiveHolds) {
+                                setSolutionEntry(result, objIndex, storm::utility::one<ValueType>());
+                            }
+                        }
+                    }
+                    return result;
                 }
     
                 template<typename ValueType, bool SingleObjectiveMode>
@@ -883,11 +915,6 @@ namespace storm {
                 template<typename ValueType, bool SingleObjectiveMode>
                 Dimension<ValueType> const& MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::getDimension(uint64_t dim) const {
                     return dimensions.at(dim);
-                }
-                
-                template<typename ValueType, bool SingleObjectiveMode>
-                storm::storage::BitVector const& MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::getProb1Objectives() const {
-                    return productModel->getProb1Objectives();
                 }
                 
                 template class MultiDimensionalRewardUnfolding<double, true>;

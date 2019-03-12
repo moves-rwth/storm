@@ -36,6 +36,7 @@ namespace storm {
                     explicit CostLimitClosure(storm::storage::BitVector const& downwardDimensions);
                     bool insert(CostLimits const& costLimits);
                     bool contains(CostLimits const& costLimits) const;
+                    bool containsUpwardClosure(CostLimits const& costLimits) const;
                     bool dominates(CostLimits const& lhs, CostLimits const& rhs) const;
                     std::vector<CostLimits> getDominatingCostLimits(CostLimits const& costLimits) const;
                     GeneratorType const& getGenerator() const;

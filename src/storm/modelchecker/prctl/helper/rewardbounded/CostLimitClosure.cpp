@@ -88,6 +88,14 @@ namespace storm {
                     return false;
                 }
 
+                bool CostLimitClosure::containsUpwardClosure(CostLimits const& costLimits) const {
+                    CostLimits infinityProjection(costLimits);
+                    for (auto const& dim : downwardDimensions) {
+                        infinityProjection[dim] = CostLimit::infinity();
+                    }
+                    return contains(infinityProjection);
+                }
+
                 bool CostLimitClosure::dominates(CostLimits const& lhs, CostLimits const& rhs) const {
                     for (uint64_t i = 0; i < lhs.size(); ++i) {
                         if (downwardDimensions.get(i)) {
@@ -102,7 +110,6 @@ namespace storm {
                     }
                     return true;
                 }
-
 
                 std::vector<CostLimits> CostLimitClosure::getDominatingCostLimits(CostLimits const& costLimits) const {
                     std::vector<CostLimits> result;

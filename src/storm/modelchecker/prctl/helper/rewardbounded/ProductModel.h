@@ -33,7 +33,7 @@ namespace storm {
                     
                     bool productStateExists(uint64_t const& modelState, uint64_t const& memoryState) const;
                     uint64_t getProductState(uint64_t const& modelState, uint64_t const& memoryState) const;
-                    uint64_t getInitialProductState(uint64_t const& initialModelState, storm::storage::BitVector const& initialModelStates) const;
+                    uint64_t getInitialProductState(uint64_t const& initialModelState, storm::storage::BitVector const& initialModelStates, EpochClass const& epochClass) const;
                     uint64_t getModelState(uint64_t const& productState) const;
                     MemoryState getMemoryState(uint64_t const& productState) const;
                     MemoryStateManager const& getMemoryStateManager() const;
@@ -47,8 +47,8 @@ namespace storm {
                     MemoryState transformMemoryState(MemoryState const& memoryState, EpochClass const& epochClass, MemoryState const& predecessorMemoryState) const;
                     uint64_t transformProductState(uint64_t const& productState, EpochClass const& epochClass, MemoryState const& predecessorMemoryState) const;
                     
-                    // returns objectives that have probability one, already in the initial state.
-                    storm::storage::BitVector const& getProb1Objectives();
+                    /// returns the initial states (with respect to the original model) that already satisfy the given objective with probability one, assuming that the cost bounds at the current epoch allow for the objective to be satisfied.
+                    boost::optional<storm::storage::BitVector> const& getProb1InitialStates(uint64_t objectiveIndex) const;
                     
                 private:
                     
@@ -77,7 +77,7 @@ namespace storm {
                     std::vector<uint64_t> productToModelStateMap;
                     std::vector<MemoryState> productToMemoryStateMap;
                     std::vector<uint64_t> choiceToStateMap;
-                    storm::storage::BitVector prob1Objectives; /// Objectives that are already satisfied in the initial state
+                    std::vector<boost::optional<storm::storage::BitVector>> prob1InitialStates; /// For each objective the set of initial states that already satisfy the objective
                 };
             }
         }

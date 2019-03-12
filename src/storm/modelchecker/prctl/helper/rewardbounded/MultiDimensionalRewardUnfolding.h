@@ -72,18 +72,12 @@ namespace storm {
                     boost::optional<ValueType> getLowerObjectiveBound(uint64_t objectiveIndex = 0);
                     
                     void setSolutionForCurrentEpoch(std::vector<SolutionType>&& inStateSolutions);
-                    SolutionType const& getInitialStateResult(Epoch const& epoch); // Assumes that the initial state is unique
-                    SolutionType const& getInitialStateResult(Epoch const& epoch, uint64_t initialStateIndex);
+                    SolutionType getInitialStateResult(Epoch const& epoch); // Assumes that the initial state is unique
+                    SolutionType getInitialStateResult(Epoch const& epoch, uint64_t initialStateIndex);
                     
                     EpochManager const& getEpochManager() const;
                     Dimension<ValueType> const& getDimension(uint64_t dim) const;
 
-                    /*!
-                     * Returns objectives that are always satisfied (i.e., have probability one) in all initial states.
-                     * These objectives can not be handled by this as they can not be translated into expected rewards.
-                     */
-                    storm::storage::BitVector const& getProb1Objectives() const;
-                    
                 private:
                 
                     void setCurrentEpochClass(Epoch const& epoch);
@@ -104,6 +98,14 @@ namespace storm {
                     void addScaledSolution(SolutionType& solution, SolutionType const& solutionToAdd, ValueType const& scalingFactor) const;
                     template<bool SO = SingleObjectiveMode, typename std::enable_if<!SO, int>::type = 0>
                     void addScaledSolution(SolutionType& solution, SolutionType const& solutionToAdd, ValueType const& scalingFactor) const;
+                    
+                    
+                    template<bool SO = SingleObjectiveMode, typename std::enable_if<SO, int>::type = 0>
+                    void setSolutionEntry(SolutionType& solution, uint64_t objIndex, ValueType const& value) const;
+                    template<bool SO = SingleObjectiveMode, typename std::enable_if<!SO, int>::type = 0>
+                    void setSolutionEntry(SolutionType& solution, uint64_t objIndex, ValueType const& value) const;
+                    
+                    
                     
                     template<bool SO = SingleObjectiveMode, typename std::enable_if<SO, int>::type = 0>
                     std::string solutionToString(SolutionType const& solution) const;

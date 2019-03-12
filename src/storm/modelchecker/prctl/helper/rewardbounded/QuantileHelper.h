@@ -1,16 +1,16 @@
 #pragma once
 
+#include <map>
+#include <boost/optional.hpp>
+
 #include "storm/logic/QuantileFormula.h"
-#include "boost/optional.hpp"
+#include "storm/logic/ProbabilityOperatorFormula.h"
 #include "storm/modelchecker/prctl/helper/rewardbounded/CostLimitClosure.h"
 #include "storm/modelchecker/prctl/helper/rewardbounded/MultiDimensionalRewardUnfolding.h"
+#include "storm/storage/BitVector.h"
 
 namespace storm {
     class Environment;
-
-    namespace storage {
-        class BitVector;
-    }
 
     namespace modelchecker {
         namespace helper {
@@ -22,12 +22,12 @@ namespace storm {
                 public:
                     QuantileHelper(ModelType const& model, storm::logic::QuantileFormula const& quantileFormula);
 
-                    std::vector<std::vector<ValueType>> computeQuantile(Environment const& env) const;
+                    std::vector<std::vector<ValueType>> computeQuantile(Environment const& env);
 
                 private:
 
-                    std::pair<CostLimitClosure, std::vector<ValueType>> computeQuantile(Environment& env, storm::storage::BitVector const& consideredDimensions) const;
-                    bool computeQuantile(Environment& env, storm::storage::BitVector const& consideredDimensions, storm::storage::BitVector const& lowerBoundedDimensions, CostLimitClosure& satCostLimits, CostLimitClosure& unsatCostLimits, MultiDimensionalRewardUnfolding<ValueType, true>& rewardUnfolding);
+                    std::pair<CostLimitClosure, std::vector<ValueType>> computeQuantile(Environment& env, storm::storage::BitVector const& consideredDimensions, bool complementaryQuery);
+                    bool computeQuantile(Environment& env, storm::storage::BitVector const& consideredDimensions, storm::logic::ProbabilityOperatorFormula const& boundedUntilOperator, storm::storage::BitVector const& lowerBoundedDimensions, CostLimitClosure& satCostLimits, CostLimitClosure& unsatCostLimits, MultiDimensionalRewardUnfolding<ValueType, true>& rewardUnfolding);
 
 
                     std::vector<std::vector<ValueType>> computeTwoDimensionalQuantile(Environment& env) const;
@@ -66,6 +66,7 @@ namespace storm {
 
                     ModelType const& model;
                     storm::logic::QuantileFormula const& quantileFormula;
+                    std::map<storm::storage::BitVector, std::pair<CostLimitClosure, std::vector<ValueType>>> cachedSubQueryResults;
                     
                     /// Statistics
                     mutable uint64_t numCheckedEpochs;

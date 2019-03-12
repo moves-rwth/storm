@@ -21,7 +21,7 @@ namespace storm {
             namespace rewardbounded {
                 
                 template<typename ValueType>
-                ProductModel<ValueType>::ProductModel(storm::models::sparse::Model<ValueType> const& model, std::vector<storm::modelchecker::multiobjective::Objective<ValueType>> const& objectives, std::vector<Dimension<ValueType>> const& dimensions, std::vector<storm::storage::BitVector> const& objectiveDimensions, EpochManager const& epochManager, std::vector<Epoch> const& originalModelSteps) : dimensions(dimensions), objectiveDimensions(objectiveDimensions), epochManager(epochManager), memoryStateManager(dimensions.size()), prob1Objectives(objectives.size(), false) {
+                ProductModel<ValueType>::ProductModel(storm::models::sparse::Model<ValueType> const& model, std::vector<storm::modelchecker::multiobjective::Objective<ValueType>> const& objectives, std::vector<Dimension<ValueType>> const& dimensions, std::vector<storm::storage::BitVector> const& objectiveDimensions, EpochManager const& epochManager, std::vector<Epoch> const& originalModelSteps) : dimensions(dimensions), objectiveDimensions(objectiveDimensions), epochManager(epochManager), memoryStateManager(dimensions.size()), prob1InitialStates(objectives.size(), boost::none) {
                     
                     for (uint64_t dim = 0; dim < dimensions.size(); ++dim) {
                         if (!dimensions[dim].memoryLabel) {
@@ -167,10 +167,9 @@ namespace storm {
                                     if (memStateBV.full()) {
                                         storm::storage::BitVector initialTransitionStates = model.getInitialStates() & transitionStates;
                                         // At this point we can check whether there is an initial state that already satisfies all subObjectives.
-                                        // Such a situation can not be reduced (easily) to an expected reward computation.
-                                        if (memStatePrimeBV.empty() && !initialTransitionStates.empty() && !objectiveContainsLowerBound && !initialTransitionStates.isDisjointFrom(constraintStates)) {
-                                            STORM_LOG_THROW(model.getInitialStates() == initialTransitionStates, storm::exceptions::NotSupportedException, "The objective " << *objectives[objIndex].formula << " is already satisfied in an initial state. This special case is not supported.");
-                                            prob1Objectives.set(objIndex, true);
+                                        // Such a situation can not be reduced (easily) to an expected reward computation and thus requires special treatment
+                                        if (memStatePrimeBV.empty() && !initialTransitionStates.empty()) {
+                                            prob1InitialStates[objIndex] = initialTransitionStates;
                                         }
                                                 
                                         for (auto const& initState : initialTransitionStates) {
@@ -331,11 +330,11 @@ namespace storm {
                 }
     
                 template<typename ValueType>
-                uint64_t ProductModel<ValueType>::getInitialProductState(uint64_t const& initialModelState, storm::storage::BitVector const& initialModelStates) const {
+                uint64_t ProductModel<ValueType>::getInitialProductState(uint64_t const& initialModelState, storm::storage::BitVector const& initialModelStates, EpochClass const& epochClass) const {
                     auto productInitStateIt = getProduct().getInitialStates().begin();
                     productInitStateIt += initialModelStates.getNumberOfSetBitsBeforeIndex(initialModelState);
                     STORM_LOG_ASSERT(getModelState(*productInitStateIt) == initialModelState, "Could not find the corresponding initial state in the product model.");
-                    return transformProductState(*productInitStateIt, epochManager.getEpochClass(epochManager.getZeroEpoch()), memoryStateManager.getInitialMemoryState());
+                    return transformProductState(*productInitStateIt, epochClass, memoryStateManager.getInitialMemoryState());
                 }
                 
                 template<typename ValueType>
@@ -649,8 +648,8 @@ namespace storm {
                 }
                 
                 template<typename ValueType>
-                storm::storage::BitVector const& ProductModel<ValueType>::getProb1Objectives() {
-                    return prob1Objectives;
+                boost::optional<storm::storage::BitVector> const& ProductModel<ValueType>::getProb1InitialStates(uint64_t objectiveIndex) const {
+                    return prob1InitialStates[objectiveIndex];
                 }
                 
                 template class ProductModel<double>;
