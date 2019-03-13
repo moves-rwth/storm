@@ -152,10 +152,11 @@ namespace storm {
                         prec = storm::utility::convertNumber<ValueType>(env.solver().getPrecisionOfLinearEquationSolver(env.solver().getLinearEquationSolverType()).first.get());
                         relative = env.solver().getPrecisionOfLinearEquationSolver(env.solver().getLinearEquationSolverType()).second.get();
                     }
+                    prec *= factor;
                     if (relative) {
-                        return std::make_pair<ValueType, ValueType>((value * (1/(prec + 1))) * factor, (value * (1 + prec/(prec +1))) * factor);
+                        return std::make_pair<ValueType, ValueType>(value * (1/(prec + 1)), value * (1 + prec/(prec +1)));
                     } else {
-                        return std::make_pair<ValueType, ValueType>((value - prec) * factor, (value + prec) * factor);
+                        return std::make_pair<ValueType, ValueType>(value - prec, value + prec);
                     }
                 }
                 
@@ -197,11 +198,13 @@ namespace storm {
                     // Translate the result by applying the scaling factors and permutation.
                     std::vector<uint64_t> permutation;
                     for (auto const& v : quantileFormula.getBoundVariables()) {
+                        uint64_t openDim = 0;
                         for (auto const& dim : getOpenDimensions()) {
                             if (getVariableForDimension(dim) == v) {
-                                permutation.push_back(dim);
+                                permutation.push_back(openDim);
                                 break;
                             }
+                            ++openDim;
                         }
                     }
                     assert(permutation.size() == getOpenDimensions().getNumberOfSetBits());
