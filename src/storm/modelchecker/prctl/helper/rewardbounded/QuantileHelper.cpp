@@ -208,15 +208,23 @@ namespace storm {
                     // Call the internal recursive function
                     auto internalResult = computeQuantile(envCpy, getOpenDimensions(), false);
                     
-                    // Translate the result by applying the scaling factors.
+                    // Translate the result by applying the scaling factors and permutation.
+                    std::vector<uint64_t> permutation;
+                    for (auto const& v : quantileFormula.getBoundVariables()) {
+                        for (auto const& dim : getOpenDimensions()) {
+                            if (getVariableForDimension(dim) == v) {
+                                permutation.push_back(dim);
+                                break;
+                            }
+                        }
+                    }
+                    assert(permutation.size() == getOpenDimensions().getNumberOfSetBits());
                     for (auto const& costLimits : internalResult.first.getGenerator()) {
-                        std::vector<ValueType> resultPoint(costLimits.size());
-                        storm::utility::vector::applyPointwise<CostLimit, ValueType, ValueType>(costLimits, internalResult.second, resultPoint, [](CostLimit const& costLimit, ValueType const& factor) -> ValueType {
-                            if (costLimit.isInfinity()) {
-                                return storm::utility::infinity<ValueType>();
-                            } else {
-                                return storm::utility::convertNumber<ValueType>(costLimit.get()) * factor;
-                            }});
+                        std::vector<ValueType> resultPoint;
+                        for (auto const& dim : permutation) {
+                            CostLimit const& cl = costLimits[dim];
+                            resultPoint.push_back(cl.isInfinity() ? storm::utility::infinity<ValueType>() : storm::utility::convertNumber<ValueType>(cl.get()) * internalResult.second[dim]);
+                        }
                         result.push_back(resultPoint);
                     }
                     if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
