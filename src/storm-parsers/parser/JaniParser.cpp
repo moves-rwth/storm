@@ -287,10 +287,21 @@ namespace storm {
                 }
             }
             storm::expressions::Expression expr = parseExpression(propertyStructure, scope.refine("expression in property"), true);
-            if (expr.isInitialized() && propertyStructure.count("op") == 0) {
-                assert(bound == boost::none);
-                return std::make_shared<storm::logic::AtomicExpressionFormula>(expr);
-            } else if(propertyStructure.count("op") == 1) {
+            if (expr.isInitialized()) {
+                bool exprContainsLabel = false;
+                auto varsInExpr = expr.getVariables();
+                for (auto const& varInExpr : varsInExpr) {
+                    if (labels.count(varInExpr.getName()) > 0) {
+                        exprContainsLabel = true;
+                        break;
+                    }
+                }
+                if (!exprContainsLabel) {
+                    assert(bound == boost::none);
+                    return std::make_shared<storm::logic::AtomicExpressionFormula>(expr);
+                }
+            }
+            if (propertyStructure.count("op") == 1) {
                 std::string opString = getString(propertyStructure.at("op"), "Operation description");
                 
                 if(opString == "Pmin" || opString == "Pmax") {
@@ -556,9 +567,7 @@ namespace storm {
                     }
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "No complex comparisons for properties are supported.");
                 } else if (expr.isInitialized()) {
-                    assert(bound == boost::none);
-                    STORM_LOG_THROW(expr.hasBooleanType(), storm::exceptions::InvalidJaniException, "Expected a boolean expression at " << scope.description);
-                    return std::make_shared<storm::logic::AtomicExpressionFormula>(expr);
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Non-trivial Expression '" << expr << "' contains a boolean transient variable. Can not translate to PRCTL-like formula at " << scope.description << ".");
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Unknown operator " << opString);
                 }
