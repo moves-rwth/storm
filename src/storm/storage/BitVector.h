@@ -417,6 +417,7 @@ namespace storm {
             
             /*!
              * Retrievs whether all bits are set in this bit vector.
+             * If the bit vector has size 0, this method always returns true.
              *
              * @return True iff all bits in the bit vector are set.
              */
