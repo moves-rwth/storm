@@ -31,7 +31,10 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, disableDCOptionName, false, "Disable Dont Care propagation.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, firstDependencyOptionName, false, "Avoid non-determinism by always taking the first possible dependency.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, approximationErrorOptionName, false, "Approximation error allowed.").setShortName(approximationErrorOptionShortName).addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("error", "The relative approximation error to use.").addValidatorDouble(ArgumentValidatorFactory::createDoubleGreaterEqualValidator(0.0)).build()).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, approximationHeuristicOptionName, false, "Set the heuristic used for approximation.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("heuristic", "Sets which heuristic is used for approximation. Must be in {depth, probability}. Default is").setDefaultValueString("depth").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator({"depth", "rateratio"})).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, approximationHeuristicOptionName, false, "Set the heuristic used for approximation.")
+                    .addArgument(storm::settings::ArgumentBuilder::createStringArgument("heuristic", "Sets which heuristic is used for approximation. Must be in {none, depth, probability, bounddifference}. Default is")
+                    .setDefaultValueString("depth")
+                    .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator({"none", "depth", "probability", "bounddifference"})).build()).build());
 #ifdef STORM_HAVE_Z3
                 this->addOption(storm::settings::OptionBuilder(moduleName, solveWithSmtOptionName, true, "Solve the DFT with SMT.").build());
 #endif
@@ -63,10 +66,14 @@ namespace storm {
                     return storm::builder::ApproximationHeuristic::NONE;
                 }
                 std::string heuristicAsString = this->getOption(approximationHeuristicOptionName).getArgumentByName("heuristic").getValueAsString();
-                if (heuristicAsString == "depth") {
+                if (heuristicAsString == "none") {
+                    return storm::builder::ApproximationHeuristic::NONE;
+                } else if (heuristicAsString == "depth") {
                     return storm::builder::ApproximationHeuristic::DEPTH;
                 } else if (heuristicAsString == "probability") {
                     return storm::builder::ApproximationHeuristic::PROBABILITY;
+                } else if (heuristicAsString == "bounddifference") {
+                    return storm::builder::ApproximationHeuristic::BOUNDDIFFERENCE;
                 }
                 STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Illegal value '" << heuristicAsString << "' set as heuristic for approximation.");
             }
