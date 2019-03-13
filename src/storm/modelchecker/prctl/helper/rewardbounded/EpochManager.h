@@ -45,6 +45,7 @@ namespace storm {
                     bool isBottomDimension(Epoch const& epoch, uint64_t const& dimension) const;
                     bool isBottomDimensionEpochClass(EpochClass const& epochClass, uint64_t const& dimension) const;
                     uint64_t getDimensionOfEpoch(Epoch const& epoch, uint64_t const& dimension) const; // assumes that the dimension is not bottom
+                    uint64_t getSumOfDimensions(Epoch const& epoch) const; // assumes that the dimension is not bottom
                     
                     std::string toString(Epoch const& epoch) const;
                     

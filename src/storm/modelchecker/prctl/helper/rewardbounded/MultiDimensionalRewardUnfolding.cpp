@@ -711,11 +711,7 @@ namespace storm {
                 
                 template<typename ValueType, bool SingleObjectiveMode>
                 ValueType MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::getRequiredEpochModelPrecision(Epoch const& startEpoch, ValueType const& precision) {
-                    uint64_t sumOfDimensions = 0;
-                    for (uint64_t dim = 0; dim < epochManager.getDimensionCount(); ++dim) {
-                        sumOfDimensions += epochManager.getDimensionOfEpoch(startEpoch, dim) + 1;
-                    }
-                    return precision / storm::utility::convertNumber<ValueType>(sumOfDimensions);
+                    return precision / storm::utility::convertNumber<ValueType>(epochManager.getSumOfDimensions(startEpoch) + 1);
                 }
                 
                 template<typename ValueType, bool SingleObjectiveMode>

@@ -64,9 +64,9 @@ namespace storm {
                     }
                     
                     // TODO
-                    // Fix precision increasing
                     // Multiple quantile formulas in the same file yield constants def clash
                     // ignore optimization direction for quantile variables
+                    // Test cases
                 }
 
                 enum class BoundTransformation {
@@ -139,9 +139,12 @@ namespace storm {
                     env.solver().minMax().setPrecision(env.solver().minMax().getPrecision() * factor);
                 }
                 
-                /// Computes a lower/ upper bound on the actual result of a minmax or linear equation solver
+                /*!
+                 * Computes a lower / upper bound on the actual result of a sound minmax or linear equation solver
+                 *
+                 */
                 template<typename ValueType>
-                std::pair<ValueType, ValueType> getLowerUpperBound(storm::Environment const& env, ValueType const& value, bool minMax = true) {
+                std::pair<ValueType, ValueType> getLowerUpperBound(storm::Environment const& env, ValueType const& factor, ValueType const& value, bool minMax = true) {
                     ValueType prec;
                     bool relative;
                     if (minMax) {
@@ -152,9 +155,9 @@ namespace storm {
                         relative = env.solver().getPrecisionOfLinearEquationSolver(env.solver().getLinearEquationSolverType()).second.get();
                     }
                     if (relative) {
-                        return std::make_pair<ValueType, ValueType>(value * (1/(prec + 1)), value * (1 + prec/(prec +1)));
+                        return std::make_pair<ValueType, ValueType>((value * (1/(prec + 1))) * factor, (value * (1 + prec/(prec +1))) * factor);
                     } else {
-                        return std::make_pair<ValueType, ValueType>(value - prec, value + prec);
+                        return std::make_pair<ValueType, ValueType>((value - prec) * factor, (value + prec) * factor);
                     }
                 }
                 
@@ -402,7 +405,8 @@ namespace storm {
                                             ValueType currValue = rewardUnfolding.getInitialStateResult(epoch);
                                             bool propertySatisfied;
                                             if (env.solver().isForceSoundness()) {
-                                                auto lowerUpperValue = getLowerUpperBound(env, currValue);
+                                                ValueType  sumOfEpochDimensions = storm::utility::convertNumber<ValueType>(rewardUnfolding.getEpochManager().getSumOfDimensions(epoch) + 1);
+                                                auto lowerUpperValue = getLowerUpperBound(env, sumOfEpochDimensions, currValue);
                                                 propertySatisfied =  boundedUntilOperator.getBound().isSatisfied(lowerUpperValue.first);
                                                 if (propertySatisfied !=  boundedUntilOperator.getBound().isSatisfied(lowerUpperValue.second)) {
                                                     // unclear result due to insufficient precision.
