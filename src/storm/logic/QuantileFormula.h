@@ -1,13 +1,12 @@
 #pragma once
 
 #include "storm/logic/Formula.h"
-#include "storm/solver/OptimizationDirection.h"
 
 namespace storm {
     namespace logic {
         class QuantileFormula : public Formula {
         public:
-            QuantileFormula(std::vector<std::pair<storm::solver::OptimizationDirection, storm::expressions::Variable>> const& boundVariables, std::shared_ptr<Formula const> subformula);
+            QuantileFormula(std::vector<storm::expressions::Variable> const& boundVariables, std::shared_ptr<Formula const> subformula);
             
             virtual ~QuantileFormula();
             
@@ -23,9 +22,7 @@ namespace storm {
             
             storm::expressions::Variable const& getBoundVariable() const;
             storm::expressions::Variable const& getBoundVariable(uint64_t index) const;
-            std::vector<std::pair<storm::solver::OptimizationDirection, storm::expressions::Variable>> const& getBoundVariables() const;
-            storm::solver::OptimizationDirection const& getOptimizationDirection() const;
-            storm::solver::OptimizationDirection const& getOptimizationDirection(uint64_t index) const;
+            std::vector<storm::expressions::Variable> const& getBoundVariables() const;
             
             virtual boost::any accept(FormulaVisitor const& visitor, boost::any const& data) const override;
             virtual void gatherAtomicExpressionFormulas(std::vector<std::shared_ptr<AtomicExpressionFormula const>>& atomicExpressionFormulas) const override;
@@ -34,7 +31,7 @@ namespace storm {
             
             virtual std::ostream& writeToStream(std::ostream& out) const override;
         private:
-            std::vector<std::pair<storm::solver::OptimizationDirection, storm::expressions::Variable>> boundVariables;
+            std::vector<storm::expressions::Variable> boundVariables;
             std::shared_ptr<Formula const> subformula;
         };
     }

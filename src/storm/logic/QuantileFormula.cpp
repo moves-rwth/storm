@@ -7,7 +7,7 @@
 namespace storm {
     namespace logic {
     
-        QuantileFormula::QuantileFormula(std::vector<std::pair<storm::solver::OptimizationDirection, storm::expressions::Variable>> const& boundVariables, std::shared_ptr<Formula const> subformula) : boundVariables(boundVariables), subformula(subformula) {
+        QuantileFormula::QuantileFormula(std::vector<storm::expressions::Variable> const& boundVariables, std::shared_ptr<Formula const> subformula) : boundVariables(boundVariables), subformula(subformula) {
             STORM_LOG_THROW(!boundVariables.empty(), storm::exceptions::InvalidArgumentException, "Quantile formula without bound variables are invalid.");
         }
         
@@ -45,26 +45,16 @@ namespace storm {
         
         storm::expressions::Variable const& QuantileFormula::getBoundVariable() const {
             STORM_LOG_THROW(boundVariables.size() == 1, storm::exceptions::InvalidArgumentException, "Requested unique bound variables. However, there are multiple bound variables defined.");
-            return boundVariables.front().second;
+            return boundVariables.front();
         }
         
         storm::expressions::Variable const& QuantileFormula::getBoundVariable(uint64_t index) const {
             STORM_LOG_THROW(index < boundVariables.size(), storm::exceptions::InvalidArgumentException, "Requested bound variable with index" << index << ". However, there are only " << boundVariables.size() << " bound variables.");
-            return boundVariables[index].second;
+            return boundVariables[index];
         }
         
-        std::vector<std::pair<storm::solver::OptimizationDirection, storm::expressions::Variable>> const& QuantileFormula::getBoundVariables() const {
+        std::vector<storm::expressions::Variable> const& QuantileFormula::getBoundVariables() const {
             return boundVariables;
-        }
-        
-        storm::solver::OptimizationDirection const& QuantileFormula::getOptimizationDirection() const {
-            STORM_LOG_THROW(boundVariables.size() == 1, storm::exceptions::InvalidArgumentException, "Requested unique optimization direction of the bound variables. However, there are multiple bound variables defined.");
-            return boundVariables.front().first;
-        }
-        
-        storm::solver::OptimizationDirection const& QuantileFormula::getOptimizationDirection(uint64_t index) const {
-            STORM_LOG_THROW(index < boundVariables.size(), storm::exceptions::InvalidArgumentException, "Requested optimization direction with index" << index << ". However, there are only " << boundVariables.size() << " bound variables.");
-            return boundVariables[index].first;
         }
         
         boost::any QuantileFormula::accept(FormulaVisitor const& visitor, boost::any const& data) const {
@@ -86,7 +76,7 @@ namespace storm {
         std::ostream& QuantileFormula::writeToStream(std::ostream& out) const {
             out << "quantile(";
             for (auto const& bv : boundVariables) {
-                out << (storm::solver::minimize(bv.first) ? "min" : "max") << " " << bv.second.getName() << ", ";
+                out << bv.getName() << ", ";
             }
             subformula->writeToStream(out);
             out << ")";

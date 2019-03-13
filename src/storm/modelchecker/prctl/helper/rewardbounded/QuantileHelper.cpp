@@ -32,15 +32,14 @@ namespace storm {
                     // Do all kinds of sanity check.
                     std::set<storm::expressions::Variable> quantileVariables;
                     for (auto const& quantileVariable : quantileFormula.getBoundVariables()) {
-                        STORM_LOG_THROW(quantileVariables.count(quantileVariable.second) == 0, storm::exceptions::NotSupportedException, "Quantile formula considers the same bound variable twice.");
-                        quantileVariables.insert(quantileVariable.second);
+                        STORM_LOG_THROW(quantileVariables.count(quantileVariable) == 0, storm::exceptions::NotSupportedException, "Quantile formula considers the same bound variable twice.");
+                        quantileVariables.insert(quantileVariable);
                     }
                     STORM_LOG_THROW(quantileFormula.getSubformula().isProbabilityOperatorFormula(), storm::exceptions::NotSupportedException, "Quantile formula needs probability operator inside. The formula " << quantileFormula << " is not supported.");
                     auto const& probOpFormula = quantileFormula.getSubformula().asProbabilityOperatorFormula();
                     STORM_LOG_THROW(probOpFormula.hasBound(), storm::exceptions::InvalidOperationException, "Probability operator inside quantile formula needs to have a bound.");
                     STORM_LOG_THROW(!model.isNondeterministicModel() || probOpFormula.hasOptimalityType(), storm::exceptions::InvalidOperationException, "Probability operator inside quantile formula needs to have an optimality type.");
                     STORM_LOG_WARN_COND(probOpFormula.getBound().comparisonType == storm::logic::ComparisonType::Greater || probOpFormula.getBound().comparisonType == storm::logic::ComparisonType::LessEqual, "Probability operator inside quantile formula needs to have bound > or <=. The specified comparison type might lead to non-termination."); // This has to do with letting bound variables approach infinity, e.g.,  Pr>0.7 [F "goal"] holds iff Pr>0.7 [F<=B "goal"] holds for some B.
-                    bool lowerBounded = storm::logic::isLowerBound(probOpFormula.getBound().comparisonType);
                     STORM_LOG_THROW(probOpFormula.getSubformula().isBoundedUntilFormula(), storm::exceptions::NotSupportedException, "Quantile formula needs bounded until probability operator formula as subformula. The formula " << quantileFormula << " is not supported.");
                     auto const& boundedUntilFormula = probOpFormula.getSubformula().asBoundedUntilFormula();
                     std::set<storm::expressions::Variable> boundVariables;
@@ -65,7 +64,6 @@ namespace storm {
                     
                     // TODO
                     // Multiple quantile formulas in the same file yield constants def clash
-                    // ignore optimization direction for quantile variables
                     // Test cases
                 }
 
@@ -178,19 +176,7 @@ namespace storm {
                     }
                     return res;
                 }
-
-                template<typename ModelType>
-                storm::solver::OptimizationDirection const& QuantileHelper<ModelType>::getOptimizationDirForDimension(uint64_t const& dim) const {
-                    storm::expressions::Variable const& dimVar = getVariableForDimension(dim);
-                    for (auto const& boundVar : quantileFormula.getBoundVariables()) {
-                        if (boundVar.second == dimVar) {
-                            return boundVar.first;
-                        }
-                    }
-                    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "The bound variable '" << dimVar.getName() << "' is not specified within the quantile formula '" << quantileFormula << "'.");
-                    return quantileFormula.getOptimizationDirection();
-                }
-
+                
                 template<typename ModelType>
                 storm::expressions::Variable const& QuantileHelper<ModelType>::getVariableForDimension(uint64_t const& dim) const {
                     auto const& boundedUntil = quantileFormula.getSubformula().asProbabilityOperatorFormula().getSubformula().asBoundedUntilFormula();

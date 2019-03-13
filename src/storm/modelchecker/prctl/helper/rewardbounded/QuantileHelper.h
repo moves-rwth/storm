@@ -30,25 +30,6 @@ namespace storm {
                     bool computeQuantile(Environment& env, storm::storage::BitVector const& consideredDimensions, storm::logic::ProbabilityOperatorFormula const& boundedUntilOperator, storm::storage::BitVector const& lowerBoundedDimensions, CostLimitClosure& satCostLimits, CostLimitClosure& unsatCostLimits, MultiDimensionalRewardUnfolding<ValueType, true>& rewardUnfolding);
 
 
-                    std::vector<std::vector<ValueType>> computeTwoDimensionalQuantile(Environment& env) const;
-                    bool exploreTwoDimensionalQuantile(Environment const& env, std::vector<std::pair<int64_t, typename ModelType::ValueType>> const& startEpochValues, std::vector<int64_t>& currentEpochValues, std::vector<std::vector<ValueType>>& resultPoints) const;
-
-                    /*!
-                     * Computes the limit probability, where the given dimensions approach infinity and the remaining dimensions are set to zero.
-                     */
-                    ValueType computeLimitValue(Environment const& env, storm::storage::BitVector const& infDimensions) const;
-
-                    /*!
-                     * Computes the limit probability, where the given dimensions approach infinity and the remaining dimensions are set to zero.
-                     * The computed value is compared to the probability threshold.
-                     * In sound mode, precision is iteratively increased in case of 'inconsistent' results.
-                     */
-                    bool checkLimitValue(Environment& env, storm::storage::BitVector const& infDimensions) const;
-                    
-                    /// Computes the quantile with respect to the given dimension.
-                    /// boost::none is returned in case of insufficient precision.
-                    boost::optional<std::pair<uint64_t, typename ModelType::ValueType>> computeQuantileForDimension(Environment const& env, uint64_t dim) const;
-                    
                     /*!
                      * Gets the number of dimensions of the underlying boudned until formula
                      */
@@ -61,7 +42,6 @@ namespace storm {
                     storm::storage::BitVector getOpenDimensions() const;
                     
                     storm::storage::BitVector getDimensionsForVariable(storm::expressions::Variable const& var) const;
-                    storm::solver::OptimizationDirection const& getOptimizationDirForDimension(uint64_t const& dim) const;
                     storm::expressions::Variable const& getVariableForDimension(uint64_t const& dim) const;
 
                     ModelType const& model;
