@@ -186,6 +186,7 @@ namespace storm {
                     numCheckedEpochs = 0;
                     numPrecisionRefinements = 0;
                     swEpochAnalysis.reset();
+                    swExploration.reset();
                     cachedSubQueryResults.clear();
                     
                     std::vector<std::vector<ValueType>> result;
@@ -217,7 +218,8 @@ namespace storm {
                     if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
                         std::cout << "Number of checked epochs: " << numCheckedEpochs << std::endl;
                         std::cout << "Number of required precision refinements: " << numPrecisionRefinements << std::endl;
-                        std::cout << "Time for epoch model analysis: " << swEpochAnalysis << " seconds." << std::endl;
+                        std::cout << "Time for epoch exploration: " << swExploration << " seconds." << std::endl;
+                        std::cout << "\tTime for epoch model analysis: " << swEpochAnalysis << " seconds." << std::endl;
                     }
                     return result;
                 }
@@ -359,8 +361,7 @@ namespace storm {
                     auto upperBound = rewardUnfolding.getUpperObjectiveBound();
                     std::vector<ValueType> x, b;
                     std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> minMaxSolver;
-                    std::set<EpochManager::Epoch> checkedEpochs;
-
+                    swExploration.start();
                     bool progress = true;
                     for (CostLimit candidateCostLimitSum(0); progress; ++candidateCostLimitSum.get()) {
                         CostLimits currentCandidate(satCostLimits.dimension(), CostLimit(0));
@@ -389,42 +390,41 @@ namespace storm {
                                     ++costLimitIt;
                                 }
                                 STORM_LOG_DEBUG("Checking start epoch " << rewardUnfolding.getEpochManager().toString(startEpoch) << ".");
-                                auto epochSequence = rewardUnfolding.getEpochComputationOrder(startEpoch);
+                                auto epochSequence = rewardUnfolding.getEpochComputationOrder(startEpoch, true);
                                 for (auto const& epoch : epochSequence) {
-                                    if (checkedEpochs.count(epoch) == 0) {
-                                        ++numCheckedEpochs;
-                                        swEpochAnalysis.start();
-                                        checkedEpochs.insert(epoch);
-                                        auto& epochModel = rewardUnfolding.setCurrentEpoch(epoch);
-                                        rewardUnfolding.setSolutionForCurrentEpoch(epochModel.analyzeSingleObjective(env,boundedUntilOperator.getOptimalityType(), x, b, minMaxSolver, lowerBound, upperBound));
-                                        swEpochAnalysis.stop();
+                                    ++numCheckedEpochs;
+                                    swEpochAnalysis.start();
+                                    auto& epochModel = rewardUnfolding.setCurrentEpoch(epoch);
+                                    rewardUnfolding.setSolutionForCurrentEpoch(epochModel.analyzeSingleObjective(env,boundedUntilOperator.getOptimalityType(), x, b, minMaxSolver, lowerBound, upperBound));
+                                    swEpochAnalysis.stop();
 
-                                        CostLimits epochAsCostLimits;
-                                        if (translateEpochToCostLimits(epoch, startEpoch, consideredDimensions, lowerBoundedDimensions, rewardUnfolding.getEpochManager(), epochAsCostLimits)) {
-                                            ValueType currValue = rewardUnfolding.getInitialStateResult(epoch);
-                                            bool propertySatisfied;
-                                            if (env.solver().isForceSoundness()) {
-                                                ValueType  sumOfEpochDimensions = storm::utility::convertNumber<ValueType>(rewardUnfolding.getEpochManager().getSumOfDimensions(epoch) + 1);
-                                                auto lowerUpperValue = getLowerUpperBound(env, sumOfEpochDimensions, currValue);
-                                                propertySatisfied =  boundedUntilOperator.getBound().isSatisfied(lowerUpperValue.first);
-                                                if (propertySatisfied !=  boundedUntilOperator.getBound().isSatisfied(lowerUpperValue.second)) {
-                                                    // unclear result due to insufficient precision.
-                                                    return false;
-                                                }
-                                            } else {
-                                                propertySatisfied =  boundedUntilOperator.getBound().isSatisfied(currValue);
+                                    CostLimits epochAsCostLimits;
+                                    if (translateEpochToCostLimits(epoch, startEpoch, consideredDimensions, lowerBoundedDimensions, rewardUnfolding.getEpochManager(), epochAsCostLimits)) {
+                                        ValueType currValue = rewardUnfolding.getInitialStateResult(epoch);
+                                        bool propertySatisfied;
+                                        if (env.solver().isForceSoundness()) {
+                                            ValueType  sumOfEpochDimensions = storm::utility::convertNumber<ValueType>(rewardUnfolding.getEpochManager().getSumOfDimensions(epoch) + 1);
+                                            auto lowerUpperValue = getLowerUpperBound(env, sumOfEpochDimensions, currValue);
+                                            propertySatisfied =  boundedUntilOperator.getBound().isSatisfied(lowerUpperValue.first);
+                                            if (propertySatisfied !=  boundedUntilOperator.getBound().isSatisfied(lowerUpperValue.second)) {
+                                                // unclear result due to insufficient precision.
+                                                swExploration.stop();
+                                                return false;
                                             }
-                                            if (propertySatisfied) {
-                                                satCostLimits.insert(epochAsCostLimits);
-                                            } else {
-                                                unsatCostLimits.insert(epochAsCostLimits);
-                                            }
+                                        } else {
+                                            propertySatisfied =  boundedUntilOperator.getBound().isSatisfied(currValue);
+                                        }
+                                        if (propertySatisfied) {
+                                            satCostLimits.insert(epochAsCostLimits);
+                                        } else {
+                                            unsatCostLimits.insert(epochAsCostLimits);
                                         }
                                     }
                                 }
                             }
                         } while (getNextCandidateCostLimit(candidateCostLimitSum, currentCandidate));
                     }
+                    swExploration.stop();
                     return true;
                 }
                 

@@ -53,6 +53,7 @@ namespace storm {
                     mutable uint64_t numCheckedEpochs;
                     mutable uint64_t numPrecisionRefinements;
                     mutable storm::utility::Stopwatch swEpochAnalysis;
+                    mutable storm::utility::Stopwatch swExploration;
                 };
             }
         }

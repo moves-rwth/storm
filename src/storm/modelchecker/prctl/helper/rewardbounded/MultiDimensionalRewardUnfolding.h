@@ -54,7 +54,11 @@ namespace storm {
                      */
                     Epoch getStartEpoch(bool setUnknownDimsToBottom = false);
                     
-                    std::vector<Epoch> getEpochComputationOrder(Epoch const& startEpoch);
+                    /*!
+                     * Computes a sequence of epochs that need to be analyzed to get a result at the start epoch.
+                     * @param stopAtComputedEpochs if set, the search for epochs that need to be computed is stopped at epochs that already have been computed earlier.
+                     */
+                    std::vector<Epoch> getEpochComputationOrder(Epoch const& startEpoch, bool stopAtComputedEpochs = false);
                     
                     EpochModel<ValueType, SingleObjectiveMode>& setCurrentEpoch(Epoch const& epoch);
                     
@@ -138,11 +142,6 @@ namespace storm {
                     
                     std::vector<Dimension<ValueType>> dimensions;
                     std::vector<storm::storage::BitVector> objectiveDimensions;
-                    
-                    
-                    storm::utility::Stopwatch swInit, swFindSol, swInsertSol, swSetEpoch, swSetEpochClass, swAux1, swAux2, swAux3, swAux4;
-                    std::vector<uint64_t> epochModelSizes;
-                    uint64_t maxSolutionsStored;
                 };
             }
         }
