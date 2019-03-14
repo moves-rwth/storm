@@ -38,6 +38,8 @@ namespace storm {
                     bool contains(CostLimits const& costLimits) const;
                     bool containsUpwardClosure(CostLimits const& costLimits) const;
                     bool dominates(CostLimits const& lhs, CostLimits const& rhs) const;
+                    bool empty() const; // True if there is no point in this
+                    bool full() const; // True if all points lie in this.
                     std::vector<CostLimits> getDominatingCostLimits(CostLimits const& costLimits) const;
                     GeneratorType const& getGenerator() const;
                     uint64_t dimension() const;

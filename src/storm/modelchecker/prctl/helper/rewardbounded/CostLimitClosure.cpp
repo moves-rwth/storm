@@ -95,7 +95,19 @@ namespace storm {
                     }
                     return contains(infinityProjection);
                 }
-
+                
+                bool CostLimitClosure::empty() const {
+                    return generator.empty();
+                }
+                
+                bool CostLimitClosure::full() const {
+                    CostLimits p(dimension(), CostLimit(0));
+                    for (auto const& dim : downwardDimensions) {
+                        p[dim] = CostLimit::infinity();
+                    }
+                    return contains(p);
+                }
+                
                 bool CostLimitClosure::dominates(CostLimits const& lhs, CostLimits const& rhs) const {
                     for (uint64_t i = 0; i < lhs.size(); ++i) {
                         if (downwardDimensions.get(i)) {

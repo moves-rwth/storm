@@ -426,9 +426,15 @@ namespace storm {
         
         storm::expressions::Variable FormulaParserGrammar::createQuantileBoundVariables(boost::optional<storm::solver::OptimizationDirection> const& dir, std::string const& variableName) {
             STORM_LOG_ASSERT(manager, "Mutable expression manager required to define quantile bound variable.");
-            STORM_LOG_THROW(!manager->hasVariable(variableName), storm::exceptions::WrongFormatException, "Invalid quantile variable name '" << variableName << "' in property: variable already exists.");
+            storm::expressions::Variable var;
+            if (manager->hasVariable(variableName)) {
+                var = manager->getVariable(variableName);
+                STORM_LOG_THROW(quantileFormulaVariables.count(var) > 0, storm::exceptions::WrongFormatException, "Invalid quantile variable name '" << variableName << "' in quantile formula: variable already exists.");
+            } else {
+                var = manager->declareRationalVariable(variableName);
+                quantileFormulaVariables.insert(var);
+            }
             STORM_LOG_WARN_COND(!dir.is_initialized(), "Optimization direction '" << dir.get() << "' for quantile variable " << variableName << " is ignored. This information will be derived from the subformula of the quantile.");
-            storm::expressions::Variable var = manager->declareRationalVariable(variableName);
             addIdentifierExpression(variableName, var);
             return var;
         }

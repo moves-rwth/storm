@@ -21,6 +21,7 @@
 #include "storm/logic/BoundedUntilFormula.h"
 
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/UnexpectedException.h"
 
 namespace storm {
     namespace modelchecker {
@@ -61,10 +62,6 @@ namespace storm {
                             STORM_LOG_THROW(quantileVariables.count(boundVariable) == 1, storm::exceptions::NotSupportedException, "The formula contains undefined constant '" << boundExpression << "'.");
                         }
                     }
-                    
-                    // TODO
-                    // Multiple quantile formulas in the same file yield constants def clash
-                    // Test cases
                 }
 
                 enum class BoundTransformation {
@@ -188,6 +185,7 @@ namespace storm {
                 std::vector<std::vector<typename ModelType::ValueType>> QuantileHelper<ModelType>::computeQuantile(Environment const& env) {
                     numCheckedEpochs = 0;
                     numPrecisionRefinements = 0;
+                    swEpochAnalysis.reset();
                     cachedSubQueryResults.clear();
                     
                     std::vector<std::vector<ValueType>> result;
@@ -219,6 +217,7 @@ namespace storm {
                     if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
                         std::cout << "Number of checked epochs: " << numCheckedEpochs << std::endl;
                         std::cout << "Number of required precision refinements: " << numPrecisionRefinements << std::endl;
+                        std::cout << "Time for epoch model analysis: " << swEpochAnalysis << " seconds." << std::endl;
                     }
                     return result;
                 }
@@ -302,30 +301,26 @@ namespace storm {
                     }
                 }
 
-                bool getNextCandidateCostLimit(CostLimit const& maxCostLimit, CostLimits& current) {
-                    if (maxCostLimit.get() == 0) {
+                bool getNextCandidateCostLimit(CostLimit const& candidateCostLimitSum, CostLimits& current) {
+                    if (current.size() == 0) {
                         return false;
                     }
-                    storm::storage::BitVector nonMaxEntries = storm::utility::vector::filter<CostLimit>(current,  [&maxCostLimit] (CostLimit const& value) -> bool { return value < maxCostLimit; });
-                    bool allZero = true;
-                    for (auto const& entry : nonMaxEntries) {
-                        if (current[entry].get() > 0) {
-                            --current[entry].get();
-                            allZero = false;
-                            break;
-                        } else {
-                            current[entry] = CostLimit(maxCostLimit.get() - 1);
+                    uint64_t iSum = current.front().get();
+                    if (iSum == candidateCostLimitSum.get()) {
+                        return false;
+                    }
+                    for (uint64_t i = 1; i < current.size(); ++i) {
+                        iSum += current[i].get();
+                        if (iSum == candidateCostLimitSum.get()) {
+                            ++current[i-1].get();
+                            uint64_t newVal = current[i].get() - 1;
+                            current[i].get() = 0;
+                            current.back().get() = newVal;
+                            return true;
                         }
                     }
-                    if (allZero) {
-                        nonMaxEntries.increment();
-                        if (nonMaxEntries.full()) {
-                            return false;
-                        }
-                        current = CostLimits(current.size(), maxCostLimit);
-                        storm::utility::vector::setVectorValues(current, nonMaxEntries, CostLimit(maxCostLimit.get() - 1));
-                    }
-                    return true;
+                    STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "The entries of the current cost limit candidate do not sum up to the current candidate sum.");
+                    return false;
                 }
 
                 bool translateEpochToCostLimits(EpochManager::Epoch const& epoch, EpochManager::Epoch const& startEpoch,storm::storage::BitVector const& consideredDimensions, storm::storage::BitVector const& lowerBoundedDimensions, EpochManager const& epochManager, CostLimits& epochAsCostLimits) {
@@ -367,10 +362,14 @@ namespace storm {
                     std::set<EpochManager::Epoch> checkedEpochs;
 
                     bool progress = true;
-                    for (CostLimit currentMaxCostLimit(0); progress; ++currentMaxCostLimit.get()) {
-                        CostLimits currentCandidate(satCostLimits.dimension(), currentMaxCostLimit);
-                        // We can only stop the exploration, if the upward closure of the point in the 'top right corner' is contained in the (un)satCostlLimits.
-                        progress = !satCostLimits.containsUpwardClosure(currentCandidate) && !unsatCostLimits.containsUpwardClosure(currentCandidate);
+                    for (CostLimit candidateCostLimitSum(0); progress; ++candidateCostLimitSum.get()) {
+                        CostLimits currentCandidate(satCostLimits.dimension(), CostLimit(0));
+                        if (!currentCandidate.empty()) {
+                            currentCandidate.back() = candidateCostLimitSum;
+                        }
+                        // We can still have progress if one of the closures is empty and the other is not full.
+                        // This ensures that we do not terminate too early in case that the (un)satCostLimits are initially non-empty.
+                        progress = (satCostLimits.empty() && !unsatCostLimits.full()) || (unsatCostLimits.empty() && !satCostLimits.full());
                         do {
                             if (!satCostLimits.contains(currentCandidate) && !unsatCostLimits.contains(currentCandidate)) {
                                 progress = true;
@@ -389,13 +388,16 @@ namespace storm {
                                     }
                                     ++costLimitIt;
                                 }
+                                STORM_LOG_DEBUG("Checking start epoch " << rewardUnfolding.getEpochManager().toString(startEpoch) << ".");
                                 auto epochSequence = rewardUnfolding.getEpochComputationOrder(startEpoch);
                                 for (auto const& epoch : epochSequence) {
                                     if (checkedEpochs.count(epoch) == 0) {
+                                        ++numCheckedEpochs;
+                                        swEpochAnalysis.start();
                                         checkedEpochs.insert(epoch);
                                         auto& epochModel = rewardUnfolding.setCurrentEpoch(epoch);
                                         rewardUnfolding.setSolutionForCurrentEpoch(epochModel.analyzeSingleObjective(env,boundedUntilOperator.getOptimalityType(), x, b, minMaxSolver, lowerBound, upperBound));
-                                        ++numCheckedEpochs;
+                                        swEpochAnalysis.stop();
 
                                         CostLimits epochAsCostLimits;
                                         if (translateEpochToCostLimits(epoch, startEpoch, consideredDimensions, lowerBoundedDimensions, rewardUnfolding.getEpochManager(), epochAsCostLimits)) {
@@ -421,7 +423,7 @@ namespace storm {
                                     }
                                 }
                             }
-                        } while (getNextCandidateCostLimit(currentMaxCostLimit, currentCandidate));
+                        } while (getNextCandidateCostLimit(candidateCostLimitSum, currentCandidate));
                     }
                     return true;
                 }

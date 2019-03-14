@@ -245,6 +245,7 @@ namespace storm {
             uint64_t propertyCount;
             
             std::set<storm::expressions::Variable> undefinedConstants;
+            std::set<storm::expressions::Variable> quantileFormulaVariables;
         };
 
     }

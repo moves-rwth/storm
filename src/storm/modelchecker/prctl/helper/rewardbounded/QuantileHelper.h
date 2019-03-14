@@ -8,6 +8,7 @@
 #include "storm/modelchecker/prctl/helper/rewardbounded/CostLimitClosure.h"
 #include "storm/modelchecker/prctl/helper/rewardbounded/MultiDimensionalRewardUnfolding.h"
 #include "storm/storage/BitVector.h"
+#include "storm/utility/Stopwatch.h"
 
 namespace storm {
     class Environment;
@@ -51,6 +52,7 @@ namespace storm {
                     /// Statistics
                     mutable uint64_t numCheckedEpochs;
                     mutable uint64_t numPrecisionRefinements;
+                    mutable storm::utility::Stopwatch swEpochAnalysis;
                 };
             }
         }
