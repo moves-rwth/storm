@@ -8,6 +8,7 @@
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 
 #include "storm/models/sparse/Mdp.h"
+#include "storm/models/sparse/Dtmc.h"
 #include "storm/modelchecker/prctl/helper/rewardbounded/MultiDimensionalRewardUnfolding.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/Expressions.h"
@@ -360,7 +361,12 @@ namespace storm {
                     auto lowerBound = rewardUnfolding.getLowerObjectiveBound();
                     auto upperBound = rewardUnfolding.getUpperObjectiveBound();
                     std::vector<ValueType> x, b;
-                    std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> minMaxSolver;
+                    std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> minMaxSolver; // Needed for MDP
+                    std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> linEqSolver; // Needed for DTMC
+                    if (!model.isNondeterministicModel()) {
+                        rewardUnfolding.setEquationSystemFormatForEpochModel(storm::solver::GeneralLinearEquationSolverFactory<ValueType>().getEquationProblemFormat(env));
+                    }
+
                     swExploration.start();
                     bool progress = true;
                     for (CostLimit candidateCostLimitSum(0); progress; ++candidateCostLimitSum.get()) {
@@ -395,7 +401,11 @@ namespace storm {
                                     ++numCheckedEpochs;
                                     swEpochAnalysis.start();
                                     auto& epochModel = rewardUnfolding.setCurrentEpoch(epoch);
-                                    rewardUnfolding.setSolutionForCurrentEpoch(epochModel.analyzeSingleObjective(env,boundedUntilOperator.getOptimalityType(), x, b, minMaxSolver, lowerBound, upperBound));
+                                    if (model.isNondeterministicModel()) {
+                                        rewardUnfolding.setSolutionForCurrentEpoch(epochModel.analyzeSingleObjective(env, boundedUntilOperator.getOptimalityType(), x, b, minMaxSolver, lowerBound, upperBound));
+                                    } else {
+                                        rewardUnfolding.setSolutionForCurrentEpoch(epochModel.analyzeSingleObjective(env, x, b, linEqSolver, lowerBound, upperBound));
+                                    }
                                     swEpochAnalysis.stop();
 
                                     CostLimits epochAsCostLimits;
@@ -431,6 +441,8 @@ namespace storm {
 
                 template class QuantileHelper<storm::models::sparse::Mdp<double>>;
                 template class QuantileHelper<storm::models::sparse::Mdp<storm::RationalNumber>>;
+                template class QuantileHelper<storm::models::sparse::Dtmc<double>>;
+                template class QuantileHelper<storm::models::sparse::Dtmc<storm::RationalNumber>>;
 
             }
         }
