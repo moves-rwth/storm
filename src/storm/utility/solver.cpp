@@ -106,7 +106,7 @@ namespace storm {
             }
             
             std::unique_ptr<storm::solver::SmtSolver> getSmtSolver(storm::expressions::ExpressionManager& manager) {
-                std::unique_ptr<storm::utility::solver::SmtSolverFactory> factory(new MathsatSmtSolverFactory());
+                std::unique_ptr<storm::utility::solver::SmtSolverFactory> factory(new SmtSolverFactory());
                 return factory->create(manager);
             }
             
