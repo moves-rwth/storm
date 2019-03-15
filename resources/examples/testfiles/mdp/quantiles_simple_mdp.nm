@@ -1,0 +1,31 @@
+
+mdp
+
+module main
+	s : [0..6] init 6;
+
+	[] s=6 -> 1 : (s'=0);
+	[] s=6 -> 1 : (s'=5);
+	[a] s=5 -> 1 : (s'=5);
+	[b] s=5 -> 1 : (s'=1); 
+	[] s=0 -> 1/10: (s'=1) + 9/10: (s'=3);
+	[] s=0 -> 1/10: (s'=1) + 9/10: (s'=4);
+	[a] s=3 -> 1: (s'=0);
+	[b] s=3 -> 1: (s'=0);
+	[]  s=1 -> 1: (s'=2);
+	[] s=2 -> 1: (s'=2);
+endmodule
+ 
+rewards "first"
+	[a] true : 1;
+endrewards
+ 
+rewards "second"
+	[b] s=3 : 1;
+	[b] s=5 : 2;
+endrewards
+
+rewards "third"
+	true : 0.7;
+endrewards
+

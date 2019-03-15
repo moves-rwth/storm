@@ -64,8 +64,6 @@ namespace storm {
                 template<typename ValueType, bool SingleObjectiveMode>
                 void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::initialize(std::set<storm::expressions::Variable> const& infinityBoundVariables) {
                     
-                    maxSolutionsStored = 0;
-                    
                     STORM_LOG_ASSERT(!SingleObjectiveMode || (this->objectives.size() == 1), "Enabled single objective mode but there are multiple objectives.");
                     std::vector<Epoch> epochSteps;
                     initializeObjectives(epochSteps, infinityBoundVariables);
@@ -278,7 +276,8 @@ namespace storm {
                         STORM_LOG_THROW(SingleObjectiveMode, storm::exceptions::NotSupportedException, "Letting lower bounds approach infinity is only supported in single objective mode."); // It most likely also works with multiple objectives with the same shape. However, we haven't checked this yet.
                         STORM_LOG_THROW(objectives.front().formula->isProbabilityOperatorFormula(), storm::exceptions::NotSupportedException, "Letting lower bounds approach infinity is only supported for probability operator formulas");
                         auto const& probabilityOperatorFormula = objectives.front().formula->asProbabilityOperatorFormula();
-                        STORM_LOG_THROW(probabilityOperatorFormula.getSubformula().isBoundedUntilFormula() && probabilityOperatorFormula.hasOptimalityType() && storm::solver::maximize(probabilityOperatorFormula.getOptimalityType()), storm::exceptions::NotSupportedException, "Letting lower bounds approach infinity is only supported for maximizing bounded until probabilities.");
+                        STORM_LOG_THROW(probabilityOperatorFormula.getSubformula().isBoundedUntilFormula(), storm::exceptions::NotSupportedException, "Letting lower bounds approach infinity is only supported for  bounded until probabilities.");
+                        STORM_LOG_THROW(!model.isNondeterministicModel() || (probabilityOperatorFormula.hasOptimalityType() && storm::solver::maximize(probabilityOperatorFormula.getOptimalityType())), storm::exceptions::NotSupportedException, "Letting lower bounds approach infinity is only supported for maximizing bounded until probabilities.");
                         
                         STORM_LOG_THROW(upperBoundedDimensions.empty() || !probabilityOperatorFormula.getSubformula().asBoundedUntilFormula().hasMultiDimensionalSubformulas(), storm::exceptions::NotSupportedException, "Letting lower bounds approach infinity is only supported if the formula has either only lower bounds or if it has a single goal state."); // This would fail because the upper bounded dimension(s) might be satisfied already. One should erase epoch steps in the epoch model (after applying the goal-unfolding).
                         storm::storage::BitVector choicesWithoutUpperBoundedStep(model.getNumberOfChoices(), true);
@@ -332,48 +331,33 @@ namespace storm {
                 }
         
                 template<typename ValueType, bool SingleObjectiveMode>
-                std::vector<typename MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::Epoch> MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::getEpochComputationOrder(Epoch const& startEpoch) {
+                std::vector<typename MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::Epoch> MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::getEpochComputationOrder(Epoch const& startEpoch, bool stopAtComputedEpochs) {
                     // Perform a DFS to find all the reachable epochs
                     std::vector<Epoch> dfsStack;
                     std::set<Epoch, std::function<bool(Epoch const&, Epoch const&)>> collectedEpochs(std::bind(&EpochManager::epochClassZigZagOrder, &epochManager, std::placeholders::_1, std::placeholders::_2));
                     
-                    collectedEpochs.insert(startEpoch);
-                    dfsStack.push_back(startEpoch);
+                    if (!stopAtComputedEpochs || epochSolutions.count(startEpoch) == 0) {
+                        collectedEpochs.insert(startEpoch);
+                        dfsStack.push_back(startEpoch);
+                    }
                     while (!dfsStack.empty()) {
                         Epoch currentEpoch = dfsStack.back();
                         dfsStack.pop_back();
                         for (auto const& step : possibleEpochSteps) {
                             Epoch successorEpoch = epochManager.getSuccessorEpoch(currentEpoch, step);
-                            /*
-                            for (auto const& e : collectedEpochs) {
-                                std::cout << "Comparing " << epochManager.toString(e) << " and " << epochManager.toString(successorEpoch) << std::endl;
-                                if (epochManager.epochClassZigZagOrder(e, successorEpoch)) {
-                                    std::cout << "    " << epochManager.toString(e) << " < " << epochManager.toString(successorEpoch) << std::endl;
+                            if (!stopAtComputedEpochs || epochSolutions.count(successorEpoch) == 0) {
+                                if (collectedEpochs.insert(successorEpoch).second) {
+                                    dfsStack.push_back(std::move(successorEpoch));
                                 }
-                                if (epochManager.epochClassZigZagOrder(successorEpoch, e)) {
-                                    std::cout << "    " << epochManager.toString(e) << " > " << epochManager.toString(successorEpoch) << std::endl;
-                                }
-                            }
-                             */
-                            if (collectedEpochs.insert(successorEpoch).second) {
-                                dfsStack.push_back(std::move(successorEpoch));
                             }
                         }
                     }
-                    /*
-                    std::cout << "Resulting order: ";
-                    for (auto const& e : collectedEpochs) {
-                        std::cout << epochManager.toString(e) << ", ";
-                    }
-                    std::cout << std::endl;
-                    */
                     return std::vector<Epoch>(collectedEpochs.begin(), collectedEpochs.end());
                 }
                 
                 template<typename ValueType, bool SingleObjectiveMode>
                 EpochModel<ValueType, SingleObjectiveMode>& MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::setCurrentEpoch(Epoch const& epoch) {
                     STORM_LOG_DEBUG("Setting model for epoch " << epochManager.toString(epoch));
-                    STORM_LOG_THROW(getProb1Objectives().empty(), storm::exceptions::InvalidOperationException, "The objective " << objectives[*getProb1Objectives().begin()].formula << " is satisfied already in the initial state(s). This special case can not be handled by the reward unfolding."); // This case should have been handled 'from the outside'
                     
                     // Check if we need to update the current epoch class
                     if (!currentEpoch || !epochManager.compareEpochClass(epoch, currentEpoch.get())) {
@@ -629,8 +613,6 @@ namespace storm {
                         epochModel.objectiveRewardFilter.push_back(storm::utility::vector::filterZero(objRewards));
                         epochModel.objectiveRewardFilter.back().complement();
                     }
-    
-                    epochModelSizes.push_back(epochModel.epochMatrix.getRowGroupCount());
                 }
                 
      
@@ -671,6 +653,20 @@ namespace storm {
                 
                 template<typename ValueType, bool SingleObjectiveMode>
                 template<bool SO, typename std::enable_if<SO, int>::type>
+                void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::setSolutionEntry(SolutionType& solution, uint64_t objIndex, ValueType const& value) const {
+                    STORM_LOG_ASSERT(objIndex == 0, "Invalid objective index in single objective mode");
+                    solution = value;
+                }
+                
+                template<typename ValueType, bool SingleObjectiveMode>
+                template<bool SO, typename std::enable_if<!SO, int>::type>
+                void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::setSolutionEntry(SolutionType& solution, uint64_t objIndex, ValueType const& value) const {
+                    STORM_LOG_ASSERT(objIndex < solution.size(), "Invalid objective index " << objIndex << ".");
+                    solution[objIndex] = value;
+                }
+                
+                template<typename ValueType, bool SingleObjectiveMode>
+                template<bool SO, typename std::enable_if<SO, int>::type>
                 std::string MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::solutionToString(SolutionType const& solution) const {
                     std::stringstream stringstream;
                     stringstream << solution;
@@ -697,11 +693,7 @@ namespace storm {
                 
                 template<typename ValueType, bool SingleObjectiveMode>
                 ValueType MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::getRequiredEpochModelPrecision(Epoch const& startEpoch, ValueType const& precision) {
-                    uint64_t sumOfDimensions = 0;
-                    for (uint64_t dim = 0; dim < epochManager.getDimensionCount(); ++dim) {
-                        sumOfDimensions += epochManager.getDimensionOfEpoch(startEpoch, dim) + 1;
-                    }
-                    return precision / storm::utility::convertNumber<ValueType>(sumOfDimensions);
+                    return precision / storm::utility::convertNumber<ValueType>(epochManager.getSumOfDimensions(startEpoch) + 1);
                 }
                 
                 template<typename ValueType, bool SingleObjectiveMode>
@@ -836,9 +828,6 @@ namespace storm {
                     solution.productStateToSolutionVectorMap = productStateToEpochModelInStateMap;
                     solution.solutions = std::move(inStateSolutions);
                     epochSolutions[currentEpoch.get()] = std::move(solution);
-                    
-                    maxSolutionsStored = std::max((uint64_t) epochSolutions.size(), maxSolutionsStored);
-                    
                 }
                 
                 template<typename ValueType, bool SingleObjectiveMode>
@@ -858,21 +847,39 @@ namespace storm {
                 template<typename ValueType, bool SingleObjectiveMode>
                 typename MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::SolutionType const& MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::getStateSolution(EpochSolution const& epochSolution, uint64_t const& productState) {
                     STORM_LOG_ASSERT(productState < epochSolution.productStateToSolutionVectorMap->size(), "Requested solution at an unexisting product state.");
-                    STORM_LOG_ASSERT((*epochSolution.productStateToSolutionVectorMap)[productState] < epochSolution.solutions.size(), "Requested solution for epoch at a state for which no solution was stored.");
-                    STORM_LOG_ASSERT(getProb1Objectives().empty(), "One of the objectives is already satisfied in the initial state. This special case is not handled."); // This case should have been handled 'from the outside'
+                    STORM_LOG_ASSERT((*epochSolution.productStateToSolutionVectorMap)[productState] < epochSolution.solutions.size(), "Requested solution for epoch at product state " << productState << " for which no solution was stored.");
                     return epochSolution.solutions[(*epochSolution.productStateToSolutionVectorMap)[productState]];
                 }
                 
                 template<typename ValueType, bool SingleObjectiveMode>
-                typename MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::SolutionType const& MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::getInitialStateResult(Epoch const& epoch) {
+                typename MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::SolutionType MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::getInitialStateResult(Epoch const& epoch) {
                     STORM_LOG_ASSERT(model.getInitialStates().getNumberOfSetBits() == 1, "The model has multiple initial states.");
-                    return getStateSolution(epoch, productModel->getInitialProductState(*model.getInitialStates().begin(), model.getInitialStates()));
+                    return getInitialStateResult(epoch, *model.getInitialStates().begin());
                 }
     
                 template<typename ValueType, bool SingleObjectiveMode>
-                typename MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::SolutionType const& MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::getInitialStateResult(Epoch const& epoch, uint64_t initialStateIndex) {
+                typename MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::SolutionType MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::getInitialStateResult(Epoch const& epoch, uint64_t initialStateIndex) {
                     STORM_LOG_ASSERT(model.getInitialStates().get(initialStateIndex), "The given model state is not an initial state.");
-                    return getStateSolution(epoch, productModel->getInitialProductState(initialStateIndex, model.getInitialStates()));
+                    
+                    auto result = getStateSolution(epoch, productModel->getInitialProductState(initialStateIndex, model.getInitialStates(), epochManager.getEpochClass(epoch)));
+                    for (uint64_t objIndex = 0; objIndex < objectives.size(); ++objIndex) {
+                        if (productModel->getProb1InitialStates(objIndex) && productModel->getProb1InitialStates(objIndex)->get(initialStateIndex)) {
+                            // Check whether the objective can actually hold in this epoch
+                            bool objectiveHolds = true;
+                            for (auto const& dim : objectiveDimensions[objIndex]) {
+                                if (dimensions[dim].boundType == DimensionBoundType::LowerBound && !epochManager.isBottomDimension(epoch, dim)) {
+                                    objectiveHolds = false;
+                                } else if (dimensions[dim].boundType == DimensionBoundType::UpperBound && epochManager.isBottomDimension(epoch, dim)) {
+                                    objectiveHolds = false;
+                                }
+                                STORM_LOG_ASSERT(dimensions[dim].boundType != DimensionBoundType::LowerBoundInfinity, "Unexpected bound type at this point.");
+                            }
+                            if (objectiveHolds) {
+                                setSolutionEntry(result, objIndex, storm::utility::one<ValueType>());
+                            }
+                        }
+                    }
+                    return result;
                 }
     
                 template<typename ValueType, bool SingleObjectiveMode>
@@ -883,11 +890,6 @@ namespace storm {
                 template<typename ValueType, bool SingleObjectiveMode>
                 Dimension<ValueType> const& MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::getDimension(uint64_t dim) const {
                     return dimensions.at(dim);
-                }
-                
-                template<typename ValueType, bool SingleObjectiveMode>
-                storm::storage::BitVector const& MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::getProb1Objectives() const {
-                    return productModel->getProb1Objectives();
                 }
                 
                 template class MultiDimensionalRewardUnfolding<double, true>;

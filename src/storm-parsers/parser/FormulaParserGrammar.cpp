@@ -127,9 +127,9 @@ namespace storm {
             identifier %= qi::as_string[qi::raw[qi::lexeme[((qi::alpha | qi::char_('_') | qi::char_('.')) >> *(qi::alnum | qi::char_('_')))]]];
             identifier.name("identifier");
             
-            quantileBoundVariable = ((qi::lit("min")[qi::_a = storm::solver::OptimizationDirection::Minimize] | qi::lit("max")[qi::_a = storm::solver::OptimizationDirection::Maximize]) >> identifier)[qi::_val = phoenix::bind(&FormulaParserGrammar::createQuantileBoundVariables, phoenix::ref(*this), qi::_a,  qi::_1)];
-            quantileBoundVariable.name("Quantile bound variable");
-            quantileFormula = (qi::lit("quantile") > qi::lit("(") >> (quantileBoundVariable % qi::lit(",")) >> qi::lit(",") >> stateFormula > qi::lit(")"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createQuantileFormula, phoenix::ref(*this), qi::_1, qi::_2)];
+            quantileBoundVariable = (-(qi::lit("min")[qi::_a = storm::solver::OptimizationDirection::Minimize] | qi::lit("max")[qi::_a = storm::solver::OptimizationDirection::Maximize]) >> identifier >> qi::lit(","))[qi::_val = phoenix::bind(&FormulaParserGrammar::createQuantileBoundVariables, phoenix::ref(*this), qi::_a,  qi::_1)];
+            quantileBoundVariable.name("quantile bound variable");
+            quantileFormula = (qi::lit("quantile") > qi::lit("(") >> *(quantileBoundVariable) >> stateFormula > qi::lit(")"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createQuantileFormula, phoenix::ref(*this), qi::_1, qi::_2)];
             quantileFormula.name("Quantile formula");
             
             stateFormula = (orStateFormula | multiFormula | quantileFormula);
@@ -424,17 +424,22 @@ namespace storm {
             }
         }
         
-        std::pair<storm::solver::OptimizationDirection, storm::expressions::Variable> FormulaParserGrammar::createQuantileBoundVariables(storm::solver::OptimizationDirection const& dir, std::string const& variableName) {
+        storm::expressions::Variable FormulaParserGrammar::createQuantileBoundVariables(boost::optional<storm::solver::OptimizationDirection> const& dir, std::string const& variableName) {
             STORM_LOG_ASSERT(manager, "Mutable expression manager required to define quantile bound variable.");
-            STORM_LOG_THROW(!manager->hasVariable(variableName), storm::exceptions::WrongFormatException, "Invalid quantile variable name '" << variableName << "' in property: variable already exists.");
-            
-            storm::expressions::Variable var = manager->declareRationalVariable(variableName);
+            storm::expressions::Variable var;
+            if (manager->hasVariable(variableName)) {
+                var = manager->getVariable(variableName);
+                STORM_LOG_THROW(quantileFormulaVariables.count(var) > 0, storm::exceptions::WrongFormatException, "Invalid quantile variable name '" << variableName << "' in quantile formula: variable already exists.");
+            } else {
+                var = manager->declareRationalVariable(variableName);
+                quantileFormulaVariables.insert(var);
+            }
+            STORM_LOG_WARN_COND(!dir.is_initialized(), "Optimization direction '" << dir.get() << "' for quantile variable " << variableName << " is ignored. This information will be derived from the subformula of the quantile.");
             addIdentifierExpression(variableName, var);
-            std::pair<storm::solver::OptimizationDirection, storm::expressions::Variable> result(dir, var);
-            return result;
+            return var;
         }
 
-        std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createQuantileFormula(std::vector<std::pair<storm::solver::OptimizationDirection, storm::expressions::Variable>> const& boundVariables, std::shared_ptr<storm::logic::Formula const> const& subformula) {
+        std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createQuantileFormula(std::vector<storm::expressions::Variable> const& boundVariables, std::shared_ptr<storm::logic::Formula const> const& subformula) {
             return std::shared_ptr<storm::logic::Formula const>(new storm::logic::QuantileFormula(boundVariables, subformula));
         }
         
