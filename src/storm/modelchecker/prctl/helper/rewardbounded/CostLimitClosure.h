@@ -43,7 +43,11 @@ namespace storm {
                     std::vector<CostLimits> getDominatingCostLimits(CostLimits const& costLimits) const;
                     GeneratorType const& getGenerator() const;
                     uint64_t dimension() const;
-
+                    
+                    /*!
+                     * Returns true if the union of the two closures is full, i.e., contains every point.
+                     */
+                    static bool unionFull(CostLimitClosure const& first, CostLimitClosure const& second);
                 private:
 
                     /// The dimensions that are downwards closed, i.e., if x is in the closure, then also all y <= x

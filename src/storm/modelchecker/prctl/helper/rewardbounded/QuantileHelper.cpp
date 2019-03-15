@@ -273,10 +273,10 @@ namespace storm {
                                         ++i;
                                     }
                                 }
-                                if (subQueryComplement) {
-                                    unsatCostLimits.insert(initPoint);
-                                } else {
+                                if (subQueryComplement == complementaryQuery) {
                                     satCostLimits.insert(initPoint);
+                                } else {
+                                    unsatCostLimits.insert(initPoint);
                                 }
                             }
                         }
@@ -298,7 +298,7 @@ namespace storm {
                             cachedSubQueryResults.emplace(cacheKey, result);
                             return result;
                         }
-                        STORM_LOG_WARN("Restarting quantile computation due to insufficient precision.");
+                        STORM_LOG_WARN("Restarting quantile computation after " << swExploration << " seconds due to insufficient precision.");
                         ++numPrecisionRefinements;
                         increasePrecision(env);
                     }
@@ -433,6 +433,9 @@ namespace storm {
                                 }
                             }
                         } while (getNextCandidateCostLimit(candidateCostLimitSum, currentCandidate));
+                        if (!progress) {
+                            progress = !CostLimitClosure::unionFull(satCostLimits, unsatCostLimits);
+                        }
                     }
                     swExploration.stop();
                     return true;

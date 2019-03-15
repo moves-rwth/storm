@@ -1,6 +1,9 @@
+#include <storm/utility/ExpressionHelper.h>
 #include "storm/modelchecker/prctl/helper/rewardbounded/CostLimitClosure.h"
 #include "storm/utility/macros.h"
 #include "storm/exceptions/IllegalArgumentException.h"
+#include "storm/utility/solver.h"
+#include "storm/solver/SmtSolver.h"
 
 namespace storm {
     namespace modelchecker {
@@ -139,6 +142,43 @@ namespace storm {
 
                 uint64_t CostLimitClosure::dimension() const {
                     return downwardDimensions.size();
+                }
+                
+                bool CostLimitClosure::unionFull(CostLimitClosure const& first, CostLimitClosure const& second) {
+                    assert(first.dimension() == second.dimension());
+                    uint64_t dimension = first.dimension();
+                    auto manager = std::make_shared<storm::expressions::ExpressionManager>();
+                    auto solver = storm::utility::solver::getSmtSolver(*manager);
+                    
+                    std::vector<storm::expressions::Expression> point;
+                    storm::expressions::Expression zero = manager->integer(0);
+                    for (uint64_t i = 0; i < dimension; ++i) {
+                        point.push_back(manager->declareIntegerVariable("x" + std::to_string(i)).getExpression());
+                        solver->add(point.back() >= zero);
+                    }
+                    for (auto const& cl : {first, second}) {
+                        for (auto const& q : cl.getGenerator()) {
+                            storm::expressions::Expression pointNotDominated;
+                            for (uint64_t i = 0; i < point.size(); ++i) {
+                                if (!cl.downwardDimensions.get(i) || !q[i].isInfinity()) {
+                                    assert(!q[i].isInfinity());
+                                    storm::expressions::Expression qi = manager->integer(q[i].get());
+                                    storm::expressions::Expression piNotDominated = cl.downwardDimensions.get(i) ? point[i] > qi : point[i] < qi;
+                                    if (piNotDominated.isInitialized()) {
+                                        pointNotDominated = pointNotDominated || piNotDominated;
+                                    } else {
+                                        pointNotDominated = piNotDominated;
+                                    }
+                                }
+                            }
+                            if (pointNotDominated.isInitialized()) {
+                                solver->add(pointNotDominated);
+                            } else {
+                                solver->add(manager->boolean(false));
+                            }
+                        }
+                    }
+                    return solver->check() == storm::solver::SmtSolver::CheckResult::Unsat;;
                 }
             }
         }
