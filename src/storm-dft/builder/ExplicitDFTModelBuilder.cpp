@@ -60,14 +60,9 @@ namespace storm {
                 generator(dft, *stateGenerationInfo, enableDC, mergeFailedStates),
                 matrixBuilder(!generator.isDeterministicModel()),
                 stateStorage(dft.stateBitVectorSize()),
-                // TODO Matthias: make choosable
                 //explorationQueue(dft.nrElements()+1, 0, 1)
                 explorationQueue(200, 0, 0.9, false)
         {
-            // Intentionally left empty.
-            // TODO Matthias: remove again
-            usedHeuristic = storm::builder::ApproximationHeuristic::DEPTH;
-
             // Compute independent subtrees
             if (dft.topLevelType() == storm::storage::DFTElementType::OR) {
                 // We only support this for approximation with top level element OR
@@ -163,7 +158,21 @@ namespace storm {
                 STORM_LOG_TRACE("Initial state: " << initialStateIndex);
                 // Initialize heuristic values for inital state
                 STORM_LOG_ASSERT(!statesNotExplored.at(initialStateIndex).second, "Heuristic for initial state is already initialized");
-                ExplorationHeuristicPointer heuristic = std::make_shared<ExplorationHeuristic>(initialStateIndex);
+                ExplorationHeuristicPointer heuristic;
+                switch (usedHeuristic) {
+                    case storm::builder::ApproximationHeuristic::NONE:
+                        heuristic = std::make_shared<DFTExplorationHeuristicNone<ValueType>>(initialStateIndex);
+                        break;
+                    case storm::builder::ApproximationHeuristic::DEPTH:
+                        heuristic = std::make_shared<DFTExplorationHeuristicDepth<ValueType>>(initialStateIndex);
+                        break;
+                    case storm::builder::ApproximationHeuristic::PROBABILITY:
+                        heuristic = std::make_shared<DFTExplorationHeuristicProbability<ValueType>>(initialStateIndex);
+                        break;
+                    case storm::builder::ApproximationHeuristic::BOUNDDIFFERENCE:
+                        heuristic = std::make_shared<DFTExplorationHeuristicBoundDifference<ValueType>>(initialStateIndex);
+                        break;
+                }
                 heuristic->markExpand();
                 statesNotExplored[initialStateIndex].second = heuristic;
                 explorationQueue.push(heuristic);
@@ -171,7 +180,7 @@ namespace storm {
                 initializeNextIteration();
             }
 
-            if (approximationThreshold > 0) {
+            if (approximationThreshold > 0.0) {
                 switch (usedHeuristic) {
                     case storm::builder::ApproximationHeuristic::NONE:
                         // Do not change anything
@@ -385,7 +394,22 @@ namespace storm {
                                 DFTStatePointer state = iter->second.first;
                                 if (!iter->second.second) {
                                     // Initialize heuristic values
-                                    ExplorationHeuristicPointer heuristic = std::make_shared<ExplorationHeuristic>(stateProbabilityPair.first, *currentExplorationHeuristic, stateProbabilityPair.second, choice.getTotalMass());
+                                    ExplorationHeuristicPointer heuristic;
+                                    switch (usedHeuristic) {
+                                        case storm::builder::ApproximationHeuristic::NONE:
+                                            heuristic = std::make_shared<DFTExplorationHeuristicNone<ValueType>>(stateProbabilityPair.first, *currentExplorationHeuristic, stateProbabilityPair.second, choice.getTotalMass());
+                                            break;
+                                        case storm::builder::ApproximationHeuristic::DEPTH:
+                                            heuristic = std::make_shared<DFTExplorationHeuristicDepth<ValueType>>(stateProbabilityPair.first, *currentExplorationHeuristic, stateProbabilityPair.second, choice.getTotalMass());
+                                            break;
+                                        case storm::builder::ApproximationHeuristic::PROBABILITY:
+                                            heuristic = std::make_shared<DFTExplorationHeuristicProbability<ValueType>>(stateProbabilityPair.first, *currentExplorationHeuristic, stateProbabilityPair.second, choice.getTotalMass());
+                                            break;
+                                        case storm::builder::ApproximationHeuristic::BOUNDDIFFERENCE:
+                                            heuristic = std::make_shared<DFTExplorationHeuristicBoundDifference<ValueType>>(stateProbabilityPair.first, *currentExplorationHeuristic, stateProbabilityPair.second, choice.getTotalMass());
+                                            break;
+                                    }
+
                                     iter->second.second = heuristic;
                                     if (state->hasFailed(dft.getTopLevelIndex()) || state->isFailsafe(dft.getTopLevelIndex()) || state->getFailableElements().hasDependencies() || (!state->getFailableElements().hasDependencies() && state->getFailableElements().hasBEs())) {
                                         // Do not skip absorbing state or if reached by dependencies
