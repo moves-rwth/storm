@@ -440,15 +440,8 @@ namespace storm {
             for (auto& functionDefinition : this->getFunctionDefinitions()) {
                 functionDefinition.second.substitute(substitution);
             }
-            for (auto& variable : this->getVariables().getBoundedIntegerVariables()) {
-                variable.substitute(substitution);
-            }
-            for (auto& variable : this->getVariables().getArrayVariables()) {
-                variable.substitute(substitution);
-            }
-            for (auto& variable : this->getVariables().getClockVariables()) {
-                variable.substitute(substitution);
-            }
+            
+            this->getVariables().substitute(substitution);
             
             for (auto& location : this->getLocations()) {
                 location.substitute(substitution);

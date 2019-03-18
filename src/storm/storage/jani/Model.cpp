@@ -1036,15 +1036,7 @@ namespace storm {
             }
             
             // Substitute constants in all global variables.
-            for (auto& variable : result.getGlobalVariables().getBoundedIntegerVariables()) {
-                variable.substitute(constantSubstitution);
-            }
-            for (auto& variable : result.getGlobalVariables().getArrayVariables()) {
-                variable.substitute(constantSubstitution);
-            }
-            for (auto& variable : result.getGlobalVariables().getClockVariables()) {
-                variable.substitute(constantSubstitution);
-            }
+            result.getGlobalVariables().substitute(constantSubstitution);
             
             // Substitute constants in initial states expression.
             result.setInitialStatesRestriction(substituteJaniExpression(this->getInitialStatesRestriction(), constantSubstitution));
