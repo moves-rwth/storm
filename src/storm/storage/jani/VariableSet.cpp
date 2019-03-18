@@ -426,7 +426,7 @@ namespace storm {
         
         void VariableSet::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {
             for (auto& variable : variables) {
-                variable.substitute(substitution);
+                variable->substitute(substitution);
             }
         }
     }
