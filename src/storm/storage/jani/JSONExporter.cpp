@@ -796,7 +796,46 @@ namespace storm {
             
         }
         
-
+        modernjson::json buildTypeDescription(storm::expressions::Type const& type) {
+            modernjson::json typeDescr;
+            if (type.isIntegerType()) {
+                typeDescr = "int";
+            } else if (type.isRationalType()) {
+                typeDescr = "real";
+            } else if (type.isBooleanType()) {
+                typeDescr = "bool";
+            } else if (type.isArrayType()) {
+                typeDescr["kind"] = "array";
+                typeDescr["base"] = buildTypeDescription(type.getElementType());
+            } else {
+                assert(false);
+            }
+            return typeDescr;
+        }
+        
+        void getBoundsFromConstraints(modernjson::json& typeDesc, storm::expressions::Variable const& var, storm::expressions::Expression const& constraint, std::vector<storm::jani::Constant> const& constants) {
+            if (constraint.getBaseExpression().isBinaryBooleanFunctionExpression() && constraint.getBaseExpression().getOperator() == storm::expressions::OperatorType::And) {
+                getBoundsFromConstraints(typeDesc, var, constraint.getBaseExpression().getOperand(0), constants);
+                getBoundsFromConstraints(typeDesc, var, constraint.getBaseExpression().getOperand(1), constants);
+            } else if (constraint.getBaseExpression().isBinaryRelationExpression()) {
+                bool leq = constraint.getBaseExpression().getOperator() == storm::expressions::OperatorType::LessOrEqual;
+                bool geq = constraint.getBaseExpression().getOperator() == storm::expressions::OperatorType::GreaterOrEqual;
+                std::vector<bool> varOps(2, false);
+                for (int i : {0,1}) {
+                    varOps[i] = constraint.getOperand(i).isVariable() && constraint.getOperand(i).getBaseExpression().asVariableExpression().getVariable() == var;
+                }
+                storm::expressions::Expression boundExpr = varOps[0] ? constraint.getOperand(1) : constraint.getOperand(0);
+                if ((leq && varOps[0]) || geq && varOps[1]) {
+                    typeDesc["upper-bound"] = buildExpression(boundExpr, constants);
+                } else if ((leq && varOps[1] || geq && varOps[0])) {
+                    typeDesc["lower-bound"] = buildExpression(boundExpr, constants);
+                } else {
+                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Jani Export for constant constraint " << constraint << " is not supported.");
+                }
+            } else {
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Jani Export for constant constraint " << constraint << " is not supported.");
+            }
+        }
         
         modernjson::json buildConstantsArray(std::vector<storm::jani::Constant> const& constants) {
             std::vector<modernjson::json> constantDeclarations;
@@ -804,13 +843,12 @@ namespace storm {
                 modernjson::json constantEntry;
                 constantEntry["name"] = constant.getName();
                 modernjson::json typeDesc;
-                if(constant.isBooleanConstant()) {
-                    typeDesc = "bool";
-                } else if(constant.isRealConstant()) {
-                    typeDesc = "real";
+                if (constant.hasConstraint()) {
+                    typeDesc["kind"] = "bounded";
+                    typeDesc["base"] = buildTypeDescription(constant.getType());
+                    getBoundsFromConstraints(typeDesc, constant.getExpressionVariable(), constant.getConstraintExpression(), constants);
                 } else {
-                    assert(constant.isIntegerConstant());
-                    typeDesc = "int";
+                    typeDesc = buildTypeDescription(constant.getType());
                 }
                 constantEntry["type"] = typeDesc;
                 if(constant.isDefined()) {
@@ -880,24 +918,7 @@ namespace storm {
             }
             return variableDeclarations;
         }
-        
-        modernjson::json buildTypeDescription(storm::expressions::Type const& type) {
-            modernjson::json typeDescr;
-            if (type.isIntegerType()) {
-                typeDescr = "int";
-            } else if (type.isRationalType()) {
-                typeDescr = "real";
-            } else if (type.isBooleanType()) {
-                typeDescr = "bool";
-            } else if (type.isArrayType()) {
-                typeDescr["kind"] = "array";
-                typeDescr["base"] = buildTypeDescription(type.getElementType());
-            } else {
-                assert(false);
-            }
-            return typeDescr;
-        }
-        
+
         modernjson::json buildFunctionsArray(std::unordered_map<std::string, FunctionDefinition> const& functionDefinitions, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables = VariableSet()) {
             modernjson::json functionDeclarations = std::vector<modernjson::json>();
             for (auto const& nameFunDef : functionDefinitions) {

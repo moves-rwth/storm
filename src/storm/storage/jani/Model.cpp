@@ -1022,6 +1022,9 @@ namespace storm {
             // Gather all defining expressions of constants.
             std::map<storm::expressions::Variable, storm::expressions::Expression> constantSubstitution;
             for (auto& constant : result.getConstants()) {
+                if (constant.hasConstraint()) {
+                    constant.setConstraintExpression(substituteJaniExpression(constant.getConstraintExpression(), constantSubstitution));
+                }
                 if (constant.isDefined()) {
                     constant.define(substituteJaniExpression(constant.getExpression(), constantSubstitution));
                     constantSubstitution[constant.getExpressionVariable()] = constant.getExpression();
@@ -1079,6 +1082,9 @@ namespace storm {
         void Model::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {
             // substitute in all defining expressions of constants
             for (auto& constant : this->getConstants()) {
+                if (constant.hasConstraint()) {
+                    constant.setConstraintExpression(substituteJaniExpression(constant.getConstraintExpression(), substitution));
+                }
                 if (constant.isDefined()) {
                     constant.define(substituteJaniExpression(constant.getExpression(), substitution));
                 }
