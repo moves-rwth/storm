@@ -325,7 +325,7 @@ namespace storm {
             // TODO Matthias: do not empty queue every time but break before
             while (!explorationQueue.empty()) {
                 // Get the first state in the queue
-                ExplorationHeuristicPointer currentExplorationHeuristic = explorationQueue.popTop();
+                ExplorationHeuristicPointer currentExplorationHeuristic = explorationQueue.pop();
                 StateType currentId = currentExplorationHeuristic->getId();
                 auto itFind = statesNotExplored.find(currentId);
                 STORM_LOG_ASSERT(itFind != statesNotExplored.end(), "Id " << currentId << " not found");
