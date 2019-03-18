@@ -29,8 +29,7 @@ namespace storm {
         class ExplicitDFTModelBuilder {
 
             using DFTStatePointer = std::shared_ptr<storm::storage::DFTState<ValueType>>;
-            // TODO Matthias: make choosable
-            using ExplorationHeuristic = DFTExplorationHeuristicDepth<ValueType>;
+            using ExplorationHeuristic = DFTExplorationHeuristic<ValueType>;
             using ExplorationHeuristicPointer = std::shared_ptr<ExplorationHeuristic>;
 
 
@@ -343,7 +342,7 @@ namespace storm {
             storm::storage::sparse::StateStorage<StateType> stateStorage;
 
             // A priority queue of states that still need to be explored.
-            storm::storage::BucketPriorityQueue<ValueType> explorationQueue;
+            storm::storage::BucketPriorityQueue<ExplorationHeuristic> explorationQueue;
 
             // A mapping of not yet explored states from the id to the tuple (state object, heuristic values).
             std::map<StateType, std::pair<DFTStatePointer, ExplorationHeuristicPointer>> statesNotExplored;
