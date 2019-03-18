@@ -411,7 +411,7 @@ namespace storm {
                                     }
 
                                     iter->second.second = heuristic;
-                                    if (state->hasFailed(dft.getTopLevelIndex()) || state->isFailsafe(dft.getTopLevelIndex()) || state->getFailableElements().hasDependencies() || (!state->getFailableElements().hasDependencies() && state->getFailableElements().hasBEs())) {
+                                    if (state->hasFailed(dft.getTopLevelIndex()) || state->isFailsafe(dft.getTopLevelIndex()) || state->getFailableElements().hasDependencies() || (!state->getFailableElements().hasDependencies() && !state->getFailableElements().hasBEs())) {
                                         // Do not skip absorbing state or if reached by dependencies
                                         iter->second.second->markExpand();
                                     }
