@@ -436,7 +436,14 @@ namespace storm {
             std::set<storm::RationalFunctionVariable> getRewardParameters(Model<storm::RationalFunction> const& model);
 
             /*!
-             * Get all parameters (probability and rewards) occurring in the model.
+             * Get all parameters occurring in rates.
+             * @param model Model.
+             * @return Set of parameters. If model is not a continuous time model, the returned set is empty.
+             */
+            std::set<storm::RationalFunctionVariable> getRateParameters(Model<storm::RationalFunction> const& model);
+
+            /*!
+             * Get all parameters (probability, rewards, and rates) occurring in the model.
              * @param model Model.
              * @return Set of parameters.
              */
