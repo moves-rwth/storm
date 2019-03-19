@@ -26,7 +26,7 @@ namespace storm {
                 // Intentionally left empty
             }
 
-            DFTExplorationHeuristic(size_t id, DFTExplorationHeuristic const& predecessor, ValueType rate, ValueType exitRate) : id(id), expand(false), lowerBound(storm::utility::zero<ValueType>()), upperBound(storm::utility::zero<ValueType>()), depth(predecessor.depth + 1), probability(storm::utility::one<ValueType>()) {
+            DFTExplorationHeuristic(size_t id, DFTExplorationHeuristic const& predecessor, ValueType rate, ValueType exitRate) : id(id), expand(false), lowerBound(storm::utility::zero<ValueType>()), upperBound(storm::utility::infinity<ValueType>()), depth(predecessor.depth + 1), probability(storm::utility::zero<ValueType>()) {
                 this->updateHeuristicValues(predecessor, rate, exitRate);
             }
 

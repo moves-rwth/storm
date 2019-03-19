@@ -18,7 +18,8 @@ namespace storm {
 
         template<>
         double DFTExplorationHeuristicBoundDifference<double>::getPriority() const {
-            double difference = (storm::utility::one<double>() / upperBound) - (storm::utility::one<double>() / lowerBound);
+            double difference = lowerBound - upperBound; // Lower bound is larger than upper bound
+            difference = 2 * difference / (upperBound + lowerBound);
             return probability * difference;
         }
 

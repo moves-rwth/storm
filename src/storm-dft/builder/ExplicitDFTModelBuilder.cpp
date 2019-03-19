@@ -191,7 +191,8 @@ namespace storm {
                         break;
                     case storm::builder::ApproximationHeuristic::PROBABILITY:
                     case storm::builder::ApproximationHeuristic::BOUNDDIFFERENCE:
-                        approximationThreshold = 10 * std::pow(2, iteration);
+                        double exponent = iteration; // Need conversion to avoid overflow when negating
+                        approximationThreshold = std::pow(2, -exponent);
                         break;
                 }
             }
@@ -646,7 +647,7 @@ namespace storm {
                 STORM_LOG_ASSERT(!it->second.first->isPseudoState(), "State is still pseudo state.");
 
                 ExplorationHeuristicPointer heuristic = it->second.second;
-                if (storm::utility::isZero(heuristic->getUpperBound())) {
+                if (storm::utility::isInfinity(heuristic->getUpperBound())) {
                     // Initialize bounds
                     ValueType lowerBound = getLowerBound(it->second.first);
                     ValueType upperBound = getUpperBound(it->second.first);
@@ -669,6 +670,7 @@ namespace storm {
             for (state->getFailableElements().init(false); !state->getFailableElements().isEnd(); state->getFailableElements().next()) {
                 lowerBound += state->getBERate(state->getFailableElements().get());
             }
+            STORM_LOG_TRACE("Lower bound is " << lowerBound << " for state " << state->getId());
             return lowerBound;
         }
 
