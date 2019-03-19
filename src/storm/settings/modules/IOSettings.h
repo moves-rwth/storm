@@ -1,6 +1,8 @@
 #ifndef STORM_SETTINGS_MODULES_IOSETTINGS_H_
 #define STORM_SETTINGS_MODULES_IOSETTINGS_H_
 
+#include <boost/optional.hpp>
+
 #include "storm-config.h"
 #include "storm/settings/modules/ModuleSettings.h"
 
@@ -270,6 +272,31 @@ namespace storm {
                  */
                 bool isToNondeterministicModelSet() const;
 
+                /*!
+                 * Retrieves whether the input model is to be read from the quantitative verification benchmark set (QVBS)
+                 */
+                bool isQvbsInputSet() const;
+                
+                /*!
+                 * Retrieves the specified model (short-)name of the QVBS
+                 */
+                std::string getQvbsModelName() const;
+                
+                /*!
+                 * Retrieves the selected model instance (file + open parameters of the model)
+                 */
+                uint64_t getQvbsInstanceIndex() const;
+                
+                /*!
+                 * Retrieves the selected property names
+                 */
+                boost::optional<std::vector<std::string>> getQvbsPropertyFilter() const;
+                
+                /*!
+                 * Retrieves the specified root directory of qvbs
+                 */
+                std::string getQvbsRoot() const;
+                
                 bool check() const override;
                 void finalize() override;
 
@@ -302,6 +329,9 @@ namespace storm {
                 static const std::string propertyOptionName;
                 static const std::string propertyOptionShortName;
                 static const std::string toNondetOptionName;
+                static const std::string qvbsInputOptionName;
+                static const std::string qvbsInputOptionShortName;
+                static const std::string qvbsRootOptionName;
 
             };
 
