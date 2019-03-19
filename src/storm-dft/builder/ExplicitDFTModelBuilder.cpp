@@ -160,9 +160,6 @@ namespace storm {
                 STORM_LOG_ASSERT(!statesNotExplored.at(initialStateIndex).second, "Heuristic for initial state is already initialized");
                 ExplorationHeuristicPointer heuristic;
                 switch (usedHeuristic) {
-                    case storm::builder::ApproximationHeuristic::NONE:
-                        heuristic = std::make_shared<DFTExplorationHeuristicNone<ValueType>>(initialStateIndex);
-                        break;
                     case storm::builder::ApproximationHeuristic::DEPTH:
                         heuristic = std::make_shared<DFTExplorationHeuristicDepth<ValueType>>(initialStateIndex);
                         break;
@@ -182,10 +179,6 @@ namespace storm {
 
             if (approximationThreshold > 0.0) {
                 switch (usedHeuristic) {
-                    case storm::builder::ApproximationHeuristic::NONE:
-                        // Do not change anything
-                        approximationThreshold = dft.nrElements()+10;
-                        break;
                     case storm::builder::ApproximationHeuristic::DEPTH:
                         approximationThreshold = iteration + 1;
                         break;
@@ -397,9 +390,6 @@ namespace storm {
                                     // Initialize heuristic values
                                     ExplorationHeuristicPointer heuristic;
                                     switch (usedHeuristic) {
-                                        case storm::builder::ApproximationHeuristic::NONE:
-                                            heuristic = std::make_shared<DFTExplorationHeuristicNone<ValueType>>(stateProbabilityPair.first, *currentExplorationHeuristic, stateProbabilityPair.second, choice.getTotalMass());
-                                            break;
                                         case storm::builder::ApproximationHeuristic::DEPTH:
                                             heuristic = std::make_shared<DFTExplorationHeuristicDepth<ValueType>>(stateProbabilityPair.first, *currentExplorationHeuristic, stateProbabilityPair.second, choice.getTotalMass());
                                             break;
