@@ -1,8 +1,7 @@
 #pragma once
 
 #include <string>
-#include <functional>
-#include <queue>
+#include <set>
 
 namespace storm {
     namespace utility {
@@ -40,8 +39,13 @@ namespace storm {
                 std::string reference;
                 double similarityFactor;
                 bool caseSensitive;
-                std::function<bool (std::pair<uint64_t, std::string> const&, std::pair<uint64_t, std::string> const&)> cmp;
-                std::priority_queue<std::pair<uint64_t, std::string>, std::vector<std::pair<uint64_t, std::string>>, decltype(cmp)> distances;
+                
+                struct comp {
+                    bool operator() (std::pair<uint64_t, std::string> const& lhs, std::pair<uint64_t, std::string> const& rhs) const {
+                        return lhs.first < rhs.first ? true : (lhs.first == rhs.first && lhs.second < rhs.second);
+                    }
+                };
+                std::set<std::pair<uint64_t, std::string>, comp> distances;
             };
             
             /*!

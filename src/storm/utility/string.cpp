@@ -6,7 +6,7 @@ namespace storm {
     namespace utility {
         namespace string {
 
-            SimilarStrings::SimilarStrings(std::string reference, double similarityFactor, bool caseSensitive) : reference(reference), similarityFactor(similarityFactor), caseSensitive(caseSensitive), cmp([](std::pair<uint64_t, std::string> const& lhs, std::pair<uint64_t, std::string> const& rhs) { return lhs.first > rhs.first; }), distances(cmp) {
+            SimilarStrings::SimilarStrings(std::string reference, double similarityFactor, bool caseSensitive) : reference(reference), similarityFactor(similarityFactor), caseSensitive(caseSensitive) {
                 // intentionally left empty.
             }
             
@@ -20,11 +20,9 @@ namespace storm {
             }
             
             std::vector<std::string> SimilarStrings::toList() const {
-                auto distancesCopy = distances;
                 std::vector<std::string> result;
-                while (!distancesCopy.empty()) {
-                    result.push_back(distancesCopy.top().second);
-                    distancesCopy.pop();
+                for (auto const& dist : distances) {
+                    result.push_back(dist.second);
                 }
                 return result;
             }
@@ -37,10 +35,9 @@ namespace storm {
                 } else if (size == 1) {
                     return "Did you mean " + result + "?";
                 } else {
-                    return "Did you mean any of [" + result + "]?";
+                    return "Did you mean any of [ " + result + " ]?";
                 }
             }
-            
             
             uint64_t levenshteinDistance(std::string const& lhs, std::string const& rhs, bool caseSensitive) {
                 std::vector<std::vector<uint64_t>> d(lhs.size() + 1, std::vector<uint64_t>(rhs.size() + 1, 0ull));
