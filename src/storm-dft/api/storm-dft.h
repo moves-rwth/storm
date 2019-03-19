@@ -101,10 +101,9 @@ namespace storm {
         template<typename ValueType>
         typename storm::modelchecker::DFTModelChecker<ValueType>::dft_results
         analyzeDFTApprox(storm::storage::DFT<ValueType> const& dft, std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties, bool symred,
-                         bool allowModularisation, bool enableDC, double approximationError, bool printOutput) {
+                         bool allowModularisation, bool enableDC, double approximationError, storm::builder::ApproximationHeuristic approximationHeuristic, bool printOutput) {
             storm::modelchecker::DFTModelChecker<ValueType> modelChecker(printOutput);
-            typename storm::modelchecker::DFTModelChecker<ValueType>::dft_results results = modelChecker.check(dft, properties, symred, allowModularisation, enableDC,
-                                                                                                               approximationError);
+            typename storm::modelchecker::DFTModelChecker<ValueType>::dft_results results = modelChecker.check(dft, properties, symred, allowModularisation, enableDC, approximationError, approximationHeuristic);
             if (printOutput) {
                 modelChecker.printTimings();
                 modelChecker.printResults();
