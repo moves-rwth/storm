@@ -30,14 +30,12 @@ namespace storm {
 
         // Instantiate templates.
         template class DFTExplorationHeuristic<double>;
-        template class DFTExplorationHeuristicNone<double>;
         template class DFTExplorationHeuristicDepth<double>;
         template class DFTExplorationHeuristicProbability<double>;
         template class DFTExplorationHeuristicBoundDifference<double>;
 
 #ifdef STORM_HAVE_CARL
         template class DFTExplorationHeuristic<storm::RationalFunction>;
-        template class DFTExplorationHeuristicNone<storm::RationalFunction>;
         template class DFTExplorationHeuristicDepth<storm::RationalFunction>;
         template class DFTExplorationHeuristicProbability<storm::RationalFunction>;
         template class DFTExplorationHeuristicBoundDifference<storm::RationalFunction>;

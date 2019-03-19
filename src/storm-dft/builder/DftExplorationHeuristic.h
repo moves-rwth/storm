@@ -12,7 +12,7 @@ namespace storm {
         /*!
          * Enum representing the heuristic used for deciding which states to expand.
          */
-        enum class ApproximationHeuristic { NONE, DEPTH, PROBABILITY, BOUNDDIFFERENCE };
+        enum class ApproximationHeuristic { DEPTH, PROBABILITY, BOUNDDIFFERENCE };
 
 
         /*!
@@ -88,30 +88,6 @@ namespace storm {
             ValueType upperBound;
             size_t depth;
             ValueType probability;
-        };
-
-        template<typename ValueType>
-        class DFTExplorationHeuristicNone : public DFTExplorationHeuristic<ValueType> {
-        public:
-            DFTExplorationHeuristicNone(size_t id) : DFTExplorationHeuristic<ValueType>(id) {
-                // Intentionally left empty
-            }
-
-            DFTExplorationHeuristicNone(size_t id, DFTExplorationHeuristic<ValueType> const& predecessor, ValueType rate, ValueType exitRate) : DFTExplorationHeuristic<ValueType>(id, predecessor, rate, exitRate) {
-                // Intentionally left empty
-            }
-
-            bool updateHeuristicValues(DFTExplorationHeuristic<ValueType> const&, ValueType, ValueType) override {
-                return false;
-            }
-
-            double getPriority() const override {
-                return 0;
-            }
-
-            bool isSkip(double) const override {
-                return false;
-            }
         };
 
         template<typename ValueType>
