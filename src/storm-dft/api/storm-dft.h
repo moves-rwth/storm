@@ -80,7 +80,7 @@ namespace storm {
             typename storm::modelchecker::DFTModelChecker<ValueType>::dft_results results = modelChecker.check(dft, properties, symred, allowModularisation, enableDC, 0.0);
             if (printOutput) {
                 modelChecker.printTimings();
-                modelChecker.printResults();
+                modelChecker.printResults(results);
             }
             return results;
         }
@@ -106,7 +106,7 @@ namespace storm {
             typename storm::modelchecker::DFTModelChecker<ValueType>::dft_results results = modelChecker.check(dft, properties, symred, allowModularisation, enableDC, approximationError, approximationHeuristic);
             if (printOutput) {
                 modelChecker.printTimings();
-                modelChecker.printResults();
+                modelChecker.printResults(results);
             }
             return results;
         }

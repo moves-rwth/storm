@@ -22,6 +22,22 @@ namespace storm {
             typedef std::vector<boost::variant<ValueType, approximation_result>> dft_results;
             typedef std::vector<std::shared_ptr<storm::logic::Formula const>> property_vector;
 
+            class ResultOutputVisitor : public boost::static_visitor<std::string> {
+            public:
+                std::string operator()(ValueType result) const {
+                    std::stringstream stream;
+                    stream << result;
+                    return stream.str();
+                }
+
+                std::string operator()(std::pair<ValueType, ValueType> const& result) const {
+                    std::stringstream stream;
+                    stream << "(" << result.first << ", " << result.second << ")";
+                    return stream.str();
+                }
+
+            };
+
             /*!
              * Constructor.
              */
@@ -53,9 +69,10 @@ namespace storm {
             /*!
              * Print result to stream.
              *
+             * @param results List of results.
              * @param os Output stream to write to.
              */
-            void printResults(std::ostream& os = std::cout);
+            void printResults(dft_results const& results, std::ostream& os = std::cout);
 
         private:
 
@@ -67,12 +84,6 @@ namespace storm {
             storm::utility::Stopwatch bisimulationTimer;
             storm::utility::Stopwatch modelCheckingTimer;
             storm::utility::Stopwatch totalTimer;
-
-            // Model checking results
-            dft_results checkResults;
-
-            // Allowed error bound for approximation
-            double approximationError;
 
             /*!
              * Internal helper for model checking a DFT.
