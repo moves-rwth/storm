@@ -214,6 +214,7 @@ endif()
 #############################################################
 include(${STORM_3RDPARTY_SOURCE_DIR}/include_cudd.cmake)
 
+
 #############################################################
 ##
 ##      carl
@@ -404,6 +405,23 @@ if (ENABLE_MSAT)
     add_imported_library(msat SHARED ${MSAT_LIB} "${MSAT_ROOT}/include")
     list(APPEND STORM_DEP_TARGETS msat_SHARED)
 endif(ENABLE_MSAT)
+
+#############################################################
+##
+##	QVBS (Quantitative verification benchmark set)
+##
+#############################################################
+
+set(STORM_HAVE_QVBS OFF)
+if (NOT "${STORM_QVBS_ROOT}" STREQUAL "")
+	if( EXISTS "${STORM_QVBS_ROOT}/index.json")
+       set(STORM_HAVE_QVBS ON)
+       message (STATUS "Storm - Enabled inputs from QVBS located at ${STORM_QVBS_ROOT}")
+	else()
+   		message(FATAL_ERROR "No file 'index.json' in provided QVBS root directory ${STORM_QVBS_ROOT}")
+	endif()
+endif()
+
 
 #############################################################
 ##
