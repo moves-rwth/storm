@@ -31,16 +31,17 @@ namespace storm {
             /*!
              * Main method for checking DFTs.
              *
-             * @param origDft             Original DFT
-             * @param properties          Properties to check for
-             * @param symred              Flag indicating if symmetry reduction should be used
-             * @param allowModularisation Flag indication if modularisation is allowed
-             * @param enableDC            Flag indicating if dont care propagation should be used
-             * @param approximationError  Error allowed for approximation. Value 0 indicates no approximation
+             * @param origDft Original DFT.
+             * @param properties Properties to check for.
+             * @param symred Flag indicating if symmetry reduction should be used.
+             * @param allowModularisation Flag indicating if modularisation is allowed.
+             * @param enableDC Flag indicating if Don't Care propagation should be used.
+             * @param approximationError Error allowed for approximation. Value 0 indicates no approximation.
+             * @param approximationHeuristic Heuristic used for approximation.
              *
              * @return Model checking results for the given properties.
              */
-            dft_results check(storm::storage::DFT<ValueType> const& origDft, property_vector const& properties, bool symred = true, bool allowModularisation = true, bool enableDC = true, double approximationError = 0.0);
+            dft_results check(storm::storage::DFT<ValueType> const& origDft, property_vector const& properties, bool symred = true, bool allowModularisation = true, bool enableDC = true, double approximationError = 0.0, storm::builder::ApproximationHeuristic approximationHeuristic = storm::builder::ApproximationHeuristic::DEPTH);
 
             /*!
              * Print timings of all operations to stream.
@@ -76,43 +77,44 @@ namespace storm {
             /*!
              * Internal helper for model checking a DFT.
              *
-             * @param dft                 DFT
-             * @param properties          Properties to check for
-             * @param symred              Flag indicating if symmetry reduction should be used
-             * @param allowModularisation Flag indication if modularisation is allowed
-             * @param enableDC            Flag indicating if dont care propagation should be used
-             * @param approximationError  Error allowed for approximation. Value 0 indicates no approximation
+             * @param dft DFT.
+             * @param properties Properties to check for.
+             * @param symred Flag indicating if symmetry reduction should be used.
+             * @param allowModularisation Flag indicating if modularisation is allowed.
+             * @param enableDC Flag indicating if Don't Caree propagation should be used.
+             * @param approximationError Error allowed for approximation. Value 0 indicates no approximation.
+             * @param approximationHeuristic Heuristic used for approximation.
              *
              * @return Model checking results (or in case of approximation two results for lower and upper bound)
              */
-            dft_results checkHelper(storm::storage::DFT<ValueType> const& dft, property_vector const& properties, bool symred, bool allowModularisation, bool enableDC, double approximationError);
+            dft_results checkHelper(storm::storage::DFT<ValueType> const& dft, property_vector const& properties, bool symred, bool allowModularisation, bool enableDC, double approximationError, storm::builder::ApproximationHeuristic approximationHeuristic = storm::builder::ApproximationHeuristic::DEPTH);
 
             /*!
              * Internal helper for building a CTMC from a DFT via parallel composition.
              *
-             * @param dft                 DFT
-             * @param properties          Properties to check for
-             * @param symred              Flag indicating if symmetry reduction should be used
-             * @param allowModularisation Flag indication if modularisation is allowed
-             * @param enableDC            Flag indicating if dont care propagation should be used
-             * @param approximationError  Error allowed for approximation. Value 0 indicates no approximation
+             * @param dft DFT.
+             * @param properties Properties to check for.
+             * @param symred Flag indicating if symmetry reduction should be used.
+             * @param allowModularisation Flag indicating if modularisation is allowed.
+             * @param enableDC Flag indicating if Don't Care propagation should be used.
              *
              * @return CTMC representing the DFT
              */
-            std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> buildModelViaComposition(storm::storage::DFT<ValueType> const& dft, property_vector const& properties, bool symred, bool allowModularisation, bool enableDC, double approximationError);
+            std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> buildModelViaComposition(storm::storage::DFT<ValueType> const& dft, property_vector const& properties, bool symred, bool allowModularisation, bool enableDC);
 
             /*!
              * Check model generated from DFT.
              *
-             * @param dft                The DFT
-             * @param properties         Properties to check for
-             * @param symred             Flag indicating if symmetry reduction should be used
-             * @param enableDC           Flag indicating if dont care propagation should be used
-             * @param approximationError Error allowed for approximation. Value 0 indicates no approximation
+             * @param dft The DFT.
+             * @param properties Properties to check for.
+             * @param symred Flag indicating if symmetry reduction should be used.
+             * @param enableDC Flag indicating if Don't Care propagation should be used.
+             * @param approximationError Error allowed for approximation. Value 0 indicates no approximation.
+             * @param approximationHeuristic Heuristic used for approximation.
              *
              * @return Model checking result
              */
-            dft_results checkDFT(storm::storage::DFT<ValueType> const& dft, property_vector const& properties, bool symred, bool enableDC, double approximationError = 0.0);
+            dft_results checkDFT(storm::storage::DFT<ValueType> const& dft, property_vector const& properties, bool symred, bool enableDC, double approximationError = 0.0, storm::builder::ApproximationHeuristic approximationHeuristic = storm::builder::ApproximationHeuristic::DEPTH);
 
             /*!
              * Check the given markov model for the given properties.

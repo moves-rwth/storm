@@ -181,11 +181,12 @@ namespace storm {
             /*!
              * Build model from DFT.
              *
-             * @param labelOpts              Options for labeling.
-             * @param iteration              Current number of iteration.
+             * @param labelOpts Options for labeling.
+             * @param iteration Current number of iteration.
              * @param approximationThreshold Threshold determining when to skip exploring states.
+             * @param approximationHeuristic Heuristic used for exploring states.
              */
-            void buildModel(LabelOptions const& labelOpts, size_t iteration, double approximationThreshold = 0.0);
+            void buildModel(LabelOptions const& labelOpts, size_t iteration, double approximationThreshold = 0.0, storm::builder::ApproximationHeuristic approximationHeuristic = storm::builder::ApproximationHeuristic::DEPTH);
 
             /*!
              * Get the built model.

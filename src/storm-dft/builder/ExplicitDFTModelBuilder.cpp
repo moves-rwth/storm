@@ -56,7 +56,6 @@ namespace storm {
                 dft(dft),
                 stateGenerationInfo(std::make_shared<storm::storage::DFTStateGenerationInfo>(dft.buildStateGenerationInfo(symmetries))),
                 enableDC(enableDC),
-                usedHeuristic(storm::settings::getModule<storm::settings::modules::FaultTreeSettings>().getApproximationHeuristic()),
                 generator(dft, *stateGenerationInfo, enableDC, mergeFailedStates),
                 matrixBuilder(!generator.isDeterministicModel()),
                 stateStorage(dft.stateBitVectorSize()),
@@ -120,8 +119,9 @@ namespace storm {
         }
 
         template<typename ValueType, typename StateType>
-        void ExplicitDFTModelBuilder<ValueType, StateType>::buildModel(LabelOptions const& labelOpts, size_t iteration, double approximationThreshold) {
+        void ExplicitDFTModelBuilder<ValueType, StateType>::buildModel(LabelOptions const& labelOpts, size_t iteration, double approximationThreshold, storm::builder::ApproximationHeuristic approximationHeuristic) {
             STORM_LOG_TRACE("Generating DFT state space");
+            usedHeuristic = approximationHeuristic;
 
             if (iteration < 1) {
                 // Initialize
