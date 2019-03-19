@@ -90,7 +90,7 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, qvbsInputOptionName, false, "Selects a model from the Quantitative Verification Benchmark Set.").setShortName(qvbsInputOptionShortName)
                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("model", "The short model name as in the benchmark set.").build())
                         .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("instance-index", "The selected instance of this model.").setDefaultValueUnsignedInteger(0).build())
-                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filter", "The comma separated list of property names to check. Empty string checks all, [] checks none.").setDefaultValueString("").build())
+                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filter", "The comma separated list of property names to check. Omit to check all, \"\" to check none.").setDefaultValueString("").build())
                         .build());
 #ifdef STORM_HAVE_QVBS
                 std::string qvbsRootDefault = STORM_QVBS_ROOT;
@@ -263,10 +263,12 @@ namespace storm {
             
             boost::optional<std::vector<std::string>> IOSettings::getQvbsPropertyFilter() const {
                 std::string listAsString = this->getOption(qvbsInputOptionName).getArgumentByName("filter").getValueAsString();
-                if (listAsString == "[]") {
-                    return std::vector<std::string>();
-                } else if (listAsString == "") {
-                    return boost::none;
+                if (listAsString == "") {
+                    if (this->getOption(qvbsInputOptionName).getArgumentByName("filter").wasSetFromDefaultValue()) {
+                        return boost::none;
+                    } else {
+                        return std::vector<std::string>();
+                    }
                 } else {
                     return storm::parser::parseCommaSeperatedValues(listAsString);
                 }

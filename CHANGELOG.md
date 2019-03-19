@@ -9,6 +9,7 @@ Version 1.3.x
 
 ### Version 1.3.1 (under development)
 - Added support for multi-dimensional quantile queries
+- Allow to quickly check a benchmark from the [Quantitative Verification Benchmark Set](http://qcomp.org/benchmarks/) using the --qvbs option.
 - Allow bounded types for constants in JANI.
 - Fixed sparse bisimulation of MDPs (which failed if all non-absorbing states in the quotient are initial)
 
