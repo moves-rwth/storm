@@ -825,9 +825,9 @@ namespace storm {
                     varOps[i] = constraint.getOperand(i).isVariable() && constraint.getOperand(i).getBaseExpression().asVariableExpression().getVariable() == var;
                 }
                 storm::expressions::Expression boundExpr = varOps[0] ? constraint.getOperand(1) : constraint.getOperand(0);
-                if ((leq && varOps[0]) || geq && varOps[1]) {
+                if ((leq && varOps[0]) || (geq && varOps[1])) {
                     typeDesc["upper-bound"] = buildExpression(boundExpr, constants);
-                } else if ((leq && varOps[1] || geq && varOps[0])) {
+                } else if ((leq && varOps[1]) || (geq && varOps[0])) {
                     typeDesc["lower-bound"] = buildExpression(boundExpr, constants);
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Jani Export for constant constraint " << constraint << " is not supported.");
