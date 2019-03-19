@@ -18,9 +18,8 @@ namespace storm {
 
         template<typename ValueType>
         typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::check(storm::storage::DFT<ValueType> const& origDft, std::vector<std::shared_ptr<const storm::logic::Formula>> const& properties, bool symred, bool allowModularisation, bool enableDC, double approximationError, storm::builder::ApproximationHeuristic approximationHeuristic) {
-            // Initialize
-            this->approximationError = approximationError;
             totalTimer.start();
+            dft_results results;
 
             // Optimizing DFT
             storm::storage::DFT<ValueType> dft = origDft.optimize();
@@ -34,13 +33,13 @@ namespace storm {
                 // Model checking
                 std::vector<ValueType> resultsValue = checkModel(model, properties);
                 for (ValueType result : resultsValue) {
-                    checkResults.push_back(result);
+                    results.push_back(result);
                 }
             } else {
-                checkResults = checkHelper(dft, properties, symred, allowModularisation, enableDC, approximationError, approximationHeuristic);
+                results = checkHelper(dft, properties, symred, allowModularisation, enableDC, approximationError, approximationHeuristic);
             }
             totalTimer.stop();
-            return checkResults;
+            return results;
         }
 
         template<typename ValueType>
@@ -442,22 +441,16 @@ namespace storm {
         }
 
         template<typename ValueType>
-        void DFTModelChecker<ValueType>::printResults(std::ostream& os) {
+        void DFTModelChecker<ValueType>::printResults(dft_results const& results, std::ostream& os) {
             bool first = true;
             os << "Result: [";
-            for (auto result : checkResults) {
-                if (!first) {
-                    os << ", ";
-                }
-                if (this->approximationError > 0.0) {
-                    approximation_result resultApprox = boost::get<approximation_result>(result);
-                    os << "(" << resultApprox.first << ", " << resultApprox.second << ")";
-                } else {
-                    os << boost::get<ValueType>(result);
-                }
+            for (auto result : results) {
                 if (first) {
                     first = false;
+                } else {
+                    os << ", ";
                 }
+                os << boost::apply_visitor(ResultOutputVisitor(), result);
             }
             os << "]" << std::endl;
         }
