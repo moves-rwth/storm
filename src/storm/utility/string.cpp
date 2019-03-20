@@ -1,5 +1,4 @@
 #include "storm/utility/string.h"
-#include <vector>
 #include <boost/algorithm/string/join.hpp>
 
 namespace storm {
