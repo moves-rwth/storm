@@ -25,6 +25,8 @@ find_path(GUROBI_INCLUDE_DIR
                     "/Library/gurobi651/mac64/include"
                     "/Library/gurobi652/mac64/include"
                     "/Library/gurobi702/mac64/include"
+                    "/Library/gurobi801/mac64/include"
+                    "/Library/gurobi810/mac64/include"
                     "${GUROBI_ROOT}/include"
           )
 
@@ -41,7 +43,9 @@ find_library( GUROBI_LIBRARY
         gurobi65
         gurobi70
         gurobi75
-              PATHS "$ENV{GUROBI_HOME}/lib" 
+        gurobi80
+        gurobi81
+              PATHS "$ENV{GUROBI_HOME}/lib"
                     "/Library/gurobi502/mac64/lib"
                     "/Library/gurobi602/mac64/lib"
                     "/Library/gurobi604/mac64/lib"
@@ -50,6 +54,8 @@ find_library( GUROBI_LIBRARY
                     "/Library/gurobi651/mac64/lib"
                     "/Library/gurobi652/mac64/lib"
                     "/Library/gurobi702/mac64/lib"
+                    "/Library/gurobi801/mac64/lib"
+                    "/Library/gurobi810/mac64/lib"
                     "${GUROBI_ROOT}/lib"
               )
 
@@ -64,6 +70,8 @@ find_library( GUROBI_CXX_LIBRARY
                     "/Library/gurobi651/mac64/lib"
                     "/Library/gurobi652/mac64/lib"
                     "/Library/gurobi702/mac64/lib"
+                    "/Library/gurobi801/mac64/lib"
+                    "/Library/gurobi810/mac64/lib"
                     "${GUROBI_ROOT}/lib"
               )
 
