@@ -14,6 +14,7 @@ Version 1.3.x
 - If an option is unknown, Storm now prints a hint to similar option names.
 - Allow bounded types for constants in JANI.
 - Fixed sparse bisimulation of MDPs (which failed if all non-absorbing states in the quotient are initial)
+- Fixed linking with Mathsat on macOS
 
 ### Version 1.3.0 (2018/12)
 - Slightly improved scheduler extraction
