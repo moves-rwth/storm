@@ -87,7 +87,7 @@ namespace storm {
                 }
             } else {
                 // Move to new bucket
-                STORM_LOG_ASSERT(newBucket < oldBucket, "Will update to higher bucket");
+                STORM_LOG_ASSERT(newBucket < oldBucket, "Will update item "<< item->getId() << " from " << oldBucket << " to higher bucket " << newBucket);
                 if (newBucket < currentBucket) {
                     currentBucket = newBucket;
                     nrUnsortedItems = 0;

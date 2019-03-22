@@ -60,8 +60,7 @@ namespace storm {
                 generator(dft, *stateGenerationInfo, enableDC, mergeFailedStates),
                 matrixBuilder(!generator.isDeterministicModel()),
                 stateStorage(dft.stateBitVectorSize()),
-                //explorationQueue(dft.nrElements()+1, 0, 1)
-                explorationQueue(200, 0, 0.9, false)
+                explorationQueue(1, 0, 0.9, false)
         {
             // Compute independent subtrees
             if (dft.topLevelType() == storm::storage::DFTElementType::OR) {
@@ -126,6 +125,19 @@ namespace storm {
 
             if (iteration < 1) {
                 // Initialize
+                switch (usedHeuristic) {
+                    case storm::builder::ApproximationHeuristic::DEPTH:
+                        explorationQueue = storm::storage::BucketPriorityQueue<ExplorationHeuristic>(dft.nrElements()+1, 0, 0.9, false);
+                        break;
+                    case storm::builder::ApproximationHeuristic::PROBABILITY:
+                        explorationQueue = storm::storage::BucketPriorityQueue<ExplorationHeuristic>(200, 0, 0.9, true);
+                        break;
+                    case storm::builder::ApproximationHeuristic::BOUNDDIFFERENCE:
+                        explorationQueue = storm::storage::BucketPriorityQueue<ExplorationHeuristic>(200, 0, 0.9, true);
+                        break;
+                    default:
+                        STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Heuristic not known.");
+                }
                 modelComponents.markovianStates = storm::storage::BitVector(INITIAL_BITVECTOR_SIZE);
 
                 if(mergeFailedStates) {

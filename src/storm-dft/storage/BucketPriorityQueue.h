@@ -30,6 +30,10 @@ namespace storm {
              */
             explicit BucketPriorityQueue(size_t nrBuckets, double lowerValue, double ratio, bool higher);
 
+            BucketPriorityQueue(BucketPriorityQueue const& queue) = default;
+
+            virtual ~BucketPriorityQueue() = default;
+
             void fix();
 
             /*!
@@ -106,18 +110,16 @@ namespace storm {
             std::function<bool(PriorityTypePointer, PriorityTypePointer)> compare;
 
             // Minimal value
-            const double lowerValue;
+            double lowerValue;
 
-            const bool higher;
+            bool higher;
 
-            const bool AUTOSORT = false;
+            bool AUTOSORT = false;
 
-            const double logBase;
+            double logBase;
 
             // Number of available buckets
-            const size_t nrBuckets;
-
-
+            size_t nrBuckets;
 
         };
 
