@@ -36,8 +36,8 @@ namespace storm {
                         // Child not found -> find first dependent event to assure that child is dependency
                         // TODO: Not sure whether this is the intended behaviour?
                         auto itFind = mElements.find(child + "_1");
-                        STORM_LOG_ASSERT(itFind != mElements.end(), "Child '" << child << "' for gate '" << gate->name() << "' not found.");
-                        STORM_LOG_ASSERT(itFind->second->isDependency(), "Child is no dependency.");
+                        STORM_LOG_THROW(itFind != mElements.end(), storm::exceptions::WrongFormatException, "Child '" << child << "' for gate '" << gate->name() << "' not found.");
+                        STORM_LOG_THROW(itFind->second->isDependency(), storm::exceptions::WrongFormatException, "Child '" << child << "'is no dependency.");
                         STORM_LOG_TRACE("Ignore functional dependency " << child << " in gate " << gate->name());
                     }
                 }
@@ -47,7 +47,7 @@ namespace storm {
             for(auto& elem : mRestrictionChildNames) {
                 for(auto const& childName : elem.second) {
                     auto itFind = mElements.find(childName);
-                    STORM_LOG_ASSERT(itFind != mElements.end(), "Child not found.");
+                    STORM_LOG_THROW(itFind != mElements.end(), storm::exceptions::WrongFormatException, "Child '" << childName << "' for gate '" << elem.first->name() << "' not found.");
                     DFTElementPointer childElement = itFind->second;
                     STORM_LOG_THROW(childElement->isGate() || childElement->isBasicElement(), storm::exceptions::WrongFormatException, "Child '" << childElement->name() << "' of restriction '" << elem.first->name() << "' must be gate or BE.");
                     elem.first->pushBackChild(childElement);
@@ -61,7 +61,7 @@ namespace storm {
                 std::vector<std::shared_ptr<storm::storage::DFTBE<ValueType>>> dependencies;
                 for(auto const& childName : elem.second) {
                     auto itFind = mElements.find(childName);
-                    STORM_LOG_ASSERT(itFind != mElements.end(), "Child '" << childName << "' not found");
+                    STORM_LOG_THROW(itFind != mElements.end(), storm::exceptions::WrongFormatException, "Child '" << childName << "' for gate '" << elem.first->name() << "' not found.");
                     DFTElementPointer childElement = itFind->second;
                     if (!first) {
                         STORM_LOG_THROW(childElement->isBasicElement(), storm::exceptions::WrongFormatException, "Child '" << childName << "' of dependency '" << elem.first->name() << "' must be BE.");
