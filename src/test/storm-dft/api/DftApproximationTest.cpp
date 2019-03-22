@@ -90,7 +90,7 @@ namespace {
 
     TYPED_TEST(DftApproximationTest, HecsTimebound) {
         //double errorBound = 0.01;
-        double errorBound = 0.5;
+        double errorBound = 0.1;
         double timeBound = 100;
         std::pair<double, double> approxResult = this->analyzeTimebound(STORM_TEST_RESOURCES_DIR "/dft/hecs_3_2_2_np.dft", timeBound, errorBound);
         EXPECT_LE(approxResult.first, 0.0410018417);
