@@ -1,6 +1,7 @@
 #include "ExplicitDFTModelBuilder.h"
 
 #include <map>
+#include <storm/exceptions/IllegalArgumentException.h>
 
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/Ctmc.h"
@@ -169,6 +170,8 @@ namespace storm {
                     case storm::builder::ApproximationHeuristic::BOUNDDIFFERENCE:
                         heuristic = std::make_shared<DFTExplorationHeuristicBoundDifference<ValueType>>(initialStateIndex);
                         break;
+                    default:
+                        STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Heuristic not known.");
                 }
                 heuristic->markExpand();
                 statesNotExplored[initialStateIndex].second = heuristic;
@@ -184,9 +187,10 @@ namespace storm {
                         break;
                     case storm::builder::ApproximationHeuristic::PROBABILITY:
                     case storm::builder::ApproximationHeuristic::BOUNDDIFFERENCE:
-                        double exponent = iteration; // Need conversion to avoid overflow when negating
-                        approximationThreshold = std::pow(2, -exponent);
+                        approximationThreshold = std::pow(2, -(double)iteration); // Need conversion to avoid overflow when negating
                         break;
+                    default:
+                        STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Heuristic not known.");
                 }
             }
             exploreStateSpace(approximationThreshold);
@@ -399,6 +403,8 @@ namespace storm {
                                         case storm::builder::ApproximationHeuristic::BOUNDDIFFERENCE:
                                             heuristic = std::make_shared<DFTExplorationHeuristicBoundDifference<ValueType>>(stateProbabilityPair.first, *currentExplorationHeuristic, stateProbabilityPair.second, choice.getTotalMass());
                                             break;
+                                        default:
+                                            STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Heuristic not known.");
                                     }
 
                                     iter->second.second = heuristic;
