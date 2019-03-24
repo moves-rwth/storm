@@ -27,15 +27,20 @@ namespace storm {
                 return mFailed;
             }
             
-            virtual bool isConstant() const {
+            virtual bool isConstant() const override {
                 return true;
             }
             
             virtual size_t nrChildren() const override {
                 return 0;
             }
-            
-            
+
+            std::string toString() const override {
+                std::stringstream stream;
+                stream << *this;
+                return stream.str();
+            }
+
             bool isTypeEqualTo(DFTElement<ValueType> const& other) const override {
                 if(!DFTElement<ValueType>::isTypeEqualTo(other)) return false;
                 DFTConst<ValueType> const& otherCNST = static_cast<DFTConst<ValueType> const&>(other);
@@ -43,5 +48,11 @@ namespace storm {
             }
 
         };
+
+        template<typename ValueType>
+        inline std::ostream& operator<<(std::ostream& os, DFTConst<ValueType> const& be) {
+            return os << "{" << be.name() << "} BE(const " << (be.failed() ? "failed" : "failsafe") << ")";
+        }
+
     }
 }

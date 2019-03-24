@@ -8,6 +8,8 @@
 #include "storm-dft/storage/dft/DFTElements.h"
 #include "storm-dft/storage/dft/elements/DFTRestriction.h"
 #include "storm-dft/storage/dft/DFTLayoutInfo.h"
+#include "storm/exceptions/NotSupportedException.h"
+
 
 namespace storm {
     namespace storage {
@@ -109,7 +111,7 @@ namespace storm {
                 if (binaryDependencies && !storm::utility::isOne(probability) && children.size() > 2) {
                     // Introduce additional element for first capturing the probabilistic dependency
                     std::string nameAdditional = name + "_additional";
-                    addBasicElement(nameAdditional, storm::utility::zero<ValueType>(), storm::utility::zero<ValueType>(), false);
+                    addBasicElementConst(nameAdditional, false);
                     // First consider probabilistic dependency
                     addDepElement(name + "_pdep", {children.front(), nameAdditional}, probability);
                     // Then consider dependencies to the children if probabilistic dependency failed
@@ -167,15 +169,42 @@ namespace storm {
                 mChildNames[element] = children;
                 return true;
             }
-            
-            bool addBasicElement(std::string const& name, ValueType failureRate, ValueType dormancyFactor, bool transient = false) {
-                //TODO Matthias: collect constraints for SMT solving
-                //failureRate > 0
+
+            bool addBasicElementConst(std::string const& name, bool failed) {
+                if (nameInUse(name)) {
+                    STORM_LOG_ERROR("Element with name '" << name << "' already exists.");
+                    return false;
+                }
+                mElements[name] = std::make_shared<storm::storage::DFTConst<ValueType>>(mNextId++, name, failed);
+                return true;
+            }
+
+            bool addBasicElementProbability(std::string const& name, ValueType probability, ValueType dormancyFactor, bool transient = false) {
                 //0 <= dormancyFactor <= 1
                 if (nameInUse(name)) {
                     STORM_LOG_ERROR("Element with name '" << name << "' already exists.");
                     return false;
                 }
+                if (storm::utility::isZero<ValueType>(probability)) {
+                    return addBasicElementConst(name, false);
+                } else if (storm::utility::isOne<ValueType>(probability)) {
+                    return addBasicElementConst(name, true);
+                }
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Constant probability distribution is not supported for basic element '" << name << "'.");
+                return false;
+            }
+
+            bool addBasicElementExponential(std::string const& name, ValueType failureRate, ValueType dormancyFactor, bool transient = false) {
+                //TODO Matthias: collect constraints for SMT solving
+                //0 <= dormancyFactor <= 1
+                if (nameInUse(name)) {
+                    STORM_LOG_ERROR("Element with name '" << name << "' already exists.");
+                    return false;
+                }
+                if (storm::utility::isZero<ValueType>(failureRate)) {
+                    return addBasicElementConst(name, false);
+                }
+
                 mElements[name] = std::make_shared<storm::storage::DFTBE<ValueType>>(mNextId++, name, failureRate, dormancyFactor, transient);
                 return true;
             }

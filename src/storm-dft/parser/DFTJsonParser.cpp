@@ -93,13 +93,14 @@ namespace storm {
                     ValueType probability = parseRationalExpression(parseJsonNumber(data.at("probability")));
                     success = builder.addDepElement(name, childNames, probability);
                 } else if (type == "be") {
+                    // TODO support different distributions
                     ValueType failureRate = parseRationalExpression(parseJsonNumber(data.at("rate")));
                     ValueType dormancyFactor = parseRationalExpression(parseJsonNumber(data.at("dorm")));
                     bool transient = false;
                     if (data.count("transient") > 0) {
                         transient = data.at("transient");
                     }
-                    success = builder.addBasicElement(name, failureRate, dormancyFactor, transient);
+                    success = builder.addBasicElementExponential(name, failureRate, dormancyFactor, transient);
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Type name: " << type << "  not recognized.");
                     success = false;
