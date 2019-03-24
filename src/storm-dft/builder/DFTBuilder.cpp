@@ -273,14 +273,16 @@ namespace storm {
                 case storm::storage::DFTElementType::BE:
                 {
                     std::shared_ptr<storm::storage::DFTBE<ValueType>> be = std::static_pointer_cast<storm::storage::DFTBE<ValueType>>(element);
-                    addBasicElement(be->name(), be->activeFailureRate(), be->dormancyFactor(), be->isTransient());
+                    addBasicElementExponential(be->name(), be->activeFailureRate(), be->dormancyFactor(), be->isTransient());
                     break;
                 }
                 case storm::storage::DFTElementType::CONSTF:
                 case storm::storage::DFTElementType::CONSTS:
-                    // TODO
-                    STORM_LOG_ASSERT(false, "Const elements not supported.");
+                {
+                    std::shared_ptr<storm::storage::DFTConst<ValueType>> be = std::static_pointer_cast<storm::storage::DFTConst<ValueType>>(element);
+                    addBasicElementConst(be->name(), be->failed());
                     break;
+                }
                 case storm::storage::DFTElementType::PDEP:
                 {
                     DFTDependencyPointer dependency = std::static_pointer_cast<storm::storage::DFTDependency<ValueType>>(element);
