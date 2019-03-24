@@ -46,16 +46,19 @@ namespace storm {
         template<typename ValueType, typename StateType>
         StateBehavior<ValueType, StateType> DftNextStateGenerator<ValueType, StateType>::expand(StateToIdCallback const& stateToIdCallback) {
             STORM_LOG_DEBUG("Explore state: " << mDft.getStateString(state));
+            // Initialization
+            bool hasDependencies = state->getFailableElements().hasDependencies();
+            return exploreState(stateToIdCallback, hasDependencies);
+        }
 
+        template<typename ValueType, typename StateType>
+        StateBehavior<ValueType, StateType> DftNextStateGenerator<ValueType, StateType>::exploreState(StateToIdCallback const& stateToIdCallback, bool exploreDependencies) {
             // Prepare the result, in case we return early.
             StateBehavior<ValueType, StateType> result;
 
-            // Initialization
-            bool hasDependencies = state->getFailableElements().hasDependencies();
             //size_t failableCount = hasDependencies ? state->nrFailableDependencies() : state->nrFailableBEs();
             //size_t currentFailable = 0;
-            state->getFailableElements().init(hasDependencies);
-
+            state->getFailableElements().init(exploreDependencies);
             // Check for absorbing state
             if (mDft.hasFailed(state) || mDft.isFailsafe(state) || state->getFailableElements().isEnd()) {
                 Choice<ValueType, StateType> choice(0, true);
@@ -68,12 +71,12 @@ namespace storm {
                 return result;
             }
 
-            Choice<ValueType, StateType> choice(0, !hasDependencies);
+            Choice<ValueType, StateType> choice(0, !exploreDependencies);
 
             // Let BE fail
             bool isFirst = true;
             while (!state->getFailableElements().isEnd()) {
-                if (storm::settings::getModule<storm::settings::modules::FaultTreeSettings>().isTakeFirstDependency() && hasDependencies && !isFirst) {
+                if (storm::settings::getModule<storm::settings::modules::FaultTreeSettings>().isTakeFirstDependency() && exploreDependencies && !isFirst) {
                     // We discard further exploration as we already chose one dependent event
                     break;
                 }
@@ -82,10 +85,10 @@ namespace storm {
 
                 // Construct new state as copy from original one
                 DFTStatePointer newState = state->copy();
-                std::pair<std::shared_ptr<storm::storage::DFTBE<ValueType> const>, bool> nextBEPair = newState->letNextBEFail(state->getFailableElements().get());
+                std::pair<std::shared_ptr<storm::storage::DFTBE<ValueType> const>, bool> nextBEPair = newState->letNextBEFail(state->getFailableElements().get(), exploreDependencies);
                 std::shared_ptr<storm::storage::DFTBE<ValueType> const>& nextBE = nextBEPair.first;
                 STORM_LOG_ASSERT(nextBE, "NextBE is null.");
-                STORM_LOG_ASSERT(nextBEPair.second == hasDependencies, "Failure due to dependencies does not match.");
+                STORM_LOG_ASSERT(nextBEPair.second == exploreDependencies, "Failure due to dependencies does not match.");
                 STORM_LOG_TRACE("With the failure of: " << nextBE->name() << " [" << nextBE->id() << "] in " << mDft.getStateString(state));
 
                 // Propagate
@@ -149,7 +152,7 @@ namespace storm {
                 }
 
                 // Set transitions
-                if (hasDependencies) {
+                if (exploreDependencies) {
                     // Failure is due to dependency -> add non-deterministic choice
                     ValueType probability = mDft.getDependency(state->getFailableElements().get())->probability();
                     choice.addProbability(newStateId, probability);
@@ -184,8 +187,15 @@ namespace storm {
 
                 state->getFailableElements().next();
             } // end while failing BE
-            
-            if (!hasDependencies) {
+
+            if (exploreDependencies) {
+                if (result.empty()) {
+                    // Dependencies might have been prevented from sequence enforcer
+                    // -> explore BEs now
+                    return exploreState(stateToIdCallback, false);
+                }
+            } else {
+                STORM_LOG_ASSERT(choice.size() > 0, "No transitions were generated");
                 // Add all rates as one choice
                 result.addChoice(std::move(choice));
             }

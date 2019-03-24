@@ -43,7 +43,9 @@ namespace storm {
             StateBehavior<ValueType, StateType> createMergeFailedState(StateToIdCallback const& stateToIdCallback);
 
         private:
-            
+
+            StateBehavior<ValueType, StateType> exploreState(StateToIdCallback const& stateToIdCallback, bool exploreDependencies);
+
             // The dft used for the generation of next states.
             storm::storage::DFT<ValueType> const& mDft;
 

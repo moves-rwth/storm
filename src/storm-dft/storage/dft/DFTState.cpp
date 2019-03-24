@@ -195,7 +195,8 @@ namespace storm {
             if (!hasFailed(id)) {
                 return false;
             }
-            
+
+            bool addedFailableDependency = false;
             for (auto dependency : mDft.getElement(id)->outgoingDependencies()) {
                 STORM_LOG_ASSERT(dependency->triggerEvent()->id() == id, "Ids do not match.");
                 assert(dependency->dependentEvents().size() == 1);
@@ -203,9 +204,10 @@ namespace storm {
                     STORM_LOG_ASSERT(!isFailsafe(dependency->dependentEvents()[0]->id()), "Dependent event is failsafe.");
                     failableElements.addDependency(dependency->id());
                     STORM_LOG_TRACE("New dependency failure: " << dependency->toString());
+                    addedFailableDependency = true;
                 }
             }
-            return failableElements.hasDependencies();
+            return addedFailableDependency;
         }
         
         template<typename ValueType>
@@ -235,9 +237,9 @@ namespace storm {
         }
 
         template<typename ValueType>
-        std::pair<std::shared_ptr<DFTBE<ValueType> const>, bool> DFTState<ValueType>::letNextBEFail(size_t id) {
+        std::pair<std::shared_ptr<DFTBE<ValueType> const>, bool> DFTState<ValueType>::letNextBEFail(size_t id, bool dueToDependency) {
             STORM_LOG_TRACE("currently failable: " << getCurrentlyFailableString());
-            if (failableElements.hasDependencies()) {
+            if (dueToDependency) {
                 // Consider failure due to dependency
                 std::shared_ptr<DFTDependency<ValueType> const> dependency = mDft.getDependency(id);
                 STORM_LOG_ASSERT(dependency->dependentEvents().size() == 1, "More than one dependent event");

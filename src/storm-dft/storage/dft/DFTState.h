@@ -299,9 +299,10 @@ namespace storm {
             /**
              * Sets the next BE as failed
              * @param index Index in currentlyFailableBE of BE to fail
+             * @param dueToDependency Whether the failure is due to a dependency.
              * @return Pair of BE which fails and flag indicating if the failure was due to functional dependencies
              */
-            std::pair<std::shared_ptr<DFTBE<ValueType> const>, bool> letNextBEFail(size_t index = 0);
+            std::pair<std::shared_ptr<DFTBE<ValueType> const>, bool> letNextBEFail(size_t index, bool dueToDependency);
             
             /**
              * Sets the dependency as unsuccesful meaning no BE will fail.
