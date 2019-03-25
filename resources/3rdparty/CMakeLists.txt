@@ -413,6 +413,8 @@ if (ENABLE_MSAT)
         add_imported_library(msat SHARED ${MSAT_LIB} "${MSAT_ROOT}/include")
         list(APPEND STORM_DEP_TARGETS msat_SHARED)
     else()
+		# on macOS, the .dylib file has some hard coded path (Version 5.5.4).
+		# we thus link statically
         find_library(MSAT_LIB NAMES libmathsat${STATIC_EXT} mathsat PATHS "${MSAT_ROOT}/lib")
         add_imported_library(msat STATIC ${MSAT_LIB} "${MSAT_ROOT}/include")
         list(APPEND STORM_DEP_TARGETS msat_STATIC)
