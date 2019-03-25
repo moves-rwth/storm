@@ -3,18 +3,26 @@
 namespace storm {
     namespace utility {
         
-        Stopwatch::Stopwatch(bool startNow) : accumulatedTime(std::chrono::nanoseconds::zero()), stopped(true), startOfCurrentMeasurement(std::chrono::nanoseconds::zero()) {
+        Stopwatch::Stopwatch(bool startNow) : accumulatedTime(std::chrono::nanoseconds::zero()), isStopped(true), startOfCurrentMeasurement(std::chrono::nanoseconds::zero()) {
             if (startNow) {
                 start();
             }
         }
         
         Stopwatch::SecondType Stopwatch::getTimeInSeconds() const {
-            return std::chrono::duration_cast<std::chrono::seconds>(accumulatedTime).count();
+            auto time = accumulatedTime;
+            if (!this->stopped()) {
+                time += std::chrono::high_resolution_clock::now() - startOfCurrentMeasurement;
+            }
+            return std::chrono::duration_cast<std::chrono::seconds>(time).count();
         }
         
         Stopwatch::MilisecondType Stopwatch::getTimeInMilliseconds() const {
-            return std::chrono::duration_cast<std::chrono::milliseconds>(accumulatedTime).count();
+            auto time = accumulatedTime;
+            if (!this->stopped()) {
+                time += std::chrono::high_resolution_clock::now() - startOfCurrentMeasurement;
+            }
+            return std::chrono::duration_cast<std::chrono::milliseconds>(time).count();
         }
         
         Stopwatch::NanosecondType Stopwatch::getTimeInNanoseconds() const {
@@ -25,21 +33,30 @@ namespace storm {
             accumulatedTime += timeNanoseconds;
         }
         
+        void Stopwatch::add(Stopwatch const& other) {
+            STORM_LOG_WARN_COND(other.stopped(), "Expected stopped watch.");
+            accumulatedTime += other.accumulatedTime;
+        }
+        
         void Stopwatch::stop() {
-            STORM_LOG_WARN_COND(!stopped, "Stopwatch is already paused.");
-            stopped = true;
+            STORM_LOG_WARN_COND(!isStopped, "Stopwatch is already paused.");
+            isStopped = true;
             accumulatedTime += std::chrono::high_resolution_clock::now() - startOfCurrentMeasurement;
         }
         
         void Stopwatch::start() {
-            STORM_LOG_WARN_COND(stopped, "Stopwatch is already running.");
-            stopped = false;
+            STORM_LOG_WARN_COND(isStopped, "Stopwatch is already running.");
+            isStopped = false;
             startOfCurrentMeasurement = std::chrono::high_resolution_clock::now();
         }
         
         void Stopwatch::reset() {
             accumulatedTime = std::chrono::nanoseconds::zero();
-            stopped = true;
+            isStopped = true;
+        }
+        
+        bool Stopwatch::stopped() const {
+            return isStopped;
         }
         
         std::ostream& operator<<(std::ostream& out, Stopwatch const& stopwatch) {

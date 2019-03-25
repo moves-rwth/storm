@@ -94,6 +94,13 @@ namespace storm {
                  * @return The selected LP solver.
                  */
                 storm::solver::LpSolverType getLpSolver() const;
+                
+                /*!
+                 * Retrieves whether the lp solver has been set from its default value.
+                 *
+                 * @return True iff it has been set from its default value.
+                 */
+                bool isLpSolverSetFromDefaultValue() const;
 
                 /*!
                  * Retrieves the selected SMT solver.

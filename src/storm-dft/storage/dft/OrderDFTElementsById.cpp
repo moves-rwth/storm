@@ -17,7 +17,7 @@ namespace storm {
 
         template<typename ValueType>
         bool OrderElementsByRank<ValueType>::operator ()(const std::shared_ptr<DFTGate<ValueType>>& a, const std::shared_ptr<DFTGate<ValueType>>& b) const {
-            return a->rank() < b->rank();
+            return a->rank() > b->rank();
         }
 
 

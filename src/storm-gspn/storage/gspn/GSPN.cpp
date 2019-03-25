@@ -26,8 +26,8 @@ namespace storm {
             return tId;
         }
         
-        GSPN::GSPN(std::string const& name, std::vector<Place> const& places, std::vector<ImmediateTransition<WeightType>> const& itransitions, std::vector<TimedTransition<RateType>> const& ttransitions, std::vector<TransitionPartition> const& partitions, std::shared_ptr<storm::expressions::ExpressionManager> const& exprManager)
-        : name(name), places(places), immediateTransitions(itransitions), timedTransitions(ttransitions), partitions(partitions), exprManager(exprManager)
+        GSPN::GSPN(std::string const& name, std::vector<Place> const& places, std::vector<ImmediateTransition<WeightType>> const& itransitions, std::vector<TimedTransition<RateType>> const& ttransitions, std::vector<TransitionPartition> const& partitions, std::shared_ptr<storm::expressions::ExpressionManager> const& exprManager, std::map<storm::expressions::Variable, storm::expressions::Expression> const& constantsSubstitution)
+        : name(name), places(places), immediateTransitions(itransitions), timedTransitions(ttransitions), partitions(partitions), exprManager(exprManager), constantsSubstitution(constantsSubstitution)
         {
             
         }
@@ -134,12 +134,16 @@ namespace storm {
             return getImmediateTransition(id);
         }
 
+    
+        std::shared_ptr<storm::expressions::ExpressionManager> const& GSPN::getExpressionManager() const {
+            return exprManager;
+        }
+        
+        std::map<storm::expressions::Variable, storm::expressions::Expression> const& GSPN::getConstantsSubstitution() const {
+            return constantsSubstitution;
+        }
 
-    std::shared_ptr<storm::expressions::ExpressionManager> const& GSPN::getExpressionManager() const {
-        return exprManager;
-    }
-
-    void GSPN::setCapacities(std::unordered_map<std::string, uint64_t> const& mapping) {
+        void GSPN::setCapacities(std::unordered_map<std::string, uint64_t> const& mapping) {
             for(auto const& entry : mapping) {
                 storm::gspn::Place* place = getPlace(entry.first);
                 STORM_LOG_THROW(place != nullptr, storm::exceptions::InvalidArgumentException, "No place with name " << entry.first);
@@ -168,6 +172,7 @@ namespace storm {
             for (auto& trans : this->getTimedTransitions()) {
                 outStream << "\t" << trans.getName() << " [label=\"" << trans.getName();
                 outStream << "(" << trans.getRate() << ")\"];" << std::endl;
+                STORM_LOG_WARN_COND(trans.hasSingleServerSemantics(), "Unable to export non-trivial transition semantics"); // TODO
             }
             
             // print arcs
@@ -432,7 +437,12 @@ namespace storm {
             for (auto& trans : timedTransitions) {
                 stream << space3 << "<transition name=\"" << trans.getName() << "\" ";
                 stream << "type=\"EXP\" ";
-                stream << "nservers-x=\"" << trans.getRate() << "\" ";
+                //stream << "nservers-x=\"" << trans.getRate() << "\" ";
+                // Use single-server semantics for GSPNs:
+                // timed rates are independent of number of tokens in input places
+                stream << "nservers=\"1\" ";
+                //Note: The rate is translated to a number showing the decimal figures so GreatSPN can process it
+                stream << "delay=\"" << std::showpoint << trans.getRate() << "\" ";
                 if (transitionLayout.count(trans.getID()) > 0) {
                     stream << "x=\"" << transitionLayout.at(trans.getID()).x << "\" ";
                     stream << "y=\"" << transitionLayout.at(trans.getID()).y << "\" ";
@@ -448,6 +458,7 @@ namespace storm {
                 stream << space3 << "<transition name=\"" << trans.getName() << "\" ";
                 stream << "type=\"IMM\" ";
                 stream << "priority=\"" << trans.getPriority() << "\" ";
+                stream << "weight=\"" << trans.getWeight() << "\" ";
                 if (transitionLayout.count(trans.getID()) > 0) {
                     stream << "x=\"" << transitionLayout.at(trans.getID()).x << "\" ";
                     stream << "y=\"" << transitionLayout.at(trans.getID()).y << "\" ";
@@ -555,6 +566,7 @@ namespace storm {
 
             // add timed transitions
             for (const auto &trans : timedTransitions) {
+                STORM_LOG_WARN_COND(trans.hasInfiniteServerSemantics(), "Unable to export non-trivial transition semantics"); // TODO
                 stream << space2 << "<transition id=\"" << trans.getName() << "\">" << std::endl;
                 stream << space3 << "<rate>" << std::endl;
                 stream << space4 << "<value>" << trans.getRate() << "</value>" << std::endl;

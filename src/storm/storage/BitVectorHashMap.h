@@ -171,19 +171,6 @@ namespace storm {
             std::pair<bool, uint64_t> findBucket(storm::storage::BitVector const& key) const;
             
             /*!
-             * Searches for the bucket into which the given key can be inserted. If no empty bucket can be found, the
-             * size of the underlying data structure is increased.
-             *
-             * @param key The key to search for.
-             * @param increaseStorage A flag indicating whether the storage should be increased if no bucket can be found.
-             * @return A tuple whose first component indicates whether the key is already contained in the map, whose
-             * second component indicates in which bucket the key is supposed to be stored and whose third component is
-             * an error flag indicating that the bucket could not be found (e.g. due to the restriction that the storage
-             * must not be increased).
-             */
-            std::pair<bool, uint64_t> findBucketToInsert(storm::storage::BitVector const& key);
-            
-            /*!
              * Inserts the given key-value pair without resizing the underlying storage. If that fails, this is
              * indicated by the return value.
              *
@@ -234,13 +221,6 @@ namespace storm {
             // Functor object that are used to perform the actual hashing.
             Hash hasher;
             
-#ifndef NDEBUG
-            // Some performance metrics.
-            mutable uint64_t numberOfInsertions;
-            mutable uint64_t numberOfInsertionProbingSteps;
-            mutable uint64_t numberOfFinds;
-            mutable uint64_t numberOfFindProbingSteps;
-#endif
         };
 
     }

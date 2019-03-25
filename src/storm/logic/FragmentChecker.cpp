@@ -27,6 +27,9 @@ namespace storm {
             if (specification.isMultiObjectiveFormulaAtTopLevelRequired()) {
                 result &= f.isMultiObjectiveFormula();
             }
+            if (specification.isQuantileFormulaAtTopLevelRequired()) {
+                result &= f.isQuantileFormula();
+            }
             
             return result;
         }
@@ -70,6 +73,9 @@ namespace storm {
                 } else {
                     assert(tbr.isRewardBound());
                     result = result && inherited.getSpecification().areRewardBoundedUntilFormulasAllowed();
+                    if (tbr.hasRewardAccumulation()) {
+                        result = result && inherited.getSpecification().isRewardAccumulationAllowed();
+                    }
                 }
             }
             
@@ -118,6 +124,7 @@ namespace storm {
             
             bool result = inherited.getSpecification().areCumulativeRewardFormulasAllowed();
             result = result && (!f.isMultiDimensional() || inherited.getSpecification().areMultiDimensionalCumulativeRewardFormulasAllowed());
+            result = result && (!f.hasRewardAccumulation() || inherited.getSpecification().isRewardAccumulationAllowed());
             for (uint64_t i = 0; i < f.getDimension(); ++i) {
                 auto tbr = f.getTimeBoundReference(i);
                 if (tbr.isStepBound()) {
@@ -127,6 +134,9 @@ namespace storm {
                 } else {
                     assert(tbr.isRewardBound());
                     result = result && inherited.getSpecification().areRewardBoundedCumulativeRewardFormulasAllowed();
+                    if (tbr.hasRewardAccumulation()) {
+                        result = result && inherited.getSpecification().isRewardAccumulationAllowed();
+                    }
                 }
             }
             return result;
@@ -140,12 +150,15 @@ namespace storm {
                 if (!inherited.getSpecification().areNestedPathFormulasAllowed()) {
                     result = result && !f.getSubformula().isPathFormula();
                 }
+                result = result && !f.hasRewardAccumulation();
             } else if (f.isReachabilityRewardFormula()) {
                 result = result && inherited.getSpecification().areReachabilityRewardFormulasAllowed();
                 result = result && f.getSubformula().isStateFormula();
+                result = result && (!f.hasRewardAccumulation() || inherited.getSpecification().isRewardAccumulationAllowed());
             } else if (f.isReachabilityTimeFormula()) {
                 result = result && inherited.getSpecification().areReachbilityTimeFormulasAllowed();
                 result = result && f.getSubformula().isStateFormula();
+                result = result && (!f.hasRewardAccumulation() || inherited.getSpecification().isRewardAccumulationAllowed());
             }
             result = result && boost::any_cast<bool>(f.getSubformula().accept(*this, data));
             return result;
@@ -219,6 +232,14 @@ namespace storm {
             return result;
         }
         
+        boost::any FragmentChecker::visit(QuantileFormula const& f, boost::any const& data) const {
+            InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
+            if (!inherited.getSpecification().areQuantileFormulasAllowed()) {
+                return false;
+            }
+            return f.getSubformula().accept(*this, data);
+        }
+        
         boost::any FragmentChecker::visit(NextFormula const& f, boost::any const& data) const {
             InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
             bool result = inherited.getSpecification().areNextFormulasAllowed();
@@ -250,6 +271,7 @@ namespace storm {
             result = result && (!f.hasQuantitativeResult() || inherited.getSpecification().areQuantitativeOperatorResultsAllowed());
             result = result && (f.getSubformula().isRewardPathFormula() || f.getSubformula().isConditionalRewardFormula());
             result = result && (inherited.getSpecification().isVarianceMeasureTypeAllowed() || f.getMeasureType() == RewardMeasureType::Expectation);
+            
             if (!inherited.getSpecification().areNestedOperatorsAllowed()) {
                 result = result && boost::any_cast<bool>(f.getSubformula().accept(*this, InheritedInformation(inherited.getSpecification().copy().setOperatorsAllowed(false))));
             } else {
@@ -258,9 +280,11 @@ namespace storm {
             return result;
         }
         
-        boost::any FragmentChecker::visit(TotalRewardFormula const&, boost::any const& data) const {
+        boost::any FragmentChecker::visit(TotalRewardFormula const& f, boost::any const& data) const {
             InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
-            return inherited.getSpecification().areTotalRewardFormulasAllowed();
+            bool result = (!f.hasRewardAccumulation() || inherited.getSpecification().isRewardAccumulationAllowed());
+            result = result && inherited.getSpecification().areTotalRewardFormulasAllowed();
+            return result;
         }
         
         boost::any FragmentChecker::visit(UnaryBooleanStateFormula const& f, boost::any const& data) const {

@@ -111,7 +111,7 @@ namespace storm {
                         case OperatorType::Divide: newValue = firstOperandEvaluation / secondOperandEvaluation; break;
                         case OperatorType::Power: {
                             if (carl::isInteger(secondOperandEvaluation)) {
-                                std::size_t exponent = carl::toInt<carl::uint>(secondOperandEvaluation);
+                                std::size_t exponent = carl::toInt<carl::sint>(secondOperandEvaluation);
                                 newValue = carl::pow(firstOperandEvaluation, exponent);
                             }
                             break;

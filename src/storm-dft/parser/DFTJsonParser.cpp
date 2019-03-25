@@ -15,54 +15,48 @@ namespace storm {
     namespace parser {
 
         template<typename ValueType>
-        storm::storage::DFT<ValueType> DFTJsonParser<ValueType>::parseJson(const std::string& filename) {
-            readFile(filename);
-            storm::storage::DFT<ValueType> dft = builder.build();
-            STORM_LOG_DEBUG("Elements:" << std::endl << dft.getElementsString());
-            STORM_LOG_DEBUG("Spare Modules:" << std::endl << dft.getSpareModulesString());
-            return dft;
-        }
-
-        template<typename ValueType>
-        std::string DFTJsonParser<ValueType>::generateUniqueName(std::string const& id, std::string const& name) {
-            std::string newId = name;
-            std::replace(newId.begin(), newId.end(), ' ', '_');
-            std::replace(newId.begin(), newId.end(), '-', '_');
-            return newId + "_" + id;
-        }
-
-        template<typename ValueType>
-        void DFTJsonParser<ValueType>::readFile(const std::string& filename) {
-            STORM_LOG_DEBUG("Parsing from JSON");
-
+        storm::storage::DFT<ValueType> DFTJsonParser<ValueType>::parseJsonFromFile(std::string const& filename) {
+            STORM_LOG_DEBUG("Parsing from JSON file");
             std::ifstream file;
             storm::utility::openFile(filename, file);
-            json parsedJson;
-            parsedJson << file;
+            json jsonInput;
+            jsonInput << file;
             storm::utility::closeFile(file);
+            return parseJson(jsonInput);
+        }
 
-            json parameters = parsedJson.at("parameters");
-#ifdef STORM_HAVE_CARL
-            for (auto it = parameters.begin(); it != parameters.end(); ++it) {
-            STORM_LOG_THROW((std::is_same<ValueType, storm::RationalFunction>::value), storm::exceptions::NotSupportedException, "Parameters only allowed when using rational functions.");
-                std::string parameter = it.key();
-                storm::expressions::Variable var = manager->declareRationalVariable(parameter);
-                identifierMapping.emplace(var.getName(), var);
-                parser.setIdentifierMapping(identifierMapping);
-                STORM_LOG_TRACE("Added parameter: " << var.getName());
+        template<typename ValueType>
+        storm::storage::DFT<ValueType> DFTJsonParser<ValueType>::parseJsonFromString(std::string const& jsonString) {
+            STORM_LOG_DEBUG("Parsing from JSON string");
+            json jsonInput = json::parse(jsonString);
+            return parseJson(jsonInput);
+        }
+
+        template<typename ValueType>
+        storm::storage::DFT<ValueType> DFTJsonParser<ValueType>::parseJson(json const& jsonInput) {
+            // Try to parse parameters
+            if (jsonInput.find("parameters") != jsonInput.end()) {
+                json parameters = jsonInput.at("parameters");
+                STORM_LOG_THROW(parameters.empty() || (std::is_same<ValueType, storm::RationalFunction>::value), storm::exceptions::NotSupportedException, "Parameters only allowed when using rational functions.");
+                for (auto it = parameters.begin(); it != parameters.end(); ++it) {
+                    std::string parameter = it.key();
+                    storm::expressions::Variable var = manager->declareRationalVariable(parameter);
+                    identifierMapping.emplace(var.getName(), var);
+                    parser.setIdentifierMapping(identifierMapping);
+                    STORM_LOG_TRACE("Added parameter: " << var.getName());
+                }
             }
-#endif
 
-            json nodes = parsedJson.at("nodes");
-
+            json nodes = jsonInput.at("nodes");
             // Start by building mapping from ids to their unique names
             std::map<std::string, std::string> nameMapping;
-            for (auto& element: nodes) {
+            for (auto& element : nodes) {
                 json data = element.at("data");
                 std::string id = data.at("id");
                 nameMapping[id] = generateUniqueName(id, data.at("name"));
             }
 
+            // Parse nodes
             for (auto& element : nodes) {
                 STORM_LOG_TRACE("Parsing: " << element);
                 bool success = true;
@@ -71,7 +65,8 @@ namespace storm {
                 std::vector<std::string> childNames;
                 if (data.count("children") > 0) {
                     for (std::string const& child : data.at("children")) {
-                        childNames.push_back(nameMapping[child]);
+                        STORM_LOG_THROW(nameMapping.find(child) != nameMapping.end(), storm::exceptions::WrongFormatException, "Child '" << child << "' was not defined.");
+                        childNames.push_back(nameMapping.at(child));
                     }
                 }
 
@@ -82,7 +77,7 @@ namespace storm {
                 } else if (type == "or") {
                     success = builder.addOrElement(name, childNames);
                 } else if (type == "vot") {
-                    std::string votThreshold = data.at("voting");
+                    std::string votThreshold = parseJsonNumber(data.at("voting"));
                     success = builder.addVotElement(name, boost::lexical_cast<unsigned>(votThreshold), childNames);
                 } else if (type == "pand") {
                     success = builder.addPandElement(name, childNames);
@@ -95,11 +90,11 @@ namespace storm {
                 } else if (type== "fdep") {
                     success = builder.addDepElement(name, childNames, storm::utility::one<ValueType>());
                 } else if (type== "pdep") {
-                    ValueType probability = parseRationalExpression(data.at("prob"));
+                    ValueType probability = parseRationalExpression(parseJsonNumber(data.at("probability")));
                     success = builder.addDepElement(name, childNames, probability);
                 } else if (type == "be") {
-                    ValueType failureRate = parseRationalExpression(data.at("rate"));
-                    ValueType dormancyFactor = parseRationalExpression(data.at("dorm"));
+                    ValueType failureRate = parseRationalExpression(parseJsonNumber(data.at("rate")));
+                    ValueType dormancyFactor = parseRationalExpression(parseJsonNumber(data.at("dorm")));
                     bool transient = false;
                     if (data.count("transient") > 0) {
                         transient = data.at("transient");
@@ -110,22 +105,53 @@ namespace storm {
                     success = false;
                 }
 
-                // Do not set layout for dependencies
-                // This does not work because dependencies might be splitted
-                // TODO: do splitting later in rewriting step
-                if (type != "fdep" && type != "pdep") {
-                    // Set layout positions
-                    json position = element.at("position");
-                    double x = position.at("x");
-                    double y = position.at("y");
-                    builder.addLayoutInfo(name, x / 7, y / 7);
+                // Try to set layout information
+                if (element.find("position") != element.end()) {
+                    // Do not set layout for dependencies
+                    // This does not work because dependencies might be splitted
+                    // TODO: do splitting later in rewriting step
+                    if (type != "fdep" && type != "pdep") {
+                        // Set layout positions
+                        json position = element.at("position");
+                        double x = position.at("x");
+                        double y = position.at("y");
+                        builder.addLayoutInfo(name, x / 7, y / 7);
+                    }
                 }
                 STORM_LOG_THROW(success, storm::exceptions::FileIoException, "Error while adding element '" << element << "'.");
             }
 
-            std::string toplevelName = nameMapping[parsedJson.at("toplevel")];
+            std::string topLevelId = parseJsonNumber(jsonInput.at("toplevel"));
+            STORM_LOG_THROW(nameMapping.find(topLevelId) != nameMapping.end(), storm::exceptions::WrongFormatException, "Top level element with id '" << topLevelId << "' was not defined.");
+            std::string toplevelName = nameMapping.at(topLevelId);
             if(!builder.setTopLevel(toplevelName)) {
                 STORM_LOG_THROW(false, storm::exceptions::FileIoException, "Top level id unknown.");
+            }
+
+            // Build DFT
+            storm::storage::DFT<ValueType> dft = builder.build();
+            STORM_LOG_DEBUG("Elements:" << std::endl << dft.getElementsString());
+            STORM_LOG_DEBUG("Spare Modules:" << std::endl << dft.getSpareModulesString());
+            return dft;
+
+        }
+
+        template<typename ValueType>
+        std::string DFTJsonParser<ValueType>::generateUniqueName(std::string const& id, std::string const& name) {
+            std::string newId = name;
+            std::replace(newId.begin(), newId.end(), ' ', '_');
+            std::replace(newId.begin(), newId.end(), '-', '_');
+            return newId + "_" + id;
+        }
+
+        template<typename ValueType>
+        std::string DFTJsonParser<ValueType>::parseJsonNumber(json number) {
+            if (number.is_string()) {
+                return number.get<std::string>();
+            } else {
+                std::stringstream stream;
+                stream << number;
+                return stream.str();
             }
         }
 
@@ -140,10 +166,6 @@ namespace storm {
             return boost::lexical_cast<double>(expr);
         }
 
-        // Explicitly instantiate the class.
-        template class DFTJsonParser<double>;
-
-#ifdef STORM_HAVE_CARL
         template<>
         storm::RationalFunction DFTJsonParser<storm::RationalFunction>::parseRationalExpression(std::string const& expr) {
             STORM_LOG_TRACE("Translating expression: " << expr);
@@ -154,8 +176,9 @@ namespace storm {
             return rationalFunction;
         }
 
+
+        // Explicitly instantiate the class.
+        template class DFTJsonParser<double>;
         template class DFTJsonParser<RationalFunction>;
-#endif
-        
     }
 }

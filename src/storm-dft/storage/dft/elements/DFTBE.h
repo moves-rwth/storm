@@ -34,6 +34,15 @@ namespace storm {
                 return mPassiveFailureRate;
             }
 
+            ValueType dormancyFactor() const {
+                if (storm::utility::isZero<ValueType>(this->activeFailureRate())) {
+                    // Return default value of 0
+                    return storm::utility::zero<ValueType>();
+                } else {
+                    return this->passiveFailureRate() / this->activeFailureRate();
+                }
+            }
+
             bool isTransient() const {
                 return mTransient;
             }

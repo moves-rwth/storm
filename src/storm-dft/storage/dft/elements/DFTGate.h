@@ -49,8 +49,8 @@ namespace storm {
             virtual void extendSpareModule(std::set<size_t>& elementsInSpareModule) const override {
                 if (!this->isSpareGate()) {
                     DFTElement<ValueType>::extendSpareModule(elementsInSpareModule);
-                    for( auto const& child : mChildren) {
-                        if(elementsInSpareModule.count(child->id()) == 0) {
+                    for (auto const& child : mChildren) {
+                        if (elementsInSpareModule.count(child->id()) == 0) {
                             elementsInSpareModule.insert(child->id());
                             child->extendSpareModule(elementsInSpareModule);
                         }

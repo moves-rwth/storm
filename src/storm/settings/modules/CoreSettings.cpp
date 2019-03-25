@@ -45,7 +45,7 @@ namespace storm {
                 
                 std::vector<std::string> linearEquationSolver = {"gmm++", "native", "eigen", "elimination", "topological"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, eqSolverOptionName, false, "Sets which solver is preferred for solving systems of linear equations.")
-                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the solver to prefer.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(linearEquationSolver)).setDefaultValueString("gmm++").build()).build());
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the solver to prefer.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(linearEquationSolver)).setDefaultValueString("topological").build()).build());
                 
                 std::vector<std::string> ddLibraries = {"cudd", "sylvan"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, ddLibraryOptionName, false, "Sets which library is preferred for decision-diagram operations.")
@@ -110,6 +110,10 @@ namespace storm {
                     return storm::solver::LpSolverType::Z3;
                 }
                 STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown LP solver '" << lpSolverName << "'.");
+            }
+            
+            bool CoreSettings::isLpSolverSetFromDefaultValue() const {
+                return !this->getOption(lpSolverOptionName).getHasOptionBeenSet() || this->getOption(lpSolverOptionName).getArgumentByName("name").wasSetFromDefaultValue();
             }
             
             storm::solver::SmtSolverType CoreSettings::getSmtSolver() const {

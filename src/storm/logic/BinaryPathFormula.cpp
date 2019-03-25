@@ -33,6 +33,11 @@ namespace storm {
             this->getRightSubformula().gatherReferencedRewardModels(referencedRewardModels);
         }
         
+        void BinaryPathFormula::gatherUsedVariables(std::set<storm::expressions::Variable>& usedVariables) const {
+            this->getLeftSubformula().gatherUsedVariables(usedVariables);
+            this->getRightSubformula().gatherUsedVariables(usedVariables);
+        }
+        
         bool BinaryPathFormula::hasQualitativeResult() const {
             return false;
         }

@@ -65,7 +65,10 @@ namespace storm {
                 DFTDependency<ValueType> const& otherDEP= static_cast<DFTDependency<ValueType> const&>(other);
                 return (mProbability == otherDEP.mProbability);
             }
-            
+
+            virtual void extendSpareModule(std::set<size_t>& elementsInSpareModule) const override {
+                // Do nothing
+            }
 
             virtual std::vector<size_t> independentUnit() const override {
                 std::set<size_t> unit = {this->mId};

@@ -23,7 +23,9 @@
 #include "storm/settings/modules/AbstractionSettings.h"
 
 TEST(PrismMenuGame, DieAbstractionTest_Cudd) {
-    storm::settings::mutableAbstractionSettings().setAddAllGuards(false);
+    auto& settings = storm::settings::mutableAbstractionSettings();
+    settings.setAddAllGuards(false);
+    settings.setAddAllInitialExpressions(false);
     
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm");
 
@@ -47,8 +49,10 @@ TEST(PrismMenuGame, DieAbstractionTest_Cudd) {
 }
 
 TEST(PrismMenuGame, DieAbstractionTest_Sylvan) {
-    storm::settings::mutableAbstractionSettings().setAddAllGuards(false);
-
+    auto& settings = storm::settings::mutableAbstractionSettings();
+    settings.setAddAllGuards(false);
+    settings.setAddAllInitialExpressions(false);
+    
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm");
     
     std::vector<storm::expressions::Expression> initialPredicates;
@@ -97,8 +101,10 @@ TEST(PrismMenuGame, DieAbstractionTest_Sylvan) {
 #endif
 
 TEST(PrismMenuGame, DieAbstractionAndRefinementTest_Cudd) {
-    storm::settings::mutableAbstractionSettings().setAddAllGuards(false);
-
+    auto& settings = storm::settings::mutableAbstractionSettings();
+    settings.setAddAllGuards(false);
+    settings.setAddAllInitialExpressions(false);
+    
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm");
     
     std::vector<storm::expressions::Expression> initialPredicates;
@@ -124,8 +130,10 @@ TEST(PrismMenuGame, DieAbstractionAndRefinementTest_Cudd) {
 }
 
 TEST(PrismMenuGame, DieAbstractionAndRefinementTest_Sylvan) {
-    storm::settings::mutableAbstractionSettings().setAddAllGuards(false);
-
+    auto& settings = storm::settings::mutableAbstractionSettings();
+    settings.setAddAllGuards(false);
+    settings.setAddAllInitialExpressions(false);
+    
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm");
     
     std::vector<storm::expressions::Expression> initialPredicates;
@@ -151,8 +159,10 @@ TEST(PrismMenuGame, DieAbstractionAndRefinementTest_Sylvan) {
 }
 
 TEST(PrismMenuGame, DieFullAbstractionTest_Cudd) {
-    storm::settings::mutableAbstractionSettings().setAddAllGuards(false);
-
+    auto& settings = storm::settings::mutableAbstractionSettings();
+    settings.setAddAllGuards(false);
+    settings.setAddAllInitialExpressions(false);
+    
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm");
     
     std::vector<storm::expressions::Expression> initialPredicates;
@@ -191,8 +201,10 @@ TEST(PrismMenuGame, DieFullAbstractionTest_Cudd) {
 }
 
 TEST(PrismMenuGame, DieFullAbstractionTest_Sylvan) {
-    storm::settings::mutableAbstractionSettings().setAddAllGuards(false);
-
+    auto& settings = storm::settings::mutableAbstractionSettings();
+    settings.setAddAllGuards(false);
+    settings.setAddAllInitialExpressions(false);
+    
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm");
     
     std::vector<storm::expressions::Expression> initialPredicates;
@@ -231,10 +243,12 @@ TEST(PrismMenuGame, DieFullAbstractionTest_Sylvan) {
 }
 
 TEST(PrismMenuGame, CrowdsAbstractionTest_Cudd) {
-    storm::settings::mutableAbstractionSettings().setAddAllGuards(false);
-
+    auto& settings = storm::settings::mutableAbstractionSettings();
+    settings.setAddAllGuards(false);
+    settings.setAddAllInitialExpressions(false);
+    
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/crowds-5-5.pm");
-    program = program.substituteConstants();
+    program = program.substituteConstantsFormulas();
     
     std::vector<storm::expressions::Expression> initialPredicates;
     storm::expressions::ExpressionManager& manager = program.getManager();
@@ -257,10 +271,12 @@ TEST(PrismMenuGame, CrowdsAbstractionTest_Cudd) {
 }
 
 TEST(PrismMenuGame, CrowdsAbstractionTest_Sylvan) {
-    storm::settings::mutableAbstractionSettings().setAddAllGuards(false);
-
+    auto& settings = storm::settings::mutableAbstractionSettings();
+    settings.setAddAllGuards(false);
+    settings.setAddAllInitialExpressions(false);
+    
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/crowds-5-5.pm");
-    program = program.substituteConstants();
+    program = program.substituteConstantsFormulas();
     
     std::vector<storm::expressions::Expression> initialPredicates;
     storm::expressions::ExpressionManager& manager = program.getManager();
@@ -283,10 +299,12 @@ TEST(PrismMenuGame, CrowdsAbstractionTest_Sylvan) {
 }
 
 TEST(PrismMenuGame, CrowdsAbstractionAndRefinementTest_Cudd) {
-    storm::settings::mutableAbstractionSettings().setAddAllGuards(false);
-
+    auto& settings = storm::settings::mutableAbstractionSettings();
+    settings.setAddAllGuards(false);
+    settings.setAddAllInitialExpressions(false);
+    
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/crowds-5-5.pm");
-    program = program.substituteConstants();
+    program = program.substituteConstantsFormulas();
     
     std::vector<storm::expressions::Expression> initialPredicates;
     storm::expressions::ExpressionManager& manager = program.getManager();
@@ -311,10 +329,12 @@ TEST(PrismMenuGame, CrowdsAbstractionAndRefinementTest_Cudd) {
 }
 
 TEST(PrismMenuGame, CrowdsAbstractionAndRefinementTest_Sylvan) {
-    storm::settings::mutableAbstractionSettings().setAddAllGuards(false);
-
+    auto& settings = storm::settings::mutableAbstractionSettings();
+    settings.setAddAllGuards(false);
+    settings.setAddAllInitialExpressions(false);
+    
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/crowds-5-5.pm");
-    program = program.substituteConstants();
+    program = program.substituteConstantsFormulas();
     
     std::vector<storm::expressions::Expression> initialPredicates;
     storm::expressions::ExpressionManager& manager = program.getManager();
@@ -339,10 +359,12 @@ TEST(PrismMenuGame, CrowdsAbstractionAndRefinementTest_Sylvan) {
 }
 
 TEST(PrismMenuGame, CrowdsFullAbstractionTest_Cudd) {
-    storm::settings::mutableAbstractionSettings().setAddAllGuards(false);
-
+    auto& settings = storm::settings::mutableAbstractionSettings();
+    settings.setAddAllGuards(false);
+    settings.setAddAllInitialExpressions(false);
+    
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/crowds-5-5.pm");
-    program = program.substituteConstants();
+    program = program.substituteConstantsFormulas();
     
     std::vector<storm::expressions::Expression> initialPredicates;
     storm::expressions::ExpressionManager& manager = program.getManager();
@@ -419,10 +441,12 @@ TEST(PrismMenuGame, CrowdsFullAbstractionTest_Cudd) {
 }
 
 TEST(PrismMenuGame, CrowdsFullAbstractionTest_Sylvan) {
-    storm::settings::mutableAbstractionSettings().setAddAllGuards(false);
-
+    auto& settings = storm::settings::mutableAbstractionSettings();
+    settings.setAddAllGuards(false);
+    settings.setAddAllInitialExpressions(false);
+    
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/crowds-5-5.pm");
-    program = program.substituteConstants();
+    program = program.substituteConstantsFormulas();
     
     std::vector<storm::expressions::Expression> initialPredicates;
     storm::expressions::ExpressionManager& manager = program.getManager();
@@ -499,10 +523,12 @@ TEST(PrismMenuGame, CrowdsFullAbstractionTest_Sylvan) {
 }
 
 TEST(PrismMenuGame, TwoDiceAbstractionTest_Cudd) {
-    storm::settings::mutableAbstractionSettings().setAddAllGuards(false);
-
+    auto& settings = storm::settings::mutableAbstractionSettings();
+    settings.setAddAllGuards(false);
+    settings.setAddAllInitialExpressions(false);
+    
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/two_dice.nm");
-    program = program.substituteConstants();
+    program = program.substituteConstantsFormulas();
     program = program.flattenModules(std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>());
     
     std::vector<storm::expressions::Expression> initialPredicates;
@@ -527,10 +553,12 @@ TEST(PrismMenuGame, TwoDiceAbstractionTest_Cudd) {
 }
 
 TEST(PrismMenuGame, TwoDiceAbstractionTest_Sylvan) {
-    storm::settings::mutableAbstractionSettings().setAddAllGuards(false);
-
+    auto& settings = storm::settings::mutableAbstractionSettings();
+    settings.setAddAllGuards(false);
+    settings.setAddAllInitialExpressions(false);
+    
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/two_dice.nm");
-    program = program.substituteConstants();
+    program = program.substituteConstantsFormulas();
     program = program.flattenModules(std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>());
     
     std::vector<storm::expressions::Expression> initialPredicates;
@@ -555,10 +583,12 @@ TEST(PrismMenuGame, TwoDiceAbstractionTest_Sylvan) {
 }
 
 TEST(PrismMenuGame, TwoDiceAbstractionAndRefinementTest_Cudd) {
-    storm::settings::mutableAbstractionSettings().setAddAllGuards(false);
-
+    auto& settings = storm::settings::mutableAbstractionSettings();
+    settings.setAddAllGuards(false);
+    settings.setAddAllInitialExpressions(false);
+    
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/two_dice.nm");
-    program = program.substituteConstants();
+    program = program.substituteConstantsFormulas();
     program = program.flattenModules(std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>());
     
     std::vector<storm::expressions::Expression> initialPredicates;
@@ -585,10 +615,12 @@ TEST(PrismMenuGame, TwoDiceAbstractionAndRefinementTest_Cudd) {
 }
 
 TEST(PrismMenuGame, TwoDiceAbstractionAndRefinementTest_Sylvan) {
-    storm::settings::mutableAbstractionSettings().setAddAllGuards(false);
-
+    auto& settings = storm::settings::mutableAbstractionSettings();
+    settings.setAddAllGuards(false);
+    settings.setAddAllInitialExpressions(false);
+    
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/two_dice.nm");
-    program = program.substituteConstants();
+    program = program.substituteConstantsFormulas();
     program = program.flattenModules(std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>());
     
     std::vector<storm::expressions::Expression> initialPredicates;
@@ -615,10 +647,12 @@ TEST(PrismMenuGame, TwoDiceAbstractionAndRefinementTest_Sylvan) {
 }
 
 TEST(PrismMenuGame, TwoDiceFullAbstractionTest_Cudd) {
-    storm::settings::mutableAbstractionSettings().setAddAllGuards(false);
-
+    auto& settings = storm::settings::mutableAbstractionSettings();
+    settings.setAddAllGuards(false);
+    settings.setAddAllInitialExpressions(false);
+    
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/two_dice.nm");
-    program = program.substituteConstants();
+    program = program.substituteConstantsFormulas();
     program = program.flattenModules(std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>());
     
     std::vector<storm::expressions::Expression> initialPredicates;
@@ -674,10 +708,12 @@ TEST(PrismMenuGame, TwoDiceFullAbstractionTest_Cudd) {
 }
 
 TEST(PrismMenuGame, TwoDiceFullAbstractionTest_Sylvan) {
-    storm::settings::mutableAbstractionSettings().setAddAllGuards(false);
-
+    auto& settings = storm::settings::mutableAbstractionSettings();
+    settings.setAddAllGuards(false);
+    settings.setAddAllInitialExpressions(false);
+    
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/two_dice.nm");
-    program = program.substituteConstants();
+    program = program.substituteConstantsFormulas();
     program = program.flattenModules(std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>());
     
     std::vector<storm::expressions::Expression> initialPredicates;
@@ -733,10 +769,12 @@ TEST(PrismMenuGame, TwoDiceFullAbstractionTest_Sylvan) {
 }
 
 TEST(PrismMenuGame, WlanAbstractionTest_Cudd) {
-    storm::settings::mutableAbstractionSettings().setAddAllGuards(false);
-
+    auto& settings = storm::settings::mutableAbstractionSettings();
+    settings.setAddAllGuards(false);
+    settings.setAddAllInitialExpressions(false);
+    
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/wlan0-2-4.nm");
-    program = program.substituteConstants();
+    program = program.substituteConstantsFormulas();
     program = program.flattenModules(std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>());
     
     std::vector<storm::expressions::Expression> initialPredicates;
@@ -754,7 +792,7 @@ TEST(PrismMenuGame, WlanAbstractionTest_Cudd) {
 
     storm::abstraction::MenuGame<storm::dd::DdType::CUDD, double> game = abstractor.abstract();
     
-    EXPECT_EQ(915ull, game.getNumberOfTransitions());
+    EXPECT_EQ(903ull, game.getNumberOfTransitions());
     EXPECT_EQ(8ull, game.getNumberOfStates());
     EXPECT_EQ(4ull, game.getBottomStates().getNonZeroCount());
 
@@ -762,10 +800,12 @@ TEST(PrismMenuGame, WlanAbstractionTest_Cudd) {
 }
 
 TEST(PrismMenuGame, WlanAbstractionTest_Sylvan) {
-    storm::settings::mutableAbstractionSettings().setAddAllGuards(false);
-
+    auto& settings = storm::settings::mutableAbstractionSettings();
+    settings.setAddAllGuards(false);
+    settings.setAddAllInitialExpressions(false);
+    
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/wlan0-2-4.nm");
-    program = program.substituteConstants();
+    program = program.substituteConstantsFormulas();
     program = program.flattenModules(std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>());
     
     std::vector<storm::expressions::Expression> initialPredicates;
@@ -783,7 +823,7 @@ TEST(PrismMenuGame, WlanAbstractionTest_Sylvan) {
 
     storm::abstraction::MenuGame<storm::dd::DdType::Sylvan, double> game = abstractor.abstract();
     
-    EXPECT_EQ(915ull, game.getNumberOfTransitions());
+    EXPECT_EQ(903ull, game.getNumberOfTransitions());
     EXPECT_EQ(8ull, game.getNumberOfStates());
     EXPECT_EQ(4ull, game.getBottomStates().getNonZeroCount());
 
@@ -791,10 +831,12 @@ TEST(PrismMenuGame, WlanAbstractionTest_Sylvan) {
 }
 
 TEST(PrismMenuGame, WlanAbstractionAndRefinementTest_Cudd) {
-    storm::settings::mutableAbstractionSettings().setAddAllGuards(false);
+    auto& settings = storm::settings::mutableAbstractionSettings();
+    settings.setAddAllGuards(false);
+    settings.setAddAllInitialExpressions(false);
     
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/wlan0-2-4.nm");
-    program = program.substituteConstants();
+    program = program.substituteConstantsFormulas();
     program = program.flattenModules(std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>());
     
     std::vector<storm::expressions::Expression> initialPredicates;
@@ -814,7 +856,7 @@ TEST(PrismMenuGame, WlanAbstractionAndRefinementTest_Cudd) {
 
     storm::abstraction::MenuGame<storm::dd::DdType::CUDD, double> game = abstractor.abstract();
 
-    EXPECT_EQ(1824ull, game.getNumberOfTransitions());
+    EXPECT_EQ(1800ull, game.getNumberOfTransitions());
     EXPECT_EQ(16ull, game.getNumberOfStates());
     EXPECT_EQ(8ull, game.getBottomStates().getNonZeroCount());
 
@@ -822,10 +864,12 @@ TEST(PrismMenuGame, WlanAbstractionAndRefinementTest_Cudd) {
 }
 
 TEST(PrismMenuGame, WlanAbstractionAndRefinementTest_Sylvan) {
-    storm::settings::mutableAbstractionSettings().setAddAllGuards(false);
-
+    auto& settings = storm::settings::mutableAbstractionSettings();
+    settings.setAddAllGuards(false);
+    settings.setAddAllInitialExpressions(false);
+    
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/wlan0-2-4.nm");
-    program = program.substituteConstants();
+    program = program.substituteConstantsFormulas();
     program = program.flattenModules(std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>());
     
     std::vector<storm::expressions::Expression> initialPredicates;
@@ -845,7 +889,7 @@ TEST(PrismMenuGame, WlanAbstractionAndRefinementTest_Sylvan) {
     
     storm::abstraction::MenuGame<storm::dd::DdType::Sylvan, double> game = abstractor.abstract();
     
-    EXPECT_EQ(1824ull, game.getNumberOfTransitions());
+    EXPECT_EQ(1800ull, game.getNumberOfTransitions());
     EXPECT_EQ(16ull, game.getNumberOfStates());
     EXPECT_EQ(8ull, game.getBottomStates().getNonZeroCount());
 
@@ -853,10 +897,12 @@ TEST(PrismMenuGame, WlanAbstractionAndRefinementTest_Sylvan) {
 }
 
 TEST(PrismMenuGame, WlanFullAbstractionTest_Cudd) {
-    storm::settings::mutableAbstractionSettings().setAddAllGuards(false);
-
+    auto& settings = storm::settings::mutableAbstractionSettings();
+    settings.setAddAllGuards(false);
+    settings.setAddAllInitialExpressions(false);
+    
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/wlan0-2-4.nm");
-    program = program.substituteConstants();
+    program = program.substituteConstantsFormulas();
     program = program.flattenModules(std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>());
     
     std::vector<storm::expressions::Expression> initialPredicates;
@@ -980,10 +1026,12 @@ TEST(PrismMenuGame, WlanFullAbstractionTest_Cudd) {
 }
 
 TEST(PrismMenuGame, WlanFullAbstractionTest_Sylvan) {
-    storm::settings::mutableAbstractionSettings().setAddAllGuards(false);
-
+    auto& settings = storm::settings::mutableAbstractionSettings();
+    settings.setAddAllGuards(false);
+    settings.setAddAllInitialExpressions(false);
+    
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/wlan0-2-4.nm");
-    program = program.substituteConstants();
+    program = program.substituteConstantsFormulas();
     program = program.flattenModules(std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>());
     
     std::vector<storm::expressions::Expression> initialPredicates;

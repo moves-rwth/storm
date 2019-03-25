@@ -9,6 +9,7 @@
 #include "storm/storage/dd/Odd.h"
 
 #include "storm/storage/SparseMatrix.h"
+#include "storm/storage/BitVector.h"
 
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
@@ -703,15 +704,18 @@ namespace storm {
             }
             
             // Create the canonical row group sizes and build the matrix.
-            return toMatrix(rowMetaVariables, columnMetaVariables, groupMetaVariables, rowOdd, columnOdd);
+            return toLabeledMatrix(rowMetaVariables, columnMetaVariables, groupMetaVariables, rowOdd, columnOdd).matrix;
         }
 
         template<DdType LibraryType, typename ValueType>
-        storm::storage::SparseMatrix<ValueType> Add<LibraryType, ValueType>::toMatrix(std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::set<storm::expressions::Variable> const& groupMetaVariables, storm::dd::Odd const& rowOdd, storm::dd::Odd const& columnOdd) const {
+        typename Add<LibraryType, ValueType>::MatrixAndLabeling Add<LibraryType, ValueType>::toLabeledMatrix(std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::set<storm::expressions::Variable> const& groupMetaVariables, storm::dd::Odd const& rowOdd, storm::dd::Odd const& columnOdd, std::vector<std::set<storm::expressions::Variable>> const& labelMetaVariables) const {
             std::vector<uint_fast64_t> ddRowVariableIndices;
             std::vector<uint_fast64_t> ddColumnVariableIndices;
             std::vector<uint_fast64_t> ddGroupVariableIndices;
+            std::vector<storm::storage::BitVector> ddLabelVariableIndicesVector;
             std::set<storm::expressions::Variable> rowAndColumnMetaVariables;
+            bool buildLabeling = !labelMetaVariables.empty();
+            MatrixAndLabeling result;
             
             for (auto const& variable : rowMetaVariables) {
                 DdMetaVariable<LibraryType> const& metaVariable = this->getDdManager().getMetaVariable(variable);
@@ -736,7 +740,27 @@ namespace storm {
                 }
             }
             std::sort(ddGroupVariableIndices.begin(), ddGroupVariableIndices.end());
-            
+            if (buildLabeling) {
+                for (auto const& labelMetaVariableSet : labelMetaVariables) {
+                    std::set<uint64_t> ddLabelVariableIndicesSet;
+                    for (auto const& variable : labelMetaVariableSet) {
+                        DdMetaVariable<LibraryType> const& metaVariable = this->getDdManager().getMetaVariable(variable);
+                        for (auto const& ddVariable : metaVariable.getDdVariables()) {
+                            ddLabelVariableIndicesSet.insert(ddVariable.getIndex());
+                        }
+                    }
+                    
+                    ddLabelVariableIndicesVector.emplace_back(ddGroupVariableIndices.size());
+                    uint64_t position = 0;
+                    for (auto const& index : ddGroupVariableIndices) {
+                        if (ddLabelVariableIndicesSet.find(index) != ddLabelVariableIndicesSet.end()) {
+                            ddLabelVariableIndicesVector.back().set(position);
+                        }
+                        ++position;
+                    }
+                }
+            }
+
             Bdd<LibraryType> columnVariableCube = Bdd<LibraryType>::getCube(this->getDdManager(), columnMetaVariables);
             
             // Start by computing the offsets (in terms of rows) for each row group.
@@ -760,11 +784,26 @@ namespace storm {
                 groups.push_back(Add<LibraryType, ValueType>(this->getDdManager(), internalAdd, rowAndColumnMetaVariables));
             }
             
+            // Create the group labelings if requested.
+            std::vector<std::vector<uint64_t>> groupLabelings;
+            if (buildLabeling) {
+                for (auto const& ddLabelVariableIndices : ddLabelVariableIndicesVector) {
+                    groupLabelings.emplace_back(internalAdd.decodeGroupLabels(ddGroupVariableIndices, ddLabelVariableIndices));
+                    STORM_LOG_ASSERT(groupLabelings.back().size() == groups.size(), "Mismatching label sizes.");
+                }
+            }
+            
             // Create the actual storage for the non-zero entries.
             std::vector<storm::storage::MatrixEntry<uint_fast64_t, ValueType>> columnsAndValues(this->getNonZeroCount());
             
             // Now compute the indices at which the individual rows start.
             std::vector<uint_fast64_t> rowIndications(rowGroupIndices.back() + 1);
+            
+            if (buildLabeling) {
+                for (uint64_t i = 0; i < labelMetaVariables.size(); ++i) {
+                    result.labelings.emplace_back(rowGroupIndices.back());
+                }
+            }
             
             std::vector<InternalAdd<LibraryType, uint_fast64_t>> statesWithGroupEnabled(groups.size());
             InternalAdd<LibraryType, uint_fast64_t> stateToRowGroupCount = this->getDdManager().template getAddZero<uint_fast64_t>();
@@ -778,6 +817,12 @@ namespace storm {
                 }
                 
                 statesWithGroupEnabled[i] = groupNotZero.existsAbstract(columnMetaVariables).template toAdd<uint_fast64_t>();
+                if (buildLabeling) {
+                    for (uint64_t j = 0; j < labelMetaVariables.size(); ++j) {
+                        uint64_t currentLabel = groupLabelings[j][i];
+                        statesWithGroupEnabled[i].forEach(rowOdd, ddRowVariableIndices, [currentLabel, &rowGroupIndices, &result, j] (uint64_t const& offset, uint_fast64_t const& value) { result.labelings[j][rowGroupIndices[offset]] = currentLabel; });
+                    }
+                }
                 statesWithGroupEnabled[i].composeWithExplicitVector(rowOdd, ddRowVariableIndices, rowGroupIndices, std::plus<uint_fast64_t>());
             }
             
@@ -811,10 +856,12 @@ namespace storm {
                 rowIndications[i] = rowIndications[i - 1];
             }
             rowIndications[0] = 0;
-            
-            return storm::storage::SparseMatrix<ValueType>(columnOdd.getTotalOffset(), std::move(rowIndications), std::move(columnsAndValues), std::move(rowGroupIndices));
-        }
 
+            // Move-construct matrix and return.
+            result.matrix = storm::storage::SparseMatrix<ValueType>(columnOdd.getTotalOffset(), std::move(rowIndications), std::move(columnsAndValues), std::move(rowGroupIndices));
+            return result;
+        }
+        
         template<DdType LibraryType, typename ValueType>
         std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> Add<LibraryType, ValueType>::toMatrixVector(storm::dd::Add<LibraryType, ValueType> const& vector, std::set<storm::expressions::Variable> const& groupMetaVariables, storm::dd::Odd const& rowOdd, storm::dd::Odd const& columnOdd) const {
             std::set<storm::expressions::Variable> rowMetaVariables;

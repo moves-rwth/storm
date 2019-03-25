@@ -149,6 +149,11 @@ namespace storm {
              * @return The rational type.
              */
             Type const& getRationalType() const;
+            
+            /*!
+             * Retrieves the array type with the given element type
+             */
+            Type const& getArrayType(Type elementType) const;
 
             /*!
              * Declares a variable that is a copy of the provided variable (i.e. has the same type).
@@ -211,6 +216,11 @@ namespace storm {
              */
             Variable declareRationalVariable(std::string const& name, bool auxiliary = false);
             
+            /*!
+             * Declares a new array variable with the given name and the given element type.
+             */
+            Variable declareArrayVariable(std::string const& name, Type const& elementType, bool auxiliary = false);
+
             /*!
              * Declares a variable with the given name if it does not yet exist.
              *
@@ -320,6 +330,11 @@ namespace storm {
              * @return The number of rational variables.
              */
             uint_fast64_t getNumberOfRationalVariables() const;
+            
+            /*!
+             * Retrieves the number of array variables.
+             */
+            uint_fast64_t getNumberOfArrayVariables() const;
             
             /*!
              * Retrieves the name of the variable with the given index.
@@ -443,6 +458,7 @@ namespace storm {
             uint_fast64_t numberOfIntegerVariables;
             uint_fast64_t numberOfBitVectorVariables;
             uint_fast64_t numberOfRationalVariables;
+            uint_fast64_t numberOfArrayVariables;
             
             // The number of declared auxiliary variables.
             uint_fast64_t numberOfAuxiliaryVariables;
@@ -452,6 +468,7 @@ namespace storm {
             uint_fast64_t numberOfAuxiliaryIntegerVariables;
             uint_fast64_t numberOfAuxiliaryBitVectorVariables;
             uint_fast64_t numberOfAuxiliaryRationalVariables;
+            uint_fast64_t numberOfAuxiliaryArrayVariables;
             
             // A counter used to create fresh variables.
             uint_fast64_t freshVariableCounter;
@@ -461,6 +478,7 @@ namespace storm {
             mutable boost::optional<Type> integerType;
             mutable std::unordered_set<Type> bitvectorTypes;
             mutable boost::optional<Type> rationalType;
+            mutable std::unordered_set<Type> arrayTypes;
 
             // A mask that can be used to query whether a variable is an auxiliary variable.
             static const uint64_t auxiliaryMask = (1ull << 50);

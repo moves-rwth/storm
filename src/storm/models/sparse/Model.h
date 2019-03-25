@@ -324,6 +324,7 @@ namespace storm {
                  *
                  * @param outStream The stream to which the model is to be written.
                  * @param includeLabling If set to true, the states will be exported with their labels.
+                 * @param linebreakLabel If set to true, a linebreak is introduced after each label.
                  * @param subsystem If not null, this represents the subsystem that is to be exported.
                  * @param firstValue If not null, the values in this vector are attached to the states.
                  * @param secondValue If not null, the values in this vector are attached to the states.
@@ -332,7 +333,7 @@ namespace storm {
                  * @param finalizeOutput A flag that sets whether or not the dot stream is closed with a curly brace.
                  * @return A string containing the exported model in dot-format.
                  */
-                virtual void writeDotToStream(std::ostream& outStream, bool includeLabeling = true, storm::storage::BitVector const* subsystem = nullptr, std::vector<ValueType> const* firstValue = nullptr, std::vector<ValueType> const* secondValue = nullptr, std::vector<uint_fast64_t> const* stateColoring = nullptr, std::vector<std::string> const* colors = nullptr, std::vector<uint_fast64_t>* scheduler = nullptr, bool finalizeOutput = true) const;
+                virtual void writeDotToStream(std::ostream& outStream, bool includeLabeling = true, bool linebreakLabel = false, storm::storage::BitVector const* subsystem = nullptr, std::vector<ValueType> const* firstValue = nullptr, std::vector<ValueType> const* secondValue = nullptr, std::vector<uint_fast64_t> const* stateColoring = nullptr, std::vector<std::string> const* colors = nullptr, std::vector<uint_fast64_t>* scheduler = nullptr, bool finalizeOutput = true) const;
                 
                 /*!
                  * Retrieves the set of labels attached to the given state.
@@ -418,10 +419,35 @@ namespace storm {
                 boost::optional<std::shared_ptr<storm::storage::sparse::ChoiceOrigins>> choiceOrigins;
                 
             };
-            
+
 #ifdef STORM_HAVE_CARL
+            /*!
+             * Get all probability parameters occurring on transitions.
+             * @param model Model.
+             * @return Set of parameters.
+             */
             std::set<storm::RationalFunctionVariable> getProbabilityParameters(Model<storm::RationalFunction> const& model);
+
+            /*!
+             * Get all parameters occurring in rewards.
+             * @param model Model.
+             * @return Set of parameters.
+             */
             std::set<storm::RationalFunctionVariable> getRewardParameters(Model<storm::RationalFunction> const& model);
+
+            /*!
+             * Get all parameters occurring in rates.
+             * @param model Model.
+             * @return Set of parameters. If model is not a continuous time model, the returned set is empty.
+             */
+            std::set<storm::RationalFunctionVariable> getRateParameters(Model<storm::RationalFunction> const& model);
+
+            /*!
+             * Get all parameters (probability, rewards, and rates) occurring in the model.
+             * @param model Model.
+             * @return Set of parameters.
+             */
+            std::set<storm::RationalFunctionVariable> getAllParameters(Model<storm::RationalFunction> const& model);
 #endif
         } // namespace sparse
     } // namespace models

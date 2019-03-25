@@ -51,6 +51,7 @@ namespace storm {
             if (!this->sortedSccDecomposition || (needAdaptPrecision && !this->longestSccChainSize)) {
                 STORM_LOG_TRACE("Creating SCC decomposition.");
                 createSortedSccDecomposition(needAdaptPrecision);
+                STORM_LOG_INFO("Found " << this->sortedSccDecomposition->size() << " SCC(s). Average size is " << static_cast<double>(this->A->getRowGroupCount()) / static_cast<double>(this->sortedSccDecomposition->size()) << ".");
             }
             
             // We do not need to adapt the precision if all SCCs are trivial (i.e., the system is acyclic)
@@ -58,7 +59,6 @@ namespace storm {
             
             storm::Environment sccSolverEnvironment = getEnvironmentForUnderlyingSolver(env, needAdaptPrecision);
             
-            STORM_LOG_INFO("Found " << this->sortedSccDecomposition->size() << " SCC(s). Average size is " << static_cast<double>(this->A->getRowGroupCount()) / static_cast<double>(this->sortedSccDecomposition->size()) << ".");
             if (this->longestSccChainSize) {
                 STORM_LOG_INFO("Longest SCC chain size is " << this->longestSccChainSize.get());
             }
@@ -78,7 +78,7 @@ namespace storm {
                 storm::storage::BitVector sccRowGroupsAsBitVector(x.size(), false);
                 storm::storage::BitVector sccRowsAsBitVector(b.size(), false);
                 for (auto const& scc : *this->sortedSccDecomposition) {
-                    if (scc.isTrivial()) {
+                    if (scc.size() == 1) {
                         returnValue = solveTrivialScc(*scc.begin(), dir, x, b) && returnValue;
                     } else {
                         sccRowGroupsAsBitVector.clear();
@@ -134,7 +134,6 @@ namespace storm {
                 ValueType denominator;
                 for (auto const& entry : this->A->getRow(row)) {
                     if (entry.getColumn() == sccState) {
-                        STORM_LOG_ASSERT(!storm::utility::isOne(entry.getValue()), "Diagonal entry of fix point system has value 1.");
                         hasDiagonalEntry = true;
                         denominator = storm::utility::one<ValueType>() - entry.getValue();
                     } else {
@@ -142,7 +141,14 @@ namespace storm {
                     }
                 }
                 if (hasDiagonalEntry) {
-                    rowValue /= denominator;
+                    if (storm::utility::isZero(denominator)) {
+                        // In this case we have a selfloop on this state. This can never an optimal choice:
+                        // When minimizing, we are looking for the largest fixpoint (which will never be attained by this action)
+                        // When maximizing, this choice reflects probability zero (non-optimal) or reward infinity (should already be handled during preprocessing).
+                        continue;
+                    } else {
+                        rowValue /= denominator;
+                    }
                 }
                 if (firstRow) {
                     xi = std::move(rowValue);
@@ -165,6 +171,7 @@ namespace storm {
             if (this->isTrackSchedulerSet()) {
                 this->schedulerChoices.get()[sccState] = bestRow - this->A->getRowGroupIndices()[sccState];
             }
+            STORM_LOG_THROW(!firstRow, storm::exceptions::UnexpectedException, "Empty row group in MinMax equation system.");
             //std::cout << "Solved trivial scc " << sccState << " with result " << globalX[sccState] << std::endl;
             return true;
         }
@@ -190,6 +197,10 @@ namespace storm {
             if (req.lowerBounds() && this->hasLowerBound()) {
                 req.clearLowerBounds();
             }
+            
+            // If all requirements of the underlying solver have been passed as requirements to the calling site, we can
+            // assume that the system has no end components if the underlying solver requires this.
+            req.clearNoEndComponents();
             STORM_LOG_THROW(!req.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + req.getEnabledRequirementsAsString() + " not checked.");
             this->sccSolver->setRequirementsChecked(true);
             

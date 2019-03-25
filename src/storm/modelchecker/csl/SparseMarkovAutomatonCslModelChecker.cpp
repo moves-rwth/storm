@@ -28,6 +28,12 @@ namespace storm {
         
         template<typename SparseMarkovAutomatonModelType>
         bool SparseMarkovAutomatonCslModelChecker<SparseMarkovAutomatonModelType>::canHandle(CheckTask<storm::logic::Formula, ValueType> const& checkTask) const {
+            return SparseMarkovAutomatonCslModelChecker<SparseMarkovAutomatonModelType>::canHandleImplementation<ValueType>(checkTask);
+        }
+        
+        template <typename SparseMarkovAutomatonModelType>
+        template<typename CValueType, typename std::enable_if<storm::NumberTraits<CValueType>::SupportsExponential, int>::type>
+        bool SparseMarkovAutomatonCslModelChecker<SparseMarkovAutomatonModelType>::canHandleImplementation(CheckTask<storm::logic::Formula, CValueType> const& checkTask) const {
             storm::logic::Formula const& formula = checkTask.getFormula();
             if(formula.isInFragment(storm::logic::csl().setGloballyFormulasAllowed(false).setNextFormulasAllowed(false).setRewardOperatorsAllowed(true).setReachabilityRewardFormulasAllowed(true).setTotalRewardFormulasAllowed(true).setTimeAllowed(true).setLongRunAverageProbabilitiesAllowed(true).setLongRunAverageRewardFormulasAllowed(true))) {
                 return true;
@@ -40,6 +46,21 @@ namespace storm {
             }
         }
         
+        template <typename SparseMarkovAutomatonModelType>
+        template<typename CValueType, typename std::enable_if<!storm::NumberTraits<CValueType>::SupportsExponential, int>::type>
+        bool SparseMarkovAutomatonCslModelChecker<SparseMarkovAutomatonModelType>::canHandleImplementation(CheckTask<storm::logic::Formula, CValueType> const& checkTask) const {
+            storm::logic::Formula const& formula = checkTask.getFormula();
+            if(formula.isInFragment(storm::logic::prctl().setGloballyFormulasAllowed(false).setNextFormulasAllowed(false).setRewardOperatorsAllowed(true).setReachabilityRewardFormulasAllowed(true).setTotalRewardFormulasAllowed(true).setTimeAllowed(true).setLongRunAverageProbabilitiesAllowed(true).setLongRunAverageRewardFormulasAllowed(true).setTimeBoundedUntilFormulasAllowed(false).setCumulativeRewardFormulasAllowed(false).setInstantaneousFormulasAllowed(false))) {
+                return true;
+            } else {
+                // Check whether we consider a multi-objective formula
+                // For multi-objective model checking, each initial state  requires an individual scheduler (in contrast to single objective model checking). Let's exclude multiple initial states.
+                if (this->getModel().getInitialStates().getNumberOfSetBits() > 1) return false;
+                if (!checkTask.isOnlyInitialStatesRelevantSet()) return false;
+                return formula.isInFragment(storm::logic::multiObjective().setTimeAllowed(true).setTimeBoundedUntilFormulasAllowed(false).setCumulativeRewardFormulasAllowed(false).setInstantaneousFormulasAllowed(false));
+            }
+        }
+        
         template<typename SparseMarkovAutomatonModelType>
         std::unique_ptr<CheckResult> SparseMarkovAutomatonCslModelChecker<SparseMarkovAutomatonModelType>::computeBoundedUntilProbabilities(Environment const& env, CheckTask<storm::logic::BoundedUntilFormula, ValueType> const& checkTask) {
             storm::logic::BoundedUntilFormula const& pathFormula = checkTask.getFormula();
@@ -49,7 +70,7 @@ namespace storm {
             std::unique_ptr<CheckResult> rightResultPointer = this->check(env, pathFormula.getRightSubformula());
             ExplicitQualitativeCheckResult const& rightResult = rightResultPointer->asExplicitQualitativeCheckResult();
 
-            STORM_LOG_THROW(pathFormula.getTimeBoundReference().isTimeBound(), storm::exceptions::NotImplementedException, "Currently step-bounded and reward=bpimded properties on MAs are not supported.");
+            STORM_LOG_THROW(pathFormula.getTimeBoundReference().isTimeBound(), storm::exceptions::NotImplementedException, "Currently step-bounded and reward-bounded properties on MAs are not supported.");
             double lowerBound = 0;
             double upperBound = 0;
             if (pathFormula.hasLowerBound()) {

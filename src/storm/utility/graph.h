@@ -10,7 +10,9 @@
 #include "storm/storage/Scheduler.h"
 #include "storm/models/sparse/NondeterministicModel.h"
 #include "storm/models/sparse/DeterministicModel.h"
+
 #include "storm/storage/dd/DdType.h"
+#include "storm/storage/dd/Bdd.h"
 
 #include "storm/solver/OptimizationDirection.h"
 
@@ -47,6 +49,9 @@ namespace storm {
         
     }
     
+    namespace abstraction {
+        class ExplicitGameStrategyPair;
+    }
     
     namespace utility {
         namespace graph {
@@ -62,9 +67,10 @@ namespace storm {
              * @param targetStates The target states that may not be passed.
              * @param useStepBound A flag that indicates whether or not to use the given number of maximal steps for the search.
              * @param maximalSteps The maximal number of steps to reach the psi states.
+             * @param choiceFilter If given, only choices for which the bitvector is true are considered.
              */
             template<typename T>
-            storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, bool useStepBound = false, uint_fast64_t maximalSteps = 0);
+            storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, bool useStepBound = false, uint_fast64_t maximalSteps = 0, boost::optional<storm::storage::BitVector> const& choiceFilter = boost::none);
 
             /*!
              * Retrieves a set of states that covers als BSCCs of the system in the sense that for every BSCC exactly
@@ -75,6 +81,15 @@ namespace storm {
             template<typename T>
             storm::storage::BitVector getBsccCover(storm::storage::SparseMatrix<T> const& transitionMatrix);
         
+            
+            /*!
+             * Returns true if the graph represented by the given matrix has a cycle
+             * @param transitionMatrix
+             * @param subsystem if given, only states in the subsystem are considered for the check.
+             */
+            template<typename T>
+            bool hasCycle(storm::storage::SparseMatrix<T> const& transitionMatrix, boost::optional<storm::storage::BitVector> const& subsystem = boost::none);
+            
             /*!
              * Checks whether there is an End Component that
              * 1. contains at least one of the specified choices and
@@ -277,6 +292,16 @@ namespace storm {
              */
             template <typename T>
             void computeSchedulerProbGreater0E(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::Scheduler<T>& scheduler, boost::optional<storm::storage::BitVector> const& rowFilter = boost::none);
+
+            /*!
+             * Computes a scheduler for the given states that have a scheduler that has a reward infinity.
+             *
+             * @param rewInfStates The states that have a scheduler achieving reward infinity.
+             * @param transitionMatrix The transition matrix of the system.
+             * @param scheduler The resulting scheduler for the rewInf States. The scheduler is not set at other states.
+             */
+            template <typename T>
+            void computeSchedulerRewInf(storm::storage::BitVector const& rewInfStates, storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::Scheduler<T>& scheduler);
 
             /*!
              * Computes a scheduler for the given states that have a scheduler that has a probability 0.
@@ -542,9 +567,9 @@ namespace storm {
             std::pair<storm::dd::Bdd<Type>, storm::dd::Bdd<Type>> performProb01Min(storm::models::symbolic::NondeterministicModel<Type, ValueType> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates);
 
             template <storm::dd::DdType Type>
-            struct GameProb01Result {
-                GameProb01Result() = default;
-                GameProb01Result(storm::dd::Bdd<Type> const& player1States, storm::dd::Bdd<Type> const& player2States, boost::optional<storm::dd::Bdd<Type>> const& player1Strategy = boost::none, boost::optional<storm::dd::Bdd<Type>> const& player2Strategy = boost::none) : player1States(player1States), player2States(player2States), player1Strategy(player1Strategy), player2Strategy(player2Strategy) {
+            struct SymbolicGameProb01Result {
+                SymbolicGameProb01Result() = default;
+                SymbolicGameProb01Result(storm::dd::Bdd<Type> const& player1States, storm::dd::Bdd<Type> const& player2States, boost::optional<storm::dd::Bdd<Type>> const& player1Strategy = boost::none, boost::optional<storm::dd::Bdd<Type>> const& player2Strategy = boost::none) : player1States(player1States), player2States(player2States), player1Strategy(player1Strategy), player2Strategy(player2Strategy) {
                     // Intentionally left empty.
                 }
                 
@@ -597,7 +622,7 @@ namespace storm {
              * @param producePlayer2Strategy A flag indicating whether the strategy of player 2 shall be produced.
              */
             template <storm::dd::DdType Type, typename ValueType>
-            GameProb01Result<Type> performProb0(storm::models::symbolic::StochasticTwoPlayerGame<Type, ValueType> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool producePlayer1Strategy = false, bool producePlayer2Strategy = false);
+            SymbolicGameProb01Result<Type> performProb0(storm::models::symbolic::StochasticTwoPlayerGame<Type, ValueType> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool producePlayer1Strategy = false, bool producePlayer2Strategy = false);
             
             /*!
              * Computes the set of states that have probability 1 given the strategies of the two players.
@@ -611,7 +636,64 @@ namespace storm {
              * @param player1Candidates If given, this set constrains the candidates of player 1 states that are considered.
              */
             template <storm::dd::DdType Type, typename ValueType>
-            GameProb01Result<Type> performProb1(storm::models::symbolic::StochasticTwoPlayerGame<Type, ValueType> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool producePlayer1Strategy = false, bool producePlayer2Strategy = false, boost::optional<storm::dd::Bdd<Type>> const& player1Candidates = boost::none);
+            SymbolicGameProb01Result<Type> performProb1(storm::models::symbolic::StochasticTwoPlayerGame<Type, ValueType> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool producePlayer1Strategy = false, bool producePlayer2Strategy = false, boost::optional<storm::dd::Bdd<Type>> const& player1Candidates = boost::none);
+            
+            struct ExplicitGameProb01Result {
+                ExplicitGameProb01Result() = default;
+                ExplicitGameProb01Result(uint64_t numberOfPlayer1States, uint64_t numberOfPlayer2States) : player1States(numberOfPlayer1States), player2States(numberOfPlayer2States) {
+                    // Intentionally left empty.
+                }
+                
+                ExplicitGameProb01Result(storm::storage::BitVector const& player1States, storm::storage::BitVector const& player2States) : player1States(player1States), player2States(player2States) {
+                    // Intentionally left empty.
+                }
+                
+                storm::storage::BitVector const& getPlayer1States() const {
+                    return player1States;
+                }
+                
+                storm::storage::BitVector const& getPlayer2States() const {
+                    return player2States;
+                }
+                
+                storm::storage::BitVector player1States;
+                storm::storage::BitVector player2States;
+            };
+            
+            /*!
+             * Computes the set of states that have probability 0 given the strategies of the two players.
+             *
+             * @param transitionMatrix The transition matrix of the model as a BDD.
+             * @param player1Groups The grouping of player 1 states (in terms of player 2 states).
+             * @param player1BackwardTransitions The backward transitions (player 1 to player 2).
+             * @param player2BackwardTransitions The backward transitions (player 2 to player 1).
+             * @param phiStates The phi states of the model.
+             * @param psiStates The psi states of the model.
+             * @param player1Direction The optimization direction of player 1.
+             * @param player2Direction The optimization direction of player 2.
+             * @param strategyPair If not null, player 1 and t2 strategies are synthesized and the corresponding choices
+             * are written to this strategy.
+             */
+            template <typename ValueType>
+            ExplicitGameProb01Result performProb0(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint64_t> const& player1Groups, storm::storage::SparseMatrix<ValueType> const& player1BackwardTransitions, std::vector<uint64_t> const& player2BackwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::OptimizationDirection const& player1Direction, storm::OptimizationDirection const& player2Direction, storm::abstraction::ExplicitGameStrategyPair* strategyPair = nullptr);
+            
+            /*!
+             * Computes the set of states that have probability 1 given the strategies of the two players.
+             *
+             * @param transitionMatrix The transition matrix of the model as a BDD.
+             * @param player1Groups The grouping of player 1 states (in terms of player 2 states).
+             * @param player1BackwardTransitions The backward transitions (player 1 to player 2).
+             * @param player2BackwardTransitions The backward transitions (player 2 to player 1).
+             * @param phiStates The phi states of the model.
+             * @param psiStates The psi states of the model.
+             * @param player1Direction The optimization direction of player 1.
+             * @param player2Direction The optimization direction of player 2.
+             * @param strategyPair If not null, player 1 and t2 strategies are synthesized and the corresponding choices
+             * are written to this strategy.
+             * @param player1Candidates If given, this set constrains the candidates of player 1 states that are considered.
+             */
+            template <typename ValueType>
+            ExplicitGameProb01Result performProb1(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint64_t> const& player1Groups, storm::storage::SparseMatrix<ValueType> const& player1BackwardTransitions, std::vector<uint64_t> const& player2BackwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::OptimizationDirection const& player1Direction, storm::OptimizationDirection const& player2Direction, storm::abstraction::ExplicitGameStrategyPair* strategyPair = nullptr, boost::optional<storm::storage::BitVector> const& player1Candidates = boost::none);
             
             /*!
              * Performs a topological sort of the states of the system according to the given transitions.
@@ -620,7 +702,7 @@ namespace storm {
              * @return A vector of indices that is a topological sort of the states.
              */
             template <typename T>
-            std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<T> const& matrix) ;
+            std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<T> const& matrix, std::vector<uint64_t> const& firstStates = {}) ;
 
         } // namespace graph
     } // namespace utility

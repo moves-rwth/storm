@@ -6,6 +6,7 @@
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
+#include "storm/storage/jani/Property.h"
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/MultiObjectiveSettings.h"
 #include "storm/settings/SettingsManager.h"

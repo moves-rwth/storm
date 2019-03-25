@@ -23,6 +23,15 @@ namespace storm {
             // Intentionally left empty.
         }
         
+        template <storm::dd::DdType DdType, typename ValueType>
+        std::vector<std::map<storm::expressions::Variable, storm::expressions::Expression>> MenuGameAbstractor<DdType, ValueType>::getVariableUpdates(uint64_t player1Choice) const {
+            std::vector<std::map<storm::expressions::Variable, storm::expressions::Expression>> result(this->getNumberOfUpdates(player1Choice));
+            for (uint64_t i = 0; i < result.size(); ++i) {
+                result[i] = this->getVariableUpdates(player1Choice, i);
+            }
+            return result;
+        }
+        
         template <typename ValueType>
         std::string getStateName(std::pair<storm::expressions::SimpleValuation, ValueType> const& stateValue, std::set<storm::expressions::Variable> const& locationVariables, std::set<storm::expressions::Variable> const& predicateVariables, storm::expressions::Variable const& bottomVariable) {
             std::stringstream stateName;
@@ -167,7 +176,7 @@ namespace storm {
         template class MenuGameAbstractor<storm::dd::DdType::Sylvan, double>;
         
 #ifdef STORM_HAVE_CARL
-        template class MenuGameAbstractor<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+        template class MenuGameAbstractor<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 #endif
     }
 }

@@ -50,7 +50,8 @@ namespace storm {
                     ("F", 5)
                     ("G", 6)
                     ("X", 7)
-                    ("multi", 8);
+                    ("multi", 8)
+                    ("quantile", 9);
                 }
             };
             
@@ -145,7 +146,11 @@ namespace storm {
             
             qi::rule<Iterator, std::vector<storm::jani::Property>(), Skipper> start;
             
-            qi::rule<Iterator, qi::unused_type(), qi::locals<bool>, Skipper> constantDefinition;
+            enum class ConstantDataType {
+                Bool, Integer, Rational
+            };
+            
+            qi::rule<Iterator, qi::unused_type(), qi::locals<ConstantDataType>, Skipper> constantDefinition;
             qi::rule<Iterator, std::string(), Skipper> identifier;
             qi::rule<Iterator, std::string(), Skipper> formulaName;
             
@@ -192,12 +197,14 @@ namespace storm {
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> longRunAverageRewardFormula;
             
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> multiFormula;
+            qi::rule<Iterator, storm::expressions::Variable(), qi::locals<boost::optional<storm::solver::OptimizationDirection>>, Skipper> quantileBoundVariable;
+            qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> quantileFormula;
             
             // Parser that is used to recognize doubles only (as opposed to Spirit's double_ parser).
             boost::spirit::qi::real_parser<double, boost::spirit::qi::strict_real_policies<double>> strict_double;
 
             bool areConstantDefinitionsAllowed() const;
-            void addConstant(std::string const& name, bool integer);
+            void addConstant(std::string const& name, ConstantDataType type, boost::optional<storm::expressions::Expression> const& expression);
             void addProperty(std::vector<storm::jani::Property>& properties, boost::optional<std::string> const& name, std::shared_ptr<storm::logic::Formula const> const& formula);
 
             std::shared_ptr<storm::logic::TimeBoundReference> createTimeBoundReference(storm::logic::TimeBoundType const& type, boost::optional<std::string> const& rewardModelName) const;
@@ -225,7 +232,10 @@ namespace storm {
             std::shared_ptr<storm::logic::Formula const> createBinaryBooleanStateFormula(std::shared_ptr<storm::logic::Formula const> const& leftSubformula, std::shared_ptr<storm::logic::Formula const> const& rightSubformula, storm::logic::BinaryBooleanStateFormula::OperatorType operatorType);
             std::shared_ptr<storm::logic::Formula const> createUnaryBooleanStateFormula(std::shared_ptr<storm::logic::Formula const> const& subformula, boost::optional<storm::logic::UnaryBooleanStateFormula::OperatorType> const& operatorType);
             std::shared_ptr<storm::logic::Formula const> createMultiFormula(std::vector<std::shared_ptr<storm::logic::Formula const>> const& subformulas);
+            storm::expressions::Variable createQuantileBoundVariables(boost::optional<storm::solver::OptimizationDirection> const& dir, std::string const& variableName);
+            std::shared_ptr<storm::logic::Formula const> createQuantileFormula(std::vector<storm::expressions::Variable> const& boundVariables, std::shared_ptr<storm::logic::Formula const> const& subformula);
             
+            std::set<storm::expressions::Variable> getUndefinedConstants(std::shared_ptr<storm::logic::Formula const> const& formula) const;
             storm::jani::Property createProperty(boost::optional<std::string> const& propertyName, storm::modelchecker::FilterType const& filterType, std::shared_ptr<storm::logic::Formula const> const& formula, std::shared_ptr<storm::logic::Formula const> const& states);
             storm::jani::Property createPropertyWithDefaultFilterTypeAndStates(boost::optional<std::string> const& propertyName, std::shared_ptr<storm::logic::Formula const> const& formula);
             
@@ -233,6 +243,9 @@ namespace storm {
             phoenix::function<SpiritErrorHandler> handler;
             
             uint64_t propertyCount;
+            
+            std::set<storm::expressions::Variable> undefinedConstants;
+            std::set<storm::expressions::Variable> quantileFormulaVariables;
         };
 
     }

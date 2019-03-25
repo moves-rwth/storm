@@ -84,7 +84,7 @@ namespace storm {
             }
 
             template< typename DataType>
-            bool SubsetEnumerator<DataType>::trueFilter(std::vector<uint_fast64_t> const& subset, uint_fast64_t const& item, DataType const& data){
+            bool SubsetEnumerator<DataType>::trueFilter(std::vector<uint_fast64_t> const&, uint_fast64_t const&, DataType const&) {
                 return true;
             }
 

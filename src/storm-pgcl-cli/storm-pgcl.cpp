@@ -18,7 +18,10 @@
 #include "storm-pgcl/settings/modules/PGCLSettings.h"
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/settings/modules/DebugSettings.h"
-#include "storm/settings/modules/JaniExportSettings.h"
+#include "storm-conv/settings/modules/JaniExportSettings.h"
+#include "storm-conv/api/storm-conv.h"
+#include "storm-parsers/api/storm-parsers.h"
+#include "storm/storage/SymbolicModelDescription.h"
 
 #include "storm/utility/file.h"
 
@@ -37,12 +40,14 @@ void initializeSettings() {
     storm::settings::addModule<storm::settings::modules::JaniExportSettings>();
 }
 
-void handleJani(storm::jani::Model& model) {
-    if (!storm::settings::getModule<storm::settings::modules::JaniExportSettings>().isJaniFileSet()) {
-        // For now, we have to have a jani file
-        storm::jani::JsonExporter::toStream(model, {}, std::cout);
+void handleJani(storm::jani::Model& model, std::vector<storm::jani::Property>& properties) {
+    auto const& jani = storm::settings::getModule<storm::settings::modules::JaniExportSettings>();
+    storm::converter::JaniConversionOptions options(jani);
+    storm::api::transformJani(model, properties, options);
+    if (storm::settings::getModule<storm::settings::modules::PGCLSettings>().isToJaniSet()) {
+        storm::api::exportJaniToFile(model, properties, storm::settings::getModule<storm::settings::modules::PGCLSettings>().getWriteToJaniFilename(), jani.isCompactJsonSet());
     } else {
-        storm::jani::JsonExporter::toFile(model, {}, storm::settings::getModule<storm::settings::modules::JaniExportSettings>().getJaniFilename());
+        storm::api::printJaniToStream(model, properties, std::cout);
     }
 }
 
@@ -64,31 +69,40 @@ int main(const int argc, const char** argv) {
         if (!optionsCorrect) {
             return -1;
         }
-        
-        if (!storm::settings::getModule<storm::settings::modules::PGCLSettings>().isPgclFileSet()) {
+    
+        auto pgcl = storm::settings::getModule<storm::settings::modules::PGCLSettings>();
+        if (!pgcl.isPgclFileSet()) {
             return -1;
         }
-        storm::pgcl::PgclProgram prog = storm::parser::PgclParser::parse(storm::settings::getModule<storm::settings::modules::PGCLSettings>().getPgclFilename());
+        
+        storm::pgcl::PgclProgram prog = storm::parser::PgclParser::parse(pgcl.getPgclFilename());
         storm::ppg::ProgramGraph* progGraph = storm::builder::ProgramGraphBuilder::build(prog);
     
         progGraph->printInfo(std::cout);
-        if (storm::settings::getModule<storm::settings::modules::PGCLSettings>().isProgramGraphToDotSet()) {
+        if (pgcl.isProgramGraphToDotSet()) {
             programGraphToDotFile(*progGraph);
         }
-        if (storm::settings::getModule<storm::settings::modules::PGCLSettings>().isToJaniSet()) {
+        if (pgcl.isToJaniSet()) {
             storm::builder::JaniProgramGraphBuilderSetting settings;
             // To disable reward detection, uncomment the following line
             // TODO add a setting for this.
             // settings.filterRewardVariables = false;
             storm::builder::JaniProgramGraphBuilder builder(*progGraph, settings);
-            if (storm::settings::getModule<storm::settings::modules::PGCLSettings>().isProgramVariableRestrictionSet()) {
+            if (pgcl.isProgramVariableRestrictionSet()) {
                 // TODO More fine grained control
-                storm::storage::IntegerInterval restr = storm::storage::parseIntegerInterval(storm::settings::getModule<storm::settings::modules::PGCLSettings>().getProgramVariableRestrictions());
+                storm::storage::IntegerInterval restr = storm::storage::parseIntegerInterval(pgcl.getProgramVariableRestrictions());
                 builder.restrictAllVariables(restr);
             }
             storm::jani::Model* model = builder.build();
+            
             delete progGraph;
-            handleJani(*model);
+            std::vector<storm::jani::Property> properties;
+            if (pgcl.isPropertyInputSet()) {
+                boost::optional<std::set<std::string>> propertyFilter = storm::api::parsePropertyFilter(pgcl.getPropertyInputFilter());
+                properties = storm::api::parsePropertiesForSymbolicModelDescription(pgcl.getPropertyInput(), *model, propertyFilter);
+            }
+            
+            handleJani(*model, properties);
             delete model;
         } else {
             

@@ -91,7 +91,7 @@ namespace storm {
             if (consideredModel->isOfType(storm::models::ModelType::Ctmc) || consideredModel->isOfType(storm::models::ModelType::MarkovAutomaton)) {
                     STORM_LOG_WARN("Parameter lifting not supported for continuous time models. Transforming continuous model to discrete model...");
                     std::vector<std::shared_ptr<storm::logic::Formula const>> taskFormulaAsVector { task.getFormula().asSharedPointer() };
-                    consideredModel = storm::api::transformContinuousToDiscreteTimeSparseModel(consideredModel, taskFormulaAsVector);
+                    consideredModel = storm::api::transformContinuousToDiscreteTimeSparseModel(consideredModel, taskFormulaAsVector).first;
                     STORM_LOG_THROW(consideredModel->isOfType(storm::models::ModelType::Dtmc) || consideredModel->isOfType(storm::models::ModelType::Mdp), storm::exceptions::UnexpectedException, "Transformation to discrete time model has failed.");
             }
             
@@ -121,7 +121,7 @@ namespace storm {
             if (consideredModel->isOfType(storm::models::ModelType::Ctmc) || consideredModel->isOfType(storm::models::ModelType::MarkovAutomaton)) {
                     STORM_LOG_WARN("Parameter lifting not supported for continuous time models. Transforming continuous model to discrete model...");
                     std::vector<std::shared_ptr<storm::logic::Formula const>> taskFormulaAsVector { task.getFormula().asSharedPointer() };
-                    consideredModel = storm::api::transformContinuousToDiscreteTimeSparseModel(consideredModel, taskFormulaAsVector);
+                    consideredModel = storm::api::transformContinuousToDiscreteTimeSparseModel(consideredModel, taskFormulaAsVector).first;
                     STORM_LOG_THROW(consideredModel->isOfType(storm::models::ModelType::Dtmc) || consideredModel->isOfType(storm::models::ModelType::Mdp), storm::exceptions::UnexpectedException, "Transformation to discrete time model has failed.");
             }
             
@@ -186,6 +186,20 @@ namespace storm {
             Environment env;
             auto regionChecker = initializeRegionModelChecker(env, model, task, engine);
             return regionChecker->performRegionRefinement(env, region, coverageThreshold, refinementDepthThreshold, hypothesis);
+        }
+    
+        /*!
+         * Finds the extremal value in the given region
+         * @param engine The considered region checking engine
+         * @param coverageThreshold if given, the refinement stops as soon as the fraction of the area of the subregions with inconclusive result is less then this threshold
+         * @param refinementDepthThreshold if given, the refinement stops at the given depth. depth=0 means no refinement.
+         * @param hypothesis if not 'unknown', it is only checked whether the hypothesis holds (and NOT the complementary result).
+         */
+        template <typename ValueType>
+        std::pair<ValueType, typename storm::storage::ParameterRegion<ValueType>::Valuation> computeExtremalValue(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, storm::storage::ParameterRegion<ValueType> const& region, storm::modelchecker::RegionCheckEngine engine, storm::solver::OptimizationDirection const& dir, boost::optional<ValueType> const& precision) {
+            Environment env;
+            auto regionChecker = initializeRegionModelChecker(env, model, task, engine);
+            return regionChecker->computeExtremalValue(env, region, dir, precision.is_initialized() ? precision.get() : storm::utility::zero<ValueType>());
         }
         
         template <typename ValueType>

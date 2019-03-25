@@ -23,8 +23,21 @@ namespace storm {
          * @return DFT.
          */
         template<typename ValueType>
-        std::shared_ptr<storm::storage::DFT<ValueType>> loadDFTGalileo(std::string const& file) {
+        std::shared_ptr<storm::storage::DFT<ValueType>> loadDFTGalileoFile(std::string const& file) {
              return std::make_shared<storm::storage::DFT<ValueType>>(storm::parser::DFTGalileoParser<ValueType>::parseDFT(file));
+        }
+
+        /*!
+         * Load DFT from JSON string.
+         *
+         * @param jsonString String containing DFT description in JSON format.
+         *
+         * @return DFT.
+         */
+        template<typename ValueType>
+        std::shared_ptr<storm::storage::DFT<ValueType>> loadDFTJsonString(std::string const& jsonString) {
+                storm::parser::DFTJsonParser<ValueType> parser;
+                return std::make_shared<storm::storage::DFT<ValueType>>(parser.parseJsonFromString(jsonString));
         }
 
         /*!
@@ -35,10 +48,17 @@ namespace storm {
          * @return DFT.
          */
         template<typename ValueType>
-        std::shared_ptr<storm::storage::DFT<ValueType>> loadDFTJson(std::string const& file) {
+        std::shared_ptr<storm::storage::DFT<ValueType>> loadDFTJsonFile(std::string const& file) {
                 storm::parser::DFTJsonParser<ValueType> parser;
-                return std::make_shared<storm::storage::DFT<ValueType>>(parser.parseJson(file));
+                return std::make_shared<storm::storage::DFT<ValueType>>(parser.parseJsonFromFile(file));
         }
+
+        template<typename ValueType>
+        bool isWellFormed(storm::storage::DFT<ValueType> const& dft) {
+            std::stringstream stream;
+            return dft.checkWellFormedness(stream);
+        }
+
 
         /*!
          * Analyse the given DFT according to the given properties.
@@ -52,9 +72,11 @@ namespace storm {
          *
          * @return Result.
          */
-        template <typename ValueType>
-        typename storm::modelchecker::DFTModelChecker<ValueType>::dft_results analyzeDFT(storm::storage::DFT<ValueType> const& dft, std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties, bool symred, bool allowModularisation, bool enableDC, bool printOutput) {
-            storm::modelchecker::DFTModelChecker<ValueType> modelChecker;
+        template<typename ValueType>
+        typename storm::modelchecker::DFTModelChecker<ValueType>::dft_results
+        analyzeDFT(storm::storage::DFT<ValueType> const& dft, std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties, bool symred, bool allowModularisation,
+                   bool enableDC, bool printOutput) {
+            storm::modelchecker::DFTModelChecker<ValueType> modelChecker(printOutput);
             typename storm::modelchecker::DFTModelChecker<ValueType>::dft_results results = modelChecker.check(dft, properties, symred, allowModularisation, enableDC, 0.0);
             if (printOutput) {
                 modelChecker.printTimings();
@@ -76,10 +98,13 @@ namespace storm {
          *
          * @return Result.
          */
-        template <typename ValueType>
-        typename storm::modelchecker::DFTModelChecker<ValueType>::dft_results analyzeDFTApprox(storm::storage::DFT<ValueType> const& dft, std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties, bool symred, bool allowModularisation, bool enableDC, double approximationError, bool printOutput) {
-            storm::modelchecker::DFTModelChecker<ValueType> modelChecker;
-            typename storm::modelchecker::DFTModelChecker<ValueType>::dft_results results = modelChecker.check(dft, properties, symred, allowModularisation, enableDC, approximationError);
+        template<typename ValueType>
+        typename storm::modelchecker::DFTModelChecker<ValueType>::dft_results
+        analyzeDFTApprox(storm::storage::DFT<ValueType> const& dft, std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties, bool symred,
+                         bool allowModularisation, bool enableDC, double approximationError, bool printOutput) {
+            storm::modelchecker::DFTModelChecker<ValueType> modelChecker(printOutput);
+            typename storm::modelchecker::DFTModelChecker<ValueType>::dft_results results = modelChecker.check(dft, properties, symred, allowModularisation, enableDC,
+                                                                                                               approximationError);
             if (printOutput) {
                 modelChecker.printTimings();
                 modelChecker.printResults();
@@ -94,7 +119,15 @@ namespace storm {
          * @param file File.
          */
         template<typename ValueType>
-        void exportDFTToJson(storm::storage::DFT<ValueType> const& dft, std::string const& file);
+        void exportDFTToJsonFile(storm::storage::DFT<ValueType> const& dft, std::string const& file);
+
+        /*!
+         * Export DFT to JSON string.
+         *
+         * @param dft DFT.
+         */
+        template<typename ValueType>
+        std::string exportDFTToJsonString(storm::storage::DFT<ValueType> const& dft);
 
         /*!
          * Export DFT to SMT encoding.
@@ -109,9 +142,21 @@ namespace storm {
          * Transform DFT to GSPN.
          *
          * @param dft DFT.
+         *
+         * @return Pair of GSPN and id of failed place corresponding to the top level element.
          */
         template<typename ValueType>
-        void transformToGSPN(storm::storage::DFT<ValueType> const& dft);
+        std::pair<std::shared_ptr<storm::gspn::GSPN>, uint64_t> transformToGSPN(storm::storage::DFT<ValueType> const& dft);
+
+        /*!
+         * Transform GSPN to Jani model.
+         *
+         * @param gspn GSPN.
+         * @param toplevelFailedPlace Id of the failed place in the GSPN for the top level element in the DFT.
+         *
+         * @return JANI model.
+         */
+        std::shared_ptr<storm::jani::Model> transformToJani(storm::gspn::GSPN const& gspn, uint64_t toplevelFailedPlace);
 
     }
 }

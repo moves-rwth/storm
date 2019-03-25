@@ -57,6 +57,7 @@ set(GUROBI_ROOT "" CACHE STRING "A hint to the root directory of Gurobi (optiona
 set(Z3_ROOT "" CACHE STRING "A hint to the root directory of Z3 (optional).")
 set(CUDA_ROOT "" CACHE STRING "The hint to the root directory of CUDA (optional).")
 set(MSAT_ROOT "" CACHE STRING "The hint to the root directory of MathSAT (optional).")
+set(STORM_QVBS_ROOT "" CACHE STRING "The hint to the root directory of the Quantitative Verification Benchmark Set (QVBS) (optional).")
 set(ADDITIONAL_INCLUDE_DIRS "" CACHE STRING "Additional directories added to the include directories.")
 set(ADDITIONAL_LINK_DIRS "" CACHE STRING "Additional directories added to the link directories.")
 set(USE_XERCESC ${XML_SUPPORT})
@@ -420,30 +421,27 @@ set(STORM_VERSION_MAJOR "${CMAKE_MATCH_1}")
 set(STORM_VERSION_MINOR "${CMAKE_MATCH_2}")
 set(STORM_VERSION_PATCH "${CMAKE_MATCH_3}")
 set(STORM_GIT_VERSION_REST "${CMAKE_MATCH_4}")
-# parse rest of the form (-label)-commitsahead-hash-appendix
+# parse rest of the form (-label)-commitsahead-hash(-appendix)
 string(REGEX MATCH "^(\\-([a-z][a-z0-9\\.]+))?\\-([0-9]+)\\-([a-z0-9]+)(\\-.*)?$" STORM_VERSION_REST_MATCH "${STORM_GIT_VERSION_REST}")
 set(STORM_VERSION_LABEL "${CMAKE_MATCH_2}") # might be empty
 set(STORM_VERSION_COMMITS_AHEAD "${CMAKE_MATCH_3}")
-set(STORM_VERSION_TAG_HASH "${CMAKE_MATCH_4}")
+set(STORM_VERSION_TAG_HASH "${CMAKE_MATCH_4}") # is not used
 set(STORM_VERSION_APPENDIX "${CMAKE_MATCH_5}") # might be empty
 
-
-set(STORM_VERSION_DIRTY boost::none)
-if (NOT "${STORM_GIT_VERSION_STRING}" STREQUAL "")
+# check whether the git version lookup failed
+if (STORM_GIT_VERSION_STRING MATCHES "NOTFOUND")
+	set(STORM_VERSION_SOURCE "VersionSource::Static")
+	set(STORM_VERSION_COMMITS_AHEAD 0)
+	set(STORM_VERSION_DIRTY boost::none)
+	include(version.cmake)
+	message(WARNING "Storm - Git version information not available, statically assuming version ${STORM_VERSION_MAJOR}.${STORM_VERSION_MINOR}.${STORM_VERSION_PATCH}.")
+else()
+	set(STORM_VERSION_SOURCE "VersionSource::Git")
 	if ("${STORM_VERSION_APPENDIX}" MATCHES "^.*dirty.*$")
 		set(STORM_VERSION_DIRTY "true")
 	else()
 		set(STORM_VERSION_DIRTY "false")
 	endif()
-endif()
-
-# now check whether the git version lookup failed
-set(STORM_VERSION_SOURCE "VersionSource::Git")
-if (STORM_GIT_VERSION_STRING MATCHES "NOTFOUND")
-	set(STORM_VERSION_SOURCE "VersionSource::Static")
-	set(STORM_VERSION_COMMITS_AHEAD "boost::none")
-	include(version.cmake)
-	message(WARNING "Storm - Git version information not available, statically assuming version ${STORM_VERSION_MAJOR}.${STORM_VERSION_MINOR}.${STORM_VERSION_PATCH}.")
 endif()
 
 # check whether there is a label ('alpha', 'pre', etc.)
@@ -454,18 +452,19 @@ else()
 endif()
 
 # check for development version with commits ahead of latest tag
-set(STORM_VERSION_DEV "false")
-set(STORM_VERSION_DEV_STRING "")
 if(STORM_VERSION_COMMITS_AHEAD)
+	set(STORM_VERSION_DEV "true")
+	set(STORM_VERSION_DEV_STRING " (dev)")
 	if ("${STORM_VERSION_LABEL}" STREQUAL "")
 		# increase patch number to indicate newer version
 		MATH(EXPR STORM_VERSION_DEV_PATCH "${STORM_VERSION_PATCH}+1")
 	else()
 		set(STORM_VERSION_DEV_PATCH "${STORM_VERSION_PATCH}")
 	endif()
-	set(STORM_VERSION_DEV "true")
-	set(STORM_VERSION_DEV_STRING " (dev)")
 else()
+	set(STORM_VERSION_COMMITS_AHEAD 0)
+	set(STORM_VERSION_DEV "false")
+	set(STORM_VERSION_DEV_STRING "")
 	set(STORM_VERSION_DEV_PATCH ${STORM_VERSION_PATCH})
 endif()
 

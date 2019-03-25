@@ -73,7 +73,7 @@ namespace storm {
                 STORM_LOG_INFO_COND(!changed, "Selecting '" + toString(type) + "' as the multiplier type to match the selected equation solver. If you want to override this, please explicitly specify a different multiplier type.");
             }
             
-            switch (env.solver().multiplier().getType()) {
+            switch (type) {
                 case MultiplierType::Gmmxx:
                     return std::make_unique<GmmxxMultiplier<ValueType>>(matrix);
                 case MultiplierType::Native:

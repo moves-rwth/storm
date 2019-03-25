@@ -133,6 +133,7 @@ namespace storm {
                 } else if (modelType == storm::jani::ModelType::MDP || modelType == storm::jani::ModelType::LTS) {
                     return new storm::models::sparse::Mdp<ValueType, storm::models::sparse::StandardRewardModel<ValueType>>(std::move(transitionMatrix), std::move(stateLabeling), std::move(rewardModels));
                 } else if (modelType == storm::jani::ModelType::MA) {
+                    markovianStates->resize(transitionMatrix.getRowGroupCount());
                     return new storm::models::sparse::MarkovAutomaton<ValueType, storm::models::sparse::StandardRewardModel<ValueType>>(std::move(transitionMatrix), std::move(stateLabeling), std::move(*markovianStates), std::move(rewardModels));
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Model type unsupported by JIT builder.");

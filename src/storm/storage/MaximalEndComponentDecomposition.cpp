@@ -74,10 +74,10 @@ namespace storm {
             if (states) {
                 endComponentStateSets.emplace_back(states->begin(), states->end(), true);
             } else {
-                std::vector<storm::storage::sparse::state_type> states;
-                states.resize(transitionMatrix.getRowGroupCount());
-                std::iota(states.begin(), states.end(), 0);
-                endComponentStateSets.emplace_back(states.begin(), states.end(), true);
+                std::vector<storm::storage::sparse::state_type> allStates;
+                allStates.resize(transitionMatrix.getRowGroupCount());
+                std::iota(allStates.begin(), allStates.end(), 0);
+                endComponentStateSets.emplace_back(allStates.begin(), allStates.end(), true);
             }
             storm::storage::BitVector statesToCheck(numberOfStates);
             storm::storage::BitVector includedChoices;

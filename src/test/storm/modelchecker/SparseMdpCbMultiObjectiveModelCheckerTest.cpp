@@ -5,6 +5,7 @@
 #include "storm/modelchecker/multiobjective/multiObjectiveModelChecking.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/models/sparse/Mdp.h"
+#include "storm/storage/jani/Property.h"
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/api/storm.h"

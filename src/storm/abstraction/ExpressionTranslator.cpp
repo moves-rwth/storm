@@ -118,7 +118,7 @@ namespace storm {
                 
                 // At this point, none of the predicates was found to be equivalent, but there is no need to split as the subexpressions are not valid predicates.
                 
-                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Expressions of this kind are currently not supported by the abstraction expression translator.");
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Expressions of this kind are currently not supported by the abstraction expression translator (" << expression << ").");
             }
             return boost::any();
         }
@@ -136,7 +136,7 @@ namespace storm {
                 
                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Expressions of this kind are currently not supported by the abstraction expression translator.");
             } else {
-                return abstractionInformation.get().getDdManager().template getIdentity<double>(abstractionInformation.get().getDdLocationVariable(expression.getVariable(), true));
+                return abstractionInformation.get().getDdManager().template getIdentity<double>(abstractionInformation.get().getDdLocationMetaVariable(expression.getVariable(), true));
             }
         }
         

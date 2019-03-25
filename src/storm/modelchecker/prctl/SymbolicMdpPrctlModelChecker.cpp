@@ -30,7 +30,7 @@ namespace storm {
         template<typename ModelType>
         bool SymbolicMdpPrctlModelChecker<ModelType>::canHandle(CheckTask<storm::logic::Formula, ValueType> const& checkTask) const {
             storm::logic::Formula const& formula = checkTask.getFormula();
-            return formula.isInFragment(storm::logic::prctl().setLongRunAverageRewardFormulasAllowed(false));
+            return formula.isInFragment(storm::logic::prctl().setLongRunAverageRewardFormulasAllowed(false).setTimeOperatorsAllowed(true).setReachbilityTimeFormulasAllowed(true));
         }
         
         template<typename ModelType>
@@ -98,6 +98,15 @@ namespace storm {
             std::unique_ptr<CheckResult> subResultPointer = this->check(env, eventuallyFormula.getSubformula());
             SymbolicQualitativeCheckResult<DdType> const& subResult = subResultPointer->asSymbolicQualitativeCheckResult<DdType>();
             return storm::modelchecker::helper::SymbolicMdpPrctlHelper<DdType, ValueType>::computeReachabilityRewards(env, checkTask.getOptimizationDirection(), this->getModel(), this->getModel().getTransitionMatrix(), checkTask.isRewardModelSet() ? this->getModel().getRewardModel(checkTask.getRewardModel()) : this->getModel().getRewardModel(""), subResult.getTruthValuesVector());
+        }
+        
+        template<typename ModelType>
+        std::unique_ptr<CheckResult> SymbolicMdpPrctlModelChecker<ModelType>::computeReachabilityTimes(Environment const& env, storm::logic::RewardMeasureType, CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) {
+            storm::logic::EventuallyFormula const& eventuallyFormula = checkTask.getFormula();
+            STORM_LOG_THROW(checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidPropertyException, "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
+            std::unique_ptr<CheckResult> subResultPointer = this->check(env, eventuallyFormula.getSubformula());
+            SymbolicQualitativeCheckResult<DdType> const& subResult = subResultPointer->asSymbolicQualitativeCheckResult<DdType>();
+            return storm::modelchecker::helper::SymbolicMdpPrctlHelper<DdType, ValueType>::computeReachabilityTimes(env, checkTask.getOptimizationDirection(), this->getModel(), this->getModel().getTransitionMatrix(), subResult.getTruthValuesVector());
         }
 
         template class SymbolicMdpPrctlModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD, double>>;

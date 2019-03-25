@@ -998,6 +998,8 @@ namespace storm {
                     // Check quotient matrix for sanity.
                     if (std::is_same<ValueType, storm::RationalNumber>::value) {
                         STORM_LOG_ASSERT(quotientTransitionMatrix.greater(storm::utility::one<ValueType>()).isZero(), "Illegal entries in quotient matrix.");
+                    } else if (std::is_same<ValueType, storm::RationalFunction>::value) {
+                        // No comparison for rational functions
                     } else {
                         STORM_LOG_ASSERT(quotientTransitionMatrix.greater(storm::utility::one<ValueType>() + storm::utility::convertNumber<ValueType>(1e-6)).isZero(), "Illegal entries in quotient matrix.");
                     }

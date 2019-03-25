@@ -64,7 +64,7 @@ namespace storm {
                 
                 void computeEpochSolution(Environment const& env, typename helper::rewardbounded::MultiDimensionalRewardUnfolding<ValueType, false>::Epoch const& epoch, std::vector<ValueType> const& weightVector, EpochCheckingData& cachedData);
                 
-                void updateCachedData(Environment const& env, typename helper::rewardbounded::MultiDimensionalRewardUnfolding<ValueType, false>::EpochModel const& epochModel, EpochCheckingData& cachedData, std::vector<ValueType> const& weightVector);
+                void updateCachedData(Environment const& env, typename helper::rewardbounded::EpochModel<ValueType, false> const& epochModel, EpochCheckingData& cachedData, std::vector<ValueType> const& weightVector);
                 
                 storm::utility::Stopwatch swAll, swEpochModelBuild, swEpochModelAnalysis;
                 uint64_t numCheckedEpochs, numChecks;

@@ -324,9 +324,11 @@ namespace storm {
                             successorSCCs.clear();
                             for (auto const& state : currentScc) {
                                 for (auto const& entry : transitions.getRowGroup(state)) {
-                                    auto const& successorSCC = sccIndices[entry.getColumn()];
-                                    if (successorSCC != currentSccIndex && unsortedSCCs.get(successorSCC)) {
-                                        successorSCCs.insert(successorSCC);
+                                    if (!storm::utility::isZero(entry.getValue())) {
+                                        auto const& successorSCC = sccIndices[entry.getColumn()];
+                                        if (successorSCC != currentSccIndex && unsortedSCCs.get(successorSCC)) {
+                                            successorSCCs.insert(successorSCC);
+                                        }
                                     }
                                 }
                             }
@@ -345,9 +347,11 @@ namespace storm {
                             uint32_t& currentChainSize = chainSizes[currentSccIndex];
                             for (auto const& state : scc) {
                                 for (auto const& entry : transitions.getRowGroup(state)) {
-                                    auto const& successorSCC = sccIndices[entry.getColumn()];
-                                    if (successorSCC != currentSccIndex) {
-                                        currentChainSize = std::max(currentChainSize, chainSizes[successorSCC] + 1);
+                                    if (!storm::utility::isZero(entry.getValue())) {
+                                        auto const& successorSCC = sccIndices[entry.getColumn()];
+                                        if (successorSCC != currentSccIndex) {
+                                            currentChainSize = std::max(currentChainSize, chainSizes[successorSCC] + 1);
+                                        }
                                     }
                                 }
                             }

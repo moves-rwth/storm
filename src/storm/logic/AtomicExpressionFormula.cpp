@@ -24,6 +24,10 @@ namespace storm {
             atomicExpressionFormulas.push_back(std::dynamic_pointer_cast<AtomicExpressionFormula const>(this->shared_from_this()));
         }
         
+        void AtomicExpressionFormula::gatherUsedVariables(std::set<storm::expressions::Variable>& usedVariables) const {
+            expression.gatherVariables(usedVariables);
+        }
+        
         std::ostream& AtomicExpressionFormula::writeToStream(std::ostream& out) const {
             out << expression;
             return out;

@@ -80,8 +80,9 @@ namespace storm {
             
             void copyElements(std::vector<size_t> elements, storm::builder::DFTBuilder<ValueType> builder) const;
             
-            size_t stateVectorSize() const {
-                return mStateVectorSize;
+            size_t stateBitVectorSize() const {
+                // Ensure multiple of 64
+                return (mStateVectorSize / 64 + (mStateVectorSize % 64 != 0)) * 64;
             }
             
             size_t nrElements() const {
@@ -93,6 +94,8 @@ namespace storm {
             }
 
             size_t nrDynamicElements() const;
+
+            size_t nrStaticElements() const;
             
             size_t getTopLevelIndex() const {
                 return mTopLevelIndex;
@@ -202,7 +205,14 @@ namespace storm {
             }
 
             bool canHaveNondeterminism() const;
-            
+
+            /*!
+             * Check if the DFT is well-formed.
+             * @param stream Output stream where warnings about non-well-formed parts are written.
+             * @return True iff the DFT is well-formed.
+             */
+            bool checkWellFormedness(std::ostream& stream) const;
+
             uint64_t maxRank() const;
             
             std::vector<DFT<ValueType>> topModularisation() const;

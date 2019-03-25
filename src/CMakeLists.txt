@@ -16,7 +16,11 @@ add_subdirectory(storm-dft)
 add_subdirectory(storm-dft-cli)
 add_subdirectory(storm-pars)
 add_subdirectory(storm-pars-cli)
+add_subdirectory(storm-pomdp)
+add_subdirectory(storm-pomdp-cli)
 
+add_subdirectory(storm-conv)
+add_subdirectory(storm-conv-cli)
 
 
 add_subdirectory(test)

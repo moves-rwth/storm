@@ -12,8 +12,8 @@ namespace storm {
         class ExplicitParetoCurveCheckResult : public ParetoCurveCheckResult<ValueType> {
         public:
             ExplicitParetoCurveCheckResult();
-            ExplicitParetoCurveCheckResult(storm::storage::sparse::state_type const& state, std::vector<typename ParetoCurveCheckResult<ValueType>::point_type> const& points, typename ParetoCurveCheckResult<ValueType>::polytope_type const& underApproximation, typename ParetoCurveCheckResult<ValueType>::polytope_type const& overApproximation);
-            ExplicitParetoCurveCheckResult(storm::storage::sparse::state_type const& state, std::vector<typename ParetoCurveCheckResult<ValueType>::point_type>&& points, typename ParetoCurveCheckResult<ValueType>::polytope_type&& underApproximation, typename ParetoCurveCheckResult<ValueType>::polytope_type&& overApproximation);
+            ExplicitParetoCurveCheckResult(storm::storage::sparse::state_type const& state, std::vector<typename ParetoCurveCheckResult<ValueType>::point_type> const& points, typename ParetoCurveCheckResult<ValueType>::polytope_type const& underApproximation = nullptr, typename ParetoCurveCheckResult<ValueType>::polytope_type const& overApproximation = nullptr);
+            ExplicitParetoCurveCheckResult(storm::storage::sparse::state_type const& state, std::vector<typename ParetoCurveCheckResult<ValueType>::point_type>&& points, typename ParetoCurveCheckResult<ValueType>::polytope_type&& underApproximation = nullptr, typename ParetoCurveCheckResult<ValueType>::polytope_type&& overApproximation = nullptr);
             
             ExplicitParetoCurveCheckResult(ExplicitParetoCurveCheckResult const& other) = default;
             ExplicitParetoCurveCheckResult& operator=(ExplicitParetoCurveCheckResult const& other) = default;

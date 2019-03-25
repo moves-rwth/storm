@@ -17,6 +17,7 @@
 #include "storm/exceptions/InvalidTypeException.h"
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/solver/SmtSolver.h"
+#include "storm/storage/jani/expressions/JaniExpressionSubstitutionVisitor.h"
 
 #include "storm/storage/prism/CompositionVisitor.h"
 #include "storm/storage/prism/Compositions.h"
@@ -186,11 +187,24 @@ namespace storm {
         }
         
         bool Program::isDiscreteTimeModel() const {
-            return modelType == ModelType::DTMC || modelType == ModelType::MDP;
+            return modelType == ModelType::DTMC || modelType == ModelType::MDP || modelType == ModelType::POMDP;
         }
         
         bool Program::isDeterministicModel() const {
             return modelType == ModelType::DTMC || modelType == ModelType::CTMC;
+        }
+
+
+        bool Program::isPartiallyObservable() const {
+            return modelType == ModelType::POMDP;
+        }
+
+        size_t Program::getNumberOfCommands() const {
+            size_t res = 0;
+            for (auto const& module : this->getModules()) {
+                res += module.getNumberOfCommands();
+            }
+            return res;
         }
         
         bool Program::hasUndefinedConstants() const {
@@ -316,14 +330,76 @@ namespace storm {
         }
         
         std::map<storm::expressions::Variable, storm::expressions::Expression> Program::getConstantsSubstitution() const {
-            std::map<storm::expressions::Variable, storm::expressions::Expression> constantsSubstitution;
-            for (auto const& constant : this->getConstants()) {
-                if (constant.isDefined()) {
-                    constantsSubstitution.emplace(constant.getExpressionVariable(), constant.getExpression());
+            return getConstantsFormulasSubstitution(true, false);
+        }
+        
+        std::map<storm::expressions::Variable, storm::expressions::Expression> Program::getFormulasSubstitution() const {
+            return getConstantsFormulasSubstitution(false, true);
+        }
+        
+        std::map<storm::expressions::Variable, storm::expressions::Expression> Program::getConstantsFormulasSubstitution(bool getConstantsSubstitution, bool getFormulasSubstitution) const {
+            std::map<storm::expressions::Variable, storm::expressions::Expression> result;
+            if (getConstantsSubstitution) {
+                for (auto const& constant : this->getConstants()) {
+                    if (constant.isDefined()) {
+                        result.emplace(constant.getExpressionVariable(), constant.getExpression().substitute(result));
+                    }
                 }
             }
-            return constantsSubstitution;
+            if (getFormulasSubstitution) {
+                for (auto const& formula : this->getFormulas()) {
+                    result.emplace(formula.getExpressionVariable(), formula.getExpression().substitute(result));
+                }
+            }
+            return result;
         }
+        
+        std::map<storm::expressions::Variable, storm::expressions::Expression> Program::getSubstitutionForRenamedModule(Module const& renamedModule, std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
+            auto renaming = getFinalRenamingOfModule(renamedModule);
+            std::map<storm::expressions::Variable, storm::expressions::Expression> renamingAsSubstitution;
+            for (auto const& renamingPair : renaming) {
+                if (getManager().hasVariable(renamingPair.first)) {
+                    assert(getManager().hasVariable(renamingPair.second));
+                    renamingAsSubstitution.emplace(getManager().getVariable(renamingPair.first), getManager().getVariableExpression(renamingPair.second));
+                }
+            }
+            
+            std::map<storm::expressions::Variable, storm::expressions::Expression> newSubstitution;
+            for (auto const& substVarExpr : substitution) {
+                newSubstitution.emplace(substVarExpr.first, storm::jani::substituteJaniExpression(substVarExpr.second, renamingAsSubstitution));
+            }
+            return newSubstitution;
+        }
+
+        std::map<std::string, std::string> Program::getFinalRenamingOfModule(Module const& renamedModule) const {
+            std::vector<Module const*> moduleStack = {&renamedModule};
+            while (moduleStack.back()->isRenamedFromModule()) {
+                moduleStack.push_back(&getModule(moduleStack.back()->getBaseModule()));
+            }
+            
+            assert(!moduleStack.back()->isRenamedFromModule());
+            moduleStack.pop_back();
+            assert(moduleStack.empty() || moduleStack.back()->isRenamedFromModule());
+            std::map<std::string, std::string> currentRenaming;
+            while (!moduleStack.empty()) {
+                Module const& currentModule = *moduleStack.back();
+                moduleStack.pop_back();
+                assert(currentModule.isRenamedFromModule());
+                std::map<std::string, std::string> newRenaming = currentModule.getRenaming();
+                for (auto const& renaimingPair : newRenaming) {
+                    auto findRes = currentRenaming.find(renaimingPair.second);
+                    if (findRes != currentRenaming.end()) {
+                        newRenaming[renaimingPair.second] = findRes->second;
+                        currentRenaming.erase(findRes);
+                    }
+                }
+                newRenaming.insert(currentRenaming.begin(), currentRenaming.end());
+                currentRenaming = std::move(newRenaming);
+            }
+            return currentRenaming;
+        }
+
+        
         
         std::size_t Program::getNumberOfConstants() const {
             return this->getConstants().size();
@@ -734,8 +810,11 @@ namespace storm {
                 for (auto const& booleanVariable : module.getBooleanVariables()) {
                     this->variableToModuleIndexMap[booleanVariable.getName()] = moduleIndex;
                 }
-                for (auto const& integerVariable : module.getBooleanVariables()) {
+                for (auto const& integerVariable : module.getIntegerVariables()) {
                     this->variableToModuleIndexMap[integerVariable.getName()] = moduleIndex;
+                }
+                for (auto const& clockVariable : module.getClockVariables()) {
+                    this->variableToModuleIndexMap[clockVariable.getName()] = moduleIndex;
                 }
             }
             
@@ -779,63 +858,73 @@ namespace storm {
         }
         
         Program Program::substituteConstants() const {
-            // We start by creating the appropriate substitution.
-            std::map<storm::expressions::Variable, storm::expressions::Expression> constantSubstitution;
-            std::vector<Constant> newConstants(this->getConstants());
-            for (uint_fast64_t constantIndex = 0; constantIndex < newConstants.size(); ++constantIndex) {
-                auto const& constant = newConstants[constantIndex];
-                
-                // Put the corresponding expression in the substitution.
-                if (constant.isDefined()) {
-                    constantSubstitution.emplace(constant.getExpressionVariable(), constant.getExpression().simplify());
-                    
-                    // If there is at least one more constant to come, we substitute the constants we have so far.
-                    if (constantIndex + 1 < newConstants.size()) {
-                        newConstants[constantIndex + 1] = newConstants[constantIndex + 1].substitute(constantSubstitution);
-                    }
-                }
+            return substituteConstantsFormulas(true, false);
+        }
+        
+        Program Program::substituteFormulas() const {
+            return substituteConstantsFormulas(false, true);
+        }
+        
+        Program Program::substituteConstantsFormulas(bool substituteConstants, bool substituteFormulas) const {
+            // Formulas need to be substituted first. otherwise, constants appearing in formula expressions can not be handled properly
+            if (substituteConstants && substituteFormulas) {
+                return this->substituteFormulas().substituteConstants();
             }
             
-            // Now we can substitute the constants in all expressions appearing in the program.
+            // We start by creating the appropriate substitution.
+            std::map<storm::expressions::Variable, storm::expressions::Expression> substitution = getConstantsFormulasSubstitution(substituteConstants, substituteFormulas);
+            
+            std::vector<Constant> newConstants;
+            newConstants.reserve(this->getNumberOfConstants());
+            for (auto const& oldConstant : this->getConstants()) {
+                newConstants.push_back(oldConstant.substitute(substitution));
+            }
+            
+            std::vector<Formula> newFormulas;
+            newFormulas.reserve(this->getNumberOfFormulas());
+            for (auto const& oldFormula : this->getFormulas()) {
+                newFormulas.emplace_back(oldFormula.substitute(substitution));
+            }
+            
             std::vector<BooleanVariable> newBooleanVariables;
             newBooleanVariables.reserve(this->getNumberOfGlobalBooleanVariables());
             for (auto const& booleanVariable : this->getGlobalBooleanVariables()) {
-                newBooleanVariables.emplace_back(booleanVariable.substitute(constantSubstitution));
+                newBooleanVariables.emplace_back(booleanVariable.substitute(substitution));
             }
             
             std::vector<IntegerVariable> newIntegerVariables;
             newBooleanVariables.reserve(this->getNumberOfGlobalIntegerVariables());
             for (auto const& integerVariable : this->getGlobalIntegerVariables()) {
-                newIntegerVariables.emplace_back(integerVariable.substitute(constantSubstitution));
-            }
-            
-            std::vector<Formula> newFormulas;
-            newFormulas.reserve(this->getNumberOfFormulas());
-            for (auto const& formula : this->getFormulas()) {
-                newFormulas.emplace_back(formula.substitute(constantSubstitution));
+                newIntegerVariables.emplace_back(integerVariable.substitute(substitution));
             }
             
             std::vector<Module> newModules;
             newModules.reserve(this->getNumberOfModules());
             for (auto const& module : this->getModules()) {
-                newModules.emplace_back(module.substitute(constantSubstitution));
+                if (module.isRenamedFromModule()) {
+                    // The renaming needs to be applied to the substitution as well.
+                    auto renamedSubstitution = getSubstitutionForRenamedModule(module, substitution);
+                    newModules.emplace_back(module.substitute(renamedSubstitution));
+                } else {
+                    newModules.emplace_back(module.substitute(substitution));
+                }
             }
             
             std::vector<RewardModel> newRewardModels;
             newRewardModels.reserve(this->getNumberOfRewardModels());
             for (auto const& rewardModel : this->getRewardModels()) {
-                newRewardModels.emplace_back(rewardModel.substitute(constantSubstitution));
+                newRewardModels.emplace_back(rewardModel.substitute(substitution));
             }
             
             boost::optional<storm::prism::InitialConstruct> newInitialConstruct;
             if (this->hasInitialConstruct()) {
-                newInitialConstruct = this->getInitialConstruct().substitute(constantSubstitution);
+                newInitialConstruct = this->getInitialConstruct().substitute(substitution);
             }
             
             std::vector<Label> newLabels;
             newLabels.reserve(this->getNumberOfLabels());
             for (auto const& label : this->getLabels()) {
-                newLabels.emplace_back(label.substitute(constantSubstitution));
+                newLabels.emplace_back(label.substitute(substitution));
             }
             
             return Program(this->manager, this->getModelType(), newConstants, newBooleanVariables, newIntegerVariables, newFormulas, newModules, this->getActionNameToIndexMapping(), newRewardModels, newLabels, newInitialConstruct, this->getOptionalSystemCompositionConstruct(), prismCompatibility);
@@ -1018,13 +1107,30 @@ namespace storm {
                     variables.insert(variable.getExpressionVariable());
                     all.insert(variable.getExpressionVariable());
                 }
+                
+                for (auto const& variable : module.getClockVariables()) {
+                    // Record the new identifier for future checks.
+                    variables.insert(variable.getExpressionVariable());
+                    all.insert(variable.getExpressionVariable());
+                }
             }
             
             // Create the set of valid identifiers for future checks.
             std::set<storm::expressions::Variable> variablesAndConstants;
             std::set_union(variables.begin(), variables.end(), constants.begin(), constants.end(), std::inserter(variablesAndConstants, variablesAndConstants.begin()));
             
-            // Check the commands of the modules.
+            // Collect the formula placeholders and check formulas
+            for (auto const& formula : this->getFormulas()) {
+                std::set<storm::expressions::Variable> containedVariables = formula.getExpression().getVariables();
+                bool isValid = std::includes(variablesAndConstants.begin(), variablesAndConstants.end(), containedVariables.begin(), containedVariables.end());
+                STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << formula.getFilename() << ", line " << formula.getLineNumber() << ": formula expression refers to unknown identifiers.");
+                if (formula.hasExpressionVariable()) {
+                    all.insert(formula.getExpressionVariable());
+                    variablesAndConstants.insert(formula.getExpressionVariable());
+                }
+            }
+            
+            // Check the commands and invariants of the modules.
             bool hasProbabilisticCommand = false;
             bool hasMarkovianCommand = false;
             bool hasLabeledMarkovianCommand = false;
@@ -1035,6 +1141,24 @@ namespace storm {
                 }
                 for (auto const& variable : module.getIntegerVariables()) {
                     legalVariables.insert(variable.getExpressionVariable());
+                }
+                for (auto const& variable : module.getClockVariables()) {
+                    legalVariables.insert(variable.getExpressionVariable());
+                }
+                
+                if (module.hasInvariant()) {
+                    std::set<storm::expressions::Variable> containedVariables = module.getInvariant().getVariables();
+                    std::set<storm::expressions::Variable> illegalVariables;
+                    std::set_difference(containedVariables.begin(), containedVariables.end(), variablesAndConstants.begin(), variablesAndConstants.end(), std::inserter(illegalVariables, illegalVariables.begin()));
+                    bool isValid = illegalVariables.empty();
+                    if (!isValid) {
+                        std::vector<std::string> illegalVariableNames;
+                        for (auto const& var : illegalVariables) {
+                            illegalVariableNames.push_back(var.getName());
+                        }
+                        STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << module.getFilename() << ", line " << module.getLineNumber() << ": invariant " << module.getInvariant()  << " refers to unknown identifiers: " << boost::algorithm::join(illegalVariableNames, ",") << ".");
+                    }
+                    STORM_LOG_THROW(module.getInvariant().hasBooleanType(), storm::exceptions::WrongFormatException, "Error in " << module.getFilename() << ", line " << module.getLineNumber() << ": invariant " << module.getInvariant() << " must evaluate to type 'bool'.");
                 }
                 
                 for (auto& command : module.getCommands()) {
@@ -1092,7 +1216,7 @@ namespace storm {
                                 }
                             }
                             STORM_LOG_THROW(alreadyAssignedVariables.find(assignedVariable) == alreadyAssignedVariables.end(), storm::exceptions::WrongFormatException, "Error in " << command.getFilename() << ", line " << command.getLineNumber() << ": duplicate assignment to variable '" << assignment.getVariableName() << "'.");
-                            STORM_LOG_THROW(assignedVariable.getType() == assignment.getExpression().getType(), storm::exceptions::WrongFormatException, "Error in " << command.getFilename() << ", line " << command.getLineNumber() << ": illegally assigning a value of type '" << assignment.getExpression().getType() << "' to variable '" << assignment.getVariableName() << "' of type '" << assignedVariable.getType() << "'.");
+                            STORM_LOG_THROW(assignedVariable.getType() == assignment.getExpression().getType() || (assignedVariable.getType().isRationalType() && assignment.getExpression().getType().isNumericalType()), storm::exceptions::WrongFormatException, "Error in " << command.getFilename() << ", line " << command.getLineNumber() << ": illegally assigning a value of type '" << assignment.getExpression().getType() << "' to variable '" << assignment.getVariableName() << "' of type '" << assignedVariable.getType() << "'.");
                             
                             containedVariables = assignment.getExpression().getVariables();
                             illegalVariables.clear();
@@ -1193,13 +1317,6 @@ namespace storm {
                 STORM_LOG_THROW(label.getStatePredicateExpression().hasBooleanType(), storm::exceptions::WrongFormatException, "Error in " << label.getFilename() << ", line " << label.getLineNumber() << ": label predicate must evaluate to type 'bool'.");
             }
             
-            // Check the formulas.
-            for (auto const& formula : this->getFormulas()) {
-                std::set<storm::expressions::Variable> containedVariables = formula.getExpression().getVariables();
-                bool isValid = std::includes(variablesAndConstants.begin(), variablesAndConstants.end(), containedVariables.begin(), containedVariables.end());
-                STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << formula.getFilename() << ", line " << formula.getLineNumber() << ": formula expression refers to unknown identifiers.");
-            }
-            
             if(lvl >= Program::ValidityCheckLevel::READYFORPROCESSING) {
                 // We check for each global variable and each labeled command, whether there is at most one instance writing to that variable.
                 std::set<std::pair<std::string, std::string>> globalBVarsWrittenToByCommand;
@@ -1236,7 +1353,7 @@ namespace storm {
         
         Program Program::simplify() {
             // Start by substituting the constants, because this will potentially erase some commands or even actions.
-            Program substitutedProgram = this->substituteConstants();
+            Program substitutedProgram = this->substituteConstantsFormulas();
             
             // As we possibly delete some commands and some actions might be dropped from modules altogether, we need to
             // maintain a list of actions that we need to remove in other modules. For example, if module A loses all [a]
@@ -1319,7 +1436,8 @@ namespace storm {
                     }
                 }
                 
-                newModules.emplace_back(module.getName(), newBooleanVars, newIntegerVars, newCommands);
+                // we currently do not simplify clock variables or invariants
+                newModules.emplace_back(module.getName(), newBooleanVars, newIntegerVars, module.getClockVariables(), module.getInvariant(), newCommands);
                 
                 // Determine the set of action indices that have been deleted entirely.
                 std::set_difference(module.getSynchronizingActionIndices().begin(), module.getSynchronizingActionIndices().end(), newModules.back().getSynchronizingActionIndices().begin(), newModules.back().getSynchronizingActionIndices().end(), std::inserter(actionIndicesToDelete, actionIndicesToDelete.begin()));
@@ -1374,6 +1492,7 @@ namespace storm {
             std::stringstream newModuleName;
             std::vector<storm::prism::BooleanVariable> allBooleanVariables;
             std::vector<storm::prism::IntegerVariable> allIntegerVariables;
+            std::vector<storm::prism::ClockVariable> allClockVariables;
             std::vector<storm::prism::Command> newCommands;
             uint_fast64_t nextCommandIndex = 0;
             uint_fast64_t nextUpdateIndex = 0;
@@ -1381,7 +1500,11 @@ namespace storm {
             // Assert the values of the constants.
             for (auto const& constant : this->getConstants()) {
                 if (constant.isDefined()) {
-                    solver->add(constant.getExpressionVariable() == constant.getExpression());
+                    if (constant.getType().isBooleanType()) {
+                        solver->add(storm::expressions::iff(constant.getExpressionVariable(),constant.getExpression()));
+                    } else {
+                        solver->add(constant.getExpressionVariable() == constant.getExpression());
+                    }
                 }
             }
             
@@ -1395,6 +1518,7 @@ namespace storm {
             // this is just for simplicity and is not needed.
             allBooleanVariables.insert(allBooleanVariables.end(), this->getGlobalBooleanVariables().begin(), this->getGlobalBooleanVariables().end());
             allIntegerVariables.insert(allIntegerVariables.end(), this->getGlobalIntegerVariables().begin(), this->getGlobalIntegerVariables().end());
+            storm::expressions::Expression newInvariant;
             
             // Now go through the modules, gather the variables, construct the name of the new module and assert the
             // bounds of the discovered variables.
@@ -1402,10 +1526,15 @@ namespace storm {
                 newModuleName << module.getName() << "_";
                 allBooleanVariables.insert(allBooleanVariables.end(), module.getBooleanVariables().begin(), module.getBooleanVariables().end());
                 allIntegerVariables.insert(allIntegerVariables.end(), module.getIntegerVariables().begin(), module.getIntegerVariables().end());
+                allClockVariables.insert(allClockVariables.end(), module.getClockVariables().begin(), module.getClockVariables().end());
                 
                 for (auto const& variable : module.getIntegerVariables()) {
                     solver->add(variable.getExpression() >= variable.getLowerBoundExpression());
                     solver->add(variable.getExpression() <= variable.getUpperBoundExpression());
+                }
+                
+                if (module.hasInvariant()) {
+                    newInvariant = newInvariant.isInitialized() ? (newInvariant && module.getInvariant()) : module.getInvariant();
                 }
                 
                 // The commands without a synchronizing action name, can simply be copied (plus adjusting the global
@@ -1549,7 +1678,8 @@ namespace storm {
             }
             
             // Finally, we can create the module and the program and return it.
-            storm::prism::Module singleModule(newModuleName.str(), allBooleanVariables, allIntegerVariables, newCommands, this->getFilename(), 0);
+            storm::prism::Module singleModule(newModuleName.str(), allBooleanVariables, allIntegerVariables, allClockVariables, newInvariant, newCommands, this->getFilename(), 0);
+            
             return Program(manager, this->getModelType(), this->getConstants(), std::vector<storm::prism::BooleanVariable>(), std::vector<storm::prism::IntegerVariable>(), this->getFormulas(), {singleModule}, actionToIndexMap, this->getRewardModels(), this->getLabels(), this->getOptionalInitialConstruct(), this->getOptionalSystemCompositionConstruct(), prismCompatibility, this->getFilename(), 0, true);
         }
 
@@ -1713,15 +1843,22 @@ namespace storm {
         
         storm::jani::Model Program::toJani(bool allVariablesGlobal, std::string suffix) const {
             ToJaniConverter converter;
-            storm::jani::Model resultingModel = converter.convert(*this, allVariablesGlobal, suffix);
+            auto janiModel = converter.convert(*this, allVariablesGlobal, suffix);
             STORM_LOG_WARN_COND(!converter.labelsWereRenamed(), "Labels were renamed in PRISM-to-JANI conversion, but the mapping is not stored.");
-            return resultingModel;
+            STORM_LOG_WARN_COND(!converter.rewardModelsWereRenamed(), "Rewardmodels were renamed in PRISM-to-JANI conversion, but the mapping is not stored.");
+            return janiModel;
         }
 
-        std::pair<storm::jani::Model, std::map<std::string, std::string>> Program::toJaniWithLabelRenaming(bool allVariablesGlobal, std::string suffix) const {
+        std::pair<storm::jani::Model, std::vector<storm::jani::Property>> Program::toJani(std::vector<storm::jani::Property> const& properties, bool allVariablesGlobal, std::string suffix) const {
             ToJaniConverter converter;
-            storm::jani::Model resultingModel = converter.convert(*this, allVariablesGlobal, suffix);
-            return std::make_pair(resultingModel, converter.getLabelRenaming());
+            auto janiModel = converter.convert(*this, allVariablesGlobal, suffix);
+            std::vector<storm::jani::Property> newProperties;
+            if (converter.labelsWereRenamed() || converter.rewardModelsWereRenamed()) {
+                newProperties = converter.applyRenaming(properties);
+            } else {
+                newProperties = properties;  // Nothing to be done here. Notice that the copy operation is suboptimal. 
+            }
+            return std::make_pair(janiModel, newProperties);
         }
 
         storm::expressions::ExpressionManager& Program::getManager() const {
@@ -1749,6 +1886,8 @@ namespace storm {
                 case Program::ModelType::MDP: out << "mdp"; break;
                 case Program::ModelType::CTMDP: out << "ctmdp"; break;
                 case Program::ModelType::MA: out << "ma"; break;
+                case Program::ModelType::POMDP: out << "pomdp"; break;
+                case Program::ModelType::PTA: out << "pta"; break;
             }
             return out;
         }

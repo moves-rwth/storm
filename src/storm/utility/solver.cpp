@@ -15,8 +15,10 @@
 #include "storm/solver/MathsatSmtSolver.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/CoreSettings.h"
+#include "storm/utility/NumberTraits.h"
 
 #include "storm/exceptions/InvalidSettingsException.h"
+#include "storm/exceptions/InvalidOperationException.h"
 
 namespace storm {
     namespace utility {
@@ -25,8 +27,11 @@ namespace storm {
             template<typename ValueType>
             std::unique_ptr<storm::solver::LpSolver<ValueType>> LpSolverFactory<ValueType>::create(std::string const& name, storm::solver::LpSolverTypeSelection solvT) const {
                 storm::solver::LpSolverType t;
-                if(solvT == storm::solver::LpSolverTypeSelection::FROMSETTINGS) {
+                if (solvT == storm::solver::LpSolverTypeSelection::FROMSETTINGS) {
                     t = storm::settings::getModule<storm::settings::modules::CoreSettings>().getLpSolver();
+                    if (storm::NumberTraits<ValueType>::IsExact && t != storm::solver::LpSolverType::Z3 && storm::settings::getModule<storm::settings::modules::CoreSettings>().isLpSolverSetFromDefaultValue()) {
+                        t = storm::solver::LpSolverType::Z3;
+                    }
                 } else {
                     t = convert(solvT);
                 }
@@ -85,7 +90,18 @@ namespace storm {
             }
             
             std::unique_ptr<storm::solver::SmtSolver> SmtSolverFactory::create(storm::expressions::ExpressionManager& manager) const {
-                storm::solver::SmtSolverType smtSolverType = storm::settings::getModule<storm::settings::modules::CoreSettings>().getSmtSolver();
+                storm::solver::SmtSolverType smtSolverType;
+                if (storm::settings::hasModule<storm::settings::modules::CoreSettings>()) {
+                     smtSolverType = storm::settings::getModule<storm::settings::modules::CoreSettings>().getSmtSolver();
+                } else {
+#ifdef STORM_HAVE_Z3
+                    smtSolverType = storm::solver::SmtSolverType::Z3;
+#elif STORM_HAVE_MSAT
+                    smtSolverType = storm::solver::SmtSolverType::Mathsat;
+#else
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Requested an SMT solver but none was installed.");
+#endif
+                }
                 switch (smtSolverType) {
                     case storm::solver::SmtSolverType::Z3: return std::unique_ptr<storm::solver::SmtSolver>(new storm::solver::Z3SmtSolver(manager));
                     case storm::solver::SmtSolverType::Mathsat: return std::unique_ptr<storm::solver::SmtSolver>(new storm::solver::MathsatSmtSolver(manager));
@@ -102,7 +118,7 @@ namespace storm {
             }
             
             std::unique_ptr<storm::solver::SmtSolver> getSmtSolver(storm::expressions::ExpressionManager& manager) {
-                std::unique_ptr<storm::utility::solver::SmtSolverFactory> factory(new MathsatSmtSolverFactory());
+                std::unique_ptr<storm::utility::solver::SmtSolverFactory> factory(new SmtSolverFactory());
                 return factory->create(manager);
             }
             

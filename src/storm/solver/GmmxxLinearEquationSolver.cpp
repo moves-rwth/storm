@@ -65,7 +65,11 @@ namespace storm {
                 }
                 
                 // Prepare an iteration object that determines the accuracy and the maximum number of iterations.
-                gmm::iteration iter(storm::utility::convertNumber<ValueType>(env.solver().gmmxx().getPrecision()), 0, env.solver().gmmxx().getMaximalNumberOfIterations());
+                gmm::size_type maxIter = std::numeric_limits<gmm::size_type>::max();
+                if (env.solver().gmmxx().getMaximalNumberOfIterations() < static_cast<uint64_t>(maxIter)) {
+                    maxIter = env.solver().gmmxx().getMaximalNumberOfIterations();
+                }
+                gmm::iteration iter(storm::utility::convertNumber<ValueType>(env.solver().gmmxx().getPrecision()), 0, maxIter);
                 
                 // Invoke gmm with the corresponding settings
                 if (method == GmmxxLinearEquationSolverMethod::Bicgstab) {
@@ -103,10 +107,10 @@ namespace storm {
                 
                 // Check if the solver converged and issue a warning otherwise.
                 if (iter.converged()) {
-                    STORM_LOG_INFO("Iterative solver converged after " << iter.get_iteration() << " iterations.");
+                    STORM_LOG_INFO("Iterative solver converged after " << iter.get_iteration() << " iteration(s).");
                     return true;
                 } else {
-                    STORM_LOG_WARN("Iterative solver did not converge.");
+                    STORM_LOG_WARN("Iterative solver did not converge within " << iter.get_iteration() << " iteration(s).");
                     return false;
                 }
             }

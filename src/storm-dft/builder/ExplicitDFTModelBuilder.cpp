@@ -7,6 +7,7 @@
 #include "storm/utility/constants.h"
 #include "storm/utility/vector.h"
 #include "storm/utility/bitoperations.h"
+#include "storm/utility/ProgressMeasurement.h"
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/logic/AtomicLabelFormula.h"
@@ -58,10 +59,10 @@ namespace storm {
                 usedHeuristic(storm::settings::getModule<storm::settings::modules::FaultTreeSettings>().getApproximationHeuristic()),
                 generator(dft, *stateGenerationInfo, enableDC, mergeFailedStates),
                 matrixBuilder(!generator.isDeterministicModel()),
-                stateStorage(((dft.stateVectorSize() / 64) + 1) * 64),
+                stateStorage(dft.stateBitVectorSize()),
                 // TODO Matthias: make choosable
                 //explorationQueue(dft.nrElements()+1, 0, 1)
-                explorationQueue(200, 0, 0.9)
+                explorationQueue(200, 0, 0.9, false)
         {
             // Intentionally left empty.
             // TODO Matthias: remove again
@@ -319,6 +320,8 @@ namespace storm {
         void ExplicitDFTModelBuilder<ValueType, StateType>::exploreStateSpace(double approximationThreshold) {
             size_t nrExpandedStates = 0;
             size_t nrSkippedStates = 0;
+            storm::utility::ProgressMeasurement progress("explored states");
+            progress.startNewMeasurement(0);
             // TODO Matthias: do not empty queue every time but break before
             while (!explorationQueue.empty()) {
                 // Get the first state in the queue
@@ -384,7 +387,7 @@ namespace storm {
                                     // Initialize heuristic values
                                     ExplorationHeuristicPointer heuristic = std::make_shared<ExplorationHeuristic>(stateProbabilityPair.first, *currentExplorationHeuristic, stateProbabilityPair.second, choice.getTotalMass());
                                     iter->second.second = heuristic;
-                                    if (state->hasFailed(dft.getTopLevelIndex()) || state->isFailsafe(dft.getTopLevelIndex()) || state->nrFailableDependencies() > 0 || (state->nrFailableDependencies() == 0 && state->nrFailableBEs() == 0)) {
+                                    if (state->hasFailed(dft.getTopLevelIndex()) || state->isFailsafe(dft.getTopLevelIndex()) || state->getFailableElements().hasDependencies() || (!state->getFailableElements().hasDependencies() && state->getFailableElements().hasBEs())) {
                                         // Do not skip absorbing state or if reached by dependencies
                                         iter->second.second->markExpand();
                                     }
@@ -415,6 +418,10 @@ namespace storm {
                         }
                         matrixBuilder.finishRow();
                     }
+                }
+                // Output number of currently explored states
+                if (nrExpandedStates % 100 == 0) {
+                    progress.updateProgress(nrExpandedStates);
                 }
             } // end exploration
 
@@ -635,8 +642,8 @@ namespace storm {
         ValueType ExplicitDFTModelBuilder<ValueType, StateType>::getLowerBound(DFTStatePointer const& state) const {
             // Get the lower bound by considering the failure of all possible BEs
             ValueType lowerBound = storm::utility::zero<ValueType>();
-            for (size_t index = 0; index < state->nrFailableBEs(); ++index) {
-                lowerBound += state->getFailableBERate(index);
+            for (state->getFailableElements().init(false); !state->getFailableElements().isEnd(); state->getFailableElements().next()) {
+                lowerBound += state->getBERate(state->getFailableElements().get());
             }
             return lowerBound;
         }

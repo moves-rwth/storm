@@ -13,7 +13,6 @@
 namespace storm {
     namespace api {
 
-        
         std::vector<storm::jani::Property> substituteConstantsInProperties(std::vector<storm::jani::Property> const& properties, std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {
             std::vector<storm::jani::Property> preprocessedProperties;
             for (auto const& property : properties) {
@@ -58,5 +57,6 @@ namespace storm {
             }
             return formulas;
         }
+        
     }
 }

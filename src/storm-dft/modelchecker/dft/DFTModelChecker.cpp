@@ -110,7 +110,7 @@ namespace storm {
                         int limK = invResults ? -1 : nrM+1;
                         int chK = invResults ? -1 : 1;
                         // WARNING: there is a bug for computing permutations with more than 32 elements
-                        STORM_LOG_ASSERT(res.size() < 32, "Permutations work only for < 32 elements");
+                        STORM_LOG_THROW(res.size() < 32, storm::exceptions::NotSupportedException, "Permutations work only for < 32 elements");
                         for(int cK = nrK; cK != limK; cK += chK ) {
                             STORM_LOG_ASSERT(cK >= 0, "ck negative.");
                             size_t permutation = smallestIntWithNBitsSet(static_cast<size_t>(cK));
@@ -342,22 +342,30 @@ namespace storm {
                 return results;
             } else {
                 // Build a single Markov Automaton
+                auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
                 STORM_LOG_DEBUG("Building Model...");
                 storm::builder::ExplicitDFTModelBuilder<ValueType> builder(dft, symmetries, enableDC);
-                typename storm::builder::ExplicitDFTModelBuilder<ValueType>::LabelOptions labeloptions(properties, storm::settings::getModule<storm::settings::modules::IOSettings>().isExportExplicitSet());
+                typename storm::builder::ExplicitDFTModelBuilder<ValueType>::LabelOptions labeloptions(properties, ioSettings.isExportExplicitSet() || ioSettings.isExportDotSet());
                 builder.buildModel(labeloptions, 0, 0.0);
                 std::shared_ptr<storm::models::sparse::Model<ValueType>> model = builder.getModel();
-                //model->printModelInformationToStream(std::cout);
                 explorationTimer.stop();
+
+                // Print model information
+                if (printInfo) {
+                    model->printModelInformationToStream(std::cout);
+                }
 
                 // Export the model if required
                 // TODO move this outside of the model checker?
-                if (storm::settings::getModule<storm::settings::modules::IOSettings>().isExportExplicitSet()) {
-                    std::ofstream stream;
-                    storm::utility::openFile(storm::settings::getModule<storm::settings::modules::IOSettings>().getExportExplicitFilename(), stream);
+                if (ioSettings.isExportExplicitSet()) {
                     std::vector<std::string> parameterNames;
                     // TODO fill parameter names
-                    storm::exporter::explicitExportSparseModel(stream, model, parameterNames);
+                    storm::api::exportSparseModelAsDrn(model, ioSettings.getExportExplicitFilename(), parameterNames);
+                }
+                if (ioSettings.isExportDotSet()) {
+                    std::ofstream stream;
+                    storm::utility::openFile(ioSettings.getExportDotFilename(), stream);
+                    model->writeDotToStream(stream, true, true);
                     storm::utility::closeFile(stream);
                 }
 

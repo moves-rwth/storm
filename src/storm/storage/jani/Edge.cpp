@@ -1,6 +1,7 @@
 #include "storm/storage/jani/Edge.h"
 
 #include "storm/storage/jani/Model.h"
+#include "storm/storage/jani/expressions/JaniExpressionSubstitutionVisitor.h"
 
 #include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidArgumentException.h"
@@ -66,6 +67,10 @@ namespace storm {
             return destinations;
         }
         
+        std::vector<EdgeDestination>& Edge::getDestinations() {
+            return destinations;
+        }
+        
         std::size_t Edge::getNumberOfDestinations() const {
             return destinations.size();
         }
@@ -76,7 +81,7 @@ namespace storm {
         
         void Edge::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {
             if (this->hasRate()) {
-                this->setRate(this->getRate().substitute(substitution));
+                this->setRate(substituteJaniExpression(this->getRate(), substitution));
             }
             for (auto& destination : destinations) {
                 destination.substitute(substitution);
@@ -85,6 +90,14 @@ namespace storm {
                 
         bool Edge::hasSilentAction() const {
             return actionIndex == Model::SILENT_ACTION_INDEX;
+        }
+
+        uint64_t Edge::getColor() const {
+            return this->color;
+        }
+
+        void Edge::setColor(uint64_t newColor) {
+            this->color = newColor;
         }
         
         boost::container::flat_set<storm::expressions::Variable> const& Edge::getWrittenGlobalVariables() const {
@@ -99,8 +112,8 @@ namespace storm {
             return templateEdge->hasTransientEdgeDestinationAssignments();
         }
         
-        bool Edge::usesAssignmentLevels() const {
-            return templateEdge->usesAssignmentLevels();
+        bool Edge::usesAssignmentLevels(bool onlyTransient) const {
+            return templateEdge->usesAssignmentLevels(onlyTransient);
         }
 
         void Edge::simplifyIndexedAssignments(VariableSet const& localVars) {
@@ -116,6 +129,14 @@ namespace storm {
             }
         }
 
+        int64_t const& Edge::getLowestAssignmentLevel() const {
+            return templateEdge->getLowestAssignmentLevel();
+        }
+
+        int64_t const& Edge::getHighestAssignmentLevel() const {
+            return templateEdge->getHighestAssignmentLevel();
+        }
+        
         void Edge::setTemplateEdge(std::shared_ptr<TemplateEdge> const& newTe) {
             templateEdge = newTe;
             uint64_t i = 0;
@@ -130,10 +151,46 @@ namespace storm {
             destinations = newdestinations;
         }
 
+        std::string Edge::toString() const {
+            std::stringstream ss;
+            ss << *this;
+            return ss.str();
+        }
+
         std::shared_ptr<TemplateEdge> const& Edge::getTemplateEdge() {
             return templateEdge;
         }
 
-
+        std::ostream& operator<<(std::ostream& stream, Edge const& edge) {
+            stream << "[" << (edge.hasSilentAction() ? "" : ("action_id: " + std::to_string(edge.getActionIndex()))) << "]";
+            stream << "guard: '" << edge.getGuard() << "'\t from_location_id: " << edge.getSourceLocationIndex();
+            if (edge.hasRate()) {
+                stream << " with rate '" << edge.getRate() << "'";
+            }
+            if (edge.getDestinations().empty()) {
+                stream << "without any destination";
+            } else {
+                stream << " to ... [" << std::endl;
+                for (auto const& dest : edge.getDestinations()) {
+                    stream << "\tlocation_id: " << dest.getLocationIndex() << " with probability '" << dest.getProbability() << "' and updates: ";
+                    if (dest.getOrderedAssignments().empty()) {
+                        stream << "none" << std::endl;
+                    }
+                    bool first = true;
+                    for (auto const& a : dest.getOrderedAssignments()) {
+                        if (first) {
+                            first = false;
+                            stream << a;
+                        }
+                        stream << ",  " << a;
+                    }
+                }
+                stream << "]";
+            }
+            if (edge.getColor() != 0) {
+                stream << " color: " << edge.getColor();
+            }
+            return stream;
+        }
     }
 }

@@ -45,15 +45,38 @@ namespace storm {
             /*!
              * Parse basic element and add it to builder.
              *
-             * @param tokens Tokens defining the basic element.
+             * @param name Name of BE.
+             * @param input Input line.
+             * @param lineNo Line number.
              * @param builder DFTBuilder.
              * @param valueParser ValueParser.
              *
              * @return True iff the parsing and creation was successful.
              */
-            static bool parseBasicElement(std::vector<std::string> const& tokens, storm::builder::DFTBuilder<ValueType>& builder, ValueParser<ValueType>& valueParser);
+            static bool parseBasicElement(std::string const& name, std::string const& input, size_t lineNo, storm::builder::DFTBuilder<ValueType>& builder, ValueParser<ValueType>& valueParser);
 
-            enum Distribution { None, Constant, Exponential, Weibull, LogNormal };
+            /*!
+             * Parse argument of basic element of the form "name=value".
+             *
+             * @param name Name of BE.
+             * @param input Input line. The parsed argument will be removed from the line.
+             * @param valueParser ValueParser.
+             *
+             * @return Pair (success, value). Success is true iff the parsing was succesful. Then value contains the parsed value.
+             */
+            static std::pair<bool, ValueType> parseValue(std::string name, std::string& line, ValueParser<ValueType>& valueParser);
+
+            /*!
+             * Parse argument of basic element of type number: "name=number".
+             *
+             * @param name Name of BE.
+             * @param input Input line. The parsed argument will be removed from the line.
+             *
+             * @return Pair (success, value). Success is true iff the parsing was succesful. Then value contains the parsed value.
+             */
+            static std::pair<bool, unsigned> parseNumber(std::string name, std::string& line);
+
+            enum Distribution { None, Constant, Exponential, Erlang, Weibull, LogNormal };
         };
     }
 }

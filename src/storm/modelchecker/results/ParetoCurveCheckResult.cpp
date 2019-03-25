@@ -32,25 +32,37 @@ namespace storm {
         }
         
         template<typename ValueType>
+        bool ParetoCurveCheckResult<ValueType>::hasUnderApproximation() const {
+            return bool(underApproximation);
+        }
+        
+        template<typename ValueType>
+        bool ParetoCurveCheckResult<ValueType>::hasOverApproximation() const {
+            return bool(overApproximation);
+        }
+        
+        template<typename ValueType>
         typename ParetoCurveCheckResult<ValueType>::polytope_type const& ParetoCurveCheckResult<ValueType>::getUnderApproximation() const {
+            STORM_LOG_ASSERT(hasUnderApproximation(), "Requested under approx. of Pareto curve although it does not exist.");
             return underApproximation;
         }
         
         template<typename ValueType>
         typename ParetoCurveCheckResult<ValueType>::polytope_type const& ParetoCurveCheckResult<ValueType>::getOverApproximation() const {
+            STORM_LOG_ASSERT(hasUnderApproximation(), "Requested over approx. of Pareto curve although it does not exist.");
             return overApproximation;
         }
         
         template<typename ValueType>
         std::ostream& ParetoCurveCheckResult<ValueType>::writeToStream(std::ostream& out) const {
             out << std::endl;
-            if (underApproximation) {
+            if (hasUnderApproximation()) {
                 out << "Underapproximation of achievable values: " << underApproximation->toString() << std::endl;
             }
-            if (overApproximation) {
+            if (hasOverApproximation()) {
                 out << "Overapproximation of achievable values: " << overApproximation->toString() << std::endl;
             }
-            out << points.size() << " pareto optimal points found:" << std::endl;
+            out << points.size() << " Pareto optimal points found:" << std::endl;
             for(auto const& p : points) {
                 out << "   (";
                 for(auto it = p.begin(); it != p.end(); ++it){

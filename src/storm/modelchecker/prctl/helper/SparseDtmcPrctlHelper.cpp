@@ -81,75 +81,6 @@ namespace storm {
                 return result;
             }
             
-            template<typename ValueType>
-            std::vector<ValueType> analyzeTrivialDtmcEpochModel(typename rewardbounded::MultiDimensionalRewardUnfolding<ValueType, true>::EpochModel& epochModel) {
-                
-                std::vector<ValueType> epochResult;
-                epochResult.reserve(epochModel.epochInStates.getNumberOfSetBits());
-                auto stepSolutionIt = epochModel.stepSolutions.begin();
-                auto stepChoiceIt = epochModel.stepChoices.begin();
-                for (auto const& state : epochModel.epochInStates) {
-                    while (*stepChoiceIt < state) {
-                        ++stepChoiceIt;
-                        ++stepSolutionIt;
-                    }
-                    if (epochModel.objectiveRewardFilter.front().get(state)) {
-                        if (*stepChoiceIt == state) {
-                            epochResult.push_back(epochModel.objectiveRewards.front()[state] + *stepSolutionIt);
-                        } else {
-                            epochResult.push_back(epochModel.objectiveRewards.front()[state]);
-                        }
-                    } else {
-                        if (*stepChoiceIt == state) {
-                            epochResult.push_back(*stepSolutionIt);
-                        } else {
-                            epochResult.push_back(storm::utility::zero<ValueType>());
-                        }
-                    }
-                }
-                return epochResult;
-            }
-            
-            template<typename ValueType>
-            std::vector<ValueType> analyzeNonTrivialDtmcEpochModel(Environment const& env, typename rewardbounded::MultiDimensionalRewardUnfolding<ValueType, true>::EpochModel& epochModel, std::vector<ValueType>& x, std::vector<ValueType>& b, std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>>& linEqSolver, boost::optional<ValueType> const& lowerBound, boost::optional<ValueType> const& upperBound) {
- 
-                // Update some data for the case that the Matrix has changed
-                if (epochModel.epochMatrixChanged) {
-                    x.assign(epochModel.epochMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
-                    storm::solver::GeneralLinearEquationSolverFactory<ValueType> linearEquationSolverFactory;
-                    linEqSolver = linearEquationSolverFactory.create(env, epochModel.epochMatrix);
-                    linEqSolver->setCachingEnabled(true);
-                    auto req = linEqSolver->getRequirements(env);
-                    if (lowerBound) {
-                        linEqSolver->setLowerBound(lowerBound.get());
-                        req.clearLowerBounds();
-                    }
-                    if (upperBound) {
-                        linEqSolver->setUpperBound(upperBound.get());
-                        req.clearUpperBounds();
-                    }
-                    STORM_LOG_THROW(!req.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + req.getEnabledRequirementsAsString() + " not checked.");
-                }
-                
-                // Prepare the right hand side of the equation system
-                b.assign(epochModel.epochMatrix.getRowCount(), storm::utility::zero<ValueType>());
-                std::vector<ValueType> const& objectiveValues = epochModel.objectiveRewards.front();
-                for (auto const& choice : epochModel.objectiveRewardFilter.front()) {
-                    b[choice] = objectiveValues[choice];
-                }
-                auto stepSolutionIt = epochModel.stepSolutions.begin();
-                for (auto const& choice : epochModel.stepChoices) {
-                    b[choice] += *stepSolutionIt;
-                    ++stepSolutionIt;
-                }
-                assert(stepSolutionIt == epochModel.stepSolutions.end());
-                
-                // Solve the minMax equation system
-                linEqSolver->solveEquations(env, x, b);
-                
-                return storm::utility::vector::filterVector(x, epochModel.epochInStates);
-            }
-            
             template<>
             std::map<storm::storage::sparse::state_type, storm::RationalFunction> SparseDtmcPrctlHelper<storm::RationalFunction>::computeRewardBoundedValues(Environment const& env, storm::models::sparse::Dtmc<storm::RationalFunction> const& model, std::shared_ptr<storm::logic::OperatorFormula const> rewardBoundedFormula) {
                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The specified property is not supported by this value type.");
@@ -184,8 +115,7 @@ namespace storm {
                 // Set the correct equation problem format.
                 storm::solver::GeneralLinearEquationSolverFactory<ValueType> linearEquationSolverFactory;
                 rewardUnfolding.setEquationSystemFormatForEpochModel(linearEquationSolverFactory.getEquationProblemFormat(preciseEnv));
-                bool convertToEquationSystem = linearEquationSolverFactory.getEquationProblemFormat(preciseEnv) == solver::LinearEquationSolverProblemFormat::EquationSystem;
-                
+
                 storm::utility::ProgressMeasurement progress("epochs");
                 progress.setMaxCount(epochOrder.size());
                 progress.startNewMeasurement(0);
@@ -194,17 +124,12 @@ namespace storm {
                     swBuild.start();
                     auto& epochModel = rewardUnfolding.setCurrentEpoch(epoch);
                     swBuild.stop(); swCheck.start();
-                    // If the epoch matrix is empty we do not need to solve a linear equation system
-                    if ((convertToEquationSystem && epochModel.epochMatrix.isIdentityMatrix()) || (!convertToEquationSystem && epochModel.epochMatrix.getEntryCount() == 0)) {
-                        rewardUnfolding.setSolutionForCurrentEpoch(analyzeTrivialDtmcEpochModel<ValueType>(epochModel));
-                    } else {
-                        rewardUnfolding.setSolutionForCurrentEpoch(analyzeNonTrivialDtmcEpochModel<ValueType>(preciseEnv, epochModel, x, b, linEqSolver, lowerBound, upperBound));
-                    }
+                    rewardUnfolding.setSolutionForCurrentEpoch(epochModel.analyzeSingleObjective(preciseEnv, x, b, linEqSolver, lowerBound, upperBound));
                     swCheck.stop();
                     if (storm::settings::getModule<storm::settings::modules::IOSettings>().isExportCdfSet() && !rewardUnfolding.getEpochManager().hasBottomDimension(epoch)) {
                         std::vector<ValueType> cdfEntry;
                         for (uint64_t i = 0; i < rewardUnfolding.getEpochManager().getDimensionCount(); ++i) {
-                            uint64_t offset = rewardUnfolding.getDimension(i).isUpperBounded ? 0 : 1;
+                            uint64_t offset = rewardUnfolding.getDimension(i).boundType == helper::rewardbounded::DimensionBoundType::LowerBound ? 1 : 0;
                             cdfEntry.push_back(storm::utility::convertNumber<ValueType>(rewardUnfolding.getEpochManager().getDimensionOfEpoch(epoch, i) + offset) * rewardUnfolding.getDimension(i).scalingFactor);
                         }
                         cdfEntry.push_back(rewardUnfolding.getInitialStateResult(epoch));
@@ -422,6 +347,21 @@ namespace storm {
                                                   },
                                                   hint);
             }
+            
+            template<typename ValueType, typename RewardModelType>
+            std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeReachabilityTimes(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& targetStates, bool qualitative, ModelCheckerHint const& hint) {
+                
+                return computeReachabilityRewards(env, std::move(goal), transitionMatrix, backwardTransitions,
+                                                  [&] (uint_fast64_t numberOfRows, storm::storage::SparseMatrix<ValueType> const&, storm::storage::BitVector const&) {
+                                                      return std::vector<ValueType>(numberOfRows, storm::utility::one<ValueType>());
+                                                  },
+                                                  targetStates, qualitative,
+                                                  [&] () {
+                                                      return storm::storage::BitVector(transitionMatrix.getRowGroupCount(), false);
+                                                  },
+                                                  hint);
+            }
+
             
             // This function computes an upper bound on the reachability rewards (see Baier et al, CAV'17).
             template<typename ValueType>

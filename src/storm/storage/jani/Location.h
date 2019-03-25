@@ -18,7 +18,8 @@ namespace storm {
              * Creates a new location.
              */
             Location(std::string const& name, std::vector<Assignment> const& transientAssignments = {});
-            
+
+            Location(std::string const& name, OrderedAssignments const& assignments);
             /*!
              * Retrieves the name of the location.
              */
@@ -30,10 +31,31 @@ namespace storm {
             OrderedAssignments const& getAssignments() const;
             
             /*!
+             * Retrieves the assignments of this location.
+             */
+            OrderedAssignments& getAssignments();
+            
+            /*!
              * Adds the given transient assignment to this location.
              */
             void addTransientAssignment(storm::jani::Assignment const& assignment);
   
+            /*!
+             * Retrieves whether a time progress invariant is attached to this location
+             */
+            bool hasTimeProgressInvariant() const;
+            
+            /*!
+             * Retrieves the time progress invariant
+             */
+            storm::expressions::Expression const& getTimeProgressInvariant() const;
+            
+            /*!
+             * Sets the time progress invariant of this location
+             * @param expression the location invariant (type bool)
+             */
+            void setTimeProgressInvariant(storm::expressions::Expression const& expression);
+            
             /*!
              * Substitutes all variables in all expressions according to the given substitution.
              */
@@ -60,6 +82,9 @@ namespace storm {
             
             /// The transient assignments made in this location.
             OrderedAssignments assignments;
+            
+            // The location's time progress condition
+            storm::expressions::Expression timeProgressInvariant;
         };
         
     }

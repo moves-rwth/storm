@@ -23,11 +23,11 @@ namespace storm {
             const std::string MinMaxEquationSolverSettings::intervalIterationSymmetricUpdatesOptionName = "symmetricupdates";
 
             MinMaxEquationSolverSettings::MinMaxEquationSolverSettings() : ModuleSettings(moduleName) {
-                std::vector<std::string> minMaxSolvingTechniques = {"vi", "value-iteration", "pi", "policy-iteration", "lp", "linear-programming", "rs", "ratsearch", "ii", "interval-iteration", "svi", "sound-value-iteration", "topological"};
+                std::vector<std::string> minMaxSolvingTechniques = {"vi", "value-iteration", "pi", "policy-iteration", "lp", "linear-programming", "rs", "ratsearch", "ii", "interval-iteration", "svi", "sound-value-iteration", "topological", "vi-to-pi"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, solvingMethodOptionName, false, "Sets which min/max linear equation solving technique is preferred.")
-                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of a min/max linear equation solving technique.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(minMaxSolvingTechniques)).setDefaultValueString("vi").build()).build());
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of a min/max linear equation solving technique.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(minMaxSolvingTechniques)).setDefaultValueString("topological").build()).build());
                 
-                this->addOption(storm::settings::OptionBuilder(moduleName, maximalIterationsOptionName, false, "The maximal number of iterations to perform before iterative solving is aborted.").setShortName(maximalIterationsOptionShortName).addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("count", "The maximal iteration count.").setDefaultValueUnsignedInteger(20000).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, maximalIterationsOptionName, false, "The maximal number of iterations to perform before iterative solving is aborted.").setShortName(maximalIterationsOptionShortName).addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("count", "The maximal iteration count.").build()).build());
                 
                 this->addOption(storm::settings::OptionBuilder(moduleName, precisionOptionName, false, "The precision used for detecting convergence of iterative methods.").addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to achieve.").setDefaultValueDouble(1e-06).addValidatorDouble(ArgumentValidatorFactory::createDoubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
 
@@ -38,7 +38,7 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of a long run average computation method.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(lraMethods)).setDefaultValueString("vi").build()).build());
 
                 std::vector<std::string> maMethods = {"imca", "unifplus"};
-                this->addOption(storm::settings::OptionBuilder(moduleName, markovAutomatonBoundedReachabilityMethodOptionName, true, "The method to use to solve bounded reachability queries on MAs.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the method to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(maMethods)).setDefaultValueString("unifplus").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, markovAutomatonBoundedReachabilityMethodOptionName, false, "The method to use to solve bounded reachability queries on MAs.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the method to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(maMethods)).setDefaultValueString("unifplus").build()).build());
                 
                 std::vector<std::string> multiplicationStyles = {"gaussseidel", "regular", "gs", "r"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, valueIterationMultiplicationStyleOptionName, false, "Sets which method multiplication style to prefer for value iteration.")
@@ -64,6 +64,8 @@ namespace storm {
                     return storm::solver::MinMaxMethod::SoundValueIteration;
                 } else if (minMaxEquationSolvingTechnique == "topological") {
                     return storm::solver::MinMaxMethod::Topological;
+                } else if (minMaxEquationSolvingTechnique == "vi-to-pi") {
+                    return storm::solver::MinMaxMethod::ViToPi;
                 }
                 
                 STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown min/max equation solving technique '" << minMaxEquationSolvingTechnique << "'.");
@@ -109,6 +111,10 @@ namespace storm {
                     return storm::solver::LraMethod::LinearProgramming;
                 }
                 STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown lra solving technique '" << lraMethodString << "'.");
+            }
+            
+            bool MinMaxEquationSolverSettings::isLraMethodSetFromDefaultValue() const {
+                return !this->getOption(lraMethodOptionName).getArgumentByName("name").getHasBeenSet() || this->getOption(lraMethodOptionName).getArgumentByName("name").wasSetFromDefaultValue();
             }
             
             MinMaxEquationSolverSettings::MarkovAutomatonBoundedReachabilityMethod MinMaxEquationSolverSettings::getMarkovAutomatonBoundedReachabilityMethod() const {

@@ -15,7 +15,7 @@ namespace storm {
             /*!
              * Creates a constant.
              */
-            Constant(std::string const& name, storm::expressions::Variable const& variable, boost::optional<storm::expressions::Expression> const& expression = boost::none);
+            Constant(std::string const& name, storm::expressions::Variable const& variable, storm::expressions::Expression const& definingExpression = storm::expressions::Expression(), storm::expressions::Expression const& constraintExpression = storm::expressions::Expression());
             
             /*!
              * Retrieves the name of the constant.
@@ -29,6 +29,7 @@ namespace storm {
             
             /*!
              * Defines the constant with the given expression.
+             * If a constraintExpression is set, it is checked whether the constant definition satisfies the given constraint.
              */
             void define(storm::expressions::Expression const& expression);
             
@@ -62,6 +63,21 @@ namespace storm {
              */
             storm::expressions::Expression const& getExpression() const;
             
+            /*!
+             * Retrieves whether there is a constraint for the possible values of this constant
+             */
+             bool hasConstraint() const;
+             
+             /*!
+              * Retrieves the expression that constraints the possible values of this constant (if any).
+              */
+            storm::expressions::Expression const& getConstraintExpression() const;
+             
+             /*!
+              * Sets a constraint expression. An exception is thrown if this constant is defined and the definition violates the given constraint.
+              */
+             void setConstraintExpression(storm::expressions::Expression const& expression);
+            
         private:
             // The name of the constant.
             std::string name;
@@ -70,7 +86,10 @@ namespace storm {
             storm::expressions::Variable variable;
 
             // The expression defining the constant (if any).
-            boost::optional<storm::expressions::Expression> expression;
+            storm::expressions::Expression definingExpression;
+
+            // The expression constraining possible values of the constant (if any).
+            storm::expressions::Expression constraintExpression;
         };
         
     }

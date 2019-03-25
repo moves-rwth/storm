@@ -4,6 +4,7 @@
 #include "test/storm_gtest.h"
 
 #include "storm/api/builder.h"
+#include "storm-conv/api/storm-conv.h"
 #include "storm-parsers/api/model_descriptions.h"
 #include "storm/api/properties.h"
 #include "storm-parsers/api/properties.h"
@@ -27,10 +28,13 @@
 #include "storm/exceptions/UncheckedRequirementException.h"
 
 namespace {
+    
+    enum class MdpEngine {PrismSparse, JaniSparse, JitSparse, Hybrid, PrismDd, JaniDd};
+
     class SparseDoubleValueIterationEnvironment {
     public:
         static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan; // Unused for sparse models
-        static const storm::settings::modules::CoreSettings::Engine engine = storm::settings::modules::CoreSettings::Engine::Sparse;
+        static const MdpEngine engine = MdpEngine::PrismSparse;
         static const bool isExact = false;
         typedef double ValueType;
         typedef storm::models::sparse::Mdp<ValueType> ModelType;
@@ -41,10 +45,41 @@ namespace {
             return env;
         }
     };
+
+    class JaniSparseDoubleValueIterationEnvironment {
+    public:
+        static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan; // Unused for sparse models
+        static const MdpEngine engine = MdpEngine::JaniSparse;
+        static const bool isExact = false;
+        typedef double ValueType;
+        typedef storm::models::sparse::Mdp<ValueType> ModelType;
+        static storm::Environment createEnvironment() {
+            storm::Environment env;
+            env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
+            env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-10));
+            return env;
+        }
+    };
+
+    class JitSparseDoubleValueIterationEnvironment {
+    public:
+        static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan; // Unused for sparse models
+        static const MdpEngine engine = MdpEngine::JitSparse;
+        static const bool isExact = false;
+        typedef double ValueType;
+        typedef storm::models::sparse::Mdp<ValueType> ModelType;
+        static storm::Environment createEnvironment() {
+            storm::Environment env;
+            env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
+            env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-10));
+            return env;
+        }
+    };
+    
     class SparseDoubleIntervalIterationEnvironment {
     public:
         static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan; // Unused for sparse models
-        static const storm::settings::modules::CoreSettings::Engine engine = storm::settings::modules::CoreSettings::Engine::Sparse;
+        static const MdpEngine engine = MdpEngine::PrismSparse;
         static const bool isExact = false;
         typedef double ValueType;
         typedef storm::models::sparse::Mdp<ValueType> ModelType;
@@ -60,7 +95,7 @@ namespace {
     class SparseDoubleSoundValueIterationEnvironment {
     public:
         static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan; // Unused for sparse models
-        static const storm::settings::modules::CoreSettings::Engine engine = storm::settings::modules::CoreSettings::Engine::Sparse;
+        static const MdpEngine engine = MdpEngine::PrismSparse;
         static const bool isExact = false;
         typedef double ValueType;
         typedef storm::models::sparse::Mdp<ValueType> ModelType;
@@ -77,7 +112,7 @@ namespace {
     class SparseDoubleTopologicalValueIterationEnvironment {
     public:
         static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan; // Unused for sparse models
-        static const storm::settings::modules::CoreSettings::Engine engine = storm::settings::modules::CoreSettings::Engine::Sparse;
+        static const MdpEngine engine = MdpEngine::PrismSparse;
         static const bool isExact = false;
         typedef double ValueType;
         typedef storm::models::sparse::Mdp<ValueType> ModelType;
@@ -94,7 +129,7 @@ namespace {
     class SparseDoubleTopologicalSoundValueIterationEnvironment {
     public:
         static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan; // Unused for sparse models
-        static const storm::settings::modules::CoreSettings::Engine engine = storm::settings::modules::CoreSettings::Engine::Sparse;
+        static const MdpEngine engine = MdpEngine::PrismSparse;
         static const bool isExact = false;
         typedef double ValueType;
         typedef storm::models::sparse::Mdp<ValueType> ModelType;
@@ -112,7 +147,7 @@ namespace {
     class SparseRationalPolicyIterationEnvironment {
     public:
         static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan; // Unused for sparse models
-        static const storm::settings::modules::CoreSettings::Engine engine = storm::settings::modules::CoreSettings::Engine::Sparse;
+        static const MdpEngine engine = MdpEngine::PrismSparse;
         static const bool isExact = true;
         typedef storm::RationalNumber ValueType;
         typedef storm::models::sparse::Mdp<ValueType> ModelType;
@@ -122,10 +157,25 @@ namespace {
             return env;
         }
     };
+    
+    class SparseRationalViToPiEnvironment {
+    public:
+        static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan; // Unused for sparse models
+        static const MdpEngine engine = MdpEngine::PrismSparse;
+        static const bool isExact = true;
+        typedef storm::RationalNumber ValueType;
+        typedef storm::models::sparse::Mdp<ValueType> ModelType;
+        static storm::Environment createEnvironment() {
+            storm::Environment env;
+            env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ViToPi);
+            return env;
+        }
+    };
+    
     class SparseRationalRationalSearchEnvironment {
     public:
         static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan; // Unused for sparse models
-        static const storm::settings::modules::CoreSettings::Engine engine = storm::settings::modules::CoreSettings::Engine::Sparse;
+        static const MdpEngine engine = MdpEngine::PrismSparse;
         static const bool isExact = true;
         typedef storm::RationalNumber ValueType;
         typedef storm::models::sparse::Mdp<ValueType> ModelType;
@@ -138,7 +188,7 @@ namespace {
     class HybridCuddDoubleValueIterationEnvironment {
     public:
         static const storm::dd::DdType ddType = storm::dd::DdType::CUDD;
-        static const storm::settings::modules::CoreSettings::Engine engine = storm::settings::modules::CoreSettings::Engine::Hybrid;
+        static const MdpEngine engine = MdpEngine::Hybrid;
         static const bool isExact = false;
         typedef double ValueType;
         typedef storm::models::symbolic::Mdp<ddType, ValueType> ModelType;
@@ -152,7 +202,7 @@ namespace {
     class HybridSylvanDoubleValueIterationEnvironment {
     public:
         static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan;
-        static const storm::settings::modules::CoreSettings::Engine engine = storm::settings::modules::CoreSettings::Engine::Hybrid;
+        static const MdpEngine engine = MdpEngine::Hybrid;
         static const bool isExact = false;
         typedef double ValueType;
         typedef storm::models::symbolic::Mdp<ddType, ValueType> ModelType;
@@ -166,7 +216,7 @@ namespace {
     class HybridCuddDoubleSoundValueIterationEnvironment {
     public:
         static const storm::dd::DdType ddType = storm::dd::DdType::CUDD;
-        static const storm::settings::modules::CoreSettings::Engine engine = storm::settings::modules::CoreSettings::Engine::Hybrid;
+        static const MdpEngine engine = MdpEngine::Hybrid;
         static const bool isExact = false;
         typedef double ValueType;
         typedef storm::models::symbolic::Mdp<ddType, ValueType> ModelType;
@@ -182,7 +232,7 @@ namespace {
     class HybridSylvanRationalPolicyIterationEnvironment {
     public:
         static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan;
-        static const storm::settings::modules::CoreSettings::Engine engine = storm::settings::modules::CoreSettings::Engine::Hybrid;
+        static const MdpEngine engine = MdpEngine::Hybrid;
         static const bool isExact = true;
         typedef storm::RationalNumber ValueType;
         typedef storm::models::symbolic::Mdp<ddType, ValueType> ModelType;
@@ -195,7 +245,21 @@ namespace {
    class DdCuddDoubleValueIterationEnvironment {
     public:
         static const storm::dd::DdType ddType = storm::dd::DdType::CUDD;
-        static const storm::settings::modules::CoreSettings::Engine engine = storm::settings::modules::CoreSettings::Engine::Dd;
+        static const MdpEngine engine = MdpEngine::PrismDd;
+        static const bool isExact = false;
+        typedef double ValueType;
+        typedef storm::models::symbolic::Mdp<ddType, ValueType> ModelType;
+        static storm::Environment createEnvironment() {
+            storm::Environment env;
+            env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
+            env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-10));
+            return env;
+        }
+    };
+   class JaniDdCuddDoubleValueIterationEnvironment {
+    public:
+        static const storm::dd::DdType ddType = storm::dd::DdType::CUDD;
+        static const MdpEngine engine = MdpEngine::JaniDd;
         static const bool isExact = false;
         typedef double ValueType;
         typedef storm::models::symbolic::Mdp<ddType, ValueType> ModelType;
@@ -209,7 +273,7 @@ namespace {
     class DdSylvanDoubleValueIterationEnvironment {
     public:
         static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan;
-        static const storm::settings::modules::CoreSettings::Engine engine = storm::settings::modules::CoreSettings::Engine::Dd;
+        static const MdpEngine engine = MdpEngine::PrismDd;
         static const bool isExact = false;
         typedef double ValueType;
         typedef storm::models::symbolic::Mdp<ddType, ValueType> ModelType;
@@ -223,7 +287,7 @@ namespace {
     class DdCuddDoublePolicyIterationEnvironment {
     public:
         static const storm::dd::DdType ddType = storm::dd::DdType::CUDD;
-        static const storm::settings::modules::CoreSettings::Engine engine = storm::settings::modules::CoreSettings::Engine::Dd;
+        static const MdpEngine engine = MdpEngine::PrismDd;
         static const bool isExact = false;
         typedef double ValueType;
         typedef storm::models::symbolic::Mdp<ddType, ValueType> ModelType;
@@ -237,7 +301,7 @@ namespace {
     class DdSylvanRationalRationalSearchEnvironment {
     public:
         static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan;
-        static const storm::settings::modules::CoreSettings::Engine engine = storm::settings::modules::CoreSettings::Engine::Dd;
+        static const MdpEngine engine = MdpEngine::PrismDd;
         static const bool isExact = true;
         typedef storm::RationalNumber ValueType;
         typedef storm::models::symbolic::Mdp<ddType, ValueType> ModelType;
@@ -268,8 +332,15 @@ namespace {
             std::pair<std::shared_ptr<MT>, std::vector<std::shared_ptr<storm::logic::Formula const>>> result;
             storm::prism::Program program = storm::api::parseProgram(pathToPrismFile);
             program = storm::utility::prism::preprocess(program, constantDefinitionString);
-            result.second = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
-            result.first = storm::api::buildSparseModel<ValueType>(program, result.second)->template as<MT>();
+            if (TestType::engine == MdpEngine::PrismSparse) {
+                result.second = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
+                result.first = storm::api::buildSparseModel<ValueType>(program, result.second)->template as<MT>();
+            } else if (TestType::engine == MdpEngine::JaniSparse || TestType::engine == MdpEngine::JitSparse) {
+                auto janiData = storm::api::convertPrismToJani(program, storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
+                janiData.first.substituteFunctions();
+                result.second = storm::api::extractFormulasFromProperties(janiData.second);
+                result.first = storm::api::buildSparseModel<ValueType>(janiData.first, result.second, TestType::engine == MdpEngine::JitSparse)->template as<MT>();
+            }
             return result;
         }
         
@@ -279,8 +350,15 @@ namespace {
             std::pair<std::shared_ptr<MT>, std::vector<std::shared_ptr<storm::logic::Formula const>>> result;
             storm::prism::Program program = storm::api::parseProgram(pathToPrismFile);
             program = storm::utility::prism::preprocess(program, constantDefinitionString);
-            result.second = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
-            result.first = storm::api::buildSymbolicModel<TestType::ddType, ValueType>(program, result.second)->template as<MT>();
+            if (TestType::engine == MdpEngine::Hybrid || TestType::engine == MdpEngine::PrismDd) {
+                result.second = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
+                result.first = storm::api::buildSymbolicModel<TestType::ddType, ValueType>(program, result.second)->template as<MT>();
+            } else if (TestType::engine == MdpEngine::JaniDd) {
+                auto janiData = storm::api::convertPrismToJani(program, storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
+                janiData.first.substituteFunctions();
+                result.second = storm::api::extractFormulasFromProperties(janiData.second);
+                result.first = storm::api::buildSymbolicModel<TestType::ddType, ValueType>(janiData.first, result.second)->template as<MT>();
+            }
             return result;
         }
         
@@ -295,7 +373,7 @@ namespace {
         template <typename MT = typename TestType::ModelType>
         typename std::enable_if<std::is_same<MT, SparseModelType>::value, std::shared_ptr<storm::modelchecker::AbstractModelChecker<MT>>>::type
         createModelChecker(std::shared_ptr<MT> const& model) const {
-            if (TestType::engine == storm::settings::modules::CoreSettings::Engine::Sparse) {
+            if (TestType::engine == MdpEngine::PrismSparse || TestType::engine == MdpEngine::JaniSparse || TestType::engine == MdpEngine::JitSparse) {
                 return std::make_shared<storm::modelchecker::SparseMdpPrctlModelChecker<SparseModelType>>(*model);
             }
         }
@@ -303,9 +381,9 @@ namespace {
         template <typename MT = typename TestType::ModelType>
         typename std::enable_if<std::is_same<MT, SymbolicModelType>::value, std::shared_ptr<storm::modelchecker::AbstractModelChecker<MT>>>::type
         createModelChecker(std::shared_ptr<MT> const& model) const {
-            if (TestType::engine == storm::settings::modules::CoreSettings::Engine::Hybrid) {
+            if (TestType::engine == MdpEngine::Hybrid) {
                 return std::make_shared<storm::modelchecker::HybridMdpPrctlModelChecker<SymbolicModelType>>(*model);
-            } else if (TestType::engine == storm::settings::modules::CoreSettings::Engine::Dd) {
+            } else if (TestType::engine == MdpEngine::PrismDd || TestType::engine == MdpEngine::JaniDd) {
                 return std::make_shared<storm::modelchecker::SymbolicMdpPrctlModelChecker<SymbolicModelType>>(*model);
             }
         }
@@ -336,17 +414,21 @@ namespace {
   
     typedef ::testing::Types<
             SparseDoubleValueIterationEnvironment,
+            JaniSparseDoubleValueIterationEnvironment,
+            JitSparseDoubleValueIterationEnvironment,
             SparseDoubleIntervalIterationEnvironment,
             SparseDoubleSoundValueIterationEnvironment,
             SparseDoubleTopologicalValueIterationEnvironment,
             SparseDoubleTopologicalSoundValueIterationEnvironment,
             SparseRationalPolicyIterationEnvironment,
+            SparseRationalViToPiEnvironment,
             SparseRationalRationalSearchEnvironment,
             HybridCuddDoubleValueIterationEnvironment,
             HybridSylvanDoubleValueIterationEnvironment,
             HybridCuddDoubleSoundValueIterationEnvironment,
             HybridSylvanRationalPolicyIterationEnvironment,
             DdCuddDoubleValueIterationEnvironment,
+            JaniDdCuddDoubleValueIterationEnvironment,
             DdSylvanDoubleValueIterationEnvironment,
             DdCuddDoublePolicyIterationEnvironment,
             DdSylvanRationalRationalSearchEnvironment
@@ -494,11 +576,32 @@ namespace {
         // This example considers a zero-reward end component that does not reach the target
         // For some methods this requires end-component elimination which is (currently) not supported in the Dd engine
 
-        if (TypeParam::engine == storm::settings::modules::CoreSettings::Engine::Dd && this->env().solver().minMax().getMethod() == storm::solver::MinMaxMethod::RationalSearch) {
+        if (TypeParam::engine == MdpEngine::PrismDd && this->env().solver().minMax().getMethod() == storm::solver::MinMaxMethod::RationalSearch) {
             EXPECT_THROW(checker->check(this->env(), tasks[0]), storm::exceptions::UncheckedRequirementException);
         } else {
             result = checker->check(this->env(), tasks[0]);
             EXPECT_NEAR(this->parseNumber("1"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        }
+    }
+    
+    TYPED_TEST(MdpPrctlModelCheckerTest, Team) {
+        std::string formulasString = "R{\"w_1_total\"}max=? [ C ]";
+        auto modelFormulas = this->buildModelFormulas(STORM_TEST_RESOURCES_DIR "/mdp/multiobj_team3.nm", formulasString);
+        auto model = std::move(modelFormulas.first);
+        auto tasks = this->getTasks(modelFormulas.second);
+        EXPECT_EQ(12475ul, model->getNumberOfStates());
+        EXPECT_EQ(15228ul, model->getNumberOfTransitions());
+        ASSERT_EQ(model->getType(), storm::models::ModelType::Mdp);
+        auto checker = this->createModelChecker(model);
+        std::unique_ptr<storm::modelchecker::CheckResult> result;
+        
+        // This example considers an expected total reward formula, which is not supported in all engines
+
+        if (TypeParam::engine == MdpEngine::PrismSparse || TypeParam::engine == MdpEngine::JaniSparse || TypeParam::engine == MdpEngine::JitSparse) {
+            result = checker->check(this->env(), tasks[0]);
+            EXPECT_NEAR(this->parseNumber("114/49"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        } else {
+            EXPECT_FALSE(checker->canHandle(tasks[0]));
         }
     }
 }

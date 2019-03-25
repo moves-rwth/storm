@@ -48,6 +48,7 @@ namespace storm {
             virtual bool isUnaryBooleanStateFormula() const;
             
             virtual bool isMultiObjectiveFormula() const;
+            virtual bool isQuantileFormula() const;
 
             // Operator formulas.
             virtual bool isOperatorFormula() const;
@@ -108,6 +109,9 @@ namespace storm {
             
             MultiObjectiveFormula& asMultiObjectiveFormula();
             MultiObjectiveFormula const& asMultiObjectiveFormula() const;
+            
+            QuantileFormula& asQuantileFormula();
+            QuantileFormula const& asQuantileFormula() const;
             
             BinaryStateFormula& asBinaryStateFormula();
             BinaryStateFormula const& asBinaryStateFormula() const;
@@ -192,14 +196,17 @@ namespace storm {
             
             std::vector<std::shared_ptr<AtomicExpressionFormula const>> getAtomicExpressionFormulas() const;
             std::vector<std::shared_ptr<AtomicLabelFormula const>> getAtomicLabelFormulas() const;
+            std::set<storm::expressions::Variable> getUsedVariables() const;
             std::set<std::string> getReferencedRewardModels() const;
             
             std::shared_ptr<Formula const> asSharedPointer();
             std::shared_ptr<Formula const> asSharedPointer() const;
             
             std::shared_ptr<Formula> substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const;
+            std::shared_ptr<Formula> substitute(std::function<storm::expressions::Expression(storm::expressions::Expression const&)> const& expressionSubstitution) const;
             std::shared_ptr<Formula> substitute(std::map<std::string, storm::expressions::Expression> const& labelSubstitution) const;
             std::shared_ptr<Formula> substitute(std::map<std::string, std::string> const& labelSubstitution) const;
+            std::shared_ptr<Formula> substituteRewardModelNames(std::map<std::string, std::string> const& rewardModelNameSubstitution) const;
 
             /*!
              * Takes the formula and converts it to an equivalent expression. The formula may contain atomic labels, but
@@ -218,7 +225,8 @@ namespace storm {
             virtual void gatherAtomicExpressionFormulas(std::vector<std::shared_ptr<AtomicExpressionFormula const>>& atomicExpressionFormulas) const;
             virtual void gatherAtomicLabelFormulas(std::vector<std::shared_ptr<AtomicLabelFormula const>>& atomicLabelFormulas) const;
             virtual void gatherReferencedRewardModels(std::set<std::string>& referencedRewardModels) const;
-            
+            virtual void gatherUsedVariables(std::set<storm::expressions::Variable>& usedVariables) const;
+
         private:
             // Currently empty.
         };

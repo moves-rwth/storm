@@ -16,6 +16,9 @@ exception_name(exception_name const& cp) : BaseException(cp) { \
 } \
 ~exception_name() throw() { \
 } \
+virtual std::string type() const override { \
+    return #exception_name; \
+} \
 template<typename T> \
 exception_name& operator<<(T const& var) { \
     this->stream << var; \

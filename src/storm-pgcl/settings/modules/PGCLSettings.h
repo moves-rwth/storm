@@ -30,6 +30,11 @@ namespace storm {
                 bool isToJaniSet() const;
                 
                 /**
+                 * returns the file name where jani output should be stored.
+                 */
+                std::string getWriteToJaniFilename() const;
+                
+                /**
                  * Whether the program graph should be drawn (dot output)
                  */
                 bool isProgramGraphToDotSet() const;
@@ -49,6 +54,26 @@ namespace storm {
                  */
                 std::string getProgramVariableRestrictions() const;
                 
+                /*!
+                 * Retrieves whether the property option was set.
+                 *
+                 * @return True if the property option was set.
+                 */
+                bool isPropertyInputSet() const;
+
+                /*!
+                 * Retrieves the property specified with the property option.
+                 *
+                 * @return The property specified with the property option.
+                 */
+                std::string getPropertyInput() const;
+
+                /*!
+                 * Retrieves the property filter.
+                 *
+                 * @return The property filter.
+                 */
+                std::string getPropertyInputFilter() const;
                 
                 bool check() const override;
                 void finalize() override;
@@ -64,7 +89,8 @@ namespace storm {
                 static const std::string programGraphToDotShortOptionName;
                 static const std::string programVariableRestrictionsOptionName;
                 static const std::string programVariableRestrictionShortOptionName;
-                
+                static const std::string propertyOptionName;
+                static const std::string propertyOptionShortName;
             };
         }
     }

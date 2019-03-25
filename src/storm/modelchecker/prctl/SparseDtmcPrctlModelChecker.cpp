@@ -7,9 +7,11 @@
 
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "storm/modelchecker/results/ExplicitParetoCurveCheckResult.h"
 
 #include "storm/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
 #include "storm/modelchecker/csl/helper/SparseCtmcCslHelper.h"
+#include "storm/modelchecker/prctl/helper/rewardbounded/QuantileHelper.h"
 
 #include "storm/logic/FragmentSpecification.h"
 
@@ -31,7 +33,13 @@ namespace storm {
         template<typename SparseDtmcModelType>
         bool SparseDtmcPrctlModelChecker<SparseDtmcModelType>::canHandle(CheckTask<storm::logic::Formula, ValueType> const& checkTask) const {
             storm::logic::Formula const& formula = checkTask.getFormula();
-            return formula.isInFragment(storm::logic::prctl().setLongRunAverageRewardFormulasAllowed(true).setLongRunAverageProbabilitiesAllowed(true).setConditionalProbabilityFormulasAllowed(true).setConditionalRewardFormulasAllowed(true).setTotalRewardFormulasAllowed(true).setOnlyEventuallyFormuluasInConditionalFormulasAllowed(true).setRewardBoundedUntilFormulasAllowed(true).setRewardBoundedCumulativeRewardFormulasAllowed(true).setMultiDimensionalBoundedUntilFormulasAllowed(true).setMultiDimensionalCumulativeRewardFormulasAllowed(true));
+            if (formula.isInFragment(storm::logic::prctl().setLongRunAverageRewardFormulasAllowed(true).setLongRunAverageProbabilitiesAllowed(true).setConditionalProbabilityFormulasAllowed(true).setConditionalRewardFormulasAllowed(true).setTotalRewardFormulasAllowed(true).setOnlyEventuallyFormuluasInConditionalFormulasAllowed(true).setRewardBoundedUntilFormulasAllowed(true).setRewardBoundedCumulativeRewardFormulasAllowed(true).setMultiDimensionalBoundedUntilFormulasAllowed(true).setMultiDimensionalCumulativeRewardFormulasAllowed(true).setTimeOperatorsAllowed(true).setReachbilityTimeFormulasAllowed(true))) {
+                return true;
+            } else if (formula.isInFragment(storm::logic::quantiles())) {
+                if (this->getModel().getInitialStates().getNumberOfSetBits() > 1) return false;
+                return true;
+            }
+            return false;
         }
         
         template<typename SparseDtmcModelType>
@@ -125,6 +133,15 @@ namespace storm {
         }
         
         template<typename SparseDtmcModelType>
+        std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseDtmcModelType>::computeReachabilityTimes(Environment const& env, storm::logic::RewardMeasureType, CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) {
+            storm::logic::EventuallyFormula const& eventuallyFormula = checkTask.getFormula();
+            std::unique_ptr<CheckResult> subResultPointer = this->check(env, eventuallyFormula.getSubformula());
+            ExplicitQualitativeCheckResult const& subResult = subResultPointer->asExplicitQualitativeCheckResult();
+            std::vector<ValueType> numericResult = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeReachabilityTimes(env, storm::solver::SolveGoal<ValueType>(this->getModel(), checkTask), this->getModel().getTransitionMatrix(), this->getModel().getBackwardTransitions(), subResult.getTruthValuesVector(), checkTask.isQualitativeSet(), checkTask.getHint());
+            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(numericResult)));
+        }
+        
+        template<typename SparseDtmcModelType>
         std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseDtmcModelType>::computeTotalRewards(Environment const& env, storm::logic::RewardMeasureType, CheckTask<storm::logic::TotalRewardFormula, ValueType> const& checkTask) {
             std::vector<ValueType> numericResult = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeTotalRewards(env, storm::solver::SolveGoal<ValueType>(this->getModel(), checkTask), this->getModel().getTransitionMatrix(), this->getModel().getBackwardTransitions(), checkTask.isRewardModelSet() ? this->getModel().getRewardModel(checkTask.getRewardModel()) : this->getModel().getRewardModel(""), checkTask.isQualitativeSet(), checkTask.getHint());
             return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(numericResult)));
@@ -173,6 +190,28 @@ namespace storm {
             
             std::vector<ValueType> numericResult = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeConditionalRewards(env, storm::solver::SolveGoal<ValueType>(this->getModel(), checkTask), this->getModel().getTransitionMatrix(), this->getModel().getBackwardTransitions(), checkTask.isRewardModelSet() ? this->getModel().getRewardModel(checkTask.getRewardModel()) : this->getModel().getRewardModel(""), leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector(), checkTask.isQualitativeSet());
             return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(numericResult)));
+        }
+        
+        
+        template<>
+        std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>>::checkQuantileFormula(Environment const& env, CheckTask<storm::logic::QuantileFormula, ValueType> const& checkTask) {
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Quantiles for parametric models are not implemented.");
+        }
+        
+        template<typename SparseDtmcModelType>
+        std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseDtmcModelType>::checkQuantileFormula(Environment const& env, CheckTask<storm::logic::QuantileFormula, ValueType> const& checkTask) {
+            STORM_LOG_THROW(checkTask.isOnlyInitialStatesRelevantSet(), storm::exceptions::InvalidOperationException, "Computing quantiles is only supported for the initial states of a model.");
+            STORM_LOG_THROW(this->getModel().getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::InvalidOperationException, "Quantiles not supported on models with multiple initial states.");
+            uint64_t initialState = *this->getModel().getInitialStates().begin();
+
+            helper::rewardbounded::QuantileHelper<SparseDtmcModelType> qHelper(this->getModel(), checkTask.getFormula());
+            auto res = qHelper.computeQuantile(env);
+            
+            if (res.size() == 1 && res.front().size() == 1) {
+                return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(initialState, std::move(res.front().front())));
+            } else {
+                return std::unique_ptr<CheckResult>(new ExplicitParetoCurveCheckResult<ValueType>(initialState, std::move(res)));
+            }
         }
         
         template class SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>>;

@@ -43,7 +43,7 @@ namespace storm {
                 boost::any_cast<bool>(expression.getSecondOperand()->accept(*this, data));
         }
         
-        boost::any CheckIfThenElseGuardVisitor::visit(VariableExpression const& expression, boost::any const&) {
+        boost::any CheckIfThenElseGuardVisitor::visit(VariableExpression const&, boost::any const&) {
             return false;
         }
         
@@ -55,15 +55,15 @@ namespace storm {
             return expression.getOperand()->accept(*this, data);
         }
         
-        boost::any CheckIfThenElseGuardVisitor::visit(BooleanLiteralExpression const& expression, boost::any const&) {
+        boost::any CheckIfThenElseGuardVisitor::visit(BooleanLiteralExpression const&, boost::any const&) {
             return false;
         }
         
-        boost::any CheckIfThenElseGuardVisitor::visit(IntegerLiteralExpression const& expression, boost::any const&) {
+        boost::any CheckIfThenElseGuardVisitor::visit(IntegerLiteralExpression const&, boost::any const&) {
             return false;
         }
         
-        boost::any CheckIfThenElseGuardVisitor::visit(RationalLiteralExpression const& expression, boost::any const&) {
+        boost::any CheckIfThenElseGuardVisitor::visit(RationalLiteralExpression const&, boost::any const&) {
             return false;
         }
         

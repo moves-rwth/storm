@@ -16,6 +16,12 @@ namespace storm {
             // Intenetionally left empty.
         }
         
+        ExpressionCreator::~ExpressionCreator() {
+            if (deleteIdentifierMapping) {
+                delete this->identifiers;
+            }
+        }
+        
         storm::expressions::Expression ExpressionCreator::createIteExpression(storm::expressions::Expression const& e1, storm::expressions::Expression const& e2, storm::expressions::Expression const& e3, bool& pass) const {
             if (this->createExpressions) {
                 try {
@@ -241,7 +247,7 @@ namespace storm {
         void ExpressionCreator::setIdentifierMapping(std::unordered_map<std::string, storm::expressions::Expression> const& identifierMapping) {
             unsetIdentifierMapping();
             
-            createExpressions =true;
+            createExpressions = true;
             identifiers = new qi::symbols<char, storm::expressions::Expression>();
             for (auto const& identifierExpressionPair : identifierMapping) {
                 identifiers->add(identifierExpressionPair.first, identifierExpressionPair.second);
@@ -257,9 +263,6 @@ namespace storm {
             }
             this->identifiers = nullptr;
         }
-        
 
-
-        
     }
 }

@@ -73,6 +73,10 @@ namespace storm {
             return Expression(this->getBaseExpression().simplify());
         }
         
+        Expression Expression::reduceNesting() const {
+            return Expression(this->getBaseExpression().reduceNesting());
+        }
+        
         OperatorType Expression::getOperator() const {
             return this->getBaseExpression().getOperator();
         }
@@ -122,6 +126,10 @@ namespace storm {
 			this->getBaseExpression().gatherVariables(result);
             return result;
 		}
+        
+        void Expression::gatherVariables(std::set<storm::expressions::Variable>& variables) const {
+            this->getBaseExpression().gatherVariables(variables);
+        }
         
         bool Expression::containsVariable(std::set<storm::expressions::Variable> const& variables) const {
             std::set<storm::expressions::Variable> appearingVariables = this->getVariables();
@@ -447,8 +455,5 @@ namespace storm {
             
             return result;
         }
-
-
-
     }
 }

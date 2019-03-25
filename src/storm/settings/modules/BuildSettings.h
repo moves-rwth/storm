@@ -80,6 +80,12 @@ namespace storm {
                  * @return
                  */
                 bool isBuildOutOfBoundsStateSet() const;
+                
+                /*!
+                 * Retrieves the number of bits that should be used to represent unbounded integer variables
+                 * @return
+                 */
+                uint64_t getBitsForUnboundedVariables() const;
 
 
                 // The name of the module.

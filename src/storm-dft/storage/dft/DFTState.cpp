@@ -6,7 +6,7 @@ namespace storm {
     namespace storage {
 
         template<typename ValueType>
-        DFTState<ValueType>::DFTState(DFT<ValueType> const& dft, DFTStateGenerationInfo const& stateGenerationInfo, size_t id) : mStatus(dft.stateVectorSize()), mId(id), mPseudoState(false), mDft(dft), mStateGenerationInfo(stateGenerationInfo) {
+        DFTState<ValueType>::DFTState(DFT<ValueType> const& dft, DFTStateGenerationInfo const& stateGenerationInfo, size_t id) : mStatus(dft.stateBitVectorSize()), mId(id), failableElements(dft.nrElements()), mPseudoState(false), mDft(dft), mStateGenerationInfo(stateGenerationInfo) {
             // TODO Matthias: use construct()
             
             // Initialize uses
@@ -20,12 +20,14 @@ namespace storm {
             // Initialize activation
             propagateActivation(mDft.getTopLevelIndex());
 
-            std::vector<size_t> alwaysActiveBEs = mDft.nonColdBEs();
-            mCurrentlyFailableBE.insert(mCurrentlyFailableBE.end(), alwaysActiveBEs.begin(), alwaysActiveBEs.end());
+            // Initialize currently failable BEs
+            for (size_t id : mDft.nonColdBEs()) {
+                failableElements.addBE(id);
+            }
         }
 
         template<typename ValueType>
-        DFTState<ValueType>::DFTState(storm::storage::BitVector const& status, DFT<ValueType> const& dft, DFTStateGenerationInfo const& stateGenerationInfo, size_t id) : mStatus(status), mId(id), mPseudoState(true), mDft(dft), mStateGenerationInfo(stateGenerationInfo) {
+        DFTState<ValueType>::DFTState(storm::storage::BitVector const& status, DFT<ValueType> const& dft, DFTStateGenerationInfo const& stateGenerationInfo, size_t id) : mStatus(status), mId(id), failableElements(dft.nrElements()), mPseudoState(true), mDft(dft), mStateGenerationInfo(stateGenerationInfo) {
             // Intentionally left empty
         }
         
@@ -33,8 +35,7 @@ namespace storm {
         void DFTState<ValueType>::construct() {
             STORM_LOG_TRACE("Construct concrete state from pseudo state " << mDft.getStateString(mStatus, mStateGenerationInfo, mId));
             // Clear information from pseudo state
-            mCurrentlyFailableBE.clear();
-            mFailableDependencies.clear();
+            failableElements.clear();
             mUsedRepresentants.clear();
             STORM_LOG_ASSERT(mPseudoState, "Only pseudo states can be constructed.");
             for(size_t index = 0; index < mDft.nrElements(); ++index) {
@@ -42,7 +43,7 @@ namespace storm {
                 if (mDft.isBasicElement(index) && isOperational(index)) {
                     std::shared_ptr<const DFTBE<ValueType>> be = mDft.getBasicElement(index);
                     if (be->canFail() && (!be->isColdBasicElement() || !mDft.hasRepresentant(index) || isActive(mDft.getRepresentant(index)))) {
-                        mCurrentlyFailableBE.push_back(index);
+                        failableElements.addBE(index);
                         STORM_LOG_TRACE("Currently failable: " << be->toString());
                     }
                 } else if (mDft.getElement(index)->isSpareGate()) {
@@ -59,7 +60,7 @@ namespace storm {
                 STORM_LOG_ASSERT(dependencyId == dependency->id(), "Ids do not match.");
                 assert(dependency->dependentEvents().size() == 1);
                 if (hasFailed(dependency->triggerEvent()->id()) && getElementState(dependency->dependentEvents()[0]->id()) == DFTElementState::Operational) {
-                    mFailableDependencies.push_back(dependencyId);
+                    failableElements.addDependency(dependencyId);
                     STORM_LOG_TRACE("New dependency failure: " << dependency->toString());
                 }
             }
@@ -185,10 +186,8 @@ namespace storm {
 
         template<typename ValueType>
         void DFTState<ValueType>::beNoLongerFailable(size_t id) {
-            auto it = std::find(mCurrentlyFailableBE.begin(), mCurrentlyFailableBE.end(), id);
-            if (it != mCurrentlyFailableBE.end()) {
-                mCurrentlyFailableBE.erase(it);
-            }
+            failableElements.removeBE(id);
+            updateDontCareDependencies(id);
         }
 
         template<typename ValueType>
@@ -202,11 +201,11 @@ namespace storm {
                 assert(dependency->dependentEvents().size() == 1);
                 if (getElementState(dependency->dependentEvents()[0]->id()) == DFTElementState::Operational) {
                     STORM_LOG_ASSERT(!isFailsafe(dependency->dependentEvents()[0]->id()), "Dependent event is failsafe.");
-                    mFailableDependencies.push_back(dependency->id());
+                    failableElements.addDependency(dependency->id());
                     STORM_LOG_TRACE("New dependency failure: " << dependency->toString());
                 }
             }
-            return nrFailableDependencies() > 0;
+            return failableElements.hasDependencies();
         }
         
         template<typename ValueType>
@@ -218,6 +217,7 @@ namespace storm {
                 assert(dependency->dependentEvents().size() == 1);
                 STORM_LOG_ASSERT(dependency->dependentEvents()[0]->id() == id, "Ids do not match.");
                 setDependencyDontCare(dependency->id());
+                failableElements.removeDependency(dependency->id());
             }
         }
 
@@ -235,40 +235,35 @@ namespace storm {
         }
 
         template<typename ValueType>
-        ValueType DFTState<ValueType>::getFailableBERate(size_t index) const {
-            STORM_LOG_ASSERT(index < nrFailableBEs(), "Index invalid.");
-            return getBERate(mCurrentlyFailableBE[index]);
-        }
-
-        template<typename ValueType>
-        std::pair<std::shared_ptr<DFTBE<ValueType> const>, bool> DFTState<ValueType>::letNextBEFail(size_t index) {
+        std::pair<std::shared_ptr<DFTBE<ValueType> const>, bool> DFTState<ValueType>::letNextBEFail(size_t id) {
             STORM_LOG_TRACE("currently failable: " << getCurrentlyFailableString());
-            if (nrFailableDependencies() > 0) {
+            if (failableElements.hasDependencies()) {
                 // Consider failure due to dependency
-                STORM_LOG_ASSERT(index < nrFailableDependencies(), "Index invalid.");
-                std::shared_ptr<DFTDependency<ValueType> const> dependency = mDft.getDependency(mFailableDependencies[index]);
-                assert(dependency->dependentEvents().size() == 1);
+                std::shared_ptr<DFTDependency<ValueType> const> dependency = mDft.getDependency(id);
+                STORM_LOG_ASSERT(dependency->dependentEvents().size() == 1, "More than one dependent event");
                 std::pair<std::shared_ptr<DFTBE<ValueType> const>,bool> res(mDft.getBasicElement(dependency->dependentEvents()[0]->id()), true);
-                mFailableDependencies.erase(mFailableDependencies.begin() + index);
+                STORM_LOG_ASSERT(!hasFailed(res.first->id()), "Element " << res.first->toString() << " has already failed.");
+                failableElements.removeDependency(id);
                 setFailed(res.first->id());
                 setDependencySuccessful(dependency->id());
+                beNoLongerFailable(res.first->id());
                 return res;
             } else {
                 // Consider "normal" failure
-                STORM_LOG_ASSERT(index < nrFailableBEs(), "Index invalid.");
-                std::pair<std::shared_ptr<DFTBE<ValueType> const>,bool> res(mDft.getBasicElement(mCurrentlyFailableBE[index]), false);
+                std::pair<std::shared_ptr<DFTBE<ValueType> const>,bool> res(mDft.getBasicElement(id), false);
+                STORM_LOG_ASSERT(!hasFailed(res.first->id()), "Element " << res.first->toString() << " has already failed.");
                 STORM_LOG_ASSERT(res.first->canFail(), "Element " << *(res.first) << " cannot fail.");
-                mCurrentlyFailableBE.erase(mCurrentlyFailableBE.begin() + index);
+                failableElements.removeBE(id);
                 setFailed(res.first->id());
                 return res;
             }
         }
  
         template<typename ValueType>
-        void DFTState<ValueType>::letDependencyBeUnsuccessful(size_t index) {
-            STORM_LOG_ASSERT(nrFailableDependencies() > 0 && index < nrFailableDependencies(), "Index invalid.");
-            std::shared_ptr<DFTDependency<ValueType> const> dependency = mDft.getDependency(getDependencyId(index));
-            mFailableDependencies.erase(mFailableDependencies.begin() + index);
+        void DFTState<ValueType>::letDependencyBeUnsuccessful(size_t id) {
+            STORM_LOG_ASSERT(failableElements.hasDependencies(), "Index invalid.");
+            std::shared_ptr<DFTDependency<ValueType> const> dependency = mDft.getDependency(id);
+            failableElements.removeDependency(id);
             setDependencyUnsuccessful(dependency->id());
         }
 
@@ -280,7 +275,7 @@ namespace storm {
 
         template<typename ValueType>
         bool DFTState<ValueType>::isActive(size_t id) const {
-            STORM_LOG_ASSERT(mDft.isRepresentative(id), "Element is no representative.");
+            STORM_LOG_ASSERT(mDft.isRepresentative(id), "Element " << mDft.getElement(id)->toString() << " is no representative.");
             return mStatus[mStateGenerationInfo.getSpareActivationIndex(id)];
         }
             
@@ -294,7 +289,7 @@ namespace storm {
                     std::shared_ptr<const DFTBE<ValueType>> be = mDft.getBasicElement(elem);
                     if (be->isColdBasicElement() && be->canFail()) {
                         // Add to failable BEs
-                        mCurrentlyFailableBE.push_back(elem);
+                        failableElements.addBE(elem);
                     }
                 } else if (mDft.getElement(elem)->isSpareGate() && !isActive(uses(elem))) {
                     propagateActivation(uses(elem));

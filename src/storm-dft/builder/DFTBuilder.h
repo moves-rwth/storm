@@ -93,8 +93,8 @@ namespace storm {
                 if(children.size() <= 1) {
                     STORM_LOG_ERROR("Dependencies require at least two children");
                 }
-                if(mElements.count(name) != 0) {
-                    // Element with that name already exists.
+                if (nameInUse(name)) {
+                    STORM_LOG_ERROR("Element with name '" << name << "' already exists.");
                     return false;
                 }
 
@@ -122,13 +122,11 @@ namespace storm {
                     if(binaryDependencies) {
                         for (size_t i = 1; i < children.size(); ++i) {
                             std::string nameDep = name + "_" + std::to_string(i);
-                            if (mElements.count(nameDep) != 0) {
-                                // Element with that name already exists.
-                                STORM_LOG_ERROR("Element with name: " << nameDep << " already exists.");
+                            if (nameInUse(nameDep)) {
+                                STORM_LOG_ERROR("Element with name '" << name << "' already exists.");
                                 return false;
                             }
-                            STORM_LOG_ASSERT(storm::utility::isOne(probability) || children.size() == 2,
-                                             "PDep with multiple children supported.");
+                            STORM_LOG_ASSERT(storm::utility::isOne(probability) || children.size() == 2, "PDep with multiple children supported.");
                             DFTDependencyPointer element = std::make_shared<storm::storage::DFTDependency<ValueType>>(mNextId++, nameDep, probability);
                             mElements[element->name()] = element;
                             mDependencyChildNames[element] = {trigger, children[i]};
@@ -146,8 +144,8 @@ namespace storm {
 
             bool addVotElement(std::string const& name, unsigned threshold, std::vector<std::string> const& children) {
                 STORM_LOG_ASSERT(children.size() > 0, "Has no child.");
-                if(mElements.count(name) != 0) {
-                    STORM_LOG_ERROR("Element with name: " << name << " already exists.");
+                if (nameInUse(name)) {
+                    STORM_LOG_ERROR("Element with name '" << name << "' already exists.");
                     return false;
                 }
                 // It is an and-gate
@@ -174,19 +172,33 @@ namespace storm {
                 //TODO Matthias: collect constraints for SMT solving
                 //failureRate > 0
                 //0 <= dormancyFactor <= 1
-
+                if (nameInUse(name)) {
+                    STORM_LOG_ERROR("Element with name '" << name << "' already exists.");
+                    return false;
+                }
                 mElements[name] = std::make_shared<storm::storage::DFTBE<ValueType>>(mNextId++, name, failureRate, dormancyFactor, transient);
                 return true;
             }
 
             void addLayoutInfo(std::string const& name, double x, double y) {
-                STORM_LOG_ASSERT(mElements.count(name) > 0, "Element '" << name << "' not found.");
+                if (!nameInUse(name)) {
+                    STORM_LOG_ERROR("Element with name '" << name << "' not found.");
+                }
                 mLayoutInfo[name] = storm::storage::DFTLayoutInfo(x, y);
             }
             
             bool setTopLevel(std::string const& tle) {
                 mTopLevelIdentifier = tle;
-                return mElements.count(tle) > 0;
+                return nameInUse(tle);
+            }
+
+            /**
+             * Check whether the name is already used.
+             * @param name Element name.
+             * @return True iff name is already in use.
+             */
+            bool nameInUse(std::string const& name) {
+                return mElements.find(name) != mElements.end();
             }
             
             std::string getUniqueName(std::string name);
