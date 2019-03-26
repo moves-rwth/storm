@@ -17,13 +17,16 @@ Designed for users that need particular features and people developing under Sto
 Storm makes use of [CArL](https://github.com/smtrat/carl){:target="_blank"} for the representation of rationals and rational functions. If you don't have it installed on your system, our build script will download and configure it automatically for you. However, under certain circumstances, you might want to install CArL yourself. This may for example be advantageous if you need to repeatedly build Storm from scratch or you want to change its source code. Installing CArL is as easy as
 
 ```console
-$ git clone https://github.com/smtrat/carl
+$ git clone -b master14 https://github.com/smtrat/carl
 $ cd carl
 $ mkdir build
 $ cd build
 $ cmake -DUSE_CLN_NUMBERS=ON -DUSE_GINAC=ON -DTHREAD_SAFE=ON ..
 $ make lib_carl
 ```
+
+{:.alert .alert-warning}
+Make sure you are using the `master14` branch of CArL as the current master branch uses a newer C++ standard that Storm does not require and therefore does not enable.
 
 Once it is build, it will register itself to cmake so Storm can find your build automatically.
 
