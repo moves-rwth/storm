@@ -28,13 +28,19 @@ if (NOT STORM_PORTABLE)
 	set(STORM_CUDD_FLAGS "${STORM_CUDD_FLAGS} -march=native")
 endif()
 
+# Set sysroot to circumvent problems in macOS "Mojave" where the header files are no longer in /usr/include
+set(CUDD_INCLUDE_FLAGS "")
+if (CMAKE_OSX_SYSROOT)
+    set(CUDD_INCLUDE_FLAGS "CPPFLAGS=--sysroot=${CMAKE_OSX_SYSROOT}")
+endif()
+
 ExternalProject_Add(
         cudd3
         DOWNLOAD_COMMAND ""
         SOURCE_DIR ${STORM_3RDPARTY_SOURCE_DIR}/cudd-3.0.0
         PREFIX ${STORM_3RDPARTY_BINARY_DIR}/cudd-3.0.0
         PATCH_COMMAND ${AUTORECONF}
-        CONFIGURE_COMMAND ${STORM_3RDPARTY_SOURCE_DIR}/cudd-3.0.0/configure --enable-shared --enable-obj --with-pic=yes --prefix=${STORM_3RDPARTY_BINARY_DIR}/cudd-3.0.0 --libdir=${CUDD_LIB_DIR} CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER}
+        CONFIGURE_COMMAND ${STORM_3RDPARTY_SOURCE_DIR}/cudd-3.0.0/configure --enable-shared --enable-obj --with-pic=yes --prefix=${STORM_3RDPARTY_BINARY_DIR}/cudd-3.0.0 --libdir=${CUDD_LIB_DIR} CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER} ${CUDD_INCLUDE_FLAGS}
         BUILD_COMMAND make ${STORM_CUDD_FLAGS}
         INSTALL_COMMAND make install
         BUILD_IN_SOURCE 0
