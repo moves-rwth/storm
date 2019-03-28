@@ -244,8 +244,7 @@ namespace storm {
                 storm::storage::BitVector probabilisticStates = ~markovianStates;
 
                 // Searching for SCCs in probabilistic fragment to decide which algorithm is applied.
-                storm::storage::StronglyConnectedComponentDecomposition<ValueType> sccDecomposition(transitionMatrix, probabilisticStates, true, false);
-                bool cycleFree = sccDecomposition.empty();
+                bool cycleFree = !storm::utility::graph::hasCycle(transitionMatrix, probabilisticStates);
 
                 // Vectors to store computed vectors.
                 UnifPlusVectors<ValueType> unifVectors;

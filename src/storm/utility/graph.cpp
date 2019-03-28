@@ -106,7 +106,7 @@ namespace storm {
             template<typename T>
             storm::storage::BitVector getBsccCover(storm::storage::SparseMatrix<T> const& transitionMatrix) {
                 storm::storage::BitVector result(transitionMatrix.getRowGroupCount());
-                storm::storage::StronglyConnectedComponentDecomposition<T> decomposition(transitionMatrix, false, true);
+                storm::storage::StronglyConnectedComponentDecomposition<T> decomposition(transitionMatrix, storm::storage::StronglyConnectedComponentDecompositionOptions().onlyBottomSccs());
                 
                 // Take the first state out of each BSCC.
                 for (auto const& scc : decomposition) {
