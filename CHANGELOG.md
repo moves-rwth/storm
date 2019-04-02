@@ -7,6 +7,14 @@ The releases of major and minor versions contain an overview of changes since th
 Version 1.3.x
 -------------
 
+### Version 1.3.1 (under development)
+- Added support for multi-dimensional quantile queries
+- Allow to quickly check a benchmark from the [Quantitative Verification Benchmark Set](http://qcomp.org/benchmarks/) using the --qvbs option.
+- Added script resources/examples/download_qvbs.sh to download the QVBS.
+- If an option is unknown, Storm now prints a hint to similar option names.
+- Allow bounded types for constants in JANI.
+- Fixed sparse bisimulation of MDPs (which failed if all non-absorbing states in the quotient are initial)
+- Fixed linking with Mathsat on macOS
 
 ### Version 1.3.0 (2018/12)
 - Slightly improved scheduler extraction

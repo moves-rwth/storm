@@ -1,5 +1,6 @@
 #pragma once
 
+#include <storm/exceptions/IllegalArgumentException.h>
 #include "defines.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/Variable.h"
@@ -145,7 +146,6 @@ namespace storm {
                 assert(hasLocation(sourceId));
                 return addProgramEdgeToAllGroups(getLocation(sourceId), action, condition, targetId);
             }
-
             
             ProgramVariableIdentifier getVariableId(std::string const& varName) const {
                 // TODO consider holding a map for this.
@@ -154,7 +154,8 @@ namespace storm {
                         return v.first;
                     }
                 }
-                assert(false);
+                STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Variable " << varName << " was not found.");
+                return 0;
             }
             
             std::string const& getVariableName(ProgramVariableIdentifier id) const {

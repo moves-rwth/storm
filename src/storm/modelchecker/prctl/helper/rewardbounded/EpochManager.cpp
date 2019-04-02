@@ -186,6 +186,15 @@ namespace storm {
                     epoch |= (value << (dimension * bitsPerDimension));
                 }
                 
+                void EpochManager::setDimensionOfEpochClass(EpochClass& epochClass, uint64_t const& dimension, bool const& setToBottom) const {
+                    STORM_LOG_ASSERT(dimensionCount > 0, "Invoked EpochManager with zero dimension count.");
+                    if (setToBottom) {
+                        epochClass |= (1 << dimension);
+                    } else {
+                        epochClass &= ~(1 << dimension);
+                    }
+                }
+                
                 bool EpochManager::isBottomDimension(Epoch const& epoch, uint64_t const& dimension) const {
                     STORM_LOG_ASSERT(dimensionCount > 0, "Invoked EpochManager with zero dimension count.");
                     return (epoch | (dimensionBitMask << (dimension * bitsPerDimension))) == epoch;
@@ -199,6 +208,17 @@ namespace storm {
                 uint64_t EpochManager::getDimensionOfEpoch(Epoch const& epoch, uint64_t const& dimension) const {
                     STORM_LOG_ASSERT(dimensionCount > 0, "Invoked EpochManager with zero dimension count.");
                     return (epoch >> (dimension * bitsPerDimension)) & dimensionBitMask;
+                }
+                
+                uint64_t EpochManager::getSumOfDimensions(Epoch const& epoch) const {
+                    STORM_LOG_ASSERT(dimensionCount > 0, "Invoked EpochManager with zero dimension count.");
+                    uint64_t sumOfDimensions = 0;
+                    for (uint64_t dim = 0; dim < getDimensionCount(); ++dim) {
+                        if (!isBottomDimension(epoch, dim)) {
+                            sumOfDimensions += getDimensionOfEpoch(epoch, dim) + 1;
+                        }
+                    }
+                    return sumOfDimensions;
                 }
                 
                 std::string EpochManager::toString(Epoch const& epoch) const {

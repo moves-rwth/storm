@@ -566,6 +566,9 @@ namespace storm {
         }
 
         bool BitVector::full() const {
+            if (bitCount == 0) {
+                return true;
+            }
             // Check that all buckets except the last one have all bits set.
             uint64_t* last = buckets + bucketCount() - 1;
             for (uint64_t const* it = buckets; it < last; ++it) {

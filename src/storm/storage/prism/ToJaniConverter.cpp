@@ -48,7 +48,7 @@ namespace storm {
             
             // Add all constants of the PRISM program to the JANI model.
             for (auto const& constant : program.getConstants()) {
-                janiModel.addConstant(storm::jani::Constant(constant.getName(), constant.getExpressionVariable(), constant.isDefined() ? boost::optional<storm::expressions::Expression>(constant.getExpression()) : boost::none));
+                janiModel.addConstant(storm::jani::Constant(constant.getName(), constant.getExpressionVariable(), constant.isDefined() ? constant.getExpression() : storm::expressions::Expression()));
             }
             
             // Maintain a mapping of each variable to a flag that is true if the variable will be made global.

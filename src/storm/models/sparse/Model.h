@@ -419,10 +419,35 @@ namespace storm {
                 boost::optional<std::shared_ptr<storm::storage::sparse::ChoiceOrigins>> choiceOrigins;
                 
             };
-            
+
 #ifdef STORM_HAVE_CARL
+            /*!
+             * Get all probability parameters occurring on transitions.
+             * @param model Model.
+             * @return Set of parameters.
+             */
             std::set<storm::RationalFunctionVariable> getProbabilityParameters(Model<storm::RationalFunction> const& model);
+
+            /*!
+             * Get all parameters occurring in rewards.
+             * @param model Model.
+             * @return Set of parameters.
+             */
             std::set<storm::RationalFunctionVariable> getRewardParameters(Model<storm::RationalFunction> const& model);
+
+            /*!
+             * Get all parameters occurring in rates.
+             * @param model Model.
+             * @return Set of parameters. If model is not a continuous time model, the returned set is empty.
+             */
+            std::set<storm::RationalFunctionVariable> getRateParameters(Model<storm::RationalFunction> const& model);
+
+            /*!
+             * Get all parameters (probability, rewards, and rates) occurring in the model.
+             * @param model Model.
+             * @return Set of parameters.
+             */
+            std::set<storm::RationalFunctionVariable> getAllParameters(Model<storm::RationalFunction> const& model);
 #endif
         } // namespace sparse
     } // namespace models

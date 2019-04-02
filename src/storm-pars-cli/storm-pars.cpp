@@ -276,7 +276,7 @@ namespace storm {
                     STORM_PRINT_AND_LOG("Time for model checking: " << *watch << "." << std::endl << std::endl);
                 }
             } else {
-                STORM_PRINT_AND_LOG(" failed, property is unsupported by selected engine/settings." << std::endl);
+                STORM_LOG_ERROR("Property is unsupported by selected engine/settings." << std::endl);
             }
         }
 
@@ -393,6 +393,11 @@ namespace storm {
                                                     auto dtmc = model->template as<storm::models::sparse::Dtmc<ValueType>>();
                                                     boost::optional<ValueType> rationalFunction = result->asExplicitQuantitativeCheckResult<ValueType>()[*model->getInitialStates().begin()];
                                                     storm::api::exportParametricResultToFile(rationalFunction, storm::analysis::ConstraintCollector<ValueType>(*dtmc), parametricSettings.exportResultPath());
+                                                }
+                                                else if (parametricSettings.exportResultToFile() && model->isOfType(storm::models::ModelType::Ctmc)) {
+                                                    auto ctmc = model->template as<storm::models::sparse::Ctmc<ValueType>>();
+                                                    boost::optional<ValueType> rationalFunction = result->asExplicitQuantitativeCheckResult<ValueType>()[*model->getInitialStates().begin()];
+                                                    storm::api::exportParametricResultToFile(rationalFunction, storm::analysis::ConstraintCollector<ValueType>(*ctmc), parametricSettings.exportResultPath());
                                                 }
                                             });
             } else {

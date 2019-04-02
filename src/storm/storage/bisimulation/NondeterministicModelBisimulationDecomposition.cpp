@@ -211,7 +211,7 @@ namespace storm {
             }
             
             // Finally construct the quotient model.
-            this->quotient = std::make_shared<ModelType>(builder.build(), std::move(newLabeling), std::move(rewardModels));
+            this->quotient = std::make_shared<ModelType>(builder.build(0,this->size(), this->size()), std::move(newLabeling), std::move(rewardModels));
         }
         
         template<typename ModelType>

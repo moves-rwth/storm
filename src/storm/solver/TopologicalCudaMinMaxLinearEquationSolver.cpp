@@ -136,8 +136,7 @@ namespace storm {
 				throw storm::exceptions::InvalidStateException() << "The useGpu Flag of a SCC was set, but this version of storm does not support CUDA acceleration. Internal Error!";
 #endif
 			} else {
-				storm::storage::BitVector fullSystem(this->A->getRowGroupCount(), true);
-				storm::storage::StronglyConnectedComponentDecomposition<ValueType> sccDecomposition(*this->A, fullSystem, false, false);
+				storm::storage::StronglyConnectedComponentDecomposition<ValueType> sccDecomposition(*this->A);
 
                 STORM_LOG_THROW(sccDecomposition.size() > 0, storm::exceptions::IllegalArgumentException, "Can not solve given equation system as the SCC decomposition returned no SCCs.");
 

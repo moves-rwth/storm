@@ -42,7 +42,7 @@ namespace storm {
              * If addSelfLoopAtSinkStates is true, such rows get a selfloop (with value 1). Otherwise, the row remains empty.
              */
             static EndComponentEliminatorReturnType transform(storm::storage::SparseMatrix<ValueType> const& originalMatrix, storm::storage::BitVector const& subsystemStates, storm::storage::BitVector const& possibleECRows, storm::storage::BitVector const& addSinkRowStates, bool addSelfLoopAtSinkStates = false) {
-                STORM_LOG_DEBUG("Invoked EndComponentEliminator on matrix with " << originalMatrix.getRowGroupCount() << " row groups.");
+                STORM_LOG_DEBUG("Invoked EndComponentEliminator on matrix with " << originalMatrix.getRowGroupCount() << " row groups and " << subsystemStates.getNumberOfSetBits() << " subsystem states.");
                 
                 storm::storage::MaximalEndComponentDecomposition<ValueType> ecs = computeECs(originalMatrix, possibleECRows, subsystemStates);
                 
@@ -53,7 +53,7 @@ namespace storm {
                          keptStates.set(stateActionsPair.first, false);
                      }
                 }
-                STORM_LOG_DEBUG("Found " << ecs.size() << " end components to eliminate. Keeping " << keptStates.getNumberOfSetBits() << " of " << keptStates.size() << " original states.");
+                STORM_LOG_DEBUG("Found " << ecs.size() << " end components to eliminate. Keeping " << keptStates.getNumberOfSetBits() << " of " << keptStates.size() << " original states plus " << ecs.size() << "new end component states.");
                 
                 EndComponentEliminatorReturnType result;
                 std::vector<uint_fast64_t> newRowGroupIndices;

@@ -44,6 +44,10 @@ namespace storm {
             const std::string IOSettings::propertyOptionShortName = "prop";
             const std::string IOSettings::toNondetOptionName = "to-nondet";
             
+            const std::string IOSettings::qvbsInputOptionName = "qvbs";
+            const std::string IOSettings::qvbsInputOptionShortName = "qvbs";
+            const std::string IOSettings::qvbsRootOptionName = "qvbsroot";
+            
             IOSettings::IOSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportDotOptionName, "", "If given, the loaded model will be written to the specified file in the dot format.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file to which the model is to be written.").build()).build());
@@ -82,6 +86,19 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, janiPropertyOptionName, false, "Specifies the properties from the jani model (given by --" + janiInputOptionName + ")  to be checked.").setShortName(janiPropertyOptionShortName)
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("values", "A comma separated list of properties to be checked").setDefaultValueString("").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, toNondetOptionName, false, "If set, DTMCs/CTMCs are converted to MDPs/MAs (without actual nondeterminism) before model checking.").build());
+
+                this->addOption(storm::settings::OptionBuilder(moduleName, qvbsInputOptionName, false, "Selects a model from the Quantitative Verification Benchmark Set.").setShortName(qvbsInputOptionShortName)
+                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("model", "The short model name as in the benchmark set.").build())
+                        .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("instance-index", "The selected instance of this model.").setDefaultValueUnsignedInteger(0).build())
+                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filter", "The comma separated list of property names to check. Omit to check all, \"\" to check none.").setDefaultValueString("").build())
+                        .build());
+#ifdef STORM_HAVE_QVBS
+                std::string qvbsRootDefault = STORM_QVBS_ROOT;
+#else
+                std::string qvbsRootDefault = "";
+#endif
+                this->addOption(storm::settings::OptionBuilder(moduleName, qvbsRootOptionName, false, "Specifies the root directory of the Quantitative Verification Benchmark Set. Default can be set in CMAKE.")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("path", "The path.").setDefaultValueString(qvbsRootDefault).build()).build());
             }
 
             bool IOSettings::isExportDotSet() const {
@@ -232,21 +249,59 @@ namespace storm {
                 return this->getOption(toNondetOptionName).getHasOptionBeenSet();
             }
             
+            bool IOSettings::isQvbsInputSet() const {
+                return this->getOption(qvbsInputOptionName).getHasOptionBeenSet();
+            }
+            
+            std::string IOSettings::getQvbsModelName() const {
+                return this->getOption(qvbsInputOptionName).getArgumentByName("model").getValueAsString();
+            }
+            
+            uint64_t IOSettings::getQvbsInstanceIndex() const {
+                return this->getOption(qvbsInputOptionName).getArgumentByName("instance-index").getValueAsUnsignedInteger();
+            }
+            
+            boost::optional<std::vector<std::string>> IOSettings::getQvbsPropertyFilter() const {
+                std::string listAsString = this->getOption(qvbsInputOptionName).getArgumentByName("filter").getValueAsString();
+                if (listAsString == "") {
+                    if (this->getOption(qvbsInputOptionName).getArgumentByName("filter").wasSetFromDefaultValue()) {
+                        return boost::none;
+                    } else {
+                        return std::vector<std::string>();
+                    }
+                } else {
+                    return storm::parser::parseCommaSeperatedValues(listAsString);
+                }
+            }
+            
+            std::string IOSettings::getQvbsRoot() const {
+                auto const& path = this->getOption(qvbsRootOptionName).getArgumentByName("path");
+#ifndef STORM_HAVE_QVBS
+                STORM_LOG_THROW(this->getOption(qvbsRootOptionName).getHasOptionBeenSet(), storm::exceptions::InvalidSettingsException, "QVBS Root is not specified. Either use the --" + qvbsRootOptionName + " option or specify it within CMAKE.");
+#endif
+                return path.getValueAsString();
+            }
+            
 			void IOSettings::finalize() {
                 // Intentionally left empty.
             }
 
             bool IOSettings::check() const {
-                // Ensure that not two symbolic input models were given.
-                STORM_LOG_THROW(!isJaniInputSet() || !isPrismInputSet(), storm::exceptions::InvalidSettingsException, "Symbolic model ");
+                // Ensure that at most one symbolic input model is given.
+                uint64_t numSymbolicInputs = isJaniInputSet() ? 1 : 0;
+                numSymbolicInputs += isPrismInputSet() ? 1 : 0;
+                numSymbolicInputs += isQvbsInputSet() ? 1 : 0;
+                STORM_LOG_THROW(numSymbolicInputs <= 1, storm::exceptions::InvalidSettingsException, "Multiple symbolic input models.");
+                STORM_LOG_THROW(!isExportJaniDotSet() || isJaniInputSet() || isQvbsInputSet(), storm::exceptions::InvalidSettingsException, "Jani-to-dot export is only available for jani models" );
 
                 // Ensure that not two explicit input models were given.
-                STORM_LOG_THROW(!isExplicitSet() || !isExplicitDRNSet(), storm::exceptions::InvalidSettingsException, "Explicit model ");
-
-                STORM_LOG_THROW(!isExportJaniDotSet() || isJaniInputSet(), storm::exceptions::InvalidSettingsException, "Jani-to-dot export is only available for jani models" );
+                uint64_t numExplicitInputs = isExplicitSet() ? 1 : 0;
+                numExplicitInputs += isExplicitDRNSet() ? 1 : 0;
+                numExplicitInputs += isExplicitIMCASet() ? 1 : 0;
+                STORM_LOG_THROW(numExplicitInputs <= 1, storm::exceptions::InvalidSettingsException, "Multiple explicit input models");
 
                 // Ensure that the model was given either symbolically or explicitly.
-                STORM_LOG_THROW(!isJaniInputSet() || !isPrismInputSet() || !isExplicitSet() || !isExplicitDRNSet(), storm::exceptions::InvalidSettingsException, "The model may be either given in an explicit or a symbolic format (PRISM or JANI), but not both.");
+                STORM_LOG_THROW(numSymbolicInputs + numExplicitInputs <= 1, storm::exceptions::InvalidSettingsException, "The model may be either given in an explicit or a symbolic format (PRISM or JANI), but not both.");
                 
                 // Make sure PRISM-to-JANI conversion is only set if the actual input is in PRISM format.
                 STORM_LOG_THROW(!isPrismToJaniSet() || isPrismInputSet(), storm::exceptions::InvalidSettingsException, "For the transformation from PRISM to JANI, the input model must be given in the prism format.");

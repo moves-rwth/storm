@@ -51,6 +51,12 @@
 // Whether MathSAT is available and to be used (define/undef)
 #cmakedefine STORM_HAVE_MSAT
 
+// Whether benchmarks from QVBS can be used as input
+#cmakedefine STORM_HAVE_QVBS
+
+// The root directory of QVBS
+#cmakedefine STORM_QVBS_ROOT "@STORM_QVBS_ROOT@"
+
 // Whether Intel Threading Building Blocks are available and to be used (define/undef)
 #cmakedefine STORM_HAVE_INTELTBB
 

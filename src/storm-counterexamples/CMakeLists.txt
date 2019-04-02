@@ -8,7 +8,7 @@ file(GLOB_RECURSE STORM_CEX_SOURCES ${PROJECT_SOURCE_DIR}/src/storm-counterexamp
 file(GLOB_RECURSE STORM_CEX_HEADERS ${PROJECT_SOURCE_DIR}/src/storm-counterexamples/*/*.h)
 
 
-# Create storm-dft.
+# Create storm-counterexamples.
 add_library(storm-counterexamples SHARED ${STORM_CEX_SOURCES} ${STORM_CEX_HEADERS})
 
 # Remove define symbol for shared libstorm.

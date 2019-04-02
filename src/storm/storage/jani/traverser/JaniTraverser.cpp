@@ -48,6 +48,9 @@ namespace storm {
             if (constant.isDefined()) {
                 traverse(constant.getExpression(), data);
             }
+            if (constant.hasConstraint()) {
+                traverse(constant.getConstraintExpression(), data);
+            }
         }
         
         void JaniTraverser::traverse(FunctionDefinition& functionDefinition, boost::any const& data) {
@@ -225,6 +228,9 @@ namespace storm {
         void ConstJaniTraverser::traverse(Constant const& constant, boost::any const& data) {
             if (constant.isDefined()) {
                 traverse(constant.getExpression(), data);
+            }
+            if (constant.hasConstraint()) {
+                traverse(constant.getConstraintExpression(), data);
             }
         }
         

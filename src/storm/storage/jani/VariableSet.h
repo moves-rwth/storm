@@ -265,6 +265,13 @@ namespace storm {
              */
             std::map<std::string, std::reference_wrapper<Variable const>> getNameToVariableMap() const;
             
+            /*!
+             * Applies the given substitution to all variables in this set.
+             * The substitution does not apply to the variables itself, but to initial expressions, variable bounds, ...
+             * @param substitution
+             */
+            void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution);
+            
         private:
             /// The vector of all variables.
             std::vector<std::shared_ptr<Variable>> variables;

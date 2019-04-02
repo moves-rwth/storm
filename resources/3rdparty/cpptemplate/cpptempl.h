@@ -126,6 +126,7 @@ namespace cpptempl
 	class Data
 	{
 	public:
+		virtual ~Data() {}
 		virtual bool empty() = 0 ;
 		virtual std::string getvalue();
 		virtual data_list& getlist();
@@ -192,6 +193,7 @@ namespace cpptempl
 	class Token
 	{
 	public:
+		virtual ~Token() {};
 		virtual TokenType gettype() = 0 ;
 		virtual void gettext(std::ostream &stream, data_map &data) = 0 ;
 		virtual void set_children(token_vector &children);

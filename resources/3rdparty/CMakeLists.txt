@@ -199,9 +199,16 @@ if (STORM_USE_GUROBI)
     find_package(Gurobi QUIET REQUIRED)
     set(STORM_HAVE_GUROBI ${GUROBI_FOUND})
     if (GUROBI_FOUND)
-        message (STATUS "Storm - Linking with Gurobi.")
-        add_imported_library(Gurobi SHARED ${GUROBI_LIBRARY} ${GUROBI_INCLUDE_DIRS})
-		list(APPEND STORM_DEP_TARGETS Gurobi_SHARED)
+		if (EXISTS ${GUROBI_LIBRARY})
+            message (STATUS "Storm - Linking with Gurobi.")
+            add_imported_library(Gurobi SHARED ${GUROBI_LIBRARY} ${GUROBI_INCLUDE_DIRS})
+            list(APPEND STORM_DEP_TARGETS Gurobi_SHARED)
+        else()
+            # The FindGurobi.cmake script needs to be updated every now and then as the library file contains the version number...
+            message(SEND_ERROR "Gurobi Library ${GUROBI_LIBRARY} not found. If your Gurobi Version is higher then 8.1.0, please contact the Storm developers.")
+        endif()
+    else()
+        message(SEND_ERROR "Gurobi Library requested but was not found. Make sure that GUROBI_ROOT points to the correct directory (containing include/ and lib/ subdirectories).")
     endif()
 else()
     set(STORM_HAVE_GUROBI OFF)
@@ -213,6 +220,7 @@ endif()
 ##
 #############################################################
 include(${STORM_3RDPARTY_SOURCE_DIR}/include_cudd.cmake)
+
 
 #############################################################
 ##
@@ -400,10 +408,35 @@ endif()
 set(STORM_HAVE_MSAT ${ENABLE_MSAT})
 if (ENABLE_MSAT)
     message (STATUS "Storm - Linking with MathSAT.")
-    find_library(MSAT_LIB mathsat PATHS "${MSAT_ROOT}/lib")
-    add_imported_library(msat SHARED ${MSAT_LIB} "${MSAT_ROOT}/include")
-    list(APPEND STORM_DEP_TARGETS msat_SHARED)
+    if(${OPERATING_SYSTEM} MATCHES "Linux")
+        find_library(MSAT_LIB mathsat PATHS "${MSAT_ROOT}/lib")
+        add_imported_library(msat SHARED ${MSAT_LIB} "${MSAT_ROOT}/include")
+        list(APPEND STORM_DEP_TARGETS msat_SHARED)
+    else()
+		# on macOS, the .dylib file has some hard coded path (Version 5.5.4).
+		# we thus link statically
+        find_library(MSAT_LIB NAMES libmathsat${STATIC_EXT} mathsat PATHS "${MSAT_ROOT}/lib")
+        add_imported_library(msat STATIC ${MSAT_LIB} "${MSAT_ROOT}/include")
+        list(APPEND STORM_DEP_TARGETS msat_STATIC)
+    endif()
 endif(ENABLE_MSAT)
+
+#############################################################
+##
+##	QVBS (Quantitative verification benchmark set)
+##
+#############################################################
+
+set(STORM_HAVE_QVBS OFF)
+if (NOT "${STORM_QVBS_ROOT}" STREQUAL "")
+	if( EXISTS "${STORM_QVBS_ROOT}/index.json")
+       set(STORM_HAVE_QVBS ON)
+       message (STATUS "Storm - Enabled inputs from QVBS located at ${STORM_QVBS_ROOT}")
+	else()
+   		message(FATAL_ERROR "No file 'index.json' in provided QVBS root directory ${STORM_QVBS_ROOT}")
+	endif()
+endif()
+
 
 #############################################################
 ##

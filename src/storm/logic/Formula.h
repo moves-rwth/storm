@@ -48,6 +48,7 @@ namespace storm {
             virtual bool isUnaryBooleanStateFormula() const;
             
             virtual bool isMultiObjectiveFormula() const;
+            virtual bool isQuantileFormula() const;
 
             // Operator formulas.
             virtual bool isOperatorFormula() const;
@@ -108,6 +109,9 @@ namespace storm {
             
             MultiObjectiveFormula& asMultiObjectiveFormula();
             MultiObjectiveFormula const& asMultiObjectiveFormula() const;
+            
+            QuantileFormula& asQuantileFormula();
+            QuantileFormula const& asQuantileFormula() const;
             
             BinaryStateFormula& asBinaryStateFormula();
             BinaryStateFormula const& asBinaryStateFormula() const;

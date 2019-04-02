@@ -42,6 +42,7 @@
 #include "storm/settings/modules/AbstractionSettings.h"
 #include "storm/settings/modules/ResourceSettings.h"
 #include "storm/settings/modules/ModelCheckerSettings.h"
+#include "storm/storage/Qvbs.h"
 
 #include "storm/utility/Stopwatch.h"
 
@@ -114,6 +115,20 @@ namespace storm {
             return input;
         }
         
+        void ensureNoUndefinedPropertyConstants(std::vector<storm::jani::Property> const& properties) {
+            // Make sure there are no undefined constants remaining in any property.
+            for (auto const& property : properties) {
+                std::set<storm::expressions::Variable> usedUndefinedConstants = property.getUndefinedConstants();
+                if (!usedUndefinedConstants.empty()) {
+                    std::vector<std::string> undefinedConstantsNames;
+                    for (auto const& constant : usedUndefinedConstants) {
+                        undefinedConstantsNames.emplace_back(constant.getName());
+                    }
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The property '" << property << " still refers to the undefined constants " << boost::algorithm::join(undefinedConstantsNames, ",") << ".");
+                }
+            }
+        }
+        
         SymbolicInput preprocessSymbolicInput(SymbolicInput const& input, storm::builder::BuilderType const& builderType) {
             auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
             
@@ -130,18 +145,7 @@ namespace storm {
                 output.properties = storm::api::substituteConstantsInProperties(output.properties, constantDefinitions);
             }
             
-            // Make sure there are no undefined constants remaining in any property.
-            for (auto const& property : output.properties) {
-                std::set<storm::expressions::Variable> usedUndefinedConstants = property.getUndefinedConstants();
-                if (!usedUndefinedConstants.empty()) {
-                    std::vector<std::string> undefinedConstantsNames;
-                    for (auto const& constant : usedUndefinedConstants) {
-                        undefinedConstantsNames.emplace_back(constant.getName());
-                    }
-
-                    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The property '" << property << " still refers to the undefined constants " << boost::algorithm::join(undefinedConstantsNames, ",") << ".");
-                }
-            }
+            ensureNoUndefinedPropertyConstants(output.properties);
             
             // Check whether conversion for PRISM to JANI is requested or necessary.
             if (input.model && input.model.get().isPrismProgram()) {
@@ -195,14 +199,48 @@ namespace storm {
             STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unable to determine the model builder type.");
         }
         
+        SymbolicInput parseAndPreprocessSymbolicInputQvbs(storm::settings::modules::IOSettings const& ioSettings, storm::builder::BuilderType const& builderType) {
+            // Parse the model input
+            SymbolicInput input;
+            storm::storage::QvbsBenchmark benchmark(ioSettings.getQvbsModelName());
+            STORM_PRINT_AND_LOG(benchmark.getInfo(ioSettings.getQvbsInstanceIndex(), ioSettings.getQvbsPropertyFilter()));
+            storm::utility::Stopwatch modelParsingWatch(true);
+            storm::jani::ModelFeatures supportedFeatures = storm::api::getSupportedJaniFeatures(builderType);
+            auto janiInput = storm::api::parseJaniModel(benchmark.getJaniFile(ioSettings.getQvbsInstanceIndex()), supportedFeatures, ioSettings.getQvbsPropertyFilter());
+            input.model = std::move(janiInput.first);
+            input.properties = std::move(janiInput.second);
+            modelParsingWatch.stop();
+            STORM_PRINT("Time for model input parsing: " << modelParsingWatch << "." << std::endl << std::endl);
+            
+            // Parse additional properties
+            boost::optional<std::set<std::string>> propertyFilter = storm::api::parsePropertyFilter(ioSettings.getPropertyFilter());
+            parseProperties(ioSettings, input, propertyFilter);
+            
+            // Substitute constant definitions
+            auto constantDefinitions = input.model.get().parseConstantDefinitions(benchmark.getConstantDefinition(ioSettings.getQvbsInstanceIndex()));
+            input.model = input.model.get().preprocess(constantDefinitions);
+            if (!input.properties.empty()) {
+                input.properties = storm::api::substituteConstantsInProperties(input.properties, constantDefinitions);
+            }
+            
+            ensureNoUndefinedPropertyConstants(input.properties);
+            return input;
+        }
+        
         SymbolicInput parseAndPreprocessSymbolicInput() {
             // Get the used builder type to handle cases where preprocessing depends on it
             auto buildSettings = storm::settings::getModule<storm::settings::modules::BuildSettings>();
             auto coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
+            auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
             auto builderType = getBuilderType(coreSettings.getEngine(), buildSettings.isJitSet());
             
-            SymbolicInput input = parseSymbolicInput(builderType);
-            input = preprocessSymbolicInput(input, builderType);
+            SymbolicInput input;
+            if (ioSettings.isQvbsInputSet()) {
+                input = parseAndPreprocessSymbolicInputQvbs(ioSettings, builderType);
+            } else {
+                input = parseSymbolicInput(builderType);
+                input = preprocessSymbolicInput(input, builderType);
+            }
             exportSymbolicInput(input);
             return input;
         }
@@ -579,7 +617,7 @@ namespace storm {
                     STORM_PRINT("Time for model checking: " << *watch << "." << std::endl);
                 }
             } else {
-                STORM_PRINT(" failed, property is unsupported by selected engine/settings." << std::endl);
+                STORM_LOG_ERROR("Property is unsupported by selected engine/settings." << std::endl);
             }
         }
         

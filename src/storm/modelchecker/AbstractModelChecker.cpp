@@ -48,6 +48,8 @@ namespace storm {
                 return this->checkStateFormula(env, checkTask.substituteFormula(formula.asStateFormula()));
             } else if (formula.isMultiObjectiveFormula()){
                 return this->checkMultiObjectiveFormula(env, checkTask.substituteFormula(formula.asMultiObjectiveFormula()));
+            } else if (formula.isQuantileFormula()){
+                return this->checkQuantileFormula(env, checkTask.substituteFormula(formula.asQuantileFormula()));
             }
             STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The given formula '" << formula << "' is invalid.");
         }
@@ -308,6 +310,11 @@ namespace storm {
 
         template<typename ModelType>
         std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::checkMultiObjectiveFormula(Environment const& env, CheckTask<storm::logic::MultiObjectiveFormula, ValueType> const& checkTask) {
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker (" << getClassName() << ") does not support the formula: " << checkTask.getFormula() << ".");
+        }
+
+        template<typename ModelType>
+        std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::checkQuantileFormula(Environment const& env, CheckTask<storm::logic::QuantileFormula, ValueType> const& checkTask) {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker (" << getClassName() << ") does not support the formula: " << checkTask.getFormula() << ".");
         }
 
