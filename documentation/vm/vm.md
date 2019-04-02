@@ -10,6 +10,9 @@ If you just want to try Storm without installing it or its dependencies, the vir
 {:.alert .alert-info}
 The virtual machine is hosted at [sciebo](https://www.sciebo.de/en/){:target="_blank" .alert-link}, an academic cloud hoster. We are not able to trace the identity of downloaders, so reviewers can use this link without revealing their identity.
 
+{:.alert .alert-danger}
+Note that the provided virtual machine images might not be up to date. If you need the latest release we recommend to use the [Docker container]({{ site.github.url }}/documentation/installation/installation.html#docker){:.alert-link} instead.
+
 ## Importing
 
 When you have downloaded the OVA image, you can import it into, for example, [VirtualBox](https://www.virtualbox.org){:target="_blank"}. Before the first run, you should review the hardware resources allocated to the VM. E.g., for VirtualBox open *Settings → System* and adjust the memory size and CPU count under *Motherboard* and *Processor*, respectively.
