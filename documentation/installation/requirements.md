@@ -39,13 +39,13 @@ Required:
 - gmp
 - ginac
 - autoreconf
-- doxygen
 - glpk
 - hwloc
 
 Recommended:
 - [Z3](https://github.com/Z3Prover/z3) (not strictly required, but already needed for standard tasks like PRISM/JANI model building)
 - xercesc (installation prevents an expensive part of the build step)
+- [Eigen3](http://eigen.tuxfamily.org/index.php) (installation prevents an expensive part of the build step)
 - [MathSAT](http://mathsat.fbk.eu/){:target="_blank"} (needed by the abstraction refinement engine, needs to be configured manually during the [configuration](manual-configuration.html#mathsat))
 
 
@@ -53,9 +53,9 @@ Recommended:
 
 Currently, we provide support for
 
-- <i class="fa fa-apple" aria-hidden="true"></i> macOS 10.12 "Sierra"
+- <i class="fa fa-apple" aria-hidden="true"></i> macOS 10.12 "Sierra" and higher
 - <i class="icon-debian"></i> Debian 9 "Stretch"
-- <i class="icon-ubuntu"></i> Ubuntu 16.10 "Yakkety Yak"
+- <i class="icon-ubuntu"></i> Ubuntu 16.10 "Yakkety Yak" and higher
 
 which are known to enable the easy installation of Storm. Other Linux distributions are likely to work too, but it may take significant effort to get the required versions of the dependencies up and running. For example, thanks to [Joachim Klein](http://www.inf.tu-dresden.de/index.php?node_id=1473){:target="_blank"}, there is a [script]({{ site.github.url }}/resources/scripts/installation/storm-build-debian-jessie.sh) that installs Storm and some crucial dependencies on Debian 8 "Jessie".
 
@@ -68,7 +68,7 @@ In the following, we will detail all dependencies of Storm and how to install th
 
 We collected some platform specific hints to ease the installation of Storm on the supported operating systems. Since Storm has some optional dependencies that enhance it's functionality, and some dependencies that are strictly required, we show how to install both the *required* and *recommended* dependencies. The installation instructions of the *recommended* dependencies are to be understood incrementally, i.e. in addition to the required dependencies.
 
-### <i class="fa fa-apple" aria-hidden="true"></i> macOS 10.12 "Sierra"
+### <i class="fa fa-apple" aria-hidden="true"></i> macOS 10.12 "Sierra" and higher
 
 First of all, you need to download and install Xcode and its command line utilities to have the suitable command line tools. For more details, we refer to [this tutorial](https://www.moncefbelyamani.com/how-to-install-xcode-homebrew-git-rvm-ruby-on-mac/){:target="_blank"}.
 
@@ -76,7 +76,7 @@ Furthermore, we recommend the usage of [Homebrew](https://brew.sh){:target="_bla
 
 - Required:
 ``` console
-$ brew install cln ginac automake cmake doxygen
+$ brew install cln ginac automake cmake
 $ brew install boost --c++11
 $ brew install gmp --c++11
 $ brew install glpk
@@ -92,22 +92,22 @@ $ brew install z3 xerces-c
 
 - Required:
 ``` console
-$ sudo apt-get install git cmake libboost-all-dev libcln-dev libgmp-dev libginac-dev automake doxygen libglpk-dev
+$ sudo apt-get install git cmake libboost-all-dev libcln-dev libgmp-dev libginac-dev automake libglpk-dev
 ```
 
 - Recommended
 ``` console
-$ sudo apt-get install libz3-dev z3 libxerces-c-dev
+$ sudo apt-get install libz3-dev libxerces-c-dev libeigen3-dev
 ```
 
-### <i class="icon-ubuntu"></i> Ubuntu 16.10 "Yakkety Yak"
+### <i class="icon-ubuntu"></i> Ubuntu 16.10 "Yakkety Yak" and higher
 
 - Required:
 ``` console
-$ sudo apt-get install git cmake libboost-all-dev libcln-dev libgmp-dev libginac-dev automake doxygen libglpk-dev libhwloc-dev
+$ sudo apt-get install git cmake libboost-all-dev libcln-dev libgmp-dev libginac-dev automake libglpk-dev libhwloc-dev
 ```
 
 - Recommended:
 ``` console
-$ sudo apt-get install libz3-dev z3 libxerces-c-dev
+$ sudo apt-get install libz3-dev libxerces-c-dev libeigen3-dev
 ```
