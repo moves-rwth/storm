@@ -149,6 +149,7 @@ namespace storm {
                                 }
                                 case storm::storage::DFTElementType::BE_CONST:
                                     result.push_back(be->id());
+                                    break;
                                 default:
                                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "BE type '" << be->type() << "' is not supported.");
                             }
