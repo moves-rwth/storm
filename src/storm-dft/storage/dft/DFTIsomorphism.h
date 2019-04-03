@@ -14,7 +14,7 @@ namespace storage {
 
     struct GateGroupToHash {
         static constexpr uint_fast64_t fivebitmask = (1 << 6) - 1;
-        static constexpr uint_fast64_t eightbitmask = (1 << 8) - 1;
+        static constexpr uint_fast64_t eightbitmask = (1 << 9) - 1;
 
         /**
          * Hash function, which ensures that the colours are sorted according to their rank.
