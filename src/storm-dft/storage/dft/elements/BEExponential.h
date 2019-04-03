@@ -78,7 +78,7 @@ namespace storm {
                 return storm::utility::isZero(this->passiveFailureRate());
             }
 
-            bool isTypeEqualTo(DFTElement <ValueType> const& other) const override {
+            bool isTypeEqualTo(DFTElement<ValueType> const& other) const override {
                 if (!DFTElement<ValueType>::isTypeEqualTo(other)) {
                     return false;
                 }

@@ -40,7 +40,9 @@ namespace storm {
             }
             
             
-            virtual std::string typestring() const = 0;
+            virtual std::string typestring() const {
+                return storm::storage::toString(this->type());
+            }
 
             virtual void checkFails(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const = 0;
 

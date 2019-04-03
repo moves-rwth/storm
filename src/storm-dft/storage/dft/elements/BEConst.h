@@ -7,6 +7,7 @@ namespace storm {
 
         /*!
          * BE which is either constant failed or constant failsafe.
+         * The BE is either always failed (from the beginning) or can never fail (failsafe).
          */
         template<typename ValueType>
         class BEConst : public DFTBE<ValueType> {
@@ -38,7 +39,7 @@ namespace storm {
                 return this->failed();
             }
 
-            bool isTypeEqualTo(DFTElement <ValueType> const& other) const override {
+            bool isTypeEqualTo(DFTElement<ValueType> const& other) const override {
                 if (!DFTElement<ValueType>::isTypeEqualTo(other)) {
                     return false;
                 }
