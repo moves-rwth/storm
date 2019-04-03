@@ -54,17 +54,39 @@ namespace storage {
 
     template<typename ValueType>
     struct BEColourClass {
-        BEColourClass() = default;
-        BEColourClass(ValueType a, ValueType p, size_t h) : aRate(a), pRate(p), hash(h) {}
 
+        BEColourClass() = default;
+
+        BEColourClass(storm::storage::DFTElementType t, ValueType a, ValueType p, size_t h) : type(t), hash(h), aRate(a), pRate(p) {
+            STORM_LOG_ASSERT(t == storm::storage::DFTElementType::BE_EXP, "Expected type BE_EXP but got type " << t);
+        }
+
+        BEColourClass(storm::storage::DFTElementType t, bool fail, size_t h) : type(t), hash(h), failed(fail) {
+            STORM_LOG_ASSERT(t == storm::storage::DFTElementType::BE_CONST, "Expected type BE_CONST but got type " << t);
+        }
+
+        storm::storage::DFTElementType type;
+        size_t hash;
         ValueType aRate;
         ValueType pRate;
-        size_t    hash;
+        bool failed;
     };
+
 
     template<typename ValueType>
     bool operator==(BEColourClass<ValueType> const& lhs, BEColourClass<ValueType> const& rhs) {
-        return lhs.hash == rhs.hash && lhs.aRate == rhs.aRate && lhs.pRate == rhs.pRate;
+        if (lhs.type != rhs.type) {
+            return false;
+        }
+        switch (lhs.type) {
+            case storm::storage::DFTElementType::BE_EXP:
+                return lhs.hash == rhs.hash && lhs.aRate == rhs.aRate && lhs.pRate == rhs.pRate;
+            case storm::storage::DFTElementType::BE_CONST:
+                return lhs.hash == rhs.hash && lhs.failed == rhs.failed;
+            default:
+                STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "BE of type '" << lhs.type << "' is not known.");
+                break;
+        }
     }
 
     /**
@@ -249,7 +271,23 @@ namespace storage {
 
     protected:
         void colourize(std::shared_ptr<const DFTBE<ValueType>> const& be) {
-            beColour[be->id()] = BEColourClass<ValueType>(be->activeFailureRate(), be->passiveFailureRate(), be->nrParents());
+            switch (be->type()) {
+                case storm::storage::DFTElementType::BE_EXP:
+                {
+                    auto beExp = std::static_pointer_cast<BEExponential<ValueType> const>(be);
+                    beColour[beExp->id()] = BEColourClass<ValueType>(beExp->type(), beExp->activeFailureRate(), beExp->passiveFailureRate(), beExp->nrParents());
+                    break;
+                }
+                case storm::storage::DFTElementType::BE_CONST:
+                {
+                    auto beConst = std::static_pointer_cast<BEConst<ValueType> const>(be);
+                    beColour[beConst->id()] = BEColourClass<ValueType>(beConst->type(), beConst->failed(), beConst->nrParents());
+                    break;
+                }
+                default:
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "BE of type '" << be->type() << "' is not known.");
+                    break;
+            }
         }
 
         void colourize(std::shared_ptr<const DFTGate<ValueType>> const& gate) {
@@ -260,7 +298,24 @@ namespace storage {
         
         void colourize(std::shared_ptr<const DFTDependency<ValueType>> const& dep) {
             // TODO this can be improved for n-ary dependencies.
-            depColour[dep->id()] = std::pair<ValueType, ValueType>(dep->probability(), dep->dependentEvents()[0]->activeFailureRate());
+            std::shared_ptr<DFTBE<ValueType> const> be = dep->dependentEvents()[0];
+            switch (be->type()) {
+                case storm::storage::DFTElementType::BE_EXP:
+                {
+                    auto beExp = std::static_pointer_cast<BEExponential<ValueType> const>(be);
+                    depColour[dep->id()] = std::pair<ValueType, ValueType>(dep->probability(), beExp->activeFailureRate());
+                    break;
+                }
+                case storm::storage::DFTElementType::BE_CONST:
+                {
+                    auto beConst = std::static_pointer_cast<BEConst<ValueType> const>(be);
+                    depColour[dep->id()] = std::pair<ValueType, ValueType>(dep->probability(), beConst->failed());
+                    break;
+                }
+                default:
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "BE of type '" << be->type() << "' is not known.");
+                    break;
+            }
         }
         
         void colourize(std::shared_ptr<const DFTRestriction<ValueType>> const& restr) {
@@ -644,10 +699,26 @@ namespace std {
     template<typename ValueType>
     struct hash<storm::storage::BEColourClass<ValueType>> {
         size_t operator()(storm::storage::BEColourClass<ValueType> const& bcc) const {
+            constexpr uint_fast64_t fivebitmask = (1 << 6) - 1;
+            constexpr uint_fast64_t eightbitmask = (1 << 9) - 1;
             std::hash<ValueType> hasher;
-            return (hasher(bcc.aRate) ^ hasher(bcc.pRate) << 8) | bcc.hash;
+            uint_fast64_t groupHash = static_cast<uint_fast64_t>(1) << 63;
+            groupHash |= (static_cast<uint_fast64_t>(bcc.type) & fivebitmask) << (62 - 5);
+
+            switch (bcc.type) {
+                case storm::storage::DFTElementType::BE_EXP:
+                    return (hasher(bcc.aRate) ^ hasher(bcc.pRate) << 8);
+                case storm::storage::DFTElementType::BE_CONST:
+                    return (bcc.failed << 8);
+                default:
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "BE of type '" << bcc.type << "' is not known.");
+                    break;
+            }
+            groupHash |= static_cast<uint_fast64_t>(bcc.hash) & eightbitmask;
+            return groupHash;
         }
     };
+
 
     template<typename ValueType>
     struct hash<std::pair<ValueType, ValueType>> {

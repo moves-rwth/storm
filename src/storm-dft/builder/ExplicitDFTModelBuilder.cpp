@@ -9,6 +9,7 @@
 #include "storm/utility/vector.h"
 #include "storm/utility/bitoperations.h"
 #include "storm/utility/ProgressMeasurement.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/logic/AtomicLabelFormula.h"
@@ -704,13 +705,26 @@ namespace storm {
                         ValueType rate = state->getBERate(id);
                         if (storm::utility::isZero<ValueType>(rate)) {
                             // Get active failure rate for cold BE
-                            rate = dft.getBasicElement(id)->activeFailureRate();
-                            if (storm::utility::isZero<ValueType>(rate)) {
-                                // Ignore BE which cannot fail
-                                continue;
+                            auto be = dft.getBasicElement(id);
+                            switch (be->type()) {
+                                case storm::storage::DFTElementType::BE_EXP:
+                                {
+                                    auto beExp = std::static_pointer_cast<storm::storage::BEExponential<ValueType> const>(be);
+                                    rate = beExp->activeFailureRate();
+                                    STORM_LOG_ASSERT(!storm::utility::isZero<ValueType>(rate), "Failure rate should not be zero.");
+                                    // Mark BE as cold
+                                    coldBEs.set(i, true);
+                                    break;
+                                }
+                                case storm::storage::DFTElementType::BE_CONST:
+                                {
+                                    // Ignore BE which cannot fail
+                                    continue;
+                                }
+                                default:
+                                    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "BE of type '" << be->type() << "' is not known.");
+                                    break;
                             }
-                            // Mark BE as cold
-                            coldBEs.set(i, true);
                         }
                         rates.push_back(rate);
                         rateSum += rate;

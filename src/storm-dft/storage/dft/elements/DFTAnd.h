@@ -39,12 +39,6 @@ namespace storm {
                 return "AND";
             }
         };
-
-        template<typename ValueType>
-        inline std::ostream& operator<<(std::ostream& os, DFTAnd<ValueType> const& gate) {
-            return os << gate.toString();
-        }
-
               
     }
 }

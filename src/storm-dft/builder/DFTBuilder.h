@@ -175,7 +175,7 @@ namespace storm {
                     STORM_LOG_ERROR("Element with name '" << name << "' already exists.");
                     return false;
                 }
-                mElements[name] = std::make_shared<storm::storage::DFTConst<ValueType>>(mNextId++, name, failed);
+                mElements[name] = std::make_shared<storm::storage::BEConst<ValueType>>(mNextId++, name, failed);
                 return true;
             }
 
@@ -205,7 +205,7 @@ namespace storm {
                     return addBasicElementConst(name, false);
                 }
 
-                mElements[name] = std::make_shared<storm::storage::DFTBE<ValueType>>(mNextId++, name, failureRate, dormancyFactor, transient);
+                mElements[name] = std::make_shared<storm::storage::BEExponential<ValueType>>(mNextId++, name, failureRate, dormancyFactor, transient);
                 return true;
             }
 

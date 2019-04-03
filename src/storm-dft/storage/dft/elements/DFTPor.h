@@ -52,10 +52,5 @@ namespace storm {
             bool inclusive;
         };
 
-        template<typename ValueType>
-        inline std::ostream& operator<<(std::ostream& os, DFTPor<ValueType> const& gate) {
-             return os << gate.toString();
-        }
-
     }
 }

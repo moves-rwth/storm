@@ -417,8 +417,11 @@ namespace storm {
                 varNames.push_back("t_" + element->name());
                 timePointVariables.emplace(i, varNames.size() - 1);
                 switch (element->type()) {
-                    case storm::storage::DFTElementType::BE:
+                    case storm::storage::DFTElementType::BE_EXP:
                         beVariables.push_back(varNames.size() - 1);
+                        break;
+                    case storm::storage::DFTElementType::BE_CONST:
+                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Constant BEs are not supported in SMT translation.");
                         break;
                     case storm::storage::DFTElementType::SPARE:
                     {
@@ -721,8 +724,7 @@ namespace storm {
                         std::shared_ptr<DFTConstraint> nextFailure = std::make_shared<IsConstantValue>(timePointVariables.at(j), i+1);
                         // BE is not cold
                         // TODO: implement use of activation variables here
-                        bool cold = storm::utility::isZero<ValueType>(be->activeFailureRate());
-                        notColdC[i].push_back(std::make_shared<Implies>(nextFailure, std::make_shared<IsTrue>(!cold)));
+                        notColdC[i].push_back(std::make_shared<Implies>(nextFailure, std::make_shared<IsTrue>(be->canFail())));
                     }
                 }
             }

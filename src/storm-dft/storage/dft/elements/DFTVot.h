@@ -71,10 +71,5 @@ namespace storm {
             }
         };
 
-        template<typename ValueType>
-        inline std::ostream& operator<<(std::ostream& os, DFTVot<ValueType> const& gate) {
-            return os << gate.toString();
-        }
-
     }
 }

@@ -3,6 +3,7 @@
 #include <algorithm>
 
 #include "storm/utility/macros.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/WrongFormatException.h"
 
@@ -188,14 +189,12 @@ namespace storm {
                 case storm::storage::DFTElementType::SPARE:
                    element = std::make_shared<storm::storage::DFTSpare<ValueType>>(mNextId++, name);
                    break;
-                case storm::storage::DFTElementType::BE:
+                case storm::storage::DFTElementType::BE_EXP:
+                case storm::storage::DFTElementType::BE_CONST:
                 case storm::storage::DFTElementType::VOT:
                 case storm::storage::DFTElementType::PDEP:
                     // Handled separately
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Gate type handled separately.");
-                case storm::storage::DFTElementType::CONSTF:
-                case storm::storage::DFTElementType::CONSTS:
-                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Gate type not supported.");
                 default:
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Gate type not known.");
             }
@@ -270,17 +269,16 @@ namespace storm {
                     copyGate(std::static_pointer_cast<storm::storage::DFTGate<ValueType>>(element), children);
                     break;
                 }
-                case storm::storage::DFTElementType::BE:
+                case storm::storage::DFTElementType::BE_EXP:
                 {
-                    std::shared_ptr<storm::storage::DFTBE<ValueType>> be = std::static_pointer_cast<storm::storage::DFTBE<ValueType>>(element);
-                    addBasicElementExponential(be->name(), be->activeFailureRate(), be->dormancyFactor(), be->isTransient());
+                    auto beExp = std::static_pointer_cast<storm::storage::BEExponential<ValueType>>(element);
+                    addBasicElementExponential(beExp->name(), beExp->activeFailureRate(), beExp->dormancyFactor(), beExp->isTransient());
                     break;
                 }
-                case storm::storage::DFTElementType::CONSTF:
-                case storm::storage::DFTElementType::CONSTS:
+                case storm::storage::DFTElementType::BE_CONST:
                 {
-                    std::shared_ptr<storm::storage::DFTConst<ValueType>> be = std::static_pointer_cast<storm::storage::DFTConst<ValueType>>(element);
-                    addBasicElementConst(be->name(), be->failed());
+                    auto beConst = std::static_pointer_cast<storm::storage::BEConst<ValueType>>(element);
+                    addBasicElementConst(beConst->name(), beConst->failed());
                     break;
                 }
                 case storm::storage::DFTElementType::PDEP:
@@ -303,7 +301,7 @@ namespace storm {
                     break;
                 }
                 default:
-                    STORM_LOG_ASSERT(false, "Dft type not known.");
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "DFT type '" << element->type() << "' not known.");
                     break;
             }
         }
