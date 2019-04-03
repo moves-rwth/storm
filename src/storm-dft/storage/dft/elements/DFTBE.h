@@ -6,7 +6,8 @@ namespace storm {
     namespace storage {
 
         /*!
-         * Abstract base class for basic elements (BEs) in DFTs.
+         * Abstract base class for basic events (BEs) in DFTs.
+         * BEs are atomic and not further subdivided.
          */
         template<typename ValueType>
         class DFTBE : public DFTElement<ValueType> {
@@ -36,8 +37,7 @@ namespace storm {
              * @param dependency Ingoing dependency.
              */
             void addIngoingDependency(std::shared_ptr<DFTDependency<ValueType>> const& dependency) {
-                // TODO write this assertion for n-ary dependencies, probably by adding a method to the dependencies to support this.
-                //STORM_LOG_ASSERT(e->dependentEvent()->id() == this->id(), "Ids do not match.");
+                STORM_LOG_ASSERT(dependency->containsDependentEvent(this->id()), "Dependency " << *dependency << " has no dependent BE " << *this << ".");
                 STORM_LOG_ASSERT(std::find(mIngoingDependencies.begin(), mIngoingDependencies.end(), dependency) == mIngoingDependencies.end(),
                                  "Ingoing Dependency " << dependency << " already present.");
                 mIngoingDependencies.push_back(dependency);
@@ -69,19 +69,19 @@ namespace storm {
                 }
                 DFTElement<ValueType>::extendSubDft(elemsInSubtree, parentsOfSubRoot, blockParents, sparesAsLeaves);
                 if (elemsInSubtree.empty()) {
-                    // Parent in the subdft, ie it is *not* a subdft
+                    // Parent in the subDFT, i.e., it is *not* a subDFT
                     return;
                 }
-                for (auto const& incDep : ingoingDependencies()) {
-                    incDep->extendSubDft(elemsInSubtree, parentsOfSubRoot, blockParents, sparesAsLeaves);
+                for (auto const& inDep : ingoingDependencies()) {
+                    inDep->extendSubDft(elemsInSubtree, parentsOfSubRoot, blockParents, sparesAsLeaves);
                     if (elemsInSubtree.empty()) {
-                        // Parent in the subdft, ie it is *not* a subdft
+                        // Parent in the subDFT, i.e., it is *not* a subDFT
                         return;
                     }
                 }
             }
 
-            bool checkDontCareAnymore(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues <ValueType>& queues) const override {
+            bool checkDontCareAnymore(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
                 if (DFTElement<ValueType>::checkDontCareAnymore(state, queues)) {
                     state.beNoLongerFailable(this->id());
                     return true;

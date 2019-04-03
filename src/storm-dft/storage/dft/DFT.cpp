@@ -621,6 +621,7 @@ namespace storm {
                     }
                 }
             }
+            // TODO check VOT gates
             return wellformed;
         }
 
