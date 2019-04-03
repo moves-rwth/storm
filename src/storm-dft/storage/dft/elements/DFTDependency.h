@@ -32,8 +32,19 @@ namespace storm {
                 // We cannot assert 0<=p<=1 in general, because ValueType might be RationalFunction.
             }
 
+            /*!
+             * Destructor
+             */
+            virtual ~DFTDependency() {
+                // Intentionally left empty.
+            };
+
             DFTElementType type() const override {
                 return DFTElementType::PDEP;
+            }
+
+            std::string typestring() const override {
+                return this->isFDEP() ? "FDEP" : "PDEP";
             }
 
             /*!
@@ -155,7 +166,7 @@ namespace storm {
 
             std::string toString() const override {
                 std::stringstream stream;
-                stream << "{" << this->name() << "} " << (this->isFDEP() ? "FDEP" : "PDEP") << "(" << this->triggerEvent()->name() << " => { ";
+                stream << "{" << this->name() << "} " << this->typestring() << "(" << this->triggerEvent()->name() << " => { ";
                 for (auto const& depEv : this->dependentEvents()) {
                     stream << depEv->name() << " ";
                 }

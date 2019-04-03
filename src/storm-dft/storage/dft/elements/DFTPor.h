@@ -31,7 +31,7 @@ namespace storm {
             }
 
             std::string typestring() const override {
-                return isInclusive() ? "POR (incl)" : "POR (excl)";
+                return this->isInclusive() ? "POR (incl)" : "POR (excl)";
             }
 
             /*!
@@ -42,7 +42,7 @@ namespace storm {
                 return inclusive;
             }
 
-            void checkFails(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues <ValueType>& queues) const override {
+            void checkFails(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
                 STORM_LOG_ASSERT(isInclusive(), "Exclusive POR not supported.");
                 if (state.isOperational(this->mId)) {
                     auto childIter = this->mChildren.begin();
