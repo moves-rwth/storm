@@ -122,14 +122,11 @@ namespace storm {
 
                     // Check which type the element is and call the corresponding translate-function.
                     switch (dftElement->type()) {
-                        case storm::storage::DFTElementType::BE:
-                            translateBE(std::static_pointer_cast<storm::storage::DFTBE<ValueType> const>(dftElement));
+                        case storm::storage::DFTElementType::BE_EXP:
+                            translateBEExponential(std::static_pointer_cast<storm::storage::BEExponential<ValueType> const>(dftElement));
                             break;
-                        case storm::storage::DFTElementType::CONSTF:
-                            translateCONSTF(dftElement);
-                            break;
-                        case storm::storage::DFTElementType::CONSTS:
-                            translateCONSTS(dftElement);
+                        case storm::storage::DFTElementType::BE_CONST:
+                            translateBEConst(std::static_pointer_cast<storm::storage::BEConst<ValueType> const>(dftElement));
                             break;
                         case storm::storage::DFTElementType::AND:
                             translateAND(std::static_pointer_cast<storm::storage::DFTAnd<ValueType> const>(dftElement));
@@ -163,7 +160,7 @@ namespace storm {
                             translateSeq(std::static_pointer_cast<storm::storage::DFTSeq<ValueType> const>(dftElement));
                             break;
                         default:
-                            STORM_LOG_ASSERT(false, "DFT type " << dftElement->type() << " unknown.");
+                            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "DFT type '" << dftElement->type() << "' not known.");
                             break;
                     }
                 }
@@ -171,8 +168,7 @@ namespace storm {
             }
 
             template<typename ValueType>
-            void DftToGspnTransformator<ValueType>::translateBE(
-                    std::shared_ptr<storm::storage::DFTBE<ValueType> const> dftBE) {
+            void DftToGspnTransformator<ValueType>::translateBEExponential(std::shared_ptr<storm::storage::BEExponential<ValueType> const> dftBE) {
                 double xcenter = mDft.getElementLayoutInfo(dftBE->id()).x;
                 double ycenter = mDft.getElementLayoutInfo(dftBE->id()).y;
 
@@ -260,35 +256,30 @@ namespace storm {
             }
 
             template<typename ValueType>
-            void DftToGspnTransformator<ValueType>::translateCONSTF(
-                    std::shared_ptr<storm::storage::DFTElement<ValueType> const> dftConstF) {
-                double xcenter = mDft.getElementLayoutInfo(dftConstF->id()).x;
-                double ycenter = mDft.getElementLayoutInfo(dftConstF->id()).y;
+            void DftToGspnTransformator<ValueType>::translateBEConst(std::shared_ptr<storm::storage::BEConst<ValueType> const> dftConst) {
+                double xcenter = mDft.getElementLayoutInfo(dftConst->id()).x;
+                double ycenter = mDft.getElementLayoutInfo(dftConst->id()).y;
 
-                addFailedPlace(dftConstF, storm::gspn::LayoutInfo(xcenter, ycenter - 3.0), true);
+                if (dftConst->failed()) {
+                    // Constant failed BE
+                    addFailedPlace(dftConst, storm::gspn::LayoutInfo(xcenter, ycenter - 3.0), true);
 
-                if (!smart || mDft.isRepresentative(dftConstF->id())) {
-                    addUnavailablePlace(dftConstF, storm::gspn::LayoutInfo(xcenter, ycenter + 3.0), false);
-                }
-            }
+                    if (!smart || mDft.isRepresentative(dftConst->id())) {
+                        addUnavailablePlace(dftConst, storm::gspn::LayoutInfo(xcenter, ycenter + 3.0), false);
+                    }
+                } else {
+                    // Constant failsafe BE
+                    size_t capacity = 0; // It cannot contain a token, because it cannot fail.
+                    uint64_t failedPlace = builder.addPlace(capacity, 0, dftConst->name() + STR_FAILED);
+                    assert(failedPlaces.size() == dftConst->id());
+                    failedPlaces.push_back(failedPlace);
+                    builder.setPlaceLayoutInfo(failedPlace, storm::gspn::LayoutInfo(xcenter, ycenter - 3.0));
 
-            template<typename ValueType>
-            void DftToGspnTransformator<ValueType>::translateCONSTS(
-                    std::shared_ptr<storm::storage::DFTElement<ValueType> const> dftConstS) {
-                double xcenter = mDft.getElementLayoutInfo(dftConstS->id()).x;
-                double ycenter = mDft.getElementLayoutInfo(dftConstS->id()).y;
-
-                size_t capacity = 0; // It cannot contain a token, because it cannot fail.
-
-                uint64_t failedPlace = builder.addPlace(capacity, 0, dftConstS->name() + STR_FAILED);
-                assert(failedPlaces.size() == dftConstS->id());
-                failedPlaces.push_back(failedPlace);
-                builder.setPlaceLayoutInfo(failedPlace, storm::gspn::LayoutInfo(xcenter, ycenter - 3.0));
-
-                if (!smart || mDft.isRepresentative(dftConstS->id())) {
-                    uint64_t unavailablePlace = builder.addPlace(capacity, 0, dftConstS->name() + "_unavail");
-                    unavailablePlaces.emplace(dftConstS->id(), unavailablePlace);
-                    builder.setPlaceLayoutInfo(unavailablePlace, storm::gspn::LayoutInfo(xcenter, ycenter + 3.0));
+                    if (!smart || mDft.isRepresentative(dftConst->id())) {
+                        uint64_t unavailablePlace = builder.addPlace(capacity, 0, dftConst->name() + "_unavail");
+                        unavailablePlaces.emplace(dftConst->id(), unavailablePlace);
+                        builder.setPlaceLayoutInfo(unavailablePlace, storm::gspn::LayoutInfo(xcenter, ycenter + 3.0));
+                    }
                 }
             }
 

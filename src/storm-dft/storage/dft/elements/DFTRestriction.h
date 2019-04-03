@@ -106,21 +106,6 @@ namespace storm {
                 }
             }
 
-
-            virtual std::string toString() const override {
-                std::stringstream stream;
-                stream << "{" << this->name() << "} " << typestring() << "( ";
-                typename DFTElementVector::const_iterator it = mChildren.begin();
-                stream << (*it)->name();
-                ++it;
-                while(it != mChildren.end()) {
-                    stream <<  ", " << (*it)->name();
-                    ++it;
-                }
-                stream << ")";
-                return stream.str();
-            }
-
             virtual bool checkDontCareAnymore(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
                 return false;
             }
@@ -155,10 +140,23 @@ namespace storm {
                 return false;
             }
 
-
+            virtual std::string toString() const override {
+                std::stringstream stream;
+                stream << "{" << this->name() << "} " << this->typestring() << "( ";
+                auto it = this->children().begin();
+                stream << (*it)->name();
+                ++it;
+                while(it != this->children().end()) {
+                    stream <<  ", " << (*it)->name();
+                    ++it;
+                }
+                stream << ")";
+                return stream.str();
+            }
 
 
         };
+
 
         template<typename ValueType>
         class DFTSeq : public DFTRestriction<ValueType> {

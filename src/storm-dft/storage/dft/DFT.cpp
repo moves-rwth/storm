@@ -3,6 +3,7 @@
 #include <boost/container/flat_set.hpp>
 #include <map>
 
+#include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/utility/iota_n.h"
@@ -348,9 +349,8 @@ namespace storm {
                     case DFTElementType::OR:
                         builder.addOrElement(newParentName, childrenNames);
                         break;
-                    case DFTElementType::BE:
-                    case DFTElementType::CONSTF:
-                    case DFTElementType::CONSTS:
+                    case DFTElementType::BE_EXP:
+                    case DFTElementType::BE_CONST:
                     case DFTElementType::VOT:
                     case DFTElementType::PAND:
                     case DFTElementType::SPARE:
@@ -391,9 +391,8 @@ namespace storm {
                     case DFTElementType::AND:
                     case DFTElementType::OR:
                     case DFTElementType::VOT:
-                    case DFTElementType::BE:
-                    case DFTElementType::CONSTF:
-                    case DFTElementType::CONSTS:
+                    case DFTElementType::BE_EXP:
+                    case DFTElementType::BE_CONST:
                         break;
                     case DFTElementType::PAND:
                     case DFTElementType::SPARE:
@@ -421,9 +420,8 @@ namespace storm {
                     case DFTElementType::VOT:
                         ++noStatic;
                         break;
-                    case DFTElementType::BE:
-                    case DFTElementType::CONSTF:
-                    case DFTElementType::CONSTS:
+                    case DFTElementType::BE_EXP:
+                    case DFTElementType::BE_CONST:
                     case DFTElementType::PAND:
                     case DFTElementType::SPARE:
                     case DFTElementType::POR:
@@ -443,7 +441,7 @@ namespace storm {
         std::string DFT<ValueType>::getElementsString() const {
             std::stringstream stream;
             for (auto const& elem : mElements) {
-                stream << "[" << elem->id() << "]" << elem->toString() << std::endl;
+                stream << "[" << elem->id() << "]" << *elem << std::endl;
             }
             return stream.str();
         }
@@ -495,7 +493,7 @@ namespace storm {
             std::stringstream stream;
             for (auto const& elem : mElements) {
                 stream << "[" << elem->id() << "]";
-                stream << elem->toString();
+                stream << *elem;
                 if (elem->isDependency()) {
                     stream << "\t** " << storm::storage::toChar(state->getDependencyState(elem->id())) << "[dep]";
                 } else {
@@ -860,9 +858,8 @@ namespace storm {
             size_t noRestriction = 0;
             for (auto const& elem : mElements) {
                 switch (elem->type()) {
-                    case DFTElementType::BE:
-                    case DFTElementType::CONSTF:
-                    case DFTElementType::CONSTS:
+                    case DFTElementType::BE_EXP:
+                    case DFTElementType::BE_CONST:
                         ++noBE;
                         break;
                     case DFTElementType::AND:

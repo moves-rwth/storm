@@ -118,7 +118,13 @@ namespace storm {
                     newState->updateFailableDependencies(next->id());
                 }
 
-                if(newState->isInvalid() || (nextBE->isTransient() && !newState->hasFailed(mDft.getTopLevelIndex()))) {
+                bool transient = false;
+                if (nextBE->type() == storm::storage::DFTElementType::BE_EXP) {
+                    auto beExp = std::static_pointer_cast<storm::storage::BEExponential<ValueType> const>(nextBE);
+                    transient = beExp->isTransient();
+                }
+
+                if(newState->isInvalid() || (transient && !newState->hasFailed(mDft.getTopLevelIndex()))) {
                     // Continue with next possible state
                     state->getFailableElements().next();
                     STORM_LOG_TRACE("State is ignored because " << (newState->isInvalid() ? "it is invalid" : "the transient fault is ignored"));
@@ -173,12 +179,14 @@ namespace storm {
                 } else {
                     // Failure is due to "normal" BE failure
                     // Set failure rate according to activation
+                    STORM_LOG_THROW(nextBE->type() == storm::storage::DFTElementType::BE_EXP, storm::exceptions::NotSupportedException, "BE of type '" << nextBE->type() << "' is not supported.");
+                    auto beExp = std::static_pointer_cast<storm::storage::BEExponential<ValueType> const>(nextBE);
                     bool isActive = true;
-                    if (mDft.hasRepresentant(nextBE->id())) {
+                    if (mDft.hasRepresentant(beExp->id())) {
                         // Active must be checked for the state we are coming from as this state is responsible for the rate
-                        isActive = state->isActive(mDft.getRepresentant(nextBE->id()));
+                        isActive = state->isActive(mDft.getRepresentant(beExp->id()));
                     }
-                    ValueType rate = isActive ? nextBE->activeFailureRate() : nextBE->passiveFailureRate();
+                    ValueType rate = isActive ? beExp->activeFailureRate() : beExp->passiveFailureRate();
                     STORM_LOG_ASSERT(!storm::utility::isZero(rate), "Rate is 0.");
                     choice.addProbability(newStateId, rate);
                     STORM_LOG_TRACE("Added transition to " << newStateId << " with " << (isActive ? "active" : "passive") << " failure rate " << rate);

@@ -11,6 +11,7 @@
 #include "storm/storage/BitVector.h"
 #include "storm/utility/math.h"
 #include "storm/utility/macros.h"
+#include "storm/exceptions/NotSupportedException.h"
 
 #include "storm-dft/storage/dft/DFTElements.h"
 #include "storm-dft/storage/dft/SymmetricUnits.h"
@@ -134,11 +135,23 @@ namespace storm {
 
             std::vector<size_t> nonColdBEs() const {
                 std::vector<size_t> result;
-                for(DFTElementPointer elem : mElements) {
-                    if(elem->isBasicElement()) {
+                for (DFTElementPointer elem : mElements) {
+                    if (elem->isBasicElement()) {
                         std::shared_ptr<DFTBE<ValueType>> be = std::static_pointer_cast<DFTBE<ValueType>>(elem);
-                        if (be->canFail() && !be->isColdBasicElement()) {
-                            result.push_back(be->id());
+                        if (be->canFail()) {
+                            switch (be->type()) {
+                                case storm::storage::DFTElementType::BE_EXP: {
+                                    auto beExp = std::static_pointer_cast<BEExponential<ValueType>>(be);
+                                    if (!beExp->isColdBasicElement()) {
+                                        result.push_back(be->id());
+                                    }
+                                    break;
+                                }
+                                case storm::storage::DFTElementType::BE_CONST:
+                                    result.push_back(be->id());
+                                default:
+                                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "BE type '" << be->type() << "' is not supported.");
+                            }
                         }
                     }
                 }

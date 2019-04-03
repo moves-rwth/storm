@@ -102,14 +102,14 @@ namespace storm {
             
             virtual std::string toString() const override {
                 std::stringstream stream;
-                bool fdep = storm::utility::isOne(mProbability);
-                stream << "{" << this->name() << "} " << (fdep ? "FDEP" : "PDEP") << "(" << mTriggerEvent->name() << " => { ";
-                for(auto const& depEv : mDependentEvents) {
+                bool isFDEP = storm::utility::isOne(this->probability());
+                stream << "{" << this->name() << "} " << (isFDEP ? "FDEP" : "PDEP") << "(" << this->triggerEvent()->name() << " => { ";
+                for(auto const& depEv : this->dependentEvents()) {
                     stream << depEv->name() << " ";
                 }
                 stream << "}";
-                if (!fdep) {
-                    stream << " with probability " << mProbability;
+                if (!isFDEP) {
+                    stream << " with probability " << this->probability();
                 }
                 return stream.str();
             }

@@ -9,11 +9,9 @@
 #include <memory>
 #include <map>
 
-
-
-#include "../DFTElementType.h"
-#include "../DFTState.h"
-#include "../DFTStateSpaceGenerationQueues.h"
+#include "storm-dft/storage/dft/DFTElementType.h"
+#include "storm-dft/storage/dft/DFTState.h"
+#include "storm-dft/storage/dft/DFTStateSpaceGenerationQueues.h"
 #include "storm/utility/constants.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 
@@ -24,6 +22,8 @@ namespace storm {
     namespace storage {
         
         using std::size_t;
+
+        // Forward declarations
         template<typename ValueType>
         class DFTGate;
         
@@ -54,41 +54,84 @@ namespace storm {
 
 
         public:
-            DFTElement(size_t id, std::string const& name) :
-                    mId(id), mName(name)
-            {}
+            /*!
+             * Constructor.
+             * @param id Id.
+             * @param name Name.
+             */
+            DFTElement(size_t id, std::string const& name) : mId(id), mName(name) {
+            }
 
-            virtual ~DFTElement() {}
+            /*!
+             * Destructor.
+             */
+            virtual ~DFTElement() {
+            }
 
-            /**
-             * Returns the id
+            /*!
+             * Get id.
+             * @return Id.
              */
             virtual size_t id() const {
                 return mId;
             }
 
+            /*!
+             * Set id.
+             * @param id Id.
+             */
+            virtual void setId(size_t id) {
+                this->mId = id;
+            }
+
+            /*!
+             * Get name.
+             * @return Name.
+             */
+            virtual std::string const& name() const {
+                return mName;
+            }
+
+
+            /*!
+             * Get type.
+             * @return Type.
+             */
             virtual DFTElementType type() const = 0;
 
-            virtual void setRank(size_t rank) {
-                mRank = rank;
-            }
-            
+            /*!
+             * Get rank.
+             * @return Rank.
+             */
             virtual size_t rank() const {
                 return mRank;
             }
-            
+
+            /*!
+             * Set rank.
+             * @param rank Rank.
+             */
+            virtual void setRank(size_t rank) {
+                this->mRank = rank;
+            }
+
             virtual bool isConstant() const {
                 return false;
             }
-            
-            virtual bool isGate() const {
+
+            /*!
+             * Checks whether the element is a basic element.
+             * @return True iff element is a BE.
+             */
+            virtual bool isBasicElement() const {
                 return false;
             }
 
-            /**
-             *  Returns true if the element is a BE
+            /*!
+             * Check wether the element is a gate.
+             * @return True iff element is a gate.
              */
-            virtual bool isBasicElement() const {
+            virtual bool isGate() const {
                 return false;
             }
             
@@ -107,17 +150,7 @@ namespace storm {
                 return false;
             }
 
-            virtual void setId(size_t newId) {
-                mId = newId;
-            }
 
-            /**
-             * Returns the name
-             */
-            virtual std::string const& name() const {
-                return mName;
-            }
-            
             bool addParent(DFTGatePointer const& e) {
                 if(std::find(mParents.begin(), mParents.end(), e) != mParents.end()) {
                     return false;
@@ -260,8 +293,6 @@ namespace storm {
             
             virtual std::size_t nrChildren() const = 0;
 
-            virtual std::string toString() const = 0;
-
             virtual bool checkDontCareAnymore(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const;
 
             /**
@@ -292,14 +323,23 @@ namespace storm {
                 return type() == other.type();
             }
 
+            /*!
+             * Print information about element to string.
+             * @return Element information.
+             */
+            virtual std::string toString() const = 0;
+
 
         protected:
            // virtual bool checkIsomorphicSubDftHelper(DFTElement const& otherElem, std::vector<std::pair<DFTElement const&, DFTElement const&>>& mapping, std::vector<DFTElement const&> const& order ) const = 0;
 
         };
-        
-        
-       
+
+
+        template<typename ValueType>
+        inline std::ostream& operator<<(std::ostream& os, DFTElement<ValueType> const& element) {
+            return os << element.toString();
+        }
           
         template<typename ValueType>
         bool equalType(DFTElement<ValueType> const& e1, DFTElement<ValueType> const& e2) {

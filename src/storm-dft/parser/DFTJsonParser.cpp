@@ -93,14 +93,25 @@ namespace storm {
                     ValueType probability = parseRationalExpression(parseJsonNumber(data.at("probability")));
                     success = builder.addDepElement(name, childNames, probability);
                 } else if (type == "be") {
-                    // TODO support different distributions
-                    ValueType failureRate = parseRationalExpression(parseJsonNumber(data.at("rate")));
-                    ValueType dormancyFactor = parseRationalExpression(parseJsonNumber(data.at("dorm")));
-                    bool transient = false;
-                    if (data.count("transient") > 0) {
-                        transient = data.at("transient");
+                    std::string distribution = "exp"; // Set default of exponential distribution
+                    if (data.count("distribution") > 0) {
+                        distribution = data.at("distribution");
                     }
-                    success = builder.addBasicElementExponential(name, failureRate, dormancyFactor, transient);
+                    if (distribution == "exp") {
+                        ValueType failureRate = parseRationalExpression(parseJsonNumber(data.at("rate")));
+                        ValueType dormancyFactor = parseRationalExpression(parseJsonNumber(data.at("dorm")));
+                        bool transient = false;
+                        if (data.count("transient") > 0) {
+                            transient = data.at("transient");
+                        }
+                        success = builder.addBasicElementExponential(name, failureRate, dormancyFactor, transient);
+                    } else if (distribution == "const") {
+                        bool failed = data.at("failed");
+                        success = builder.addBasicElementConst(name, failed);
+                    } else {
+                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Distribution: " << distribution << " not supported.");
+                        success = false;
+                    }
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Type name: " << type << "  not recognized.");
                     success = false;
