@@ -24,7 +24,7 @@ namespace storm {
              * parame children Children.
              */
             DFTPand(size_t id, std::string const& name, bool inclusive, std::vector<std::shared_ptr<DFTElement<ValueType>>> const& children = {}) : DFTGate<ValueType>(id, name, children), inclusive(inclusive) {
-                // Intentionally left empty.
+                    // Intentionally left empty.
             }
 
             DFTElementType type() const override {
@@ -32,7 +32,7 @@ namespace storm {
             }
 
             std::string typestring() const override {
-                return isInclusive() ? "PAND (incl)" : "PAND (excl)";
+                return this->isInclusive() ? "PAND (incl)" : "PAND (excl)";
             }
 
             /*!

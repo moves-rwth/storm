@@ -1,10 +1,9 @@
 #pragma once
 
-#include "storm-dft/storage/dft/elements/DFTAnd.h"
-#include "storm-dft/storage/dft/elements/DFTBE.h"
-#include "storm-dft/storage/dft/elements/BEConst.h"
-#include "storm-dft/storage/dft/elements/DFTDependency.h"
 #include "storm-dft/storage/dft/elements/BEExponential.h"
+#include "storm-dft/storage/dft/elements/BEConst.h"
+#include "storm-dft/storage/dft/elements/DFTAnd.h"
+#include "storm-dft/storage/dft/elements/DFTDependency.h"
 #include "storm-dft/storage/dft/elements/DFTOr.h"
 #include "storm-dft/storage/dft/elements/DFTPand.h"
 #include "storm-dft/storage/dft/elements/DFTPor.h"

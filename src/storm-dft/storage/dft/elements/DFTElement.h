@@ -99,6 +99,10 @@ namespace storm {
              */
             virtual DFTElementType type() const = 0;
 
+            virtual std::string typestring() const {
+                return storm::storage::toString(this->type());
+            }
+
             /*!
              * Get rank.
              * @return Rank.
@@ -290,7 +294,10 @@ namespace storm {
             virtual void extendSpareModule(std::set<size_t>& elementsInModule) const;
 
            // virtual void extendImmediateFailureCausePathEvents(std::set<size_t>& ) const;
-            
+            /*!
+             * Get number of children.
+             * @return Nr of children.
+             */
             virtual std::size_t nrChildren() const = 0;
 
             virtual bool checkDontCareAnymore(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const;
