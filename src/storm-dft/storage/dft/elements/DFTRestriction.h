@@ -49,7 +49,7 @@ namespace storm {
              * @return True iff all children are BEs.
              */
             bool allChildrenBEs() const {
-                for (auto const& elem : mChildren) {
+                for (auto const& elem : this->children()) {
                     if (!elem->isBasicElement()) {
                         return false;
                     }
@@ -57,25 +57,23 @@ namespace storm {
                 return true;
             }
 
-            virtual void extendSpareModule(std::set<size_t>& elementsInSpareModule) const override {
+            void extendSpareModule(std::set<size_t>& elementsInSpareModule) const override {
                 // Do nothing
             }
 
-            virtual bool checkDontCareAnymore(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues <ValueType>& queues) const override {
+            bool checkDontCareAnymore(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues <ValueType>& queues) const override {
                 return false;
             }
 
 
         protected:
-            void fail(DFTState <ValueType>& state, DFTStateSpaceGenerationQueues <ValueType>& queues) const {
+            void fail(DFTState <ValueType>& state, DFTStateSpaceGenerationQueues <ValueType>& queues) const override {
                 state.markAsInvalid();
             }
 
-            void failsafe(DFTState <ValueType>& state, DFTStateSpaceGenerationQueues <ValueType>& queues) const {
+            void failsafe(DFTState <ValueType>& state, DFTStateSpaceGenerationQueues <ValueType>& queues) const override {
 
             }
-
-            DFTElementVector mChildren;
         };
 
 
@@ -98,18 +96,18 @@ namespace storm {
                 // Intentionally left empty.
             }
 
-            virtual DFTElementType type() const override {
+            DFTElementType type() const override {
                 return DFTElementType::SEQ;
             }
 
-            virtual bool isSeqEnforcer() const override {
+            bool isSeqEnforcer() const override {
                 return true;
             }
 
             void checkFails(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues <ValueType>& queues) const override {
                 STORM_LOG_ASSERT(queues.failurePropagationDone(), "Failure propagation not finished.");
                 bool childOperationalBefore = false;
-                for (auto const& child : this->mChildren) {
+                for (auto const& child : this->children()) {
                     if (!state.hasFailed(child->id())) {
                         childOperationalBefore = true;
                     } else if (childOperationalBefore && state.hasFailed(child->id())) {
@@ -122,7 +120,7 @@ namespace storm {
             void checkFailsafe(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues <ValueType>& queues) const override {
             }
 
-            virtual bool checkDontCareAnymore(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues <ValueType>& queues) const override {
+            bool checkDontCareAnymore(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues <ValueType>& queues) const override {
                 // Actually, it doesnt matter what we return here..
                 return false;
             }

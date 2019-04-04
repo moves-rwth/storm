@@ -67,7 +67,7 @@ namespace storm {
 
         protected:
 
-            virtual void fail(DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const {
+            void fail(DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
                 for (std::shared_ptr<DFTGate> parent : this->mParents) {
                     if (state.isOperational(parent->id())) {
                         queues.propagateFailure(parent);
@@ -80,7 +80,7 @@ namespace storm {
                 this->childrenDontCare(state, queues);
             }
 
-            virtual void failsafe(DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const {
+            void failsafe(DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
                 for (std::shared_ptr<DFTGate> parent : this->mParents) {
                     if (state.isOperational(parent->id())) {
                         queues.propagateFailsafe(parent);
