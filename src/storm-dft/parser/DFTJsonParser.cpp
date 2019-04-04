@@ -3,8 +3,9 @@
 #include <iostream>
 #include <fstream>
 #include <boost/algorithm/string.hpp>
-#include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string/replace.hpp>
+#include <boost/lexical_cast.hpp>
+
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/FileIoException.h"
 #include "storm/exceptions/NotSupportedException.h"
@@ -87,16 +88,17 @@ namespace storm {
                     success = builder.addSpareElement(name, childNames);
                 } else if (type == "seq") {
                     success = builder.addSequenceEnforcer(name, childNames);
-                } else if (type== "fdep") {
+                } else if (type == "fdep") {
                     success = builder.addDepElement(name, childNames, storm::utility::one<ValueType>());
-                } else if (type== "pdep") {
+                } else if (type == "pdep") {
                     ValueType probability = parseRationalExpression(parseJsonNumber(data.at("probability")));
                     success = builder.addDepElement(name, childNames, probability);
-                } else if (type == "be") {
+                } else if (boost::starts_with(type, "be")) {
                     std::string distribution = "exp"; // Set default of exponential distribution
                     if (data.count("distribution") > 0) {
                         distribution = data.at("distribution");
                     }
+                    STORM_LOG_THROW(type == "be" || "be_" + distribution == type, storm::exceptions::WrongFormatException, "BE type '" << type << "' and distribution '" << distribution << " do not agree.");
                     if (distribution == "exp") {
                         ValueType failureRate = parseRationalExpression(parseJsonNumber(data.at("rate")));
                         ValueType dormancyFactor = parseRationalExpression(parseJsonNumber(data.at("dorm")));
