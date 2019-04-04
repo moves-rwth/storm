@@ -44,7 +44,7 @@ namespace storm {
             void checkFails(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
                 if (state.isOperational(this->mId)) {
                     unsigned nrFailedChildren = 0;
-                    for (auto const& child : this->mChildren) {
+                    for (auto const& child : this->children()) {
                         if (state.hasFailed(child->id())) {
                             ++nrFailedChildren;
                             if (nrFailedChildren >= mThreshold) {
@@ -61,7 +61,7 @@ namespace storm {
                 STORM_LOG_ASSERT(this->hasFailsafeChild(state), "No failsafe child.");
                 if (state.isOperational(this->mId)) {
                     unsigned nrFailsafeChildren = 0;
-                    for (auto const& child : this->mChildren) {
+                    for (auto const& child : this->children()) {
                         if (state.isFailsafe(child->id())) {
                             ++nrFailsafeChildren;
                             if (nrFailsafeChildren > this->nrChildren() - mThreshold) {

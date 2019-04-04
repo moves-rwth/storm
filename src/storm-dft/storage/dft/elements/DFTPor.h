@@ -45,14 +45,14 @@ namespace storm {
             void checkFails(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
                 STORM_LOG_ASSERT(isInclusive(), "Exclusive POR not supported.");
                 if (state.isOperational(this->mId)) {
-                    auto childIter = this->mChildren.begin();
+                    auto childIter = this->children().begin();
                     if (state.hasFailed((*childIter)->id())) {
                         // First child has failed before others
                         this->fail(state, queues);
                         return;
                     }
                     // Iterate over other children
-                    for (; childIter != this->mChildren.end(); ++childIter) {
+                    for (; childIter != this->children().end(); ++childIter) {
                         if (state.hasFailed((*childIter)->id())) {
                             // Child has failed before first child
                             this->failsafe(state, queues);
@@ -65,7 +65,7 @@ namespace storm {
             void checkFailsafe(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
                 STORM_LOG_ASSERT(isInclusive(), "Exclusive POR not supported.");
                 // If first child is not failsafe, it could still fail.
-                if (state.isFailsafe(this->mChildren.front()->id())) {
+                if (state.isFailsafe(this->children().front()->id())) {
                     this->failsafe(state, queues);
                     this->childrenDontCare(state, queues);
                 }
