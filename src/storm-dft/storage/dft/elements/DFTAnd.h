@@ -29,7 +29,7 @@ namespace storm {
 
             void checkFails(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
                 if (state.isOperational(this->mId)) {
-                    for (auto const& child : this->mChildren) {
+                    for (auto const& child : this->children()) {
                         if (!state.hasFailed(child->id())) {
                             return;
                         }

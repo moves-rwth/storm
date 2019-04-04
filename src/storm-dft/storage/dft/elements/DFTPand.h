@@ -47,7 +47,7 @@ namespace storm {
                 STORM_LOG_ASSERT(isInclusive(), "Exclusive PAND not supported.");
                 if (state.isOperational(this->mId)) {
                     bool childOperationalBefore = false;
-                    for (auto const& child : this->mChildren) {
+                    for (auto const& child : this->children()) {
                         if (!state.hasFailed(child->id())) {
                             childOperationalBefore = true;
                         } else if (childOperationalBefore && state.hasFailed(child->id())) {

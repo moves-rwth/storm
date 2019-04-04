@@ -14,9 +14,6 @@ namespace storm {
             using DFTElementPointer = std::shared_ptr<DFTElement<ValueType>>;
             using DFTElementVector = std::vector<DFTElementPointer>;
 
-        protected:
-            DFTElementVector mChildren;
-
         public:
             /*!
              * Constructor.
@@ -50,7 +47,7 @@ namespace storm {
             virtual void extendSpareModule(std::set<size_t>& elementsInSpareModule) const override {
                 if (!this->isSpareGate()) {
                     DFTElement<ValueType>::extendSpareModule(elementsInSpareModule);
-                    for (auto const& child : mChildren) {
+                    for (auto const& child : this->children()) {
                         if (elementsInSpareModule.count(child->id()) == 0) {
                             elementsInSpareModule.insert(child->id());
                             child->extendSpareModule(elementsInSpareModule);
@@ -70,7 +67,7 @@ namespace storm {
 
         protected:
 
-            void fail(DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const {
+            virtual void fail(DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const {
                 for (std::shared_ptr<DFTGate> parent : this->mParents) {
                     if (state.isOperational(parent->id())) {
                         queues.propagateFailure(parent);
@@ -83,7 +80,7 @@ namespace storm {
                 this->childrenDontCare(state, queues);
             }
 
-            void failsafe(DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const {
+            virtual void failsafe(DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const {
                 for (std::shared_ptr<DFTGate> parent : this->mParents) {
                     if (state.isOperational(parent->id())) {
                         queues.propagateFailsafe(parent);
@@ -94,7 +91,7 @@ namespace storm {
             }
 
             void childrenDontCare(DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const {
-                queues.propagateDontCare(mChildren);
+                queues.propagateDontCare(this->children());
             }
         };
 
