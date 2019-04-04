@@ -158,6 +158,11 @@ namespace storm {
                 return false;
             }
 
+            virtual void fail(DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const = 0;
+
+            virtual void failsafe(DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const = 0;
+
+
         private:
             DFTElementVector mChildren;
 
