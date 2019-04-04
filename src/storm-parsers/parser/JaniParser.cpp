@@ -397,10 +397,15 @@ namespace storm {
                     storm::logic::OperatorInformation opInfo;
                     opInfo.optimalityType =  opString == "Smin" ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize;
                     opInfo.bound = bound;
-                    
+                    STORM_LOG_THROW(propertyStructure.count("accumulate") > 0, storm::exceptions::InvalidJaniException, "Expected an accumulate array at steady state property at " << scope.description);
+                    storm::logic::RewardAccumulation rewardAccumulation = parseRewardAccumulation(propertyStructure.at("accumulate"), scope.description);
                     STORM_LOG_THROW(propertyStructure.count("exp") > 0, storm::exceptions::InvalidJaniException, "Expected an expression at steady state property at " << scope.description);
                     auto rewExpr = parseExpression(propertyStructure["exp"], scope.refine("steady-state operator"), true);
-                    if (!rewExpr.isInitialized() || rewExpr.hasBooleanType()) {
+                    if (!rewExpr.isInitialized()) {
+                        STORM_LOG_THROW(!rewardAccumulation.isStepsSet(), storm::exceptions::InvalidJaniException, "Nested long-run average properties are not allowed to accumulate on steps at" << scope.description);
+                        STORM_LOG_THROW(!rewardAccumulation.isExitSet() || !rewardAccumulation.isTimeSet(), storm::exceptions::InvalidJaniException, "Nested long-run average properties are not allowed to accumulate both on exit and time at" << scope.description);
+                        STORM_LOG_THROW(propertyStructure.count("exp") > 0, storm::exceptions::InvalidJaniException, "Expected an expression at steady state property at " << scope.description);
+                        STORM_LOG_WARN("Reward Accumulations on nested long-run average properties is not respected.");
                         std::shared_ptr<storm::logic::Formula const> subformula = parseUnaryFormulaArgument(propertyStructure, formulaContext, opString, scope.refine("Steady-state operator"))[0];
                         return std::make_shared<storm::logic::LongRunAverageOperatorFormula>(subformula, opInfo);
                     }
@@ -409,7 +414,7 @@ namespace storm {
                     if (!rewExpr.isVariable()) {
                         nonTrivialRewardModelExpressions.emplace(rewardName, rewExpr);
                     }
-                    auto subformula = std::make_shared<storm::logic::LongRunAverageRewardFormula>();
+                    auto subformula = std::make_shared<storm::logic::LongRunAverageRewardFormula>(rewardAccumulation);
                     return std::make_shared<storm::logic::RewardOperatorFormula>(subformula, rewardName, opInfo);
                     
                 } else if (opString == "U" || opString == "F") {
