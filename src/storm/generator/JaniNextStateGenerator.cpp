@@ -43,7 +43,7 @@ namespace storm {
         JaniNextStateGenerator<ValueType, StateType>::JaniNextStateGenerator(storm::jani::Model const& model, NextStateGeneratorOptions const& options, bool) : NextStateGenerator<ValueType, StateType>(model.getExpressionManager(), options), model(model), rewardExpressions(), hasStateActionRewards(false) {
             STORM_LOG_THROW(!this->options.isBuildChoiceLabelsSet(), storm::exceptions::InvalidSettingsException, "JANI next-state generator cannot generate choice labels.");
 
-            auto features = model.getModelFeatures();
+            auto features = this->model.getModelFeatures();
             features.remove(storm::jani::ModelFeature::DerivedOperators);
             features.remove(storm::jani::ModelFeature::StateExitRewards);
             // Eliminate arrays if necessary.
@@ -72,15 +72,15 @@ namespace storm {
             this->transientVariableInformation.registerArrayVariableReplacements(arrayEliminatorData);
             
             // Create a proper evalator.
-            this->evaluator = std::make_unique<storm::expressions::ExpressionEvaluator<ValueType>>(model.getManager());
+            this->evaluator = std::make_unique<storm::expressions::ExpressionEvaluator<ValueType>>(this->model.getManager());
             this->transientVariableInformation.setDefaultValuesInEvaluator(*this->evaluator);
             
             if (this->options.isBuildAllRewardModelsSet()) {
-                rewardExpressions = model.getAllRewardModelExpressions();
+                rewardExpressions = this->model.getAllRewardModelExpressions();
             } else {
                 // Extract the reward models from the model based on the names we were given.
                 for (auto const& rewardModelName : this->options.getRewardModelNames()) {
-                    rewardExpressions.emplace_back(rewardModelName, model.getRewardModelExpression(rewardModelName));
+                    rewardExpressions.emplace_back(rewardModelName, this->model.getRewardModelExpression(rewardModelName));
                 }
             }
             
@@ -96,9 +96,9 @@ namespace storm {
                         // If it's a label, i.e. refers to a transient boolean variable we need to derive the expression
                         // for the label so we can cut off the exploration there.
                         if (expressionOrLabelAndBool.first.getLabel() != "init" && expressionOrLabelAndBool.first.getLabel() != "deadlock") {
-                            STORM_LOG_THROW(model.getGlobalVariables().hasVariable(expressionOrLabelAndBool.first.getLabel()) , storm::exceptions::InvalidSettingsException, "Terminal states refer to illegal label '" << expressionOrLabelAndBool.first.getLabel() << "'.");
+                            STORM_LOG_THROW(this->model.getGlobalVariables().hasVariable(expressionOrLabelAndBool.first.getLabel()) , storm::exceptions::InvalidSettingsException, "Terminal states refer to illegal label '" << expressionOrLabelAndBool.first.getLabel() << "'.");
                             
-                            storm::jani::Variable const& variable = model.getGlobalVariables().getVariable(expressionOrLabelAndBool.first.getLabel());
+                            storm::jani::Variable const& variable = this->model.getGlobalVariables().getVariable(expressionOrLabelAndBool.first.getLabel());
                             STORM_LOG_THROW(variable.isBooleanVariable(), storm::exceptions::InvalidSettingsException, "Terminal states refer to non-boolean variable '" << expressionOrLabelAndBool.first.getLabel() << "'.");
                             STORM_LOG_THROW(variable.isTransient(), storm::exceptions::InvalidSettingsException, "Terminal states refer to non-transient variable '" << expressionOrLabelAndBool.first.getLabel() << "'.");
                             
