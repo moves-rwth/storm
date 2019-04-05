@@ -206,9 +206,10 @@ namespace storm {
             return result;
         }
         
-        boost::any FragmentChecker::visit(LongRunAverageRewardFormula const&, boost::any const& data) const {
+        boost::any FragmentChecker::visit(LongRunAverageRewardFormula const& f, boost::any const& data) const {
             InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
-            return inherited.getSpecification().areLongRunAverageRewardFormulasAllowed();
+            bool result = (!f.hasRewardAccumulation() || inherited.getSpecification().isRewardAccumulationAllowed());
+            return result && inherited.getSpecification().areLongRunAverageRewardFormulasAllowed();
         }
         
         boost::any FragmentChecker::visit(MultiObjectiveFormula const& f, boost::any const& data) const {
