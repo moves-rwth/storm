@@ -1,17 +1,17 @@
+#include <storm/exceptions/UnmetRequirementException.h>
 #include "storm-dft/api/storm-dft.h"
 
 #include "storm-dft/settings/DftSettings.h"
+#include "storm-dft/settings/modules/DftGspnSettings.h"
 #include "storm-dft/settings/modules/DftIOSettings.h"
 #include "storm-dft/settings/modules/FaultTreeSettings.h"
-#include "storm-dft/settings/modules/DftGspnSettings.h"
+#include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/IOSettings.h"
 #include "storm/settings/modules/ResourceSettings.h"
-#include "storm/settings/modules/GeneralSettings.h"
-
-
-#include "storm-parsers/api/storm-parsers.h"
 #include "storm/utility/initialize.h"
 #include "storm-cli-utilities/cli.h"
+#include "storm-parsers/api/storm-parsers.h"
+
 
 /*!
  * Process commandline options and start computations.
@@ -28,7 +28,7 @@ void processOptions() {
 
 
     if (!dftIOSettings.isDftFileSet() && !dftIOSettings.isDftJsonFileSet()) {
-        STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "No input model.");
+        STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "No input model given.");
     }
 
     // Build DFT from given file
@@ -48,13 +48,12 @@ void processOptions() {
     if (dftIOSettings.isExportToJson()) {
         // Export to json
         storm::api::exportDFTToJsonFile<ValueType>(*dft, dftIOSettings.getExportJsonFilename());
-        return;
     }
 
     // Check well-formedness of DFT
     std::stringstream stream;
     if (!dft->checkWellFormedness(stream)) {
-        STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "DFT is not well-formed: " << stream.str());
+        STORM_LOG_THROW(false, storm::exceptions::UnmetRequirementException, "DFT is not well-formed: " << stream.str());
     }
 
     if (dftGspnSettings.isTransformToGspn()) {
@@ -82,14 +81,16 @@ void processOptions() {
     }
 #endif
 
+    // From now on we analyse DFT via model checking
+
     // Set min or max
     std::string optimizationDirection = "min";
     if (dftIOSettings.isComputeMaximalValue()) {
-        STORM_LOG_THROW(!dftIOSettings.isComputeMinimalValue(), storm::exceptions::InvalidSettingsException, "Cannot compute minimal and maximal values at the same time.");
         optimizationDirection = "max";
     }
 
-    // Construct properties to analyse
+    // Construct properties to analyse.
+    // We allow multiple properties to be checked at once.
     std::vector<std::string> properties;
     if (ioSettings.isPropertySet()) {
         properties.push_back(ioSettings.getProperty());
@@ -114,10 +115,13 @@ void processOptions() {
     }
 
     // Build properties
-    STORM_LOG_THROW(!properties.empty(), storm::exceptions::InvalidSettingsException, "No property given.");
-    std::string propString = properties[0];
-    for (size_t i = 1; i < properties.size(); ++i) {
-        propString += ";" + properties[i];
+    STORM_LOG_WARN_COND(!properties.empty(), "No property given.");
+    std::string propString;
+    for (size_t i = 0; i < properties.size(); ++i) {
+        if (i + 1 < properties.size()) {
+            propString += ";";
+        }
+        propString += properties[i];
     }
     std::vector<std::shared_ptr<storm::logic::Formula const>> props = storm::api::extractFormulasFromProperties(storm::api::parseProperties(propString));
 
@@ -159,7 +163,7 @@ void processOptions() {
  *
  * @param argc The argc argument of main().
  * @param argv The argv argument of main().
- * @return Return code, 0 if successfull, not 0 otherwise.
+ * @return Return code, 0 if successful, > 0 otherwise.
  */
 int main(const int argc, const char** argv) {
     try {
