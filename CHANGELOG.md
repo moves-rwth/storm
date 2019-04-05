@@ -12,9 +12,12 @@ Version 1.3.x
 - Allow to quickly check a benchmark from the [Quantitative Verification Benchmark Set](http://qcomp.org/benchmarks/) using the --qvbs option.
 - Added script resources/examples/download_qvbs.sh to download the QVBS.
 - If an option is unknown, Storm now prints a hint to similar option names.
-- Allow bounded types for constants in JANI.
+- JANI: Allow bounded types for constants
+- JANI: Support for non-trivial reward accumulations.
+- JANI: Fixed support for reward expressions over non-transient variables.
 - Fixed sparse bisimulation of MDPs (which failed if all non-absorbing states in the quotient are initial)
 - Fixed linking with Mathsat on macOS
+- Fixed compilation for macOS mojave
 
 ### Version 1.3.0 (2018/12)
 - Slightly improved scheduler extraction
