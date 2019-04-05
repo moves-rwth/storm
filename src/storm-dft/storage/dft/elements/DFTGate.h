@@ -90,6 +90,11 @@ namespace storm {
                 this->childrenDontCare(state, queues);
             }
 
+            /*!
+             * Propagate Don't Care to children.
+             * @param state Current DFT state.
+             * @param queues Propagation queues.
+             */
             void childrenDontCare(DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const {
                 queues.propagateDontCare(this->children());
             }

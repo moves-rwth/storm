@@ -55,6 +55,18 @@ namespace storm {
                 return mProbability;
             }
 
+            bool isDependency() const override {
+                return true;
+            }
+
+            /*!
+             * Check whether the dependency is an FDEP, i.e., p=1.
+             * @return True iff p=1.
+             */
+            bool isFDEP() const {
+                return storm::utility::isOne(this->probability());
+            }
+
             /*!
              * Get trigger event, i.e., the first child.
              * @return Trigger event.
@@ -104,18 +116,6 @@ namespace storm {
 
             virtual size_t nrChildren() const override {
                 return 1;
-            }
-
-            bool isDependency() const override {
-                return true;
-            }
-
-            /*!
-             * Check whether the dependency is an FDEP, i.e., p=1.
-             * @return True iff p=1.
-             */
-            bool isFDEP() const {
-                return storm::utility::isOne(this->probability());
             }
 
             bool isTypeEqualTo(DFTElement<ValueType> const& other) const override {
