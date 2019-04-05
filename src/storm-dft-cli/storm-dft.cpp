@@ -120,16 +120,38 @@ void processOptions() {
         propString += ";" + properties[i];
     }
     std::vector<std::shared_ptr<storm::logic::Formula const>> props = storm::api::extractFormulasFromProperties(storm::api::parseProperties(propString));
-    STORM_LOG_ASSERT(props.size() > 0, "No properties found.");
+
+    // Set relevant elements
+    // TODO: also incorporate events from properties
+    std::set<size_t> relevantEvents; // Per default only the toplevel event is relevant
+    // Possible clash of relevantEvents and disableDC was already considered in FaultTreeSettings::check().
+    if (faultTreeSettings.areRelevantEventsSet()) {
+        for (std::string const& relevantName : faultTreeSettings.getRelevantEvents()) {
+            if (relevantName == "none") {
+                // Only toplevel event is relevant
+                relevantEvents = {};
+                break;
+            } else if (relevantName == "all") {
+                // All events are relevant
+                relevantEvents = dft->getAllIds();
+                break;
+            } else {
+                // Find corresponding id
+                relevantEvents.insert(dft->getIndex(relevantName));
+            }
+        }
+    } else if (faultTreeSettings.isDisableDC()) {
+        // All events are relevant
+        relevantEvents = dft->getAllIds();
+    }
 
     // Carry out the actual analysis
+    double approximationError = 0.0;
     if (faultTreeSettings.isApproximationErrorSet()) {
-        // Approximate analysis
-        storm::api::analyzeDFTApprox<ValueType>(*dft, props, faultTreeSettings.useSymmetryReduction(), faultTreeSettings.useModularisation(), !faultTreeSettings.isDisableDC(),
-                                                faultTreeSettings.getApproximationError(), faultTreeSettings.getApproximationHeuristic(), true);
-    } else {
-        storm::api::analyzeDFT<ValueType>(*dft, props, faultTreeSettings.useSymmetryReduction(), faultTreeSettings.useModularisation(), !faultTreeSettings.isDisableDC(), true);
+        approximationError = faultTreeSettings.getApproximationError();
     }
+    storm::api::analyzeDFT<ValueType>(*dft, props, faultTreeSettings.useSymmetryReduction(), faultTreeSettings.useModularisation(), relevantEvents, approximationError,
+                                      faultTreeSettings.getApproximationHeuristic(), true);
 }
 
 /*!

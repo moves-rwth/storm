@@ -846,6 +846,22 @@ namespace storm {
         }
 
         template<typename ValueType>
+        std::set<size_t> DFT<ValueType>::getAllIds() const {
+            std::set<size_t> ids;
+            for (auto const& elem : mElements) {
+                ids.insert(elem->id());
+            }
+            return ids;
+        }
+
+        template<typename ValueType>
+        size_t DFT<ValueType>::getIndex(std::string const& name) const {
+            auto iter = std::find_if(mElements.begin(), mElements.end(), [&name](DFTElementPointer const& e) { return e->name() == name; });
+            STORM_LOG_THROW(iter != mElements.end(), storm::exceptions::InvalidArgumentException, "Event name '" << name << "' not known.");
+            return (*iter)->id();
+        }
+
+        template<typename ValueType>
         void DFT<ValueType>::writeStatsToStream(std::ostream& stream) const {
             // Count individual types of elements
             size_t noBE = 0;

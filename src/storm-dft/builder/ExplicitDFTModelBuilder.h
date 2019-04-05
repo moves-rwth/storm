@@ -174,9 +174,9 @@ namespace storm {
              *
              * @param dft DFT.
              * @param symmetries Symmetries in the dft.
-             * @param enableDC Flag indicating if dont care propagation should be used.
+             * @param relevantEvents List with ids of relevant events which should be observed.
              */
-            ExplicitDFTModelBuilder(storm::storage::DFT<ValueType> const& dft, storm::storage::DFTIndependentSymmetries const& symmetries, bool enableDC);
+            ExplicitDFTModelBuilder(storm::storage::DFT<ValueType> const& dft, storm::storage::DFTIndependentSymmetries const& symmetries, std::set<size_t> const& relevantEvents);
 
             /*!
              * Build model from DFT.
@@ -312,8 +312,8 @@ namespace storm {
             // TODO Matthias: use const reference
             std::shared_ptr<storm::storage::DFTStateGenerationInfo> stateGenerationInfo;
 
-            // Flag indication if dont care propagation should be used.
-            bool enableDC = true;
+            // List with ids of relevant events which should be observed.
+            std::set<size_t> const& relevantEvents;
 
             //TODO Matthias: make changeable
             const bool mergeFailedStates = true;
