@@ -19,7 +19,21 @@ namespace storm {
         }
         
         bool ModelBase::isNondeterministicModel() const {
-            return this->isOfType(storm::models::ModelType::Mdp) || this->isOfType(storm::models::ModelType::MarkovAutomaton);
+            for (auto const& type : {storm::models::ModelType::Mdp, storm::models::ModelType::Pomdp, storm::models::ModelType::S2pg, storm::models::ModelType::MarkovAutomaton}) {
+                if (this->isOfType(type)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        
+        bool ModelBase::isDiscreteTimeModel() const {
+            for (auto const& type : {storm::models::ModelType::Dtmc, storm::models::ModelType::Mdp, storm::models::ModelType::Pomdp, storm::models::ModelType::S2pg}) {
+                if (this->isOfType(type)) {
+                    return true;
+                }
+            }
+            return false;
         }
         
         bool ModelBase::supportsParameters() const {
