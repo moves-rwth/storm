@@ -10,7 +10,7 @@ namespace storm {
     namespace generator {
         
         template<typename ValueType, typename StateType>
-        DftNextStateGenerator<ValueType, StateType>::DftNextStateGenerator(storm::storage::DFT<ValueType> const& dft, storm::storage::DFTStateGenerationInfo const& stateGenerationInfo, bool enableDC, bool mergeFailedStates) : mDft(dft), mStateGenerationInfo(stateGenerationInfo), state(nullptr), enableDC(enableDC), mergeFailedStates(mergeFailedStates) {
+        DftNextStateGenerator<ValueType, StateType>::DftNextStateGenerator(storm::storage::DFT<ValueType> const& dft, storm::storage::DFTStateGenerationInfo const& stateGenerationInfo, std::set<size_t> const& relevantEvents, bool mergeFailedStates) : mDft(dft), mStateGenerationInfo(stateGenerationInfo), state(nullptr), relevantEvents(relevantEvents), mergeFailedStates(mergeFailedStates) {
             deterministicModel = !mDft.canHaveNondeterminism();
         }
         
@@ -144,7 +144,7 @@ namespace storm {
                     }
 
                     // Propagate dont cares
-                    while (enableDC && !queues.dontCarePropagationDone()) {
+                    while (relevantEvents.empty() && !queues.dontCarePropagationDone()) {
                         DFTElementPointer next = queues.nextDontCarePropagation();
                         next->checkDontCareAnymore(*newState, queues);
                     }

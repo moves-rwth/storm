@@ -53,57 +53,40 @@ namespace storm {
                 return std::make_shared<storm::storage::DFT<ValueType>>(parser.parseJsonFromFile(file));
         }
 
+        /*!
+         * Check whether the DFT is well-formed.
+         *
+         * @param dft DFT.
+         * @return True iff the DFT is well-formed.
+         */
         template<typename ValueType>
         bool isWellFormed(storm::storage::DFT<ValueType> const& dft) {
             std::stringstream stream;
             return dft.checkWellFormedness(stream);
         }
 
-
         /*!
-         * Analyse the given DFT according to the given properties.
+         * Compute the exact or approximate analysis result of the given DFT according to the given properties.
          * First the Markov model is built from the DFT and then this model is checked against the given properties.
          *
          * @param dft DFT.
          * @param properties PCTL formulas capturing the properties to check.
          * @param symred Flag whether symmetry reduction should be used.
          * @param allowModularisation Flag whether modularisation should be applied if possible.
-         * @param enableDC Flag whether Don't Care propagation should be used.
-         *
-         * @return Result.
+         * @param relevantEvents List of relevant events which should be observed.
+         * @param approximationError Allowed approximation error.  Value 0 indicates no approximation.
+         * @param approximationHeuristic Heuristic used for state space exploration.
+         * @param printOutput If true, model information, timings, results, etc. are printed.
+         * @return Results.
          */
         template<typename ValueType>
         typename storm::modelchecker::DFTModelChecker<ValueType>::dft_results
-        analyzeDFT(storm::storage::DFT<ValueType> const& dft, std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties, bool symred, bool allowModularisation,
-                   bool enableDC, bool printOutput) {
+        analyzeDFT(storm::storage::DFT<ValueType> const& dft, std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties, bool symred = true,
+                         bool allowModularisation = true, std::set<size_t> const& relevantEvents = {}, double approximationError = 0.0,
+                         storm::builder::ApproximationHeuristic approximationHeuristic = storm::builder::ApproximationHeuristic::DEPTH, bool printOutput = false) {
             storm::modelchecker::DFTModelChecker<ValueType> modelChecker(printOutput);
-            typename storm::modelchecker::DFTModelChecker<ValueType>::dft_results results = modelChecker.check(dft, properties, symred, allowModularisation, enableDC, 0.0);
-            if (printOutput) {
-                modelChecker.printTimings();
-                modelChecker.printResults(results);
-            }
-            return results;
-        }
-
-        /*!
-         * Approximate the analysis result of the given DFT according to the given properties.
-         * First the Markov model is built from the DFT and then this model is checked against the given properties.
-         *
-         * @param dft DFT.
-         * @param properties PCTL formulas capturing the properties to check.
-         * @param symred Flag whether symmetry reduction should be used.
-         * @param allowModularisation Flag whether modularisation should be applied if possible.
-         * @param enableDC Flag whether Don't Care propagation should be used.
-         * @param approximationError Allowed approximation error.
-         *
-         * @return Result.
-         */
-        template<typename ValueType>
-        typename storm::modelchecker::DFTModelChecker<ValueType>::dft_results
-        analyzeDFTApprox(storm::storage::DFT<ValueType> const& dft, std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties, bool symred,
-                         bool allowModularisation, bool enableDC, double approximationError, storm::builder::ApproximationHeuristic approximationHeuristic, bool printOutput) {
-            storm::modelchecker::DFTModelChecker<ValueType> modelChecker(printOutput);
-            typename storm::modelchecker::DFTModelChecker<ValueType>::dft_results results = modelChecker.check(dft, properties, symred, allowModularisation, enableDC, approximationError, approximationHeuristic);
+            typename storm::modelchecker::DFTModelChecker<ValueType>::dft_results results = modelChecker.check(dft, properties, symred, allowModularisation, relevantEvents,
+                                                                                                               approximationError, approximationHeuristic);
             if (printOutput) {
                 modelChecker.printTimings();
                 modelChecker.printResults(results);

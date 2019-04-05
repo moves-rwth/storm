@@ -15,22 +15,27 @@ namespace {
     class ApproxDepthConfig {
     public:
         typedef double ValueType;
+
         static DftAnalysisConfig createConfig() {
-            return DftAnalysisConfig {storm::builder::ApproximationHeuristic::DEPTH, false};
+            return DftAnalysisConfig{storm::builder::ApproximationHeuristic::DEPTH, false};
         }
     };
+
     class ApproxProbabilityConfig {
     public:
         typedef double ValueType;
+
         static DftAnalysisConfig createConfig() {
-            return DftAnalysisConfig {storm::builder::ApproximationHeuristic::PROBABILITY, false};
+            return DftAnalysisConfig{storm::builder::ApproximationHeuristic::PROBABILITY, false};
         }
     };
+
     class ApproxBoundDifferenceConfig {
     public:
         typedef double ValueType;
+
         static DftAnalysisConfig createConfig() {
-            return DftAnalysisConfig {storm::builder::ApproximationHeuristic::BOUNDDIFFERENCE, false};
+            return DftAnalysisConfig{storm::builder::ApproximationHeuristic::BOUNDDIFFERENCE, false};
         }
     };
 
@@ -52,7 +57,8 @@ namespace {
             EXPECT_TRUE(storm::api::isWellFormed(*dft));
             std::string property = "T=? [F \"failed\"]";
             std::vector<std::shared_ptr<storm::logic::Formula const>> properties = storm::api::extractFormulasFromProperties(storm::api::parseProperties(property));
-            typename storm::modelchecker::DFTModelChecker<double>::dft_results results = storm::api::analyzeDFTApprox<double>(*dft, properties, config.useSR, false, true, errorBound, config.heuristic, false);
+            typename storm::modelchecker::DFTModelChecker<double>::dft_results results = storm::api::analyzeDFT<double>(*dft, properties, config.useSR, false, {}, errorBound,
+                                                                                                                        config.heuristic, false);
             return boost::get<storm::modelchecker::DFTModelChecker<double>::approximation_result>(results[0]);
         }
 
@@ -62,7 +68,8 @@ namespace {
             std::stringstream propertyStream;
             propertyStream << "P=? [F<=" << timeBound << " \"failed\"]";
             std::vector<std::shared_ptr<storm::logic::Formula const>> properties = storm::api::extractFormulasFromProperties(storm::api::parseProperties(propertyStream.str()));
-            typename storm::modelchecker::DFTModelChecker<double>::dft_results results = storm::api::analyzeDFTApprox<double>(*dft, properties, config.useSR, false, true, errorBound, config.heuristic, false);
+            typename storm::modelchecker::DFTModelChecker<double>::dft_results results = storm::api::analyzeDFT<double>(*dft, properties, config.useSR, false, {}, errorBound,
+                                                                                                                        config.heuristic, false);
             return boost::get<storm::modelchecker::DFTModelChecker<double>::approximation_result>(results[0]);
         }
 
@@ -83,7 +90,7 @@ namespace {
         std::pair<double, double> approxResult = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/hecs_3_2_2_np.dft", errorBound);
         EXPECT_LE(approxResult.first, 417.9436693);
         EXPECT_GE(approxResult.second, 417.9436693);
-        EXPECT_LE(2*(approxResult.second - approxResult.first) / (approxResult.first + approxResult.second), errorBound);
+        EXPECT_LE(2 * (approxResult.second - approxResult.first) / (approxResult.first + approxResult.second), errorBound);
         // Ensure results are not equal -> not exact values were computed
         EXPECT_GE(approxResult.second - approxResult.first, errorBound * approxResult.first / 10);
     }

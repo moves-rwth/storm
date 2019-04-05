@@ -305,6 +305,19 @@ namespace storm {
 
             void writeStatsToStream(std::ostream& stream) const;
 
+            /*!
+             * Get Ids of all elements.
+             * @return All element ids.
+             */
+            std::set<size_t> getAllIds() const;
+
+            /*!
+             * Get id for the given element name.
+             * @param name Name of element.
+             * @return Index of element.
+             */
+            size_t getIndex(std::string const& name) const;
+
         private:
             std::tuple<std::vector<size_t>, std::vector<size_t>, std::vector<size_t>> getSortedParentAndDependencyIds(size_t index) const;
             

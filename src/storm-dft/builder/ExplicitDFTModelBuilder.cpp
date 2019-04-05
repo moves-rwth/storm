@@ -54,11 +54,11 @@ namespace storm {
         }
 
         template<typename ValueType, typename StateType>
-        ExplicitDFTModelBuilder<ValueType, StateType>::ExplicitDFTModelBuilder(storm::storage::DFT<ValueType> const& dft, storm::storage::DFTIndependentSymmetries const& symmetries, bool enableDC) :
+        ExplicitDFTModelBuilder<ValueType, StateType>::ExplicitDFTModelBuilder(storm::storage::DFT<ValueType> const& dft, storm::storage::DFTIndependentSymmetries const& symmetries, std::set<size_t> const& relevantEvents) :
                 dft(dft),
                 stateGenerationInfo(std::make_shared<storm::storage::DFTStateGenerationInfo>(dft.buildStateGenerationInfo(symmetries))),
-                enableDC(enableDC),
-                generator(dft, *stateGenerationInfo, enableDC, mergeFailedStates),
+                relevantEvents(relevantEvents),
+                generator(dft, *stateGenerationInfo, relevantEvents, mergeFailedStates),
                 matrixBuilder(!generator.isDeterministicModel()),
                 stateStorage(dft.stateBitVectorSize()),
                 explorationQueue(1, 0, 0.9, false)
