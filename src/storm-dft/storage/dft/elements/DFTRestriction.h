@@ -72,7 +72,7 @@ namespace storm {
             }
 
             void failsafe(DFTState <ValueType>& state, DFTStateSpaceGenerationQueues <ValueType>& queues) const override {
-
+                // Do nothing
             }
         };
 

@@ -1,4 +1,4 @@
-#pragma once 
+#pragma once
 
 #include <string>
 #include <cstdlib>
@@ -16,23 +16,25 @@
 #include "storm/adapters/RationalFunctionAdapter.h"
 
 
-
-
 namespace storm {
     namespace storage {
-        
+
         using std::size_t;
 
         // Forward declarations
         template<typename ValueType>
         class DFTGate;
-        
+
         template<typename ValueType>
         class DFTDependency;
+
         template<typename ValueType>
         class DFTRestriction;
 
-        
+        /*!
+         * Abstract base class for DFT elements.
+         * It is the most general class.
+         */
         template<typename ValueType>
         class DFTElement {
 
@@ -43,16 +45,6 @@ namespace storm {
             using DFTRestrictionPointer = std::shared_ptr<DFTRestriction<ValueType>>;
             using DFTRestrictionVector = std::vector<DFTRestrictionPointer>;
 
-
-        protected:
-            std::size_t mId;
-            std::string mName;
-            std::size_t mRank = -1;
-            DFTGateVector mParents;
-            DFTDependencyVector mOutgoingDependencies;
-            DFTRestrictionVector mRestrictions;
-
-
         public:
             /*!
              * Constructor.
@@ -60,12 +52,14 @@ namespace storm {
              * @param name Name.
              */
             DFTElement(size_t id, std::string const& name) : mId(id), mName(name) {
+                // Intentionally left empty.
             }
 
             /*!
              * Destructor.
              */
             virtual ~DFTElement() {
+                // Intentionally left empty.
             }
 
             /*!
@@ -99,6 +93,10 @@ namespace storm {
              */
             virtual DFTElementType type() const = 0;
 
+            /*!
+             * Get type as string.
+             * @return String with type information.
+             */
             virtual std::string typestring() const {
                 return storm::storage::toString(this->type());
             }
@@ -119,10 +117,6 @@ namespace storm {
                 this->mRank = rank;
             }
 
-            virtual bool isConstant() const {
-                return false;
-            }
-
             /*!
              * Checks whether the element is a basic element.
              * @return True iff element is a BE.
@@ -132,111 +126,168 @@ namespace storm {
             }
 
             /*!
-             * Check wether the element is a gate.
+             * Check whether the element is a gate.
              * @return True iff element is a gate.
              */
             virtual bool isGate() const {
                 return false;
             }
-            
-            /**
-             * Returns true if the element is a spare gate
+
+            /*!
+             * Check whether the element is a SPARE gate.
+             * @return True iff element is a SPARE gate.
              */
             virtual bool isSpareGate() const {
                 return false;
             }
 
+            /*!
+             * Check whether the element is a dependency.
+             * @return True iff element is a dependency.
+             */
             virtual bool isDependency() const {
                 return false;
             }
-            
+
+            /*!
+             * Check whether the element is a restriction.
+             * @return True iff element is a restriction.
+             */
             virtual bool isRestriction() const {
                 return false;
             }
 
-
-            bool addParent(DFTGatePointer const& e) {
-                if(std::find(mParents.begin(), mParents.end(), e) != mParents.end()) {
-                    return false;
-                }
-                else 
-                {
-                    mParents.push_back(e);
-                    return true;
-                }
+            /*!
+             * Return whether the element has parents.
+             * @return True iff at least one parent exists.
+             */
+            bool hasParents() const {
+                return !mParents.empty();
             }
 
-            bool addRestriction(DFTRestrictionPointer const& e) {
-                if (std::find(mRestrictions.begin(), mRestrictions.end(), e) != mRestrictions.end()) {
-                    return false;
-                } else {
-                    mRestrictions.push_back(e);
-                    return true;
-                }
+            /*!
+             * Return the number of parents.
+             * @return Number of parents.
+             */
+            size_t nrParents() const {
+                return mParents.size();
             }
 
-             bool hasOnlyStaticParents() const {
-                for(auto const& parent : mParents) {
-                    if(!isStaticGateType(parent->type())) {
+            /*!
+             * Get parents.
+             * @return Parents.
+             */
+            DFTGateVector const& parents() const {
+                return mParents;
+            }
+
+            /*!
+             * Add parent.
+             * @param parent Parent.
+             */
+            void addParent(DFTGatePointer const& parent) {
+                if (std::find(this->parents().begin(), this->parents().end(), parent) == this->parents().end()) {
+                    // Parent does not exist yet
+                    mParents.push_back(parent);
+                };
+            }
+
+            /*!
+             * Return Ids of parents.
+             * @return Parent ids.
+             */
+            std::vector<size_t> parentIds() const {
+                std::vector<size_t> ids;
+                for (auto parent : this->parents()) {
+                    ids.push_back(parent->id());
+                }
+                return ids;
+            }
+
+            /*!
+             * Check whether the element has only static gates as parents.
+             * @return True iff all parents are static gates.
+             */
+            bool hasOnlyStaticParents() const {
+                for (auto const& parent : this->parents()) {
+                    if (!isStaticGateType(parent->type())) {
                         return false;
                     }
                 }
                 return true;
             }
 
-            
-            bool hasParents() const {
-                return !mParents.empty();
-            }
-            
-            size_t nrParents() const {
-                return mParents.size();
-            }
-
-            DFTGateVector const& parents() const {
-                return mParents;
-            }
-            
+            /*!
+             * Return whether the element has restrictions.
+             * @return True iff at least one restriction exists.
+             */
             bool hasRestrictions() const {
                 return !mRestrictions.empty();
             }
-            
+
+            /*!
+             * Return the number of restrictions.
+             * @return Number of restrictions.
+             */
             size_t nrRestrictions() const {
                 return mRestrictions.size();
             }
-            
+
+            /*!
+             * Get restrictions.
+             * @return Restrictions.
+             */
             DFTRestrictionVector const& restrictions() const {
                 return mRestrictions;
             }
 
-            std::vector<size_t> parentIds() const {
-                std::vector<size_t> res;
-                for(auto parent : parents()) {
-                    res.push_back(parent->id());
-                }
-                return res;
-            }
-            
-            bool addOutgoingDependency(DFTDependencyPointer const& e) {
-                STORM_LOG_ASSERT(e->triggerEvent()->id() == this->id(), "Ids do not match.");
-                if(std::find(mOutgoingDependencies.begin(), mOutgoingDependencies.end(), e) != mOutgoingDependencies.end()) {
-                    return false;
-                }
-                else
-                {
-                    mOutgoingDependencies.push_back(e);
-                    return true;
+            /*!
+             * Add restriction.
+             * @param restrictions Restriction.
+             */
+            void addRestriction(DFTRestrictionPointer const& restriction) {
+                if (std::find(this->restrictions().begin(), this->restrictions().end(), restriction) == this->restrictions().end()) {
+                    // Restriction does not exist yet
+                    mRestrictions.push_back(restriction);
                 }
             }
-            
+
+            /*!
+             * Return whether the element has outgoing dependencies.
+             * @return True iff at least one restriction exists.
+             */
             bool hasOutgoingDependencies() const {
                 return !mOutgoingDependencies.empty();
             }
-            
+
+            /*!
+             * Return the number of outgoing dependencies.
+             * @return Number of outgoing dependencies.
+             */
             size_t nrOutgoingDependencies() const {
                 return mOutgoingDependencies.size();
             }
-            
+
+            /*!
+             * Get outgoing dependencies.
+             * @return Outgoing dependencies.
+             */
+            DFTDependencyVector const& outgoingDependencies() const {
+                return mOutgoingDependencies;
+            }
+
+            /*!
+             * Add outgoing dependency.
+             * @param outgoingDependency Outgoing dependency.
+             */
+            void addOutgoingDependency(DFTDependencyPointer const& outgoingDependency) {
+                STORM_LOG_ASSERT(outgoingDependency->triggerEvent()->id() == this->id(), "Ids do not match.");
+                if (std::find(this->outgoingDependencies().begin(), this->outgoingDependencies().end(), outgoingDependency) == this->outgoingDependencies().end()) {
+                    // Outgoing dependency does not exist yet
+                    mOutgoingDependencies.push_back(outgoingDependency);
+                };
+            }
+
             /**
              * Obtains ids of elements which are the direct successor in the list of children of a restriction
              * @return A vector of ids
@@ -244,24 +295,24 @@ namespace storm {
             std::vector<size_t> seqRestrictionPosts() const {
                 std::vector<size_t> res;
                 for (auto const& restr : mRestrictions) {
-                    if(!restr->isSeqEnforcer()) {
+                    if (!restr->isSeqEnforcer()) {
                         continue;
                     }
                     auto it = restr->children().cbegin();
-                    for(; it != restr->children().cend(); ++it) {
-                        if((*it)->id() == mId) {
+                    for (; it != restr->children().cend(); ++it) {
+                        if ((*it)->id() == mId) {
                             break;
                         }
                     }
                     STORM_LOG_ASSERT(it != restr->children().cend(), "Child not found.");
                     ++it;
-                    if(it != restr->children().cend()) {
+                    if (it != restr->children().cend()) {
                         res.push_back((*it)->id());
                     }
                 }
                 return res;
             }
-            
+
             /**
              * Obtains ids of elements which are the direct predecessor in the list of children of a restriction
              * @return A vector of ids
@@ -269,31 +320,27 @@ namespace storm {
             std::vector<size_t> seqRestrictionPres() const {
                 std::vector<size_t> res;
                 for (auto const& restr : mRestrictions) {
-                    if(!restr->isSeqEnforcer()) {
+                    if (!restr->isSeqEnforcer()) {
                         continue;
                     }
                     auto it = restr->children().cbegin();
-                    for(; it != restr->children().cend(); ++it) {
-                        if((*it)->id() == mId) {
+                    for (; it != restr->children().cend(); ++it) {
+                        if ((*it)->id() == mId) {
                             break;
                         }
                     }
                     STORM_LOG_ASSERT(it != restr->children().cend(), "Child not found.");
-                    if(it != restr->children().cbegin()) {
+                    if (it != restr->children().cbegin()) {
                         --it;
                         res.push_back((*it)->id());
                     }
                 }
                 return res;
             }
-            
-            DFTDependencyVector const& outgoingDependencies() const {
-                return mOutgoingDependencies;
-            }
-            
+
             virtual void extendSpareModule(std::set<size_t>& elementsInModule) const;
 
-           // virtual void extendImmediateFailureCausePathEvents(std::set<size_t>& ) const;
+            // virtual void extendImmediateFailureCausePathEvents(std::set<size_t>& ) const;
             /*!
              * Get number of children.
              * @return Nr of children.
@@ -320,12 +367,18 @@ namespace storm {
              *  such that there exists a  path from x to a child of this does not go through this.
              */
             virtual std::vector<size_t> independentSubDft(bool blockParents, bool sparesAsLeaves = false) const;
+
             /**
              * Helper to the independent subtree computation
              * @see independentSubDft
              */
             virtual void extendSubDft(std::set<size_t>& elemsInSubtree, std::vector<size_t> const& parentsOfSubRoot, bool blockParents, bool sparesAsLeaves) const;
 
+            /*!
+             * Check whether two elements have the same type.
+             * @param other Other element.
+             * @return True iff this and other have the same type.
+             */
             virtual bool isTypeEqualTo(DFTElement<ValueType> const& other) const {
                 return type() == other.type();
             }
@@ -338,8 +391,12 @@ namespace storm {
 
 
         protected:
-           // virtual bool checkIsomorphicSubDftHelper(DFTElement const& otherElem, std::vector<std::pair<DFTElement const&, DFTElement const&>>& mapping, std::vector<DFTElement const&> const& order ) const = 0;
-
+            std::size_t mId;
+            std::string mName;
+            std::size_t mRank = -1;
+            DFTGateVector mParents;
+            DFTDependencyVector mOutgoingDependencies;
+            DFTRestrictionVector mRestrictions;
         };
 
 
@@ -347,7 +404,7 @@ namespace storm {
         inline std::ostream& operator<<(std::ostream& os, DFTElement<ValueType> const& element) {
             return os << element.toString();
         }
-          
+
         template<typename ValueType>
         bool equalType(DFTElement<ValueType> const& e1, DFTElement<ValueType> const& e2) {
             return e1.isTypeEqualTo(e2);
