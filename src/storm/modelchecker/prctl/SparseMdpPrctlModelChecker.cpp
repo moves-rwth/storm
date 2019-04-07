@@ -141,7 +141,7 @@ namespace storm {
             STORM_LOG_THROW(checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidPropertyException, "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
             if (rewardPathFormula.isMultiDimensional() || rewardPathFormula.getTimeBoundReference().isRewardBound()) {
                 STORM_LOG_THROW(checkTask.isOnlyInitialStatesRelevantSet(), storm::exceptions::InvalidOperationException, "Checking reward bounded cumulative reward formulas can only be done for the initial states of the model.");
-                STORM_LOG_THROW(checkTask.getFormula().hasRewardAccumulation(), storm::exceptions::InvalidOperationException, "Checking reward bounded cumulative reward formulas is not supported if reward accumulations are given.");
+                STORM_LOG_THROW(!checkTask.getFormula().hasRewardAccumulation(), storm::exceptions::InvalidOperationException, "Checking reward bounded cumulative reward formulas is not supported if reward accumulations are given.");
                 STORM_LOG_WARN_COND(!checkTask.isQualitativeSet(), "Checking reward bounded until formulas is not optimized w.r.t. qualitative queries");
                 storm::logic::OperatorInformation opInfo(checkTask.getOptimizationDirection());
                 if (checkTask.isBoundSet()) {

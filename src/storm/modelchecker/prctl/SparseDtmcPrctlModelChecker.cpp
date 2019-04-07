@@ -102,7 +102,7 @@ namespace storm {
             storm::logic::CumulativeRewardFormula const& rewardPathFormula = checkTask.getFormula();
             if (rewardPathFormula.isMultiDimensional() || rewardPathFormula.getTimeBoundReference().isRewardBound()) {
                 STORM_LOG_THROW(checkTask.isOnlyInitialStatesRelevantSet(), storm::exceptions::InvalidOperationException, "Checking non-trivial bounded until probabilities can only be computed for the initial states of the model.");
-                STORM_LOG_THROW(checkTask.getFormula().hasRewardAccumulation(), storm::exceptions::InvalidOperationException, "Checking reward bounded cumulative reward formulas is not supported if reward accumulations are given.");
+                STORM_LOG_THROW(!checkTask.getFormula().hasRewardAccumulation(), storm::exceptions::InvalidOperationException, "Checking reward bounded cumulative reward formulas is not supported if reward accumulations are given.");
                 storm::logic::OperatorInformation opInfo;
                 if (checkTask.isBoundSet()) {
                     opInfo.bound = checkTask.getBound();
