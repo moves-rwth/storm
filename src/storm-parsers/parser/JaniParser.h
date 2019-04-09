@@ -75,7 +75,7 @@ namespace storm {
             };
 
             std::pair<storm::jani::Model, std::vector<storm::jani::Property>> parseModel(bool parseProperties = true);
-            storm::jani::Property parseProperty(json const& propertyStructure, Scope const& scope);
+            storm::jani::Property parseProperty(storm::jani::Model& model, json const& propertyStructure, Scope const& scope);
             storm::jani::Automaton parseAutomaton(json const& automatonStructure, storm::jani::Model const& parentModel, Scope const& scope);
             struct ParsedType {
                 enum class BasicType {Bool, Int, Real};
@@ -97,13 +97,13 @@ namespace storm {
              * Helper for parsing the actions of a model.
              */
             void parseActions(json const& actionStructure, storm::jani::Model& parentModel);
-            std::shared_ptr<storm::logic::Formula const> parseFormula(json const& propertyStructure,   storm::logic::FormulaContext formulaContext, Scope const& scope, boost::optional<storm::logic::Bound> bound = boost::none);
+            std::shared_ptr<storm::logic::Formula const> parseFormula(storm::jani::Model& model, json const& propertyStructure,   storm::logic::FormulaContext formulaContext, Scope const& scope, boost::optional<storm::logic::Bound> bound = boost::none);
             std::vector<storm::expressions::Expression> parseUnaryExpressionArguments(json const& expressionStructure, std::string const& opstring, Scope const& scope, bool returnNoneOnUnknownOpString = false, std::unordered_map<std::string, storm::expressions::Variable> const& auxiliaryVariables = {});
             std::vector<storm::expressions::Expression> parseBinaryExpressionArguments(json const& expressionStructure, std::string const& opstring,  Scope const& scope, bool returnNoneOnUnknownOpString = false, std::unordered_map<std::string, storm::expressions::Variable> const& auxiliaryVariables = {});
 
 
-            std::vector<std::shared_ptr<storm::logic::Formula const>> parseUnaryFormulaArgument(json const& propertyStructure, storm::logic::FormulaContext formulaContext,  std::string const& opstring, Scope const& scope);
-            std::vector<std::shared_ptr<storm::logic::Formula const>> parseBinaryFormulaArguments(json const& propertyStructure, storm::logic::FormulaContext formulaContext, std::string const& opstring, Scope const& scope);
+            std::vector<std::shared_ptr<storm::logic::Formula const>> parseUnaryFormulaArgument(storm::jani::Model& model, json const& propertyStructure, storm::logic::FormulaContext formulaContext,  std::string const& opstring, Scope const& scope);
+            std::vector<std::shared_ptr<storm::logic::Formula const>> parseBinaryFormulaArguments(storm::jani::Model& model, json const& propertyStructure, storm::logic::FormulaContext formulaContext, std::string const& opstring, Scope const& scope);
             storm::jani::PropertyInterval parsePropertyInterval(json const& piStructure, Scope const& scope);
             storm::logic::RewardAccumulation parseRewardAccumulation(json const& accStructure, std::string const& context);
             
@@ -122,7 +122,6 @@ namespace storm {
             std::shared_ptr<storm::expressions::ExpressionManager> expressionManager;
             
             std::set<std::string> labels = {};
-            std::unordered_map<std::string, storm::expressions::Expression> nonTrivialRewardModelExpressions;
 
             bool allowRecursion = true;
 
