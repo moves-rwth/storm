@@ -89,6 +89,7 @@ namespace storm {
             //jani-version
             STORM_LOG_THROW(parsedStructure.count("jani-version") == 1, storm::exceptions::InvalidJaniException, "Jani-version must be given exactly once.");
             uint64_t version = getUnsignedInt(parsedStructure.at("jani-version"), "jani version");
+            STORM_LOG_WARN_COND(version >= 1 && version <=1, "JANI Version " << version << " is not supported. Results may be wrong.");
             //name
             STORM_LOG_THROW(parsedStructure.count("name") == 1, storm::exceptions::InvalidJaniException, "A model must have a (single) name");
             std::string name = getString(parsedStructure.at("name"), "model name");
@@ -224,7 +225,6 @@ namespace storm {
             return  { parseFormula(model, propertyStructure.at("exp"), formulaContext, scope.refine("Operand of operator " + opstring)) };
         }
         
-        
         std::vector<std::shared_ptr<storm::logic::Formula const>> JaniParser::parseBinaryFormulaArguments(storm::jani::Model& model, json const& propertyStructure, storm::logic::FormulaContext formulaContext, std::string const& opstring, Scope const& scope) {
             STORM_LOG_THROW(propertyStructure.count("left") == 1, storm::exceptions::InvalidJaniException, "Expecting left operand for operator " << opstring << " in  " << scope.description);
             STORM_LOG_THROW(propertyStructure.count("right") == 1, storm::exceptions::InvalidJaniException, "Expecting right operand for operator " << opstring << " in  " << scope.description);
@@ -272,6 +272,19 @@ namespace storm {
             return storm::logic::RewardAccumulation(accSteps, accTime, accExit);
         }
         
+        void insertLowerUpperTimeBounds(std::vector<boost::optional<storm::logic::TimeBound>>& lowerBounds, std::vector<boost::optional<storm::logic::TimeBound>>& upperBounds, storm::jani::PropertyInterval const& pi) {
+            if (pi.hasLowerBound()) {
+                lowerBounds.push_back(storm::logic::TimeBound(pi.lowerBoundStrict, pi.lowerBound));
+            } else {
+                lowerBounds.push_back(boost::none);
+            }
+            if (pi.hasUpperBound()) {
+                upperBounds.push_back(storm::logic::TimeBound(pi.upperBoundStrict, pi.upperBound));
+            } else {
+                upperBounds.push_back(boost::none);
+            }
+        }
+        
         std::shared_ptr<storm::logic::Formula const> JaniParser::parseFormula(storm::jani::Model& model, json const& propertyStructure, storm::logic::FormulaContext formulaContext, Scope const& scope, boost::optional<storm::logic::Bound> bound) {
             if (propertyStructure.is_boolean()) {
                 return std::make_shared<storm::logic::BooleanLiteralFormula>(propertyStructure.get<bool>());
@@ -311,6 +324,7 @@ namespace storm {
                     assert(bound == boost::none);
                     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Forall and Exists are currently not supported");
                 } else if (opString == "Emin" || opString == "Emax") {
+                    STORM_LOG_WARN_COND(model.getJaniVersion() == 1, "Model not compliant: Contains Emin/Emax property in " << scope.description << ".");
                     STORM_LOG_THROW(propertyStructure.count("exp") == 1, storm::exceptions::InvalidJaniException, "Expecting reward-expression for operator " << opString << " in  " << scope.description);
                     storm::expressions::Expression rewExpr = parseExpression(propertyStructure.at("exp"), scope.refine("Reward expression"));
                     STORM_LOG_THROW(rewExpr.hasNumericalType(), storm::exceptions::InvalidJaniException, "Reward expression '" << rewExpr << "' does not have numerical type in " << scope.description);
@@ -356,12 +370,18 @@ namespace storm {
                         for (auto const& rewInst : propertyStructure.at("reward-instants")) {
                             storm::expressions::Expression rewInstRewardModelExpression = parseExpression(rewInst.at("exp"), scope.refine("Reward expression at reward instant"));
                             STORM_LOG_THROW(rewInstRewardModelExpression.hasNumericalType(), storm::exceptions::InvalidJaniException, "Reward expression '" << rewInstRewardModelExpression << "' does not have numerical type in " << scope.description);
-                            std::string rewInstRewardModelName = rewInstRewardModelExpression.toString();
-                            if (!rewInstRewardModelExpression.isVariable()) {
-                                model.addNonTrivialRewardExpression(rewInstRewardModelName, rewInstRewardModelExpression);
-                            }
                             storm::logic::RewardAccumulation boundRewardAccumulation = parseRewardAccumulation(rewInst.at("accumulate"), scope.description);
-                            boundReferences.emplace_back(rewInstRewardModelName, boundRewardAccumulation);
+                            bool steps = (boundRewardAccumulation.isStepsSet() || boundRewardAccumulation.isExitSet()) && boundRewardAccumulation.size() == 1;
+                            bool time = boundRewardAccumulation.isTimeSet() && boundRewardAccumulation.size() == 1 && !model.isDiscreteTimeModel();
+                            if ((steps || time) && !rewInstRewardModelExpression.containsVariables() && storm::utility::isOne(rewInstRewardModelExpression.evaluateAsRational())) {
+                                boundReferences.emplace_back(steps ? storm::logic::TimeBoundType::Steps : storm::logic::TimeBoundType::Time);
+                            } else {
+                                std::string rewInstRewardModelName = rewInstRewardModelExpression.toString();
+                                if (!rewInstRewardModelExpression.isVariable()) {
+                                    model.addNonTrivialRewardExpression(rewInstRewardModelName, rewInstRewardModelExpression);
+                                }
+                                boundReferences.emplace_back(rewInstRewardModelName, boundRewardAccumulation);
+                            }
                             storm::expressions::Expression rewInstantExpr = parseExpression(rewInst.at("instant"), scope.refine("reward instant"));
                             bounds.emplace_back(false, rewInstantExpr);
                         }
@@ -395,21 +415,20 @@ namespace storm {
                     // Reward accumulation is optional as it was not available in the early days...
                     boost::optional<storm::logic::RewardAccumulation> rewardAccumulation;
                     if (propertyStructure.count("accumulate") > 0) {
-                         rewardAccumulation = parseRewardAccumulation(propertyStructure.at("accumulate"), scope.description);
+                        STORM_LOG_WARN_COND(model.getJaniVersion() == 1, "Unexpected accumulate field in " << scope.description << ".");
+                        rewardAccumulation = parseRewardAccumulation(propertyStructure.at("accumulate"), scope.description);
                     }
-                    //STORM_LOG_THROW(, storm::exceptions::InvalidJaniException, "Expected an accumulate array at steady state property at " << scope.description);
                     STORM_LOG_THROW(propertyStructure.count("exp") > 0, storm::exceptions::InvalidJaniException, "Expected an expression at steady state property at " << scope.description);
-                    auto rewExpr = parseExpression(propertyStructure["exp"], scope.refine("steady-state operator"), true);
-                    if (!rewExpr.isInitialized()) {
+                    auto exp = parseExpression(propertyStructure["exp"], scope.refine("steady-state operator"), true);
+                    if (!exp.isInitialized() || exp.hasBooleanType()) {
                         STORM_LOG_THROW(!rewardAccumulation.is_initialized(), storm::exceptions::InvalidJaniException, "Long-run average probabilities are not allowed to have a reward accumulation at" << scope.description);
-                        STORM_LOG_THROW(propertyStructure.count("exp") > 0, storm::exceptions::InvalidJaniException, "Expected an expression at steady state property at " << scope.description);
                         std::shared_ptr<storm::logic::Formula const> subformula = parseUnaryFormulaArgument(model, propertyStructure, formulaContext, opString, scope.refine("Steady-state operator"))[0];
                         return std::make_shared<storm::logic::LongRunAverageOperatorFormula>(subformula, opInfo);
                     }
-                    STORM_LOG_THROW(rewExpr.hasNumericalType(), storm::exceptions::InvalidJaniException, "Reward expression '" << rewExpr << "' does not have numerical type in " << scope.description);
-                    std::string rewardName = rewExpr.toString();
-                    if (!rewExpr.isVariable()) {
-                        model.addNonTrivialRewardExpression(rewardName, rewExpr);
+                    STORM_LOG_THROW(exp.hasNumericalType(), storm::exceptions::InvalidJaniException, "Reward expression '" << exp << "' does not have numerical type in " << scope.description);
+                    std::string rewardName = exp.toString();
+                    if (!exp.isVariable()) {
+                        model.addNonTrivialRewardExpression(rewardName, exp);
                     }
                     auto subformula = std::make_shared<storm::logic::LongRunAverageRewardFormula>(rewardAccumulation);
                     return std::make_shared<storm::logic::RewardOperatorFormula>(subformula, rewardName, opInfo);
@@ -429,56 +448,35 @@ namespace storm {
                     std::vector<boost::optional<storm::logic::TimeBound>> lowerBounds, upperBounds;
                     std::vector<storm::logic::TimeBoundReference> tbReferences;
                     if (propertyStructure.count("step-bounds") > 0) {
+                        STORM_LOG_WARN_COND(model.getJaniVersion() == 1, "Jani model not compliant: Contains step-bounds in " << scope.description << ".");
                         storm::jani::PropertyInterval pi = parsePropertyInterval(propertyStructure.at("step-bounds"), scope.refine("step-bounded until").clearVariables());
-                        boost::optional<storm::logic::TimeBound> lowerBound, upperBound;
-                        if (pi.hasLowerBound()) {
-                            lowerBounds.push_back(storm::logic::TimeBound(pi.lowerBoundStrict, pi.lowerBound));
-                        } else {
-                            lowerBounds.push_back(boost::none);
-                        }
-                        if (pi.hasUpperBound()) {
-                            upperBounds.push_back(storm::logic::TimeBound(pi.upperBoundStrict, pi.upperBound));
-                        } else {
-                            upperBounds.push_back(boost::none);
-                        }
+                        insertLowerUpperTimeBounds(lowerBounds, upperBounds, pi);
                         tbReferences.emplace_back(storm::logic::TimeBoundType::Steps);
                     }
                     if (propertyStructure.count("time-bounds") > 0) {
+                        STORM_LOG_WARN_COND(model.getJaniVersion() == 1, "Jani model not compliant: Contains time-bounds in " << scope.description << ".");
                         storm::jani::PropertyInterval pi = parsePropertyInterval(propertyStructure.at("time-bounds"), scope.refine("time-bounded until").clearVariables());
-                        boost::optional<storm::logic::TimeBound> lowerBound, upperBound;
-                        if (pi.hasLowerBound()) {
-                            lowerBounds.push_back(storm::logic::TimeBound(pi.lowerBoundStrict, pi.lowerBound));
-                        } else {
-                            lowerBounds.push_back(boost::none);
-                        }
-                        if (pi.hasUpperBound()) {
-                            upperBounds.push_back(storm::logic::TimeBound(pi.upperBoundStrict, pi.upperBound));
-                        } else {
-                            upperBounds.push_back(boost::none);
-                        }
+                        insertLowerUpperTimeBounds(lowerBounds, upperBounds, pi);
                         tbReferences.emplace_back(storm::logic::TimeBoundType::Time);
                     }
                     if (propertyStructure.count("reward-bounds") > 0 ) {
                         for (auto const& rbStructure : propertyStructure.at("reward-bounds")) {
                             storm::jani::PropertyInterval pi = parsePropertyInterval(rbStructure.at("bounds"), scope.refine("reward-bounded until").clearVariables());
+                            insertLowerUpperTimeBounds(lowerBounds, upperBounds, pi);
                             STORM_LOG_THROW(rbStructure.count("exp") == 1, storm::exceptions::InvalidJaniException, "Expecting reward-expression for operator " << opString << " in  " << scope.description);
                             storm::expressions::Expression rewInstRewardModelExpression = parseExpression(rbStructure.at("exp"), scope.refine("Reward expression at reward-bounds"));
                             STORM_LOG_THROW(rewInstRewardModelExpression.hasNumericalType(), storm::exceptions::InvalidJaniException, "Reward expression '" << rewInstRewardModelExpression << "' does not have numerical type in " << scope.description);
-                            std::string rewInstRewardModelName = rewInstRewardModelExpression.toString();
-                            if (!rewInstRewardModelExpression.isVariable()) {
-                                model.addNonTrivialRewardExpression(rewInstRewardModelName, rewInstRewardModelExpression);
-                            }
                             storm::logic::RewardAccumulation boundRewardAccumulation = parseRewardAccumulation(rbStructure.at("accumulate"), scope.description);
-                            tbReferences.emplace_back(rewInstRewardModelName, boundRewardAccumulation);
-                            if (pi.hasLowerBound()) {
-                                lowerBounds.push_back(storm::logic::TimeBound(pi.lowerBoundStrict, pi.lowerBound));
+                            bool steps = (boundRewardAccumulation.isStepsSet() || boundRewardAccumulation.isExitSet()) && boundRewardAccumulation.size() == 1;
+                            bool time = boundRewardAccumulation.isTimeSet() && boundRewardAccumulation.size() == 1 && !model.isDiscreteTimeModel();
+                            if ((steps || time) && !rewInstRewardModelExpression.containsVariables() && storm::utility::isOne(rewInstRewardModelExpression.evaluateAsRational())) {
+                                tbReferences.emplace_back(steps ? storm::logic::TimeBoundType::Steps : storm::logic::TimeBoundType::Time);
                             } else {
-                                lowerBounds.push_back(boost::none);
-                            }
-                            if (pi.hasUpperBound()) {
-                                upperBounds.push_back(storm::logic::TimeBound(pi.upperBoundStrict, pi.upperBound));
-                            } else {
-                                upperBounds.push_back(boost::none);
+                                std::string rewInstRewardModelName = rewInstRewardModelExpression.toString();
+                                if (!rewInstRewardModelExpression.isVariable()) {
+                                    model.addNonTrivialRewardExpression(rewInstRewardModelName, rewInstRewardModelExpression);
+                                }
+                                tbReferences.emplace_back(rewInstRewardModelName, boundRewardAccumulation);
                             }
                         }
                     }
@@ -493,11 +491,11 @@ namespace storm {
                     assert(bound == boost::none);
                     std::vector<std::shared_ptr<storm::logic::Formula const>> args = parseUnaryFormulaArgument(model, propertyStructure, formulaContext, opString, scope.refine("Subformula of globally operator "));
                     if (propertyStructure.count("step-bounds") > 0) {
-                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Globally and step-bounds are not supported currently");
+                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Globally and step-bounds are not supported.");
                     } else if (propertyStructure.count("time-bounds") > 0) {
-                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Globally and time bounds are not supported by storm");
+                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Globally and time bounds are not supported.");
                     } else if (propertyStructure.count("reward-bounds") > 0 ) {
-                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Reward bounded properties are not supported by storm");
+                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Globally and reward bounded properties are not supported.");
                     }
                     return std::make_shared<storm::logic::GloballyFormula const>(args[1]);
 
