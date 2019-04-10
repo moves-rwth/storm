@@ -1,8 +1,12 @@
 #include "DFTASFChecker.h"
 #include "SmtConstraint.cpp"
 #include <string>
+
 #include "storm/utility/file.h"
 #include "storm/utility/bitoperations.h"
+#include "storm/solver/SmtSolver.h"
+#include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/storage/expressions/Type.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/NotSupportedException.h"
 
@@ -428,6 +432,31 @@ namespace storm {
             }
             stream << "(check-sat)" << std::endl;
             storm::utility::closeFile(stream);
+        }
+
+        void DFTASFChecker::toSolver() {
+            std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
+            std::unique_ptr<storm::solver::SmtSolver> solver = storm::utility::solver::SmtSolverFactory().create(
+                    *manager);
+            for (auto const &timeVarEntry : timePointVariables) {
+                manager->declareIntegerVariable(varNames[timeVarEntry.second]);
+            }
+            for (auto const &claimVarEntry : claimVariables) {
+                manager->declareIntegerVariable(varNames[claimVarEntry.second]);
+            }
+            for (auto const &markovianVarEntry : markovianVariables) {
+                manager->declareBooleanVariable(varNames[markovianVarEntry.second]);
+            }
+            if (!tmpTimePointVariables.empty()) {
+                for (auto const &tmpVar : tmpTimePointVariables) {
+                    manager->declareIntegerVariable(varNames[tmpVar]);
+                }
+            }
+            for (auto const &constraint : constraints) {
+                solver->add(constraint->toExpression(varNames, manager));
+            }
+
+            //TODO Add porperties to check
         }
     }
 }

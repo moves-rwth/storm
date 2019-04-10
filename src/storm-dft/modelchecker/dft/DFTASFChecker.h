@@ -6,7 +6,7 @@
 
 #include "SmtConstraint.h"
 #include "storm-dft/storage/dft/DFT.h"
-
+#include "storm/utility/solver.h"
 
 namespace storm {
     namespace modelchecker {
@@ -29,14 +29,12 @@ namespace storm {
             using ValueType = double;
         public:
             DFTASFChecker(storm::storage::DFT<ValueType> const&);
-
             /**
              * Generate general variables and constraints for the DFT and store them in the corresponding maps and vectors
              *
              */
             void convert();
             void toFile(std::string const&);
-
             void toSolver();
             
         private:

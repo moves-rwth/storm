@@ -34,6 +34,11 @@ namespace storm {
                 return sstr.str();
             }
 
+            storm::expressions::Expression toExpression(std::vector<std::string> const &varNames,
+                                                        std::shared_ptr<storm::expressions::ExpressionManager> manager) const override {
+                //TODO
+            }
+
         private:
             uint64_t varIndex;
             std::vector<uint64_t> varIndices;
@@ -69,6 +74,11 @@ namespace storm {
                 return sstr.str();
             }
 
+            storm::expressions::Expression toExpression(std::vector<std::string> const &varNames,
+                                                        std::shared_ptr<storm::expressions::ExpressionManager> manager) const override {
+                //TODO
+            }
+
         private:
             uint64_t varIndex;
             std::vector<uint64_t> varIndices;
@@ -91,6 +101,11 @@ namespace storm {
                 sstr << "(<= " << varNames.at(varIndex) << " " << upperBound << ")";
                 sstr << ")";
                 return sstr.str();
+            }
+
+            storm::expressions::Expression toExpression(std::vector<std::string> const &varNames,
+                                                        std::shared_ptr<storm::expressions::ExpressionManager> manager) const override {
+                //TODO
             }
 
         private:
@@ -122,6 +137,11 @@ namespace storm {
                 return sstr.str();
             }
 
+            storm::expressions::Expression toExpression(std::vector<std::string> const &varNames,
+                                                        std::shared_ptr<storm::expressions::ExpressionManager> manager) const override {
+                //TODO
+            }
+
         private:
             std::vector<std::shared_ptr<SmtConstraint>> constraints;
 
@@ -150,6 +170,11 @@ namespace storm {
                 return sstr.str();
             }
 
+            storm::expressions::Expression toExpression(std::vector<std::string> const &varNames,
+                                                        std::shared_ptr<storm::expressions::ExpressionManager> manager) const override {
+                //TODO
+            }
+
         private:
             std::vector<std::shared_ptr<SmtConstraint>> constraints;
 
@@ -167,6 +192,11 @@ namespace storm {
                 return sstr.str();
             }
 
+            storm::expressions::Expression toExpression(std::vector<std::string> const &varNames,
+                                                        std::shared_ptr<storm::expressions::ExpressionManager> manager) const override {
+                //TODO
+            }
+
         private:
             std::shared_ptr<SmtConstraint> lhs;
             std::shared_ptr<SmtConstraint> rhs;
@@ -182,6 +212,11 @@ namespace storm {
                 std::stringstream sstr;
                 sstr << "(= " << lhs->toSmtlib2(varNames) << " " << rhs->toSmtlib2(varNames) << ")";
                 return sstr.str();
+            }
+
+            storm::expressions::Expression toExpression(std::vector<std::string> const &varNames,
+                                                        std::shared_ptr<storm::expressions::ExpressionManager> manager) const override {
+                //TODO
             }
 
         private:
@@ -202,6 +237,11 @@ namespace storm {
                 std::stringstream sstr;
                 sstr << (value ? "true" : "false");
                 return sstr.str();
+            }
+
+            storm::expressions::Expression toExpression(std::vector<std::string> const &varNames,
+                                                        std::shared_ptr<storm::expressions::ExpressionManager> manager) const override {
+                //TODO
             }
 
         private:
@@ -228,6 +268,11 @@ namespace storm {
                 return sstr.str();
             }
 
+            storm::expressions::Expression toExpression(std::vector<std::string> const &varNames,
+                                                        std::shared_ptr<storm::expressions::ExpressionManager> manager) const override {
+                //TODO
+            }
+
         private:
             uint64_t varIndex;
             bool value;
@@ -247,6 +292,11 @@ namespace storm {
                 assert(varIndex < varNames.size());
                 sstr << "(= " << varNames.at(varIndex) << " " << value << ")";
                 return sstr.str();
+            }
+
+            storm::expressions::Expression toExpression(std::vector<std::string> const &varNames,
+                                                        std::shared_ptr<storm::expressions::ExpressionManager> manager) const override {
+                //TODO
             }
 
         private:
@@ -270,6 +320,11 @@ namespace storm {
                 return sstr.str();
             }
 
+            storm::expressions::Expression toExpression(std::vector<std::string> const &varNames,
+                                                        std::shared_ptr<storm::expressions::ExpressionManager> manager) const override {
+                //TODO
+            }
+
         private:
             uint64_t varIndex;
             uint64_t value;
@@ -290,6 +345,11 @@ namespace storm {
                 return sstr.str();
             }
 
+            storm::expressions::Expression toExpression(std::vector<std::string> const &varNames,
+                                                        std::shared_ptr<storm::expressions::ExpressionManager> manager) const override {
+                //TODO
+            }
+
         private:
             uint64_t varIndex;
             uint64_t value;
@@ -308,6 +368,11 @@ namespace storm {
                 return "(= " + varNames.at(var1Index) + " " + varNames.at(var2Index) + ")";
             }
 
+            storm::expressions::Expression toExpression(std::vector<std::string> const &varNames,
+                                                        std::shared_ptr<storm::expressions::ExpressionManager> manager) const override {
+                //TODO
+            }
+
         private:
             uint64_t var1Index;
             uint64_t var2Index;
@@ -324,6 +389,11 @@ namespace storm {
 
             std::string toSmtlib2(std::vector<std::string> const &varNames) const override {
                 return "(< " + varNames.at(var1Index) + " " + varNames.at(var2Index) + ")";
+            }
+
+            storm::expressions::Expression toExpression(std::vector<std::string> const &varNames,
+                                                        std::shared_ptr<storm::expressions::ExpressionManager> manager) const override {
+                //TODO
             }
 
         private:
@@ -355,6 +425,11 @@ namespace storm {
                 return sstr.str();
             }
 
+            storm::expressions::Expression toExpression(std::vector<std::string> const &varNames,
+                                                        std::shared_ptr<storm::expressions::ExpressionManager> manager) const override {
+                //TODO
+            }
+
         private:
             std::vector<uint64_t> varIndices;
         };
@@ -378,6 +453,11 @@ namespace storm {
                 return sstr.str();
             }
 
+            storm::expressions::Expression toExpression(std::vector<std::string> const &varNames,
+                                                        std::shared_ptr<storm::expressions::ExpressionManager> manager) const override {
+                //TODO
+            }
+
         private:
             std::vector<uint64_t> varIndices;
         };
@@ -395,6 +475,11 @@ namespace storm {
                 sstr << "(ite " << ifConstraint->toSmtlib2(varNames) << " " << thenConstraint->toSmtlib2(varNames)
                      << " " << elseConstraint->toSmtlib2(varNames) << ")";
                 return sstr.str();
+            }
+
+            storm::expressions::Expression toExpression(std::vector<std::string> const &varNames,
+                                                        std::shared_ptr<storm::expressions::ExpressionManager> manager) const override {
+                //TODO
             }
 
         private:
