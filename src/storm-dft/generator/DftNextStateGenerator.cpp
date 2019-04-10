@@ -204,7 +204,14 @@ namespace storm {
                     return exploreState(stateToIdCallback, false);
                 }
             } else {
-                STORM_LOG_ASSERT(choice.size() > 0, "No transitions were generated");
+                if (choice.size() == 0) {
+                    // No transition was generated
+                    STORM_LOG_TRACE("No transitions were generated.");
+                    // Add self loop
+                    choice.addProbability(state->getId(), storm::utility::one<ValueType>());
+                    STORM_LOG_TRACE("Added self loop for " << state->getId());
+                }
+                STORM_LOG_ASSERT(choice.size() > 0, "At least one choice should have been generated.");
                 // Add all rates as one choice
                 result.addChoice(std::move(choice));
             }
