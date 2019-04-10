@@ -106,7 +106,7 @@ namespace storm {
                 }
                 std::string trigger = children[0];
 
-                //TODO Matthias: collect constraints for SMT solving
+                //TODO: collect constraints for SMT solving
                 //0 <= probability <= 1
                 if (binaryDependencies && !storm::utility::isOne(probability) && children.size() > 2) {
                     // Introduce additional element for first capturing the probabilistic dependency
@@ -195,7 +195,7 @@ namespace storm {
             }
 
             bool addBasicElementExponential(std::string const& name, ValueType failureRate, ValueType dormancyFactor, bool transient = false) {
-                //TODO Matthias: collect constraints for SMT solving
+                //TODO: collect constraints for SMT solving
                 //0 <= dormancyFactor <= 1
                 if (nameInUse(name)) {
                     STORM_LOG_ERROR("Element with name '" << name << "' already exists.");

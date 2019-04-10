@@ -7,7 +7,7 @@ namespace storm {
 
         template<typename ValueType>
         DFTState<ValueType>::DFTState(DFT<ValueType> const& dft, DFTStateGenerationInfo const& stateGenerationInfo, size_t id) : mStatus(dft.stateBitVectorSize()), mId(id), failableElements(dft.nrElements()), mPseudoState(false), mDft(dft), mStateGenerationInfo(stateGenerationInfo) {
-            // TODO Matthias: use construct()
+            // TODO: use construct()
             
             // Initialize uses
             for(size_t spareId : mDft.getSpareIndices()) {

@@ -33,7 +33,7 @@ namespace storm {
         template<typename ValueType, typename StateType>
         void DftNextStateGenerator<ValueType, StateType>::load(storm::storage::BitVector const& state) {
             // Load the state from bitvector
-            size_t id = 0; //TODO Matthias: set correct id
+            size_t id = 0; //TODO: set correct id
             this->state = std::make_shared<storm::storage::DFTState<ValueType>>(state, mDft, mStateGenerationInfo, id);
         }
 
@@ -144,6 +144,7 @@ namespace storm {
                     }
 
                     // Propagate dont cares
+                    // TODO: do not set DC for relevant events
                     while (relevantEvents.empty() && !queues.dontCarePropagationDone()) {
                         DFTElementPointer next = queues.nextDontCarePropagation();
                         next->checkDontCareAnymore(*newState, queues);

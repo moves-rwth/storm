@@ -24,7 +24,7 @@ namespace storm {
             // Optimizing DFT
             storm::storage::DFT<ValueType> dft = origDft.optimize();
 
-            // TODO Matthias: check that all paths reach the target state for approximation
+            // TODO: check that all paths reach the target state for approximation
 
             // Checking DFT
             if (properties[0]->isTimeOperatorFormula() && allowModularisation) {
@@ -88,7 +88,7 @@ namespace storm {
             // Perform modularisation
             if(dfts.size() > 1) {
                 STORM_LOG_TRACE("Recursive CHECK Call");
-                // TODO Matthias: compute simultaneously
+                // TODO: compute simultaneously
                 dft_results results;
                 for (auto property : properties) {
                     if (!property->isProbabilityOperatorFormula()) {
@@ -97,7 +97,7 @@ namespace storm {
                         // Recursively call model checking
                         std::vector<ValueType> res;
                         for(auto const ft : dfts) {
-                            // TODO Matthias: allow approximation in modularisation
+                            // TODO: allow approximation in modularisation
                             dft_results ftResults = checkHelper(ft, {property}, symred, true, relevantEvents, 0.0);
                             STORM_LOG_ASSERT(ftResults.size() == 1, "Wrong number of results");
                             res.push_back(boost::get<ValueType>(ftResults[0]));
@@ -143,7 +143,7 @@ namespace storm {
 
         template<typename ValueType>
         std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> DFTModelChecker<ValueType>::buildModelViaComposition(storm::storage::DFT<ValueType> const& dft, property_vector const& properties, bool symred, bool allowModularisation, std::set<size_t> const& relevantEvents)  {
-            // TODO Matthias: use approximation?
+            // TODO: use approximation?
             STORM_LOG_TRACE("Build model via composition");
             std::vector<storm::storage::DFT<ValueType>> dfts;
             bool isAnd = true;
@@ -280,7 +280,7 @@ namespace storm {
                 storm::builder::ExplicitDFTModelBuilder<ValueType> builder(dft, symmetries, relevantEvents);
                 typename storm::builder::ExplicitDFTModelBuilder<ValueType>::LabelOptions labeloptions(properties);
 
-                // TODO Matthias: compute approximation for all properties simultaneously?
+                // TODO: compute approximation for all properties simultaneously?
                 std::shared_ptr<const storm::logic::Formula> property = properties[0];
                 if (properties.size() > 1) {
                     STORM_LOG_WARN("Computing approximation only for first property: " << *property);
@@ -295,12 +295,12 @@ namespace storm {
                         explorationTimer.start();
                     }
                     STORM_LOG_DEBUG("Building model...");
-                    // TODO Matthias refine model using existing model and MC results
+                    // TODO refine model using existing model and MC results
                     builder.buildModel(labeloptions, iteration, approximationError, approximationHeuristic);
                     explorationTimer.stop();
                     buildingTimer.start();
 
-                    // TODO Matthias: possible to do bisimulation on approximated model and not on concrete one?
+                    // TODO: possible to do bisimulation on approximated model and not on concrete one?
 
                     // Build model for lower bound
                     STORM_LOG_DEBUG("Getting model for lower bound...");
