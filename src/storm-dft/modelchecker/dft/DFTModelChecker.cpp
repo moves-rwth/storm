@@ -27,6 +27,7 @@ namespace storm {
             // TODO: check that all paths reach the target state for approximation
 
             // Checking DFT
+            // TODO: distinguish for all properties, not only for first one
             if (properties[0]->isTimeOperatorFormula() && allowModularisation) {
                 // Use parallel composition as modularisation approach for expected time
                 std::shared_ptr<storm::models::sparse::Model<ValueType>> model = buildModelViaComposition(dft, properties, symred, true, relevantEvents);
