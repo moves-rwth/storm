@@ -115,15 +115,17 @@ void processOptions() {
     }
 
     // Build properties
-    STORM_LOG_WARN_COND(!properties.empty(), "No property given.");
-    std::string propString;
-    for (size_t i = 0; i < properties.size(); ++i) {
-        if (i + 1 < properties.size()) {
-            propString += ";";
+    std::vector<std::shared_ptr<storm::logic::Formula const>> props;
+    if (!properties.empty()) {
+        std::string propString;
+        for (size_t i = 0; i < properties.size(); ++i) {
+            if (i + 1 < properties.size()) {
+                propString += ";";
+            }
+            propString += properties[i];
         }
-        propString += properties[i];
+        props = storm::api::extractFormulasFromProperties(storm::api::parseProperties(propString));
     }
-    std::vector<std::shared_ptr<storm::logic::Formula const>> props = storm::api::extractFormulasFromProperties(storm::api::parseProperties(propString));
 
     // Set relevant elements
     // TODO: also incorporate events from properties
@@ -149,13 +151,18 @@ void processOptions() {
         relevantEvents = dft->getAllIds();
     }
 
-    // Carry out the actual analysis
-    double approximationError = 0.0;
-    if (faultTreeSettings.isApproximationErrorSet()) {
-        approximationError = faultTreeSettings.getApproximationError();
+    // Analyze DFT
+    // TODO allow building of state space even without properties
+    if (props.empty()) {
+        STORM_LOG_WARN("No property given. No analysis will be performed.");
+    } else {
+        double approximationError = 0.0;
+        if (faultTreeSettings.isApproximationErrorSet()) {
+            approximationError = faultTreeSettings.getApproximationError();
+        }
+        storm::api::analyzeDFT<ValueType>(*dft, props, faultTreeSettings.useSymmetryReduction(), faultTreeSettings.useModularisation(), relevantEvents, approximationError,
+                                          faultTreeSettings.getApproximationHeuristic(), true);
     }
-    storm::api::analyzeDFT<ValueType>(*dft, props, faultTreeSettings.useSymmetryReduction(), faultTreeSettings.useModularisation(), relevantEvents, approximationError,
-                                      faultTreeSettings.getApproximationHeuristic(), true);
 }
 
 /*!
