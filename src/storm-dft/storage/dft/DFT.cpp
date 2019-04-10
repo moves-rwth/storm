@@ -18,9 +18,10 @@ namespace storm {
 
         template<typename ValueType>
         DFT<ValueType>::DFT(DFTElementVector const& elements, DFTElementPointer const& tle) : mElements(elements), mNrOfBEs(0), mNrOfSpares(0), mTopLevelIndex(tle->id()), mMaxSpareChildCount(0) {
+            // Check that ids correspond to indices in the element vector
             STORM_LOG_ASSERT(elementIndicesCorrect(), "Ids incorrect.");
             size_t nrRepresentatives = 0;
-            
+
             for (auto& elem : mElements) {
                 if (isRepresentative(elem->id())) {
                     ++nrRepresentatives;
