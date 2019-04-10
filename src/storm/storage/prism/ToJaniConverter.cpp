@@ -18,7 +18,7 @@
 namespace storm {
     namespace prism {
         
-        storm::jani::Model ToJaniConverter::convert(storm::prism::Program const& program, bool allVariablesGlobal, std::string suffix) {
+        storm::jani::Model ToJaniConverter::convert(storm::prism::Program const& program, bool allVariablesGlobal, std::set<storm::expressions::Variable> const& givenVariablesToMakeGlobal, std::string suffix) {
             labelRenaming.clear();
             rewardModelRenaming.clear();
             formulaToFunctionCallMap.clear();
@@ -53,6 +53,9 @@ namespace storm {
             
             // Maintain a mapping of each variable to a flag that is true if the variable will be made global.
             std::map<storm::expressions::Variable, bool> variablesToMakeGlobal;
+            for (auto const& var : givenVariablesToMakeGlobal) {
+                variablesToMakeGlobal.emplace(var, true);
+            }
             
             // Get the set of variables that appeare in a renaimng of a renamed module
             if (program.getNumberOfFormulas() > 0) {
