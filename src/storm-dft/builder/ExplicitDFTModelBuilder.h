@@ -135,7 +135,7 @@ namespace storm {
                 size_t mappingOffset;
 
                 // A mapping from state ids to the row group indices in which they actually reside.
-                // TODO Matthias: avoid hack with fixed int type
+                // TODO: avoid hack with fixed int type
                 std::vector<uint_fast64_t> stateRemapping;
 
             private:
@@ -309,13 +309,13 @@ namespace storm {
             storm::storage::DFT<ValueType> const& dft;
 
             // General information for state generation
-            // TODO Matthias: use const reference
+            // TODO: use const reference
             std::shared_ptr<storm::storage::DFTStateGenerationInfo> stateGenerationInfo;
 
             // List with ids of relevant events which should be observed.
             std::set<size_t> const& relevantEvents;
 
-            //TODO Matthias: make changeable
+            //TODO: merge depending on relevant events
             const bool mergeFailedStates = true;
 
             // Heuristic used for approximation

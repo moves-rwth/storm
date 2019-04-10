@@ -155,7 +155,7 @@ namespace storm {
                     setMarkovian(behavior.begin()->isMarkovian());
 
                     // Now add self loop.
-                    // TODO Matthias: maybe use general method.
+                    // TODO: maybe use general method.
                     STORM_LOG_ASSERT(behavior.getNumberOfChoices() == 1, "Wrong number of choices for failed state.");
                     STORM_LOG_ASSERT(behavior.begin()->size() == 1, "Wrong number of transitions for failed state.");
                     std::pair<StateType, ValueType> stateProbabilityPair = *(behavior.begin()->begin());
@@ -214,7 +214,7 @@ namespace storm {
 
             // Fix the entries in the transition matrix according to the mapping of ids to row group indices
             STORM_LOG_ASSERT(matrixBuilder.getRemapping(initialStateIndex) == initialStateIndex, "Initial state should not be remapped.");
-            // TODO Matthias: do not consider all rows?
+            // TODO: do not consider all rows?
             STORM_LOG_TRACE("Remap matrix: " << matrixBuilder.stateRemapping << ", offset: " << matrixBuilder.mappingOffset);
             matrixBuilder.remap();
 
@@ -238,16 +238,16 @@ namespace storm {
         void ExplicitDFTModelBuilder<ValueType, StateType>::initializeNextIteration() {
             STORM_LOG_TRACE("Refining DFT state space");
 
-            // TODO Matthias: should be easier now as skipped states all are at the end of the matrix
+            // TODO: should be easier now as skipped states all are at the end of the matrix
             // Push skipped states to explore queue
-            // TODO Matthias: remove
+            // TODO: remove
             for (auto const& skippedState : skippedStates) {
                 statesNotExplored[skippedState.second.first->getId()] = skippedState.second;
                 explorationQueue.push(skippedState.second.second);
             }
 
             // Initialize matrix builder again
-            // TODO Matthias: avoid copy
+            // TODO: avoid copy
             std::vector<uint_fast64_t> copyRemapping = matrixBuilder.stateRemapping;
             matrixBuilder = MatrixBuilder(!generator.isDeterministicModel());
             matrixBuilder.stateRemapping = copyRemapping;
@@ -309,7 +309,7 @@ namespace storm {
             modelComponents.markovianStates = markovianStatesNew;
 
             // Build submatrix for expanded states
-            // TODO Matthias: only use row groups when necessary
+            // TODO: only use row groups when necessary
             for (StateType oldRowGroup = 0; oldRowGroup < modelComponents.transitionMatrix.getRowGroupCount(); ++oldRowGroup) {
                 if (indexRemapping[oldRowGroup] < nrExpandedStates) {
                     // State is expanded -> copy to new matrix
@@ -342,7 +342,7 @@ namespace storm {
             size_t nrSkippedStates = 0;
             storm::utility::ProgressMeasurement progress("explored states");
             progress.startNewMeasurement(0);
-            // TODO Matthias: do not empty queue every time but break before
+            // TODO: do not empty queue every time but break before
             while (!explorationQueue.empty()) {
                 // Get the first state in the queue
                 ExplorationHeuristicPointer currentExplorationHeuristic = explorationQueue.pop();
@@ -379,7 +379,7 @@ namespace storm {
                     STORM_LOG_TRACE("Skip expansion of state: " << dft.getStateString(currentState));
                     setMarkovian(true);
                     // Add transition to target state with temporary value 0
-                    // TODO Matthias: what to do when there is no unique target state?
+                    // TODO: what to do when there is no unique target state?
                     matrixBuilder.addTransition(failedStateId, storm::utility::zero<ValueType>());
                     // Remember skipped state
                     skippedStates[matrixBuilder.getCurrentRowGroup() - 1] = std::make_pair(currentState, currentExplorationHeuristic);
@@ -434,7 +434,7 @@ namespace storm {
                                         STORM_LOG_ASSERT(!currentState->isPseudoState(), "State is pseudo state.");
 
                                         // Initialize bounds
-                                        // TODO Mathias: avoid hack
+                                        // TODO: avoid hack
                                         ValueType lowerBound = getLowerBound(state);
                                         ValueType upperBound = getUpperBound(state);
                                         heuristic->setBounds(lowerBound, upperBound);
@@ -522,12 +522,12 @@ namespace storm {
         template<typename ValueType, typename StateType>
         std::shared_ptr<storm::models::sparse::Model<ValueType>> ExplicitDFTModelBuilder<ValueType, StateType>::getModelApproximation(bool lowerBound, bool expectedTime) {
             if (expectedTime) {
-                // TODO Matthias: handle case with no skipped states
+                // TODO: handle case with no skipped states
                 changeMatrixBound(modelComponents.transitionMatrix, lowerBound);
                 return createModel(true);
             } else {
                 // Change model for probabilities
-                // TODO Matthias: make nicer
+                // TODO: make nicer
                 storm::storage::SparseMatrix<ValueType> matrix = modelComponents.transitionMatrix;
                 storm::models::sparse::StateLabeling labeling = modelComponents.stateLabeling;
                 if (lowerBound) {
@@ -554,7 +554,7 @@ namespace storm {
                 } else {
                     // Build MA
                     // Compute exit rates
-                    // TODO Matthias: avoid computing multiple times
+                    // TODO: avoid computing multiple times
                     modelComponents.exitRates = std::vector<ValueType>(modelComponents.markovianStates.size());
                     std::vector<typename storm::storage::SparseMatrix<ValueType>::index_type> indices = matrix.getRowGroupIndices();
                     for (StateType stateIndex = 0; stateIndex < modelComponents.markovianStates.size(); ++stateIndex) {
@@ -573,7 +573,7 @@ namespace storm {
                     std::shared_ptr<storm::models::sparse::MarkovAutomaton<ValueType>> ma = std::make_shared<storm::models::sparse::MarkovAutomaton<ValueType>>(std::move(maComponents));
                     if (ma->hasOnlyTrivialNondeterminism()) {
                         // Markov automaton can be converted into CTMC
-                        // TODO Matthias: change components which were not moved accordingly
+                        // TODO: change components which were not moved accordingly
                         model = ma->convertToCtmc();
                     } else {
                         model = ma;
@@ -604,7 +604,7 @@ namespace storm {
             } else {
                 // Build MA
                 // Compute exit rates
-                // TODO Matthias: avoid computing multiple times
+                // TODO: avoid computing multiple times
                 modelComponents.exitRates = std::vector<ValueType>(modelComponents.markovianStates.size());
                 std::vector<typename storm::storage::SparseMatrix<ValueType>::index_type> indices = modelComponents.transitionMatrix.getRowGroupIndices();
                 for (StateType stateIndex = 0; stateIndex < modelComponents.markovianStates.size(); ++stateIndex) {
@@ -632,7 +632,7 @@ namespace storm {
                 }
                 if (ma->hasOnlyTrivialNondeterminism()) {
                     // Markov automaton can be converted into CTMC
-                    // TODO Matthias: change components which were not moved accordingly
+                    // TODO: change components which were not moved accordingly
                     model = ma->convertToCtmc();
                 } else {
                     model = ma;
@@ -770,7 +770,7 @@ namespace storm {
                 return result;
             }
 
-            // TODO Matthias: works only for <64 BEs!
+            // TODO: works only for <64 BEs!
             // WARNING: this code produces wrong results for more than 32 BEs
             /*for (size_t i = 1; i < 4 && i <= rates.size(); ++i) {
                 size_t permutation = smallestIntWithNBitsSet(static_cast<size_t>(i));
@@ -842,7 +842,7 @@ namespace storm {
                         STORM_LOG_ASSERT(iter->second.first->status() == state->status(), "Pseudo states do not coincide.");
                         state->setId(stateId);
                         // Update mapping to map to concrete state now
-                        // TODO Matthias: just change pointer?
+                        // TODO: just change pointer?
                         statesNotExplored[stateId] = std::make_pair(state, iter->second.second);
                         // We do not push the new state on the exploration queue as the pseudo state was already pushed
                         STORM_LOG_TRACE("Created pseudo state " << dft.getStateString(state));
