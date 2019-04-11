@@ -52,6 +52,18 @@ namespace storm {
                 return mChildren.size();
             }
 
+            /*!
+             * Check whether the given element is contained in the list of children.
+             * @param id Id of element to search for.
+             * @return True iff element was found in list of children.
+             */
+            bool containsChild(size_t id) {
+                auto it = std::find_if(this->mChildren.begin(), this->mChildren.end(), [&id](DFTElementPointer element) -> bool {
+                    return element->id() == id;
+                });
+                return it != this->mChildren.end();
+            }
+
             virtual std::vector<size_t> independentUnit() const override {
                 std::set<size_t> unit = {this->mId};
                 for (auto const& child : mChildren) {

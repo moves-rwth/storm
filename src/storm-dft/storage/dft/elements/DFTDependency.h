@@ -113,7 +113,6 @@ namespace storm {
                 return it != this->mDependentEvents.end();
             }
 
-
             virtual size_t nrChildren() const override {
                 return 1;
             }

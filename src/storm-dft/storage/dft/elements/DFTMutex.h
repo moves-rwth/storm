@@ -28,7 +28,7 @@ namespace storm {
                 return DFTElementType::MUTEX;
             }
 
-            bool isSeqEnforcer() const override {
+            bool isMutex() const override {
                 return true;
             }
 

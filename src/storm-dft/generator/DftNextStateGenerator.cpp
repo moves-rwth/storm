@@ -105,6 +105,7 @@ namespace storm {
                     DFTGatePointer next = queues.nextFailurePropagation();
                     next->checkFails(*newState, queues);
                     newState->updateFailableDependencies(next->id());
+                    newState->updateFailableInRestrictions(next->id());
                 }
 
                 // Check restrictions
@@ -116,6 +117,7 @@ namespace storm {
                     DFTRestrictionPointer next = queues.nextRestrictionCheck();
                     next->checkFails(*newState, queues);
                     newState->updateFailableDependencies(next->id());
+                    newState->updateFailableInRestrictions(next->id());
                 }
 
                 bool transient = false;
@@ -153,6 +155,7 @@ namespace storm {
                     // Update failable dependencies
                     newState->updateFailableDependencies(nextBE->id());
                     newState->updateDontCareDependencies(nextBE->id());
+                    newState->updateFailableInRestrictions(nextBE->id());
 
                     // Add new state
                     newStateId = stateToIdCallback(newState);

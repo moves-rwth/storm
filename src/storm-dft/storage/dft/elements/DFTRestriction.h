@@ -45,6 +45,14 @@ namespace storm {
             }
 
             /*!
+             * Return whether the restriction is a mutex.
+             * @return True iff the restriction is a MUTEX.
+             */
+            virtual bool isMutex() const {
+                return false;
+            }
+
+            /*!
              * Returns whether all children are BEs.
              * @return True iff all children are BEs.
              */
