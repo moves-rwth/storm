@@ -497,7 +497,7 @@ namespace storm {
                     } else if (propertyStructure.count("reward-bounds") > 0 ) {
                         STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Globally and reward bounded properties are not supported.");
                     }
-                    return std::make_shared<storm::logic::GloballyFormula const>(args[1]);
+                    return std::make_shared<storm::logic::GloballyFormula const>(args[0]);
 
                 } else if (opString == "W") {
                     assert(bound == boost::none);
