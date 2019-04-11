@@ -88,6 +88,8 @@ namespace storm {
                     success = builder.addSpareElement(name, childNames);
                 } else if (type == "seq") {
                     success = builder.addSequenceEnforcer(name, childNames);
+                } else if (type == "mutex") {
+                    success = builder.addMutex(name, childNames);
                 } else if (type == "fdep") {
                     success = builder.addDepElement(name, childNames, storm::utility::one<ValueType>());
                 } else if (type == "pdep") {

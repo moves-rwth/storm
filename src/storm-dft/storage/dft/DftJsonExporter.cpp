@@ -61,10 +61,11 @@ namespace storm {
                     nodeData["voting"] = std::static_pointer_cast<storm::storage::DFTVot<ValueType> const>(element)->threshold();
                 }
             } else if (element->isRestriction()) {
+                // TODO use same method for gates and restrictions
                 // Set children for restriction
-                auto seq = std::static_pointer_cast<storm::storage::DFTRestriction<ValueType> const>(element);
+                auto restriction = std::static_pointer_cast<storm::storage::DFTRestriction<ValueType> const>(element);
                 std::vector<std::string> children;
-                for (DFTElementPointer const& child : seq->children()) {
+                for (DFTElementPointer const& child : restriction->children()) {
                     children.push_back(std::to_string(child->id()));
                 }
                 nodeData["children"] = children;
