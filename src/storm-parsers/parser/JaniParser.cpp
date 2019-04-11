@@ -322,7 +322,7 @@ namespace storm {
                     
                 } else if (opString == "∀" || opString == "∃") {
                     assert(bound == boost::none);
-                    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Forall and Exists are currently not supported");
+                    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Forall and Exists are currently not supported in " << scope.description);
                 } else if (opString == "Emin" || opString == "Emax") {
                     STORM_LOG_WARN_COND(model.getJaniVersion() == 1, "Model not compliant: Contains Emin/Emax property in " << scope.description << ".");
                     STORM_LOG_THROW(propertyStructure.count("exp") == 1, storm::exceptions::InvalidJaniException, "Expecting reward-expression for operator " << opString << " in  " << scope.description);
@@ -558,7 +558,7 @@ namespace storm {
                                             ct = storm::logic::ComparisonType::Less;
                                         }
                                     } else {
-                                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Comparison operators '=' or '≠' in property specifications are currently not supported.");
+                                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Comparison operators '=' or '≠' in property specifications are currently not supported in " << scope.description << ".");
                                     }
                                 }
                                 return parseFormula(model, propertyStructure.at(leftRight[i]), formulaContext, scope, storm::logic::Bound(ct, boundExpr));
