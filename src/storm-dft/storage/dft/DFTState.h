@@ -289,6 +289,13 @@ namespace storm {
              * @return true if failable dependent events exist
              */
             bool updateFailableDependencies(size_t id);
+
+            /**
+             * Sets all failable BEs due to restrictions from newly failed element.
+             * @param id Id of the newly failed element
+             * @return true if newly failable events exist
+             */
+            bool updateFailableInRestrictions(size_t id);
             
             /**
              * Sets all dependencies dont care whose dependent event is the newly failed BE.
@@ -315,6 +322,13 @@ namespace storm {
              * @return True, if elements were swapped, false if nothing changed.
              */
             bool orderBySymmetry();
+
+            /*!
+             * Check whether the event cannot fail at the moment due to a restriction.
+             * @param id Event id.
+             * @return True iff a restriction prevents the failure of the event.
+             */
+            bool isEventDisabledViaRestriction(size_t id) const;
             
             /**
              * Checks whether operational post seq elements are present

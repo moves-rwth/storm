@@ -338,6 +338,29 @@ namespace storm {
                 return res;
             }
 
+            /**
+             * Obtains ids of elements which are under the same mutex.
+             * @return A vector of ids
+             */
+            std::vector<size_t> mutexRestrictionElements() const {
+                std::vector<size_t> res;
+                for (auto const& restr : mRestrictions) {
+                    if (!restr->isMutex()) {
+                        continue;
+                    }
+                    bool found = false;
+                    for (auto it = restr->children().cbegin(); it != restr->children().cend(); ++it) {
+                        if ((*it)->id() != mId) {
+                            res.push_back((*it)->id());
+                        } else {
+                            found = true;
+                        }
+                    }
+                    STORM_LOG_ASSERT(found, "Child " << mId << " is not included in restriction " << *restr);
+                }
+                return res;
+            }
+
             virtual void extendSpareModule(std::set<size_t>& elementsInModule) const;
 
             // virtual void extendImmediateFailureCausePathEvents(std::set<size_t>& ) const;

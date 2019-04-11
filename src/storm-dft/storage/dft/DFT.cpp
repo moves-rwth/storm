@@ -89,11 +89,12 @@ namespace storm {
         DFTStateGenerationInfo DFT<ValueType>::buildStateGenerationInfo(storm::storage::DFTIndependentSymmetries const& symmetries) const {
             DFTStateGenerationInfo generationInfo(nrElements(), mMaxSpareChildCount);
             
-            // Generate Pre and Post info for restrictions
+            // Generate Pre and Post info for restrictions, and mutexes
             for(auto const& elem : mElements) {
                 if(!elem->isDependency() && !elem->isRestriction()) {
                     generationInfo.setRestrictionPreElements(elem->id(), elem->seqRestrictionPres());
                     generationInfo.setRestrictionPostElements(elem->id(), elem->seqRestrictionPosts());
+                    generationInfo.setMutexElements(elem->id(), elem->mutexRestrictionElements());
                 }
             }
 

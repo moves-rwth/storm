@@ -1,6 +1,7 @@
 #include "DFTState.h"
 #include "storm-dft/storage/dft/DFTElements.h"
 #include "storm-dft/storage/dft/DFT.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 
 namespace storm {
     namespace storage {
@@ -22,7 +23,12 @@ namespace storm {
 
             // Initialize currently failable BEs
             for (size_t id : mDft.nonColdBEs()) {
-                failableElements.addBE(id);
+                // Check if restriction might prevent failure
+                if (!isEventDisabledViaRestriction(id)) {
+                    failableElements.addBE(id);
+                } else {
+                    STORM_LOG_TRACE("BE " << id << " is disabled due to a restriction.");
+                }
             }
         }
 
@@ -40,7 +46,7 @@ namespace storm {
             STORM_LOG_ASSERT(mPseudoState, "Only pseudo states can be constructed.");
             for(size_t index = 0; index < mDft.nrElements(); ++index) {
                 // Initialize currently failable BE
-                if (mDft.isBasicElement(index) && isOperational(index)) {
+                if (mDft.isBasicElement(index) && isOperational(index) && !isEventDisabledViaRestriction(index)) {
                     std::shared_ptr<const DFTBE<ValueType>> be = mDft.getBasicElement(index);
                     if (be->canFail()) {
                         switch (be->type()) {
@@ -215,15 +221,68 @@ namespace storm {
             bool addedFailableDependency = false;
             for (auto dependency : mDft.getElement(id)->outgoingDependencies()) {
                 STORM_LOG_ASSERT(dependency->triggerEvent()->id() == id, "Ids do not match.");
-                assert(dependency->dependentEvents().size() == 1);
+                STORM_LOG_ASSERT(dependency->dependentEvents().size() == 1, "Only one dependent event is allowed.");
                 if (getElementState(dependency->dependentEvents()[0]->id()) == DFTElementState::Operational) {
                     STORM_LOG_ASSERT(!isFailsafe(dependency->dependentEvents()[0]->id()), "Dependent event is failsafe.");
-                    failableElements.addDependency(dependency->id());
-                    STORM_LOG_TRACE("New dependency failure: " << *dependency);
-                    addedFailableDependency = true;
+                    // By assertion we have only one dependent event
+                    // Check if restriction prevents failure of dependent event
+                    if (!isEventDisabledViaRestriction(dependency->dependentEvents()[0]->id())) {
+                        // Add dependency as possible failure
+                        failableElements.addDependency(dependency->id());
+                        STORM_LOG_TRACE("New dependency failure: " << *dependency);
+                        addedFailableDependency = true;
+                    }
                 }
             }
             return addedFailableDependency;
+        }
+
+        template<typename ValueType>
+        bool DFTState<ValueType>::updateFailableInRestrictions(size_t id) {
+            if (!hasFailed(id)) {
+                // Non-failure does not change anything in a restriction
+                return false;
+            }
+
+            bool addedFailableEvent = false;
+            for (auto restriction : mDft.getElement(id)->restrictions()) {
+                STORM_LOG_ASSERT(restriction->containsChild(id), "Ids do not match.");
+                if (restriction->isSeqEnforcer()) {
+                    for (auto it = restriction->children().cbegin(); it != restriction->children().cend(); ++it) {
+                        if ((*it)->isBasicElement()) {
+                            if ((*it)->id() != id) {
+                                if (!hasFailed((*it)->id())) {
+                                    // Failure should be prevented later on
+                                    STORM_LOG_TRACE("Child " << (*it)->id() << " should have failed.");
+                                }
+                            } else {
+                                // Current event has failed
+                                ++it;
+                                if (it != restriction->children().cend()) {
+                                    // Enable next event
+                                    failableElements.addBE((*it)->id());
+                                    STORM_LOG_TRACE("Added possible BE failure: " << *(*it));
+                                    addedFailableEvent = true;
+                                }
+                                break;
+                            }
+                        }
+                    }
+                } else if (restriction->isMutex()) {
+                    // Current element has failed and disables all other children
+                    for (auto const& child : restriction->children()) {
+                        if (child->isBasicElement() && child->id() != id && getElementState(child->id()) == DFTElementState::Operational) {
+                            // Disable child
+                            failableElements.removeBE(child->id());
+                            STORM_LOG_TRACE("Disabled child: " << *child);
+                            addedFailableEvent = true;
+                        }
+                    }
+                } else {
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Restriction must be SEQ or MUTEX");
+                }
+            }
+            return addedFailableEvent;
         }
         
         template<typename ValueType>
@@ -304,7 +363,7 @@ namespace storm {
                 activate(representativeId);
             }
             for(size_t elem : mDft.module(representativeId)) {
-                if(mDft.isBasicElement(elem) && isOperational(elem)) {
+                if(mDft.isBasicElement(elem) && isOperational(elem) && !isEventDisabledViaRestriction(elem)) {
                     std::shared_ptr<const DFTBE<ValueType>> be = mDft.getBasicElement(elem);
                     if (be->canFail()) {
                         switch (be->type()) {
@@ -360,6 +419,28 @@ namespace storm {
         void DFTState<ValueType>::finalizeUses(size_t spareId) {
             STORM_LOG_ASSERT(hasFailed(spareId), "Spare has not failed.");
             mStatus.setFromInt(mStateGenerationInfo.getSpareUsageIndex(spareId), mStateGenerationInfo.usageInfoBits(), mDft.getMaxSpareChildCount());
+        }
+
+        template<typename ValueType>
+        bool DFTState<ValueType>::isEventDisabledViaRestriction(size_t id) const {
+            STORM_LOG_ASSERT(!mDft.isDependency(id), "Event " << id << " is dependency.");
+            STORM_LOG_ASSERT(!mDft.isRestriction(id), "Event " << id << " is restriction.");
+            // First check sequence enforcer
+            auto const& preIds = mStateGenerationInfo.seqRestrictionPreElements(id);
+            for (size_t id : preIds) {
+                if (isOperational(id)) {
+                    return true;
+                }
+            }
+
+            // Second check mutexes
+            auto const& mutexIds = mStateGenerationInfo.mutexRestrictionElements(id);
+            for (size_t id : mutexIds) {
+                if (!isOperational(id)) {
+                    return true;
+                }
+            }
+            return false;
         }
         
         template<typename ValueType>
