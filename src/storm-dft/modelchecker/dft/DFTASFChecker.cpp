@@ -14,7 +14,7 @@
 namespace storm {
 
     namespace modelchecker {
-        DFTASFChecker::DFTASFChecker(storm::storage::DFT<double> const& dft) : dft(dft) {
+        DFTASFChecker::DFTASFChecker(storm::storage::DFT<ValueType> const &dft) : dft(dft) {
             // Intentionally left empty.
         }
 

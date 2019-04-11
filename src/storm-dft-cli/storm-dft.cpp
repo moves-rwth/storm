@@ -76,8 +76,7 @@ void processOptions() {
     if (faultTreeSettings.solveWithSMT()) {
         // Solve with SMT
         STORM_LOG_DEBUG("Running DFT analysis with use of SMT");
-        storm::api::exportDFTToSMT(*dft, "test.smt2");
-        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Only exported to SMT file 'test.smt2' but analysis is not supported.");
+        storm::api::analyzeDFTSMT(*dft, true);
         return;
     }
 #endif

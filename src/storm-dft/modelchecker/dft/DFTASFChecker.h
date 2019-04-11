@@ -24,8 +24,8 @@ namespace storm {
             uint64_t spareIndex;
             uint64_t childIndex;
         };
-        
-        
+
+
         class DFTASFChecker {
             using ValueType = double;
         public:

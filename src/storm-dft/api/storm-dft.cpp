@@ -43,6 +43,34 @@ namespace storm {
         }
 
         template<>
+        std::vector<storm::solver::SmtSolver::CheckResult>
+        analyzeDFTSMT(storm::storage::DFT<double> const &dft, bool printOutput) {
+            storm::modelchecker::DFTASFChecker smtChecker(dft);
+            smtChecker.convert();
+            std::vector<storm::solver::SmtSolver::CheckResult> results = smtChecker.toSolver();
+
+            if (printOutput) {
+                for (size_t i = 0; i < results.size(); ++i) {
+                    std::string tmp = "unknonwn";
+                    if (results.at(i) == storm::solver::SmtSolver::CheckResult::Sat) {
+                        tmp = "SAT";
+                    } else if (results.at(i) == storm::solver::SmtSolver::CheckResult::Unsat) {
+                        tmp = "UNSAT";
+                    }
+                    std::cout << "Query " << std::to_string(i) << " : " << tmp << std::endl;
+                }
+            }
+            return results;
+        }
+
+        template<>
+        std::vector<storm::solver::SmtSolver::CheckResult>
+        analyzeDFTSMT(storm::storage::DFT<storm::RationalFunction> const &dft, bool printOutput) {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
+                            "Analysis by SMT not supported for this data type.");
+        }
+
+        template<>
         std::pair<std::shared_ptr<storm::gspn::GSPN>, uint64_t> transformToGSPN(storm::storage::DFT<double> const& dft) {
             storm::settings::modules::FaultTreeSettings const& ftSettings = storm::settings::getModule<storm::settings::modules::FaultTreeSettings>();
             storm::settings::modules::DftGspnSettings const& dftGspnSettings = storm::settings::getModule<storm::settings::modules::DftGspnSettings>();
