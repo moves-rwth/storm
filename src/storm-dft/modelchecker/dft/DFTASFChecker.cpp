@@ -4,6 +4,7 @@
 
 #include "storm/utility/file.h"
 #include "storm/utility/bitoperations.h"
+#include "storm-parsers/parser/ExpressionCreator.h"
 #include "storm/solver/SmtSolver.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/Type.h"
@@ -123,12 +124,6 @@ namespace storm {
 
             // Handle dependencies
             addMarkovianConstraints();
-
-            //TODO Move this out of convert method
-
-            // Toplevel element will not fail (part of constraint 13)
-            constraints.push_back(std::make_shared<IsConstantValue>(timePointVariables.at(dft.getTopLevelIndex()), notFailed));
-            constraints.back()->setDescription("Toplevel element should not fail");
         }
 
         // Constraint Generator Functions
@@ -434,10 +429,12 @@ namespace storm {
             storm::utility::closeFile(stream);
         }
 
-        void DFTASFChecker::toSolver() {
+        std::vector<storm::solver::SmtSolver::CheckResult> DFTASFChecker::toSolver() {
+            std::vector<storm::solver::SmtSolver::CheckResult> resultVector;
             std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
             std::unique_ptr<storm::solver::SmtSolver> solver = storm::utility::solver::SmtSolverFactory().create(
                     *manager);
+            //Add variables to manager
             for (auto const &timeVarEntry : timePointVariables) {
                 manager->declareIntegerVariable(varNames[timeVarEntry.second]);
             }
@@ -452,11 +449,21 @@ namespace storm {
                     manager->declareIntegerVariable(varNames[tmpVar]);
                 }
             }
+            // Add constraints to solver
             for (auto const &constraint : constraints) {
                 solver->add(constraint->toExpression(varNames, manager));
             }
+            // Set backtracking marker to check several properties without reconstructing DFT encoding
+            solver->push();
 
-            //TODO Add porperties to check
+            // Constraint that toplevel element will not fail (part of constraint 13)
+            std::shared_ptr<SmtConstraint> tleNeverFailedConstr = std::make_shared<IsConstantValue>(
+                    timePointVariables.at(dft.getTopLevelIndex()), notFailed);
+            solver->add(tleNeverFailedConstr->toExpression(varNames, manager));
+            resultVector.push_back(solver->check());
+            solver->pop();
+
+            return resultVector;
         }
     }
 }

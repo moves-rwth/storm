@@ -1,4 +1,5 @@
 #include "DFTASFChecker.h"
+#include <storm/storage/expressions/ExpressionManager.h>
 #include <string>
 
 namespace storm {
@@ -36,7 +37,16 @@ namespace storm {
 
             storm::expressions::Expression toExpression(std::vector<std::string> const &varNames,
                                                         std::shared_ptr<storm::expressions::ExpressionManager> manager) const override {
-                //TODO
+                std::vector<storm::expressions::Expression> outerAnd;
+                std::vector<storm::expressions::Expression> innerOr;
+                for (auto const &ovi : varIndices) {
+                    outerAnd.push_back((manager->getVariableExpression(varNames.at(varIndex)) >=
+                                        manager->getVariableExpression(varNames.at(ovi))));
+                    innerOr.push_back((manager->getVariableExpression(varNames.at(varIndex)) ==
+                                       manager->getVariableExpression(varNames.at(ovi))));
+                }
+                outerAnd.push_back(disjunction(innerOr));
+                return conjunction(outerAnd);
             }
 
         private:
@@ -76,7 +86,16 @@ namespace storm {
 
             storm::expressions::Expression toExpression(std::vector<std::string> const &varNames,
                                                         std::shared_ptr<storm::expressions::ExpressionManager> manager) const override {
-                //TODO
+                std::vector<storm::expressions::Expression> outerAnd;
+                std::vector<storm::expressions::Expression> innerOr;
+                for (auto const &ovi : varIndices) {
+                    outerAnd.push_back((manager->getVariableExpression(varNames.at(varIndex)) <=
+                                        manager->getVariableExpression(varNames.at(ovi))));
+                    innerOr.push_back((manager->getVariableExpression(varNames.at(varIndex)) ==
+                                       manager->getVariableExpression(varNames.at(ovi))));
+                }
+                outerAnd.push_back(disjunction(innerOr));
+                return conjunction(outerAnd);
             }
 
         private:
@@ -105,7 +124,8 @@ namespace storm {
 
             storm::expressions::Expression toExpression(std::vector<std::string> const &varNames,
                                                         std::shared_ptr<storm::expressions::ExpressionManager> manager) const override {
-                //TODO
+                return (manager->getVariableExpression(varNames.at(varIndex)) >= lowerBound) &&
+                       (manager->getVariableExpression(varNames.at(varIndex)) <= upperBound);
             }
 
         private:
@@ -139,7 +159,15 @@ namespace storm {
 
             storm::expressions::Expression toExpression(std::vector<std::string> const &varNames,
                                                         std::shared_ptr<storm::expressions::ExpressionManager> manager) const override {
-                //TODO
+                if (constraints.empty()) {
+                    return manager->boolean(true);
+                } else {
+                    std::vector<storm::expressions::Expression> conjuncts;
+                    for (auto const &c : constraints) {
+                        conjuncts.push_back(c->toExpression(varNames, manager));
+                    }
+                    return conjunction(conjuncts);
+                }
             }
 
         private:
@@ -172,7 +200,15 @@ namespace storm {
 
             storm::expressions::Expression toExpression(std::vector<std::string> const &varNames,
                                                         std::shared_ptr<storm::expressions::ExpressionManager> manager) const override {
-                //TODO
+                if (constraints.empty()) {
+                    return manager->boolean(false);
+                } else {
+                    std::vector<storm::expressions::Expression> disjuncts;
+                    for (auto const &c : constraints) {
+                        disjuncts.push_back(c->toExpression(varNames, manager));
+                    }
+                    return disjunction(disjuncts);
+                }
             }
 
         private:
@@ -194,7 +230,7 @@ namespace storm {
 
             storm::expressions::Expression toExpression(std::vector<std::string> const &varNames,
                                                         std::shared_ptr<storm::expressions::ExpressionManager> manager) const override {
-                //TODO
+                return implies(lhs->toExpression(varNames, manager), rhs->toExpression(varNames, manager));
             }
 
         private:
@@ -216,7 +252,7 @@ namespace storm {
 
             storm::expressions::Expression toExpression(std::vector<std::string> const &varNames,
                                                         std::shared_ptr<storm::expressions::ExpressionManager> manager) const override {
-                //TODO
+                return iff(lhs->toExpression(varNames, manager), rhs->toExpression(varNames, manager));
             }
 
         private:
@@ -241,7 +277,7 @@ namespace storm {
 
             storm::expressions::Expression toExpression(std::vector<std::string> const &varNames,
                                                         std::shared_ptr<storm::expressions::ExpressionManager> manager) const override {
-                //TODO
+                return manager->boolean(value);
             }
 
         private:
@@ -270,7 +306,11 @@ namespace storm {
 
             storm::expressions::Expression toExpression(std::vector<std::string> const &varNames,
                                                         std::shared_ptr<storm::expressions::ExpressionManager> manager) const override {
-                //TODO
+                if (value) {
+                    return manager->getVariableExpression(varNames.at(varIndex));
+                } else {
+                    return !(manager->getVariableExpression(varNames.at(varIndex)));
+                }
             }
 
         private:
@@ -296,7 +336,7 @@ namespace storm {
 
             storm::expressions::Expression toExpression(std::vector<std::string> const &varNames,
                                                         std::shared_ptr<storm::expressions::ExpressionManager> manager) const override {
-                //TODO
+                return manager->getVariableExpression(varNames.at(varIndex)) == manager->integer(value);
             }
 
         private:
@@ -322,7 +362,7 @@ namespace storm {
 
             storm::expressions::Expression toExpression(std::vector<std::string> const &varNames,
                                                         std::shared_ptr<storm::expressions::ExpressionManager> manager) const override {
-                //TODO
+                return manager->getVariableExpression(varNames.at(varIndex)) < value;
             }
 
         private:
@@ -347,7 +387,7 @@ namespace storm {
 
             storm::expressions::Expression toExpression(std::vector<std::string> const &varNames,
                                                         std::shared_ptr<storm::expressions::ExpressionManager> manager) const override {
-                //TODO
+                return manager->getVariableExpression(varNames.at(varIndex)) <= value;
             }
 
         private:
@@ -370,7 +410,8 @@ namespace storm {
 
             storm::expressions::Expression toExpression(std::vector<std::string> const &varNames,
                                                         std::shared_ptr<storm::expressions::ExpressionManager> manager) const override {
-                //TODO
+                return manager->getVariableExpression(varNames.at(var1Index)) ==
+                       manager->getVariableExpression(varNames.at(var2Index));
             }
 
         private:
@@ -393,7 +434,8 @@ namespace storm {
 
             storm::expressions::Expression toExpression(std::vector<std::string> const &varNames,
                                                         std::shared_ptr<storm::expressions::ExpressionManager> manager) const override {
-                //TODO
+                return manager->getVariableExpression(varNames.at(var1Index)) <
+                       manager->getVariableExpression(varNames.at(var2Index));
             }
 
         private:
@@ -427,7 +469,16 @@ namespace storm {
 
             storm::expressions::Expression toExpression(std::vector<std::string> const &varNames,
                                                         std::shared_ptr<storm::expressions::ExpressionManager> manager) const override {
-                //TODO
+                std::vector<storm::expressions::Expression> conjuncts;
+                for (uint64_t i = 0; i < varIndices.size(); ++i) {
+                    for (uint64_t j = i + 1; j < varIndices.size(); ++j) {
+                        // check all elements pairwise for inequality
+                        conjuncts.push_back(manager->getVariableExpression(varNames.at(varIndices.at(i))) !=
+                                            manager->getVariableExpression(varNames.at(varIndices.at(j))));
+                    }
+                }
+                // take the conjunction of all pairwise inequalities
+                return conjunction(conjuncts);
             }
 
         private:
@@ -455,8 +506,15 @@ namespace storm {
 
             storm::expressions::Expression toExpression(std::vector<std::string> const &varNames,
                                                         std::shared_ptr<storm::expressions::ExpressionManager> manager) const override {
-                //TODO
+                std::vector<storm::expressions::Expression> conjuncts;
+                for (uint64_t i = 1; i < varIndices.size(); ++i) {
+                    conjuncts.push_back(manager->getVariableExpression(varNames.at(varIndices.at(i - 1))) <=
+                                        manager->getVariableExpression(varNames.at(varIndices.at(i))));
+                }
+                // take the conjunction of all pairwise inequalities
+                return conjunction(conjuncts);
             }
+
 
         private:
             std::vector<uint64_t> varIndices;
@@ -479,7 +537,9 @@ namespace storm {
 
             storm::expressions::Expression toExpression(std::vector<std::string> const &varNames,
                                                         std::shared_ptr<storm::expressions::ExpressionManager> manager) const override {
-                //TODO
+                return ite(ifConstraint->toExpression(varNames, manager),
+                           thenConstraint->toExpression(varNames, manager),
+                           elseConstraint->toExpression(varNames, manager));
             }
 
         private:

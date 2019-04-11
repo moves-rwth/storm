@@ -4,6 +4,7 @@
 #include <vector>
 #include <unordered_map>
 
+#include "storm/solver/SmtSolver.h"
 #include "SmtConstraint.h"
 #include "storm-dft/storage/dft/DFT.h"
 #include "storm/utility/solver.h"
@@ -35,7 +36,8 @@ namespace storm {
              */
             void convert();
             void toFile(std::string const&);
-            void toSolver();
+
+            std::vector<storm::solver::SmtSolver::CheckResult> toSolver();
             
         private:
             uint64_t getClaimVariableIndex(uint64_t spareIndex, uint64_t childIndex) const;
