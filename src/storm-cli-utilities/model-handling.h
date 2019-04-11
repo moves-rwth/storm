@@ -633,7 +633,12 @@ namespace storm {
             for (auto const& property : properties) {
                 printModelCheckingProperty(property);
                 storm::utility::Stopwatch watch(true);
-                std::unique_ptr<storm::modelchecker::CheckResult> result = verificationCallback(property.getRawFormula(), property.getFilter().getStatesFormula());
+                std::unique_ptr<storm::modelchecker::CheckResult> result;
+                try {
+                    result = verificationCallback(property.getRawFormula(), property.getFilter().getStatesFormula());
+                } catch (storm::exceptions::BaseException const& ex) {
+                    STORM_LOG_WARN("Cannot handle property: " << ex.what());
+                }
                 watch.stop();
                 postprocessingCallback(result);
                 printResult<ValueType>(result, property, &watch);
