@@ -342,8 +342,11 @@ namespace storm {
             return opDecl;
         }
         
-        boost::any FormulaToJaniJson::visit(storm::logic::GloballyFormula const&, boost::any const&) const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Jani currently does not support conversion of a globally formulae");
+        boost::any FormulaToJaniJson::visit(storm::logic::GloballyFormula const& f, boost::any const& data) const {
+            modernjson::json opDecl;
+            opDecl["op"] = "G";
+            opDecl["exp"] = anyToJson(f.getSubformula().accept(*this, data));
+            return opDecl;
         }
         
         boost::any FormulaToJaniJson::visit(storm::logic::InstantaneousRewardFormula const&, boost::any const&) const {
