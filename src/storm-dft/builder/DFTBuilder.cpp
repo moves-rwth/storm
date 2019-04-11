@@ -137,7 +137,7 @@ namespace storm {
         template<typename ValueType>
         bool DFTBuilder<ValueType>::addRestriction(std::string const& name, std::vector<std::string> const& children, storm::storage::DFTElementType tp) {
             if (children.size() <= 1) {
-                STORM_LOG_ERROR("Sequence enforcers require at least two children");
+                STORM_LOG_ERROR("Restrictions require at least two children");
             }
             if (nameInUse(name)) {
                 STORM_LOG_ERROR("Element with name '" << name << "' already exists.");
@@ -149,8 +149,7 @@ namespace storm {
                     restr = std::make_shared<storm::storage::DFTSeq<ValueType>>(mNextId++, name);
                     break;
                 case storm::storage::DFTElementType::MUTEX:
-                    // TODO notice that mutex state generation support is lacking anyway, as DONT CARE propagation would be broken for this.
-                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Gate type not supported.");
+                    restr = std::make_shared<storm::storage::DFTMutex<ValueType>>(mNextId++, name);
                     break;
                 default:
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Gate type not known.");

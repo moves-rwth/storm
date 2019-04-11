@@ -137,6 +137,8 @@ namespace storm {
                             success = builder.addSpareElement(name, childNames);
                         } else if (type == "seq") {
                             success = builder.addSequenceEnforcer(name, childNames);
+                        } else if (type == "mutex") {
+                            success = builder.addMutex(name, childNames);
                         } else if (type == "fdep") {
                             STORM_LOG_THROW(childNames.size() >= 2, storm::exceptions::WrongFormatException, "FDEP gate needs at least two children in line " << lineNo << ".");
                             success = builder.addDepElement(name, childNames, storm::utility::one<ValueType>());
