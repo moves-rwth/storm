@@ -11,6 +11,7 @@
 
 #include "storm/utility/macros.h"
 #include "storm/utility/graph.h"
+#include "storm/utility/FilteredRewardModel.h"
 
 #include "storm/settings/modules/GeneralSettings.h"
 
@@ -30,7 +31,7 @@ namespace storm {
         template<typename ModelType>
         bool SymbolicMdpPrctlModelChecker<ModelType>::canHandle(CheckTask<storm::logic::Formula, ValueType> const& checkTask) const {
             storm::logic::Formula const& formula = checkTask.getFormula();
-            return formula.isInFragment(storm::logic::prctl().setLongRunAverageRewardFormulasAllowed(false).setTimeOperatorsAllowed(true).setReachbilityTimeFormulasAllowed(true));
+            return formula.isInFragment(storm::logic::prctl().setLongRunAverageRewardFormulasAllowed(false).setTimeOperatorsAllowed(true).setReachbilityTimeFormulasAllowed(true).setRewardAccumulationAllowed(true));
         }
         
         template<typename ModelType>
@@ -80,7 +81,8 @@ namespace storm {
             storm::logic::CumulativeRewardFormula const& rewardPathFormula = checkTask.getFormula();
             STORM_LOG_THROW(checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidArgumentException, "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
             STORM_LOG_THROW(rewardPathFormula.hasIntegerBound(), storm::exceptions::InvalidPropertyException, "Formula needs to have a discrete time bound.");
-            return storm::modelchecker::helper::SymbolicMdpPrctlHelper<DdType, ValueType>::computeCumulativeRewards(env, checkTask.getOptimizationDirection(), this->getModel(), this->getModel().getTransitionMatrix(), checkTask.isRewardModelSet() ? this->getModel().getRewardModel(checkTask.getRewardModel()) : this->getModel().getRewardModel(""), rewardPathFormula.getNonStrictBound<uint64_t>());
+            auto rewardModel = storm::utility::createFilteredRewardModel(this->getModel(), checkTask);
+            return storm::modelchecker::helper::SymbolicMdpPrctlHelper<DdType, ValueType>::computeCumulativeRewards(env, checkTask.getOptimizationDirection(), this->getModel(), this->getModel().getTransitionMatrix(), rewardModel.get(), rewardPathFormula.getNonStrictBound<uint64_t>());
         }
         
         template<typename ModelType>
@@ -97,7 +99,8 @@ namespace storm {
             STORM_LOG_THROW(checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidPropertyException, "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
             std::unique_ptr<CheckResult> subResultPointer = this->check(env, eventuallyFormula.getSubformula());
             SymbolicQualitativeCheckResult<DdType> const& subResult = subResultPointer->asSymbolicQualitativeCheckResult<DdType>();
-            return storm::modelchecker::helper::SymbolicMdpPrctlHelper<DdType, ValueType>::computeReachabilityRewards(env, checkTask.getOptimizationDirection(), this->getModel(), this->getModel().getTransitionMatrix(), checkTask.isRewardModelSet() ? this->getModel().getRewardModel(checkTask.getRewardModel()) : this->getModel().getRewardModel(""), subResult.getTruthValuesVector());
+            auto rewardModel = storm::utility::createFilteredRewardModel(this->getModel(), checkTask);
+            return storm::modelchecker::helper::SymbolicMdpPrctlHelper<DdType, ValueType>::computeReachabilityRewards(env, checkTask.getOptimizationDirection(), this->getModel(), this->getModel().getTransitionMatrix(), rewardModel.get(), subResult.getTruthValuesVector());
         }
         
         template<typename ModelType>

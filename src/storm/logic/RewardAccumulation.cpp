@@ -23,6 +23,10 @@ namespace storm {
             return !isStepsSet() && !isTimeSet() && !isExitSet();
         }
 
+        uint64_t RewardAccumulation::size() const {
+            return (isStepsSet() ? 1 : 0) + (isTimeSet() ? 1 : 0) + (isExitSet() ? 1 : 0);
+        }
+        
         std::ostream& operator<<(std::ostream& out, RewardAccumulation const& acc) {
             bool hasEntry = false;
             if (acc.isStepsSet()) {

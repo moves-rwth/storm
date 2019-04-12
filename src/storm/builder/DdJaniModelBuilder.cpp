@@ -1452,7 +1452,7 @@ namespace storm {
                         STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Cannot translate model of type " << modelType << ".");
                     }
                 } else {
-                    return ActionDd(this->variables.manager->template getBddZero(), this->variables.manager->template getAddZero<ValueType>(), {}, std::make_pair<uint64_t, uint64_t>(0, 0), {}, this->variables.manager->getBddZero());
+                    return ActionDd(this->variables.manager->getBddZero(), this->variables.manager->template getAddZero<ValueType>(), {}, std::make_pair<uint64_t, uint64_t>(0, 0), {}, this->variables.manager->getBddZero());
                 }
             }
             

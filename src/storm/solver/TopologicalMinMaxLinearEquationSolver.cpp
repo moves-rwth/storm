@@ -113,12 +113,9 @@ namespace storm {
         template<typename ValueType>
         void TopologicalMinMaxLinearEquationSolver<ValueType>::createSortedSccDecomposition(bool needLongestChainSize) const {
             // Obtain the scc decomposition
-            this->sortedSccDecomposition = std::make_unique<storm::storage::StronglyConnectedComponentDecomposition<ValueType>>(*this->A);
+            this->sortedSccDecomposition = std::make_unique<storm::storage::StronglyConnectedComponentDecomposition<ValueType>>(*this->A, storm::storage::StronglyConnectedComponentDecompositionOptions().forceTobologicalSort().computeSccDepths(needLongestChainSize));
             if (needLongestChainSize) {
-                this->longestSccChainSize = 0;
-                this->sortedSccDecomposition->sortTopologically(*this->A, &(this->longestSccChainSize.get()));
-            } else {
-                this->sortedSccDecomposition->sortTopologically(*this->A);
+                this->longestSccChainSize = this->sortedSccDecomposition->getMaxSccDepth() + 1;
             }
         }
         

@@ -413,7 +413,7 @@ namespace storm {
                 uint_fast64_t numberOfStates = probabilityMatrix.getRowCount();
 
                 // Start by decomposing the CTMC into its BSCCs.
-                storm::storage::StronglyConnectedComponentDecomposition<ValueType> bsccDecomposition(probabilityMatrix, storm::storage::BitVector(probabilityMatrix.getRowCount(), true), false, true);
+                storm::storage::StronglyConnectedComponentDecomposition<ValueType> bsccDecomposition(probabilityMatrix, storm::storage::StronglyConnectedComponentDecompositionOptions().onlyBottomSccs());
                 
                 STORM_LOG_DEBUG("Found " << bsccDecomposition.size() << " BSCCs.");
                 

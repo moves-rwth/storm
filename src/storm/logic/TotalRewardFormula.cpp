@@ -30,6 +30,9 @@ namespace storm {
 
         std::ostream& TotalRewardFormula::writeToStream(std::ostream& out) const {
             out << "C";
+            if (hasRewardAccumulation()) {
+                out << "[" << getRewardAccumulation() << "]";
+            }
             return out;
         }
     }
