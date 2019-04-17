@@ -10,7 +10,7 @@ namespace storm {
     namespace generator {
 
         template<typename ValueType, typename StateType>
-        DftNextStateGenerator<ValueType, StateType>::DftNextStateGenerator(storm::storage::DFT<ValueType> const& dft, storm::storage::DFTStateGenerationInfo const& stateGenerationInfo, bool mergeFailedStates) : mDft(dft), mStateGenerationInfo(stateGenerationInfo), state(nullptr), mergeFailedStates(mergeFailedStates) {
+        DftNextStateGenerator<ValueType, StateType>::DftNextStateGenerator(storm::storage::DFT<ValueType> const& dft, storm::storage::DFTStateGenerationInfo const& stateGenerationInfo) : mDft(dft), mStateGenerationInfo(stateGenerationInfo), state(nullptr), uniqueFailedState(false) {
             deterministicModel = !mDft.canHaveNondeterminism();
         }
 
@@ -135,9 +135,9 @@ namespace storm {
 
                 // Get the id of the successor state
                 StateType newStateId;
-                if (newState->hasFailed(mDft.getTopLevelIndex()) && mergeFailedStates) {
+                if (newState->hasFailed(mDft.getTopLevelIndex()) && uniqueFailedState) {
                     // Use unique failed state
-                    newStateId = mergeFailedStateId;
+                    newStateId = 0;
                 } else {
                     // Propagate failsafe
                     while (!queues.failsafePropagationDone()) {
@@ -226,15 +226,16 @@ namespace storm {
 
         template<typename ValueType, typename StateType>
         StateBehavior<ValueType, StateType> DftNextStateGenerator<ValueType, StateType>::createMergeFailedState(StateToIdCallback const& stateToIdCallback) {
-            STORM_LOG_ASSERT(mergeFailedStates, "No unique failed state used.");
-            // Introduce explicit fail state
+            this->uniqueFailedState = true;
+            // Introduce explicit fail state with id 0
             DFTStatePointer failedState = std::make_shared<storm::storage::DFTState<ValueType>>(mDft, mStateGenerationInfo, 0);
-            mergeFailedStateId = stateToIdCallback(failedState);
-            STORM_LOG_TRACE("Introduce fail state with id: " << mergeFailedStateId);
+            size_t failedStateId = stateToIdCallback(failedState);
+            STORM_LOG_ASSERT(failedStateId == 0, "Unique failed state has not id 0.");
+            STORM_LOG_TRACE("Introduce fail state with id 0.");
 
             // Add self loop
             Choice<ValueType, StateType> choice(0, true);
-            choice.addProbability(mergeFailedStateId, storm::utility::one<ValueType>());
+            choice.addProbability(0, storm::utility::one<ValueType>());
 
             // No further exploration required
             StateBehavior<ValueType, StateType> result;

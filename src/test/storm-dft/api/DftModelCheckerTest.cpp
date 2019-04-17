@@ -81,7 +81,7 @@ namespace {
                 relevantEvents = dft->getAllIds();
             }
             typename storm::modelchecker::DFTModelChecker<double>::dft_results results = storm::api::analyzeDFT<double>(*dft, properties, config.useSR, config.useMod,
-                                                                                                                        relevantEvents);
+                                                                                                                        relevantEvents, true);
             return boost::get<double>(results[0]);
         }
 

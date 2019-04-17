@@ -862,12 +862,14 @@ namespace storm {
         }
 
         template<typename ValueType>
-        void DFT<ValueType>::setRelevantEvents(std::set<size_t> const& relevantEvents) const {
+        void DFT<ValueType>::setRelevantEvents(std::set<size_t> const& relevantEvents, bool allowDCForRelevantEvents) const {
             for (auto const& elem : mElements) {
                 if (relevantEvents.find(elem->id()) != relevantEvents.end()) {
                     elem->setRelevance(true);
+                    elem->setAllowDC(allowDCForRelevantEvents);
                 } else {
                     elem->setRelevance(false);
+                    elem->setAllowDC(true);
                 }
             }
         }

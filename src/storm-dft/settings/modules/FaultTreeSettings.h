@@ -41,6 +41,13 @@ namespace storm {
                 bool isDisableDC() const;
 
                 /*!
+                 * Retrieves whether the option to allow Dont Care propagation for relevant events is set.
+                 *
+                 * @return True iff the option was set.
+                 */
+                bool isAllowDCForRelevantEvents() const;
+
+                /*!
                  * Retrieves whether the option to give relevant events is set.
                  *
                  * @return True iff the option was set.
@@ -106,6 +113,7 @@ namespace storm {
                 static const std::string symmetryReductionOptionShortName;
                 static const std::string modularisationOptionName;
                 static const std::string disableDCOptionName;
+                static const std::string allowDCRelevantOptionName;
                 static const std::string relevantEventsOptionName;
                 static const std::string approximationErrorOptionName;
                 static const std::string approximationErrorOptionShortName;

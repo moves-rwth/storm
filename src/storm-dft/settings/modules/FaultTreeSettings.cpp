@@ -19,6 +19,7 @@ namespace storm {
             const std::string FaultTreeSettings::symmetryReductionOptionShortName = "symred";
             const std::string FaultTreeSettings::modularisationOptionName = "modularisation";
             const std::string FaultTreeSettings::disableDCOptionName = "disabledc";
+            const std::string FaultTreeSettings::allowDCRelevantOptionName = "allowdcrelevant";
             const std::string FaultTreeSettings::relevantEventsOptionName = "relevantevents";
             const std::string FaultTreeSettings::approximationErrorOptionName = "approximation";
             const std::string FaultTreeSettings::approximationErrorOptionShortName = "approx";
@@ -31,10 +32,11 @@ namespace storm {
             FaultTreeSettings::FaultTreeSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, symmetryReductionOptionName, false, "Exploit symmetric structure of model.").setShortName(symmetryReductionOptionShortName).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, modularisationOptionName, false, "Use modularisation (not applicable for expected time).").build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, disableDCOptionName, false, "Disable Dont Care propagation.").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, disableDCOptionName, false, "Disable Don't Care propagation.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, firstDependencyOptionName, false, "Avoid non-determinism by always taking the first possible dependency.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, relevantEventsOptionName, false, "Specifies the relevant events from the DFT.")
-                    .addArgument(storm::settings::ArgumentBuilder::createStringArgument("values", "A comma separated list of relevant events. 'all' marks all events as relevant, The default '' or 'none' mark only the top level event as relevant.").setDefaultValueString("").build()).build());
+                    .addArgument(storm::settings::ArgumentBuilder::createStringArgument("values", "A comma separated list of names of relevant events. 'all' marks all events as relevant, The default '' or 'none' marks only the top level event as relevant.").setDefaultValueString("").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, allowDCRelevantOptionName, false, "Allow Don't Care propagation for relevant events.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, approximationErrorOptionName, false, "Approximation error allowed.").setShortName(approximationErrorOptionShortName).addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("error", "The relative approximation error to use.").addValidatorDouble(ArgumentValidatorFactory::createDoubleGreaterEqualValidator(0.0)).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, approximationHeuristicOptionName, false, "Set the heuristic used for approximation.")
                     .addArgument(storm::settings::ArgumentBuilder::createStringArgument("heuristic", "The name of the heuristic used for approximation.")
@@ -55,6 +57,10 @@ namespace storm {
 
             bool FaultTreeSettings::isDisableDC() const {
                 return this->getOption(disableDCOptionName).getHasOptionBeenSet();
+            }
+
+            bool FaultTreeSettings::isAllowDCForRelevantEvents() const {
+                return this->getOption(allowDCRelevantOptionName).getHasOptionBeenSet();
             }
 
             bool FaultTreeSettings::areRelevantEventsSet() const {

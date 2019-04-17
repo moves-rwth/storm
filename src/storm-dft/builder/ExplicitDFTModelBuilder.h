@@ -151,42 +151,24 @@ namespace storm {
             };
 
         public:
-            // A structure holding the labeling options.
-            struct LabelOptions {
-                // Constructor
-                LabelOptions(std::vector<std::shared_ptr<storm::logic::Formula const>> properties, bool buildAllLabels = false);
-
-                // Flag indicating if the general fail label should be included.
-                bool buildFailLabel;
-
-                // Flag indicating if the general failsafe label should be included.
-                bool buildFailSafeLabel;
-
-                // Flag indicating if all possible labels should be included.
-                bool buildAllLabels;
-
-                // Set of element names whose fail label to include.
-                std::set<std::string> elementLabels;
-            };
-
             /*!
              * Constructor.
              *
              * @param dft DFT.
              * @param symmetries Symmetries in the dft.
              * @param relevantEvents List with ids of relevant events which should be observed.
+             * @param allowDCForRelevantEvents If true, Don't Care propagation is allowed even for relevant events.
              */
-            ExplicitDFTModelBuilder(storm::storage::DFT<ValueType> const& dft, storm::storage::DFTIndependentSymmetries const& symmetries, std::set<size_t> const& relevantEvents);
+            ExplicitDFTModelBuilder(storm::storage::DFT<ValueType> const& dft, storm::storage::DFTIndependentSymmetries const& symmetries, std::set<size_t> const& relevantEvents, bool allowDCForRelevantEvents);
 
             /*!
              * Build model from DFT.
              *
-             * @param labelOpts Options for labeling.
              * @param iteration Current number of iteration.
              * @param approximationThreshold Threshold determining when to skip exploring states.
              * @param approximationHeuristic Heuristic used for exploring states.
              */
-            void buildModel(LabelOptions const& labelOpts, size_t iteration, double approximationThreshold = 0.0, storm::builder::ApproximationHeuristic approximationHeuristic = storm::builder::ApproximationHeuristic::DEPTH);
+            void buildModel(size_t iteration, double approximationThreshold = 0.0, storm::builder::ApproximationHeuristic approximationHeuristic = storm::builder::ApproximationHeuristic::DEPTH);
 
             /*!
              * Get the built model.
@@ -221,10 +203,8 @@ namespace storm {
 
             /*!
              * Build the labeling.
-             *
-             * @param labelOpts Options for labeling.
              */
-            void buildLabeling(LabelOptions const& labelOpts);
+            void buildLabeling();
 
             /*!
              * Add a state to the explored states (if not already there). It also handles pseudo states.
@@ -315,17 +295,15 @@ namespace storm {
             // List with ids of relevant events which should be observed.
             std::set<size_t> const& relevantEvents;
 
-            //TODO: merge depending on relevant events
-            const bool mergeFailedStates = true;
-
             // Heuristic used for approximation
             storm::builder::ApproximationHeuristic usedHeuristic;
 
             // Current id for new state
             size_t newIndex = 0;
 
-            // Id of failed state
-            size_t failedStateId = 0;
+            // Whether to use a unique state for all failed states
+            // If used, the unique failed state has the id 0
+            bool uniqueFailedState = false;
 
             // Id of initial state
             size_t initialStateIndex = 0;

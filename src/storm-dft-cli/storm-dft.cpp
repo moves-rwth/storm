@@ -138,11 +138,15 @@ void processOptions() {
     // Events from properties are relevant as well
     for (auto atomic : atomicLabels) {
         std::string label = atomic->getLabel();
-        std::size_t foundIndex = label.find("_fail");
-        if (foundIndex != std::string::npos) {
-            relevantEventNames.push_back(label.substr(0, foundIndex));
+        if (label == "failed") {
+            // Ignore as this label will always be added
         } else {
-            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Label '" << label << "' not known.");
+            std::size_t foundIndex = label.find("_fail");
+            if (foundIndex != std::string::npos) {
+                relevantEventNames.push_back(label.substr(0, foundIndex));
+            } else {
+                STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Label '" << label << "' not known.");
+            }
         }
     }
 
@@ -178,8 +182,8 @@ void processOptions() {
         if (faultTreeSettings.isApproximationErrorSet()) {
             approximationError = faultTreeSettings.getApproximationError();
         }
-        storm::api::analyzeDFT<ValueType>(*dft, props, faultTreeSettings.useSymmetryReduction(), faultTreeSettings.useModularisation(), relevantEvents, approximationError,
-                                          faultTreeSettings.getApproximationHeuristic(), true);
+        storm::api::analyzeDFT<ValueType>(*dft, props, faultTreeSettings.useSymmetryReduction(), faultTreeSettings.useModularisation(), relevantEvents,
+                                          faultTreeSettings.isAllowDCForRelevantEvents(), approximationError, faultTreeSettings.getApproximationHeuristic(), true);
     }
 }
 
