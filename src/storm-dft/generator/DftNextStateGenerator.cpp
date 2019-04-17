@@ -8,17 +8,17 @@
 
 namespace storm {
     namespace generator {
-        
+
         template<typename ValueType, typename StateType>
-        DftNextStateGenerator<ValueType, StateType>::DftNextStateGenerator(storm::storage::DFT<ValueType> const& dft, storm::storage::DFTStateGenerationInfo const& stateGenerationInfo, std::set<size_t> const& relevantEvents, bool mergeFailedStates) : mDft(dft), mStateGenerationInfo(stateGenerationInfo), state(nullptr), relevantEvents(relevantEvents), mergeFailedStates(mergeFailedStates) {
+        DftNextStateGenerator<ValueType, StateType>::DftNextStateGenerator(storm::storage::DFT<ValueType> const& dft, storm::storage::DFTStateGenerationInfo const& stateGenerationInfo, bool mergeFailedStates) : mDft(dft), mStateGenerationInfo(stateGenerationInfo), state(nullptr), mergeFailedStates(mergeFailedStates) {
             deterministicModel = !mDft.canHaveNondeterminism();
         }
-        
+
         template<typename ValueType, typename StateType>
         bool DftNextStateGenerator<ValueType, StateType>::isDeterministicModel() const {
             return deterministicModel;
         }
-        
+
         template<typename ValueType, typename StateType>
         std::vector<StateType> DftNextStateGenerator<ValueType, StateType>::getInitialStates(StateToIdCallback const& stateToIdCallback) {
             DFTStatePointer initialState = std::make_shared<storm::storage::DFTState<ValueType>>(mDft, mStateGenerationInfo, 0);
@@ -42,7 +42,7 @@ namespace storm {
             // Store a pointer to the state itself, because we need to be able to access it when expanding it.
             this->state = state;
         }
-        
+
         template<typename ValueType, typename StateType>
         StateBehavior<ValueType, StateType> DftNextStateGenerator<ValueType, StateType>::expand(StateToIdCallback const& stateToIdCallback) {
             STORM_LOG_DEBUG("Explore state: " << mDft.getStateString(state));
@@ -146,8 +146,8 @@ namespace storm {
                     }
 
                     // Propagate dont cares
-                    // TODO: do not set DC for relevant events
-                    while (relevantEvents.empty() && !queues.dontCarePropagationDone()) {
+                    // Relevance is considered for each element independently
+                    while (!queues.dontCarePropagationDone()) {
                         DFTElementPointer next = queues.nextDontCarePropagation();
                         next->checkDontCareAnymore(*newState, queues);
                     }

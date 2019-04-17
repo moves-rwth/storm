@@ -58,11 +58,17 @@ namespace storm {
                 dft(dft),
                 stateGenerationInfo(std::make_shared<storm::storage::DFTStateGenerationInfo>(dft.buildStateGenerationInfo(symmetries))),
                 relevantEvents(relevantEvents),
-                generator(dft, *stateGenerationInfo, relevantEvents, mergeFailedStates),
+                generator(dft, *stateGenerationInfo, mergeFailedStates),
                 matrixBuilder(!generator.isDeterministicModel()),
                 stateStorage(dft.stateBitVectorSize()),
                 explorationQueue(1, 0, 0.9, false)
         {
+            // Set relevant events
+            this->dft.setRelevantEvents(this->relevantEvents);
+            // Mark top level element as relevant
+            this->dft.getElement(this->dft.getTopLevelIndex())->setRelevance(true);
+
+
             // Compute independent subtrees
             if (dft.topLevelType() == storm::storage::DFTElementType::OR) {
                 // We only support this for approximation with top level element OR
