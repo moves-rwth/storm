@@ -47,12 +47,13 @@ namespace storm {
              *
              * @param name Name of BE.
              * @param input Input line.
+             * @param lineNo Line number.
              * @param builder DFTBuilder.
              * @param valueParser ValueParser.
              *
              * @return True iff the parsing and creation was successful.
              */
-            static bool parseBasicElement(std::string const& name, std::string const& input, storm::builder::DFTBuilder<ValueType>& builder, ValueParser<ValueType>& valueParser);
+            static bool parseBasicElement(std::string const& name, std::string const& input, size_t lineNo, storm::builder::DFTBuilder<ValueType>& builder, ValueParser<ValueType>& valueParser);
 
             /*!
              * Parse argument of basic element of the form "name=value".

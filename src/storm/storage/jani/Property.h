@@ -23,11 +23,11 @@ namespace storm {
             storm::expressions::Expression upperBound;
             bool upperBoundStrict = false;
             
-            bool hasLowerBound() {
+            bool hasLowerBound() const {
                 return lowerBound.isInitialized();
             }
             
-            bool hasUpperBound() {
+            bool hasUpperBound() const {
                 return upperBound.isInitialized();
             }
         };

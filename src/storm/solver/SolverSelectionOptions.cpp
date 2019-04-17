@@ -36,6 +36,16 @@ namespace storm {
             return "invalid";
         }
         
+        std::string toString(GameMethod m) {
+            switch(m) {
+                case GameMethod::ValueIteration:
+                    return "valueiteration";
+                case GameMethod::PolicyIteration:
+                    return "PolicyIteration";
+            }
+            return "invalid";
+        }
+        
         std::string toString(LraMethod m) {
             switch(m) {
                 case LraMethod::LinearProgramming:

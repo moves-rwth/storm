@@ -16,6 +16,9 @@ namespace storm {
             // Returns true iff accumulation for all types of reward is disabled.
             bool isEmpty() const;
             
+            // Returns the number of types of rewards that are enabled.
+            uint64_t size() const;
+            
         private:
             bool time, steps, exit;
         };

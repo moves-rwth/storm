@@ -423,5 +423,11 @@ namespace storm {
             
             return result;
         }
+        
+        void VariableSet::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {
+            for (auto& variable : variables) {
+                variable->substitute(substitution);
+            }
+        }
     }
 }

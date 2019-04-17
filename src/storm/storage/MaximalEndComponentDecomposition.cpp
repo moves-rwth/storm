@@ -74,10 +74,10 @@ namespace storm {
             if (states) {
                 endComponentStateSets.emplace_back(states->begin(), states->end(), true);
             } else {
-                std::vector<storm::storage::sparse::state_type> states;
-                states.resize(transitionMatrix.getRowGroupCount());
-                std::iota(states.begin(), states.end(), 0);
-                endComponentStateSets.emplace_back(states.begin(), states.end(), true);
+                std::vector<storm::storage::sparse::state_type> allStates;
+                allStates.resize(transitionMatrix.getRowGroupCount());
+                std::iota(allStates.begin(), allStates.end(), 0);
+                endComponentStateSets.emplace_back(allStates.begin(), allStates.end(), true);
             }
             storm::storage::BitVector statesToCheck(numberOfStates);
             storm::storage::BitVector includedChoices;
@@ -93,15 +93,18 @@ namespace storm {
             } else {
                 includedChoices = storm::storage::BitVector(transitionMatrix.getRowCount(), true);
             }
+            storm::storage::BitVector currMecAsBitVector(transitionMatrix.getRowGroupCount());
                         
             for (std::list<StateBlock>::const_iterator mecIterator = endComponentStateSets.begin(); mecIterator != endComponentStateSets.end();) {
                 StateBlock const& mec = *mecIterator;
-                
+                currMecAsBitVector.clear();
+                currMecAsBitVector.set(mec.begin(), mec.end(), true);
                 // Keep track of whether the MEC changed during this iteration.
                 bool mecChanged = false;
                 
                 // Get an SCC decomposition of the current MEC candidate.
-                StronglyConnectedComponentDecomposition<ValueType> sccs(transitionMatrix, mec, includedChoices, true);
+                
+                StronglyConnectedComponentDecomposition<ValueType> sccs(transitionMatrix, StronglyConnectedComponentDecompositionOptions().subsystem(&currMecAsBitVector).choices(&includedChoices).dropNaiveSccs());
                 
                 // We need to do another iteration in case we have either more than once SCC or the SCC is smaller than
                 // the MEC canditate itself.

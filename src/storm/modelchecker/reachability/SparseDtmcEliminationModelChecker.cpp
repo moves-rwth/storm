@@ -179,7 +179,7 @@ namespace storm {
             
             // Start by decomposing the DTMC into its BSCCs.
             std::chrono::high_resolution_clock::time_point sccDecompositionStart = std::chrono::high_resolution_clock::now();
-            storm::storage::StronglyConnectedComponentDecomposition<ValueType> bsccDecomposition(transitionMatrix, storm::storage::BitVector(transitionMatrix.getRowCount(), true), false, true);
+            storm::storage::StronglyConnectedComponentDecomposition<ValueType> bsccDecomposition(transitionMatrix, storm::storage::StronglyConnectedComponentDecompositionOptions().onlyBottomSccs());
             auto sccDecompositionEnd = std::chrono::high_resolution_clock::now();
             
             std::chrono::high_resolution_clock::time_point conversionStart = std::chrono::high_resolution_clock::now();
@@ -896,7 +896,8 @@ namespace storm {
                 STORM_LOG_TRACE("SCC is large enough (" << scc.getNumberOfSetBits() << " states) to be decomposed further.");
                 
                 // Here, we further decompose the SCC into sub-SCCs.
-                storm::storage::StronglyConnectedComponentDecomposition<ValueType> decomposition(forwardTransitions, scc & ~entryStates, false, false);
+                storm::storage::BitVector nonEntrySccStates = scc & ~entryStates;
+                storm::storage::StronglyConnectedComponentDecomposition<ValueType> decomposition(forwardTransitions, storm::storage::StronglyConnectedComponentDecompositionOptions().subsystem(&nonEntrySccStates));
                 STORM_LOG_TRACE("Decomposed SCC into " << decomposition.size() << " sub-SCCs.");
                 
                 // Store a bit vector of remaining SCCs so we can be flexible when it comes to the order in which

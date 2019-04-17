@@ -33,7 +33,7 @@ namespace storm {
                     
                     bool productStateExists(uint64_t const& modelState, uint64_t const& memoryState) const;
                     uint64_t getProductState(uint64_t const& modelState, uint64_t const& memoryState) const;
-                    uint64_t getInitialProductState(uint64_t const& initialModelState, storm::storage::BitVector const& initialModelStates) const;
+                    uint64_t getInitialProductState(uint64_t const& initialModelState, storm::storage::BitVector const& initialModelStates, EpochClass const& epochClass) const;
                     uint64_t getModelState(uint64_t const& productState) const;
                     MemoryState getMemoryState(uint64_t const& productState) const;
                     MemoryStateManager const& getMemoryStateManager() const;
@@ -46,11 +46,13 @@ namespace storm {
                     
                     MemoryState transformMemoryState(MemoryState const& memoryState, EpochClass const& epochClass, MemoryState const& predecessorMemoryState) const;
                     uint64_t transformProductState(uint64_t const& productState, EpochClass const& epochClass, MemoryState const& predecessorMemoryState) const;
-    
+                    
+                    /// returns the initial states (with respect to the original model) that already satisfy the given objective with probability one, assuming that the cost bounds at the current epoch allow for the objective to be satisfied.
+                    boost::optional<storm::storage::BitVector> const& getProb1InitialStates(uint64_t objectiveIndex) const;
                     
                 private:
                     
-                    storm::storage::MemoryStructure computeMemoryStructure(storm::models::sparse::Model<ValueType> const& model, std::vector<storm::modelchecker::multiobjective::Objective<ValueType>> const& objectives) const;
+                    storm::storage::MemoryStructure computeMemoryStructure(storm::models::sparse::Model<ValueType> const& model, std::vector<storm::modelchecker::multiobjective::Objective<ValueType>> const& objectives);
                     std::vector<MemoryState> computeMemoryStateMap(storm::storage::MemoryStructure const& memory) const;
     
                     
@@ -75,7 +77,7 @@ namespace storm {
                     std::vector<uint64_t> productToModelStateMap;
                     std::vector<MemoryState> productToMemoryStateMap;
                     std::vector<uint64_t> choiceToStateMap;
-                    
+                    std::vector<boost::optional<storm::storage::BitVector>> prob1InitialStates; /// For each objective the set of initial states that already satisfy the objective
                 };
             }
         }

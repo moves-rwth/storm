@@ -13,7 +13,7 @@ namespace storm {
                 public:
                     
                     typedef uint64_t Epoch; // The number of reward steps that are "left" for each dimension
-                    typedef uint64_t EpochClass; // The number of reward steps that are "left" for each dimension
+                    typedef uint64_t EpochClass; // Encodes the dimensions of an epoch that are bottom. Two epoch models within the same class have the same graph structure.
                     
                     EpochManager();
                     EpochManager(uint64_t dimensionCount);
@@ -40,10 +40,12 @@ namespace storm {
                     
                     void setBottomDimension(Epoch& epoch, uint64_t const& dimension) const;
                     void setDimensionOfEpoch(Epoch& epoch, uint64_t const& dimension, uint64_t const& value) const; // assumes that the value is valid, i.e., small enough
+                    void setDimensionOfEpochClass(EpochClass& epochClass, uint64_t const& dimension, bool const& setToBottom) const;
                     
                     bool isBottomDimension(Epoch const& epoch, uint64_t const& dimension) const;
                     bool isBottomDimensionEpochClass(EpochClass const& epochClass, uint64_t const& dimension) const;
                     uint64_t getDimensionOfEpoch(Epoch const& epoch, uint64_t const& dimension) const; // assumes that the dimension is not bottom
+                    uint64_t getSumOfDimensions(Epoch const& epoch) const; // assumes that the dimension is not bottom
                     
                     std::string toString(Epoch const& epoch) const;
                     

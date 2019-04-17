@@ -27,6 +27,9 @@ namespace storm {
             if (specification.isMultiObjectiveFormulaAtTopLevelRequired()) {
                 result &= f.isMultiObjectiveFormula();
             }
+            if (specification.isQuantileFormulaAtTopLevelRequired()) {
+                result &= f.isQuantileFormula();
+            }
             
             return result;
         }
@@ -203,9 +206,10 @@ namespace storm {
             return result;
         }
         
-        boost::any FragmentChecker::visit(LongRunAverageRewardFormula const&, boost::any const& data) const {
+        boost::any FragmentChecker::visit(LongRunAverageRewardFormula const& f, boost::any const& data) const {
             InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
-            return inherited.getSpecification().areLongRunAverageRewardFormulasAllowed();
+            bool result = (!f.hasRewardAccumulation() || inherited.getSpecification().isRewardAccumulationAllowed());
+            return result && inherited.getSpecification().areLongRunAverageRewardFormulasAllowed();
         }
         
         boost::any FragmentChecker::visit(MultiObjectiveFormula const& f, boost::any const& data) const {
@@ -227,6 +231,14 @@ namespace storm {
                 result = result && boost::any_cast<bool>(subF->accept(*this, InheritedInformation(subFormulaFragment)));
             }
             return result;
+        }
+        
+        boost::any FragmentChecker::visit(QuantileFormula const& f, boost::any const& data) const {
+            InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
+            if (!inherited.getSpecification().areQuantileFormulasAllowed()) {
+                return false;
+            }
+            return f.getSubformula().accept(*this, data);
         }
         
         boost::any FragmentChecker::visit(NextFormula const& f, boost::any const& data) const {

@@ -10,6 +10,8 @@
 
 #include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/exceptions/IllegalFunctionCallException.h"
+#include "storm/models/sparse/Ctmc.h"
+#include "storm/models/sparse/MarkovAutomaton.h"
 
 namespace storm {
     namespace models {
@@ -474,10 +476,24 @@ namespace storm {
                 return result;
             }
 
+            std::set<storm::RationalFunctionVariable> getRateParameters(Model<storm::RationalFunction> const& model) {
+                if (model.isOfType(storm::models::ModelType::Ctmc)) {
+                    auto const& ctmc = model.template as<storm::models::sparse::Ctmc<storm::RationalFunction>>();
+                    return storm::utility::vector::getVariables(ctmc->getExitRateVector());
+                } else if (model.isOfType(storm::models::ModelType::MarkovAutomaton)) {
+                    auto const& ma = model.template as<storm::models::sparse::MarkovAutomaton<storm::RationalFunction>>();
+                    return storm::utility::vector::getVariables(ma->getExitRates());
+                } else {
+                    return {};
+                }
+            }
+
             std::set<storm::RationalFunctionVariable> getAllParameters(Model<storm::RationalFunction> const& model) {
                 std::set<storm::RationalFunctionVariable> parameters = getProbabilityParameters(model);
                 std::set<storm::RationalFunctionVariable> rewardParameters = getRewardParameters(model);
                 parameters.insert(rewardParameters.begin(), rewardParameters.end());
+                std::set<storm::RationalFunctionVariable> rateParameters = getRewardParameters(model);
+                parameters.insert(rateParameters.begin(), rateParameters.end());
                 return parameters;
             }
 #endif

@@ -342,8 +342,11 @@ namespace storm {
             return opDecl;
         }
         
-        boost::any FormulaToJaniJson::visit(storm::logic::GloballyFormula const&, boost::any const&) const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Jani currently does not support conversion of a globally formulae");
+        boost::any FormulaToJaniJson::visit(storm::logic::GloballyFormula const& f, boost::any const& data) const {
+            modernjson::json opDecl;
+            opDecl["op"] = "G";
+            opDecl["exp"] = anyToJson(f.getSubformula().accept(*this, data));
+            return opDecl;
         }
         
         boost::any FormulaToJaniJson::visit(storm::logic::InstantaneousRewardFormula const&, boost::any const&) const {
@@ -409,6 +412,10 @@ namespace storm {
         
         boost::any FormulaToJaniJson::visit(storm::logic::MultiObjectiveFormula const&, boost::any const&) const {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Jani currently does not support conversion of a multi-objective formula");
+        }
+        
+        boost::any FormulaToJaniJson::visit(storm::logic::QuantileFormula const&, boost::any const&) const {
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Jani currently does not support conversion of a Quantile formula");
         }
         
         boost::any FormulaToJaniJson::visit(storm::logic::NextFormula const& f, boost::any const& data) const {
@@ -491,61 +498,46 @@ namespace storm {
             } else {
                 opString += "min";
             }
+
+            opDecl["op"] = opString;
+
+            if (f.getSubformula().isEventuallyFormula()) {
+                opDecl["reach"] = anyToJson(f.getSubformula().asEventuallyFormula().getSubformula().accept(*this, data));
+                if (f.getSubformula().asEventuallyFormula().hasRewardAccumulation()) {
+                    opDecl["accumulate"] = constructRewardAccumulation(f.getSubformula().asEventuallyFormula().getRewardAccumulation(), rewardModelName);
+                } else {
+                    opDecl["accumulate"] = constructStandardRewardAccumulation(rewardModelName);
+                }
+            } else if (f.getSubformula().isCumulativeRewardFormula()) {
+                // TODO: support for reward bounded formulas
+                STORM_LOG_WARN_COND(!f.getSubformula().asCumulativeRewardFormula().getTimeBoundReference().isRewardBound(), "Export for cumulative reward formulas with reward instant currently unsupported.");
+                opDecl[instantName] = buildExpression(f.getSubformula().asCumulativeRewardFormula().getBound(), model.getConstants(), model.getGlobalVariables());
+                if (f.getSubformula().asCumulativeRewardFormula().hasRewardAccumulation()) {
+                        opDecl["accumulate"] = constructRewardAccumulation(f.getSubformula().asCumulativeRewardFormula().getRewardAccumulation(), rewardModelName);
+                } else {
+                    opDecl["accumulate"] = constructStandardRewardAccumulation(rewardModelName);
+                }
+            } else if (f.getSubformula().isInstantaneousRewardFormula()) {
+                opDecl[instantName] = buildExpression(f.getSubformula().asInstantaneousRewardFormula().getBound(), model.getConstants(), model.getGlobalVariables());
+            } else if (f.getSubformula().isLongRunAverageRewardFormula()) {
+                if (f.getSubformula().asLongRunAverageRewardFormula().hasRewardAccumulation()) {
+                    opDecl["accumulate"] = constructRewardAccumulation(f.getSubformula().asLongRunAverageRewardFormula().getRewardAccumulation(), rewardModelName);
+                } else {
+                    opDecl["accumulate"] = constructStandardRewardAccumulation(rewardModelName);
+                }
+            }
+            opDecl["exp"] = buildExpression(model.getRewardModelExpression(rewardModelName), model.getConstants(), model.getGlobalVariables());
             
             if(f.hasBound()) {
+                modernjson::json compDecl;
                 auto bound = f.getBound();
-                opDecl["op"] = comparisonTypeToJani(bound.comparisonType);
-                opDecl["left"]["op"] = opString;
-                if (f.getSubformula().isEventuallyFormula()) {
-                    opDecl["left"]["reach"] = anyToJson(f.getSubformula().asEventuallyFormula().getSubformula().accept(*this, data));
-                    if (f.getSubformula().asEventuallyFormula().hasRewardAccumulation()) {
-                        opDecl["left"]["accumulate"] = constructRewardAccumulation(f.getSubformula().asEventuallyFormula().getRewardAccumulation(), rewardModelName);
-                    } else {
-                        opDecl["left"]["accumulate"] = constructStandardRewardAccumulation(rewardModelName);
-                    }
-                } else if (f.getSubformula().isCumulativeRewardFormula()) {
-                    // TODO: support for reward bounded formulas
-                    STORM_LOG_WARN_COND(!f.getSubformula().asCumulativeRewardFormula().getTimeBoundReference().isRewardBound(), "Export for reward bounded cumulative reward formulas currently unsupported.");
-                    opDecl["left"][instantName] = buildExpression(f.getSubformula().asCumulativeRewardFormula().getBound(), model.getConstants(), model.getGlobalVariables());
-                    if (f.getSubformula().asCumulativeRewardFormula().hasRewardAccumulation()) {
-                        opDecl["left"]["accumulate"] = constructRewardAccumulation(f.getSubformula().asCumulativeRewardFormula().getRewardAccumulation(), rewardModelName);
-                    } else {
-                        opDecl["left"]["accumulate"] = constructStandardRewardAccumulation(rewardModelName);
-                    }
-                } else if (f.getSubformula().isInstantaneousRewardFormula()) {
-                    opDecl["left"][instantName] = buildExpression(f.getSubformula().asInstantaneousRewardFormula().getBound(), model.getConstants(), model.getGlobalVariables());
-                } else if (f.getSubformula().isLongRunAverageRewardFormula()) {
-                    // Nothing to do in this case
-                }
-                opDecl["left"]["exp"] = buildExpression(model.getRewardModelExpression(rewardModelName), model.getConstants(), model.getGlobalVariables());
-                opDecl["right"] = buildExpression(bound.threshold, model.getConstants(), model.getGlobalVariables());
+                compDecl["op"] = comparisonTypeToJani(bound.comparisonType);
+                compDecl["left"] = std::move(opDecl);
+                compDecl["right"] = buildExpression(bound.threshold, model.getConstants(), model.getGlobalVariables());
+                return compDecl;
             } else {
-                opDecl["op"] = opString;
-
-                if (f.getSubformula().isEventuallyFormula()) {
-                    opDecl["reach"] = anyToJson(f.getSubformula().asEventuallyFormula().getSubformula().accept(*this, data));
-                    if (f.getSubformula().asEventuallyFormula().hasRewardAccumulation()) {
-                        opDecl["accumulate"] = constructRewardAccumulation(f.getSubformula().asEventuallyFormula().getRewardAccumulation(), rewardModelName);
-                    } else {
-                        opDecl["accumulate"] = constructStandardRewardAccumulation(rewardModelName);
-                    }
-                } else if (f.getSubformula().isCumulativeRewardFormula()) {
-                    // TODO: support for reward bounded formulas
-                    STORM_LOG_WARN_COND(!f.getSubformula().asCumulativeRewardFormula().getTimeBoundReference().isRewardBound(), "Export for reward bounded cumulative reward formulas currently unsupported.");
-                    opDecl[instantName] = buildExpression(f.getSubformula().asCumulativeRewardFormula().getBound(), model.getConstants(), model.getGlobalVariables());
-                    if (f.getSubformula().asCumulativeRewardFormula().hasRewardAccumulation()) {
-                        opDecl["accumulate"] = constructRewardAccumulation(f.getSubformula().asCumulativeRewardFormula().getRewardAccumulation(), rewardModelName);
-                    } else {
-                        opDecl["accumulate"] = constructStandardRewardAccumulation(rewardModelName);
-                    }
-                } else if (f.getSubformula().isInstantaneousRewardFormula()) {
-                    opDecl[instantName] = buildExpression(f.getSubformula().asInstantaneousRewardFormula().getBound(), model.getConstants(), model.getGlobalVariables());
-                } else if (f.getSubformula().isLongRunAverageRewardFormula()) {
-                    // Nothing to do in this case
-                }
-                opDecl["exp"] = buildExpression(model.getRewardModelExpression(rewardModelName), model.getConstants(), model.getGlobalVariables());
+                return opDecl;
             }
-            return opDecl;
         }
         
         boost::any FormulaToJaniJson::visit(storm::logic::TotalRewardFormula const&, boost::any const&) const {
@@ -792,7 +784,46 @@ namespace storm {
             
         }
         
-
+        modernjson::json buildTypeDescription(storm::expressions::Type const& type) {
+            modernjson::json typeDescr;
+            if (type.isIntegerType()) {
+                typeDescr = "int";
+            } else if (type.isRationalType()) {
+                typeDescr = "real";
+            } else if (type.isBooleanType()) {
+                typeDescr = "bool";
+            } else if (type.isArrayType()) {
+                typeDescr["kind"] = "array";
+                typeDescr["base"] = buildTypeDescription(type.getElementType());
+            } else {
+                assert(false);
+            }
+            return typeDescr;
+        }
+        
+        void getBoundsFromConstraints(modernjson::json& typeDesc, storm::expressions::Variable const& var, storm::expressions::Expression const& constraint, std::vector<storm::jani::Constant> const& constants) {
+            if (constraint.getBaseExpression().isBinaryBooleanFunctionExpression() && constraint.getBaseExpression().getOperator() == storm::expressions::OperatorType::And) {
+                getBoundsFromConstraints(typeDesc, var, constraint.getBaseExpression().getOperand(0), constants);
+                getBoundsFromConstraints(typeDesc, var, constraint.getBaseExpression().getOperand(1), constants);
+            } else if (constraint.getBaseExpression().isBinaryRelationExpression()) {
+                bool leq = constraint.getBaseExpression().getOperator() == storm::expressions::OperatorType::LessOrEqual;
+                bool geq = constraint.getBaseExpression().getOperator() == storm::expressions::OperatorType::GreaterOrEqual;
+                std::vector<bool> varOps(2, false);
+                for (int i : {0,1}) {
+                    varOps[i] = constraint.getOperand(i).isVariable() && constraint.getOperand(i).getBaseExpression().asVariableExpression().getVariable() == var;
+                }
+                storm::expressions::Expression boundExpr = varOps[0] ? constraint.getOperand(1) : constraint.getOperand(0);
+                if ((leq && varOps[0]) || (geq && varOps[1])) {
+                    typeDesc["upper-bound"] = buildExpression(boundExpr, constants);
+                } else if ((leq && varOps[1]) || (geq && varOps[0])) {
+                    typeDesc["lower-bound"] = buildExpression(boundExpr, constants);
+                } else {
+                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Jani Export for constant constraint " << constraint << " is not supported.");
+                }
+            } else {
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Jani Export for constant constraint " << constraint << " is not supported.");
+            }
+        }
         
         modernjson::json buildConstantsArray(std::vector<storm::jani::Constant> const& constants) {
             std::vector<modernjson::json> constantDeclarations;
@@ -800,13 +831,12 @@ namespace storm {
                 modernjson::json constantEntry;
                 constantEntry["name"] = constant.getName();
                 modernjson::json typeDesc;
-                if(constant.isBooleanConstant()) {
-                    typeDesc = "bool";
-                } else if(constant.isRealConstant()) {
-                    typeDesc = "real";
+                if (constant.hasConstraint()) {
+                    typeDesc["kind"] = "bounded";
+                    typeDesc["base"] = buildTypeDescription(constant.getType());
+                    getBoundsFromConstraints(typeDesc, constant.getExpressionVariable(), constant.getConstraintExpression(), constants);
                 } else {
-                    assert(constant.isIntegerConstant());
-                    typeDesc = "int";
+                    typeDesc = buildTypeDescription(constant.getType());
                 }
                 constantEntry["type"] = typeDesc;
                 if(constant.isDefined()) {
@@ -876,24 +906,7 @@ namespace storm {
             }
             return variableDeclarations;
         }
-        
-        modernjson::json buildTypeDescription(storm::expressions::Type const& type) {
-            modernjson::json typeDescr;
-            if (type.isIntegerType()) {
-                typeDescr = "int";
-            } else if (type.isRationalType()) {
-                typeDescr = "real";
-            } else if (type.isBooleanType()) {
-                typeDescr = "bool";
-            } else if (type.isArrayType()) {
-                typeDescr["kind"] = "array";
-                typeDescr["base"] = buildTypeDescription(type.getElementType());
-            } else {
-                assert(false);
-            }
-            return typeDescr;
-        }
-        
+
         modernjson::json buildFunctionsArray(std::unordered_map<std::string, FunctionDefinition> const& functionDefinitions, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables = VariableSet()) {
             modernjson::json functionDeclarations = std::vector<modernjson::json>();
             for (auto const& nameFunDef : functionDefinitions) {

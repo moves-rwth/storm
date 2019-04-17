@@ -88,7 +88,7 @@ namespace storm {
                     if (storm::settings::getModule<storm::settings::modules::IOSettings>().isExportCdfSet() && !rewardUnfolding.getEpochManager().hasBottomDimension(epoch)) {
                         std::vector<ValueType> cdfEntry;
                         for (uint64_t i = 0; i < rewardUnfolding.getEpochManager().getDimensionCount(); ++i) {
-                            uint64_t offset = rewardUnfolding.getDimension(i).isUpperBounded ? 0 : 1;
+                            uint64_t offset = rewardUnfolding.getDimension(i).boundType == helper::rewardbounded::DimensionBoundType::LowerBound ? 1 : 0;
                             cdfEntry.push_back(storm::utility::convertNumber<ValueType>(rewardUnfolding.getEpochManager().getDimensionOfEpoch(epoch, i) + offset) * rewardUnfolding.getDimension(i).scalingFactor);
                         }
                         auto const& solution = rewardUnfolding.getInitialStateResult(epoch);
@@ -309,7 +309,7 @@ namespace storm {
             }
 
             template <class SparseMdpModelType>
-            void RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::updateCachedData(Environment const& env, typename helper::rewardbounded::MultiDimensionalRewardUnfolding<ValueType, false>::EpochModel const& epochModel, EpochCheckingData& cachedData, std::vector<ValueType> const& weightVector) {
+            void RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::updateCachedData(Environment const& env, helper::rewardbounded::EpochModel<ValueType, false> const& epochModel, EpochCheckingData& cachedData, std::vector<ValueType> const& weightVector) {
                 if (epochModel.epochMatrixChanged) {
                 
                     // Update the cached MinMaxSolver data
