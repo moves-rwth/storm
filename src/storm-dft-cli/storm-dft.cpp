@@ -127,8 +127,26 @@ void processOptions() {
         props = storm::api::extractFormulasFromProperties(storm::api::parseProperties(propString));
     }
 
+    // Get necessary labels from properties
+    std::vector<std::shared_ptr<storm::logic::AtomicLabelFormula const>> atomicLabels;
+    for (auto property : props) {
+        property->gatherAtomicLabelFormulas(atomicLabels);
+    }
+
+    // Set relevant event names
+    std::vector<std::string> relevantEventNames = faultTreeSettings.getRelevantEvents();
+    // Events from properties are relevant as well
+    for (auto atomic : atomicLabels) {
+        std::string label = atomic->getLabel();
+        std::size_t foundIndex = label.find("_fail");
+        if (foundIndex != std::string::npos) {
+            relevantEventNames.push_back(label.substr(0, foundIndex));
+        } else {
+            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Label '" << label << "' not known.");
+        }
+    }
+
     // Set relevant elements
-    // TODO: also incorporate events from properties
     std::set<size_t> relevantEvents; // Per default only the toplevel event is relevant
     // Possible clash of relevantEvents and disableDC was already considered in FaultTreeSettings::check().
     if (faultTreeSettings.areRelevantEventsSet()) {
