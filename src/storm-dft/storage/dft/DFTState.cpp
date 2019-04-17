@@ -98,10 +98,20 @@ namespace storm {
         DFTElementState DFTState<ValueType>::getElementState(size_t id) const {
             return static_cast<DFTElementState>(getElementStateInt(id));
         }
+
+        template<typename ValueType>
+        DFTElementState DFTState<ValueType>::getElementState(storm::storage::BitVector const& state, DFTStateGenerationInfo const& stateGenerationInfo, size_t id) {
+            return static_cast<DFTElementState>(DFTState<ValueType>::getElementStateInt(state, stateGenerationInfo, id));
+        }
         
         template<typename ValueType>
         DFTDependencyState DFTState<ValueType>::getDependencyState(size_t id) const {
             return static_cast<DFTDependencyState>(getElementStateInt(id));
+        }
+
+        template<typename ValueType>
+        DFTDependencyState DFTState<ValueType>::getDependencyState(storm::storage::BitVector const& state, DFTStateGenerationInfo const& stateGenerationInfo, size_t id) {
+            return static_cast<DFTDependencyState>(DFTState<ValueType>::getElementStateInt(state, stateGenerationInfo, id));
         }
 
         template<typename ValueType>
@@ -110,8 +120,8 @@ namespace storm {
         }
         
         template<typename ValueType>
-        int DFTState<ValueType>::getElementStateInt(storm::storage::BitVector const& state, size_t indexId) {
-            return state.getAsInt(indexId, 2);
+        int DFTState<ValueType>::getElementStateInt(storm::storage::BitVector const& state, DFTStateGenerationInfo const& stateGenerationInfo, size_t id) {
+            return state.getAsInt(stateGenerationInfo.getStateIndex(id), 2);
         }
 
         template<typename ValueType>

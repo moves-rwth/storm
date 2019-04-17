@@ -540,12 +540,10 @@ namespace storm {
             std::stringstream stream;
             stream << "(" << id << ") ";
             for (auto const& elem : mElements) {
-                size_t elemIndex = stateGenerationInfo.getStateIndex(elem->id());
-                int elementState = DFTState<ValueType>::getElementStateInt(status, elemIndex);
                 if (elem->isDependency()) {
-                    stream << storm::storage::toChar(static_cast<DFTDependencyState>(elementState)) << "[dep]";
+                    stream << storm::storage::toChar(DFTState<ValueType>::getDependencyState(status, stateGenerationInfo, elem->id())) << "[dep]";
                 } else {
-                    stream << storm::storage::toChar(static_cast<DFTElementState>(elementState));
+                    stream << storm::storage::toChar(DFTState<ValueType>::getElementState(status, stateGenerationInfo, elem->id()));
                     if(elem->isSpareGate()) {
                         stream << "[";
                         size_t nrUsedChild = status.getAsInt(stateGenerationInfo.getSpareUsageIndex(elem->id()), stateGenerationInfo.usageInfoBits());
