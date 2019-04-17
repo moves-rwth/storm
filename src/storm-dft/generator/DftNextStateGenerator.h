@@ -24,7 +24,7 @@ namespace storm {
         public:
             typedef std::function<StateType (DFTStatePointer const&)> StateToIdCallback;
             
-            DftNextStateGenerator(storm::storage::DFT<ValueType> const& dft, storm::storage::DFTStateGenerationInfo const& stateGenerationInfo, std::set<size_t> const& relevantEvents, bool mergeFailedStates);
+            DftNextStateGenerator(storm::storage::DFT<ValueType> const& dft, storm::storage::DFTStateGenerationInfo const& stateGenerationInfo, bool mergeFailedStates);
                         
             bool isDeterministicModel() const;
             std::vector<StateType> getInitialStates(StateToIdCallback const& stateToIdCallback);
@@ -54,9 +54,6 @@ namespace storm {
 
             // Current state
             DFTStatePointer state;
-
-            // List with ids of relevant events which should be observed.
-            std::set<size_t> const& relevantEvents;
 
             // Flag indication if all failed states should be merged into one.
             bool mergeFailedStates = true;

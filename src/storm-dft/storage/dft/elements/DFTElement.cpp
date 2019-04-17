@@ -9,6 +9,11 @@ namespace storm {
 
         template<typename ValueType>
         bool DFTElement<ValueType>::checkDontCareAnymore(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const {
+            if (this->isRelevant()) {
+                // Relevant events are ignored for Don't Care propagation
+                return false;
+            }
+
             if (state.dontCare(mId)) {
                 return false;
             }

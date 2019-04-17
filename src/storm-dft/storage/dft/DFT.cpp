@@ -864,6 +864,17 @@ namespace storm {
         }
 
         template<typename ValueType>
+        void DFT<ValueType>::setRelevantEvents(std::set<size_t> const& relevantEvents) const {
+            for (auto const& elem : mElements) {
+                if (relevantEvents.find(elem->id()) != relevantEvents.end()) {
+                    elem->setRelevance(true);
+                } else {
+                    elem->setRelevance(false);
+                }
+            }
+        }
+
+        template<typename ValueType>
         void DFT<ValueType>::writeStatsToStream(std::ostream& stream) const {
             // Count individual types of elements
             size_t noBE = 0;

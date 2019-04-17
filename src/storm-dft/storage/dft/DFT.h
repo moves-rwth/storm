@@ -318,6 +318,12 @@ namespace storm {
              */
             size_t getIndex(std::string const& name) const;
 
+            /*!
+             * Set the relevance flag for all elements according to the given relevant events.
+             * @param relevantEvents All elements which should be to relevant. All elements not occuring are set to irrelevant.
+             */
+            void setRelevantEvents(std::set<size_t> const& relevantEvents) const;
+
         private:
             std::tuple<std::vector<size_t>, std::vector<size_t>, std::vector<size_t>> getSortedParentAndDependencyIds(size_t index) const;
             

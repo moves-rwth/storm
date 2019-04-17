@@ -51,7 +51,7 @@ namespace storm {
              * @param id Id.
              * @param name Name.
              */
-            DFTElement(size_t id, std::string const& name) : mId(id), mName(name) {
+            DFTElement(size_t id, std::string const& name) : mId(id), mName(name), mRank(-1), mRelevant(false) {
                 // Intentionally left empty.
             }
 
@@ -115,6 +115,23 @@ namespace storm {
              */
             virtual void setRank(size_t rank) {
                 this->mRank = rank;
+            }
+
+            /*!
+             * Get whether the element is relevant.
+             * Relevant elements are for example not set to Don't Care and their status is stored as a label in the generated Markov Chain.
+             * @return True iff the element is relevant.
+             */
+            virtual bool isRelevant() const {
+                return mRelevant;
+            }
+
+            /*!
+             * Set the relevancy of the element.
+             * @param relevant If true, the element is relevant.
+             */
+            virtual void setRelevance(bool relevant) const {
+                this->mRelevant = relevant;
             }
 
             /*!
@@ -416,10 +433,11 @@ namespace storm {
         protected:
             std::size_t mId;
             std::string mName;
-            std::size_t mRank = -1;
+            std::size_t mRank;
             DFTGateVector mParents;
             DFTDependencyVector mOutgoingDependencies;
             DFTRestrictionVector mRestrictions;
+            mutable bool mRelevant; // Must be mutable to allow changes later on. TODO: avoid mutable
         };
 
 
