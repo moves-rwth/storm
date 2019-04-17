@@ -155,12 +155,8 @@ namespace {
         result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/pdep3.dft");
         EXPECT_FLOAT_EQ(result, 67 / 24.0);
         if (this->getConfig().useMod) {
-            if (this->getConfig().useDC) {
-                EXPECT_THROW(this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/pdep2.dft"), storm::exceptions::NotSupportedException);
-            } else {
-                result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/pdep2.dft");
-                EXPECT_FLOAT_EQ(result, 38 / 15.0);
-            }
+            result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/pdep2.dft");
+            EXPECT_FLOAT_EQ(result, 38 / 15.0);
             EXPECT_THROW(this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/pdep4.dft"), storm::exceptions::NotSupportedException);
         } else {
             result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/pdep4.dft");
