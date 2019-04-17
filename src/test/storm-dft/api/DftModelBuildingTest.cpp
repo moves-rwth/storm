@@ -16,14 +16,12 @@ namespace {
         std::vector<std::shared_ptr<storm::logic::Formula const>> properties = storm::api::extractFormulasFromProperties(storm::api::parseProperties(property));
         std::map<size_t, std::vector<std::vector<size_t>>> emptySymmetry;
         storm::storage::DFTIndependentSymmetries symmetries(emptySymmetry);
-        typename storm::builder::ExplicitDFTModelBuilder<double>::LabelOptions labeloptions(properties, false);
-
 
         // Set relevant events (none)
         std::set<size_t> relevantEvents;
         // Build model
-        storm::builder::ExplicitDFTModelBuilder<double> builder(*dft, symmetries, relevantEvents);
-        builder.buildModel(labeloptions, 0, 0.0);
+        storm::builder::ExplicitDFTModelBuilder<double> builder(*dft, symmetries, relevantEvents, false);
+        builder.buildModel(0, 0.0);
         std::shared_ptr<storm::models::sparse::Model<double>> model = builder.getModel();
         EXPECT_EQ(8ul, model->getNumberOfStates());
         EXPECT_EQ(13ul, model->getNumberOfTransitions());
@@ -31,8 +29,8 @@ namespace {
         // Set relevant events (all)
         relevantEvents = dft->getAllIds();
         // Build model
-        storm::builder::ExplicitDFTModelBuilder<double> builder2(*dft, symmetries, relevantEvents);
-        builder2.buildModel(labeloptions, 0, 0.0);
+        storm::builder::ExplicitDFTModelBuilder<double> builder2(*dft, symmetries, relevantEvents, false);
+        builder2.buildModel(0, 0.0);
         model = builder2.getModel();
         EXPECT_EQ(170ul, model->getNumberOfStates());
         EXPECT_EQ(688ul, model->getNumberOfTransitions());
@@ -42,8 +40,8 @@ namespace {
         relevantEvents.clear();
         relevantEvents.insert(dft->getIndex("H"));
         // Build model
-        storm::builder::ExplicitDFTModelBuilder<double> builder3(*dft, symmetries, relevantEvents);
-        builder3.buildModel(labeloptions, 0, 0.0);
+        storm::builder::ExplicitDFTModelBuilder<double> builder3(*dft, symmetries, relevantEvents, false);
+        builder3.buildModel(0, 0.0);
         model = builder3.getModel();
         EXPECT_EQ(11ul, model->getNumberOfStates());
         EXPECT_EQ(23ul, model->getNumberOfTransitions());
@@ -54,8 +52,8 @@ namespace {
         relevantEvents.insert(dft->getIndex("H"));
         relevantEvents.insert(dft->getIndex("I"));
         // Build model
-        storm::builder::ExplicitDFTModelBuilder<double> builder4(*dft, symmetries, relevantEvents);
-        builder4.buildModel(labeloptions, 0, 0.0);
+        storm::builder::ExplicitDFTModelBuilder<double> builder4(*dft, symmetries, relevantEvents, false);
+        builder4.buildModel(0, 0.0);
         model = builder4.getModel();
         EXPECT_EQ(14ul, model->getNumberOfStates());
         EXPECT_EQ(30ul, model->getNumberOfTransitions());

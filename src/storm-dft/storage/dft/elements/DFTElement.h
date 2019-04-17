@@ -51,7 +51,7 @@ namespace storm {
              * @param id Id.
              * @param name Name.
              */
-            DFTElement(size_t id, std::string const& name) : mId(id), mName(name), mRank(-1), mRelevant(false) {
+            DFTElement(size_t id, std::string const& name) : mId(id), mName(name), mRank(-1), mRelevant(false), mAllowDC(true) {
                 // Intentionally left empty.
             }
 
@@ -132,6 +132,14 @@ namespace storm {
              */
             virtual void setRelevance(bool relevant) const {
                 this->mRelevant = relevant;
+            }
+
+            /*!
+             * Set whether Don't Care propagation is allowed for this element.
+             * @param allowDC If true, the element is allowed to be set to Don't Care.
+             */
+            virtual void setAllowDC(bool allowDC) const {
+                this->mAllowDC = allowDC;
             }
 
             /*!
@@ -438,6 +446,7 @@ namespace storm {
             DFTDependencyVector mOutgoingDependencies;
             DFTRestrictionVector mRestrictions;
             mutable bool mRelevant; // Must be mutable to allow changes later on. TODO: avoid mutable
+            mutable bool mAllowDC; // Must be mutable to allow changes later on. TODO: avoid mutable
         };
 
 
