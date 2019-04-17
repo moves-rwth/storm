@@ -37,7 +37,7 @@ namespace storm {
             void convert();
             void toFile(std::string const&);
 
-            std::vector<storm::solver::SmtSolver::CheckResult> toSolver();
+            void toSolver();
             
         private:
             uint64_t getClaimVariableIndex(uint64_t spareIndex, uint64_t childIndex) const;
@@ -115,8 +115,16 @@ namespace storm {
              * This corresponds to constraints (9), (10) and (11)
              */
             void addMarkovianConstraints();
+
+            /**
+             * Check if the TLE of the DFT never fails
+             *
+             * @return  "Sat" if TLE never fails, "Unsat" if it does, otherwise "Unknown"
+             */
+            storm::solver::SmtSolver::CheckResult checkTleNeverFailedQuery();
             
             storm::storage::DFT<ValueType> const& dft;
+            std::shared_ptr<storm::solver::SmtSolver> solver = 0;
             std::vector<std::string> varNames;
             std::unordered_map<uint64_t, uint64_t> timePointVariables;
             std::vector<std::shared_ptr<SmtConstraint>> constraints;

@@ -429,10 +429,12 @@ namespace storm {
             storm::utility::closeFile(stream);
         }
 
-        std::vector<storm::solver::SmtSolver::CheckResult> DFTASFChecker::toSolver() {
-            std::vector<storm::solver::SmtSolver::CheckResult> resultVector;
+        void DFTASFChecker::toSolver() {
+            // First convert the DFT
+            convert();
+
             std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
-            std::unique_ptr<storm::solver::SmtSolver> solver = storm::utility::solver::SmtSolverFactory().create(
+            solver = storm::utility::solver::SmtSolverFactory().create(
                     *manager);
             //Add variables to manager
             for (auto const &timeVarEntry : timePointVariables) {
@@ -453,19 +455,23 @@ namespace storm {
             for (auto const &constraint : constraints) {
                 solver->add(constraint->toExpression(varNames, manager));
             }
+
+        }
+
+        storm::solver::SmtSolver::CheckResult DFTASFChecker::checkTleNeverFailedQuery() {
+            STORM_LOG_ERROR_COND(!solver, "SMT Solver was not initialized, call toSolver() before checking queries");
+
             // Set backtracking marker to check several properties without reconstructing DFT encoding
             solver->push();
-
-            //TODO put different queries in separate functions for further modularization
-
             // Constraint that toplevel element will not fail (part of constraint 13)
             std::shared_ptr<SmtConstraint> tleNeverFailedConstr = std::make_shared<IsConstantValue>(
                     timePointVariables.at(dft.getTopLevelIndex()), notFailed);
-            solver->add(tleNeverFailedConstr->toExpression(varNames, manager));
-            resultVector.push_back(solver->check());
+            solver->add(tleNeverFailedConstr->toExpression(varNames,
+                                                           std::make_shared<storm::expressions::ExpressionManager>(
+                                                                   solver->getManager())));
+            storm::solver::SmtSolver::CheckResult res = solver->check();
             solver->pop();
-
-            return resultVector;
+            return res;
         }
     }
 }

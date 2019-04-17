@@ -47,7 +47,10 @@ namespace storm {
         analyzeDFTSMT(storm::storage::DFT<double> const &dft, bool printOutput) {
             storm::modelchecker::DFTASFChecker smtChecker(dft);
             smtChecker.convert();
-            std::vector<storm::solver::SmtSolver::CheckResult> results = smtChecker.toSolver();
+            smtChecker.toSolver();
+            std::vector<storm::solver::SmtSolver::CheckResult> results;
+
+            results.push_back(smtChecker.checkTleNeverFailedQuery());
 
             if (printOutput) {
                 // TODO add suitable output function, maybe add query descriptions for better readability
