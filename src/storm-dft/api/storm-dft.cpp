@@ -50,6 +50,7 @@ namespace storm {
             std::vector<storm::solver::SmtSolver::CheckResult> results = smtChecker.toSolver();
 
             if (printOutput) {
+                // TODO add suitable output function, maybe add query descriptions for better readability
                 for (size_t i = 0; i < results.size(); ++i) {
                     std::string tmp = "unknonwn";
                     if (results.at(i) == storm::solver::SmtSolver::CheckResult::Sat) {

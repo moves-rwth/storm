@@ -456,6 +456,8 @@ namespace storm {
             // Set backtracking marker to check several properties without reconstructing DFT encoding
             solver->push();
 
+            //TODO put different queries in separate functions for further modularization
+
             // Constraint that toplevel element will not fail (part of constraint 13)
             std::shared_ptr<SmtConstraint> tleNeverFailedConstr = std::make_shared<IsConstantValue>(
                     timePointVariables.at(dft.getTopLevelIndex()), notFailed);

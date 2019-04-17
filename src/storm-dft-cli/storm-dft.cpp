@@ -51,6 +51,12 @@ void processOptions() {
         return;
     }
 
+    if (dftIOSettings.isExportToSmt()) {
+        // Export to json
+        storm::api::exportDFTToSMT<ValueType>(*dft, dftIOSettings.getExportSmtFilename());
+        return;
+    }
+
     // Check well-formedness of DFT
     std::stringstream stream;
     if (!dft->checkWellFormedness(stream)) {
