@@ -152,13 +152,13 @@ namespace storm {
             std::shared_ptr<DFTState<ValueType>> copy() const;
 
             DFTElementState getElementState(size_t id) const;
-            
+
+            static DFTElementState getElementState(storm::storage::BitVector const& state, DFTStateGenerationInfo const& stateGenerationInfo, size_t id);
+
             DFTDependencyState getDependencyState(size_t id) const;
 
-            int getElementStateInt(size_t id) const;
+            static DFTDependencyState getDependencyState(storm::storage::BitVector const& state, DFTStateGenerationInfo const& stateGenerationInfo, size_t id);
 
-            static int getElementStateInt(storm::storage::BitVector const& state, size_t indexId);
-            
             size_t getId() const;
 
             void setId(size_t id);
@@ -371,6 +371,10 @@ namespace storm {
             
         private:
             void propagateActivation(size_t representativeId);
+
+            int getElementStateInt(size_t id) const;
+
+            static int getElementStateInt(storm::storage::BitVector const& state, DFTStateGenerationInfo const& stateGenerationInfo, size_t id);
 
         };
 
