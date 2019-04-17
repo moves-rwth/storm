@@ -459,19 +459,66 @@ namespace storm {
         }
 
         storm::solver::SmtSolver::CheckResult DFTASFChecker::checkTleNeverFailedQuery() {
-            STORM_LOG_ERROR_COND(!solver, "SMT Solver was not initialized, call toSolver() before checking queries");
+            // STORM_LOG_ERROR_COND(!solver, "SMT Solver was not initialized, call toSolver() before checking queries");
 
             // Set backtracking marker to check several properties without reconstructing DFT encoding
             solver->push();
             // Constraint that toplevel element will not fail (part of constraint 13)
             std::shared_ptr<SmtConstraint> tleNeverFailedConstr = std::make_shared<IsConstantValue>(
                     timePointVariables.at(dft.getTopLevelIndex()), notFailed);
-            solver->add(tleNeverFailedConstr->toExpression(varNames,
-                                                           std::make_shared<storm::expressions::ExpressionManager>(
-                                                                   solver->getManager())));
+            std::shared_ptr<storm::expressions::ExpressionManager> manager = solver->getManager().getSharedPointer();
+            solver->add(tleNeverFailedConstr->toExpression(varNames, manager));
             storm::solver::SmtSolver::CheckResult res = solver->check();
             solver->pop();
             return res;
+        }
+
+        storm::solver::SmtSolver::CheckResult DFTASFChecker::checkTleFailsWithLeq(uint64_t bound) {
+            //STORM_LOG_ERROR_COND(!solver, "SMT Solver was not initialized, call toSolver() before checking queries");
+
+            // Set backtracking marker to check several properties without reconstructing DFT encoding
+            solver->push();
+            // Constraint that toplevel element can fail with less or equal 'bound' failures
+            std::shared_ptr<SmtConstraint> tleNeverFailedConstr = std::make_shared<IsLessEqualConstant>(
+                    timePointVariables.at(dft.getTopLevelIndex()), bound);
+            std::shared_ptr<storm::expressions::ExpressionManager> manager = solver->getManager().getSharedPointer();
+            solver->add(tleNeverFailedConstr->toExpression(varNames, manager));
+            storm::solver::SmtSolver::CheckResult res = solver->check();
+            solver->pop();
+            return res;
+        }
+
+        void DFTASFChecker::setSolverTimeout(uint_fast64_t milliseconds) {
+            if (!solver) {
+                STORM_LOG_WARN("SMT Solver was not initialized, timeout setting ignored");
+            } else {
+                solver->setTimeout(milliseconds);
+            }
+        }
+
+        void DFTASFChecker::unsetSolverTimeout() {
+            if (!solver) {
+                STORM_LOG_WARN("SMT Solver was not initialized, timeout unsetting ignored");
+            } else {
+                solver->unsetTimeout();
+            }
+        }
+
+        uint64_t DFTASFChecker::getLeastFailureBound() {
+            //STORM_LOG_ERROR_COND(!solver, "SMT Solver was not initialized, call toSolver() before checking queries");
+
+            uint64_t bound = 0;
+            while (bound < notFailed) {
+                setSolverTimeout(10000);
+                storm::solver::SmtSolver::CheckResult tmp_res = checkTleFailsWithLeq(bound);
+                unsetSolverTimeout();
+                if (tmp_res == storm::solver::SmtSolver::CheckResult::Sat ||
+                    tmp_res == storm::solver::SmtSolver::CheckResult::Unknown) {
+                    return bound;
+                }
+                ++bound;
+            }
+            return bound;
         }
     }
 }

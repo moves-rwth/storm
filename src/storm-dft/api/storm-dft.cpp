@@ -51,11 +51,11 @@ namespace storm {
             std::vector<storm::solver::SmtSolver::CheckResult> results;
 
             results.push_back(smtChecker.checkTleNeverFailedQuery());
-
+            uint64_t lower_bound = smtChecker.getLeastFailureBound();
             if (printOutput) {
-                // TODO add suitable output function, maybe add query descriptions for better readability
+                //TODO add suitable output function, maybe add query descriptions for better readability
                 for (size_t i = 0; i < results.size(); ++i) {
-                    std::string tmp = "unknonwn";
+                    std::string tmp = "unknown";
                     if (results.at(i) == storm::solver::SmtSolver::CheckResult::Sat) {
                         tmp = "SAT";
                     } else if (results.at(i) == storm::solver::SmtSolver::CheckResult::Unsat) {
@@ -63,6 +63,7 @@ namespace storm {
                     }
                     std::cout << "Query " << std::to_string(i) << " : " << tmp << std::endl;
                 }
+                std::cout << "Lower bound: " << std::to_string(lower_bound) << std::endl;
             }
             return results;
         }

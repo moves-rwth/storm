@@ -37,7 +37,44 @@ namespace storm {
             void convert();
             void toFile(std::string const&);
 
+            /**
+             * Generates a new solver instance and prepares it for SMT checking of the DFT. Needs to be called before all queries to the solver
+             */
             void toSolver();
+
+            /**
+             * Check if the TLE of the DFT never fails
+             *
+             * @return  "Sat" if TLE never fails, "Unsat" if it does, otherwise "Unknown"
+             */
+            storm::solver::SmtSolver::CheckResult checkTleNeverFailedQuery();
+
+            /**
+             * Check if there exists a sequence of BE failures of given length such that the TLE of the DFT fails
+             *
+             * @param bound the length of the sequene
+             * @return "Sat" if such a sequence exists, "Unsat" if it does not, otherwise "Unknown"
+             */
+            storm::solver::SmtSolver::CheckResult checkTleFailsWithLeq(uint64_t bound);
+
+            /**
+             * Get the minimal number of BEs necessary for the TLE to fail
+             *
+             * @return the minimal number
+             */
+            uint64_t getLeastFailureBound();
+
+            /**
+             * Set the timeout of the solver
+             *
+             * @param milliseconds the timeout in milliseconds
+             */
+            void setSolverTimeout(uint_fast64_t milliseconds);
+
+            /**
+             * Unset the timeout for the solver
+             */
+            void unsetSolverTimeout();
             
         private:
             uint64_t getClaimVariableIndex(uint64_t spareIndex, uint64_t childIndex) const;
@@ -72,7 +109,6 @@ namespace storm {
 
             /**
              * Add constraints encoding VOT gates.
-
              */
             void generateVotConstraint(size_t i, std::vector<uint64_t> childVarIndices,
                                        std::shared_ptr<storm::storage::DFTElement<ValueType> const> element);
@@ -107,7 +143,7 @@ namespace storm {
             /**
             * Add constraints encoding claiming rules.
             * This corresponds to constraint (8) and addition
-               */
+            */
             void addClaimingConstraints();
 
             /**
@@ -115,16 +151,9 @@ namespace storm {
              * This corresponds to constraints (9), (10) and (11)
              */
             void addMarkovianConstraints();
-
-            /**
-             * Check if the TLE of the DFT never fails
-             *
-             * @return  "Sat" if TLE never fails, "Unsat" if it does, otherwise "Unknown"
-             */
-            storm::solver::SmtSolver::CheckResult checkTleNeverFailedQuery();
             
             storm::storage::DFT<ValueType> const& dft;
-            std::shared_ptr<storm::solver::SmtSolver> solver = 0;
+            std::shared_ptr<storm::solver::SmtSolver> solver = NULL;
             std::vector<std::string> varNames;
             std::unordered_map<uint64_t, uint64_t> timePointVariables;
             std::vector<std::shared_ptr<SmtConstraint>> constraints;
