@@ -150,7 +150,7 @@ void processOptions() {
         if (label == "failed") {
             // Ignore as this label will always be added
         } else {
-            std::size_t foundIndex = label.find("_fail");
+            std::size_t foundIndex = label.find("_failed");
             if (foundIndex != std::string::npos) {
                 relevantEventNames.push_back(label.substr(0, foundIndex));
             } else {

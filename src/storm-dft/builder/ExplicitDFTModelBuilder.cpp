@@ -476,7 +476,7 @@ namespace storm {
             for (size_t id = 0; id < dft.nrElements(); ++id) {
                 std::shared_ptr<storage::DFTElement<ValueType> const> element = dft.getElement(id);
                 if (element->isRelevant()) {
-                    modelComponents.stateLabeling.addLabel(element->name() + "_fail");
+                    modelComponents.stateLabeling.addLabel(element->name() + "_failed");
                     modelComponents.stateLabeling.addLabel(element->name() + "_dc");
                 }
             }
@@ -498,7 +498,7 @@ namespace storm {
                         storm::storage::DFTElementState elementState = storm::storage::DFTState<ValueType>::getElementState(state, *stateGenerationInfo, element->id());
                         switch (elementState) {
                             case storm::storage::DFTElementState::Failed:
-                                modelComponents.stateLabeling.addLabelToState(element->name() + "_fail", stateId);
+                                modelComponents.stateLabeling.addLabelToState(element->name() + "_failed", stateId);
                                 break;
                             case storm::storage::DFTElementState::DontCare:
                                 modelComponents.stateLabeling.addLabelToState(element->name() + "_dc", stateId);
