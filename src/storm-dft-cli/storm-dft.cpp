@@ -127,15 +127,24 @@ void processOptions() {
         props = storm::api::extractFormulasFromProperties(storm::api::parseProperties(propString));
     }
 
+
+    // Set relevant event names
+    std::vector<std::string> relevantEventNames;
+    //Possible clash of relevantEvents and disableDC was already considered in FaultTreeSettings::check().
+    if (faultTreeSettings.areRelevantEventsSet()) {
+        relevantEventNames = faultTreeSettings.getRelevantEvents();
+    } else if (faultTreeSettings.isDisableDC()) {
+        // All events are relevant
+        relevantEventNames = {"all"};
+    }
+
+    // Events from properties are relevant as well
     // Get necessary labels from properties
     std::vector<std::shared_ptr<storm::logic::AtomicLabelFormula const>> atomicLabels;
     for (auto property : props) {
         property->gatherAtomicLabelFormulas(atomicLabels);
     }
-
-    // Set relevant event names
-    std::vector<std::string> relevantEventNames = faultTreeSettings.getRelevantEvents();
-    // Events from properties are relevant as well
+    // Add relevant event names from properties
     for (auto atomic : atomicLabels) {
         std::string label = atomic->getLabel();
         if (label == "failed") {
@@ -151,27 +160,22 @@ void processOptions() {
     }
 
     // Set relevant elements
-    std::set<size_t> relevantEvents; // Per default only the toplevel event is relevant
-    // Possible clash of relevantEvents and disableDC was already considered in FaultTreeSettings::check().
-    if (faultTreeSettings.areRelevantEventsSet()) {
-        for (std::string const& relevantName : faultTreeSettings.getRelevantEvents()) {
-            if (relevantName == "none") {
-                // Only toplevel event is relevant
-                relevantEvents = {};
-                break;
-            } else if (relevantName == "all") {
-                // All events are relevant
-                relevantEvents = dft->getAllIds();
-                break;
-            } else {
-                // Find corresponding id
-                relevantEvents.insert(dft->getIndex(relevantName));
-            }
+    std::set<size_t> relevantEvents; // Per default no event (except the toplevel event) is relevant
+    for (std::string const& relevantName : relevantEventNames) {
+        if (relevantName == "none") {
+            // Only toplevel event is relevant
+            relevantEvents = {};
+            break;
+        } else if (relevantName == "all") {
+            // All events are relevant
+            relevantEvents = dft->getAllIds();
+            break;
+        } else {
+            // Find and add corresponding event id
+            relevantEvents.insert(dft->getIndex(relevantName));
         }
-    } else if (faultTreeSettings.isDisableDC()) {
-        // All events are relevant
-        relevantEvents = dft->getAllIds();
     }
+
 
     // Analyze DFT
     // TODO allow building of state space even without properties
