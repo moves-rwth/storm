@@ -38,7 +38,8 @@ namespace storm {
             // Try to parse parameters
             if (jsonInput.find("parameters") != jsonInput.end()) {
                 json parameters = jsonInput.at("parameters");
-                STORM_LOG_THROW(parameters.empty() || (std::is_same<ValueType, storm::RationalFunction>::value), storm::exceptions::NotSupportedException, "Parameters only allowed when using rational functions.");
+                STORM_LOG_THROW(parameters.empty() || (std::is_same<ValueType, storm::RationalFunction>::value), storm::exceptions::NotSupportedException,
+                                "Parameters only allowed when using rational functions.");
                 for (auto it = parameters.begin(); it != parameters.end(); ++it) {
                     std::string parameter = it.key();
                     storm::expressions::Variable var = manager->declareRationalVariable(parameter);
@@ -51,10 +52,14 @@ namespace storm {
             json nodes = jsonInput.at("nodes");
             // Start by building mapping from ids to their unique names
             std::map<std::string, std::string> nameMapping;
+            std::set<std::string> names;
             for (auto& element : nodes) {
                 json data = element.at("data");
                 std::string id = data.at("id");
-                nameMapping[id] = generateUniqueName(id, data.at("name"));
+                std::string uniqueName = generateUniqueName(data.at("name"));
+                STORM_LOG_THROW(names.find(uniqueName) == names.end(), storm::exceptions::WrongFormatException, "Element '" << uniqueName << "' was already declared.");
+                names.insert(uniqueName);
+                nameMapping[id] = uniqueName;
             }
 
             // Parse nodes
@@ -62,7 +67,7 @@ namespace storm {
                 STORM_LOG_TRACE("Parsing: " << element);
                 bool success = true;
                 json data = element.at("data");
-                std::string name = generateUniqueName(data.at("id"), data.at("name"));
+                std::string name = generateUniqueName(data.at("name"));
                 std::vector<std::string> childNames;
                 if (data.count("children") > 0) {
                     for (std::string const& child : data.at("children")) {
@@ -73,7 +78,7 @@ namespace storm {
 
                 std::string type = data.at("type");
 
-                if(type == "and") {
+                if (type == "and") {
                     success = builder.addAndElement(name, childNames);
                 } else if (type == "or") {
                     success = builder.addOrElement(name, childNames);
@@ -100,7 +105,8 @@ namespace storm {
                     if (data.count("distribution") > 0) {
                         distribution = data.at("distribution");
                     }
-                    STORM_LOG_THROW(type == "be" || "be_" + distribution == type, storm::exceptions::WrongFormatException, "BE type '" << type << "' and distribution '" << distribution << " do not agree.");
+                    STORM_LOG_THROW(type == "be" || "be_" + distribution == type, storm::exceptions::WrongFormatException,
+                                    "BE type '" << type << "' and distribution '" << distribution << " do not agree.");
                     if (distribution == "exp") {
                         ValueType failureRate = parseRationalExpression(parseJsonNumber(data.at("rate")));
                         ValueType dormancyFactor = parseRationalExpression(parseJsonNumber(data.at("dorm")));
@@ -138,9 +144,10 @@ namespace storm {
             }
 
             std::string topLevelId = parseJsonNumber(jsonInput.at("toplevel"));
-            STORM_LOG_THROW(nameMapping.find(topLevelId) != nameMapping.end(), storm::exceptions::WrongFormatException, "Top level element with id '" << topLevelId << "' was not defined.");
+            STORM_LOG_THROW(nameMapping.find(topLevelId) != nameMapping.end(), storm::exceptions::WrongFormatException,
+                            "Top level element with id '" << topLevelId << "' was not defined.");
             std::string toplevelName = nameMapping.at(topLevelId);
-            if(!builder.setTopLevel(toplevelName)) {
+            if (!builder.setTopLevel(toplevelName)) {
                 STORM_LOG_THROW(false, storm::exceptions::FileIoException, "Top level id unknown.");
             }
 
@@ -153,11 +160,11 @@ namespace storm {
         }
 
         template<typename ValueType>
-        std::string DFTJsonParser<ValueType>::generateUniqueName(std::string const& id, std::string const& name) {
-            std::string newId = name;
-            std::replace(newId.begin(), newId.end(), ' ', '_');
-            std::replace(newId.begin(), newId.end(), '-', '_');
-            return newId + "_" + id;
+        std::string DFTJsonParser<ValueType>::generateUniqueName(std::string const& name) {
+            std::string newName = name;
+            std::replace(newName.begin(), newName.end(), ' ', '_');
+            std::replace(newName.begin(), newName.end(), '-', '_');
+            return newName;
         }
 
         template<typename ValueType>
