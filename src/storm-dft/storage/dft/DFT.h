@@ -325,6 +325,12 @@ namespace storm {
              */
             void setRelevantEvents(std::set<size_t> const& relevantEvents, bool allowDCForRelevantEvents) const;
 
+            /*!
+             * Get a string containing the list of all relevant events.
+             * @return String containing all relevant events.
+             */
+            std::string getRelevantEventsString() const;
+
         private:
             std::tuple<std::vector<size_t>, std::vector<size_t>, std::vector<size_t>> getSortedParentAndDependencyIds(size_t index) const;
             

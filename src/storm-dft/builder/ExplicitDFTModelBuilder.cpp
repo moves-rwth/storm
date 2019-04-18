@@ -44,6 +44,7 @@ namespace storm {
             this->dft.setRelevantEvents(this->relevantEvents, allowDCForRelevantEvents);
             // Mark top level element as relevant
             this->dft.getElement(this->dft.getTopLevelIndex())->setRelevance(true);
+            STORM_LOG_DEBUG("Relevant events: " << this->dft.getRelevantEventsString());
             if (this->relevantEvents.empty()) {
                 // Only interested in top level event -> introduce unique failed state
                 this->uniqueFailedState = true;

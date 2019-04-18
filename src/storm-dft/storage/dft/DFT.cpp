@@ -875,6 +875,23 @@ namespace storm {
         }
 
         template<typename ValueType>
+        std::string DFT<ValueType>::getRelevantEventsString() const {
+            std::stringstream stream;
+            bool first = true;
+            for (auto const& elem : mElements) {
+                if (elem->isRelevant()) {
+                    if (first) {
+                        first = false;
+                    } else {
+                        stream << ", ";
+                    }
+                    stream << elem->name() << " [" << elem->id() << "]";
+                }
+            }
+            return stream.str();
+        }
+
+        template<typename ValueType>
         void DFT<ValueType>::writeStatsToStream(std::ostream& stream) const {
             // Count individual types of elements
             size_t noBE = 0;
