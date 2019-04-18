@@ -119,10 +119,10 @@ void processOptions() {
     if (!properties.empty()) {
         std::string propString;
         for (size_t i = 0; i < properties.size(); ++i) {
+            propString += properties[i];
             if (i + 1 < properties.size()) {
                 propString += ";";
             }
-            propString += properties[i];
         }
         props = storm::api::extractFormulasFromProperties(storm::api::parseProperties(propString));
     }
