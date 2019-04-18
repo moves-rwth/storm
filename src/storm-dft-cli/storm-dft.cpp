@@ -1,10 +1,11 @@
-#include <storm/exceptions/UnmetRequirementException.h>
-#include "storm-dft/api/storm-dft.h"
+#include <boost/algorithm/string.hpp>
 
+#include "storm-dft/api/storm-dft.h"
 #include "storm-dft/settings/DftSettings.h"
 #include "storm-dft/settings/modules/DftGspnSettings.h"
 #include "storm-dft/settings/modules/DftIOSettings.h"
 #include "storm-dft/settings/modules/FaultTreeSettings.h"
+#include <storm/exceptions/UnmetRequirementException.h>
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/IOSettings.h"
 #include "storm/settings/modules/ResourceSettings.h"
@@ -150,9 +151,11 @@ void processOptions() {
         if (label == "failed") {
             // Ignore as this label will always be added
         } else {
-            std::size_t foundIndex = label.find("_failed");
-            if (foundIndex != std::string::npos) {
-                relevantEventNames.push_back(label.substr(0, foundIndex));
+            // Get name of event
+            if (boost::ends_with(label, "_failed")) {
+                relevantEventNames.push_back(label.substr(0, label.size() - 7));
+            } else if (boost::ends_with(label, "_dc")) {
+                relevantEventNames.push_back(label.substr(0, label.size() - 3));
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Label '" << label << "' not known.");
             }
