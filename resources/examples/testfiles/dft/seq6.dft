@@ -1,0 +1,8 @@
+toplevel "T";
+"T" wsp "A" "C";
+"A" lambda=1e-4 dorm=1;
+"C" lambda=5e-5 dorm=0;
+"seq" seq "OR" "C";
+"OR" or "F";
+"F" lambda=0 dorm=0;
+"FDEP" fdep "A" "F";

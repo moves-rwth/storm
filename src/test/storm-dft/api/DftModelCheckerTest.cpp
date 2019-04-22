@@ -194,6 +194,8 @@ namespace {
         EXPECT_FLOAT_EQ(result, 6);
         result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/seq5.dft");
         EXPECT_EQ(result, storm::utility::infinity<double>());
+        result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/seq6.dft");
+        EXPECT_FLOAT_EQ(result, 30000);
 
         result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/mutex.dft");
         EXPECT_FLOAT_EQ(result, 0.5);
