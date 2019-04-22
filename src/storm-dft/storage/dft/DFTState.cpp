@@ -259,23 +259,22 @@ namespace storm {
                 STORM_LOG_ASSERT(restriction->containsChild(id), "Ids do not match.");
                 if (restriction->isSeqEnforcer()) {
                     for (auto it = restriction->children().cbegin(); it != restriction->children().cend(); ++it) {
-                        if ((*it)->isBasicElement()) {
-                            if ((*it)->id() != id) {
-                                if (!hasFailed((*it)->id())) {
-                                    // Failure should be prevented later on
-                                    STORM_LOG_TRACE("Child " << (*it)->id() << " should have failed.");
-                                }
-                            } else {
-                                // Current event has failed
-                                ++it;
-                                if (it != restriction->children().cend()) {
-                                    // Enable next event
-                                    failableElements.addBE((*it)->id());
-                                    STORM_LOG_TRACE("Added possible BE failure: " << *(*it));
-                                    addedFailableEvent = true;
-                                }
+                        if ((*it)->id() != id) {
+                            if (!hasFailed((*it)->id())) {
+                                // Failure should be prevented later on
+                                STORM_LOG_TRACE("Child " << (*it)->name() << " should have failed.");
                                 break;
                             }
+                        } else {
+                            // Current event has failed
+                            ++it;
+                            if (it != restriction->children().cend() && (*it)->isBasicElement()) {
+                                // Enable next event
+                                failableElements.addBE((*it)->id());
+                                STORM_LOG_TRACE("Added possible BE failure: " << *(*it));
+                                addedFailableEvent = true;
+                            }
+                            break;
                         }
                     }
                 } else if (restriction->isMutex()) {
