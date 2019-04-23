@@ -59,8 +59,10 @@ namespace storm {
             //size_t failableCount = hasDependencies ? state->nrFailableDependencies() : state->nrFailableBEs();
             //size_t currentFailable = 0;
             state->getFailableElements().init(exploreDependencies);
-            // Check for absorbing state
-            if (mDft.hasFailed(state) || mDft.isFailsafe(state) || state->getFailableElements().isEnd()) {
+            // Check for absorbing state:
+            // - either no relevant event remains (i.e., all relevant events have failed already), or
+            // - no BE can fail
+            if (!state->getFailableElements().hasRemainingRelevantEvent() || state->getFailableElements().isEnd()) {
                 Choice<ValueType, StateType> choice(0, true);
                 // Add self loop
                 choice.addProbability(state->getId(), storm::utility::one<ValueType>());
@@ -80,7 +82,6 @@ namespace storm {
                     // We discard further exploration as we already chose one dependent event
                     break;
                 }
-                STORM_LOG_ASSERT(!mDft.hasFailed(state), "Dft has failed.");
                 isFirst = false;
 
                 // Construct new state as copy from original one
@@ -119,6 +120,8 @@ namespace storm {
                     newState->updateFailableDependencies(next->id());
                     newState->updateFailableInRestrictions(next->id());
                 }
+
+                newState->updateRemainingRelevantEvents();
 
                 bool transient = false;
                 if (nextBE->type() == storm::storage::DFTElementType::BE_EXP) {

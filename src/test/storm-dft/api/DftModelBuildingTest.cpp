@@ -32,8 +32,8 @@ namespace {
         storm::builder::ExplicitDFTModelBuilder<double> builder2(*dft, symmetries, relevantEvents, false);
         builder2.buildModel(0, 0.0);
         model = builder2.getModel();
-        EXPECT_EQ(448ul, model->getNumberOfStates());
-        EXPECT_EQ(1260ul, model->getNumberOfTransitions());
+        EXPECT_EQ(512ul, model->getNumberOfStates());
+        EXPECT_EQ(2305ul, model->getNumberOfTransitions());
 
         // Set relevant events (H)
         relevantEvents.clear();

@@ -875,6 +875,18 @@ namespace storm {
         }
 
         template<typename ValueType>
+        std::set<size_t> DFT<ValueType>::getRelevantEvents() const {
+            std::set<size_t> relevantEvents;
+            for (auto const& elem : mElements) {
+                if (elem->isRelevant()) {
+                    relevantEvents.insert(elem->id());
+                }
+            }
+            return relevantEvents;
+        }
+
+
+        template<typename ValueType>
         std::string DFT<ValueType>::getRelevantEventsString() const {
             std::stringstream stream;
             bool first = true;

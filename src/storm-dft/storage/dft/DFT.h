@@ -319,6 +319,12 @@ namespace storm {
             size_t getIndex(std::string const& name) const;
 
             /*!
+             * Get all relevant events.
+             * @return List of all relevant events.
+             */
+            std::set<size_t> getRelevantEvents() const;
+
+            /*!
              * Set the relevance flag for all elements according to the given relevant events.
              * @param relevantEvents All elements which should be to relevant. All elements not occuring are set to irrelevant.
              * @param allowDCForRelevantEvents Flag whether Don't Care propagation is allowed even for relevant events.
