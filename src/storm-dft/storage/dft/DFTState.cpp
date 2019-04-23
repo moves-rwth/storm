@@ -267,8 +267,12 @@ namespace storm {
                             }
                         } else {
                             // Current event has failed
+                            STORM_LOG_ASSERT(hasFailed((*it)->id()), "Child " << (*it)->name() << " should have failed.");
                             ++it;
-                            if (it != restriction->children().cend() && (*it)->isBasicElement()) {
+                            while (it != restriction->children().cend() && !isOperational((*it)->id())) {
+                                ++it;
+                            }
+                            if (it != restriction->children().cend() && (*it)->isBasicElement() && isOperational((*it)->id())) {
                                 // Enable next event
                                 failableElements.addBE((*it)->id());
                                 STORM_LOG_TRACE("Added possible BE failure: " << *(*it));
