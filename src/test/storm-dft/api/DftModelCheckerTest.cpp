@@ -2,7 +2,6 @@
 #include "storm-config.h"
 
 #include "storm-dft/api/storm-dft.h"
-#include "storm-dft/modelchecker/dft/DFTASFChecker.h"
 #include "storm-parsers/api/storm-parsers.h"
 
 namespace {
@@ -70,17 +69,6 @@ namespace {
             std::vector<std::shared_ptr<storm::logic::Formula const>> properties = storm::api::extractFormulasFromProperties(storm::api::parseProperties(property));
             typename storm::modelchecker::DFTModelChecker<double>::dft_results results = storm::api::analyzeDFT<double>(*dft, properties, config.useSR, config.useMod, config.useDC, false);
             return boost::get<double>(results[0]);
-        }
-
-        storm::solver::SmtSolver::CheckResult analyzeSMT(std::string const &file) {
-            std::shared_ptr<storm::storage::DFT<double>> dft = storm::api::loadDFTGalileoFile<double>(file);
-            EXPECT_TRUE(storm::api::isWellFormed(*dft));
-            storm::modelchecker::DFTASFChecker smtChecker(*dft);
-            smtChecker.convert();
-            smtChecker.toSolver();
-            std::vector<storm::solver::SmtSolver::CheckResult> results;
-
-            return smtChecker.checkTleNeverFailed();
         }
 
         double analyzeReliability(std::string const &file, double bound) {
@@ -210,12 +198,5 @@ namespace {
     TYPED_TEST(DftModelCheckerTest, HecsMTTF) {
         double result = this->analyzeReliability(STORM_TEST_RESOURCES_DIR "/dft/hecs_2_2.dft", 1.0);
         EXPECT_FLOAT_EQ(result, 0.00021997582);
-    }
-
-    TYPED_TEST(DftModelCheckerTest, SmtTest) {
-        storm::solver::SmtSolver::CheckResult result = this->analyzeSMT(STORM_TEST_RESOURCES_DIR "/dft/and.dft");
-        EXPECT_EQ(result, storm::solver::SmtSolver::CheckResult::Unsat);
-        result = this->analyzeSMT(STORM_TEST_RESOURCES_DIR "/dft/pand.dft");
-        EXPECT_EQ(result, storm::solver::SmtSolver::CheckResult::Sat);
     }
 }
