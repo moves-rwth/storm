@@ -80,7 +80,7 @@ namespace {
             smtChecker.toSolver();
             std::vector<storm::solver::SmtSolver::CheckResult> results;
 
-            return smtChecker.checkTleNeverFailedQuery();
+            return smtChecker.checkTleNeverFailed();
         }
 
         double analyzeReliability(std::string const &file, double bound) {

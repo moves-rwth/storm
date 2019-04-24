@@ -46,12 +46,12 @@ namespace storm {
         std::vector<storm::solver::SmtSolver::CheckResult>
         analyzeDFTSMT(storm::storage::DFT<double> const &dft, bool printOutput) {
             storm::modelchecker::DFTASFChecker smtChecker(dft);
-            smtChecker.convert();
             smtChecker.toSolver();
             std::vector<storm::solver::SmtSolver::CheckResult> results;
 
-            results.push_back(smtChecker.checkTleNeverFailedQuery());
+            results.push_back(smtChecker.checkTleNeverFailed());
             uint64_t lower_bound = smtChecker.getLeastFailureBound();
+            uint64_t upper_bound = smtChecker.getAlwaysFailedBound();
             if (printOutput) {
                 //TODO add suitable output function, maybe add query descriptions for better readability
                 for (size_t i = 0; i < results.size(); ++i) {
@@ -61,9 +61,9 @@ namespace storm {
                     } else if (results.at(i) == storm::solver::SmtSolver::CheckResult::Unsat) {
                         tmp = "UNSAT";
                     }
-                    std::cout << "Query " << std::to_string(i) << " : " << tmp << std::endl;
                 }
                 std::cout << "Lower bound: " << std::to_string(lower_bound) << std::endl;
+                std::cout << "Upper bound: " << std::to_string(upper_bound) << std::endl;
             }
             return results;
         }

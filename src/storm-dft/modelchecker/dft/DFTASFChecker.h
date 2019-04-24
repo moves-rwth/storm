@@ -47,22 +47,37 @@ namespace storm {
              *
              * @return  "Sat" if TLE never fails, "Unsat" if it does, otherwise "Unknown"
              */
-            storm::solver::SmtSolver::CheckResult checkTleNeverFailedQuery();
+            storm::solver::SmtSolver::CheckResult checkTleNeverFailed();
 
             /**
-             * Check if there exists a sequence of BE failures of given length such that the TLE of the DFT fails
+             * Check if there exists a sequence of BE failures of exactly given length such that the TLE of the DFT fails
              *
              * @param bound the length of the sequene
+             * @return "Sat" if such a sequence exists, "Unsat" if it does not, otherwise "Unknown"
+             */
+            storm::solver::SmtSolver::CheckResult checkTleFailsWithEq(uint64_t bound);
+
+            /**
+             * Check if there exists a sequence of BE failures of at least given length such that the TLE of the DFT fails
+             *
+             * @param bound the length of the sequence
              * @return "Sat" if such a sequence exists, "Unsat" if it does not, otherwise "Unknown"
              */
             storm::solver::SmtSolver::CheckResult checkTleFailsWithLeq(uint64_t bound);
 
             /**
-             * Get the minimal number of BEs necessary for the TLE to fail
+             * Get the minimal number of BEs necessary for the TLE to fail (lower bound for number of failures to check)
              *
              * @return the minimal number
              */
             uint64_t getLeastFailureBound();
+
+            /**
+             * Get the number of BE failures for which the TLE always fails (upper bound for number of failures to check)
+             *
+             * @return the number
+             */
+            uint64_t getAlwaysFailedBound();
 
             /**
              * Set the timeout of the solver
@@ -78,6 +93,19 @@ namespace storm {
             
         private:
             uint64_t getClaimVariableIndex(uint64_t spareIndex, uint64_t childIndex) const;
+
+            /**
+             * Generate constraint for spares such that when trying to claim child (i+1), other spares either claimed it
+             * before or will never claim it
+             *
+             * @param spare Spare.
+             * @param childIndex Index of child to consider in spare children
+             * @param timepoint Timepoint to try to claim
+             * @return
+             */
+            std::shared_ptr<SmtConstraint>
+            generateClaimEarlyConstraint(std::shared_ptr<storm::storage::DFTSpare<ValueType> const> spare,
+                                         uint64_t childIndex) const;
 
             /**
              * Generate constraint for 'spare (s) tries to claim the child (i) at the given timepoint (t)'.
@@ -153,7 +181,7 @@ namespace storm {
             void addMarkovianConstraints();
             
             storm::storage::DFT<ValueType> const& dft;
-            std::shared_ptr<storm::solver::SmtSolver> solver = NULL;
+            std::shared_ptr<storm::solver::SmtSolver> solver = nullptr;
             std::vector<std::string> varNames;
             std::unordered_map<uint64_t, uint64_t> timePointVariables;
             std::vector<std::shared_ptr<SmtConstraint>> constraints;

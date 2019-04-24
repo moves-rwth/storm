@@ -242,6 +242,13 @@ namespace storm {
             for (uint64_t currChild = 0; currChild < children.size() - 1; ++currChild) {
                 uint64_t timeCurrChild = childVarIndices.at(currChild); // Moment when current child fails
 
+                // If trying to claim (i+1)-th child, either child claimed before or never claimed by other spare
+                // (additional constraint)
+                std::shared_ptr<SmtConstraint> claimEarlyC = generateClaimEarlyConstraint(spare, currChild);
+                constraints.push_back(std::make_shared<Implies>(
+                        std::make_shared<IsLess>(getClaimVariableIndex(spare->id(), children.at(currChild)->id()),
+                                                 timeCurrChild), claimEarlyC));
+                constraints.back()->setDescription("Ensure earliest possible claiming");
                 // If i-th child fails after being claimed, then try to claim next child (constraint 6)
                 std::shared_ptr<SmtConstraint> tryClaimC = generateTryToClaimConstraint(spare, currChild + 1,
                                                                                         timeCurrChild);
@@ -250,6 +257,28 @@ namespace storm {
                                                  timeCurrChild), tryClaimC));
                 constraints.back()->setDescription("Try to claim " + std::to_string(currChild + 2) + "th child");
             }
+        }
+
+        std::shared_ptr<SmtConstraint>
+        DFTASFChecker::generateClaimEarlyConstraint(std::shared_ptr<storm::storage::DFTSpare<ValueType> const> spare,
+                                                    uint64_t childIndex) const {
+            auto child = spare->children().at(childIndex + 1);
+            std::vector<std::shared_ptr<SmtConstraint>> constraintAggregator;
+            for (auto const &otherSpare : child->parents()) {
+                if (otherSpare->id() == spare->id()) {
+                    // not a different spare.
+                    continue;
+                }
+                std::vector<std::shared_ptr<SmtConstraint>> OrAggregator;
+                // Other spare has claimed before
+                OrAggregator.push_back(std::make_shared<IsLessConstant>(
+                        getClaimVariableIndex(otherSpare->id(), child->id()), timePointVariables.at(childIndex)));
+                // Other spare will never claim
+                OrAggregator.push_back(std::make_shared<IsConstantValue>(
+                        getClaimVariableIndex(otherSpare->id(), child->id()), notFailed));
+                constraintAggregator.push_back(std::make_shared<Or>(OrAggregator));
+            }
+            return std::make_shared<And>(constraintAggregator);
         }
 
         std::shared_ptr<SmtConstraint>
@@ -458,14 +487,14 @@ namespace storm {
 
         }
 
-        storm::solver::SmtSolver::CheckResult DFTASFChecker::checkTleNeverFailedQuery() {
-            // STORM_LOG_ERROR_COND(!solver, "SMT Solver was not initialized, call toSolver() before checking queries");
+        storm::solver::SmtSolver::CheckResult DFTASFChecker::checkTleFailsWithEq(uint64_t bound) {
+            STORM_LOG_ASSERT(solver, "SMT Solver was not initialized, call toSolver() before checking queries");
 
             // Set backtracking marker to check several properties without reconstructing DFT encoding
             solver->push();
-            // Constraint that toplevel element will not fail (part of constraint 13)
+            // Constraint that toplevel element can fail with less or equal 'bound' failures
             std::shared_ptr<SmtConstraint> tleNeverFailedConstr = std::make_shared<IsConstantValue>(
-                    timePointVariables.at(dft.getTopLevelIndex()), notFailed);
+                    timePointVariables.at(dft.getTopLevelIndex()), bound);
             std::shared_ptr<storm::expressions::ExpressionManager> manager = solver->getManager().getSharedPointer();
             solver->add(tleNeverFailedConstr->toExpression(varNames, manager));
             storm::solver::SmtSolver::CheckResult res = solver->check();
@@ -474,7 +503,7 @@ namespace storm {
         }
 
         storm::solver::SmtSolver::CheckResult DFTASFChecker::checkTleFailsWithLeq(uint64_t bound) {
-            //STORM_LOG_ERROR_COND(!solver, "SMT Solver was not initialized, call toSolver() before checking queries");
+            STORM_LOG_ASSERT(solver, "SMT Solver was not initialized, call toSolver() before checking queries");
 
             // Set backtracking marker to check several properties without reconstructing DFT encoding
             solver->push();
@@ -489,24 +518,25 @@ namespace storm {
         }
 
         void DFTASFChecker::setSolverTimeout(uint_fast64_t milliseconds) {
-            if (!solver) {
-                STORM_LOG_WARN("SMT Solver was not initialized, timeout setting ignored");
-            } else {
-                solver->setTimeout(milliseconds);
-            }
+            STORM_LOG_ASSERT(solver, "SMT Solver was not initialized, timeout cannot be set");
+            solver->setTimeout(milliseconds);
         }
 
         void DFTASFChecker::unsetSolverTimeout() {
-            if (!solver) {
-                STORM_LOG_WARN("SMT Solver was not initialized, timeout unsetting ignored");
-            } else {
-                solver->unsetTimeout();
-            }
+            STORM_LOG_ASSERT(solver, "SMT Solver was not initialized, timeout cannot be unset");
+            solver->unsetTimeout();
+        }
+
+        storm::solver::SmtSolver::CheckResult DFTASFChecker::checkTleNeverFailed() {
+            STORM_LOG_ASSERT(solver, "SMT Solver was not initialized, call toSolver() before checking queries");
+            return checkTleFailsWithEq(notFailed);
         }
 
         uint64_t DFTASFChecker::getLeastFailureBound() {
-            //STORM_LOG_ERROR_COND(!solver, "SMT Solver was not initialized, call toSolver() before checking queries");
-
+            STORM_LOG_ASSERT(solver, "SMT Solver was not initialized, call toSolver() before checking queries");
+            if (checkTleNeverFailed() == storm::solver::SmtSolver::CheckResult::Sat) {
+                return notFailed;
+            }
             uint64_t bound = 0;
             while (bound < notFailed) {
                 setSolverTimeout(10000);
@@ -517,6 +547,25 @@ namespace storm {
                     return bound;
                 }
                 ++bound;
+            }
+            return bound;
+        }
+
+        uint64_t DFTASFChecker::getAlwaysFailedBound() {
+            STORM_LOG_ASSERT(solver, "SMT Solver was not initialized, call toSolver() before checking queries");
+            if (checkTleNeverFailed() == storm::solver::SmtSolver::CheckResult::Sat) {
+                return notFailed;
+            }
+            uint64_t bound = notFailed - 1;
+            while (bound >= 0) {
+                setSolverTimeout(10000);
+                storm::solver::SmtSolver::CheckResult tmp_res = checkTleFailsWithEq(bound);
+                unsetSolverTimeout();
+                if (tmp_res == storm::solver::SmtSolver::CheckResult::Sat ||
+                    tmp_res == storm::solver::SmtSolver::CheckResult::Unknown) {
+                    return bound;
+                }
+                --bound;
             }
             return bound;
         }
