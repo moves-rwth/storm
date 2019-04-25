@@ -370,6 +370,31 @@ namespace storm {
             uint64_t value;
         };
 
+        class IsGreaterConstant : public SmtConstraint {
+        public:
+            IsGreaterConstant(uint64_t varIndex, uint64_t val) : varIndex(varIndex), value(val) {
+            }
+
+            virtual ~IsGreaterConstant() {
+            }
+
+            std::string toSmtlib2(std::vector<std::string> const &varNames) const override {
+                std::stringstream sstr;
+                assert(varIndex < varNames.size());
+                sstr << "(< " << value << " " << varNames.at(varIndex) << ")";
+                return sstr.str();
+            }
+
+            storm::expressions::Expression toExpression(std::vector<std::string> const &varNames,
+                                                        std::shared_ptr<storm::expressions::ExpressionManager> manager) const override {
+                return manager->getVariableExpression(varNames.at(varIndex)) > value;
+            }
+
+        private:
+            uint64_t varIndex;
+            uint64_t value;
+        };
+
         class IsLessEqualConstant : public SmtConstraint {
         public:
             IsLessEqualConstant(uint64_t varIndex, uint64_t val) : varIndex(varIndex), value(val) {

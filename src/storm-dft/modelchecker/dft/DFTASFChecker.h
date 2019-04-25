@@ -68,16 +68,18 @@ namespace storm {
             /**
              * Get the minimal number of BEs necessary for the TLE to fail (lower bound for number of failures to check)
              *
+             * @param timeout timeout for each query in seconds, defaults to 10 seconds
              * @return the minimal number
              */
-            uint64_t getLeastFailureBound();
+            uint64_t getLeastFailureBound(uint_fast64_t timeout = 10);
 
             /**
              * Get the number of BE failures for which the TLE always fails (upper bound for number of failures to check)
              *
+             * @param timeout timeout for each query in seconds, defaults to 10 seconds
              * @return the number
              */
-            uint64_t getAlwaysFailedBound();
+            uint64_t getAlwaysFailedBound(uint_fast64_t timeout = 10);
 
             /**
              * Set the timeout of the solver
@@ -93,19 +95,6 @@ namespace storm {
             
         private:
             uint64_t getClaimVariableIndex(uint64_t spareIndex, uint64_t childIndex) const;
-
-            /**
-             * Generate constraint for spares such that when trying to claim child (i+1), other spares either claimed it
-             * before or will never claim it
-             *
-             * @param spare Spare.
-             * @param childIndex Index of child to consider in spare children
-             * @param timepoint Timepoint to try to claim
-             * @return
-             */
-            std::shared_ptr<SmtConstraint>
-            generateClaimEarlyConstraint(std::shared_ptr<storm::storage::DFTSpare<ValueType> const> spare,
-                                         uint64_t childIndex) const;
 
             /**
              * Generate constraint for 'spare (s) tries to claim the child (i) at the given timepoint (t)'.

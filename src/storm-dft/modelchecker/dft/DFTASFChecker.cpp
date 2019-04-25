@@ -241,14 +241,6 @@ namespace storm {
             STORM_LOG_ASSERT(children.size() >= 2, "Spare has only one child");
             for (uint64_t currChild = 0; currChild < children.size() - 1; ++currChild) {
                 uint64_t timeCurrChild = childVarIndices.at(currChild); // Moment when current child fails
-
-                // If trying to claim (i+1)-th child, either child claimed before or never claimed by other spare
-                // (additional constraint)
-                std::shared_ptr<SmtConstraint> claimEarlyC = generateClaimEarlyConstraint(spare, currChild);
-                constraints.push_back(std::make_shared<Implies>(
-                        std::make_shared<IsLess>(getClaimVariableIndex(spare->id(), children.at(currChild)->id()),
-                                                 timeCurrChild), claimEarlyC));
-                constraints.back()->setDescription("Ensure earliest possible claiming");
                 // If i-th child fails after being claimed, then try to claim next child (constraint 6)
                 std::shared_ptr<SmtConstraint> tryClaimC = generateTryToClaimConstraint(spare, currChild + 1,
                                                                                         timeCurrChild);
@@ -257,28 +249,6 @@ namespace storm {
                                                  timeCurrChild), tryClaimC));
                 constraints.back()->setDescription("Try to claim " + std::to_string(currChild + 2) + "th child");
             }
-        }
-
-        std::shared_ptr<SmtConstraint>
-        DFTASFChecker::generateClaimEarlyConstraint(std::shared_ptr<storm::storage::DFTSpare<ValueType> const> spare,
-                                                    uint64_t childIndex) const {
-            auto child = spare->children().at(childIndex + 1);
-            std::vector<std::shared_ptr<SmtConstraint>> constraintAggregator;
-            for (auto const &otherSpare : child->parents()) {
-                if (otherSpare->id() == spare->id()) {
-                    // not a different spare.
-                    continue;
-                }
-                std::vector<std::shared_ptr<SmtConstraint>> OrAggregator;
-                // Other spare has claimed before
-                OrAggregator.push_back(std::make_shared<IsLessConstant>(
-                        getClaimVariableIndex(otherSpare->id(), child->id()), timePointVariables.at(childIndex)));
-                // Other spare will never claim
-                OrAggregator.push_back(std::make_shared<IsConstantValue>(
-                        getClaimVariableIndex(otherSpare->id(), child->id()), notFailed));
-                constraintAggregator.push_back(std::make_shared<Or>(OrAggregator));
-            }
-            return std::make_shared<And>(constraintAggregator);
         }
 
         std::shared_ptr<SmtConstraint>
@@ -309,7 +279,9 @@ namespace storm {
                     // not a different spare.
                     continue;
                 }
-                claimingPossibleC.push_back(std::make_shared<IsConstantValue>(getClaimVariableIndex(otherSpare->id(), child->id()), notFailed));
+                claimingPossibleC.push_back(std::make_shared<IsLess>(timepoint,
+                                                                     getClaimVariableIndex(otherSpare->id(),
+                                                                                           child->id())));
             }
 
             // Claim child if available
@@ -532,40 +504,51 @@ namespace storm {
             return checkTleFailsWithEq(notFailed);
         }
 
-        uint64_t DFTASFChecker::getLeastFailureBound() {
+        uint64_t DFTASFChecker::getLeastFailureBound(uint_fast64_t timeout) {
             STORM_LOG_ASSERT(solver, "SMT Solver was not initialized, call toSolver() before checking queries");
             if (checkTleNeverFailed() == storm::solver::SmtSolver::CheckResult::Sat) {
                 return notFailed;
             }
             uint64_t bound = 0;
             while (bound < notFailed) {
-                setSolverTimeout(10000);
+                setSolverTimeout(timeout * 1000);
                 storm::solver::SmtSolver::CheckResult tmp_res = checkTleFailsWithLeq(bound);
                 unsetSolverTimeout();
-                if (tmp_res == storm::solver::SmtSolver::CheckResult::Sat ||
-                    tmp_res == storm::solver::SmtSolver::CheckResult::Unknown) {
-                    return bound;
+                switch (tmp_res) {
+                    case storm::solver::SmtSolver::CheckResult::Sat:
+                        return bound;
+                    case storm::solver::SmtSolver::CheckResult::Unknown:
+                        STORM_LOG_DEBUG("Solver returned 'Unknown'");
+                        return bound;
+                    default:
+                        ++bound;
+                        break;
                 }
-                ++bound;
+
             }
             return bound;
         }
 
-        uint64_t DFTASFChecker::getAlwaysFailedBound() {
+        uint64_t DFTASFChecker::getAlwaysFailedBound(uint_fast64_t timeout) {
             STORM_LOG_ASSERT(solver, "SMT Solver was not initialized, call toSolver() before checking queries");
             if (checkTleNeverFailed() == storm::solver::SmtSolver::CheckResult::Sat) {
                 return notFailed;
             }
             uint64_t bound = notFailed - 1;
             while (bound >= 0) {
-                setSolverTimeout(10000);
+                setSolverTimeout(timeout * 1000);
                 storm::solver::SmtSolver::CheckResult tmp_res = checkTleFailsWithEq(bound);
                 unsetSolverTimeout();
-                if (tmp_res == storm::solver::SmtSolver::CheckResult::Sat ||
-                    tmp_res == storm::solver::SmtSolver::CheckResult::Unknown) {
-                    return bound;
+                switch (tmp_res) {
+                    case storm::solver::SmtSolver::CheckResult::Sat:
+                        return bound;
+                    case storm::solver::SmtSolver::CheckResult::Unknown:
+                        STORM_LOG_DEBUG("Solver returned 'Unknown'");
+                        return bound;
+                    default:
+                        --bound;
+                        break;
                 }
-                --bound;
             }
             return bound;
         }
