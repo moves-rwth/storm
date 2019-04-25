@@ -31,6 +31,7 @@ namespace storm {
                 // Retrieve the results after calling check.
                 std::vector<std::vector<ValueType>> const& getResults() const;
                 std::vector<ValueType> const& getResultForObjective(uint64_t objIndex) const;
+                ValueType const& getSchedulerIndependentStateResult(uint64_t objIndex, uint64_t state) const;
                 storm::storage::BitVector const& getSchedulerIndependentStates(uint64_t objIndex) const;
                 std::vector<ValueType> getInitialStateResults() const;
                 ModelType const& getModel() const;

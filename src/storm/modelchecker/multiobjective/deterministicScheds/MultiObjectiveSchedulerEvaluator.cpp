@@ -100,8 +100,8 @@ namespace storm {
                     }
                     
                     auto detModel = mdp ? mdp->applyScheduler(scheduler, false) : model.applyScheduler(scheduler, false);
-                    STORM_LOG_ASSERT(detModel->isOfType(storm::models::ModelType::Dtmc), "Model is of unexpected type.");
-                    auto const& dtmc = *(detModel->template as<storm::models::sparse::Dtmc<ValueType>>());
+                    detModel->getTransitionMatrix().makeRowGroupingTrivial();
+                    storm::models::sparse::Dtmc<ValueType> dtmc(std::move(detModel->getTransitionMatrix()), std::move(detModel->getStateLabeling()), std::move(detModel->getRewardModels()));
                     for (uint64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
                         storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> task(*this->objectives[objIndex].formula, false);
                         auto res = storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<ValueType>>(dtmc).check(env, task);
@@ -149,6 +149,13 @@ namespace storm {
             std::vector<typename MultiObjectiveSchedulerEvaluator<ModelType>::ValueType> const& MultiObjectiveSchedulerEvaluator<ModelType>::getResultForObjective(uint64_t objIndex) const {
                 STORM_LOG_ASSERT(currSchedHasBeenChecked, "Tried to get results for a scheduler that has not yet been analyzed.");
                 return results[objIndex];
+            }
+            
+            
+            template <class ModelType>
+            typename MultiObjectiveSchedulerEvaluator<ModelType>::ValueType const& MultiObjectiveSchedulerEvaluator<ModelType>::getSchedulerIndependentStateResult(uint64_t objIndex, uint64_t state) const {
+                STORM_LOG_ASSERT(getSchedulerIndependentStates(objIndex).get(state), "Tried to get scheduler-independent result for a scheduler-dependent state.");
+                return results[objIndex][state];
             }
             
             template <class ModelType>

@@ -6,6 +6,7 @@
 #include "storm/modelchecker/multiobjective/preprocessing/SparseMultiObjectivePreprocessorResult.h"
 #include "storm/modelchecker/multiobjective/deterministicScheds/MultiObjectiveSchedulerEvaluator.h"
 #include "storm/modelchecker/multiobjective/deterministicScheds/DetSchedsWeightVectorChecker.h"
+#include "storm/modelchecker/multiobjective/deterministicScheds/DetSchedsSimplexChecker.h"
 
 #include "storm/storage/geometry/Polytope.h"
 #include "storm/storage/geometry/Halfspace.h"
@@ -114,10 +115,8 @@ namespace storm {
                     
                     /*!
                      * Creates a polytope that captures all points that lie 'under' the facet
-                     * More precisely, the vertices of the polytope are the points on the facet
-                     * and point p with p_i = min {x_i | x lies on facet}
                      */
-                    Polytope const& getInducedSimplex(Pointset const& pointset);
+                    Polytope const& getInducedSimplex(Pointset const& pointset, std::vector<GeometryValueType> const& referenceCoordinates);
                     
                     
 
@@ -160,7 +159,7 @@ namespace storm {
                 void addHalfspaceToOverApproximation(Environment const& env, std::vector<GeometryValueType> const& normalVector, Point const& pointOnHalfspace);
                 
                 /*!
-                 * Adds a polytope which consists of unachievable point
+                 * Adds a polytope which consists of unachievable points
                  */
                 void addUnachievableArea(Environment const& env, Polytope const& area);
                 
@@ -169,6 +168,11 @@ namespace storm {
                  *   Adds the facets that need further processing to unprocessedFacets
                  */
                 void initializeFacets(Environment const& env);
+                
+                /*!
+                 *  Gets reference coordinates used to subdividing the downwardclosure
+                 */
+                std::vector<GeometryValueType> getReferenceCoordinates() const;
                 
                 /*!
                  * Checks the precision of the given Facet and returns true, if no further processing of the facet is necessary
@@ -200,6 +204,15 @@ namespace storm {
                 bool optimizeAndSplitFacet(Environment const& env, Facet& f);
                 
                 /*!
+                 * Adds a new point that lies within the induced simplex of the given facet to the analysis context.
+                 * @param context the analysis context
+                 * @param pointId the id of the given point.
+                 * @param performCheck if true, it is checked whether the facet is sufficiently precise now. If false, no check is performed.
+                 * @return true iff performCheck is true and the facet is sufficiently precise.
+                 */
+                bool addNewSimplexPoint(FacetAnalysisContext& context, PointId const& pointId, bool performCheck);
+                
+                /*!
                  * Finds all points that lie within the induced Simplex of the given facet.
                  * Returns true if the facet is sufficiently precise when considering all added points
                  */
@@ -209,9 +222,6 @@ namespace storm {
                  * Finds points that lie on the facet
                  * Returns true if the facet has been analyzed sufficiently precise.
                  * If false is returned, it means that *all* points that lie on the facet have been analyzed but the analysis is still not precise enough
-                 *
-                 * use smt to find an eps-box in the simplex that does not contain a point. Add new points until one in the box is found. repeat.
-                 * stop when no more points or boxes can be found.
                  */
                 bool analyzePointsOnFacet(Environment const& env, FacetAnalysisContext& context);
                 
@@ -224,6 +234,7 @@ namespace storm {
                 
                 std::shared_ptr<MultiObjectiveSchedulerEvaluator<SparseModelType>> schedulerEvaluator;
                 std::shared_ptr<DetSchedsWeightVectorChecker<SparseModelType>> weightVectorChecker;
+                std::shared_ptr<DetSchedsSimplexChecker<SparseModelType, GeometryValueType>> simplexChecker;
                 std::shared_ptr<SparseModelType> const& model;
                 uint64_t originalModelInitialState;
                 std::vector<Objective<ModelValueType>> const& objectives;

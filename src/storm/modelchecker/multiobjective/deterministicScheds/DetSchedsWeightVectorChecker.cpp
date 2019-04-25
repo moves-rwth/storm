@@ -54,6 +54,7 @@ namespace storm {
                                     choiceValue += weightVector[objIndex] * stateResults[objIndex][state];
                                 } else {
                                     ValueType objValue = storm::utility::zero<ValueType>();
+                                    // TODO: Choice rewards?
                                     for (auto const& entry : transitionMatrix.getRow(choiceOffset + choice)) {
                                         objValue += entry.getValue() * stateResults[objIndex][entry.getColumn()];
                                     }
