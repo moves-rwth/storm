@@ -2151,6 +2151,17 @@ namespace storm {
         }
 
         template<typename ValueType>
+        std::string SparseMatrix<ValueType>::getDimensionsAsString() const {
+            std::string result = std::to_string(getRowCount()) + "x" + std::to_string(getColumnCount()) + " matrix (" + std::to_string(getNonzeroEntryCount()) + " non-zeroes";
+            if (!hasTrivialRowGrouping()) {
+                result += ", " + std::to_string(getRowGroupCount()) + " groups";
+            }
+            result += ")";
+            return result;
+        }
+
+        
+        template<typename ValueType>
         std::ostream& operator<<(std::ostream& out, SparseMatrix<ValueType> const& matrix) {
             // Print column numbers in header.
             out << "\t\t";

@@ -964,6 +964,11 @@ namespace storm {
             friend std::ostream& operator<<(std::ostream& out, SparseMatrix<TPrime> const& matrix);
 
             /*!
+             * Returns a string describing the dimensions of the matrix.
+             */
+            std::string getDimensionsAsString() const;
+            
+            /*!
              * Prints the matrix in a dense format, as also used by e.g. Matlab.
              * Notice that the format does not support multiple rows in a rowgroup.
              *
