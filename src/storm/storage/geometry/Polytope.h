@@ -114,6 +114,14 @@ namespace storm {
                 virtual std::shared_ptr<Polytope<ValueType>> downwardClosure() const;
                 
                 /*!
+                 * Computes the set {x \in this | x \notin rhs}.
+                 * As this set is not necessarily convex, it is represented as the union of the returned polytopes.
+                 * The returned polytopes are disjoint and non-empty.
+                 * If the resulting set is empty, an empty vector is returned.
+                 */
+                std::vector<std::shared_ptr<Polytope<ValueType>>> setMinus(std::shared_ptr<Polytope<ValueType>> const& rhs) const;
+                
+                /*!
                  * Finds an optimal point inside this polytope w.r.t. the given direction, i.e.,
                  * a point that maximizes dotPorduct(point, direction).
                  * If such a point does not exist, the returned bool is false. There are two reasons for this:
@@ -127,6 +135,11 @@ namespace storm {
                  */
                 template <typename TargetType>
                 std::shared_ptr<Polytope<TargetType>> convertNumberRepresentation() const;
+                
+                /*!
+                 * Performs cleaning operations, e.g., deleting redundant halfspaces
+                 */
+                virtual std::shared_ptr<Polytope<ValueType>> clean();
                 
                 /*
                  * Returns a string representation of this polytope.
