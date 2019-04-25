@@ -504,6 +504,15 @@ namespace storm {
             return checkTleFailsWithEq(notFailed);
         }
 
+        uint64_t DFTASFChecker::correctLowerBound(uint64_t bound) {
+            STORM_LOG_ASSERT(solver, "SMT Solver was not initialized, call toSolver() before checking queries");
+            STORM_LOG_DEBUG("Lower bound correction - try to correct bound " << std::to_string(bound));
+            // placeholder, set lower bound to 1 to prevent loss of precision
+            return 1;
+            // TODO correction mechanism
+            // easy method ("climb down" all direct predecessor states of bound) does not work
+        }
+
         uint64_t DFTASFChecker::getLeastFailureBound(uint_fast64_t timeout) {
             STORM_LOG_TRACE("Compute lower bound for number of BE failures necessary for the DFT to fail");
             STORM_LOG_ASSERT(solver, "SMT Solver was not initialized, call toSolver() before checking queries");
@@ -514,7 +523,11 @@ namespace storm {
                 unsetSolverTimeout();
                 switch (tmp_res) {
                     case storm::solver::SmtSolver::CheckResult::Sat:
-                        return bound;
+                        if (dft.getDependencies().size() > 0) {
+                            return correctLowerBound(bound);
+                        } else {
+                            return bound;
+                        }
                     case storm::solver::SmtSolver::CheckResult::Unknown:
                         STORM_LOG_DEBUG("Lower bound: Solver returned 'Unknown'");
                         return bound;

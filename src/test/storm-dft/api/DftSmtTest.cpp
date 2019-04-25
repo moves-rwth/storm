@@ -26,7 +26,7 @@ namespace {
 
     TEST(DftSmtTest, SpareTest) {
         std::shared_ptr<storm::storage::DFT<double>> dft =
-                storm::api::loadDFTGalileoFile<double>(STORM_TEST_RESOURCES_DIR "/dft/spareTwoModules.dft");
+                storm::api::loadDFTGalileoFile<double>(STORM_TEST_RESOURCES_DIR "/dft/spare_two_modules.dft");
         EXPECT_TRUE(storm::api::isWellFormed(*dft));
         storm::modelchecker::DFTASFChecker smtChecker(*dft);
         smtChecker.convert();

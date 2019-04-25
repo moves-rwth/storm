@@ -74,7 +74,8 @@ namespace storm {
             uint64_t getLeastFailureBound(uint_fast64_t timeout = 10);
 
             /**
-             * Get the number of BE failures for which the TLE always fails (upper bound for number of failures to check)
+             * Get the number of BE failures for which the TLE always fails (upper bound for number of failures to check).
+             * Note that the returned value may be higher than the real one when dependencies are present.
              *
              * @param timeout timeout for each query in seconds, defaults to 10 seconds
              * @return the number
@@ -94,6 +95,15 @@ namespace storm {
             void unsetSolverTimeout();
             
         private:
+            /**
+             * Helper function for correction of least failure bound when dependencies are present
+             *
+             * @param state number of the state in the sequence to check
+             * @param bound known lower bound to be corrected
+             * @return the corrected bound, 1 if correction cannot be completed
+             */
+            uint64_t correctLowerBound(uint64_t bound);
+
             uint64_t getClaimVariableIndex(uint64_t spareIndex, uint64_t childIndex) const;
 
             /**
