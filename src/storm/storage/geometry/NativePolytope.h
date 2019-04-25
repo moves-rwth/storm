@@ -138,6 +138,8 @@ namespace storm {
                 
 
                 virtual bool isNativePolytope() const override;
+                
+                virtual std::shared_ptr<Polytope<ValueType>> clean() override;
             private:
 
                 // returns the vertices of this polytope as EigenVectors

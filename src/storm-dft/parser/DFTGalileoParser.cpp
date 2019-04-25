@@ -137,6 +137,8 @@ namespace storm {
                             success = builder.addSpareElement(name, childNames);
                         } else if (type == "seq") {
                             success = builder.addSequenceEnforcer(name, childNames);
+                        } else if (type == "mutex") {
+                            success = builder.addMutex(name, childNames);
                         } else if (type == "fdep") {
                             STORM_LOG_THROW(childNames.size() >= 2, storm::exceptions::WrongFormatException, "FDEP gate needs at least two children in line " << lineNo << ".");
                             success = builder.addDepElement(name, childNames, storm::utility::one<ValueType>());
@@ -297,26 +299,29 @@ namespace storm {
 
             switch (distribution) {
                 case Constant:
+                    if (storm::utility::isZero(firstValDistribution) || storm::utility::isOne(firstValDistribution)) {
+                        return builder.addBasicElementProbability(parseName(name), firstValDistribution, dormancyFactor, false); // TODO set transient BEs
+                    }
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Constant distribution is not supported for basic element '" << name << "' in line " << lineNo << ".");
                     break;
                 case Exponential:
-                    return builder.addBasicElement(parseName(name), firstValDistribution, dormancyFactor, false); // TODO set transient BEs
+                    return builder.addBasicElementExponential(parseName(name), firstValDistribution, dormancyFactor, false); // TODO set transient BEs
                     break;
                 case Erlang:
                     if (erlangPhases == 1) {
                         // Erlang distribution reduces to exponential distribution
-                        return builder.addBasicElement(parseName(name), firstValDistribution, dormancyFactor, false); // TODO set transient BEs
+                        return builder.addBasicElementExponential(parseName(name), firstValDistribution, dormancyFactor, false); // TODO set transient BEs
                     } else {
                         // Model Erlang distribution by using SEQ over BEs instead.
                         // For each phase a BE is added, then the SEQ ensures the ordered failure.
                         STORM_LOG_WARN("Erlang distribution for basic element '" << name << "' in line " << lineNo << " is modelled by SEQ gate and BEs.");
                         std::string origName = parseName(name);
                         std::vector<std::string> childNames;
-                        bool success = builder.addBasicElement(origName, firstValDistribution, dormancyFactor, false); // TODO set transient BEs
+                        bool success = builder.addBasicElementExponential(origName, firstValDistribution, dormancyFactor, false); // TODO set transient BEs
                         for (size_t i = 0; i < erlangPhases - 1; ++i) {
                             std::string beName = origName + "_" + std::to_string(i);
                             childNames.push_back(beName);
-                            success = success && builder.addBasicElement(beName, firstValDistribution, dormancyFactor, false); // TODO set transient BEs
+                            success = success && builder.addBasicElementExponential(beName, firstValDistribution, dormancyFactor, false); // TODO set transient BEs
                         }
                         childNames.push_back(origName);
                         return success && builder.addSequenceEnforcer(origName + "_seq", childNames);
@@ -325,7 +330,7 @@ namespace storm {
                 case Weibull:
                     if (storm::utility::isOne<ValueType>(secondValDistribution)) {
                         // Weibull distribution reduces to exponential distribution
-                        return builder.addBasicElement(parseName(name), firstValDistribution, dormancyFactor, false); // TODO set transient BEs
+                        return builder.addBasicElementExponential(parseName(name), firstValDistribution, dormancyFactor, false); // TODO set transient BEs
                     } else {
                         STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Weibull distribution is not supported for basic element '" << name << "' in line " << lineNo << ".");
                     }

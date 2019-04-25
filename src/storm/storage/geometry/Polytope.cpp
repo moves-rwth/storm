@@ -176,6 +176,25 @@ namespace storm {
                 }
                 return affineTransformation(idMatrix, b);
             }
+            
+            template <typename ValueType>
+            std::vector<std::shared_ptr<Polytope<ValueType>>> Polytope<ValueType>::setMinus(std::shared_ptr<Polytope<ValueType>> const& rhs) const {
+                std::vector<std::shared_ptr<Polytope<ValueType>>> result;
+                auto rhsHalfspaces = rhs->getHalfspaces();
+                std::shared_ptr<Polytope<ValueType>> remaining = nullptr;
+                for (auto const& h : rhsHalfspaces) {
+                    Polytope<ValueType> const& ref = (remaining == nullptr) ? *this : *remaining;
+                    auto next = ref.intersection(h.invert());
+                    if (!next->isEmpty()) {
+                        result.push_back(next);
+                    }
+                    remaining = ref.intersection(h);
+                    if (remaining->isEmpty()) {
+                        break;
+                    }
+                }
+                return result;
+            }
 
             template <typename ValueType>
             std::shared_ptr<Polytope<ValueType>> Polytope<ValueType>::downwardClosure() const {
@@ -234,6 +253,12 @@ namespace storm {
                 return false;
             }
             
+            template <typename ValueType>
+            std::shared_ptr<Polytope<ValueType>> Polytope<ValueType>::clean() {
+                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "functionality not implemented for this polytope type.");
+                return nullptr;
+            }
+
             template class Polytope<double>;
             template std::shared_ptr<Polytope<double>> Polytope<double>::convertNumberRepresentation() const;
             

@@ -11,6 +11,7 @@
 #include "storm/storage/BitVector.h"
 #include "storm/utility/math.h"
 #include "storm/utility/macros.h"
+#include "storm/exceptions/NotSupportedException.h"
 
 #include "storm-dft/storage/dft/DFTElements.h"
 #include "storm-dft/storage/dft/SymmetricUnits.h"
@@ -134,11 +135,24 @@ namespace storm {
 
             std::vector<size_t> nonColdBEs() const {
                 std::vector<size_t> result;
-                for(DFTElementPointer elem : mElements) {
-                    if(elem->isBasicElement()) {
+                for (DFTElementPointer elem : mElements) {
+                    if (elem->isBasicElement()) {
                         std::shared_ptr<DFTBE<ValueType>> be = std::static_pointer_cast<DFTBE<ValueType>>(elem);
-                        if (be->canFail() && !be->isColdBasicElement()) {
-                            result.push_back(be->id());
+                        if (be->canFail()) {
+                            switch (be->type()) {
+                                case storm::storage::DFTElementType::BE_EXP: {
+                                    auto beExp = std::static_pointer_cast<BEExponential<ValueType>>(be);
+                                    if (!beExp->isColdBasicElement()) {
+                                        result.push_back(be->id());
+                                    }
+                                    break;
+                                }
+                                case storm::storage::DFTElementType::BE_CONST:
+                                    result.push_back(be->id());
+                                    break;
+                                default:
+                                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "BE type '" << be->type() << "' is not supported.");
+                            }
                         }
                     }
                 }
@@ -290,6 +304,38 @@ namespace storm {
             }
 
             void writeStatsToStream(std::ostream& stream) const;
+
+            /*!
+             * Get Ids of all elements.
+             * @return All element ids.
+             */
+            std::set<size_t> getAllIds() const;
+
+            /*!
+             * Get id for the given element name.
+             * @param name Name of element.
+             * @return Index of element.
+             */
+            size_t getIndex(std::string const& name) const;
+
+            /*!
+             * Get all relevant events.
+             * @return List of all relevant events.
+             */
+            std::set<size_t> getRelevantEvents() const;
+
+            /*!
+             * Set the relevance flag for all elements according to the given relevant events.
+             * @param relevantEvents All elements which should be to relevant. All elements not occuring are set to irrelevant.
+             * @param allowDCForRelevantEvents Flag whether Don't Care propagation is allowed even for relevant events.
+             */
+            void setRelevantEvents(std::set<size_t> const& relevantEvents, bool allowDCForRelevantEvents) const;
+
+            /*!
+             * Get a string containing the list of all relevant events.
+             * @return String containing all relevant events.
+             */
+            std::string getRelevantEventsString() const;
 
         private:
             std::tuple<std::vector<size_t>, std::vector<size_t>, std::vector<size_t>> getSortedParentAndDependencyIds(size_t index) const;

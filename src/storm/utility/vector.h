@@ -103,10 +103,11 @@ namespace storm {
             /*!
              * Constructs a vector [min, min+1, ...., max-1]
              */
-            inline std::vector<uint_fast64_t> buildVectorForRange(uint_fast64_t min, uint_fast64_t max) {
-                STORM_LOG_ASSERT(min < max, "Invalid range.");
-                uint_fast64_t diff = max - min;
-                std::vector<uint_fast64_t> v;
+            template<typename T>
+            inline std::vector<T> buildVectorForRange(T min, T max) {
+                STORM_LOG_ASSERT(min <= max, "Invalid range.");
+                T diff = max - min;
+                std::vector<T> v;
                 v.reserve(diff);
                 iota_n(std::back_inserter(v), diff, min);
                 return v;
@@ -119,7 +120,7 @@ namespace storm {
              */
             template<typename T>
             std::vector<uint_fast64_t> getSortedIndices(std::vector<T> const& v){
-                std::vector<uint_fast64_t> res = buildVectorForRange(0, v.size());
+                std::vector<uint_fast64_t> res = buildVectorForRange<uint_fast64_t>(0, v.size());
                 std::sort(res.begin(), res.end(), [&v](uint_fast64_t index1, uint_fast64_t index2) { return v[index1] > v[index2];});
                 return res;
             }

@@ -6,13 +6,17 @@
 
 namespace storm {
     namespace storage {
-        
+
         template<typename ValueType>
         bool DFTElement<ValueType>::checkDontCareAnymore(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const {
+            if (!this->mAllowDC) {
+                return false;
+            }
+
             if (state.dontCare(mId)) {
                 return false;
             }
-            
+
             // Check that no outgoing dependencies can be triggered anymore
             // Notice that n-ary dependencies are supported via rewriting them during build-time
             for (DFTDependencyPointer dependency : mOutgoingDependencies) {
@@ -21,23 +25,23 @@ namespace storm {
                     return false;
                 }
             }
-            
+
             bool hasParentSpare = false;
 
             // Check that no parent can fail anymore
-            for(DFTGatePointer const& parent : mParents) {
-                if(state.isOperational(parent->id())) {
+            for (DFTGatePointer const& parent : mParents) {
+                if (state.isOperational(parent->id())) {
                     return false;
                 }
                 if (parent->isSpareGate()) {
                     hasParentSpare = true;
                 }
             }
-            
-            if(!mRestrictions.empty() && state.hasOperationalPostSeqElements(mId)) {
+
+            if (!mRestrictions.empty() && state.hasOperationalPostSeqElements(mId)) {
                 return false;
             }
-            
+
             state.setDontCare(mId);
             if (hasParentSpare) {
                 // Activate child for consistency in failed spares
@@ -48,8 +52,8 @@ namespace storm {
 
         template<typename ValueType>
         void DFTElement<ValueType>::extendSpareModule(std::set<size_t>& elementsInModule) const {
-            for(auto const& parent : mParents) {
-                if(elementsInModule.count(parent->id()) == 0 && !parent->isSpareGate()) {
+            for (auto const& parent : mParents) {
+                if (elementsInModule.count(parent->id()) == 0 && !parent->isSpareGate()) {
                     elementsInModule.insert(parent->id());
                     parent->extendSpareModule(elementsInModule);
                 }
@@ -78,48 +82,42 @@ namespace storm {
 
         template<typename ValueType>
         void DFTElement<ValueType>::extendSubDft(std::set<size_t>& elemsInSubtree, std::vector<size_t> const& parentsOfSubRoot, bool blockParents, bool sparesAsLeaves) const {
-            if(elemsInSubtree.count(this->id()) > 0) return;
-            if(std::find(parentsOfSubRoot.begin(), parentsOfSubRoot.end(), mId) != parentsOfSubRoot.end()) {
+            if (elemsInSubtree.count(this->id()) > 0) return;
+            if (std::find(parentsOfSubRoot.begin(), parentsOfSubRoot.end(), mId) != parentsOfSubRoot.end()) {
                 // This is a parent of the suspected root, thus it is not a subdft.
                 elemsInSubtree.clear();
                 return;
             }
             elemsInSubtree.insert(mId);
-            for(auto const& parent : mParents) {
-                if(blockParents && std::find(parentsOfSubRoot.begin(), parentsOfSubRoot.end(), parent->id()) != parentsOfSubRoot.end()) {
+            for (auto const& parent : mParents) {
+                if (blockParents && std::find(parentsOfSubRoot.begin(), parentsOfSubRoot.end(), parent->id()) != parentsOfSubRoot.end()) {
                     continue;
                 }
                 parent->extendSubDft(elemsInSubtree, parentsOfSubRoot, blockParents, sparesAsLeaves);
-                if(elemsInSubtree.empty()) {
+                if (elemsInSubtree.empty()) {
                     return;
                 }
             }
-            for(auto const& dep : mOutgoingDependencies) {
+            for (auto const& dep : mOutgoingDependencies) {
                 dep->extendSubDft(elemsInSubtree, parentsOfSubRoot, blockParents, sparesAsLeaves);
-                if(elemsInSubtree.empty()) {
+                if (elemsInSubtree.empty()) {
                     return;
                 }
 
             }
-            
-            for(auto const& restr : mRestrictions) {
+
+            for (auto const& restr : mRestrictions) {
                 restr->extendSubDft(elemsInSubtree, parentsOfSubRoot, blockParents, sparesAsLeaves);
-                if(elemsInSubtree.empty()) {
+                if (elemsInSubtree.empty()) {
                     return;
                 }
             }
-            
+
         }
         
-        
-
         // Explicitly instantiate the class.
         template class DFTElement<double>;
-
-#ifdef STORM_HAVE_CARL
         template class DFTElement<RationalFunction>;
-#endif
-        
 
     }
 }

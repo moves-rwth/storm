@@ -10,6 +10,7 @@
 
 #include "storm/utility/macros.h"
 #include "storm/utility/constants.h"
+#include "storm/utility/vector.h"
 
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/ExpressionManager.h"
@@ -25,7 +26,7 @@ namespace storm {
         
 #ifdef STORM_HAVE_GUROBI
         template<typename ValueType>
-        GurobiLpSolver<ValueType>::GurobiLpSolver(std::string const& name, OptimizationDirection const& optDir) : LpSolver<ValueType>(optDir), env(nullptr), model(nullptr), nextVariableIndex(0) {
+        GurobiLpSolver<ValueType>::GurobiLpSolver(std::string const& name, OptimizationDirection const& optDir) : LpSolver<ValueType>(optDir), env(nullptr), model(nullptr), nextVariableIndex(0), nextConstraintIndex(0) {
             // Create the environment.
             int error = GRBloadenv(&env, "");
             if (error || env == nullptr) {
@@ -164,6 +165,9 @@ namespace storm {
             STORM_LOG_THROW(error == 0, storm::exceptions::InvalidStateException, "Could not create binary Gurobi variable (" << GRBgeterrormsg(env) << ", error code " << error << ").");
             this->variableToIndexMap.emplace(variable, nextVariableIndex);
             ++nextVariableIndex;
+            if (!incrementalData.empty()) {
+                incrementalData.back().variables.push_back(variable);
+            }
         }
         
         template<typename ValueType>
@@ -205,6 +209,7 @@ namespace storm {
                 default:
                     STORM_LOG_ASSERT(false, "Illegal operator in LP solver constraint.");
             }
+            ++nextConstraintIndex;
             STORM_LOG_THROW(error == 0, storm::exceptions::InvalidStateException, "Could not assert constraint (" << GRBgeterrormsg(env) << ", error code " << error << ").");
         }
         
@@ -385,6 +390,50 @@ namespace storm {
             int error = GRBsetintparam(env, "OutputFlag", set);
             STORM_LOG_THROW(error == 0, storm::exceptions::InvalidStateException, "Unable to set Gurobi Parameter OutputFlag (" << GRBgeterrormsg(env) << ", error code " << error << ").");
         }
+        
+        template<typename ValueType>
+        void GurobiLpSolver<ValueType>::push() {
+            IncrementalLevel lvl;
+            lvl.firstConstraintIndex = nextConstraintIndex;
+            incrementalData.push_back(lvl);
+        }
+        
+        template<typename ValueType>
+        void GurobiLpSolver<ValueType>::pop() {
+            if (incrementalData.empty()) {
+                STORM_LOG_ERROR("Tried to pop from a solver without pushing before.");
+            } else {
+                // TODO: check if we need to update before deleting
+                IncrementalLevel const& lvl = incrementalData.back();
+                
+                std::vector<int> indicesToBeRemoved = storm::utility::vector::buildVectorForRange(lvl.firstConstraintIndex, nextConstraintIndex);
+                GRBdelconstrs(model, indicesToBeRemoved.size(), indicesToBeRemoved.data());
+                nextConstraintIndex = lvl.firstConstraintIndex;
+                indicesToBeRemoved.clear();
+                
+                if (!lvl.variables.empty()) {
+                    int firstIndex = -1;
+                    bool first = true;
+                    for (auto const& var : lvl.variables) {
+                        if (first) {
+                            auto it = variableToIndexMap.find(var);
+                            firstIndex = it->second;
+                            variableToIndexMap.erase(it);
+                            first = false;
+                        } else {
+                            variableToIndexMap.erase(var);
+                        }
+                    }
+                    std::vector<int> indicesToBeRemoved = storm::utility::vector::buildVectorForRange(firstIndex, nextVariableIndex);
+                    GRBdelvars(model, indicesToBeRemoved.size(), indicesToBeRemoved.data());
+                    nextVariableIndex = firstIndex;
+                }
+                incrementalData.pop_back();
+                update();
+            }
+        }
+        
+        
 #else
         template<typename ValueType>
         GurobiLpSolver<ValueType>::GurobiLpSolver(std::string const&, OptimizationDirection const&) {
@@ -512,6 +561,16 @@ namespace storm {
 
         template<typename ValueType>
         void GurobiLpSolver<ValueType>::toggleOutput(bool) const {
+            throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
+        }
+        
+        template<typename ValueType>
+        void GurobiLpSolver<ValueType>::push() {
+            throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
+        }
+        
+        template<typename ValueType>
+        void GurobiLpSolver<ValueType>::pop() {
             throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
         }
 

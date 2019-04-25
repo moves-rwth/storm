@@ -257,6 +257,16 @@ namespace storm {
         void Z3LpSolver<ValueType>::writeModelToFile(std::string const& filename) const {
             STORM_LOG_THROW(!this->isUnbounded(), storm::exceptions::NotImplementedException, "Exporting LP Problems to a file is not implemented for z3.");
         }
+        
+        template<typename ValueType>
+        void Z3LpSolver<ValueType>::push()  {
+            solver->push();
+        }
+        
+        template<typename ValueType>
+        void Z3LpSolver<ValueType>::pop()  {
+            solver->pop();
+        }
 
 #else
         template<typename ValueType>
@@ -382,9 +392,14 @@ namespace storm {
         ValueType Z3LpSolver<ValueType>::getObjectiveValue() const {
             throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. Yet, a method was called that requires this support.";
         }
-
+        
         template<typename ValueType>
-        void Z3LpSolver<ValueType>::writeModelToFile(std::string const&) const {
+        void Z3LpSolver<ValueType>::push()  {
+            throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. Yet, a method was called that requires this support.";
+        }
+        
+        template<typename ValueType>
+        void Z3LpSolver<ValueType>::pop()  {
             throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. Yet, a method was called that requires this support.";
         }
 #endif

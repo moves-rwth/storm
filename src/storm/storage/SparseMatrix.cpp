@@ -598,7 +598,7 @@ namespace storm {
             // If there is no current row grouping, we need to create it.
             if (!this->rowGroupIndices) {
                 STORM_LOG_ASSERT(trivialRowGrouping, "Only trivial row-groupings can be constructed on-the-fly.");
-                this->rowGroupIndices = storm::utility::vector::buildVectorForRange(0, this->getRowGroupCount() + 1);
+                this->rowGroupIndices = storm::utility::vector::buildVectorForRange(static_cast<index_type>(0), this->getRowGroupCount() + 1);
             }
             return rowGroupIndices.get();
         }
@@ -627,7 +627,7 @@ namespace storm {
         template<typename ValueType>
         void SparseMatrix<ValueType>::makeRowGroupingTrivial() {
             if (trivialRowGrouping) {
-                STORM_LOG_ASSERT(!rowGroupIndices || rowGroupIndices.get() == storm::utility::vector::buildVectorForRange(0, this->getRowGroupCount() + 1), "Row grouping is supposed to be trivial but actually it is not.");
+                STORM_LOG_ASSERT(!rowGroupIndices || rowGroupIndices.get() == storm::utility::vector::buildVectorForRange(static_cast<index_type>(0), this->getRowGroupCount() + 1), "Row grouping is supposed to be trivial but actually it is not.");
             } else {
                 trivialRowGrouping = true;
                 rowGroupIndices = boost::none;
@@ -2150,6 +2150,17 @@ namespace storm {
             return true;
         }
 
+        template<typename ValueType>
+        std::string SparseMatrix<ValueType>::getDimensionsAsString() const {
+            std::string result = std::to_string(getRowCount()) + "x" + std::to_string(getColumnCount()) + " matrix (" + std::to_string(getNonzeroEntryCount()) + " non-zeroes";
+            if (!hasTrivialRowGrouping()) {
+                result += ", " + std::to_string(getRowGroupCount()) + " groups";
+            }
+            result += ")";
+            return result;
+        }
+
+        
         template<typename ValueType>
         std::ostream& operator<<(std::ostream& out, SparseMatrix<ValueType> const& matrix) {
             // Print column numbers in header.

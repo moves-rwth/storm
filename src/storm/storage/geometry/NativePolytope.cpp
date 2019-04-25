@@ -395,6 +395,11 @@ namespace storm {
                 }
                 return result;
             }
+            
+            template <typename ValueType>
+            std::shared_ptr<Polytope<ValueType>> NativePolytope<ValueType>::clean() {
+                return create(boost::none, getVertices());
+            }
 
 
             template class NativePolytope<double>;

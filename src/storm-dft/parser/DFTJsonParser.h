@@ -40,7 +40,7 @@ namespace storm {
         private:
             storm::storage::DFT<ValueType> parseJson(json const& jsonInput);
 
-            std::string generateUniqueName(std::string const& id, std::string const& name);
+            std::string generateUniqueName(std::string const& name);
 
             ValueType parseRationalExpression(std::string const& expr);
 
