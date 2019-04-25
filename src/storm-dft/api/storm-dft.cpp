@@ -53,7 +53,7 @@ namespace storm {
             uint64_t lower_bound = smtChecker.getLeastFailureBound();
             uint64_t upper_bound = smtChecker.getAlwaysFailedBound();
             if (printOutput) {
-                //TODO add suitable output function, maybe add query descriptions for better readability
+                // TODO add suitable output function, maybe add query descriptions for better readability
                 for (size_t i = 0; i < results.size(); ++i) {
                     std::string tmp = "unknown";
                     if (results.at(i) == storm::solver::SmtSolver::CheckResult::Sat) {

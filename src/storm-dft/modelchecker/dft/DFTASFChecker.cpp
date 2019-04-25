@@ -119,8 +119,8 @@ namespace storm {
                 }
             }
 
-            // Constraint (8)
-            addClaimingConstraints();
+            // Constraint (8) intentionally commented out for testing purposes
+            //addClaimingConstraints();
 
             // Handle dependencies
             addMarkovianConstraints();
@@ -505,10 +505,8 @@ namespace storm {
         }
 
         uint64_t DFTASFChecker::getLeastFailureBound(uint_fast64_t timeout) {
+            STORM_LOG_TRACE("Compute lower bound for number of BE failures necessary for the DFT to fail");
             STORM_LOG_ASSERT(solver, "SMT Solver was not initialized, call toSolver() before checking queries");
-            if (checkTleNeverFailed() == storm::solver::SmtSolver::CheckResult::Sat) {
-                return notFailed;
-            }
             uint64_t bound = 0;
             while (bound < notFailed) {
                 setSolverTimeout(timeout * 1000);
@@ -518,7 +516,7 @@ namespace storm {
                     case storm::solver::SmtSolver::CheckResult::Sat:
                         return bound;
                     case storm::solver::SmtSolver::CheckResult::Unknown:
-                        STORM_LOG_DEBUG("Solver returned 'Unknown'");
+                        STORM_LOG_DEBUG("Lower bound: Solver returned 'Unknown'");
                         return bound;
                     default:
                         ++bound;
@@ -530,6 +528,7 @@ namespace storm {
         }
 
         uint64_t DFTASFChecker::getAlwaysFailedBound(uint_fast64_t timeout) {
+            STORM_LOG_TRACE("Compute bound for number of BE failures such that the DFT always fails");
             STORM_LOG_ASSERT(solver, "SMT Solver was not initialized, call toSolver() before checking queries");
             if (checkTleNeverFailed() == storm::solver::SmtSolver::CheckResult::Sat) {
                 return notFailed;
@@ -543,7 +542,7 @@ namespace storm {
                     case storm::solver::SmtSolver::CheckResult::Sat:
                         return bound;
                     case storm::solver::SmtSolver::CheckResult::Unknown:
-                        STORM_LOG_DEBUG("Solver returned 'Unknown'");
+                        STORM_LOG_DEBUG("Upper bound: Solver returned 'Unknown'");
                         return bound;
                     default:
                         --bound;
