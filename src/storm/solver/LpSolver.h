@@ -5,6 +5,7 @@
 #include <vector>
 #include <cstdint>
 #include <memory>
+#include <boost/optional.hpp>
 #include "OptimizationDirection.h"
 
 namespace storm {
@@ -81,6 +82,18 @@ namespace storm {
              */
             virtual storm::expressions::Variable addUnboundedContinuousVariable(std::string const& name, ValueType objectiveFunctionCoefficient = 0) = 0;
             
+           
+            /*!
+             * Registers a continuous variable, i.e. a variable that may take all real values within its bounds (if given).
+             *
+             * @param name The name of the variable.
+             * @param lowerBound The lower bound of the variable (unbounded if not given).
+             * @param upperBound The upper bound of the variable (unbounded if not given).
+             * @param objectiveFunctionCoefficient The coefficient with which the variable appears in the objective
+             * function. If omitted (or set to zero), the variable is irrelevant for the objective value.
+             */
+            storm::expressions::Variable addContinuousVariable(std::string const& name, boost::optional<ValueType> const& lowerBound = boost::none, boost::optional<ValueType> const& upperBound = boost::none, ValueType objectiveFunctionCoefficient = 0);
+            
             /*!
              * Registers an upper- and lower-bounded integer variable, i.e. a variable that may take all integer values
              * within its bounds.
@@ -123,6 +136,17 @@ namespace storm {
              * function. If omitted (or set to zero), the variable is irrelevant for the objective value.
              */
             virtual storm::expressions::Variable addUnboundedIntegerVariable(std::string const& name, ValueType objectiveFunctionCoefficient = 0) = 0;
+            
+            /*!
+             * Registers an integer variable, i.e. a variable that may take all integer values within its bounds (if given).
+             *
+             * @param name The name of the variable.
+             * @param lowerBound The lower bound of the variable.
+             * @param upperBound The upper bound of the variable.
+             * @param objectiveFunctionCoefficient The coefficient with which the variable appears in the objective
+             * function. If omitted (or set to zero), the variable is irrelevant for the objective value.
+             */
+            virtual storm::expressions::Variable addIntegerVariable(std::string const& name, boost::optional<ValueType> const& lowerBound = boost::none, boost::optional<ValueType> const& upperBound = boost::none, ValueType objectiveFunctionCoefficient = 0);
             
             /*!
              * Registers a boolean variable, i.e. a variable that may be either 0 or 1.
@@ -259,6 +283,18 @@ namespace storm {
                 return *manager;
             }
             
+			/*!
+             * Pushes a backtracking point on the solver's stack. A following call to pop() deletes exactly those
+             * assertions from the solver's stack that were added after this call.
+             */
+			virtual void push() = 0;
+   
+			/*!
+             * Pops a backtracking point from the solver's stack. This deletes all assertions from the solver's stack
+             * that were added after the last call to push().
+             */
+			virtual void pop() = 0;
+        
         protected:
             // The manager responsible for the variables.
             std::shared_ptr<storm::expressions::ExpressionManager> manager;

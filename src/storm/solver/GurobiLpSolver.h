@@ -57,6 +57,12 @@ namespace storm {
             GurobiLpSolver();
             
             /*!
+             * Creates a (deep) copy of this solver.
+             * @param other
+             */
+            GurobiLpSolver(GurobiLpSolver<ValueType> const& other);
+            
+            /*!
              * Destructs a solver by freeing the pointers to Gurobi's structures.
              */
             virtual ~GurobiLpSolver();
@@ -99,6 +105,8 @@ namespace storm {
 
             virtual void toggleOutput(bool set) const;
             
+            virtual void push() override;
+            virtual void pop() override;
         private:
             /*!
              * Sets some properties of the Gurobi environment according to parameters given by the options.
@@ -126,8 +134,17 @@ namespace storm {
             // The index of the next variable.
             int nextVariableIndex;
             
+            // The index of the next constraint.
+            int nextConstraintIndex;
+            
             // A mapping from variables to their indices.
             std::map<storm::expressions::Variable, int> variableToIndexMap;
+            
+            struct IncrementalLevel {
+                std::vector<storm::expressions::Variable> variables;
+                int firstConstraintIndex;
+            };
+            std::vector<IncrementalLevel> incrementalData;
         };
 
     }

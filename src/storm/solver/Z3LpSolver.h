@@ -95,6 +95,9 @@ namespace storm {
             
             // Methods to print the LP problem to a file.
             virtual void writeModelToFile(std::string const& filename) const override;
+            
+            virtual void push() override;
+            virtual void pop() override;
 
         private:
              virtual storm::expressions::Expression getValue(storm::expressions::Variable const& variable) const;
