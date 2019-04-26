@@ -66,7 +66,6 @@ namespace storm {
                     return create(points);
                 }
                 assert(points.front().size() == selectedDimensions.size());
-                uint64_t dimensions = selectedDimensions.size();
                 
                 std::vector<Halfspace<ValueType>> halfspaces;
                 // We build the convex hull of the given points.
