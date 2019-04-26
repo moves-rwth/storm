@@ -6,6 +6,8 @@
 #include <boost/optional.hpp>
 
 #include "storm/storage/geometry/Halfspace.h"
+#include "storm/storage/BitVector.h"
+#include "storm/storage/expressions/Expressions.h"
 
 namespace storm {
     namespace storage {
@@ -43,9 +45,16 @@ namespace storm {
                 
                 /*!
                  * Creates the downward closure of the given points (i.e., the set { x | ex. y \in conv(points) : x<=y }
-                 * If the vector of points is empty, the resulting polytope be empty.
+                 * If the vector of points is empty, the resulting polytope is empty.
                  */
                 static std::shared_ptr<Polytope<ValueType>> createDownwardClosure(std::vector<Point> const& points);
+                
+                /*!
+                 * Creates the downward closure of the given points but only with respect to the selected dimensions,
+                 * (i.e., the set { x | ex. y \in conv(points) : (x_i<=y_i if i in selectedDim) and (x_i==y_i if i not in selectedDim }
+                 * If the vector of points is empty, the resulting polytope is empty.
+                 */
+                static std::shared_ptr<Polytope<ValueType>> createSelectiveDownwardClosure(std::vector<Point> const& points, storm::storage::BitVector const& selectedDimensions);
                 
                 /*!
                  * Returns the vertices of this polytope.
@@ -109,6 +118,13 @@ namespace storm {
                 virtual std::shared_ptr<Polytope<ValueType>> affineTransformation(std::vector<Point> const& matrix, Point const& vector) const = 0;
                 
                 /*!
+                 * Returns the Polytope described by the set {x+b | x \in this}
+                 *
+                 * @param b the transformation offset
+                 */
+                std::shared_ptr<Polytope<ValueType>> shift(Point const& b) const;
+                
+                /*!
                  * Returns the downward closure of this, i.e., the set { x | ex. y \in P : x<=y} where P is this Polytope.
                  */
                 virtual std::shared_ptr<Polytope<ValueType>> downwardClosure() const;
@@ -129,6 +145,18 @@ namespace storm {
                  * - The polytope is not bounded in the given direction
                  */
                 virtual std::pair<Point, bool> optimize(Point const& direction) const = 0;
+                
+                /*!
+                 * Declares one variable for each dimension and returns the obtained variables.
+                 * @param manager The expression manager that keeps track of the variables
+                 * @param namePrefix The prefix that is prepanded to the variable index
+                 */
+                virtual std::vector<storm::expressions::Variable> declareVariables(storm::expressions::ExpressionManager& manager, std::string const& namePrefix) const;
+
+                /*!
+                 * Returns the constrains defined by this polytope as an expression over the given variables
+                 */
+                virtual std::vector<storm::expressions::Expression> getConstraints(storm::expressions::ExpressionManager const& manager, std::vector<storm::expressions::Variable> const& variables) const;
                 
                 /*!
                  * converts the intern number representation of the polytope to the given target type

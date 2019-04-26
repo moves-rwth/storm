@@ -1,8 +1,10 @@
 #ifndef STORM_STORAGE_GEOMETRY_NATIVEPOLYTOPE_H_
 #define STORM_STORAGE_GEOMETRY_NATIVEPOLYTOPE_H_
 
+#include <memory>
 #include "storm/storage/geometry/Polytope.h"
 #include "storm/adapters/EigenAdapter.h"
+#include "storm/storage/expressions/Expression.h"
 
 namespace storm {
     namespace storage {
