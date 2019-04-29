@@ -93,69 +93,72 @@ namespace storm {
         
         template<typename ValueType>
         storm::expressions::Variable GurobiLpSolver<ValueType>::addBoundedContinuousVariable(std::string const& name, ValueType lowerBound, ValueType upperBound, ValueType objectiveFunctionCoefficient) {
-            storm::expressions::Variable newVariable = this->manager->declareVariable(name, this->manager->getRationalType());
+            storm::expressions::Variable newVariable = this->manager->declareOrGetVariable(name, this->manager->getRationalType());
             this->addVariable(newVariable, GRB_CONTINUOUS, lowerBound, upperBound, objectiveFunctionCoefficient);
             return newVariable;
         }
         
         template<typename ValueType>
         storm::expressions::Variable GurobiLpSolver<ValueType>::addLowerBoundedContinuousVariable(std::string const& name, ValueType lowerBound, ValueType objectiveFunctionCoefficient) {
-            storm::expressions::Variable newVariable = this->manager->declareVariable(name, this->manager->getRationalType());
+            storm::expressions::Variable newVariable = this->manager->declareOrGetVariable(name, this->manager->getRationalType());
             this->addVariable(newVariable, GRB_CONTINUOUS, lowerBound, GRB_INFINITY, objectiveFunctionCoefficient);
             return newVariable;
         }
 
         template<typename ValueType>
         storm::expressions::Variable GurobiLpSolver<ValueType>::addUpperBoundedContinuousVariable(std::string const& name, ValueType upperBound, ValueType objectiveFunctionCoefficient) {
-            storm::expressions::Variable newVariable = this->manager->declareVariable(name, this->manager->getRationalType());
+            storm::expressions::Variable newVariable = this->manager->declareOrGetVariable(name, this->manager->getRationalType());
             this->addVariable(newVariable, GRB_CONTINUOUS, -GRB_INFINITY, upperBound, objectiveFunctionCoefficient);
             return newVariable;
         }
 
         template<typename ValueType>
         storm::expressions::Variable GurobiLpSolver<ValueType>::addUnboundedContinuousVariable(std::string const& name, ValueType objectiveFunctionCoefficient) {
-            storm::expressions::Variable newVariable = this->manager->declareVariable(name, this->manager->getRationalType());
+            storm::expressions::Variable newVariable = this->manager->declareOrGetVariable(name, this->manager->getRationalType());
             this->addVariable(newVariable, GRB_CONTINUOUS, -GRB_INFINITY, GRB_INFINITY, objectiveFunctionCoefficient);
             return newVariable;
         }
         
         template<typename ValueType>
         storm::expressions::Variable GurobiLpSolver<ValueType>::addBoundedIntegerVariable(std::string const& name, ValueType lowerBound, ValueType upperBound, ValueType objectiveFunctionCoefficient) {
-            storm::expressions::Variable newVariable = this->manager->declareVariable(name, this->manager->getIntegerType());
+            storm::expressions::Variable newVariable = this->manager->declareOrGetVariable(name, this->manager->getIntegerType());
             this->addVariable(newVariable, GRB_INTEGER, lowerBound, upperBound, objectiveFunctionCoefficient);
             return newVariable;
         }
         
         template<typename ValueType>
         storm::expressions::Variable GurobiLpSolver<ValueType>::addLowerBoundedIntegerVariable(std::string const& name, ValueType lowerBound, ValueType objectiveFunctionCoefficient) {
-            storm::expressions::Variable newVariable = this->manager->declareVariable(name, this->manager->getIntegerType());
+            storm::expressions::Variable newVariable = this->manager->declareOrGetVariable(name, this->manager->getIntegerType());
             this->addVariable(newVariable, GRB_INTEGER, lowerBound, GRB_INFINITY, objectiveFunctionCoefficient);
             return newVariable;
         }
         
         template<typename ValueType>
         storm::expressions::Variable GurobiLpSolver<ValueType>::addUpperBoundedIntegerVariable(std::string const& name, ValueType upperBound, ValueType objectiveFunctionCoefficient) {
-            storm::expressions::Variable newVariable = this->manager->declareVariable(name, this->manager->getIntegerType());
+            storm::expressions::Variable newVariable = this->manager->declareOrGetVariable(name, this->manager->getIntegerType());
             this->addVariable(newVariable, GRB_INTEGER, -GRB_INFINITY, upperBound, objectiveFunctionCoefficient);
             return newVariable;
         }
         
         template<typename ValueType>
         storm::expressions::Variable GurobiLpSolver<ValueType>::addUnboundedIntegerVariable(std::string const& name, ValueType objectiveFunctionCoefficient) {
-            storm::expressions::Variable newVariable = this->manager->declareVariable(name, this->manager->getIntegerType());
+            storm::expressions::Variable newVariable = this->manager->declareOrGetVariable(name, this->manager->getIntegerType());
             this->addVariable(newVariable, GRB_INTEGER, -GRB_INFINITY, GRB_INFINITY, objectiveFunctionCoefficient);
             return newVariable;
         }
         
         template<typename ValueType>
         storm::expressions::Variable GurobiLpSolver<ValueType>::addBinaryVariable(std::string const& name, ValueType objectiveFunctionCoefficient) {
-            storm::expressions::Variable newVariable = this->manager->declareVariable(name, this->manager->getIntegerType());
+            storm::expressions::Variable newVariable = this->manager->declareOrGetVariable(name, this->manager->getIntegerType());
             this->addVariable(newVariable, GRB_BINARY, 0, 1, objectiveFunctionCoefficient);
             return newVariable;
         }
 
         template<typename ValueType>
         void GurobiLpSolver<ValueType>::addVariable(storm::expressions::Variable const& variable, char variableType, ValueType lowerBound, ValueType upperBound, ValueType objectiveFunctionCoefficient) {
+            // Assert whether the variable does not exist yet.
+            // Due to incremental usage (push(), pop()), a variable might be declared in the manager but not in the lp model.
+            STORM_LOG_ASSERT(variableToIndexMap.count(variable) == 0, "Variable " << variable.getName() << " exists already in the model.");
             // Check for valid variable type.
             STORM_LOG_ASSERT(variableType == GRB_CONTINUOUS || variableType == GRB_INTEGER || variableType == GRB_BINARY, "Illegal type '" << variableType << "' for Gurobi variable.");
             
