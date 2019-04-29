@@ -247,7 +247,7 @@ namespace storm {
             
             
             template <class SparseModelType, typename GeometryValueType>
-            typename DeterministicSchedsParetoExplorer<SparseModelType, GeometryValueType>::Polytope const& DeterministicSchedsParetoExplorer<SparseModelType, GeometryValueType>::Facet::getInducedPolytope(Pointset const& pointset, std::vector<GeometryValueType> const& referenceCoordinates) {
+            typename DeterministicSchedsParetoExplorer<SparseModelType, GeometryValueType>::Polytope DeterministicSchedsParetoExplorer<SparseModelType, GeometryValueType>::Facet::getInducedPolytope(Pointset const& pointset, std::vector<GeometryValueType> const& referenceCoordinates) {
                 std::vector<std::vector<GeometryValueType>> vertices = {referenceCoordinates};
                 for (auto const& pId : pointsOnFacet) {
                     vertices.push_back(pointset.getPoint(pId).get());

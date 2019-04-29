@@ -112,7 +112,7 @@ namespace storm {
                     /*!
                      * Creates a polytope that captures all points that lie 'under' the facet
                      */
-                    Polytope const& getInducedPolytope(Pointset const& pointset, std::vector<GeometryValueType> const& referenceCoordinates);
+                    Polytope getInducedPolytope(Pointset const& pointset, std::vector<GeometryValueType> const& referenceCoordinates);
 
                 private:
                     storm::storage::geometry::Halfspace<GeometryValueType> halfspace;
