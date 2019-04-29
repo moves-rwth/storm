@@ -3,12 +3,19 @@
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
+#include "storm/modelchecker/csl/SparseMarkovAutomatonCslModelChecker.h"
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
+#include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/storage/BitVector.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/FilteredRewardModel.h"
+#include "storm/utility/vector.h"
 #include "storm/logic/Formulas.h"
+#include "storm/logic/CloneVisitor.h"
+#include "storm/environment/solver/MinMaxSolverEnvironment.h"
+
 
 #include "storm/exceptions/UnexpectedException.h"
 namespace storm {
@@ -140,14 +147,66 @@ namespace storm {
                 return choiceValueOffsets.get();
             }
             
-            template <typename ModelType>
-            typename ModelType::ValueType const& DeterministicSchedsObjectiveHelper<ModelType>::getUpperValueBoundAtState(uint64_t state) const{
-                return objective.upperResultBound.get();
+            template <typename ValueType>
+            std::vector<ValueType> evaluateOperatorFormula(Environment const& env, storm::models::sparse::Mdp<ValueType> const& model, storm::logic::Formula const& formula) {
+                storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<ValueType>> mc(model);
+                storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> task(formula, false);
+                auto checkResult = mc.check(env, task);
+                STORM_LOG_THROW(checkResult && checkResult->isExplicitQuantitativeCheckResult(), storm::exceptions::UnexpectedException, "Unexpected type of check result for subformula " << formula << ".");
+                return checkResult->template asExplicitQuantitativeCheckResult<ValueType>().getValueVector();
+            }
+            
+            template <typename ValueType>
+            std::vector<ValueType> evaluateOperatorFormula(Environment const& env, storm::models::sparse::MarkovAutomaton<ValueType> const& model, storm::logic::Formula const& formula) {
+                storm::modelchecker::SparseMarkovAutomatonCslModelChecker<storm::models::sparse::MarkovAutomaton<ValueType>> mc(model);
+                storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> task(formula, false);
+                auto checkResult = mc.check(env, task);
+                STORM_LOG_THROW(checkResult && checkResult->isExplicitQuantitativeCheckResult(), storm::exceptions::UnexpectedException, "Unexpected type of check result for subformula " << formula << ".");
+                return checkResult->template asExplicitQuantitativeCheckResult<ValueType>().getValueVector();
             }
             
             template <typename ModelType>
-            typename ModelType::ValueType const& DeterministicSchedsObjectiveHelper<ModelType>::getLowerValueBoundAtState(uint64_t state) const{
-                return objective.lowerResultBound.get();
+            std::vector<typename ModelType::ValueType> computeValueBounds(Environment const& env, bool lowerValueBounds, ModelType const& model, storm::logic::Formula const& formula) {
+                // Change the optimization direction in the formula.
+                auto newFormula = storm::logic::CloneVisitor().clone(formula);
+                newFormula->asOperatorFormula().setOptimalityType(lowerValueBounds ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize);
+                // Create an environment where sound results are enforced
+                storm::Environment soundEnv(env);
+                soundEnv.solver().setForceSoundness(true);
+                auto result = evaluateOperatorFormula(soundEnv, model, *newFormula);
+                
+                auto eps = storm::utility::convertNumber<typename ModelType::ValueType>(soundEnv.solver().minMax().getPrecision());
+                // Add/substract eps to all entries to make up for precision errors
+                if (lowerValueBounds) {
+                    eps = -eps;
+                }
+                for (auto& v : result) {
+                    v += eps;
+                }
+                return result;
+            }
+            
+            template <typename ModelType>
+            typename ModelType::ValueType const& DeterministicSchedsObjectiveHelper<ModelType>::getUpperValueBoundAtState(Environment const& env, uint64_t state) const{
+                //return objective.upperResultBound.get();
+                // TODO: try this.
+                if (!upperResultBounds) {
+                    upperResultBounds = computeValueBounds(env, false, model, *objective.formula);
+                    STORM_LOG_THROW(!storm::utility::vector::hasInfinityEntry(upperResultBounds.get()), storm::exceptions::NotSupportedException, "The upper bound for objective " << *objective.originalFormula << " is infinity at some state. This is not supported.");
+                }
+                return upperResultBounds.get()[state];
+                
+            }
+            
+            template <typename ModelType>
+            typename ModelType::ValueType const& DeterministicSchedsObjectiveHelper<ModelType>::getLowerValueBoundAtState(Environment const& env, uint64_t state) const{
+                // return objective.lowerResultBound.get();
+                //TODO: try this.
+                if (!lowerResultBounds) {
+                    lowerResultBounds = computeValueBounds(env, true, model, *objective.formula);
+                    STORM_LOG_THROW(!storm::utility::vector::hasInfinityEntry(lowerResultBounds.get()), storm::exceptions::NotSupportedException, "The lower bound for objective " << *objective.originalFormula << " is infinity at some state. This is not supported.");
+                }
+                return lowerResultBounds.get()[state];
             }
             
             template class DeterministicSchedsObjectiveHelper<storm::models::sparse::Mdp<double>>;

@@ -53,7 +53,7 @@ namespace storm {
                     {
                         if (env.modelchecker().multi().isSchedulerRestrictionSet()) {
                             STORM_LOG_THROW(preprocessorResult.queryType == preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType>::QueryType::Pareto, storm::exceptions::NotImplementedException, "Currently, only Pareto queries with scheduler restrictions are implemented.");
-                            auto explorer = DeterministicSchedsParetoExplorer<SparseModelType, storm::RationalNumber>(preprocessorResult);
+                            auto explorer = DeterministicSchedsParetoExplorer<SparseModelType, storm::RationalNumber>(env, preprocessorResult);
                             result = explorer.check(env);
                             if (env.modelchecker().multi().isExportPlotSet()) {
                                 explorer.exportPlotOfCurrentApproximation(env);

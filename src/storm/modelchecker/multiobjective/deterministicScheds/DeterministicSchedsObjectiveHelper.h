@@ -7,6 +7,9 @@
 
 
 namespace storm {
+    
+    class Environment;
+    
     namespace modelchecker {
         namespace multiobjective {
             
@@ -28,12 +31,15 @@ namespace storm {
                  */
                 std::map<uint64_t, ValueType> const& getChoiceValueOffsets() const;
 
-                ValueType const& getUpperValueBoundAtState(uint64_t state) const;
-                ValueType const& getLowerValueBoundAtState(uint64_t state) const;
+                ValueType const& getUpperValueBoundAtState(Environment const& env, uint64_t state) const;
+                ValueType const& getLowerValueBoundAtState(Environment const& env, uint64_t state) const;
             private:
                 
                 mutable boost::optional<std::map<uint64_t, ValueType>> schedulerIndependentStateValues;
                 mutable boost::optional<std::map<uint64_t, ValueType>> choiceValueOffsets;
+                mutable boost::optional<std::vector<ValueType>> lowerResultBounds;
+                mutable boost::optional<std::vector<ValueType>> upperResultBounds;
+                
                 
                 ModelType const& model;
                 Objective<ValueType> const& objective;

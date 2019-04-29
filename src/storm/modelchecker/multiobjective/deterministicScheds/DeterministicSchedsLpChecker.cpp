@@ -9,10 +9,10 @@ namespace storm {
         namespace multiobjective {
             
             template <typename ModelType, typename GeometryValueType>
-            DeterministicSchedsLpChecker<ModelType, GeometryValueType>::DeterministicSchedsLpChecker(ModelType const& model, std::vector<storm::modelchecker::multiobjective::Objective<ValueType>> const& objectives) : model(model) {
+            DeterministicSchedsLpChecker<ModelType, GeometryValueType>::DeterministicSchedsLpChecker(Environment const& env, ModelType const& model, std::vector<storm::modelchecker::multiobjective::Objective<ValueType>> const& objectives) : model(model) {
                 swInit.start();
                 initializeObjectiveHelper(objectives);
-                initializeLpModel();
+                initializeLpModel(env);
                 swInit.stop();
             }
             
@@ -22,8 +22,8 @@ namespace storm {
                 std::cout << "\t" << swInit << " seconds for initialization" << std::endl;
                 std::cout << "\t" << swCheck << " seconds for checking, including" << std::endl;
                 std::cout << "\t\t" << swLpBuild << " seconds for LP building" << std::endl;
-                std::cout << "\t\t" << swLpSolve << " seconds for LP solving" << std::endl;
-                std::cout << "\t\t" << swCheckVertices << " seconds for checking the vertices of the convex hull." << std::endl;
+                std::cout << "\t\t" << swLpSolve << " seconds for LP solving, including" << std::endl;
+                std::cout << "\t\t\t" << swCheckVertices << " seconds for finding the vertices of the convex hull." << std::endl;
                 std::cout << "\t" << swAux << " seconds for aux stuff" << std::endl;
             }
             
@@ -53,9 +53,10 @@ namespace storm {
             std::vector<GeometryValueType> DeterministicSchedsLpChecker<ModelType, GeometryValueType>::check(storm::Environment const& env) {
                 STORM_LOG_ASSERT(!currentWeightVector.empty(), "Checking invoked before specifying a weight vector.");
                 STORM_LOG_TRACE("Checking a vertex...");
-                swCheck.start(); swCheckVertices.start(); swLpSolve.start();
+                swCheck.start(); swLpSolve.start(); swCheckVertices.start();
                 lpModel->optimize();
-                swLpSolve.stop();
+                swCheckVertices.stop(); swLpSolve.stop();
+                STORM_LOG_TRACE("\t Done checking a vertex...");
                 STORM_LOG_ASSERT(!lpModel->isInfeasible(), "LP result is infeasable.");
                 STORM_LOG_ASSERT(!lpModel->isUnbounded(), "LP result is unbounded.");
                 
@@ -64,7 +65,7 @@ namespace storm {
                     newPoint.push_back(storm::utility::convertNumber<GeometryValueType>(lpModel->getContinuousValue(objVar)));
                 }
                 
-                swCheckVertices.stop(); swCheck.stop();
+                swCheck.stop();
                 return newPoint;
             }
 
@@ -95,7 +96,7 @@ namespace storm {
             }
             
             template <typename ModelType, typename GeometryValueType>
-            void DeterministicSchedsLpChecker<ModelType, GeometryValueType>::initializeLpModel() {
+            void DeterministicSchedsLpChecker<ModelType, GeometryValueType>::initializeLpModel(Environment const& env) {
                 uint64_t numStates = model.getNumberOfStates();
                 lpModel = storm::utility::solver::getLpSolver<ValueType>("model");
                 lpModel->setOptimizationDirection(storm::solver::OptimizationDirection::Maximize);
@@ -128,7 +129,7 @@ namespace storm {
                     for (uint64_t state = 0; state < numStates; ++state) {
                         auto valIt = schedulerIndependentStates.find(state);
                         if (valIt == schedulerIndependentStates.end()) {
-                            stateVars.push_back(lpModel->addBoundedContinuousVariable("x" + std::to_string(objIndex) + "_" + std::to_string(state), objectiveHelper[objIndex].getLowerValueBoundAtState(state), objectiveHelper[objIndex].getUpperValueBoundAtState(state)).getExpression());
+                            stateVars.push_back(lpModel->addBoundedContinuousVariable("x" + std::to_string(objIndex) + "_" + std::to_string(state), objectiveHelper[objIndex].getLowerValueBoundAtState(env, state), objectiveHelper[objIndex].getUpperValueBoundAtState(env, state)).getExpression());
                         } else {
                             stateVars.push_back(lpModel->getConstant(valIt->second));
                         }
@@ -164,7 +165,7 @@ namespace storm {
                                 lpModel->addConstraint("", stateVars[state] == choiceValue);
                             } else {
                                 uint64_t globalChoiceIndex = model.getTransitionMatrix().getRowGroupIndices()[state] + choice;
-                                storm::expressions::Expression maxDiff = lpModel->getConstant(objectiveHelper[objIndex].getUpperValueBoundAtState(state) - objectiveHelper[objIndex].getLowerValueBoundAtState(state)) * (one - choiceVars[globalChoiceIndex]);
+                                storm::expressions::Expression maxDiff = lpModel->getConstant(objectiveHelper[objIndex].getUpperValueBoundAtState(env, state) - objectiveHelper[objIndex].getLowerValueBoundAtState(env, state)) * (one - choiceVars[globalChoiceIndex]);
                                 lpModel->addConstraint("", stateVars[state] - choiceValue <= maxDiff);
                                 lpModel->addConstraint("", choiceValue - stateVars[state] <= maxDiff);
                             }

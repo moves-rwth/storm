@@ -138,7 +138,7 @@ namespace storm {
                 };
                 
                 
-                DeterministicSchedsParetoExplorer(preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType>& preprocessorResult);
+                DeterministicSchedsParetoExplorer(Environment const& env, preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType>& preprocessorResult);
 
                 virtual std::unique_ptr<CheckResult> check(Environment const& env);
 

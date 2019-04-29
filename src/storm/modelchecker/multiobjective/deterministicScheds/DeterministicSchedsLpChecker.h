@@ -24,7 +24,7 @@ namespace storm {
                 typedef typename std::shared_ptr<storm::storage::geometry::Polytope<GeometryValueType>> Polytope;
                 typedef typename std::vector<GeometryValueType> Point;
                 
-                DeterministicSchedsLpChecker(ModelType const& model, std::vector<storm::modelchecker::multiobjective::Objective<ValueType>> const& objectives);
+                DeterministicSchedsLpChecker(Environment const& env, ModelType const& model, std::vector<storm::modelchecker::multiobjective::Objective<ValueType>> const& objectives);
                 ~DeterministicSchedsLpChecker();
 
                 /*!
@@ -46,7 +46,7 @@ namespace storm {
 
             private:
                 void initializeObjectiveHelper(std::vector<storm::modelchecker::multiobjective::Objective<ValueType>> const& objectives);
-                void initializeLpModel();
+                void initializeLpModel(Environment const& env);
                 
                 void checkRecursive(storm::storage::geometry::PolytopeTree<GeometryValueType>& polytopeTree, GeometryValueType const& eps, std::vector<Point>& foundPoints, std::vector<Polytope>& infeasableAreas);
                 
