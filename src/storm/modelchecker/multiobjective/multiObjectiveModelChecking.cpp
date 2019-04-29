@@ -10,7 +10,7 @@
 #include "storm/modelchecker/multiobjective/pcaa/SparsePcaaQuantitativeQuery.h"
 #include "storm/modelchecker/multiobjective/pcaa/SparsePcaaParetoQuery.h"
 #include "storm/modelchecker/multiobjective/constraintbased/SparseCbAchievabilityQuery.h"
-#include "storm/modelchecker/multiobjective/deterministicScheds/DeterministicParetoExplorer.h"
+#include "storm/modelchecker/multiobjective/deterministicScheds/DeterministicSchedsParetoExplorer.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/utility/Stopwatch.h"
@@ -53,7 +53,7 @@ namespace storm {
                     {
                         if (env.modelchecker().multi().isSchedulerRestrictionSet()) {
                             STORM_LOG_THROW(preprocessorResult.queryType == preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType>::QueryType::Pareto, storm::exceptions::NotImplementedException, "Currently, only Pareto queries with scheduler restrictions are implemented.");
-                            auto explorer = DeterministicParetoExplorer<SparseModelType, storm::RationalNumber>(preprocessorResult);
+                            auto explorer = DeterministicSchedsParetoExplorer<SparseModelType, storm::RationalNumber>(preprocessorResult);
                             result = explorer.check(env);
                             if (env.modelchecker().multi().isExportPlotSet()) {
                                 explorer.exportPlotOfCurrentApproximation(env);
