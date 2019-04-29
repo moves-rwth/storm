@@ -170,28 +170,34 @@ namespace storm {
                 // Change the optimization direction in the formula.
                 auto newFormula = storm::logic::CloneVisitor().clone(formula);
                 newFormula->asOperatorFormula().setOptimalityType(lowerValueBounds ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize);
-                // Create an environment where sound results are enforced
-                storm::Environment soundEnv(env);
-                soundEnv.solver().setForceSoundness(true);
-                auto result = evaluateOperatorFormula(soundEnv, model, *newFormula);
                 
-                auto eps = storm::utility::convertNumber<typename ModelType::ValueType>(soundEnv.solver().minMax().getPrecision());
-                // Add/substract eps to all entries to make up for precision errors
-                if (lowerValueBounds) {
-                    eps = -eps;
+                if (std::is_same<typename ModelType::ValueType, storm::RationalNumber>::value) {
+                    // don't have to worry about precision in exact mode.
+                    return evaluateOperatorFormula(env, model, *newFormula);
+                } else {
+                    // Create an environment where sound results are enforced
+                    storm::Environment soundEnv(env);
+                    soundEnv.solver().setForceSoundness(true);
+                    auto result = evaluateOperatorFormula(soundEnv, model, *newFormula);
+                    
+                    auto eps = storm::utility::convertNumber<typename ModelType::ValueType>(soundEnv.solver().minMax().getPrecision());
+                    // Add/substract eps to all entries to make up for precision errors
+                    if (lowerValueBounds) {
+                        eps = -eps;
+                    }
+                    for (auto& v : result) {
+                        v += eps;
+                    }
+                    return result;
                 }
-                for (auto& v : result) {
-                    v += eps;
-                }
-                return result;
             }
             
             template <typename ModelType>
             typename ModelType::ValueType const& DeterministicSchedsObjectiveHelper<ModelType>::getUpperValueBoundAtState(Environment const& env, uint64_t state) const{
                 //return objective.upperResultBound.get();
-                // TODO: try this.
                 if (!upperResultBounds) {
                     upperResultBounds = computeValueBounds(env, false, model, *objective.formula);
+                    storm::utility::vector::clip(upperResultBounds.get(), objective.lowerResultBound, objective.upperResultBound);
                     STORM_LOG_THROW(!storm::utility::vector::hasInfinityEntry(upperResultBounds.get()), storm::exceptions::NotSupportedException, "The upper bound for objective " << *objective.originalFormula << " is infinity at some state. This is not supported.");
                 }
                 return upperResultBounds.get()[state];
@@ -201,9 +207,9 @@ namespace storm {
             template <typename ModelType>
             typename ModelType::ValueType const& DeterministicSchedsObjectiveHelper<ModelType>::getLowerValueBoundAtState(Environment const& env, uint64_t state) const{
                 // return objective.lowerResultBound.get();
-                //TODO: try this.
                 if (!lowerResultBounds) {
                     lowerResultBounds = computeValueBounds(env, true, model, *objective.formula);
+                    storm::utility::vector::clip(lowerResultBounds.get(), objective.lowerResultBound, objective.upperResultBound);
                     STORM_LOG_THROW(!storm::utility::vector::hasInfinityEntry(lowerResultBounds.get()), storm::exceptions::NotSupportedException, "The lower bound for objective " << *objective.originalFormula << " is infinity at some state. This is not supported.");
                 }
                 return lowerResultBounds.get()[state];
