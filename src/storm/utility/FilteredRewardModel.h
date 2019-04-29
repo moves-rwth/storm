@@ -8,9 +8,8 @@
 namespace storm {
     namespace utility {
         
-        
         /*
-         * This class wraps around a
+         * This class wraps around a Reward model where certain reward types are disabled.
          */
         template <typename RewardModelType>
         class FilteredRewardModel {
@@ -45,20 +44,25 @@ namespace storm {
                 RewardModelType const* rewardModel;
         };
         
+        template <typename RewardModelType, typename FormulaType>
+        FilteredRewardModel<RewardModelType> createFilteredRewardModel(RewardModelType const& baseRewardModel, bool isDiscreteTimeModel, FormulaType const& formula) {
+            if (formula.hasRewardAccumulation()) {
+                auto const& acc = formula.getRewardAccumulation();
+                STORM_LOG_THROW(isDiscreteTimeModel || !acc.isExitSet() || !baseRewardModel.hasStateRewards(), storm::exceptions::NotSupportedException, "Exit rewards for continuous time models are not supported.");
+                // Check which of the available reward types are allowed.
+                bool hasStateRewards = isDiscreteTimeModel ? acc.isExitSet() : acc.isTimeSet();
+                bool hasStateActionRewards = acc.isStepsSet();
+                bool hasTransitionRewards = acc.isStepsSet();
+                return FilteredRewardModel<RewardModelType>(baseRewardModel, hasStateRewards, hasStateActionRewards, hasTransitionRewards);
+            } else {
+                return FilteredRewardModel<RewardModelType>(baseRewardModel, true, true, true);
+            }
+        }
+        
         template <typename ModelType, typename CheckTaskType>
         FilteredRewardModel<typename ModelType::RewardModelType> createFilteredRewardModel(ModelType const& model, CheckTaskType const& checkTask) {
             auto const& baseRewardModel = checkTask.isRewardModelSet() ? model.getRewardModel(checkTask.getRewardModel()) : model.getUniqueRewardModel();
-            if (checkTask.getFormula().hasRewardAccumulation()) {
-                auto const& acc = checkTask.getFormula().getRewardAccumulation();
-                STORM_LOG_THROW(model.isDiscreteTimeModel() || !acc.isExitSet() || !baseRewardModel.hasStateRewards(), storm::exceptions::NotSupportedException, "Exit rewards for continuous time models are not supported.");
-                // Check which of the available reward types are allowed.
-                bool hasStateRewards = model.isDiscreteTimeModel() ? acc.isExitSet() : acc.isTimeSet();
-                bool hasStateActionRewards = acc.isStepsSet();
-                bool hasTransitionRewards = acc.isStepsSet();
-                return FilteredRewardModel<typename ModelType::RewardModelType>(baseRewardModel, hasStateRewards, hasStateActionRewards, hasTransitionRewards);
-            } else {
-                return FilteredRewardModel<typename ModelType::RewardModelType>(baseRewardModel, true, true, true);
-            }
+            return createFilteredRewardModel(baseRewardModel, model.isDiscreteTimeModel(), checkTask.getFormula());
         }
     }
 }
