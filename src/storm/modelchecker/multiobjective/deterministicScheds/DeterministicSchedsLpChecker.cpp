@@ -50,23 +50,33 @@ namespace storm {
             }
             
             template <typename ModelType, typename GeometryValueType>
-            std::vector<GeometryValueType> DeterministicSchedsLpChecker<ModelType, GeometryValueType>::check(storm::Environment const& env) {
+            boost::optional<std::vector<GeometryValueType>> DeterministicSchedsLpChecker<ModelType, GeometryValueType>::check(storm::Environment const& env, Polytope area) {
                 STORM_LOG_ASSERT(!currentWeightVector.empty(), "Checking invoked before specifying a weight vector.");
                 STORM_LOG_TRACE("Checking a vertex...");
-                swCheck.start(); swLpSolve.start(); swCheckVertices.start();
+                swCheck.start();
+                swLpBuild.start();
+                lpModel->push();
+                auto areaConstraints = area->getConstraints(lpModel->getManager(), currentObjectiveVariables);
+                for (auto const& c : areaConstraints) {
+                    lpModel->addConstraint("", c);
+                }
+                lpModel->update();
+                swLpBuild.stop();
+                swLpSolve.start(); swCheckVertices.start();
                 lpModel->optimize();
                 swCheckVertices.stop(); swLpSolve.stop();
                 STORM_LOG_TRACE("\t Done checking a vertex...");
-                STORM_LOG_ASSERT(!lpModel->isInfeasible(), "LP result is infeasable.");
-                STORM_LOG_ASSERT(!lpModel->isUnbounded(), "LP result is unbounded.");
-                
-                Point newPoint;
-                for (auto const& objVar : currentObjectiveVariables) {
-                    newPoint.push_back(storm::utility::convertNumber<GeometryValueType>(lpModel->getContinuousValue(objVar)));
+                boost::optional<Point> result;
+                if (!lpModel->isInfeasible()) {
+                    STORM_LOG_ASSERT(!lpModel->isUnbounded(), "LP result is unbounded.");
+                    result = Point();
+                    for (auto const& objVar : currentObjectiveVariables) {
+                        result->push_back(storm::utility::convertNumber<GeometryValueType>(lpModel->getContinuousValue(objVar)));
+                    }
                 }
-                
+                lpModel->pop();
                 swCheck.stop();
-                return newPoint;
+                return result;
             }
 
             template <typename ModelType, typename GeometryValueType>

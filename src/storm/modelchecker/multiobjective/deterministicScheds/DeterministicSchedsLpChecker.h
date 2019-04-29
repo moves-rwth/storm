@@ -36,7 +36,7 @@ namespace storm {
                  * Optimizes in the currently given direction
                  * @return some optimal point found in that direction.
                  */
-                Point check(storm::Environment const& env);
+                boost::optional<Point> check(storm::Environment const& env, Polytope area);
                 
                 /*!
                  * Optimizes in the currently given direction, recursively checks for points in the given area.

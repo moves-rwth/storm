@@ -154,7 +154,7 @@ namespace storm {
                 /*!
                  * Intersects the overapproximation with the given halfspace
                  */
-                void addHalfspaceToOverApproximation(Environment const& env, std::vector<GeometryValueType> const& normalVector, Point const& pointOnHalfspace);
+                void addHalfspaceToOverApproximation(Environment const& env, std::vector<GeometryValueType> const& normalVector, GeometryValueType const& offset);
                 
                 /*!
                  * Adds a polytope which consists of unachievable points
@@ -173,25 +173,9 @@ namespace storm {
                 std::vector<GeometryValueType> getReferenceCoordinates() const;
                 
                 /*!
-                 * Checks the precision of the given Facet and returns true, if no further processing of the facet is necessary
-                 */
-                bool checkFacetPrecision(Environment const& env, Facet& f);
-                
-                /*!
-                 * Checks the precision of the given Facet and returns true, if no further processing of the facet is necessary.
-                 * Also takes the given points within the simplex of the facet into account
-                 */
-                bool checkFacetPrecision(Environment const& env, Facet& f, std::set<PointId> const& collectedSimplexPoints);
-                
-                /*! Processes the given facet as follows:
-                 * 1. Optimize in the facet direction. Potentially, this adds new, unprocessed facets
-                 * 2. Find points that have already been collected so far such that  they lie in the induced simplex of the facet.
-                 * 3. Find more points that lie on the facet
-                 * 4. Find all points that lie in the induced simplex or prove that there are none
+                 * Processes the given facet
                  */
                 void processFacet(Environment const& env, Facet& f);
-                
-                FacetAnalysisContext createAnalysisContext(Environment const& env, Facet& f);
                 
                 /*!
                  * Optimizes in the facet direction. If this results in a point that does not lie on the facet,
@@ -201,14 +185,8 @@ namespace storm {
                  */
                 bool optimizeAndSplitFacet(Environment const& env, Facet& f);
                 
-                /*!
-                 * Adds a new point that lies within the induced simplex of the given facet to the analysis context.
-                 * @param context the analysis context
-                 * @param pointId the id of the given point.
-                 * @param performCheck if true, it is checked whether the facet is sufficiently precise now. If false, no check is performed.
-                 * @return true iff performCheck is true and the facet is sufficiently precise.
-                 */
-                bool addNewSimplexPoint(FacetAnalysisContext& context, PointId const& pointId, bool performCheck);
+                Polytope negateMinObjectives(Polytope const& polytope) const;
+                void negateMinObjectives(std::vector<GeometryValueType>& vector) const;
                 
                 Pointset pointset;
                 std::queue<Facet> unprocessedFacets;
