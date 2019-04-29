@@ -5,6 +5,7 @@
 
 #include "storm/modelchecker/multiobjective/preprocessing/SparseMultiObjectivePreprocessorResult.h"
 #include "storm/modelchecker/multiobjective/deterministicScheds/DeterministicSchedsLpChecker.h"
+#include "storm/modelchecker/multiobjective/deterministicScheds/DeterministicSchedsObjectiveHelper.h"
 
 #include "storm/storage/geometry/Polytope.h"
 #include "storm/storage/geometry/Halfspace.h"
@@ -44,8 +45,6 @@ namespace storm {
                     };
                     DominanceResult getDominance(Point const& other) const;
                     
-                    void setParetoOptimal(bool value = true);
-                    bool isParetoOptimal() const;
                     void setOnFacet(bool value = true);
                     bool liesOnFacet() const;
                     
@@ -53,7 +52,6 @@ namespace storm {
 
                 private:
                     std::vector<GeometryValueType> coordinates;
-                    bool paretoOptimal;
                     bool onFacet;
                 };
                 
@@ -114,27 +112,11 @@ namespace storm {
                     /*!
                      * Creates a polytope that captures all points that lie 'under' the facet
                      */
-                    Polytope const& getInducedSimplex(Pointset const& pointset, std::vector<GeometryValueType> const& referenceCoordinates);
-                    
-                    
+                    Polytope const& getInducedPolytope(Pointset const& pointset, std::vector<GeometryValueType> const& referenceCoordinates);
 
                 private:
                     storm::storage::geometry::Halfspace<GeometryValueType> halfspace;
-                    std::vector<PointId> paretoPointsOnFacet;
-                    Polytope inducedSimplex;
-                };
-                
-                struct FacetAnalysisContext {
-                    FacetAnalysisContext(Facet& f);
-                    
-                    Facet& facet;
-                    std::set<PointId> collectedPoints;
-                    std::unique_ptr<storm::solver::SmtSolver> smtSolver;
-                    std::shared_ptr<storm::expressions::ExpressionManager> expressionManager;
-                    
-                    // Variables that encode two points that lie in the induced simplex of the analyzed facet
-                    // xMinusEps = (x_1-eps, x_m-eps)
-                    std::vector<storm::expressions::Variable> x, xMinusEps;
+                    std::vector<PointId> pointsOnFacet;
                 };
                 
                 
@@ -170,7 +152,7 @@ namespace storm {
                 /*!
                  *  Gets reference coordinates used to subdividing the downwardclosure
                  */
-                std::vector<GeometryValueType> getReferenceCoordinates() const;
+                std::vector<GeometryValueType> getReferenceCoordinates(Environment const& env) const;
                 
                 /*!
                  * Processes the given facet
@@ -194,6 +176,8 @@ namespace storm {
                 std::vector<Polytope> unachievableAreas;
                 
                 std::shared_ptr<DeterministicSchedsLpChecker<SparseModelType, GeometryValueType>> lpChecker;
+                std::vector<DeterministicSchedsObjectiveHelper<SparseModelType>> objectiveHelper;
+
                 std::shared_ptr<SparseModelType> const& model;
                 uint64_t originalModelInitialState;
                 std::vector<Objective<ModelValueType>> const& objectives;

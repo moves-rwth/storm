@@ -9,9 +9,8 @@ namespace storm {
         namespace multiobjective {
             
             template <typename ModelType, typename GeometryValueType>
-            DeterministicSchedsLpChecker<ModelType, GeometryValueType>::DeterministicSchedsLpChecker(Environment const& env, ModelType const& model, std::vector<storm::modelchecker::multiobjective::Objective<ValueType>> const& objectives) : model(model) {
+            DeterministicSchedsLpChecker<ModelType, GeometryValueType>::DeterministicSchedsLpChecker(Environment const& env, ModelType const& model, std::vector<DeterministicSchedsObjectiveHelper<ModelType>> const& objectiveHelper) : model(model) , objectiveHelper(objectiveHelper) {
                 swInit.start();
-                initializeObjectiveHelper(objectives);
                 initializeLpModel(env);
                 swInit.stop();
             }
@@ -95,14 +94,6 @@ namespace storm {
                 swCheck.stop();
                 std::cout << " done!" << std::endl;
                 return {foundPoints, infeasableAreas};
-            }
-            
-            template <typename ModelType, typename GeometryValueType>
-            void DeterministicSchedsLpChecker<ModelType, GeometryValueType>::initializeObjectiveHelper(std::vector<storm::modelchecker::multiobjective::Objective<ValueType>> const& objectives) {
-                objectiveHelper.reserve(objectives.size());
-                for (auto const& obj : objectives) {
-                    objectiveHelper.emplace_back(model, obj);
-                }
             }
             
             template <typename ModelType, typename GeometryValueType>
