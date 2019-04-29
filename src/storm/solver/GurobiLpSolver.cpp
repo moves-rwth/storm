@@ -158,7 +158,7 @@ namespace storm {
         void GurobiLpSolver<ValueType>::addVariable(storm::expressions::Variable const& variable, char variableType, ValueType lowerBound, ValueType upperBound, ValueType objectiveFunctionCoefficient) {
             // Assert whether the variable does not exist yet.
             // Due to incremental usage (push(), pop()), a variable might be declared in the manager but not in the lp model.
-            STORM_LOG_ASSERT(variableToIndexMap.count(variable) == 0, "Variable " << variable << " exists already in the model.");
+            STORM_LOG_ASSERT(variableToIndexMap.count(variable) == 0, "Variable " << variable.getName() << " exists already in the model.");
             // Check for valid variable type.
             STORM_LOG_ASSERT(variableType == GRB_CONTINUOUS || variableType == GRB_INTEGER || variableType == GRB_BINARY, "Illegal type '" << variableType << "' for Gurobi variable.");
             
