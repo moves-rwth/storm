@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <set>
-#include <storm/modelchecker/multiobjective/SparseMultiObjectivePreprocessorResult.h>
 
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
