@@ -167,7 +167,7 @@ namespace storm {
             STORM_LOG_THROW(!checkName || isValidVariableName(name), storm::exceptions::InvalidArgumentException, "Invalid variable name '" << name << "'.");
             auto nameIndexPair = nameToIndexMapping.find(name);
             if (nameIndexPair != nameToIndexMapping.end()) {
-                STORM_LOG_ASSERT(indexToTypeMapping.at(nameIndexPair->second) == variableType, "Tried to declareOrGet variable '" << name << "' of type '" << variableType << "' but there is a variable with that name and different type '" << indexToTypeMapping.at(nameIndexPair->second)"'.");
+                STORM_LOG_ASSERT(indexToTypeMapping.at(nameIndexPair->second) == variableType, "Tried to declareOrGet variable '" << name << "' of type '" << variableType << "' but there is a variable with that name and different type '" << indexToTypeMapping.at(nameIndexPair->second) << "'.");
                 return Variable(this->getSharedPointer(), nameIndexPair->second);
             } else {
                 uint_fast64_t offset = 0;
