@@ -148,8 +148,8 @@ void processOptions() {
     // Add relevant event names from properties
     for (auto atomic : atomicLabels) {
         std::string label = atomic->getLabel();
-        if (label == "failed") {
-            // Ignore as this label will always be added
+        if (label == "failed" or label == "skipped") {
+            // Ignore as these label will always be added if necessary
         } else {
             // Get name of event
             if (boost::ends_with(label, "_failed")) {

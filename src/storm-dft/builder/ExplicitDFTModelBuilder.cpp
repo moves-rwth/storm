@@ -202,6 +202,13 @@ namespace storm {
                         STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Heuristic not known.");
                 }
             }
+
+            auto ftSettings = storm::settings::getModule<storm::settings::modules::FaultTreeSettings>();
+            if (ftSettings.isMaxDepthSet()) {
+                STORM_LOG_ASSERT(usedHeuristic == storm::builder::ApproximationHeuristic::DEPTH, "MaxDepth requires 'depth' exploration heuristic.");
+                approximationThreshold = ftSettings.getMaxDepth();
+            }
+
             exploreStateSpace(approximationThreshold);
 
             size_t stateSize = stateStorage.getNumberOfStates() + (this->uniqueFailedState ? 1 : 0);
@@ -519,7 +526,16 @@ namespace storm {
 
         template<typename ValueType, typename StateType>
         std::shared_ptr<storm::models::sparse::Model<ValueType>> ExplicitDFTModelBuilder<ValueType, StateType>::getModel() {
-            STORM_LOG_ASSERT(skippedStates.size() == 0, "Concrete model has skipped states");
+            if (storm::settings::getModule<storm::settings::modules::FaultTreeSettings>().isMaxDepthSet() && skippedStates.size() > 0) {
+                // Give skipped states separate label "skipped"
+                modelComponents.stateLabeling.addLabel("skipped");
+                for (auto it = skippedStates.begin(); it != skippedStates.end(); ++it) {
+                    modelComponents.stateLabeling.addLabelToState("skipped", it->first);
+                }
+            } else{
+                STORM_LOG_ASSERT(skippedStates.size() == 0, "Concrete model has skipped states");
+            }
+
             return createModel(false);
         }
 
