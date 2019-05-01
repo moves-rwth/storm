@@ -394,6 +394,11 @@ namespace storm {
         }
         
         template<typename ValueType>
+        void Z3LpSolver<ValueType>::writeModelToFile(std::string const& filename) const {
+            throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. Yet, a method was called that requires this support.";
+        }
+        
+        template<typename ValueType>
         void Z3LpSolver<ValueType>::push()  {
             throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. Yet, a method was called that requires this support.";
         }
