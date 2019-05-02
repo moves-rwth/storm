@@ -21,7 +21,6 @@ namespace storm {
                     struct Node {
                         boost::container::flat_set<uint_fast64_t> states;
                         storm::storage::BitVector statesAbove;
-//                        storm::storage::BitVector statesBelow;
                     };
 
                     /*!
@@ -69,6 +68,13 @@ namespace storm {
                    * @param below The node closest to the bottom Node of the Lattice.
                    */
                     void addRelationNodes(storm::analysis::Lattice::Node *above, storm::analysis::Lattice::Node * below);
+
+                    /*!
+                   * Adds a new relation between two nodes to the lattice
+                   * @param above The node closest to the top Node of the Lattice.
+                   * @param below The node closest to the bottom Node of the Lattice.
+                   */
+                    void addRelation(uint_fast64_t above, uint_fast64_t below);
 
                     /*!
                      * Compares the level of the nodes of the states.
@@ -128,37 +134,6 @@ namespace storm {
 
                     std::vector<uint_fast64_t> sortStates(storm::storage::BitVector* states);
 
-//                    /*!
-//                     * Returns a set with the nodes which are above the state.
-//                     *
-//                     * @param state The state number.
-//                     * @return The set with all nodes which are above the state.
-//                     */
-//                    std::set<Lattice::Node*> getAbove(uint_fast64_t state);
-//
-//                    /*!
-//                     * Returns a set with the nodes which are below the state.
-//                     *
-//                     * @param state The state number.
-//                     * @return The set with all nodes which are below the state.
-//                     */
-//                    std::set<Lattice::Node*> getBelow(uint_fast64_t state);
-//
-//                    /*!
-//                     * Returns a set with the nodes which are above the node.
-//                     *
-//                     * @param node The node.
-//                     * @return The set with all nodes which are above the node.
-//                     */
-//                    std::set<Lattice::Node*> getAbove(Lattice::Node* node);
-//
-//                    /*!
-//                     * Returns a set with the nodes which are below the node.
-//                     *
-//                     * @param node The node.
-//                     * @return The set with all nodes which are below the node.
-//                     */
-//                    std::set<Lattice::Node*> getBelow(Lattice::Node* node);
                     void setDoneBuilding(bool done);
 
                     /*!
@@ -181,6 +156,13 @@ namespace storm {
                      * @param node2
                      */
                     void mergeNodes(Node* node1, Node* node2);
+                    /*!
+                     * Merges node of var2 into node of var1
+                     * @param var1
+                     * @param var2
+                     */
+                    void merge(uint_fast64_t var1, uint_fast64_t var2);
+
 
                     /*!
                      * Constants for comparison of nodes/states
@@ -207,18 +189,9 @@ namespace storm {
 
                     bool above(Node * node1, Node * node2, storm::analysis::Lattice::Node *nodePrev, storm::storage::BitVector *statesSeen);
 
-
                     std::unordered_map<uint_fast64_t, std::unordered_map<uint_fast64_t, uint_fast64_t>> comparisons;
 
                     bool doneBuilding;
-
-//                    void setStatesAbove(Node* node, uint_fast64_t state, bool alreadyInitialized);
-
-//                    void setStatesBelow(Node* node, uint_fast64_t state, bool alreadyInitialized);
-
-//                    void setStatesAbove(storm::analysis::Lattice::Node *node, storm::storage::BitVector states, bool alreadyInitialized);
-
-//                    void setStatesBelow(storm::analysis::Lattice::Node *node, storm::storage::BitVector states, bool alreadyInitialized);
                 };
             }
 }

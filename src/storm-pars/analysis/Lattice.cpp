@@ -80,7 +80,6 @@ namespace storm {
         }
 
         void Lattice::addBetween(uint_fast64_t state, Node *above, Node *below) {
-//            std::cout << "Adding " << state << " between " << *(above->states.begin()) << " and " << *(below->states.begin()) << std::endl;
             assert(!(*addedStates)[state]);
             assert(compare(above, below) == ABOVE);
 
@@ -97,7 +96,6 @@ namespace storm {
         }
 
         void Lattice::addToNode(uint_fast64_t state, Node *node) {
-//            std::cout << "Adding " << state << " to " << *(node->states.begin()) << std::endl;
             assert(!(*addedStates)[state]);
             node->states.insert(state);
             nodes[state] = node;
@@ -116,6 +114,10 @@ namespace storm {
             }
             below->statesAbove|=((above->statesAbove));
             assert (compare(above, below) == ABOVE);
+        }
+
+        void Lattice::addRelation(uint_fast64_t above, uint_fast64_t below) {
+            addRelationNodes(getNode(above), getNode(below));
         }
 
         int Lattice::compare(uint_fast64_t state1, uint_fast64_t state2) {
@@ -365,6 +367,10 @@ namespace storm {
             for(auto const& i : node2->states) {
                 nodes[i] = node1;
             }
+        }
+
+        void Lattice::merge(uint_fast64_t var1, uint_fast64_t var2) {
+            mergeNodes(getNode(var1), getNode(var2));
         }
     }
 }

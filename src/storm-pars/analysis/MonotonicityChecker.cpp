@@ -22,11 +22,7 @@
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm-pars/modelchecker/region/SparseDtmcParameterLiftingModelChecker.h"
 
-#include "storm/solver/Z3SmtSolver.h"
-#include "storm/storage/expressions/ExpressionManager.h"
 
-#include "storm/storage/expressions/RationalFunctionToExpression.h"
-#include "storm/utility/constants.h"
 
 namespace storm {
     namespace analysis {
@@ -37,6 +33,7 @@ namespace storm {
             this->formulas = formulas;
             this->validate = validate;
             this->resultCheckOnSamples = std::map<carl::Variable, std::pair<bool, bool>>();
+            // TODO initialiseren van sample check
             if (model != nullptr) {
                 std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel = model->as<storm::models::sparse::Model<ValueType>>();
                 this->extender = new storm::analysis::LatticeExtender<ValueType>(sparseModel);
@@ -204,12 +201,12 @@ namespace storm {
                     } else if (validSomewhere) {
                         auto itr2 = varsMonotone.begin();
                         while (itr2 != varsMonotone.end()) {
-//                            if (resultCheckOnSamples.find(itr2->first) != resultCheckOnSamples.end() &&
-//                                (!resultCheckOnSamples[itr2->first].first &&
-//                                 !resultCheckOnSamples[itr2->first].second)) {
-//                                // STORM_PRINT("  - Not monotone in: " << itr2->first << std::endl);
-//                                outfile << "X " << itr2->first;
-//                            } else {
+                            if (resultCheckOnSamples.find(itr2->first) != resultCheckOnSamples.end() &&
+                                (!resultCheckOnSamples[itr2->first].first &&
+                                 !resultCheckOnSamples[itr2->first].second)) {
+                                // STORM_PRINT("  - Not monotone in: " << itr2->first << std::endl);
+                                outfile << "X " << itr2->first;
+                            } else {
                                 if (itr2->second.first && itr2->second.second) {
                                     // STORM_PRINT("  - Constant in" << itr2->first << std::endl);
                                     outfile << "C " << itr2->first;
@@ -224,7 +221,7 @@ namespace storm {
                                     // STORM_PRINT("  - Do not know if monotone incr/decreasing in: " << itr2->first << std::endl);
                                     outfile << "? " << itr2->first;
                                 }
-//                            }
+                            }
                             ++itr2;
                             if (itr2 != varsMonotone.end()) {
                                 outfile << " ";
@@ -313,44 +310,81 @@ namespace storm {
                 ++itr;
                 auto assumption3 = *itr;
 
-                if (!assumption1.second && !assumption2.second && !assumption3.second) {
-                    // Both assumption cannot be validated, so we need to keep them both
-                    // TODO: hier niet verder gaan als je iets gevonden hebt?
-                    auto assumptionsCopy = std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>(
-                            assumptions);
-                    auto assumptionsCopy2 = std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>(
-                            assumptions);
-                    auto latticeCopy = new storm::analysis::Lattice(lattice);
-                    auto latticeCopy2 = new storm::analysis::Lattice(lattice);
-                    assumptions.push_back(assumption1.first);
-                    assumptionsCopy.push_back(assumption2.first);
-                    assumptionsCopy2.push_back(assumption2.first);
+                auto assumptionsCopy = std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>(
+                        assumptions);
+                auto assumptionsCopy2 = std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>(
+                        assumptions);
 
-                    auto criticalTuple = extender->extendLattice(lattice, assumption1.first);
-                    if (somewhereMonotonicity(std::get<0>(criticalTuple))) {
-                        auto map = extendLatticeWithAssumptions(std::get<0>(criticalTuple), assumptionMaker,
-                                                                std::get<1>(criticalTuple), std::get<2>(criticalTuple),
-                                                                assumptions);
-                        result.insert(map.begin(), map.end());
-                    }
+                auto latticeCopy = new storm::analysis::Lattice(lattice);
+                auto latticeCopy2 = new storm::analysis::Lattice(lattice);
 
-                    criticalTuple = extender->extendLattice(latticeCopy, assumption2.first);
-                    if (somewhereMonotonicity(std::get<0>(criticalTuple))) {
-                        auto map = extendLatticeWithAssumptions(std::get<0>(criticalTuple), assumptionMaker,
-                                                                std::get<1>(criticalTuple), std::get<2>(criticalTuple),
-                                                                assumptionsCopy);
-                        result.insert(map.begin(), map.end());
-                    }
-                    criticalTuple = extender->extendLattice(latticeCopy2, assumption3.first);
-                    if (somewhereMonotonicity(std::get<0>(criticalTuple))) {
-                        auto map = extendLatticeWithAssumptions(std::get<0>(criticalTuple), assumptionMaker,
-                                                                std::get<1>(criticalTuple), std::get<2>(criticalTuple),
-                                                                assumptionsCopy2);
-                        result.insert(map.begin(), map.end());
-                    }
+                assumptions.push_back(assumption1.first);
+                assumptionsCopy.push_back(assumption2.first);
+                assumptionsCopy2.push_back(assumption3.first);
+
+                auto criticalTuple = extender->extendLattice(lattice, assumption1.first);
+                if (assumption1.second != AssumptionStatus::INVALID && somewhereMonotonicity(std::get<0>(criticalTuple))) {
+                    auto map = extendLatticeWithAssumptions(std::get<0>(criticalTuple), assumptionMaker,
+                                                            std::get<1>(criticalTuple), std::get<2>(criticalTuple),
+                                                            assumptions);
+                    result.insert(map.begin(), map.end());
                 }
-//                } else if (assumption1.second && assumption2.second) {
-//                    assert (false);
+
+                // TODO: checkend at ie niet invalid is
+                criticalTuple = extender->extendLattice(latticeCopy, assumption2.first);
+                if (somewhereMonotonicity(std::get<0>(criticalTuple))) {
+                    auto map = extendLatticeWithAssumptions(std::get<0>(criticalTuple), assumptionMaker,
+                                                            std::get<1>(criticalTuple), std::get<2>(criticalTuple),
+                                                            assumptionsCopy);
+                    result.insert(map.begin(), map.end());
+                }
+                criticalTuple = extender->extendLattice(latticeCopy2, assumption3.first);
+                if (somewhereMonotonicity(std::get<0>(criticalTuple))) {
+                    auto map = extendLatticeWithAssumptions(std::get<0>(criticalTuple), assumptionMaker,
+                                                            std::get<1>(criticalTuple), std::get<2>(criticalTuple),
+                                                            assumptionsCopy2);
+                    result.insert(map.begin(), map.end());
+                }
+
+
+//                if (!assumption1.second && !assumption2.second && !assumption3.second) {
+//                    // Both assumption cannot be validated, so we need to keep them both
+//                    // TODO: hier niet verder gaan als je iets gevonden hebt?
+//                    auto assumptionsCopy = std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>(
+//                            assumptions);
+//                    auto assumptionsCopy2 = std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>(
+//                            assumptions);
+//                    auto latticeCopy = new storm::analysis::Lattice(lattice);
+//                    auto latticeCopy2 = new storm::analysis::Lattice(lattice);
+//                    assumptions.push_back(assumption1.first);
+//                    assumptionsCopy.push_back(assumption2.first);
+//                    assumptionsCopy2.push_back(assumption3.first);
+//
+//                    auto criticalTuple = extender->extendLattice(lattice, assumption1.first);
+//                    if (somewhereMonotonicity(std::get<0>(criticalTuple))) {
+//                        auto map = extendLatticeWithAssumptions(std::get<0>(criticalTuple), assumptionMaker,
+//                                                                std::get<1>(criticalTuple), std::get<2>(criticalTuple),
+//                                                                assumptions);
+//                        result.insert(map.begin(), map.end());
+//                    }
+//
+//                    criticalTuple = extender->extendLattice(latticeCopy, assumption2.first);
+//                    if (somewhereMonotonicity(std::get<0>(criticalTuple))) {
+//                        auto map = extendLatticeWithAssumptions(std::get<0>(criticalTuple), assumptionMaker,
+//                                                                std::get<1>(criticalTuple), std::get<2>(criticalTuple),
+//                                                                assumptionsCopy);
+//                        result.insert(map.begin(), map.end());
+//                    }
+//                    criticalTuple = extender->extendLattice(latticeCopy2, assumption3.first);
+//                    if (somewhereMonotonicity(std::get<0>(criticalTuple))) {
+//                        auto map = extendLatticeWithAssumptions(std::get<0>(criticalTuple), assumptionMaker,
+//                                                                std::get<1>(criticalTuple), std::get<2>(criticalTuple),
+//                                                                assumptionsCopy2);
+//                        result.insert(map.begin(), map.end());
+//                    }
+////                }
+//                } else if (!assumption3.second && assumption1.second && assumption2.second) {
+////                    assert (false);
 //                    //TODO  Both assumptions hold --> should not happen if we change it to < instead of <=
 //                    auto assumption = assumptionMaker->createEqualAssumption(val1, val2);
 //                    if (!validate) {
@@ -361,9 +395,9 @@ namespace storm {
 //                    if (somewhereMonotonicity(std::get<0>(criticalTuple))) {
 //                        result = extendLatticeWithAssumptions(std::get<0>(criticalTuple), assumptionMaker, std::get<1>(criticalTuple), std::get<2>(criticalTuple), assumptions);
 //                    }
-//                } else if (assumption1.second) {
+//                } else if (!assumption3.second && !assumption2.second && assumption1.second) {
 //                    if (!validate) {
-//                        assert(false);
+////                        assert(false);
 //                        assumptions.push_back(assumption1.first);
 //                    }
 //                    // if validate is true and both hold, then they must be valid, so no need to add to assumptions
@@ -374,8 +408,8 @@ namespace storm {
 //                        result = extendLatticeWithAssumptions(std::get<0>(criticalTuple), assumptionMaker, std::get<1>(criticalTuple), std::get<2>(criticalTuple), assumptions);
 //                    }
 //
-//                } else {
-//                    assert (assumption2.second);
+//                } else if (!assumption3.second && !assumption1.second && assumption2.second){
+////                    assert (assumption2.second);
 //                    if (!validate) {
 //                        assumptions.push_back(assumption2.first);
 //                    }
@@ -383,6 +417,43 @@ namespace storm {
 //                    auto criticalTuple = extender->extendLattice(lattice, assumption2.first);
 //                    if (somewhereMonotonicity(std::get<0>(criticalTuple))) {
 //                        result = extendLatticeWithAssumptions(std::get<0>(criticalTuple), assumptionMaker, std::get<1>(criticalTuple), std::get<2>(criticalTuple), assumptions);
+//                    }
+//                } else {
+//                    // TODO: should not happen
+//                    STORM_LOG_WARN("All assumptions are true");// {" << *(assumption1.first) <<", " << *(assumption2.first) << ", " << *(assumption3.first) << "}" << std::endl);
+//                    // Both assumption cannot be validated, so we need to keep them both
+//                    // TODO: hier niet verder gaan als je iets gevonden hebt?
+//                    auto assumptionsCopy = std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>(
+//                            assumptions);
+//                    auto assumptionsCopy2 = std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>(
+//                            assumptions);
+//                    auto latticeCopy = new storm::analysis::Lattice(lattice);
+//                    auto latticeCopy2 = new storm::analysis::Lattice(lattice);
+//                    assumptions.push_back(assumption1.first);
+//                    assumptionsCopy.push_back(assumption2.first);
+//                    assumptionsCopy2.push_back(assumption2.first);
+//
+//                    auto criticalTuple = extender->extendLattice(lattice, assumption1.first);
+//                    if (somewhereMonotonicity(std::get<0>(criticalTuple))) {
+//                        auto map = extendLatticeWithAssumptions(std::get<0>(criticalTuple), assumptionMaker,
+//                                                                std::get<1>(criticalTuple), std::get<2>(criticalTuple),
+//                                                                assumptions);
+//                        result.insert(map.begin(), map.end());
+//                    }
+//
+//                    criticalTuple = extender->extendLattice(latticeCopy, assumption2.first);
+//                    if (somewhereMonotonicity(std::get<0>(criticalTuple))) {
+//                        auto map = extendLatticeWithAssumptions(std::get<0>(criticalTuple), assumptionMaker,
+//                                                                std::get<1>(criticalTuple), std::get<2>(criticalTuple),
+//                                                                assumptionsCopy);
+//                        result.insert(map.begin(), map.end());
+//                    }
+//                    criticalTuple = extender->extendLattice(latticeCopy2, assumption3.first);
+//                    if (somewhereMonotonicity(std::get<0>(criticalTuple))) {
+//                        auto map = extendLatticeWithAssumptions(std::get<0>(criticalTuple), assumptionMaker,
+//                                                                std::get<1>(criticalTuple), std::get<2>(criticalTuple),
+//                                                                assumptionsCopy2);
+//                        result.insert(map.begin(), map.end());
 //                    }
 //                }
             }
@@ -538,65 +609,65 @@ namespace storm {
             return varsMonotone;
         }
 
-        template <typename ValueType>
-        std::pair<bool, bool> MonotonicityChecker<ValueType>::checkDerivative(ValueType derivative) {
-            bool monIncr = false;
-            bool monDecr = false;
-
-            if (derivative.isZero()) {
-                monIncr = true;
-                monDecr = true;
-            } else if (derivative.isConstant()) {
-                monIncr = derivative.constantPart() >= 0;
-                monDecr = derivative.constantPart() <= 0;
-            } else {
-
-                std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
-                std::shared_ptr<storm::expressions::ExpressionManager> manager(
-                        new storm::expressions::ExpressionManager());
-
-                storm::solver::Z3SmtSolver s(*manager);
-                storm::solver::SmtSolver::CheckResult smtResult = storm::solver::SmtSolver::CheckResult::Unknown;
-
-                std::set<carl::Variable> variables = derivative.gatherVariables();
-
-
-                for (auto variable : variables) {
-                    manager->declareRationalVariable(variable.name());
-
-                }
-                storm::expressions::Expression exprBounds = manager->boolean(true);
-                auto managervars = manager->getVariables();
-                for (auto var : managervars) {
-                    exprBounds = exprBounds && manager->rational(0) < var && var < manager->rational(1);
-                }
-
-                auto converter = storm::expressions::RationalFunctionToExpression<ValueType>(manager);
-
-                storm::expressions::Expression exprToCheck1 =
-                        converter.toExpression(derivative) >= manager->rational(0);
-                s.add(exprBounds);
-                s.add(exprToCheck1);
-                smtResult = s.check();
-                monIncr = smtResult == storm::solver::SmtSolver::CheckResult::Sat;
-
-                storm::expressions::Expression exprToCheck2 =
-                        converter.toExpression(derivative) <= manager->rational(0);
-                s.reset();
-                smtResult = storm::solver::SmtSolver::CheckResult::Unknown;
-                s.add(exprBounds);
-                s.add(exprToCheck2);
-                smtResult = s.check();
-                monDecr = smtResult == storm::solver::SmtSolver::CheckResult::Sat;
-                if (monIncr && monDecr) {
-                    monIncr = false;
-                    monDecr = false;
-                }
-            }
-            assert (!(monIncr && monDecr) || derivative.isZero());
-
-            return std::pair<bool, bool>(monIncr, monDecr);
-        }
+//        template <typename ValueType>
+//        std::pair<bool, bool> MonotonicityChecker<ValueType>::checkDerivative(ValueType derivative) {
+//            bool monIncr = false;
+//            bool monDecr = false;
+//
+//            if (derivative.isZero()) {
+//                monIncr = true;
+//                monDecr = true;
+//            } else if (derivative.isConstant()) {
+//                monIncr = derivative.constantPart() >= 0;
+//                monDecr = derivative.constantPart() <= 0;
+//            } else {
+//
+//                std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
+//                std::shared_ptr<storm::expressions::ExpressionManager> manager(
+//                        new storm::expressions::ExpressionManager());
+//
+//                storm::solver::Z3SmtSolver s(*manager);
+//                storm::solver::SmtSolver::CheckResult smtResult = storm::solver::SmtSolver::CheckResult::Unknown;
+//
+//                std::set<carl::Variable> variables = derivative.gatherVariables();
+//
+//
+//                for (auto variable : variables) {
+//                    manager->declareRationalVariable(variable.name());
+//
+//                }
+//                storm::expressions::Expression exprBounds = manager->boolean(true);
+//                auto managervars = manager->getVariables();
+//                for (auto var : managervars) {
+//                    exprBounds = exprBounds && manager->rational(0) < var && var < manager->rational(1);
+//                }
+//
+//                auto converter = storm::expressions::RationalFunctionToExpression<ValueType>(manager);
+//
+//                storm::expressions::Expression exprToCheck1 =
+//                        converter.toExpression(derivative) >= manager->rational(0);
+//                s.add(exprBounds);
+//                s.add(exprToCheck1);
+//                smtResult = s.check();
+//                monIncr = smtResult == storm::solver::SmtSolver::CheckResult::Sat;
+//
+//                storm::expressions::Expression exprToCheck2 =
+//                        converter.toExpression(derivative) <= manager->rational(0);
+//                s.reset();
+//                smtResult = storm::solver::SmtSolver::CheckResult::Unknown;
+//                s.add(exprBounds);
+//                s.add(exprToCheck2);
+//                smtResult = s.check();
+//                monDecr = smtResult == storm::solver::SmtSolver::CheckResult::Sat;
+//                if (monIncr && monDecr) {
+//                    monIncr = false;
+//                    monDecr = false;
+//                }
+//            }
+//            assert (!(monIncr && monDecr) || derivative.isZero());
+//
+//            return std::pair<bool, bool>(monIncr, monDecr);
+//        }
 
 
         template <typename ValueType>

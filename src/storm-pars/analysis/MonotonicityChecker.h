@@ -10,7 +10,10 @@
 #include "LatticeExtender.h"
 #include "AssumptionMaker.h"
 #include "storm/storage/expressions/BinaryRelationExpression.h"
+#include "storm/storage/expressions/ExpressionManager.h"
 
+#include "storm/storage/expressions/RationalFunctionToExpression.h"
+#include "storm/utility/constants.h"
 #include "carl/core/Variable.h"
 #include "storm/models/ModelBase.h"
 #include "storm/models/sparse/Dtmc.h"
@@ -18,6 +21,8 @@
 #include "storm/logic/Formula.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm-pars/api/region.h"
+#include "storm/solver/Z3SmtSolver.h"
+
 
 namespace storm {
     namespace analysis {
@@ -50,6 +55,70 @@ namespace storm {
              */
             bool somewhereMonotonicity(storm::analysis::Lattice* lattice) ;
 
+            /*!
+             * Checks if a derivative >=0 or/and <=0
+             * @param derivative The derivative you want to check
+             * @return pair of bools, >= 0 and <= 0
+             */
+            static std::pair<bool, bool> checkDerivative(ValueType derivative) {
+                bool monIncr = false;
+                bool monDecr = false;
+
+                if (derivative.isZero()) {
+                    monIncr = true;
+                    monDecr = true;
+                } else if (derivative.isConstant()) {
+                    monIncr = derivative.constantPart() >= 0;
+                    monDecr = derivative.constantPart() <= 0;
+                } else {
+
+                    std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
+                    std::shared_ptr<storm::expressions::ExpressionManager> manager(
+                            new storm::expressions::ExpressionManager());
+
+                    storm::solver::Z3SmtSolver s(*manager);
+                    storm::solver::SmtSolver::CheckResult smtResult = storm::solver::SmtSolver::CheckResult::Unknown;
+
+                    std::set<carl::Variable> variables = derivative.gatherVariables();
+
+
+                    for (auto variable : variables) {
+                        manager->declareRationalVariable(variable.name());
+
+                    }
+                    storm::expressions::Expression exprBounds = manager->boolean(true);
+                    auto managervars = manager->getVariables();
+                    for (auto var : managervars) {
+                        exprBounds = exprBounds && manager->rational(0) < var && var < manager->rational(1);
+                    }
+
+                    auto converter = storm::expressions::RationalFunctionToExpression<ValueType>(manager);
+
+                    storm::expressions::Expression exprToCheck1 =
+                            converter.toExpression(derivative) >= manager->rational(0);
+                    s.add(exprBounds);
+                    s.add(exprToCheck1);
+                    smtResult = s.check();
+                    monIncr = smtResult == storm::solver::SmtSolver::CheckResult::Sat;
+
+                    storm::expressions::Expression exprToCheck2 =
+                            converter.toExpression(derivative) <= manager->rational(0);
+                    s.reset();
+                    smtResult = storm::solver::SmtSolver::CheckResult::Unknown;
+                    s.add(exprBounds);
+                    s.add(exprToCheck2);
+                    smtResult = s.check();
+                    monDecr = smtResult == storm::solver::SmtSolver::CheckResult::Sat;
+                    if (monIncr && monDecr) {
+                        monIncr = false;
+                        monDecr = false;
+                    }
+                }
+                assert (!(monIncr && monDecr) || derivative.isZero());
+
+                return std::pair<bool, bool>(monIncr, monDecr);
+            }
+
         private:
             //TODO: variabele type
             std::map<carl::Variable, std::pair<bool, bool>> analyseMonotonicity(uint_fast64_t i, storm::analysis::Lattice* lattice, storm::storage::SparseMatrix<ValueType> matrix) ;
@@ -59,8 +128,6 @@ namespace storm {
             std::map<carl::Variable, std::pair<bool, bool>> checkOnSamples(std::shared_ptr<storm::models::sparse::Dtmc<ValueType>> model, uint_fast64_t numberOfSamples);
 
             std::map<carl::Variable, std::pair<bool, bool>> checkOnSamples(std::shared_ptr<storm::models::sparse::Mdp<ValueType>> model, uint_fast64_t numberOfSamples);
-
-            std::pair<bool, bool> checkDerivative(ValueType derivative);
 
             std::unordered_map<ValueType, std::unordered_map<carl::Variable, ValueType>> derivatives;
 

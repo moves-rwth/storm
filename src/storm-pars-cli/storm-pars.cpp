@@ -596,13 +596,11 @@ namespace storm {
             }
 
             if (parSettings.isMonotonicityAnalysisSet()) {
-                std::cout << "Hello, Jip1" << std::endl;
                 // Simplify the model
                 storm::utility::Stopwatch simplifyingWatch(true);
                 std::ofstream outfile;
                 outfile.open("results.txt", std::ios_base::app);
                 outfile << ioSettings.getPrismInputFilename() << ", ";
-
 
                 if (model->isOfType(storm::models::ModelType::Dtmc)) {
                     auto consideredModel = (model->as<storm::models::sparse::Dtmc<ValueType>>());
@@ -635,8 +633,6 @@ namespace storm {
                 model->printModelInformationToStream(std::cout);
                 outfile << simplifyingWatch << ", ";
                 outfile.close();
-
-                std::cout << "Bye, Jip1" << std::endl;
             }
 
             if (parSettings.isMonotonicityAnalysisSet() && model) {
@@ -668,7 +664,8 @@ namespace storm {
                 auto matrix = sparseModel->getTransitionMatrix();
                 auto backwardsTransitionMatrix = matrix.transpose();
 
-                auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<ValueType>(matrix, false, false);
+                storm::storage::StronglyConnectedComponentDecompositionOptions const options;
+                auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<ValueType>(matrix, options);
 
                 storm::storage::BitVector selectedStates(matrix.getRowCount());
                 storm::storage::BitVector selfLoopStates(matrix.getRowCount());
@@ -724,8 +721,6 @@ namespace storm {
             }
 
             if (parSettings.isMonotonicityAnalysisSet()) {
-                std::cout << "Hello, Jip2" << std::endl;
-
                 std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(input.properties);
 
                 // Monotonicity
@@ -740,9 +735,6 @@ namespace storm {
 
                 outfile << monotonicityWatch << std::endl;
                 outfile.close();
-                std::cout << "Bye, Jip2" << std::endl;
-
-                return;
             }
 
             std::vector<storm::storage::ParameterRegion<ValueType>> regions = parseRegions<ValueType>(model);

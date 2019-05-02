@@ -56,34 +56,179 @@ TEST(AssumptionMakerTest, Brp_without_bisimulation) {
     auto assumptionMaker = storm::analysis::AssumptionMaker<storm::RationalFunction>(&assumptionChecker, dtmc->getNumberOfStates(), true);
     auto result = assumptionMaker.createAndCheckAssumption(std::get<1>(criticalTuple), std::get<2>(criticalTuple), std::get<0>(criticalTuple));
 
-    auto itr = result.begin();
+    EXPECT_EQ(3, result.size());
 
-    auto var1 = itr->first->getManager().getVariable("183");
-    auto var2 = itr->first->getManager().getVariable("186");
+    bool foundFirst = false;
+    bool foundSecond = false;
+    bool foundThird = false;
+    for (auto itr = result.begin(); itr != result.end(); ++itr) {
+        if (!foundFirst && itr->first->getFirstOperand()->asVariableExpression().getVariable().getName() == "183") {
+            EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, itr->second);
+            EXPECT_EQ(true, itr->first->getFirstOperand()->isVariable());
+            EXPECT_EQ(true, itr->first->getSecondOperand()->isVariable());
+            EXPECT_EQ("186", itr->first->getSecondOperand()->asVariableExpression().getVariable().getName());
+            EXPECT_EQ(storm::expressions::BinaryRelationExpression::RelationType::Greater, itr->first->getRelationType());
+            foundFirst = true;
+        } else if (!foundSecond && itr->first->getRelationType() == storm::expressions::BinaryRelationExpression::RelationType::Greater) {
+            EXPECT_EQ(storm::analysis::AssumptionStatus::UNKNOWN, itr->second);
+            EXPECT_EQ(true, itr->first->getFirstOperand()->isVariable());
+            EXPECT_EQ(true, itr->first->getSecondOperand()->isVariable());
+            EXPECT_EQ("186", itr->first->getFirstOperand()->asVariableExpression().getVariable().getName());
+            EXPECT_EQ("183", itr->first->getSecondOperand()->asVariableExpression().getVariable().getName());
+            EXPECT_EQ(storm::expressions::BinaryRelationExpression::RelationType::Greater, itr->first->getRelationType());
+            foundSecond = true;
+        } else if (!foundThird && itr->first->getRelationType() == storm::expressions::BinaryRelationExpression::RelationType::Equal) {
+            EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, itr->second);
+            EXPECT_EQ(true, itr->first->getFirstOperand()->isVariable());
+            EXPECT_EQ(true, itr->first->getSecondOperand()->isVariable());
+            EXPECT_EQ("186", itr->first->getFirstOperand()->asVariableExpression().getVariable().getName());
+            EXPECT_EQ("183", itr->first->getSecondOperand()->asVariableExpression().getVariable().getName());
+            EXPECT_EQ(storm::expressions::BinaryRelationExpression::RelationType::Equal, itr->first->getRelationType());
+            foundThird = true;
+        } else {
+            EXPECT_TRUE(false);
+        }
+    }
+    EXPECT_TRUE(foundFirst);
+    EXPECT_TRUE(foundSecond);
+    EXPECT_TRUE(foundThird);
+}
+
+TEST(AssumptionMakerTest, Simple1) {
+    std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/simple1.pm";
+    std::string formulaAsString = "P=? [F s=3]";
+    std::string constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
+
+    storm::prism::Program program = storm::api::parseProgram(programFile);
+    program = storm::utility::prism::preprocess(program, constantsAsString);
+    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*dtmc);
+    ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
+    model = simplifier.getSimplifiedModel();
+    dtmc = model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+
+    ASSERT_EQ(dtmc->getNumberOfStates(), 5);
+    ASSERT_EQ(dtmc->getNumberOfTransitions(), 8);
+
+    storm::storage::BitVector above(5);
+    above.set(3);
+    storm::storage::BitVector below(5);
+    below.set(4);
+    storm::storage::BitVector initialMiddle(5);
+
+    auto lattice = new storm::analysis::Lattice(&above, &below, &initialMiddle, 5);
+
+    auto assumptionChecker = storm::analysis::AssumptionChecker<storm::RationalFunction>(formulas[0], dtmc, 3);
+    auto assumptionMaker = storm::analysis::AssumptionMaker<storm::RationalFunction>(&assumptionChecker, dtmc->getNumberOfStates(), true);
+    auto result = assumptionMaker.createAndCheckAssumption(1, 2, lattice);
 
     EXPECT_EQ(3, result.size());
 
-    EXPECT_EQ(false, itr->second);
-    EXPECT_EQ(true, itr->first->getFirstOperand()->isVariable());
-    EXPECT_EQ(true, itr->first->getSecondOperand()->isVariable());
-    EXPECT_EQ(var1, itr->first->getFirstOperand()->asVariableExpression().getVariable());
-    EXPECT_EQ(var2, itr->first->getSecondOperand()->asVariableExpression().getVariable());
-    EXPECT_EQ(storm::expressions::BinaryRelationExpression::RelationType::Greater, itr->first->getRelationType());
-
-    ++itr;
-    EXPECT_EQ(false, itr->second);
-    EXPECT_EQ(true, itr->first->getFirstOperand()->isVariable());
-    EXPECT_EQ(true, itr->first->getSecondOperand()->isVariable());
-    EXPECT_EQ(var2, itr->first->getFirstOperand()->asVariableExpression().getVariable());
-    EXPECT_EQ(var1, itr->first->getSecondOperand()->asVariableExpression().getVariable());
-    EXPECT_EQ(storm::expressions::BinaryRelationExpression::RelationType::Greater, itr->first->getRelationType());
-
-    ++itr;
-    EXPECT_EQ(false, itr->second);
-    EXPECT_EQ(true, itr->first->getFirstOperand()->isVariable());
-    EXPECT_EQ(true, itr->first->getSecondOperand()->isVariable());
-    EXPECT_EQ(var2, itr->first->getFirstOperand()->asVariableExpression().getVariable());
-    EXPECT_EQ(var1, itr->first->getSecondOperand()->asVariableExpression().getVariable());
-    EXPECT_EQ(storm::expressions::BinaryRelationExpression::RelationType::Equal, itr->first->getRelationType());
-    // TODO: createEqualsAssumption checken
+    bool foundFirst = false;
+    bool foundSecond = false;
+    bool foundThird = false;
+    for (auto itr = result.begin(); itr != result.end(); ++itr) {
+        if (!foundFirst && itr->first->getFirstOperand()->asVariableExpression().getVariable().getName() == "1") {
+            EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, itr->second);
+            EXPECT_EQ(true, itr->first->getFirstOperand()->isVariable());
+            EXPECT_EQ(true, itr->first->getSecondOperand()->isVariable());
+            EXPECT_EQ("2", itr->first->getSecondOperand()->asVariableExpression().getVariable().getName());
+            EXPECT_EQ(storm::expressions::BinaryRelationExpression::RelationType::Greater, itr->first->getRelationType());
+            foundFirst = true;
+        } else if (!foundSecond && itr->first->getRelationType() == storm::expressions::BinaryRelationExpression::RelationType::Greater) {
+            EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, itr->second);
+            EXPECT_EQ(true, itr->first->getFirstOperand()->isVariable());
+            EXPECT_EQ(true, itr->first->getSecondOperand()->isVariable());
+            EXPECT_EQ("2", itr->first->getFirstOperand()->asVariableExpression().getVariable().getName());
+            EXPECT_EQ("1", itr->first->getSecondOperand()->asVariableExpression().getVariable().getName());
+            EXPECT_EQ(storm::expressions::BinaryRelationExpression::RelationType::Greater, itr->first->getRelationType());
+            foundSecond = true;
+        } else if (!foundThird && itr->first->getRelationType() == storm::expressions::BinaryRelationExpression::RelationType::Equal) {
+            EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, itr->second);
+            EXPECT_EQ(true, itr->first->getFirstOperand()->isVariable());
+            EXPECT_EQ(true, itr->first->getSecondOperand()->isVariable());
+            EXPECT_EQ("2", itr->first->getFirstOperand()->asVariableExpression().getVariable().getName());
+            EXPECT_EQ("1", itr->first->getSecondOperand()->asVariableExpression().getVariable().getName());
+            EXPECT_EQ(storm::expressions::BinaryRelationExpression::RelationType::Equal, itr->first->getRelationType());
+            foundThird = true;
+        } else {
+            EXPECT_TRUE(false);
+        }
+    }
+    EXPECT_TRUE(foundFirst);
+    EXPECT_TRUE(foundSecond);
+    EXPECT_TRUE(foundThird);
 }
+
+TEST(AssumptionMakerTest, Simple2) {
+    std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/simple2.pm";
+    std::string formulaAsString = "P=? [F s=3]";
+    std::string constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
+
+    storm::prism::Program program = storm::api::parseProgram(programFile);
+    program = storm::utility::prism::preprocess(program, constantsAsString);
+    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*dtmc);
+    ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
+    model = simplifier.getSimplifiedModel();
+    dtmc = model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+
+    ASSERT_EQ(dtmc->getNumberOfStates(), 5);
+    ASSERT_EQ(dtmc->getNumberOfTransitions(), 8);
+
+    storm::storage::BitVector above(5);
+    above.set(3);
+    storm::storage::BitVector below(5);
+    below.set(4);
+    storm::storage::BitVector initialMiddle(5);
+
+    auto lattice = new storm::analysis::Lattice(&above, &below, &initialMiddle, 5);
+
+    auto assumptionChecker = storm::analysis::AssumptionChecker<storm::RationalFunction>(formulas[0], dtmc, 3);
+    auto assumptionMaker = storm::analysis::AssumptionMaker<storm::RationalFunction>(&assumptionChecker, dtmc->getNumberOfStates(), true);
+    auto result = assumptionMaker.createAndCheckAssumption(1, 2, lattice);
+
+    auto itr = result.begin();
+
+    EXPECT_EQ(3, result.size());
+
+    bool foundFirst = false;
+    bool foundSecond = false;
+    bool foundThird = false;
+    for (auto itr = result.begin(); itr != result.end(); ++itr) {
+        if (!foundFirst && itr->first->getFirstOperand()->asVariableExpression().getVariable().getName() == "1") {
+            EXPECT_EQ(storm::analysis::AssumptionStatus::VALID, itr->second);
+            EXPECT_EQ(true, itr->first->getFirstOperand()->isVariable());
+            EXPECT_EQ(true, itr->first->getSecondOperand()->isVariable());
+            EXPECT_EQ("2", itr->first->getSecondOperand()->asVariableExpression().getVariable().getName());
+            EXPECT_EQ(storm::expressions::BinaryRelationExpression::RelationType::Greater, itr->first->getRelationType());
+            foundFirst = true;
+        } else if (!foundSecond && itr->first->getRelationType() == storm::expressions::BinaryRelationExpression::RelationType::Greater) {
+            EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, itr->second);
+            EXPECT_EQ(true, itr->first->getFirstOperand()->isVariable());
+            EXPECT_EQ(true, itr->first->getSecondOperand()->isVariable());
+            EXPECT_EQ("2", itr->first->getFirstOperand()->asVariableExpression().getVariable().getName());
+            EXPECT_EQ("1", itr->first->getSecondOperand()->asVariableExpression().getVariable().getName());
+            EXPECT_EQ(storm::expressions::BinaryRelationExpression::RelationType::Greater, itr->first->getRelationType());
+            foundSecond = true;
+        } else if (!foundThird && itr->first->getRelationType() == storm::expressions::BinaryRelationExpression::RelationType::Equal) {
+            EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, itr->second);
+            EXPECT_EQ(true, itr->first->getFirstOperand()->isVariable());
+            EXPECT_EQ(true, itr->first->getSecondOperand()->isVariable());
+            EXPECT_EQ("2", itr->first->getFirstOperand()->asVariableExpression().getVariable().getName());
+            EXPECT_EQ("1", itr->first->getSecondOperand()->asVariableExpression().getVariable().getName());
+            EXPECT_EQ(storm::expressions::BinaryRelationExpression::RelationType::Equal, itr->first->getRelationType());
+            foundThird = true;
+        } else {
+            EXPECT_TRUE(false);
+        }
+    }
+    EXPECT_TRUE(foundFirst);
+    EXPECT_TRUE(foundSecond);
+    EXPECT_TRUE(foundThird);
+}
+

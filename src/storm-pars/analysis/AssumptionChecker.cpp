@@ -5,6 +5,7 @@
 #include "AssumptionChecker.h"
 
 #include "storm-pars/utility/ModelInstantiator.h"
+#include "storm-pars/analysis/MonotonicityChecker.h"
 
 #include "storm/environment/Environment.h"
 #include "storm/exceptions/NotSupportedException.h"
@@ -16,8 +17,8 @@
 #include "storm/storage/expressions/SimpleValuation.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/VariableExpression.h"
-#include "storm/utility/constants.h"
 #include "storm/storage/expressions/RationalFunctionToExpression.h"
+#include "storm/utility/constants.h"
 
 namespace storm {
     namespace analysis {
@@ -30,6 +31,8 @@ namespace storm {
             auto instantiator = storm::utility::ModelInstantiator<storm::models::sparse::Dtmc<ValueType>, storm::models::sparse::Dtmc<double>>(*model);
             auto matrix = model->getTransitionMatrix();
             std::set<storm::RationalFunctionVariable> variables =  storm::models::sparse::getProbabilityParameters(*model);
+
+            // TODO: sampling part also done in MonotonicityChecker, would be better to use this one instead of creating it again
             for (auto i = 0; i < numberOfSamples; ++i) {
                 auto valuation = storm::utility::parametric::Valuation<ValueType>();
                 for (auto itr = variables.begin(); itr != variables.end(); ++itr) {
@@ -57,7 +60,7 @@ namespace storm {
                 }
                 auto quantitativeResult = checkResult->asExplicitQuantitativeCheckResult<double>();
                 std::vector<double> values = quantitativeResult.getValueVector();
-                results.push_back(values);
+                samples.push_back(values);
             }
         }
 
@@ -70,6 +73,8 @@ namespace storm {
             auto instantiator = storm::utility::ModelInstantiator<storm::models::sparse::Mdp<ValueType>, storm::models::sparse::Mdp<double>>(*model);
             auto matrix = model->getTransitionMatrix();
             std::set<storm::RationalFunctionVariable> variables =  storm::models::sparse::getProbabilityParameters(*model);
+
+            // TODO: sampling part also done in MonotonicityChecker, would be better to use this one instead of creating it again
             for (auto i = 0; i < numberOfSamples; ++i) {
                 auto valuation = storm::utility::parametric::Valuation<ValueType>();
                 for (auto itr = variables.begin(); itr != variables.end(); ++itr) {
@@ -96,48 +101,62 @@ namespace storm {
                 }
                 auto quantitativeResult = checkResult->asExplicitQuantitativeCheckResult<double>();
                 std::vector<double> values = quantitativeResult.getValueVector();
-                results.push_back(values);
+                samples.push_back(values);
             }
         }
 
         template <typename ValueType>
-        bool AssumptionChecker<ValueType>::checkOnSamples(std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption) {
-            bool result = true;
+        AssumptionStatus AssumptionChecker<ValueType>::checkOnSamples(std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption) {
+            auto result = AssumptionStatus::UNKNOWN;
             std::set<storm::expressions::Variable> vars = std::set<storm::expressions::Variable>({});
             assumption->gatherVariables(vars);
-            for (auto itr = results.begin(); result && itr != results.end(); ++itr) {
+            for (auto itr = samples.begin(); result == AssumptionStatus::UNKNOWN && itr != samples.end(); ++itr) {
                 std::shared_ptr<storm::expressions::ExpressionManager const> manager = assumption->getManager().getSharedPointer();
                 auto valuation = storm::expressions::SimpleValuation(manager);
                 auto values = (*itr);
-                for (auto var = vars.begin(); result && var != vars.end(); ++var) {
+                for (auto var = vars.begin(); result == AssumptionStatus::UNKNOWN && var != vars.end(); ++var) {
                     storm::expressions::Variable par = *var;
                     auto index = std::stoi(par.getName());
                     valuation.setRationalValue(par, values[index]);
                 }
                 assert(assumption->hasBooleanType());
-                result &= assumption->evaluateAsBool(&valuation);
+                if (!assumption->evaluateAsBool(&valuation)) {
+                    result = AssumptionStatus::INVALID;
+                }
             }
             return result;
         }
 
         template <typename ValueType>
-        bool AssumptionChecker<ValueType>::validateAssumption(std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption, storm::analysis::Lattice* lattice) {
-            bool result = validated(assumption);
-            if (!result) {
+        AssumptionStatus AssumptionChecker<ValueType>::validateAssumption(std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption, storm::analysis::Lattice* lattice) {
+            // First check if based on sample points the assumption can be discharged
+            auto result = checkOnSamples(assumption);
+            assert (result != storm::analysis::AssumptionStatus::VALID);
+
+            if (result == storm::analysis::AssumptionStatus::UNKNOWN) {
+                // If result from sample checking was unknown, the assumption might hold, so we continue,
+                // otherwise we return INVALID
                 std::set<storm::expressions::Variable> vars = std::set<storm::expressions::Variable>({});
                 assumption->gatherVariables(vars);
 
                 STORM_LOG_THROW(assumption->getRelationType() ==
-                                storm::expressions::BinaryRelationExpression::RelationType::Greater ||assumption->getRelationType() ==
-                                                                                                             storm::expressions::BinaryRelationExpression::RelationType::Equal,
+                                storm::expressions::BinaryRelationExpression::RelationType::Greater ||
+                                assumption->getRelationType() ==
+                                storm::expressions::BinaryRelationExpression::RelationType::Equal,
                                 storm::exceptions::NotSupportedException,
                                 "Only Greater Or Equal assumptions supported");
 
-                // TODO: implement validation of equal/greater equations
-                auto row1 = matrix.getRow(std::stoi(assumption->getFirstOperand()->asVariableExpression().getVariableName()));
-                auto row2 = matrix.getRow(std::stoi(assumption->getSecondOperand()->asVariableExpression().getVariableName()));
+                // Row with successors of the first state
+                auto row1 = matrix.getRow(
+                        std::stoi(assumption->getFirstOperand()->asVariableExpression().getVariableName()));
+                // Row with successors of the second state
+                auto row2 = matrix.getRow(
+                        std::stoi(assumption->getSecondOperand()->asVariableExpression().getVariableName()));
 
                 if (row1.getNumberOfEntries() == 2 && row2.getNumberOfEntries() == 2) {
+                    // If the states have the same successors for which we know the position in the lattice
+                    // We can check with a function if the assumption holds
+
                     auto state1succ1 = row1.begin();
                     auto state1succ2 = (++row1.begin());
                     auto state2succ1 = row2.begin();
@@ -149,63 +168,33 @@ namespace storm {
                     }
 
                     if (state1succ1->getColumn() == state2succ1->getColumn() && state1succ2->getColumn() == state2succ2->getColumn()) {
-                        auto comp = lattice->compare(state1succ1->getColumn(), state1succ2->getColumn());
-                        if (comp != storm::analysis::Lattice::UNKNOWN) {
+                        if (assumption->getRelationType() == storm::expressions::BinaryRelationExpression::RelationType::Greater
+                            && lattice->compare(state1succ1->getColumn(), state1succ2->getColumn()) != storm::analysis::Lattice::UNKNOWN) {
+                            // The assumption should be the greater assumption
+                            // If the result is unknown, we cannot compare, also SMTSolver will not help
                             result = validateAssumptionFunction(lattice, state1succ1, state1succ2, state2succ1,
                                                                 state2succ2);
-
-                        if (!result) {
-                            result = validateAssumptionSMTSolver(lattice, state1succ1, state1succ2, state2succ1,
-                                                                 state2succ2);
-                        }
-
-                            validatedAssumptions.insert(assumption);
-                            if (result) {
-                                validAssumptions.insert(assumption);
+                        } else if (assumption->getRelationType() == storm::expressions::BinaryRelationExpression::RelationType::Equal) {
+                            // The assumption is equal, the successors are the same,
+                            // so if the probability of reaching the successors is the same, we have a valid assumption
+                            if (state1succ1->getValue() == state2succ1->getValue()) {
+                                result = AssumptionStatus::VALID;
                             }
+                        } else {
+                            result = AssumptionStatus::UNKNOWN;
                         }
+                    } else {
+                        result = validateAssumptionSMTSolver(lattice, assumption);
                     }
                 } else {
-                    bool subset = true;
-
-                    if (row1.getNumberOfEntries() > row2.getNumberOfEntries()) {
-                        std::swap(row1, row2);
-                    }
-                    storm::storage::BitVector stateNumbers(matrix.getColumnCount());
-                    for (auto itr1 = row1.begin(); subset && itr1 != row1.end(); ++itr1) {
-                        bool found = false;
-                        stateNumbers.set(itr1->getColumn());
-                        for (auto itr2 = row2.begin(); !found && itr2 != row2.end(); ++itr2) {
-                            found = itr1->getColumn() == itr2->getColumn();
-                        }
-                        subset &= found;
-                    }
-
-                    if (subset) {
-                        // Check if they all are in the lattice
-                        bool allInLattice = true;
-                        for (auto i = stateNumbers.getNextSetIndex(0); allInLattice && i < stateNumbers.size(); i = stateNumbers.getNextSetIndex(i+1)) {
-                            for (auto j = stateNumbers.getNextSetIndex(i+1); allInLattice && j < stateNumbers.size(); j = stateNumbers.getNextSetIndex(j+1)) {
-                                auto comp = lattice->compare(i,j);
-                                allInLattice &= comp == storm::analysis::Lattice::ABOVE || comp == storm::analysis::Lattice::BELOW || comp == storm::analysis::Lattice::SAME;
-                            }
-                        }
-
-                        if (allInLattice) {
-                            result = validateAssumptionSMTSolver(lattice, assumption);
-                            validatedAssumptions.insert(assumption);
-                            if (result) {
-                                validAssumptions.insert(assumption);
-                            }
-                        }
-                    }
+                    result = validateAssumptionSMTSolver(lattice, assumption);
                 }
             }
             return result;
         }
 
         template <typename ValueType>
-        bool AssumptionChecker<ValueType>::validateAssumptionFunction(storm::analysis::Lattice* lattice,
+        AssumptionStatus AssumptionChecker<ValueType>::validateAssumptionFunction(storm::analysis::Lattice* lattice,
                 typename storm::storage::SparseMatrix<ValueType>::iterator state1succ1,
                 typename storm::storage::SparseMatrix<ValueType>::iterator state1succ2,
                 typename storm::storage::SparseMatrix<ValueType>::iterator state2succ1,
@@ -215,8 +204,9 @@ namespace storm {
                 || (state1succ1->getColumn() == state2succ2->getColumn()
                 && state1succ2->getColumn() == state2succ1->getColumn()));
 
-            bool result = true;
+            AssumptionStatus result;
 
+            // Calculate the difference in probability for the "highest" successor state
             ValueType prob;
             auto comp = lattice->compare(state1succ1->getColumn(), state1succ2->getColumn());
             assert (comp == storm::analysis::Lattice::ABOVE || comp == storm::analysis::Lattice::BELOW);
@@ -227,187 +217,136 @@ namespace storm {
             }
 
             auto vars = prob.gatherVariables();
-            
+
+            // If the result in monotone increasing (decreasing), then choose 0 (1) for the substitutions
+            // This will give the smallest result
             // TODO: Type
             std::map<storm::RationalFunctionVariable, typename ValueType::CoeffType> substitutions;
             for (auto var : vars) {
-                auto derivative = prob.derivative(var);
-                if(derivative.isConstant()) {
-                    if (derivative.constantPart() >= 0) {
-                        substitutions[var] = 0;
-                    } else if (derivative.constantPart() <= 0) {
-                        substitutions[var] = 1;
-                    }
+                auto monotonicity = MonotonicityChecker<ValueType>::checkDerivative(prob.derivative(var));
+                if (monotonicity.first) {
+                    // monotone increasing
+                    substitutions[var] = 0;
+                } else if (monotonicity.second) {
+                    // monotone increasing
+                    substitutions[var] = 1;
                 } else {
-                    result = false;
-                }
-            }
-//            return result && prob.evaluate(substitutions) >= 0;
-//TODO check for > and =
-            return false;
-        }
-
-        template <typename ValueType>
-        bool AssumptionChecker<ValueType>::validateAssumptionSMTSolver(storm::analysis::Lattice* lattice,
-                                                                       typename storm::storage::SparseMatrix<ValueType>::iterator state1succ1,
-                                                                       typename storm::storage::SparseMatrix<ValueType>::iterator state1succ2,
-                                                                       typename storm::storage::SparseMatrix<ValueType>::iterator state2succ1,
-                                                                       typename storm::storage::SparseMatrix<ValueType>::iterator state2succ2) {
-            assert((state1succ1->getColumn() == state2succ1->getColumn()
-                    && state1succ2->getColumn() == state2succ2->getColumn())
-                   || (state1succ1->getColumn() == state2succ2->getColumn()
-                       && state1succ2->getColumn() == state2succ1->getColumn()));
-            std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
-            std::shared_ptr<storm::expressions::ExpressionManager> manager(
-                    new storm::expressions::ExpressionManager());
-
-            storm::solver::Z3SmtSolver s(*manager);
-            storm::solver::SmtSolver::CheckResult smtResult = storm::solver::SmtSolver::CheckResult::Unknown;
-
-            storm::expressions::Variable succ1 = manager->declareRationalVariable(std::to_string(state1succ1->getColumn()));
-            storm::expressions::Variable succ2 = manager->declareRationalVariable(std::to_string(state1succ2->getColumn()));
-            auto comp = lattice->compare(state1succ1->getColumn(), state1succ2->getColumn());
-
-            storm::expressions::Expression exprGiven;
-            if (comp == storm::analysis::Lattice::ABOVE) {
-                exprGiven = succ1 >= succ2;
-            } else if (comp == storm::analysis::Lattice::BELOW) {
-                exprGiven = succ1 <= succ2;
-            } else {
-                assert (comp != storm::analysis::Lattice::UNKNOWN);
-                exprGiven = succ1 = succ2;
-            }
-
-            auto valueTypeToExpression = storm::expressions::RationalFunctionToExpression<ValueType>(manager);
-            storm::expressions::Expression exprToCheck =
-                    (valueTypeToExpression.toExpression(state1succ1->getValue())*succ1
-                     + valueTypeToExpression.toExpression(state1succ2->getValue())*succ2
-                     >= valueTypeToExpression.toExpression(state2succ1->getValue())*succ1
-                        + valueTypeToExpression.toExpression(state2succ2->getValue())*succ2);
-
-            storm::expressions::Expression exprBounds = manager->boolean(true);
-            auto variables = manager->getVariables();
-            for (auto var : variables) {
-                if (var != succ1 && var != succ2) {
-                    // ensure graph-preserving
-                    exprBounds = exprBounds && manager->rational(0) <= var && manager->rational(1) >= var;
-                } else {
-                    exprBounds = exprBounds && var >= manager->rational(0) && var <= manager->rational(1);
+                    result = AssumptionStatus::UNKNOWN;
                 }
             }
 
-            s.add(exprGiven);
-            s.add(exprToCheck);
-            s.add(exprBounds);
-            smtResult = s.check();
-
-//            return smtResult == storm::solver::SmtSolver::CheckResult::Sat;
-//TODO check for > and =
-            return false;
+            if (prob.evaluate(substitutions) >= 0) {
+                result = AssumptionStatus::VALID;
+            }
+            return result;
         }
 
-        template <typename ValueType>
-        bool AssumptionChecker<ValueType>::validateAssumptionSMTSolver(storm::analysis::Lattice* lattice, std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption) {
-            assert (!validated(assumption));
 
+        template <typename ValueType>
+        AssumptionStatus AssumptionChecker<ValueType>::validateAssumptionSMTSolver(storm::analysis::Lattice* lattice, std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption) {
             std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
             std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
 
-            bool result = true;
-            auto row1 = matrix.getRow(std::stoi(assumption->getFirstOperand()->asVariableExpression().getVariableName()));
-            auto row2 = matrix.getRow(std::stoi(assumption->getSecondOperand()->asVariableExpression().getVariableName()));
+            AssumptionStatus result;
+            auto var1 = assumption->getFirstOperand()->asVariableExpression().getVariableName();
+            auto var2 = assumption->getSecondOperand()->asVariableExpression().getVariableName();
+            auto row1 = matrix.getRow(std::stoi(var1));
+            auto row2 = matrix.getRow(std::stoi(var2));
 
-            storm::solver::Z3SmtSolver s(*manager);
+            bool orderKnown = true;
+            // Check if the order between the different successors is known
+            // Also start creating expression for order of states
+            storm::expressions::Expression exprOrderSucc = manager->boolean(true);
             std::set<storm::expressions::Variable> stateVariables;
-            if (row1.getNumberOfEntries() >= row2.getNumberOfEntries()) {
-                for (auto itr = row1.begin(); itr != row1.end(); ++itr) {
-                    stateVariables.insert(manager->declareRationalVariable(std::to_string(itr->getColumn())));
+            for (auto itr1 = row1.begin(); orderKnown && itr1 != row1.end(); ++itr1) {
+                auto varname1 = "s" + std::to_string(itr1->getColumn());
+                if (!manager->hasVariable(varname1)) {
+                    stateVariables.insert(manager->declareRationalVariable(varname1));
                 }
-            } else {
-                for (auto itr = row2.begin(); itr != row2.end(); ++itr) {
-                    stateVariables.insert(manager->declareRationalVariable(std::to_string(itr->getColumn())));
-                }
-            }
-
-            storm::expressions::Expression exprGiven = manager->boolean(true);
-
-            for (auto itr1 = row1.begin(); result && itr1 != row1.end(); ++itr1) {
-                for (auto itr2 = row1.begin(); result && itr2 != row1.end(); ++itr2) {
+                for (auto itr2 = row2.begin(); orderKnown && itr2 != row2.end(); ++itr2) {
                     if (itr1->getColumn() != itr2->getColumn()) {
+                        auto varname2 = "s" + std::to_string(itr2->getColumn());
+                        if (!manager->hasVariable(varname2)) {
+                            stateVariables.insert(manager->declareRationalVariable(varname2));
+                        }
                         auto comp = lattice->compare(itr1->getColumn(), itr2->getColumn());
-
                         if (comp == storm::analysis::Lattice::ABOVE) {
-                            exprGiven = exprGiven && (manager->getVariable(std::to_string(itr1->getColumn())) >=
-                                                      manager->getVariable(std::to_string(itr2->getColumn())));
+                            exprOrderSucc = exprOrderSucc && !(manager->getVariable(varname1) <=
+                                                              manager->getVariable(varname2));
                         } else if (comp == storm::analysis::Lattice::BELOW) {
-                            exprGiven = exprGiven && (manager->getVariable(std::to_string(itr1->getColumn())) <=
-                                                      manager->getVariable(std::to_string(itr2->getColumn())));
+                            exprOrderSucc = exprOrderSucc && !(manager->getVariable(varname1) >=
+                                                              manager->getVariable(varname2));
+                        } else if (comp == storm::analysis::Lattice::SAME) {
+                            exprOrderSucc = exprOrderSucc &&
+                                            (manager->getVariable(varname1) = manager->getVariable(varname2));
                         } else {
-                            assert (comp != storm::analysis::Lattice::UNKNOWN);
-                            exprGiven = exprGiven &&
-                                        (manager->getVariable(std::to_string(itr1->getColumn())) = manager->getVariable(
-                                                std::to_string(itr2->getColumn())));
+                            orderKnown = false;
                         }
                     }
                 }
             }
 
-            auto valueTypeToExpression = storm::expressions::RationalFunctionToExpression<ValueType>(manager);
-            storm::expressions::Expression expr1 = manager->rational(0);
-            for (auto itr1 = row1.begin(); result && itr1 != row1.end(); ++itr1) {
-                expr1 = expr1 + (valueTypeToExpression.toExpression(itr1->getValue()) * manager->getVariable(std::to_string(itr1->getColumn())));
-            }
-
-            storm::expressions::Expression expr2 = manager->rational(0);
-            for (auto itr2 = row2.begin(); result && itr2 != row2.end(); ++itr2) {
-                expr2 = expr2 + (valueTypeToExpression.toExpression(itr2->getValue()) * manager->getVariable(std::to_string(itr2->getColumn())));
-            }
-            storm::expressions::Expression exprToCheck = expr1 >= expr2;
-
-            storm::expressions::Expression exprProb1 = manager->rational(0);
-            for (auto itr1 = row1.begin(); result && itr1 != row1.end(); ++itr1) {
-                exprProb1 = exprProb1 + (valueTypeToExpression.toExpression(itr1->getValue()));
-            }
-
-            storm::expressions::Expression exprProb2 = manager->rational(0);
-            for (auto itr2 = row2.begin(); result && itr2 != row2.end(); ++itr2) {
-                exprProb2 = exprProb2 + (valueTypeToExpression.toExpression(itr2->getValue()));
-            }
-
-            storm::expressions::Expression exprBounds = exprProb1 >= manager->rational(0)
-                         && exprProb1 <= manager->rational(1)
-                         && exprProb2 >= manager->rational(0)
-                         && exprProb2 <= manager->rational(1);
-
-            auto variables = manager->getVariables();
-            for (auto var : variables) {
-                if (find(stateVariables.begin(), stateVariables.end(), var) != stateVariables.end()) {
-                    // ensure graph-preserving
-                    exprBounds = exprBounds && manager->rational(0) <= var && manager->rational(1) >= var;
-                } else {
-                    exprBounds = exprBounds && var >= manager->rational(0) && var <= manager->rational(1);
+            if (orderKnown) {
+                storm::solver::Z3SmtSolver s(*manager);
+                auto valueTypeToExpression = storm::expressions::RationalFunctionToExpression<ValueType>(manager);
+                storm::expressions::Expression expr1 = manager->rational(0);
+                for (auto itr1 = row1.begin(); itr1 != row1.end(); ++itr1) {
+                    expr1 = expr1 + (valueTypeToExpression.toExpression(itr1->getValue()) * manager->getVariable("s" + std::to_string(itr1->getColumn())));
                 }
+
+                storm::expressions::Expression expr2 = manager->rational(0);
+                for (auto itr2 = row2.begin(); itr2 != row2.end(); ++itr2) {
+                    expr2 = expr2 + (valueTypeToExpression.toExpression(itr2->getValue()) * manager->getVariable("s" + std::to_string(itr2->getColumn())));
+                }
+
+                // Create expression for the assumption based on the relation to successors
+                // It is the negation of actual assumption
+                // TODO: use same manager s.t. assumption can be used directly ?
+                storm::expressions::Expression exprToCheck ;
+                if (assumption->getRelationType() ==
+                    storm::expressions::BinaryRelationExpression::RelationType::Greater) {
+                    exprToCheck = expr1 <= expr2;
+                } else {
+                    assert (assumption->getRelationType() ==
+                        storm::expressions::BinaryRelationExpression::RelationType::Equal);
+                    exprToCheck = expr1 > expr2;
+                }
+
+                auto variables = manager->getVariables();
+                // Bounds for the state probabilities and parameters
+                storm::expressions::Expression exprBounds =  manager->boolean(true);
+                for (auto var : variables) {
+                    if (find(stateVariables.begin(), stateVariables.end(), var) != stateVariables.end()) {
+                        // the var is a state
+                        exprBounds = exprBounds && manager->rational(0) <= var && var <= manager->rational(1);
+                    } else {
+                        // the var is a parameter
+                        // TODO: graph-preserving
+                        exprBounds = exprBounds && manager->rational(0) < var && var < manager->rational(1);
+                    }
+                }
+
+                s.add(exprOrderSucc);
+                s.add(exprBounds);
+                // assert that sorting of successors in the lattice and the bounds on the expression are at least satisfiable
+                assert (s.check() == storm::solver::SmtSolver::CheckResult::Sat);
+                // TODO: kijken of t SAT moet zijn?
+                s.add(exprToCheck);
+                auto smtRes = s.check();
+                if (smtRes == storm::solver::SmtSolver::CheckResult::Unsat) {
+                    // If there is no thing satisfying the negation we are safe.
+                    result = AssumptionStatus::VALID;
+                } else if (smtRes == storm::solver::SmtSolver::CheckResult::Sat) {
+                    assert (smtRes == storm::solver::SmtSolver::CheckResult::Sat);
+                    result = AssumptionStatus::INVALID;
+                } else {
+                    result = AssumptionStatus::UNKNOWN;
+                }
+            } else {
+                result = AssumptionStatus::UNKNOWN;
             }
 
-            s.add(exprGiven);
-            s.add(exprBounds);
-            assert(s.check() == storm::solver::SmtSolver::CheckResult::Sat);
-            s.add(exprToCheck);
-            auto smtRes = s.check();
-            //TODO check for > and =
-            result = result &&  smtRes == storm::solver::SmtSolver::CheckResult::Sat;
-            return false;
-        }
-
-        template <typename ValueType>
-        bool AssumptionChecker<ValueType>::validated(std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption) {
-            return find(validatedAssumptions.begin(), validatedAssumptions.end(), assumption) != validatedAssumptions.end();
-        }
-
-        template <typename ValueType>
-        bool AssumptionChecker<ValueType>::valid(std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption) {
-            assert(find(validatedAssumptions.begin(), validatedAssumptions.end(), assumption) != validatedAssumptions.end());
-            return find(validAssumptions.begin(), validAssumptions.end(), assumption) != validAssumptions.end();
+            return result;
         }
 
         template class AssumptionChecker<storm::RationalFunction>;

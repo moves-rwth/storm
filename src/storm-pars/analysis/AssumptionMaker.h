@@ -17,6 +17,7 @@ namespace storm {
 
         template<typename ValueType>
         class AssumptionMaker {
+            typedef std::shared_ptr<storm::expressions::BinaryRelationExpression> AssumptionType;
         public:
             /*!
              * Constructs AssumptionMaker based on the lattice extender, the assumption checker and number of states of the model.
@@ -27,9 +28,7 @@ namespace storm {
              */
             AssumptionMaker( storm::analysis::AssumptionChecker<ValueType>* checker, uint_fast64_t numberOfStates, bool validate);
 
-            std::map<std::shared_ptr<storm::expressions::BinaryRelationExpression>, bool> createAndCheckAssumption(uint_fast64_t val1, uint_fast64_t val2, storm::analysis::Lattice* lattice);
-
-            std::shared_ptr<storm::expressions::BinaryRelationExpression> createEqualAssumption(uint_fast64_t val1, uint_fast64_t val2);
+            std::map<std::shared_ptr<storm::expressions::BinaryRelationExpression>, AssumptionStatus> createAndCheckAssumption(uint_fast64_t val1, uint_fast64_t val2, storm::analysis::Lattice* lattice);
 
         private:
             storm::analysis::AssumptionChecker<ValueType>* assumptionChecker;
@@ -39,8 +38,6 @@ namespace storm {
             uint_fast64_t numberOfStates;
 
             bool validate;
-
-
         };
     }
 }

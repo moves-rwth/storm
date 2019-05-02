@@ -72,7 +72,8 @@ namespace storm {
             auto initialMiddleStates = storm::storage::BitVector(numberOfStates);
             // Check if MC contains cycles
             // TODO maybe move to other place?
-            auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<ValueType>(model->getTransitionMatrix(), false, false);
+            storm::storage::StronglyConnectedComponentDecompositionOptions const options;
+            auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<ValueType>(model->getTransitionMatrix(), options);
             acyclic = true;
             for (auto i = 0; acyclic && i < decomposition.size(); ++i) {
                 acyclic &= decomposition.getBlock(i).size() <= 1;
@@ -80,6 +81,7 @@ namespace storm {
             if (acyclic) {
                 statesSorted = storm::utility::graph::getTopologicalSort(matrix);
             } else {
+                statesSorted = storm::utility::graph::getTopologicalSort(matrix);
                 for (uint_fast64_t i = 0; i < numberOfStates; ++i) {
                     stateMap[i] = new storm::storage::BitVector(numberOfStates, false);
 
@@ -241,7 +243,6 @@ namespace storm {
         std::tuple<Lattice*, uint_fast64_t, uint_fast64_t> LatticeExtender<ValueType>::extendLattice(Lattice* lattice, std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption) {
             auto numberOfStates = this->model->getNumberOfStates();
 
-
             if (assumption != nullptr) {
                 handleAssumption(lattice, assumption);
             }
@@ -328,6 +329,7 @@ namespace storm {
                     auto addedStates = lattice->getAddedStates();
                     if (assumptionSeen) {
                         statesToHandle = addedStates;
+                        // TODO: statesSorted =
                     }
                     auto stateNumber = statesToHandle->getNextSetIndex(0);
                     while (stateNumber != numberOfStates) {
@@ -342,6 +344,7 @@ namespace storm {
                             if (!(*addedStates)[succ1]) {
                                 lattice->addToNode(succ1, lattice->getNode(stateNumber));
                                 statesToHandle->set(succ1, true);
+                                statesSorted.erase(std::find(statesSorted.begin(), statesSorted.end(), succ1));
                             }
                             statesToHandle->set(stateNumber, false);
                             stateNumber = statesToHandle->getNextSetIndex(0);
@@ -355,11 +358,13 @@ namespace storm {
 
                             auto compare = lattice->compare(stateNumber, succ1);
                             if (compare == Lattice::ABOVE) {
+                                statesSorted.erase(std::find(statesSorted.begin(), statesSorted.end(), succ2));
                                 lattice->addBetween(succ2, lattice->getTop(), lattice->getNode(stateNumber));
                                 statesToHandle->set(succ2);
                                 statesToHandle->set(stateNumber, false);
                                 stateNumber = statesToHandle->getNextSetIndex(0);
                             } else if (compare == Lattice::BELOW) {
+                                statesSorted.erase(std::find(statesSorted.begin(), statesSorted.end(), succ2));
                                 lattice->addBetween(succ2, lattice->getNode(stateNumber), lattice->getBottom());
                                 statesToHandle->set(succ2);
                                 statesToHandle->set(stateNumber, false);
@@ -379,27 +384,58 @@ namespace storm {
                         }
                     }
 
-                    addedStates = lattice->getAddedStates();
-                    auto notAddedStates = addedStates->operator~();
-                    for (auto stateNumber : notAddedStates) {
-                        // Iterate over all not yet added states
-                        storm::storage::BitVector* successors = stateMap[stateNumber];
-
-                        // Check if current state has not been added yet, and all successors have, ignore selfloop in this
-                        successors->set(stateNumber, false);
-                        if ((*successors & *addedStates) == *successors) {
-                            auto result = extendAllSuccAdded(lattice, stateNumber, successors);
-                            if (std::get<1>(result) != successors->size()) {
-                                return result;
-                            }
-                            statesToHandle->set(stateNumber);
+//                    addedStates = lattice->getAddedStates();
+//                    auto notAddedStates = addedStates->operator~();
+                    if (!assumptionSeen) {
+                        stateNumber = *(statesSorted.begin());
+                        while (stateNumber != numberOfStates && (*(lattice->getAddedStates()))[stateNumber]) {
+                            statesSorted.erase(statesSorted.begin());
+                            stateNumber = *(statesSorted.begin());
                         }
-                    }
+
+                        if (stateNumber == numberOfStates) {
+                            assert(false);
+                        }
+                            storm::storage::BitVector* successors = stateMap[stateNumber];
+
+                            // Check if current state has not been added yet, and all successors have, ignore selfloop in this
+                            successors->set(stateNumber, false);
+                            if ((*successors & *addedStates) == *successors) {
+                                auto result = extendAllSuccAdded(lattice, stateNumber, successors);
+                                if (std::get<1>(result) != successors->size()) {
+                                    return result;
+                                }
+                                statesToHandle->set(stateNumber);
+                            }
+                    } else {
+                        addedStates = lattice->getAddedStates();
+                        auto notAddedStates = addedStates->operator~();
+                            for (auto stateNumber : notAddedStates) {
+                                // Iterate over all not yet added states
+                                storm::storage::BitVector* successors = stateMap[stateNumber];
+
+                                // Check if current state has not been added yet, and all successors have, ignore selfloop in this
+                                successors->set(stateNumber, false);
+                                if ((*successors & *addedStates) == *successors) {
+                                    auto result = extendAllSuccAdded(lattice, stateNumber, successors);
+                                    if (std::get<1>(result) != successors->size()) {
+                                        return result;
+                                    }
+                                    statesToHandle->set(stateNumber);
+                                }
+                            }
+                        }
 
 
                     // if nothing changed and there are states left, then add a state between top and bottom
                     if (oldNumberSet == lattice->getAddedStates()->getNumberOfSetBits() && oldNumberSet != numberOfStates) {
-                        auto stateNumber = lattice->getAddedStates()->getNextUnsetIndex(0);
+                        if (assumptionSeen) {
+                            stateNumber = lattice->getAddedStates()->getNextUnsetIndex(0);
+                        } else {
+                            stateNumber = *(statesSorted.begin());//lattice->getAddedStates()->getNextUnsetIndex(0);
+                        }
+
+                        statesSorted.erase(statesSorted.begin());
                         lattice->add(stateNumber);
                         statesToHandle->set(stateNumber);
                     }

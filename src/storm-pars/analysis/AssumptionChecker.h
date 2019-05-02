@@ -14,9 +14,19 @@
 
 namespace storm {
     namespace analysis {
+        enum AssumptionStatus {
+            VALID,
+            INVALID,
+            UNKNOWN,
+        };
         template<typename ValueType>
         class AssumptionChecker {
         public:
+            /*!
+             * Constants for status of assumption
+             */
+
+
             /*!
              * Constructs an AssumptionChecker based on the number of samples, for the given formula and model.
              *
@@ -39,60 +49,37 @@ namespace storm {
              * Checks if the assumption holds at the sample points of the AssumptionChecker.
              *
              * @param assumption The assumption to check.
-             * @return true if the assumption holds at the sample points
+             * @return AssumptionStatus::UNKNOWN or AssumptionStatus::INVALID
              */
-            bool checkOnSamples(std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption);
+            AssumptionStatus checkOnSamples(std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption);
 
             /*!
              * Tries to validate an assumption based on the lattice and underlying transition matrix.
              *
              * @param assumption The assumption to validate.
              * @param lattice The lattice.
-             * @return true if the assumption can be validated and holds, false otherwise
+             * @return AssumptionStatus::VALID, or AssumptionStatus::UNKNOWN, or AssumptionStatus::INVALID
              */
-            bool validateAssumption(std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption, storm::analysis::Lattice* lattice);
+            AssumptionStatus validateAssumption(std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption, storm::analysis::Lattice* lattice);
 
-            /*!
-             * Looks up if assumption has been validated.
-             *
-             * @param assumption The assumption.
-             * @return true if the assumption has been validated.
-             */
-            bool validated(std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption);
-
-            /*!
-             * Looks up if assumption is valid. Requires the function to be validated.
-             *
-             * @param assumption The assumption.
-             * @return true if the assumption is valid.
-             */
-            bool valid(std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption);
+            AssumptionStatus validateAssumptionSMTSolver(storm::analysis::Lattice* lattice,
+                                                         std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption);
 
         private:
             std::shared_ptr<storm::logic::Formula const> formula;
 
             storm::storage::SparseMatrix<ValueType> matrix;
 
-            std::vector<std::vector<double>> results;
+            std::vector<std::vector<double>> samples;
 
-            std::set<std::shared_ptr<storm::expressions::BinaryRelationExpression>> validatedAssumptions;
+            void createSamples();
 
-            std::set<std::shared_ptr<storm::expressions::BinaryRelationExpression>> validAssumptions;
-
-            bool validateAssumptionFunction(storm::analysis::Lattice* lattice,
+            AssumptionStatus validateAssumptionFunction(storm::analysis::Lattice* lattice,
                     typename storm::storage::SparseMatrix<ValueType>::iterator state1succ1,
                     typename storm::storage::SparseMatrix<ValueType>::iterator state1succ2,
                     typename storm::storage::SparseMatrix<ValueType>::iterator state2succ1,
                     typename storm::storage::SparseMatrix<ValueType>::iterator state2succ2);
 
-            bool validateAssumptionSMTSolver(storm::analysis::Lattice* lattice,
-                    typename storm::storage::SparseMatrix<ValueType>::iterator state1succ1,
-                    typename storm::storage::SparseMatrix<ValueType>::iterator state1succ2,
-                    typename storm::storage::SparseMatrix<ValueType>::iterator state2succ1,
-                    typename storm::storage::SparseMatrix<ValueType>::iterator state2succ2);
-
-            bool validateAssumptionSMTSolver(storm::analysis::Lattice* lattice,
-                    std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption);
         };
     }
 }

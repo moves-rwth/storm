@@ -28,7 +28,7 @@ namespace storm {
                                         return val.getName() == var.name();
                                      }) != varsManager.end();
                 if (!found) {
-                    manager->declareIntegerVariable(var.name());
+                    manager->declareRationalVariable(var.name());
                 }
             }
 
