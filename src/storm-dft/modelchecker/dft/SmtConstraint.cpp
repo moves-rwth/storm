@@ -597,6 +597,39 @@ namespace storm {
             std::shared_ptr<SmtConstraint> thenConstraint;
             std::shared_ptr<SmtConstraint> elseConstraint;
         };
+
+        class BoolCountIsLessConstant : public SmtConstraint {
+        public:
+            BoolCountIsLessConstant(std::vector<uint64_t> varIndices, uint64_t val) : varIndices(varIndices),
+                                                                                      value(val) {
+            }
+
+            std::string toSmtlib2(std::vector<std::string> const &varNames) const override {
+                std::stringstream sstr;
+                sstr << "(< (+ ";
+                for (uint64_t i = 0; i < varIndices.size(); ++i) {
+                    sstr << "(ite " << varNames.at(varIndices.at(i)) << " 1 0 )";
+                }
+                sstr << ") " << value << " )";
+                return sstr.str();
+            }
+
+            storm::expressions::Expression toExpression(std::vector<std::string> const &varNames,
+                                                        std::shared_ptr<storm::expressions::ExpressionManager> manager) const override {
+                std::vector<storm::expressions::Expression> boolToInt;
+                for (uint64_t i = 0; i < varIndices.size(); ++i) {
+                    boolToInt.push_back(
+                            ite(manager->getVariableExpression(varNames.at(varIndices.at(i))), // If variable is true
+                                manager->integer(1), // set 1
+                                manager->integer(0))); // else 0
+                }
+                return sum(boolToInt) < manager->integer(value);
+            }
+
+        private:
+            std::vector<uint64_t> varIndices;
+            uint64_t value;
+        };
     }
 }
 

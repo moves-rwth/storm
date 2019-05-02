@@ -96,13 +96,22 @@ namespace storm {
             
         private:
             /**
+             * Helper function that checks if the DFT can fail while visiting less than a given number of Markovian states
+             *
+             * @param checkNumber the number to check against
+             * @return "Sat" if a sequence of BE failures exists such that less than checkNumber Markovian states are visited,
+             * "Unsat" if it does not, otherwise "Unknown"
+             */
+            storm::solver::SmtSolver::CheckResult checkFailsWithLessThanMarkovianState(uint64_t checkNumber);
+
+            /**
              * Helper function for correction of least failure bound when dependencies are present
              *
-             * @param state number of the state in the sequence to check
              * @param bound known lower bound to be corrected
+             * @param timeout timeout timeout for each query in seconds
              * @return the corrected bound, 1 if correction cannot be completed
              */
-            uint64_t correctLowerBound(uint64_t bound);
+            uint64_t correctLowerBound(uint64_t bound, uint_fast64_t timeout);
 
             uint64_t getClaimVariableIndex(uint64_t spareIndex, uint64_t childIndex) const;
 
