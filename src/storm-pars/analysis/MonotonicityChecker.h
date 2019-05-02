@@ -77,7 +77,6 @@ namespace storm {
                             new storm::expressions::ExpressionManager());
 
                     storm::solver::Z3SmtSolver s(*manager);
-                    storm::solver::SmtSolver::CheckResult smtResult = storm::solver::SmtSolver::CheckResult::Unknown;
 
                     std::set<carl::Variable> variables = derivative.gatherVariables();
 
@@ -91,28 +90,31 @@ namespace storm {
                     for (auto var : managervars) {
                         exprBounds = exprBounds && manager->rational(0) < var && var < manager->rational(1);
                     }
+                    assert (s.check() == storm::solver::SmtSolver::CheckResult::Sat);
 
                     auto converter = storm::expressions::RationalFunctionToExpression<ValueType>(manager);
 
-                    storm::expressions::Expression exprToCheck1 =
-                            converter.toExpression(derivative) >= manager->rational(0);
+                    // < 0 so not monotone increasing
+                    storm::expressions::Expression exprToCheck =
+                            converter.toExpression(derivative) < manager->rational(0);
                     s.add(exprBounds);
-                    s.add(exprToCheck1);
-                    smtResult = s.check();
-                    monIncr = smtResult == storm::solver::SmtSolver::CheckResult::Sat;
+                    s.add(exprToCheck);
+                    // If it is unsatisfiable then it should be monotone increasing
+                    monIncr = s.check() == storm::solver::SmtSolver::CheckResult::Unsat;
 
-                    storm::expressions::Expression exprToCheck2 =
-                            converter.toExpression(derivative) <= manager->rational(0);
+                    // > 0 so not monotone decreasing
+                    exprToCheck =
+                            converter.toExpression(derivative) > manager->rational(0);
+
                     s.reset();
-                    smtResult = storm::solver::SmtSolver::CheckResult::Unknown;
                     s.add(exprBounds);
-                    s.add(exprToCheck2);
-                    smtResult = s.check();
-                    monDecr = smtResult == storm::solver::SmtSolver::CheckResult::Sat;
-                    if (monIncr && monDecr) {
-                        monIncr = false;
-                        monDecr = false;
-                    }
+                    assert (s.check() == storm::solver::SmtSolver::CheckResult::Sat);
+                    s.add(exprToCheck);
+                    monDecr = s.check() == storm::solver::SmtSolver::CheckResult::Unsat;
+//                    if (monIncr && monDecr) {
+//                        monIncr = false;
+//                        monDecr = false;
+//                    }
                 }
                 assert (!(monIncr && monDecr) || derivative.isZero());
 

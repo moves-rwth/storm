@@ -26,6 +26,59 @@
 #include "storm/api/storm.h"
 
 #include "storm-parsers/api/storm-parsers.h"
+TEST(MonotonicityCheckerTest, Derivative_checker) {
+    // Derivative 0
+    auto constFunction = storm::RationalFunction(0);
+    auto constFunctionRes = storm::analysis::MonotonicityChecker<storm::RationalFunction>::checkDerivative(constFunction);
+    EXPECT_TRUE(constFunctionRes.first);
+    EXPECT_TRUE(constFunctionRes.second);
+
+    // Derivative 5
+    constFunction = storm::RationalFunction(5);
+    constFunctionRes = storm::analysis::MonotonicityChecker<storm::RationalFunction>::checkDerivative(constFunction);
+    EXPECT_TRUE(constFunctionRes.first);
+    EXPECT_FALSE(constFunctionRes.second);
+
+    // Derivative -4
+    constFunction = storm::RationalFunction(storm::RationalFunction(1)-constFunction);
+    constFunctionRes = storm::analysis::MonotonicityChecker<storm::RationalFunction>::checkDerivative(constFunction);
+    EXPECT_FALSE(constFunctionRes.first);
+    EXPECT_TRUE(constFunctionRes.second);
+
+    std::shared_ptr<storm::RawPolynomialCache> cache = std::make_shared<storm::RawPolynomialCache>();
+    carl::StringParser parser;
+    parser.setVariables({"p", "q"});
+    // Derivative p
+    auto function = storm::RationalFunction(storm::Polynomial(parser.template parseMultivariatePolynomial<storm::RationalFunctionCoefficient>("p"), cache));
+    auto functionRes = storm::analysis::MonotonicityChecker<storm::RationalFunction>::checkDerivative(function);
+    EXPECT_TRUE(functionRes.first);
+    EXPECT_FALSE(functionRes.second);
+
+    // Derivative 1-p
+    auto functionDecr = storm::RationalFunction(storm::RationalFunction(1)-function);
+    auto functionDecrRes = storm::analysis::MonotonicityChecker<storm::RationalFunction>::checkDerivative(functionDecr);
+    EXPECT_TRUE(functionDecrRes.first);
+    EXPECT_FALSE(functionDecrRes.second);
+
+    // Derivative 1-2p
+    auto functionNonMonotonic = storm::RationalFunction(storm::RationalFunction(1)-storm::RationalFunction(2)*function);
+    auto functionNonMonotonicRes = storm::analysis::MonotonicityChecker<storm::RationalFunction>::checkDerivative(functionNonMonotonic);
+    EXPECT_FALSE(functionNonMonotonicRes.first);
+    EXPECT_FALSE(functionNonMonotonicRes.second);
+
+    // Derivative -p
+    functionDecr = storm::RationalFunction(storm::RationalFunction(0)-function);
+    functionDecrRes = storm::analysis::MonotonicityChecker<storm::RationalFunction>::checkDerivative(functionDecr);
+    EXPECT_FALSE(functionDecrRes.first);
+    EXPECT_TRUE(functionDecrRes.second);
+
+    // Derivative p*q
+    function = storm::RationalFunction(storm::Polynomial(parser.template parseMultivariatePolynomial<storm::RationalFunctionCoefficient>("p"), cache))
+               * storm::RationalFunction(storm::Polynomial(parser.template parseMultivariatePolynomial<storm::RationalFunctionCoefficient>("q"), cache))  ;
+    functionRes = storm::analysis::MonotonicityChecker<storm::RationalFunction>::checkDerivative(function);
+    EXPECT_TRUE(functionRes.first);
+    EXPECT_FALSE(functionRes.second);
+}
 
 TEST(MonotonicityCheckerTest, Monotone_no_model) {
     std::shared_ptr<storm::models::ModelBase> model;
