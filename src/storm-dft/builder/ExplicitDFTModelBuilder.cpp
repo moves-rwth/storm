@@ -383,7 +383,7 @@ namespace storm {
                     setMarkovian(true);
                     // Add transition to target state with temporary value 0
                     // TODO: what to do when there is no unique target state?
-                    STORM_LOG_ASSERT(this->uniqueFailedState, "Approximation only works with unique failed state");
+                    //STORM_LOG_ASSERT(this->uniqueFailedState, "Approximation only works with unique failed state");
                     matrixBuilder.addTransition(0, storm::utility::zero<ValueType>());
                     // Remember skipped state
                     skippedStates[matrixBuilder.getCurrentRowGroup() - 1] = std::make_pair(currentState, currentExplorationHeuristic);
@@ -425,8 +425,9 @@ namespace storm {
                                     }
 
                                     iter->second.second = heuristic;
-                                    if (state->hasFailed(dft.getTopLevelIndex()) || state->isFailsafe(dft.getTopLevelIndex()) || state->getFailableElements().hasDependencies() || (!state->getFailableElements().hasDependencies() && !state->getFailableElements().hasBEs())) {
-                                        // Do not skip absorbing state or if reached by dependencies
+                                    //if (state->hasFailed(dft.getTopLevelIndex()) || state->isFailsafe(dft.getTopLevelIndex()) || state->getFailableElements().hasDependencies() || (!state->getFailableElements().hasDependencies() && !state->getFailableElements().hasBEs())) {
+                                    if (state->getFailableElements().hasDependencies() || (!state->getFailableElements().hasDependencies() && !state->getFailableElements().hasBEs())) {
+                                            // Do not skip absorbing state or if reached by dependencies
                                         iter->second.second->markExpand();
                                     }
                                     if (usedHeuristic == storm::builder::ApproximationHeuristic::BOUNDDIFFERENCE) {
