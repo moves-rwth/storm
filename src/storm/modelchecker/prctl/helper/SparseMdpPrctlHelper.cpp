@@ -783,7 +783,7 @@ namespace storm {
                             newRew0AStates.set(ecElimResult.oldToNewStateMapping[oldRew0AState]);
                         }
                         
-                        return computeReachabilityRewardsHelper(env, std::move(goal), ecElimResult.matrix, ecElimResult.matrix.transpose(true),
+                        MDPSparseModelCheckingHelperReturnType<ValueType> result = computeReachabilityRewardsHelper(env, std::move(goal), ecElimResult.matrix, ecElimResult.matrix.transpose(true),
                                                                 [&] (uint_fast64_t rowCount, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& maybeStates) {
                                                                     std::vector<ValueType> result;
                                                                     std::vector<ValueType> oldChoiceRewards = rewardModel.getTotalRewardVector(transitionMatrix);
@@ -813,6 +813,11 @@ namespace storm {
                                                                     }
                                                                     return newChoicesWithoutReward;
                                                                 });
+                        
+                        std::vector<ValueType> resultInEcQuotient = std::move(result.values);
+                        result.values.resize(ecElimResult.oldToNewStateMapping.size());
+                        storm::utility::vector::selectVectorValues(result.values, ecElimResult.oldToNewStateMapping, resultInEcQuotient);
+                        return result;
                     }
                 }
             }
