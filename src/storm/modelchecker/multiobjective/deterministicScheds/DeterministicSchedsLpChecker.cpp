@@ -28,7 +28,7 @@ namespace storm {
             
             template <typename ModelType, typename GeometryValueType>
             void DeterministicSchedsLpChecker<ModelType, GeometryValueType>::setCurrentWeightVector(std::vector<GeometryValueType> const& weightVector) {
-                STORM_LOG_ASSERT(!weightVector.empty(), "Setting an empty weight vector is not supported.");
+                STORM_LOG_ASSERT(weightVector.size() == objectiveHelper.size(), "Setting a weight vector with invalid number of entries.");
                 swLpBuild.start();
                 if (!currentWeightVector.empty()) {
                     // Pop information of the current weight vector.
@@ -36,13 +36,18 @@ namespace storm {
                     lpModel->update();
                     currentObjectiveVariables.clear();
                 }
+                
                 currentWeightVector = weightVector;
-
+                
                 lpModel->push();
                 // set up objective function for the given weight vector
                 for (uint64_t objIndex = 0; objIndex < initialStateResults.size(); ++objIndex) {
                     currentObjectiveVariables.push_back(lpModel->addUnboundedContinuousVariable("w_" + std::to_string(objIndex), storm::utility::convertNumber<ValueType>(weightVector[objIndex])));
-                    lpModel->addConstraint("", currentObjectiveVariables.back().getExpression() == initialStateResults[objIndex]);
+                    if (objectiveHelper[objIndex].minimizing()) {
+                        lpModel->addConstraint("", currentObjectiveVariables.back().getExpression() == -initialStateResults[objIndex]);
+                    } else {
+                        lpModel->addConstraint("", currentObjectiveVariables.back().getExpression() == initialStateResults[objIndex]);
+                    }
                 }
                 lpModel->update();
                 swLpBuild.stop();
@@ -117,7 +122,7 @@ namespace storm {
                         for (uint64_t choice = 0; choice < numChoices; ++choice) {
                             localChoices.push_back(lpModel->addBoundedIntegerVariable("c" + std::to_string(state) + "_" + std::to_string(choice), 0, 1).getExpression());
                         }
-                        lpModel->addConstraint("", storm::expressions::sum(localChoices).reduceNesting() >= one);
+                        lpModel->addConstraint("", storm::expressions::sum(localChoices).reduceNesting() == one);
                         choiceVars.insert(choiceVars.end(), localChoices.begin(), localChoices.end());
                     }
                 }
@@ -145,6 +150,7 @@ namespace storm {
                         if (schedulerIndependentStates.find(state) != schedulerIndependentStates.end()) {
                             continue;
                         }
+                        storm::expressions::Expression stateValue;
                         uint64_t numChoices = model.getNumberOfChoices(state);
                         uint64_t choiceOffset = model.getTransitionMatrix().getRowGroupIndices()[state];
                         for (uint64_t choice = 0; choice < numChoices; ++choice) {
@@ -163,14 +169,29 @@ namespace storm {
                             }
                             choiceValue = choiceValue.simplify().reduceNesting();
                             if (numChoices == 1) {
-                                lpModel->addConstraint("", stateVars[state] == choiceValue);
+                                stateValue = choiceValue;
                             } else {
+                                auto choiceValVar = lpModel->addBoundedContinuousVariable("x" + std::to_string(objIndex) + "_" + std::to_string(state) + "_" + std::to_string(choice), objectiveHelper[objIndex].getLowerValueBoundAtState(env, state), objectiveHelper[objIndex].getUpperValueBoundAtState(env, state)).getExpression();
                                 uint64_t globalChoiceIndex = model.getTransitionMatrix().getRowGroupIndices()[state] + choice;
-                                storm::expressions::Expression maxDiff = lpModel->getConstant(objectiveHelper[objIndex].getUpperValueBoundAtState(env, state) - objectiveHelper[objIndex].getLowerValueBoundAtState(env, state)) * (one - choiceVars[globalChoiceIndex]);
-                                lpModel->addConstraint("", stateVars[state] - choiceValue <= maxDiff);
-                                lpModel->addConstraint("", choiceValue - stateVars[state] <= maxDiff);
+                                storm::expressions::Expression upperValueBoundAtChoice = lpModel->getConstant(objectiveHelper[objIndex].getUpperValueBoundAtState(env, state));
+                                if (objectiveHelper[objIndex].minimizing()) {
+                                    lpModel->addConstraint("", choiceValVar + (upperValueBoundAtChoice * (one - choiceVars[globalChoiceIndex])) >= choiceValue);
+                                } else {
+                                    lpModel->addConstraint("", choiceValVar <= choiceValue);
+                                    lpModel->addConstraint("", choiceValVar <= upperValueBoundAtChoice * choiceVars[globalChoiceIndex]);
+                                }
+                                if (choice == 0) {
+                                    stateValue = choiceValVar;
+                                } else {
+                                    stateValue = stateValue + choiceValVar;
+                                }
+                                // Alternative encoding: (Then the sum of the choiceVars also has to be >= one (instead of == one)
+                                //storm::expressions::Expression maxDiff = lpModel->getConstant(objectiveHelper[objIndex].getUpperValueBoundAtState(env, state) - objectiveHelper[objIndex].getLowerValueBoundAtState(env, state)) * (one - choiceVars[globalChoiceIndex]);
+                                //lpModel->addConstraint("", stateVars[state] - choiceValVar <= maxDiff);
+                                //lpModel->addConstraint("", choiceValVar - stateVars[state] <= maxDiff);
                             }
                         }
+                        lpModel->addConstraint("", stateVars[state] <= stateValue);
                     }
                 }
                 lpModel->update();
