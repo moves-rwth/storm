@@ -33,6 +33,9 @@ namespace storm {
 
                 ValueType const& getUpperValueBoundAtState(Environment const& env, uint64_t state) const;
                 ValueType const& getLowerValueBoundAtState(Environment const& env, uint64_t state) const;
+                
+                bool minimizing() const;
+                
             private:
                 
                 mutable boost::optional<std::map<uint64_t, ValueType>> schedulerIndependentStateValues;

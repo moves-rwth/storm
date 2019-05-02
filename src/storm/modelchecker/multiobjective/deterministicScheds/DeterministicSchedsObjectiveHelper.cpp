@@ -215,6 +215,11 @@ namespace storm {
                 return lowerResultBounds.get()[state];
             }
             
+            template <typename ModelType>
+            bool DeterministicSchedsObjectiveHelper<ModelType>::minimizing() const {
+                return storm::solver::minimize(objective.formula->getOptimalityType());
+            }
+
             template class DeterministicSchedsObjectiveHelper<storm::models::sparse::Mdp<double>>;
             template class DeterministicSchedsObjectiveHelper<storm::models::sparse::Mdp<storm::RationalNumber>>;
             template class DeterministicSchedsObjectiveHelper<storm::models::sparse::MarkovAutomaton<double>>;
