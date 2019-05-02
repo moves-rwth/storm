@@ -6,6 +6,7 @@
 #include "storm/modelchecker/multiobjective/preprocessing/SparseMultiObjectivePreprocessorResult.h"
 #include "storm/modelchecker/multiobjective/deterministicScheds/DeterministicSchedsLpChecker.h"
 #include "storm/modelchecker/multiobjective/deterministicScheds/DeterministicSchedsObjectiveHelper.h"
+#include "storm/modelchecker/multiobjective/pcaa/PcaaWeightVectorChecker.h"
 
 #include "storm/storage/geometry/Polytope.h"
 #include "storm/storage/geometry/Halfspace.h"
@@ -47,12 +48,17 @@ namespace storm {
                     
                     void setOnFacet(bool value = true);
                     bool liesOnFacet() const;
+                    void setParetoOptimal(bool value = true);
+                    bool isParetoOptimal() const;
                     
                     std::string toString(bool convertToDouble = false) const;
 
+                    
                 private:
                     std::vector<GeometryValueType> coordinates;
                     bool onFacet;
+                    bool paretoOptimal;
+
                 };
                 
                 
@@ -176,6 +182,7 @@ namespace storm {
                 std::vector<Polytope> unachievableAreas;
                 
                 std::shared_ptr<DeterministicSchedsLpChecker<SparseModelType, GeometryValueType>> lpChecker;
+                std::unique_ptr<PcaaWeightVectorChecker<SparseModelType>> wvChecker;
                 std::vector<DeterministicSchedsObjectiveHelper<SparseModelType>> objectiveHelper;
 
                 std::shared_ptr<SparseModelType> const& model;
