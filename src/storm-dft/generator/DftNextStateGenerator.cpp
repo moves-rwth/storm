@@ -78,6 +78,7 @@ namespace storm {
             // Let BE fail
             bool isFirst = true;
             while (!state->getFailableElements().isEnd()) {
+                //TODO outside
                 if (storm::settings::getModule<storm::settings::modules::FaultTreeSettings>().isTakeFirstDependency() && exploreDependencies && !isFirst) {
                     // We discard further exploration as we already chose one dependent event
                     break;
