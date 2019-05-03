@@ -24,7 +24,7 @@ namespace storm {
 
         void DFTASFChecker::convert() {
             std::vector<uint64_t> beVariables;
-            notFailed = dft.nrBasicElements()+1; // Value indicating the element is not failed
+            notFailed = dft.nrBasicElements() + 1; // Value indicating the element is not failed
 
             // Initialize variables
             for (size_t i = 0; i < dft.nrElements(); ++i) {
@@ -35,12 +35,21 @@ namespace storm {
                     case storm::storage::DFTElementType::BE:
                         beVariables.push_back(varNames.size() - 1);
                         break;
-                    case storm::storage::DFTElementType::SPARE:
-                    {
+                    case storm::storage::DFTElementType::SPARE: {
                         auto spare = std::static_pointer_cast<storm::storage::DFTSpare<double> const>(element);
-                        for( auto const& spareChild : spare->children()) {
+                        for (auto const &spareChild : spare->children()) {
                             varNames.push_back("c_" + element->name() + "_" + spareChild->name());
-                            claimVariables.emplace(SpareAndChildPair(element->id(), spareChild->id()), varNames.size() - 1);
+                            claimVariables.emplace(SpareAndChildPair(element->id(), spareChild->id()),
+                                                   varNames.size() - 1);
+                        }
+                        break;
+                    }
+                    case storm::storage::DFTElementType::PDEP: {
+                        auto dep = std::static_pointer_cast<storm::storage::DFTDependency<double> const>(element);
+                        for (auto const &depEvent : dep->dependentEvents()) {
+                            varNames.push_back("d_" + element->name() + "_" + depEvent->name());
+                            dependencyVariables.emplace(DependencyPair(element->id(), depEvent->id()),
+                                                        varNames.size() - 1);
                         }
                         break;
                     }
@@ -58,7 +67,7 @@ namespace storm {
             // Generate constraints
 
             // All BEs have to fail (first part of constraint 12)
-            for (auto const& beV : beVariables) {
+            for (auto const &beV : beVariables) {
                 constraints.push_back(std::make_shared<BetweenValues>(beV, 1, dft.nrBasicElements()));
             }
 
@@ -67,7 +76,7 @@ namespace storm {
             constraints.back()->setDescription("No two BEs fail at the same time");
 
             // Initialize claim variables in [1, |BE|+1]
-            for (auto const& claimVariable : claimVariables) {
+            for (auto const &claimVariable : claimVariables) {
                 constraints.push_back(std::make_shared<BetweenValues>(claimVariable.second, 0, notFailed));
             }
 
@@ -80,7 +89,7 @@ namespace storm {
                 std::vector<uint64_t> childVarIndices;
                 if (element->isGate()) {
                     std::shared_ptr<storm::storage::DFTGate<ValueType> const> gate = dft.getGate(i);
-                    for (auto const& child : gate->children()) {
+                    for (auto const &child : gate->children()) {
                         childVarIndices.push_back(timePointVariables.at(child->id()));
                     }
                 }
@@ -114,7 +123,8 @@ namespace storm {
                         // FDEPs are considered later in the Markovian constraints
                         break;
                     default:
-                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "SMT encoding for type '" << element->type() << "' is not supported.");
+                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
+                                        "SMT encoding for type '" << element->type() << "' is not supported.");
                         break;
                 }
             }
@@ -262,7 +272,7 @@ namespace storm {
             // Child cannot be claimed.
             if (childIndex + 1 < spare->children().size()) {
                 // Consider next child for claiming (second case in constraint 7)
-                noClaimingPossible.push_back(generateTryToClaimConstraint(spare, childIndex+1, timepoint));
+                noClaimingPossible.push_back(generateTryToClaimConstraint(spare, childIndex + 1, timepoint));
             } else {
                 // Last child: spare fails at same point as this child (third case in constraint 7)
                 noClaimingPossible.push_back(std::make_shared<IsEqual>(timePointVariables.at(spare->id()), timepoint));
@@ -274,7 +284,7 @@ namespace storm {
             // Next child is not yet failed
             claimingPossibleC.push_back(std::make_shared<IsLess>(timepoint, timeChild));
             // Child is not yet claimed by a different spare
-            for (auto const& otherSpare : child->parents()) {
+            for (auto const &otherSpare : child->parents()) {
                 if (otherSpare->id() == spare->id()) {
                     // not a different spare.
                     continue;
@@ -323,6 +333,11 @@ namespace storm {
             }
         }
 
+        void DFTASFChecker::generatePdepConstraint(size_t i, std::vector<uint64_t> childVarIndices,
+                                                   std::shared_ptr<storm::storage::DFTElement<ValueType> const> element) {
+            // TODO
+        }
+
         void DFTASFChecker::addMarkovianConstraints() {
             uint64_t nrMarkovian = dft.nrBasicElements();
             std::set<size_t> depElements;
@@ -339,18 +354,24 @@ namespace storm {
                         std::shared_ptr<SmtConstraint> triggerFailed = std::make_shared<IsLessEqualConstant>(
                                 timePointVariables.at(j), i);
                         std::vector<std::shared_ptr<SmtConstraint>> depFailed;
-                        for (auto const& dependency : element->outgoingDependencies()) {
-                            for (auto const& depElement : dependency->dependentEvents()) {
-                                depFailed.push_back(std::make_shared<IsLessEqualConstant>(timePointVariables.at(depElement->id()), i));
+                        for (auto const &dependency : element->outgoingDependencies()) {
+                            for (auto const &depElement : dependency->dependentEvents()) {
+                                depFailed.push_back(
+                                        std::make_shared<IsLessEqualConstant>(timePointVariables.at(depElement->id()),
+                                                                              i));
                             }
                         }
-                        markovianC[i].push_back(std::make_shared<Implies>(triggerFailed, std::make_shared<And>(depFailed)));
+                        markovianC[i].push_back(
+                                std::make_shared<Implies>(triggerFailed, std::make_shared<And>(depFailed)));
                     }
                 }
             }
             for (uint64_t i = 0; i < nrMarkovian; ++i) {
-                constraints.push_back(std::make_shared<Iff>(std::make_shared<IsBoolValue>(markovianVariables.at(i), true), std::make_shared<And>(markovianC[i])));
-                constraints.back()->setDescription("Markovian (" + std::to_string(i) + ") iff all dependent events which trigger failed also failed.");
+                constraints.push_back(
+                        std::make_shared<Iff>(std::make_shared<IsBoolValue>(markovianVariables.at(i), true),
+                                              std::make_shared<And>(markovianC[i])));
+                constraints.back()->setDescription("Markovian (" + std::to_string(i) +
+                                                   ") iff all dependent events which trigger failed also failed.");
             }
 
             // In non-Markovian steps the next failed element is a dependent BE (constraint 10) + additions to specification in paper
@@ -361,14 +382,16 @@ namespace storm {
 
                     if (be->hasIngoingDependencies()) {
                         depElements.emplace(j);
-                        for (uint64_t i = 0; i < nrMarkovian -1; ++i) {
+                        for (uint64_t i = 0; i < nrMarkovian - 1; ++i) {
                             std::shared_ptr<SmtConstraint> nextFailure = std::make_shared<IsConstantValue>(
                                     timePointVariables.at(j), i + 1);
                             std::vector<std::shared_ptr<SmtConstraint>> triggerFailed;
-                            for (auto const& dependency : be->ingoingDependencies()) {
-                                triggerFailed.push_back(std::make_shared<IsLessEqualConstant>(timePointVariables.at(dependency->triggerEvent()->id()), i));
+                            for (auto const &dependency : be->ingoingDependencies()) {
+                                triggerFailed.push_back(std::make_shared<IsLessEqualConstant>(
+                                        timePointVariables.at(dependency->triggerEvent()->id()), i));
                             }
-                            nonMarkovianC[i].push_back(std::make_shared<Implies>(nextFailure, std::make_shared<Or>(triggerFailed)));
+                            nonMarkovianC[i].push_back(
+                                    std::make_shared<Implies>(nextFailure, std::make_shared<Or>(triggerFailed)));
                         }
                     }
                 }
@@ -382,8 +405,11 @@ namespace storm {
                 }
                 // Add Constraint that any DEPENDENT event has to fail next
                 nonMarkovianC[i].push_back(std::make_shared<Or>(dependentConstr));
-                constraints.push_back(std::make_shared<Implies>(std::make_shared<IsBoolValue>(markovianVariables.at(i), false), std::make_shared<And>(nonMarkovianC[i])));
-                constraints.back()->setDescription("Non-Markovian (" + std::to_string(i) + ") -> next failure is dependent BE.");
+                constraints.push_back(
+                        std::make_shared<Implies>(std::make_shared<IsBoolValue>(markovianVariables.at(i), false),
+                                                  std::make_shared<And>(nonMarkovianC[i])));
+                constraints.back()->setDescription(
+                        "Non-Markovian (" + std::to_string(i) + ") -> next failure is dependent BE.");
             }
 
             // In Markovian steps the failure rate is positive (constraint 11)
@@ -402,35 +428,43 @@ namespace storm {
                 }
             }
             for (uint64_t i = 0; i < nrMarkovian; ++i) {
-                constraints.push_back(std::make_shared<Implies>(std::make_shared<IsBoolValue>(markovianVariables.at(i), true), std::make_shared<And>(notColdC[i])));
+                constraints.push_back(
+                        std::make_shared<Implies>(std::make_shared<IsBoolValue>(markovianVariables.at(i), true),
+                                                  std::make_shared<And>(notColdC[i])));
                 constraints.back()->setDescription("Markovian (" + std::to_string(i) + ") -> positive failure rate.");
             }
 
         }
 
 
-        void DFTASFChecker::toFile(std::string const& filename) {
+        void DFTASFChecker::toFile(std::string const &filename) {
             std::ofstream stream;
             storm::utility::openFile(filename, stream);
             stream << "; time point variables" << std::endl;
-            for (auto const& timeVarEntry : timePointVariables) {
+            for (auto const &timeVarEntry : timePointVariables) {
                 stream << "(declare-fun " << varNames[timeVarEntry.second] << "()  Int)" << std::endl;
             }
             stream << "; claim variables" << std::endl;
-            for (auto const& claimVarEntry : claimVariables) {
+            for (auto const &claimVarEntry : claimVariables) {
                 stream << "(declare-fun " << varNames[claimVarEntry.second] << "() Int)" << std::endl;
             }
             stream << "; Markovian variables" << std::endl;
-            for (auto const& markovianVarEntry : markovianVariables) {
+            for (auto const &markovianVarEntry : markovianVariables) {
                 stream << "(declare-fun " << varNames[markovianVarEntry.second] << "() Bool)" << std::endl;
+            }
+            if (!dependencyVariables.empty()) {
+                stream << "; Dependency variables" << std::endl;
+                for (auto const &depVar : dependencyVariables) {
+                    stream << "(declare-fun " << varNames[depVar.second] << "() Int)" << std::endl;
+                }
             }
             if (!tmpTimePointVariables.empty()) {
                 stream << "; Temporary variables" << std::endl;
-                for (auto const& tmpVar : tmpTimePointVariables) {
+                for (auto const &tmpVar : tmpTimePointVariables) {
                     stream << "(declare-fun " << varNames[tmpVar] << "() Int)" << std::endl;
                 }
             }
-            for (auto const& constraint : constraints) {
+            for (auto const &constraint : constraints) {
                 if (!constraint->description().empty()) {
                     stream << "; " << constraint->description() << std::endl;
                 }
@@ -462,6 +496,11 @@ namespace storm {
                     manager->declareIntegerVariable(varNames[tmpVar]);
                 }
             }
+            if (!dependencyVariables.empty()) {
+                for (auto const &depVar : dependencyVariables) {
+                    manager->declareIntegerVariable(varNames[depVar]);
+                }
+            }
             // Add constraints to solver
             for (auto const &constraint : constraints) {
                 solver->add(constraint->toExpression(varNames, manager));
@@ -475,10 +514,10 @@ namespace storm {
             // Set backtracking marker to check several properties without reconstructing DFT encoding
             solver->push();
             // Constraint that toplevel element can fail with less or equal 'bound' failures
-            std::shared_ptr<SmtConstraint> tleNeverFailedConstr = std::make_shared<IsConstantValue>(
+            std::shared_ptr<SmtConstraint> tleFailedConstr = std::make_shared<IsConstantValue>(
                     timePointVariables.at(dft.getTopLevelIndex()), bound);
             std::shared_ptr<storm::expressions::ExpressionManager> manager = solver->getManager().getSharedPointer();
-            solver->add(tleNeverFailedConstr->toExpression(varNames, manager));
+            solver->add(tleFailedConstr->toExpression(varNames, manager));
             storm::solver::SmtSolver::CheckResult res = solver->check();
             solver->pop();
             return res;
@@ -525,11 +564,35 @@ namespace storm {
             }
             // Set backtracking marker to check several properties without reconstructing DFT encoding
             solver->push();
-            // Constraint that toplevel element can fail with less or equal 'bound' failures
+            // Constraint that toplevel element can fail with less than 'checkNumber' Markovian states visited
             std::shared_ptr<SmtConstraint> countConstr = std::make_shared<BoolCountIsLessConstant>(
                     markovianIndices, checkNumber);
             std::shared_ptr<storm::expressions::ExpressionManager> manager = solver->getManager().getSharedPointer();
             solver->add(countConstr->toExpression(varNames, manager));
+            storm::solver::SmtSolver::CheckResult res = solver->check();
+            solver->pop();
+            return res;
+        }
+
+        storm::solver::SmtSolver::CheckResult
+        DFTASFChecker::checkFailsAtTimepointWithOnlyMarkovianState(uint64_t timepoint) {
+            STORM_LOG_ASSERT(solver, "SMT Solver was not initialized, call toSolver() before checking queries");
+            std::vector<uint64_t> markovianIndices;
+            // Get Markovian variable indices
+            for (uint64_t i = 0; i < timepoint; ++i) {
+                markovianIndices.push_back(markovianVariables.at(i));
+            }
+            // Set backtracking marker to check several properties without reconstructing DFT encoding
+            solver->push();
+            // Constraint that toplevel element can fail with less than 'checkNumber' Markovian states visited
+            std::shared_ptr<SmtConstraint> countConstr = std::make_shared<BoolCountIsConstantValue>(
+                    markovianIndices, timepoint);
+            // Constraint that TLE fails at timepoint
+            std::shared_ptr<SmtConstraint> timepointConstr = std::make_shared<IsConstantValue>(
+                    timePointVariables.at(dft.getTopLevelIndex()), timepoint);
+            std::shared_ptr<storm::expressions::ExpressionManager> manager = solver->getManager().getSharedPointer();
+            solver->add(countConstr->toExpression(varNames, manager));
+            solver->add(timepointConstr->toExpression(varNames, manager));
             storm::solver::SmtSolver::CheckResult res = solver->check();
             solver->pop();
             return res;
@@ -547,13 +610,40 @@ namespace storm {
                         STORM_LOG_DEBUG("Lower bound correction - corrected bound to " << std::to_string(bound));
                         return bound;
                     case storm::solver::SmtSolver::CheckResult::Unknown:
-                        STORM_LOG_DEBUG("Lower bound correction - Solver returned 'Unknown', corrected to ");
+                        STORM_LOG_DEBUG("Lower bound correction - Solver returned 'Unknown', corrected to "
+                                                << std::to_string(bound));
                         return bound;
                     default:
                         --bound;
                         break;
                 }
             }
+            return bound;
+        }
+
+        uint64_t DFTASFChecker::correctUpperBound(uint64_t bound, uint_fast64_t timeout) {
+            STORM_LOG_ASSERT(solver, "SMT Solver was not initialized, call toSolver() before checking queries");
+            STORM_LOG_DEBUG("Upper bound correction - try to correct bound " << std::to_string(bound));
+
+            while (bound > 1) {
+                setSolverTimeout(timeout * 1000);
+                storm::solver::SmtSolver::CheckResult tmp_res =
+                        checkFailsAtTimepointWithOnlyMarkovianState(bound);
+                unsetSolverTimeout();
+                switch (tmp_res) {
+                    case storm::solver::SmtSolver::CheckResult::Sat:
+                        STORM_LOG_DEBUG("Upper bound correction - corrected bound to " << std::to_string(bound));
+                        return bound;
+                    case storm::solver::SmtSolver::CheckResult::Unknown:
+                        STORM_LOG_DEBUG("Upper bound correction - Solver returned 'Unknown', corrected to ");
+                        return bound;
+                    default:
+                        --bound;
+                        break;
+
+                }
+            }
+            STORM_LOG_DEBUG("Upper bound correction - corrected bound to " << std::to_string(bound));
             return bound;
         }
 
@@ -567,7 +657,7 @@ namespace storm {
                 unsetSolverTimeout();
                 switch (tmp_res) {
                     case storm::solver::SmtSolver::CheckResult::Sat:
-                        if (dft.getDependencies().size() > 0) {
+                        if (!dft.getDependencies().empty()) {
                             return correctLowerBound(bound, timeout);
                         } else {
                             return bound;
@@ -597,7 +687,11 @@ namespace storm {
                 unsetSolverTimeout();
                 switch (tmp_res) {
                     case storm::solver::SmtSolver::CheckResult::Sat:
-                        return bound;
+                        if (!dft.getDependencies().empty()) {
+                            return correctUpperBound(bound, timeout);
+                        } else {
+                            return bound;
+                        }
                     case storm::solver::SmtSolver::CheckResult::Unknown:
                         STORM_LOG_DEBUG("Upper bound: Solver returned 'Unknown'");
                         return bound;

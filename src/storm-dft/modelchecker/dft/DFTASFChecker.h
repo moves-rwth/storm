@@ -25,6 +25,20 @@ namespace storm {
             uint64_t childIndex;
         };
 
+        class DependencyPair {
+        public:
+            DependencyPair(uint64_t depIndex, uint64_t childIndex) : depIndex(depIndex), childIndex(childIndex) {
+            }
+
+            friend bool operator<(DependencyPair const &p1, DependencyPair const &p2) {
+                return p1.depIndex < p2.depIndex || (p1.depIndex == p2.depIndex && p1.childIndex < p2.childIndex);
+            }
+
+        private:
+            uint64_t depIndex;
+            uint64_t childIndex;
+        };
+
 
         class DFTASFChecker {
             using ValueType = double;
@@ -105,13 +119,31 @@ namespace storm {
             storm::solver::SmtSolver::CheckResult checkFailsWithLessThanMarkovianState(uint64_t checkNumber);
 
             /**
+             * Helper function that checks if the DFT can fail at a timepoint while visiting less than a given number of Markovian states
+             *
+             * @param timepoint point in time to check
+             * @return "Sat" if a sequence of BE failures exists such that less than checkNumber Markovian states are visited,
+             * "Unsat" if it does not, otherwise "Unknown"
+             */
+            storm::solver::SmtSolver::CheckResult checkFailsAtTimepointWithOnlyMarkovianState(uint64_t timepoint);
+
+            /**
              * Helper function for correction of least failure bound when dependencies are present
              *
              * @param bound known lower bound to be corrected
              * @param timeout timeout timeout for each query in seconds
-             * @return the corrected bound, 1 if correction cannot be completed
+             * @return the corrected bound
              */
             uint64_t correctLowerBound(uint64_t bound, uint_fast64_t timeout);
+
+            /**
+             * Helper function for correction of bound for number of BEs such that the DFT always fails when dependencies are present
+             *
+             * @param bound known bound to be corrected
+             * @param timeout timeout timeout for each query in seconds
+             * @return the corrected bound
+             */
+            uint64_t correctUpperBound(uint64_t bound, uint_fast64_t timeout);
 
             uint64_t getClaimVariableIndex(uint64_t spareIndex, uint64_t childIndex) const;
 
@@ -177,6 +209,13 @@ namespace storm {
                                          std::shared_ptr<storm::storage::DFTElement<ValueType> const> element);
 
             /**
+             * Add constraints encoding PDEP gates.
+             * This corresponds to constraint (4)
+             */
+            void generatePdepConstraint(std::vector<uint64_t> childVarIndices,
+                                        std::shared_ptr<storm::storage::DFTElement<ValueType> const> element);
+
+            /**
             * Add constraints encoding claiming rules.
             * This corresponds to constraint (8) and addition
             */
@@ -194,6 +233,7 @@ namespace storm {
             std::unordered_map<uint64_t, uint64_t> timePointVariables;
             std::vector<std::shared_ptr<SmtConstraint>> constraints;
             std::map<SpareAndChildPair, uint64_t> claimVariables;
+            std::map<DependencyPair, uint64_t> dependencyVariables;
             std::unordered_map<uint64_t, uint64_t> markovianVariables;
             std::vector<uint64_t> tmpTimePointVariables;
             uint64_t notFailed;
