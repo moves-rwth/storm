@@ -171,7 +171,7 @@ namespace storm {
                             if (numChoices == 1) {
                                 stateValue = choiceValue;
                             } else {
-                                auto choiceValVar = lpModel->addBoundedContinuousVariable("x" + std::to_string(objIndex) + "_" + std::to_string(state) + "_" + std::to_string(choice), objectiveHelper[objIndex].getLowerValueBoundAtState(env, state), objectiveHelper[objIndex].getUpperValueBoundAtState(env, state)).getExpression();
+                                auto choiceValVar = lpModel->addBoundedContinuousVariable("x" + std::to_string(objIndex) + "_" + std::to_string(state) + "_" + std::to_string(choice), storm::utility::zero<ValueType>(), objectiveHelper[objIndex].getUpperValueBoundAtState(env, state)).getExpression();
                                 uint64_t globalChoiceIndex = model.getTransitionMatrix().getRowGroupIndices()[state] + choice;
                                 storm::expressions::Expression upperValueBoundAtChoice = lpModel->getConstant(objectiveHelper[objIndex].getUpperValueBoundAtState(env, state));
                                 if (objectiveHelper[objIndex].minimizing()) {
@@ -191,10 +191,16 @@ namespace storm {
                                 //lpModel->addConstraint("", choiceValVar - stateVars[state] <= maxDiff);
                             }
                         }
-                        lpModel->addConstraint("", stateVars[state] <= stateValue);
+                        if (objectiveHelper[objIndex].minimizing()) {
+                            lpModel->addConstraint("", stateVars[state] >= stateValue);
+                        } else {
+                            lpModel->addConstraint("", stateVars[state] <= stateValue);
+                        }
                     }
                 }
+                swAux.start();
                 lpModel->update();
+                swAux.stop();
             }
             
             template <typename ModelType, typename GeometryValueType>
