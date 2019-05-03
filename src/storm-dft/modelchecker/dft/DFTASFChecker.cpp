@@ -45,12 +45,8 @@ namespace storm {
                         break;
                     }
                     case storm::storage::DFTElementType::PDEP: {
-                        auto dep = std::static_pointer_cast<storm::storage::DFTDependency<double> const>(element);
-                        for (auto const &depEvent : dep->dependentEvents()) {
-                            varNames.push_back("d_" + element->name() + "_" + depEvent->name());
-                            dependencyVariables.emplace(DependencyPair(element->id(), depEvent->id()),
-                                                        varNames.size() - 1);
-                        }
+                        varNames.push_back("dep_" + element->name());
+                        dependencyVariables.emplace(element->id(), varNames.size() - 1);
                         break;
                     }
                     default:
@@ -120,7 +116,7 @@ namespace storm {
                         generateSpareConstraint(i, childVarIndices, element);
                         break;
                     case storm::storage::DFTElementType::PDEP:
-                        // FDEPs are considered later in the Markovian constraints
+                        generatePdepConstraint(i, childVarIndices, element);
                         break;
                     default:
                         STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
@@ -335,7 +331,19 @@ namespace storm {
 
         void DFTASFChecker::generatePdepConstraint(size_t i, std::vector<uint64_t> childVarIndices,
                                                    std::shared_ptr<storm::storage::DFTElement<ValueType> const> element) {
-            // TODO
+            auto dependency = std::static_pointer_cast<storm::storage::DFTDependency<double> const>(element);
+            auto const &dependentEvents = dependency->dependentEvents();
+            auto const &trigger = dependency->triggerEvent();
+            std::vector<uint64_t> dependentIndices;
+            for (size_t j = 0; j < dependentEvents.size(); ++j) {
+                dependentIndices.push_back(dependentEvents[j]->id());
+            }
+
+            constraints.push_back(std::make_shared<IsMaximum>(dependencyVariables.at(i), dependentIndices));
+            constraints.back()->setDescription("Dependency " + element->name() + ": Last element");
+            constraints.push_back(
+                    std::make_shared<IsEqual>(timePointVariables.at(i), timePointVariables.at(trigger->id())));
+            constraints.back()->setDescription("Dependency " + element->name() + ": Trigger element");
         }
 
         void DFTASFChecker::addMarkovianConstraints() {
@@ -452,11 +460,9 @@ namespace storm {
             for (auto const &markovianVarEntry : markovianVariables) {
                 stream << "(declare-fun " << varNames[markovianVarEntry.second] << "() Bool)" << std::endl;
             }
-            if (!dependencyVariables.empty()) {
-                stream << "; Dependency variables" << std::endl;
-                for (auto const &depVar : dependencyVariables) {
-                    stream << "(declare-fun " << varNames[depVar.second] << "() Int)" << std::endl;
-                }
+            stream << "; Dependency variables" << std::endl;
+            for (auto const &depVarEntry : dependencyVariables) {
+                stream << "(declare-fun " << varNames[depVarEntry.second] << "() Int)" << std::endl;
             }
             if (!tmpTimePointVariables.empty()) {
                 stream << "; Temporary variables" << std::endl;
@@ -496,10 +502,8 @@ namespace storm {
                     manager->declareIntegerVariable(varNames[tmpVar]);
                 }
             }
-            if (!dependencyVariables.empty()) {
-                for (auto const &depVar : dependencyVariables) {
-                    manager->declareIntegerVariable(varNames[depVar]);
-                }
+            for (auto const &depVarEntry : dependencyVariables) {
+                manager->declareIntegerVariable(varNames[depVarEntry.second]);
             }
             // Add constraints to solver
             for (auto const &constraint : constraints) {

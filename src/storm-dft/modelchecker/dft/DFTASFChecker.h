@@ -210,9 +210,9 @@ namespace storm {
 
             /**
              * Add constraints encoding PDEP gates.
-             * This corresponds to constraint (4)
+             *
              */
-            void generatePdepConstraint(std::vector<uint64_t> childVarIndices,
+            void generatePdepConstraint(size_t i, std::vector<uint64_t> childVarIndices,
                                         std::shared_ptr<storm::storage::DFTElement<ValueType> const> element);
 
             /**
@@ -233,7 +233,7 @@ namespace storm {
             std::unordered_map<uint64_t, uint64_t> timePointVariables;
             std::vector<std::shared_ptr<SmtConstraint>> constraints;
             std::map<SpareAndChildPair, uint64_t> claimVariables;
-            std::map<DependencyPair, uint64_t> dependencyVariables;
+            std::unordered_map<uint64_t, uint64_t> dependencyVariables;
             std::unordered_map<uint64_t, uint64_t> markovianVariables;
             std::vector<uint64_t> tmpTimePointVariables;
             uint64_t notFailed;
