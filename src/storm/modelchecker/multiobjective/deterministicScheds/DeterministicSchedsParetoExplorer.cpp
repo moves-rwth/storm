@@ -10,6 +10,7 @@
 #include "storm/modelchecker/multiobjective/MultiObjectivePostprocessing.h"
 #include "storm/modelchecker/results/ExplicitParetoCurveCheckResult.h"
 #include "storm/environment/modelchecker/MultiObjectiveModelCheckerEnvironment.h"
+#include "storm/environment/solver/MinMaxSolverEnvironment.h"
 
 #include "storm/utility/export.h"
 #include "storm/utility/solver.h"
@@ -441,12 +442,13 @@ namespace storm {
 
             template <class SparseModelType, typename GeometryValueType>
             void DeterministicSchedsParetoExplorer<SparseModelType, GeometryValueType>::processFacet(Environment const& env, Facet& f) {
-                if (optimizeAndSplitFacet(env,f)) {
+                GeometryValueType eps = storm::utility::convertNumber<GeometryValueType>(env.modelchecker().multi().getPrecision());
+                eps += eps; // The unknown area (box) can actually have size 2*eps
+
+                if (optimizeAndSplitFacet(env, f, eps)) {
                     return;
                 }
                 
-                GeometryValueType eps = storm::utility::convertNumber<GeometryValueType>(env.modelchecker().multi().getPrecision());
-                eps += eps; // The unknown area (box) can actually have size 2*eps
                 storm::storage::geometry::PolytopeTree<GeometryValueType> polytopeTree(f.getInducedPolytope(pointset, getReferenceCoordinates(env)));
                 for (auto const& point : pointset) {
                     polytopeTree.substractDownwardClosure(point.second.get(), eps);
@@ -466,8 +468,18 @@ namespace storm {
                 }
             }
             
+            template <typename GeometryValueType>
+            bool closePoints(std::vector<GeometryValueType> const& first, std::vector<GeometryValueType> const& second, GeometryValueType const& maxDistance) {
+                for (uint64_t i = 0; i < first.size(); ++i) {
+                    if (storm::utility::abs<GeometryValueType>(first[i] - second[i]) > maxDistance) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+            
             template <class SparseModelType, typename GeometryValueType>
-            bool DeterministicSchedsParetoExplorer<SparseModelType, GeometryValueType>::optimizeAndSplitFacet(Environment const& env, Facet& f) {
+            bool DeterministicSchedsParetoExplorer<SparseModelType, GeometryValueType>::optimizeAndSplitFacet(Environment const& env, Facet& f, GeometryValueType const& eps) {
                 
                 // Invoke optimization and insert the explored points
                 boost::optional<PointId> optPointId;
@@ -489,17 +501,27 @@ namespace storm {
                 // Potentially generate new facets
                 if (optPointId) {
                     auto const& optPoint = pointset.getPoint(*optPointId);
-                    // TODO: this check might suffer from numerical errors. Check how much this would hurt us.
                     if (f.getHalfspace().contains(optPoint.get())) {
                         // The point is contained in the halfspace which means that no more splitting is possible.
                         return false;
                     } else {
-                        // Found a new Pareto optimal point -> generate new facets
+                        // Collect the new point with its neighbors.
+                        // Also check whether the remamining area is already sufficiently small.
+                        storm::storage::geometry::PolytopeTree<GeometryValueType> remainingArea(overApproximation->intersection(f.getHalfspace().invert()));
                         std::vector<std::vector<GeometryValueType>> vertices;
                         vertices.push_back(optPoint.get());
+                        auto minmaxPrec = storm::utility::convertNumber<GeometryValueType>(env.solver().minMax().getPrecision());
+                        minmaxPrec += minmaxPrec;
                         for (auto const& pId : f.getPoints()) {
                             vertices.push_back(pointset.getPoint(pId).get());
+                            remainingArea.substractDownwardClosure(vertices.back(), eps);
+                            STORM_LOG_WARN_COND((std::is_same<ModelValueType, storm::RationalNumber>::value) || !closePoints(vertices.front(), vertices.back(), minmaxPrec), "Found Pareto optimal points that are close to each other. This can be due to numerical issues. Maybe try exact mode?");
                         }
+                        if (remainingArea.isEmpty()) {
+                            return false;
+                        }
+                        
+                        // We need to generate new facets
                         auto newHalfspaceCandidates = storm::storage::geometry::Polytope<GeometryValueType>::createSelectiveDownwardClosure(vertices, storm::utility::vector::filterZero(f.getHalfspace().normalVector()))->getHalfspaces();
                         for (auto& h : newHalfspaceCandidates) {
                             if (!storm::utility::vector::hasNegativeEntry(h.normalVector())) {

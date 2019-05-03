@@ -171,7 +171,7 @@ namespace storm {
                  * 2. New facets are generated and (if not already precise enough) added to unprocessedFacets
                  * 3. true is returned
                  */
-                bool optimizeAndSplitFacet(Environment const& env, Facet& f);
+                bool optimizeAndSplitFacet(Environment const& env, Facet& f, GeometryValueType const& eps);
                 
                 Polytope negateMinObjectives(Polytope const& polytope) const;
                 void negateMinObjectives(std::vector<GeometryValueType>& vector) const;
