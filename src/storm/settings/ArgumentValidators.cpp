@@ -129,6 +129,10 @@ namespace storm {
             return createRangeValidatorExcluding<uint64_t>(lowerBound, upperBound);
         }
         
+        std::shared_ptr<ArgumentValidator<uint64_t>> ArgumentValidatorFactory::createUnsignedRangeValidatorIncluding(uint64_t lowerBound, uint64_t upperBound) {
+            return createRangeValidatorIncluding<uint64_t>(lowerBound, upperBound);
+        }
+        
         std::shared_ptr<ArgumentValidator<double>> ArgumentValidatorFactory::createDoubleRangeValidatorExcluding(double lowerBound, double upperBound) {
             return createRangeValidatorExcluding<double>(lowerBound, upperBound);
         }
