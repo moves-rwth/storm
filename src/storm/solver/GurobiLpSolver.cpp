@@ -80,7 +80,7 @@ namespace storm {
             error = GRBsetintparam(env, "MIPFocus", storm::settings::getModule<storm::settings::modules::GurobiSettings>().getMIPFocus());
             STORM_LOG_THROW(error == 0, storm::exceptions::InvalidStateException, "Unable to set Gurobi Parameter MIPFocus (" << GRBgeterrormsg(env) << ", error code " << error << ").");
             
-            error = GRBsetintparam(env, "ConcurrentMIP", storm::settings::getModule<storm::settings::modules::GurobiSettings>().getMIPFocus());
+            error = GRBsetintparam(env, "ConcurrentMIP", storm::settings::getModule<storm::settings::modules::GurobiSettings>().getNumberOfConcurrentMipThreads());
             STORM_LOG_THROW(error == 0, storm::exceptions::InvalidStateException, "Unable to set Gurobi Parameter ConcurrentMIP (" << GRBgeterrormsg(env) << ", error code " << error << ").");
             
             // Enable the following line to force Gurobi to be as precise about the binary variables as required by the given precision option.
