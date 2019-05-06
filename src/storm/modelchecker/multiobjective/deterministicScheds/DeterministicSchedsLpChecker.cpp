@@ -92,6 +92,17 @@ namespace storm {
                     return {{}, {}};
                 }
                 
+                if (gurobiLpModel) {
+                    // For gurobi, it is possible to specify a gap between the obtained lower/upper objective bounds.
+                    GeometryValueType milpGap = storm::utility::zero<GeometryValueType>();
+                    for (auto const& wi : currentWeightVector) {
+                        milpGap += wi;
+                    }
+                    milpGap *= eps;
+                    gurobiLpModel->setMaximalMILPGap(storm::utility::convertNumber<ValueType>(milpGap), false);
+                    gurobiLpModel->update();
+                }
+                
                 std::vector<Point> foundPoints;
                 std::vector<Polytope> infeasableAreas;
                 checkRecursive(polytopeTree, eps, foundPoints, infeasableAreas);
@@ -105,6 +116,8 @@ namespace storm {
             void DeterministicSchedsLpChecker<ModelType, GeometryValueType>::initializeLpModel(Environment const& env) {
                 uint64_t numStates = model.getNumberOfStates();
                 lpModel = storm::utility::solver::getLpSolver<ValueType>("model");
+                gurobiLpModel = dynamic_cast<storm::solver::GurobiLpSolver<ValueType>*>(lpModel.get());
+                
                 lpModel->setOptimizationDirection(storm::solver::OptimizationDirection::Maximize);
                 initialStateResults.clear();
                 
@@ -176,6 +189,7 @@ namespace storm {
                                 storm::expressions::Expression upperValueBoundAtChoice = lpModel->getConstant(objectiveHelper[objIndex].getUpperValueBoundAtState(env, state));
                                 if (objectiveHelper[objIndex].minimizing()) {
                                     lpModel->addConstraint("", choiceValVar + (upperValueBoundAtChoice * (one - choiceVars[globalChoiceIndex])) >= choiceValue);
+                                    // Optional: lpModel->addConstraint("", choiceValVar <= choiceValue);
                                 } else {
                                     lpModel->addConstraint("", choiceValVar <= choiceValue);
                                     lpModel->addConstraint("", choiceValVar <= upperValueBoundAtChoice * choiceVars[globalChoiceIndex]);
@@ -238,15 +252,41 @@ namespace storm {
                         for (auto const& objVar : currentObjectiveVariables) {
                             newPoint.push_back(storm::utility::convertNumber<GeometryValueType>(lpModel->getContinuousValue(objVar)));
                         }
-                        auto halfspace = storm::storage::geometry::Halfspace<GeometryValueType>(currentWeightVector, storm::utility::vector::dotProduct(currentWeightVector, newPoint)).invert();
+                        std::vector<Point> newPoints = {newPoint};
+                        if (gurobiLpModel) {
+                            // gurobi might have other good solutions.
+                            for (uint64_t solutionIndex = 0; solutionIndex < gurobiLpModel->getSolutionCount(); ++ solutionIndex) {
+                                Point p;
+                                bool considerP = false;
+                                for (uint64_t objIndex = 0; objIndex < currentObjectiveVariables.size(); ++objIndex) {
+                                    p.push_back(storm::utility::convertNumber<GeometryValueType>(gurobiLpModel->getContinuousValue(currentObjectiveVariables[objIndex], solutionIndex)));
+                                    if (p.back() > newPoint[objIndex] + eps / storm::utility::convertNumber<GeometryValueType>(2)) {
+                                        // The other solution dominates the newPoint in this dimension and is also not too close to the newPoint.
+                                        considerP = true;
+                                    }
+                                }
+                                if (considerP) {
+                                    newPoints.push_back(std::move(p));
+                                }
+                            }
+                            std::cout << "found " << (newPoints.size() - 1) << " useful points" << std::endl;
+                        }
+                        GeometryValueType offset = storm::utility::convertNumber<GeometryValueType>(lpModel->getObjectiveValue());
+                        if (gurobiLpModel) {
+                            // Gurobi gives us the gap between the found solution and the known bound.
+                            offset += storm::utility::convertNumber<GeometryValueType>(gurobiLpModel->getMILPGap(false));
+                        }
+                        auto halfspace = storm::storage::geometry::Halfspace<GeometryValueType>(currentWeightVector, offset).invert();
                         infeasableAreas.push_back(polytopeTree.getPolytope()->intersection(halfspace));
                         if (infeasableAreas.back()->isEmpty()) {
                             infeasableAreas.pop_back();
                         }
                         swAux.start();
                         polytopeTree.setMinus(storm::storage::geometry::Polytope<GeometryValueType>::create({halfspace}));
-                        foundPoints.push_back(newPoint);
-                        polytopeTree.substractDownwardClosure(newPoint, eps);
+                        for (auto const& p : newPoints) {
+                            foundPoints.push_back(p);
+                            polytopeTree.substractDownwardClosure(p, eps);
+                        }
                         swAux.stop();
                         if (!polytopeTree.isEmpty()) {
                             checkRecursive(polytopeTree, eps, foundPoints, infeasableAreas);

@@ -7,6 +7,7 @@
 #include "storm/storage/geometry/Polytope.h"
 #include "storm/storage/geometry/PolytopeTree.h"
 #include "storm/solver/LpSolver.h"
+#include "storm/solver/GurobiLpSolver.h"
 #include "storm/utility/Stopwatch.h"
 
 namespace storm {
@@ -53,6 +54,7 @@ namespace storm {
                 std::vector<DeterministicSchedsObjectiveHelper<ModelType>> const& objectiveHelper;
 
                 std::unique_ptr<storm::solver::LpSolver<ValueType>> lpModel;
+                storm::solver::GurobiLpSolver<ValueType>* gurobiLpModel;
                 std::vector<storm::expressions::Expression> initialStateResults;
                 std::vector<storm::expressions::Variable> currentObjectiveVariables;
                 std::vector<GeometryValueType> currentWeightVector;
