@@ -4,21 +4,10 @@
 #include <unordered_set>
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/models/sparse/Dtmc.h"
-#include <carl/formula/Formula.h>
 
 namespace storm {
     namespace analysis {
 
-        template <typename ValueType, typename Enable=void>
-        struct ConstraintType {
-            typedef void* val;
-        };
-
-        template<typename ValueType>
-        struct ConstraintType<ValueType, typename std::enable_if<std::is_same<storm::RationalFunction, ValueType>::value>::type> {
-            typedef carl::Formula<typename ValueType::PolyType::PolyType> val;
-        };
-        
         /**
          * Class to collect constraints on parametric Markov chains.
          */
@@ -26,11 +15,11 @@ namespace storm {
         class ConstraintCollector {
         private:
             // A set of constraints that says that the DTMC actually has valid probability distributions in all states.
-            std::unordered_set<typename ConstraintType<ValueType>::val> wellformedConstraintSet;
+            std::unordered_set<typename storm::ConstraintType<ValueType>::val> wellformedConstraintSet;
             
             // A set of constraints that makes sure that the underlying graph of the model does not change depending
             // on the parameter values.
-            std::unordered_set<typename ConstraintType<ValueType>::val> graphPreservingConstraintSet;
+            std::unordered_set<typename storm::ConstraintType<ValueType>::val> graphPreservingConstraintSet;
 
             // A set of variables
             std::set<storm::RationalFunctionVariable> variableSet;
