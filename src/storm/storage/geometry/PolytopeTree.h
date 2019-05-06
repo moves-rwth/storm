@@ -25,6 +25,7 @@ namespace storm {
                 
                 /*!
                  * Substracts the given rhs from this polytope.
+                 * Points that lie on the boundary of rhs might still be included.
                  */
                 void setMinus(std::shared_ptr<Polytope<ValueType>> const& rhs) {
                     // This operation only has an effect if the intersection of this and rhs is non-empty.
