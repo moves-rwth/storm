@@ -78,15 +78,7 @@ namespace storm {
     
     typedef carl::RationalFunction<Polynomial, true> RationalFunction;
     typedef carl::Interval<double> Interval;
-    
-    template <typename ValueType, typename Enable=void>
-    struct ConstraintType {
-        typedef void* val;
-    };
 
-    template<typename ValueType>
-    struct ConstraintType<ValueType, typename std::enable_if<std::is_same<storm::RationalFunction, ValueType>::value>::type> {
-        typedef carl::Formula<typename ValueType::PolyType::PolyType> val;
-    };
+    typedef carl::Formula<RawPolynomial> RationalFunctionConstraint;
 }
 
