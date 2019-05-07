@@ -55,7 +55,7 @@ namespace storm {
                                 if (c.polytope != nullptr) {
                                     newChildren.push_back(c);
                                     if (newPolytope) {
-                                        newPolytope->convexUnion(c.polytope);
+                                        newPolytope = newPolytope->convexUnion(c.polytope);
                                     } else {
                                         newPolytope = c.polytope;
                                     }
