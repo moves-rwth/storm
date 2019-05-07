@@ -1,12 +1,5 @@
 #include <boost/functional/hash.hpp>
 
-// To detect whether the usage of TBB is possible, this include is neccessary
-#include "storm-config.h"
-
-#ifdef STORM_HAVE_INTELTBB
-#include "tbb/tbb.h"
-#endif
-
 #include "storm/storage/sparse/StateType.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/adapters/RationalFunctionAdapter.h"

@@ -10,6 +10,7 @@
 
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/IntelTbbAdapter.h"
 
 #include "storm/utility/macros.h"
 
