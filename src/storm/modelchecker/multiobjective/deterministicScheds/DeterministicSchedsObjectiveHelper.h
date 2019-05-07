@@ -36,6 +36,11 @@ namespace storm {
                 
                 bool minimizing() const;
                 
+                /*!
+                 * Returns true if this is a total reward objective
+                 */
+                bool isTotalRewardObjective() const;
+                
             private:
                 
                 mutable boost::optional<std::map<uint64_t, ValueType>> schedulerIndependentStateValues;

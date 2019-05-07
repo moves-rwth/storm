@@ -48,7 +48,7 @@ namespace storm {
             private:
                 void initializeLpModel(Environment const& env);
                 
-                void checkRecursive(storm::storage::geometry::PolytopeTree<GeometryValueType>& polytopeTree, GeometryValueType const& eps, std::vector<Point>& foundPoints, std::vector<Polytope>& infeasableAreas);
+                void checkRecursive(storm::storage::geometry::PolytopeTree<GeometryValueType>& polytopeTree, GeometryValueType const& eps, std::vector<Point>& foundPoints, std::vector<Polytope>& infeasableAreas, uint64_t const& depth);
                 
                 ModelType const& model;
                 std::vector<DeterministicSchedsObjectiveHelper<ModelType>> const& objectiveHelper;

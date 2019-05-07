@@ -219,6 +219,11 @@ namespace storm {
             bool DeterministicSchedsObjectiveHelper<ModelType>::minimizing() const {
                 return storm::solver::minimize(objective.formula->getOptimalityType());
             }
+            
+            template <typename ModelType>
+            bool DeterministicSchedsObjectiveHelper<ModelType>::isTotalRewardObjective() const {
+                return objective.formula->isRewardOperatorFormula() && objective.formula->getSubformula().isTotalRewardFormula();
+            }
 
             template class DeterministicSchedsObjectiveHelper<storm::models::sparse::Mdp<double>>;
             template class DeterministicSchedsObjectiveHelper<storm::models::sparse::Mdp<storm::RationalNumber>>;
