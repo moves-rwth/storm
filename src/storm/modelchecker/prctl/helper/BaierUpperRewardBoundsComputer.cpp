@@ -13,15 +13,12 @@ namespace storm {
         namespace helper {
             
             template<typename ValueType>
-            BaierUpperRewardBoundsComputer<ValueType>::BaierUpperRewardBoundsComputer(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& rewards, std::vector<ValueType> const& oneStepTargetProbabilities) : transitionMatrix(transitionMatrix), rewards(rewards), oneStepTargetProbabilities(oneStepTargetProbabilities) {
+            BaierUpperRewardBoundsComputer<ValueType>::BaierUpperRewardBoundsComputer(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& rewards, std::vector<ValueType> const& oneStepTargetProbabilities) : _transitionMatrix(transitionMatrix), _rewards(rewards), _oneStepTargetProbabilities(oneStepTargetProbabilities) {
                 // Intentionally left empty.
             }
-
+            
             template<typename ValueType>
-            ValueType BaierUpperRewardBoundsComputer<ValueType>::computeUpperBound() {
-                STORM_LOG_TRACE("Computing upper reward bounds using variant-2 of Baier et al.");
-                std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
-                
+            std::vector<ValueType> BaierUpperRewardBoundsComputer<ValueType>::computeUpperBoundOnExpectedVisitingTimes(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& oneStepTargetProbabilities) {
                 std::vector<uint64_t> stateToScc(transitionMatrix.getRowGroupCount());
                 {
                     // Start with an SCC decomposition of the system.
@@ -106,18 +103,28 @@ namespace storm {
                     remainingStates.set(newStates.begin(), newStates.end(), false);
                     newStates.clear();
                 }
-                
-                for (uint64_t state = 0; state < result.size(); ++state) {
-                    ValueType maxReward = storm::utility::zero<ValueType>();
-                    for (auto row = transitionMatrix.getRowGroupIndices()[state], endRow = transitionMatrix.getRowGroupIndices()[state + 1]; row < endRow; ++row) {
-                        maxReward = std::max(maxReward, rewards[row]);
-                    }
-                    result[state] = storm::utility::one<ValueType>() / result[state] * maxReward;
+                // Transform the d_t to an upper bound for zeta(t)
+                for (auto& r : result) {
+                    r = storm::utility::one<ValueType>() / r;
                 }
+                return result;
+            }
+
+
+            template<typename ValueType>
+            ValueType BaierUpperRewardBoundsComputer<ValueType>::computeUpperBound() {
+                STORM_LOG_TRACE("Computing upper reward bounds using variant-2 of Baier et al.");
+                std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
+                
+                auto expVisits = computeUpperBoundOnExpectedVisitingTimes(_transitionMatrix, _oneStepTargetProbabilities);
                 
                 ValueType upperBound = storm::utility::zero<ValueType>();
-                for (auto const& e : result) {
-                    upperBound += e;
+                for (uint64_t state = 0; state < expVisits.size(); ++state) {
+                    ValueType maxReward = storm::utility::zero<ValueType>();
+                    for (auto row = _transitionMatrix.getRowGroupIndices()[state], endRow = _transitionMatrix.getRowGroupIndices()[state + 1]; row < endRow; ++row) {
+                        maxReward = std::max(maxReward, _rewards[row]);
+                    }
+                    upperBound += expVisits[state] * maxReward;
                 }
                 
                 STORM_LOG_TRACE("Baier algorithm for reward bound computation (variant 2) computed bound " << upperBound << ".");
