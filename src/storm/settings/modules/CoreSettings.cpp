@@ -9,6 +9,7 @@
 #include "storm/solver/SolverSelectionOptions.h"
 
 #include "storm/storage/dd/DdType.h"
+#include "storm/adapters/IntelTbbAdapter.h"
 
 #include "storm/utility/macros.h"
 #include "storm/exceptions/IllegalArgumentValueException.h"

@@ -44,7 +44,7 @@
 
 #ifdef STORM_HAVE_INTELTBB
 #include <new> // This fixes a potential dependency ordering problem between GMM and TBB
-#include "tbb/tbb.h"
+#include "storm/adapters/IntelTbbAdapter.h"
 #include <iterator>
 #endif
 
