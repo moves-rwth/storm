@@ -52,7 +52,7 @@ namespace storm {
         
         template<>
         bool isNan(double const& value) {
-            return isnan(value);
+            return std::isnan(value);
         }
         
         bool isAlmostZero(double const& a) {
