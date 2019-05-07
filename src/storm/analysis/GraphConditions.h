@@ -4,6 +4,7 @@
 #include <unordered_set>
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/models/sparse/Dtmc.h"
+#include <carl/formula/Formula.h>
 
 namespace storm {
     namespace analysis {
@@ -16,7 +17,7 @@ namespace storm {
 
         template<typename ValueType>
         struct ConstraintType<ValueType, typename std::enable_if<std::is_same<storm::RationalFunction, ValueType>::value>::type> {
-            typedef storm::RationalFunctionConstraint val;
+            typedef carl::Formula<typename storm::RationalFunction::PolyType::PolyType> val;
         };
 
         /**
