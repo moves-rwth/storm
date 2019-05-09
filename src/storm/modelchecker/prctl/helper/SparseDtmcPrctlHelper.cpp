@@ -290,10 +290,10 @@ namespace storm {
                     // We can eliminate the rows and columns from the original transition probability matrix.
                     storm::storage::SparseMatrix<ValueType> submatrix(transitionMatrix);
                     submatrix.makeRowsAbsorbing(psiStates);
-                    submatrix.deleteDiagonalEntries(psiStates);
-                    storm::storage::BitVector failState(numberOfStates, false);
-                    failState.set(0, true);
-                    submatrix.deleteDiagonalEntries(failState);
+                    //submatrix.deleteDiagonalEntries(psiStates);
+                    //storm::storage::BitVector failState(numberOfStates, false);
+                    //failState.set(0, true);
+                    submatrix.deleteDiagonalEntries();
                     submatrix = submatrix.transpose();
                     submatrix = submatrix.getSubmatrix(true, relevantStates, relevantStates, convertToEquationSystem);
 
