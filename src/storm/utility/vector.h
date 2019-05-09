@@ -1,16 +1,12 @@
 #ifndef STORM_UTILITY_VECTOR_H_
 #define STORM_UTILITY_VECTOR_H_
 
-#include "storm-config.h"
-#ifdef STORM_HAVE_INTELTBB
-#include "tbb/tbb.h"
-#endif
-
 #include <iostream>
 #include <algorithm>
 #include <functional>
 #include <numeric>
 #include <storm/adapters/RationalFunctionAdapter.h>
+#include <storm/adapters/IntelTbbAdapter.h>
 
 #include <boost/optional.hpp>
 
@@ -1154,6 +1150,16 @@ namespace storm {
             template<typename T>
             bool hasNonZeroEntry(std::vector<T> const& v){
                 return std::any_of(v.begin(), v.end(), [](T value){return !storm::utility::isZero(value);});
+            }
+            
+            template<typename T>
+            bool hasZeroEntry(std::vector<T> const& v){
+                return std::any_of(v.begin(), v.end(), [](T value){return storm::utility::isZero(value);});
+            }
+            
+            template<typename T>
+            bool hasInfinityEntry(std::vector<T> const& v){
+                return std::any_of(v.begin(), v.end(), [](T value){return storm::utility::isInfinity(value);});
             }
 
             inline std::set<storm::RationalFunctionVariable> getVariables(std::vector<storm::RationalFunction> const& vector) {
