@@ -16,7 +16,11 @@ namespace storm {
         }
 
         bool Variable::operator==(Variable const& other) const {
+#ifndef NDEBUG
             return &this->getManager() == &other.getManager() && index == other.index;
+#else
+            return index == other.index;
+#endif
         }
 
         bool Variable::operator!=(Variable const& other) const {

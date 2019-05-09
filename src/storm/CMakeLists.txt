@@ -28,8 +28,6 @@ if (ADDITIONAL_LINK_DIRS)
 	link_directories(${ADDITIONAL_LINK_DIRS})
 endif(ADDITIONAL_LINK_DIRS)
 
-# Disable Debug compiler flags for PrismParser to lessen memory consumption during compilation
-SET_SOURCE_FILES_PROPERTIES(${PROJECT_SOURCE_DIR}/src/storm/parser/PrismParser.cpp PROPERTIES COMPILE_FLAGS -g0)
 
 ###############################################################################
 ##                                                                            
@@ -72,7 +70,7 @@ add_dependencies(storm copy_resources_headers)
 add_dependencies(binaries storm-main)
 
 # installation
-install(TARGETS storm RUNTIME DESTINATION bin LIBRARY DESTINATION lib)
-install(TARGETS storm-main RUNTIME DESTINATION bin LIBRARY DESTINATION lib OPTIONAL)
+install(TARGETS storm EXPORT storm_Targets RUNTIME DESTINATION bin LIBRARY DESTINATION lib)
+install(TARGETS storm-main EXPORT storm_Targets RUNTIME DESTINATION bin LIBRARY DESTINATION lib OPTIONAL)
 install(DIRECTORY ${CMAKE_BINARY_DIR}/include/ DESTINATION include/storm
 		FILES_MATCHING PATTERN "*.h")

@@ -4,7 +4,7 @@
 
 namespace storm {
     namespace logic {
-        LongRunAverageRewardFormula::LongRunAverageRewardFormula() {
+        LongRunAverageRewardFormula::LongRunAverageRewardFormula(boost::optional<RewardAccumulation> rewardAccumulation) : rewardAccumulation(rewardAccumulation) {
             // Intentionally left empty.
         }
         
@@ -16,12 +16,25 @@ namespace storm {
             return true;
         }
         
+        bool LongRunAverageRewardFormula::hasRewardAccumulation() const {
+            return rewardAccumulation.is_initialized();
+        }
+        
+        RewardAccumulation const& LongRunAverageRewardFormula::getRewardAccumulation() const {
+            return rewardAccumulation.get();
+        }
+        
         boost::any LongRunAverageRewardFormula::accept(FormulaVisitor const& visitor, boost::any const& data) const {
             return visitor.visit(*this, data);
         }
         
         std::ostream& LongRunAverageRewardFormula::writeToStream(std::ostream& out) const {
-            return out << "LRA";
+            out << "LRA";
+            if (hasRewardAccumulation()) {
+                out << "[" << getRewardAccumulation() << "]";
+            }
+            return out;
         }
+        
     }
 }

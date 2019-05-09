@@ -62,7 +62,7 @@ namespace storm {
         bool operator!=(SynchronizationVector const& vector1, SynchronizationVector const& vector2);
         
         struct SynchronizationVectorLexicographicalLess {
-            bool operator()(SynchronizationVector const& vector1, SynchronizationVector const& vector2);
+            bool operator()(SynchronizationVector const& vector1, SynchronizationVector const& vector2) const;
         };
         
         std::ostream& operator<<(std::ostream& stream, SynchronizationVector const& synchronizationVector);

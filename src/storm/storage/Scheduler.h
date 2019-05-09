@@ -1,11 +1,12 @@
-#ifndef STORM_STORAGE_SCHEDULER_H_
-#define STORM_STORAGE_SCHEDULER_H_
+#pragma once
 
 #include <cstdint>
 #include "storm/storage/memorystructure/MemoryStructure.h"
 #include "storm/storage/SchedulerChoice.h"
 
 namespace storm {
+
+
     namespace storage {
         
         /*
@@ -34,6 +35,11 @@ namespace storm {
              * @param memoryState The state of the memoryStructure for which to set the choice.
              */
             void setChoice(SchedulerChoice<ValueType> const& choice, uint_fast64_t modelState, uint_fast64_t memoryState = 0);
+
+            /*!
+             * Is the scheduler defined on the states indicated by the selected-states bitvector?
+             */
+            bool isChoiceSelected(BitVector const& selectedStates, uint64_t memoryState = 0) const;
             
             /*!
              * Clears the choice defined by the scheduler for the given state.
@@ -50,7 +56,12 @@ namespace storm {
              * @param memoryState the memory state which we consider.
              */
             SchedulerChoice<ValueType> const& getChoice(uint_fast64_t modelState, uint_fast64_t memoryState = 0) const;
-            
+
+            /*!
+             * Compute the Action Support: A bit vector that indicates all actions that are selected with positive probability in some memory state
+             */
+            storm::storage::BitVector computeActionSupport(std::vector<uint64_t> const& nondeterministicChoiceIndicies) const;
+
             /*!
              * Retrieves whether there is a pair of model and memory state for which the choice is undefined.
              */
@@ -111,4 +122,3 @@ namespace storm {
     }
 }
 
-#endif /* STORM_STORAGE_SCHEDULER_H_ */

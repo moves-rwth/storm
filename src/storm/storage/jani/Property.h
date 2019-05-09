@@ -1,8 +1,11 @@
 #pragma once
 
+#include <functional>
+
 #include "storm/modelchecker/results/FilterType.h"
 #include "storm/logic/Formulas.h"
 #include "storm/logic/FragmentSpecification.h"
+#include "storm/logic/CloneVisitor.h"
 
 #include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidArgumentException.h"
@@ -20,11 +23,11 @@ namespace storm {
             storm::expressions::Expression upperBound;
             bool upperBoundStrict = false;
             
-            bool hasLowerBound() {
+            bool hasLowerBound() const {
                 return lowerBound.isInitialized();
             }
             
-            bool hasUpperBound() {
+            bool hasUpperBound() const {
                 return upperBound.isInitialized();
             }
         };
@@ -54,10 +57,23 @@ namespace storm {
                 return FilterExpression(formula->substitute(substitution), ft, statesFormula->substitute(substitution));
             }
             
+            FilterExpression substitute(std::function<storm::expressions::Expression(storm::expressions::Expression const&)> const& substitutionFunction) const {
+                return FilterExpression(formula->substitute(substitutionFunction), ft, statesFormula->substitute(substitutionFunction));
+            }
+            
             FilterExpression substituteLabels(std::map<std::string, std::string> const& labelSubstitution) const {
                 return FilterExpression(formula->substitute(labelSubstitution), ft, statesFormula->substitute(labelSubstitution));
             }
-
+            
+            FilterExpression substituteRewardModelNames(std::map<std::string, std::string> const& rewardModelNameSubstitution) const {
+                return FilterExpression(formula->substituteRewardModelNames(rewardModelNameSubstitution), ft, statesFormula->substituteRewardModelNames(rewardModelNameSubstitution));
+            }
+            
+            FilterExpression clone() const {
+                storm::logic::CloneVisitor cv;
+                return FilterExpression(cv.clone(*formula), ft, cv.clone(*statesFormula));
+            }
+            
         private:
             // For now, we assume that the states are always the initial states.
             std::shared_ptr<storm::logic::Formula const> formula;
@@ -78,9 +94,10 @@ namespace storm {
              * Constructs the property
              * @param name the name
              * @param formula the formula representation
+             * @param undefinedConstants the undefined constants used in the property
              * @param comment An optional comment
              */
-            Property(std::string const& name, std::shared_ptr<storm::logic::Formula const> const& formula, std::string const& comment = "");
+            Property(std::string const& name, std::shared_ptr<storm::logic::Formula const> const& formula, std::set<storm::expressions::Variable> const& undefinedConstants, std::string const& comment = "");
             
             /**
              * Constructs the property
@@ -88,7 +105,7 @@ namespace storm {
              * @param formula the formula representation
              * @param comment An optional comment
              */
-            Property(std::string const& name, FilterExpression const& fe, std::string const& comment = "");
+            Property(std::string const& name, FilterExpression const& fe, std::set<storm::expressions::Variable> const& undefinedConstants, std::string const& comment = "");
             
             /**
              * Get the provided name
@@ -103,15 +120,25 @@ namespace storm {
             std::string const& getComment() const;
             
             Property substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const;
+            Property substitute(std::function<storm::expressions::Expression(storm::expressions::Expression const&)> const& substitutionFunction) const;
             Property substituteLabels(std::map<std::string, std::string> const& labelSubstitution) const;
+            Property substituteRewardModelNames(std::map<std::string, std::string> const& rewardModelNameSubstitution) const;
+            Property clone() const;
             
             FilterExpression const& getFilter() const;
             
+            std::set<storm::expressions::Variable> const& getUndefinedConstants() const;
+            bool containsUndefinedConstants() const;
+            std::set<storm::expressions::Variable> getUsedVariablesAndConstants() const;
+            std::set<std::string> getUsedLabels() const;
+            
             std::shared_ptr<storm::logic::Formula const> getRawFormula() const;
+            
         private:
             std::string name;
             std::string comment;
             FilterExpression filterExpression;
+            std::set<storm::expressions::Variable> undefinedConstants;
         };
         
         

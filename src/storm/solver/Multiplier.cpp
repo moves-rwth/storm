@@ -58,7 +58,22 @@ namespace storm {
         
         template<typename ValueType>
         std::unique_ptr<Multiplier<ValueType>> MultiplierFactory<ValueType>::create(Environment const& env, storm::storage::SparseMatrix<ValueType> const& matrix) {
-            switch (env.solver().multiplier().getType()) {
+            auto type = env.solver().multiplier().getType();
+            
+            // Adjust the multiplier type if an eqsolver was specified but not a multiplier
+            if (!env.solver().isLinearEquationSolverTypeSetFromDefaultValue() && env.solver().multiplier().isTypeSetFromDefault()) {
+                bool changed = false;
+                if (env.solver().getLinearEquationSolverType() == EquationSolverType::Gmmxx && type != MultiplierType::Gmmxx) {
+                    type = MultiplierType::Gmmxx;
+                    changed = true;
+                } else if (env.solver().getLinearEquationSolverType() == EquationSolverType::Native && type != MultiplierType::Native) {
+                    type = MultiplierType::Native;
+                    changed = true;
+                }
+                STORM_LOG_INFO_COND(!changed, "Selecting '" + toString(type) + "' as the multiplier type to match the selected equation solver. If you want to override this, please explicitly specify a different multiplier type.");
+            }
+            
+            switch (type) {
                 case MultiplierType::Gmmxx:
                     return std::make_unique<GmmxxMultiplier<ValueType>>(matrix);
                 case MultiplierType::Native:

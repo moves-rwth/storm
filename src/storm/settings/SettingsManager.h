@@ -65,6 +65,11 @@ namespace storm {
             void setFromConfigurationFile(std::string const& configFilename);
             
             /*!
+             * Throws an exception with a nice error message indicating similar valid option names.
+             */
+            void handleUnknownOption(std::string const& optionName, bool isShort) const;
+            
+            /*!
              * This function prints a help message to the standard output. Optionally, a string can be given as a hint.
              * If it is 'all', the complete help is shown. Otherwise, the string is interpreted as a regular expression
              * and matched against the known modules and options to restrict the help output.
@@ -268,6 +273,20 @@ namespace storm {
         SettingsType const& getModule() {
             static_assert(std::is_base_of<storm::settings::modules::ModuleSettings, SettingsType>::value, "Template argument must be derived from ModuleSettings");
             return dynamic_cast<SettingsType const&>(manager().getModule(SettingsType::moduleName));
+        }
+        
+        
+        /*!
+         * Returns true if the given module is registered.
+         *
+         */
+        template<typename SettingsType>
+        bool hasModule() {
+            static_assert(std::is_base_of<storm::settings::modules::ModuleSettings, SettingsType>::value, "Template argument must be derived from ModuleSettings");
+            if (manager().hasModule(SettingsType::moduleName)) {
+                return dynamic_cast<SettingsType const*>(&(manager().getModule(SettingsType::moduleName))) != nullptr;
+            }
+            return false;
         }
         
         /*!

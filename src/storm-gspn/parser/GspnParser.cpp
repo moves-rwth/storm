@@ -12,7 +12,7 @@
 namespace storm {
     namespace parser {
         
-        storm::gspn::GSPN* GspnParser::parse(std::string const& filename) {
+        storm::gspn::GSPN* GspnParser::parse(std::string const& filename, std::string const& constantDefinitions) {
 #ifdef STORM_HAVE_XERCES
                         // initialize xercesc
             try {
@@ -62,10 +62,11 @@ namespace storm {
             xercesc::DOMElement* elementRoot = parser->getDocument()->getDocumentElement();
             
             if (storm::adapters::XMLtoString(elementRoot->getTagName()) == "pnml") {
+                STORM_LOG_WARN_COND(constantDefinitions == "", "Constant definitions for pnml files are currently not supported.");
                 PnmlParser p;
                 return p.parse(elementRoot);
             } else if (storm::adapters::XMLtoString(elementRoot->getTagName()) == "project") {
-                GreatSpnEditorProjectParser p;
+                GreatSpnEditorProjectParser p(constantDefinitions);
                 return p.parse(elementRoot);
             } else {
                 // If the top-level node is not a "pnml" or "" node, then throw an exception.

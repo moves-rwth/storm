@@ -10,7 +10,7 @@ namespace storm {
     namespace solver {
         
         template<typename ValueType>
-        GameSolver<ValueType>::GameSolver() : trackSchedulers(false), cachingEnabled(false) {
+        GameSolver<ValueType>::GameSolver() : trackSchedulers(false), uniqueSolution(false), cachingEnabled(false) {
             // Intentionally left empty
         }
         
@@ -100,6 +100,16 @@ namespace storm {
         }
         
         template<typename ValueType>
+        void GameSolver<ValueType>::setHasUniqueSolution(bool value) {
+            this->uniqueSolution = value;
+        }
+        
+        template<typename ValueType>
+        bool GameSolver<ValueType>::hasUniqueSolution() const {
+            return this->uniqueSolution;
+        }
+        
+        template<typename ValueType>
         GameSolverFactory<ValueType>::GameSolverFactory() {
             // Intentionally left empty.
         }
@@ -112,6 +122,16 @@ namespace storm {
         template<typename ValueType>
         std::unique_ptr<GameSolver<ValueType>> GameSolverFactory<ValueType>::create(Environment const& env, storm::storage::SparseMatrix<storm::storage::sparse::state_type>&& player1Matrix, storm::storage::SparseMatrix<ValueType>&& player2Matrix) const {
             return std::make_unique<StandardGameSolver<ValueType>>(std::move(player1Matrix), std::move(player2Matrix), std::make_unique<GeneralLinearEquationSolverFactory<ValueType>>());
+        }
+        
+        template<typename ValueType>
+        std::unique_ptr<GameSolver<ValueType>> GameSolverFactory<ValueType>::create(Environment const& env, std::vector<uint64_t> const& player1Grouping, storm::storage::SparseMatrix<ValueType> const& player2Matrix) const {
+            return std::make_unique<StandardGameSolver<ValueType>>(player1Grouping, player2Matrix, std::make_unique<GeneralLinearEquationSolverFactory<ValueType>>());
+        }
+        
+        template<typename ValueType>
+        std::unique_ptr<GameSolver<ValueType>> GameSolverFactory<ValueType>::create(Environment const& env, std::vector<uint64_t>&& player1Grouping, storm::storage::SparseMatrix<ValueType>&& player2Matrix) const {
+            return std::make_unique<StandardGameSolver<ValueType>>(std::move(player1Grouping), std::move(player2Matrix), std::make_unique<GeneralLinearEquationSolverFactory<ValueType>>());
         }
         
         template class GameSolver<double>;

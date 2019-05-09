@@ -9,6 +9,27 @@
 #include <carl/core/Relation.h>
 #include <carl/util/stringparser.h>
 
+// Some header files on macOS (included via INTEL TBB) might #define TRUE and FALSE, which in carl/formula/Formula.h are used as FormulaTypes.
+// Hence, we temporarily #undef these:
+#ifdef TRUE
+#define STORM_TEMP_TRUE TRUE
+#undef TRUE
+#endif
+#ifdef FALSE
+#define STORM_TEMP_FALSE FALSE
+#undef FALSE
+#endif
+#include <carl/formula/Formula.h>
+// Restore TRUE / FALSE macros.
+#ifdef STORM_TEMP_TRUE
+#define TRUE STORM_TEMP_TRUE
+#undef STORM_TEMP_TRUE
+#endif
+#ifdef STORM_TEMP_FALSE
+#define FALSE STORM_TEMP_FALSE
+#undef STORM_TEMP_FALSE
+#endif
+
 namespace carl {
     // Define hash values for all polynomials and rational function.
     template<typename C, typename O, typename P>
@@ -57,5 +78,7 @@ namespace storm {
     
     typedef carl::RationalFunction<Polynomial, true> RationalFunction;
     typedef carl::Interval<double> Interval;
+
+    typedef carl::Formula<RawPolynomial> RationalFunctionConstraint;
 }
 

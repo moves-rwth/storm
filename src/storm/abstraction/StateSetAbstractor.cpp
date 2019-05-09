@@ -16,6 +16,10 @@ namespace storm {
         template <storm::dd::DdType DdType, typename ValueType>
         StateSetAbstractor<DdType, ValueType>::StateSetAbstractor(AbstractionInformation<DdType>& abstractionInformation, std::vector<storm::expressions::Expression> const& statePredicates, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory) : smtSolver(smtSolverFactory->create(abstractionInformation.getExpressionManager())), abstractionInformation(abstractionInformation), localExpressionInformation(abstractionInformation), relevantPredicatesAndVariables(), concretePredicateVariables(), forceRecomputation(true), cachedBdd(abstractionInformation.getDdManager().getBddOne()), constraint(abstractionInformation.getDdManager().getBddOne()) {
             
+            for (auto const& constraint : abstractionInformation.getConstraints()) {
+                smtSolver->add(constraint);
+            }
+            
             // Assert all state predicates.
             for (auto const& predicate : statePredicates) {
                 smtSolver->add(predicate);
@@ -23,8 +27,8 @@ namespace storm {
                 // Extract the variables of the predicate, so we know which variables were used when abstracting.
                 std::set<storm::expressions::Variable> usedVariables = predicate.getVariables();
                 concretePredicateVariables.insert(usedVariables.begin(), usedVariables.end());
-                localExpressionInformation.relate(usedVariables);
             }
+            localExpressionInformation.relate(concretePredicateVariables);
         }
         
         template <storm::dd::DdType DdType, typename ValueType>
@@ -48,6 +52,7 @@ namespace storm {
             }
             
             std::set<uint_fast64_t> newRelevantPredicateIndices = localExpressionInformation.getRelatedExpressions(concretePredicateVariables);
+            
             // Since the number of relevant predicates is monotonic, we can simply check for the size here.
             STORM_LOG_ASSERT(newRelevantPredicateIndices.size() >= relevantPredicatesAndVariables.size(), "Illegal size of relevant predicates.");
             if (newRelevantPredicateIndices.size() > relevantPredicatesAndVariables.size()) {
@@ -154,7 +159,7 @@ namespace storm {
         template class StateSetAbstractor<storm::dd::DdType::CUDD, double>;
         template class StateSetAbstractor<storm::dd::DdType::Sylvan, double>;
 #ifdef STORM_HAVE_CARL
-		template class StateSetAbstractor<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+		template class StateSetAbstractor<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 #endif
     }
 }

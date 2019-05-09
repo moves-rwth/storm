@@ -49,6 +49,13 @@ namespace storm {
             virtual typename SparseModelType::ValueType getBoundAtInitState(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters) override;
 
             
+            /*!
+             * Finds the extremal value within the given region and with the given precision.
+             * The returned value v corresponds to the value at the returned valuation.
+             * The actual maximum (minimum) lies in the interval [v, v+precision] ([v-precision, v])
+             */
+            virtual std::pair<typename SparseModelType::ValueType, typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::Valuation> computeExtremalValue(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters, typename SparseModelType::ValueType const& precision) override;
+            
             SparseModelType const& getConsideredParametricModel() const;
             CheckTask<storm::logic::Formula, ConstantType> const& getCurrentCheckTask() const;
             

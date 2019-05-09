@@ -15,7 +15,7 @@ namespace storm {
             const std::string MultiplierSettings::multiplierTypeOptionName = "type";
 
             MultiplierSettings::MultiplierSettings() : ModuleSettings(moduleName) {
-                std::vector<std::string> multiplierTypes = {"native", "inplace", "gmmxx"};
+                std::vector<std::string> multiplierTypes = {"native", "gmmxx"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, multiplierTypeOptionName, true, "Sets which type of multiplier is preferred.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of a multiplier.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(multiplierTypes)).setDefaultValueString("gmmxx").build()).build());
                 

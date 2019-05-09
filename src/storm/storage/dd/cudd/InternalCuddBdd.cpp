@@ -294,7 +294,7 @@ namespace storm {
             } else if (dd == Cudd_ReadOne(manager.getManager()) && complement) {
                 return;
             }
-            
+                        
             // If we are at the maximal level, the value to be set is stored as a constant in the DD.
             if (currentRowLevel == maxLevel) {
                 result.set(currentRowOffset, true);
@@ -409,6 +409,32 @@ namespace storm {
                 
                 filterExplicitVectorRec(Cudd_Regular(elseDdNode), manager, currentLevel + 1, elseComplemented, maxLevel, ddVariableIndices, currentOffset, odd.getElseSuccessor(), result, currentIndex, values);
                 filterExplicitVectorRec(Cudd_Regular(thenDdNode), manager, currentLevel + 1, thenComplemented, maxLevel, ddVariableIndices, currentOffset + odd.getElseOffset(), odd.getThenSuccessor(), result, currentIndex, values);
+            }
+        }
+        
+        std::vector<InternalBdd<DdType::CUDD>> InternalBdd<DdType::CUDD>::splitIntoGroups(std::vector<uint_fast64_t> const& ddGroupVariableIndices) const {
+            std::vector<InternalBdd<DdType::CUDD>> result;
+            splitIntoGroupsRec(Cudd_Regular(this->getCuddDdNode()), Cudd_IsComplement(this->getCuddDdNode()), result, ddGroupVariableIndices, 0, ddGroupVariableIndices.size());
+            return result;
+        }
+        
+        void InternalBdd<DdType::CUDD>::splitIntoGroupsRec(DdNode* dd, bool negated, std::vector<InternalBdd<DdType::CUDD>>& groups, std::vector<uint_fast64_t> const& ddGroupVariableIndices, uint_fast64_t currentLevel, uint_fast64_t maxLevel) const {
+            // For the empty DD, we do not need to create a group.
+            if (negated && dd == Cudd_ReadOne(ddManager->getCuddManager().getManager())) {
+                return;
+            }
+            
+            if (currentLevel == maxLevel) {
+                groups.push_back(InternalBdd<DdType::CUDD>(ddManager, cudd::BDD(ddManager->getCuddManager(), negated ? Cudd_Complement(dd) : dd)));
+            } else if (ddGroupVariableIndices[currentLevel] < Cudd_NodeReadIndex(dd)) {
+                splitIntoGroupsRec(dd, negated, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
+                splitIntoGroupsRec(dd, negated, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
+            } else {
+                DdNode* elseNode = Cudd_E(dd);
+                DdNode* thenNode = Cudd_T(dd);
+
+                splitIntoGroupsRec(elseNode, negated ^ Cudd_IsComplement(elseNode), groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
+                splitIntoGroupsRec(thenNode, negated ^ Cudd_IsComplement(thenNode), groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
             }
         }
         

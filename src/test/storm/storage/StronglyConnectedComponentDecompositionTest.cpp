@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
-#include "storm/parser/AutoParser.h"
+#include "storm-parsers/parser/AutoParser.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
 #include "storm/models/sparse/StandardRewardModel.h"
@@ -21,17 +21,19 @@ TEST(StronglyConnectedComponentDecomposition, SmallSystemFromMatrix) {
 
 	storm::storage::SparseMatrix<double> matrix;
 	ASSERT_NO_THROW(matrix = matrixBuilder.build());
-	storm::storage::BitVector allBits(6, true);
 
 	storm::storage::StronglyConnectedComponentDecomposition<double> sccDecomposition;
+	storm::storage::StronglyConnectedComponentDecompositionOptions options;
 
-	ASSERT_NO_THROW(sccDecomposition = storm::storage::StronglyConnectedComponentDecomposition<double>(matrix, allBits, false, false));
+	ASSERT_NO_THROW(sccDecomposition = storm::storage::StronglyConnectedComponentDecomposition<double>(matrix, options));
 	ASSERT_EQ(4ul, sccDecomposition.size());
 
-	ASSERT_NO_THROW(sccDecomposition = storm::storage::StronglyConnectedComponentDecomposition<double>(matrix, allBits, true, false));
+	options.dropNaiveSccs();
+	ASSERT_NO_THROW(sccDecomposition = storm::storage::StronglyConnectedComponentDecomposition<double>(matrix, options));
 	ASSERT_EQ(3ul, sccDecomposition.size());
 
-	ASSERT_NO_THROW(sccDecomposition = storm::storage::StronglyConnectedComponentDecomposition<double>(matrix, allBits, true, true));
+	options.onlyBottomSccs();
+	ASSERT_NO_THROW(sccDecomposition = storm::storage::StronglyConnectedComponentDecomposition<double>(matrix, options));
 	ASSERT_EQ(1ul, sccDecomposition.size());
 }
 
@@ -41,14 +43,17 @@ TEST(StronglyConnectedComponentDecomposition, FullSystem1) {
 	std::shared_ptr<storm::models::sparse::MarkovAutomaton<double>> markovAutomaton = abstractModel->as<storm::models::sparse::MarkovAutomaton<double>>();
     
     storm::storage::StronglyConnectedComponentDecomposition<double> sccDecomposition;
+	storm::storage::StronglyConnectedComponentDecompositionOptions options;
 
-    ASSERT_NO_THROW(sccDecomposition = storm::storage::StronglyConnectedComponentDecomposition<double>(*markovAutomaton));
+    ASSERT_NO_THROW(sccDecomposition = storm::storage::StronglyConnectedComponentDecomposition<double>(markovAutomaton->getTransitionMatrix(), options));
     ASSERT_EQ(5ul, sccDecomposition.size());
     
-    ASSERT_NO_THROW(sccDecomposition = storm::storage::StronglyConnectedComponentDecomposition<double>(*markovAutomaton, true));
+    options.dropNaiveSccs();
+    ASSERT_NO_THROW(sccDecomposition = storm::storage::StronglyConnectedComponentDecomposition<double>(markovAutomaton->getTransitionMatrix(), options));
     ASSERT_EQ(2ul, sccDecomposition.size());
 
-    ASSERT_NO_THROW(sccDecomposition = storm::storage::StronglyConnectedComponentDecomposition<double>(*markovAutomaton, true, true));
+    options.onlyBottomSccs();
+    ASSERT_NO_THROW(sccDecomposition = storm::storage::StronglyConnectedComponentDecomposition<double>(markovAutomaton->getTransitionMatrix(), options));
     ASSERT_EQ(2ul, sccDecomposition.size());
     
     markovAutomaton = nullptr;
@@ -60,8 +65,10 @@ TEST(StronglyConnectedComponentDecomposition, FullSystem2) {
 	std::shared_ptr<storm::models::sparse::MarkovAutomaton<double>> markovAutomaton = abstractModel->as<storm::models::sparse::MarkovAutomaton<double>>();
     
     storm::storage::StronglyConnectedComponentDecomposition<double> sccDecomposition;
-    ASSERT_NO_THROW(sccDecomposition = storm::storage::StronglyConnectedComponentDecomposition<double>(*markovAutomaton, true, false));
-    
+    storm::storage::StronglyConnectedComponentDecompositionOptions options;
+
+    options.dropNaiveSccs();
+    ASSERT_NO_THROW(sccDecomposition = storm::storage::StronglyConnectedComponentDecomposition<double>(markovAutomaton->getTransitionMatrix(), options));
     ASSERT_EQ(2ul, sccDecomposition.size());
     
     // Now, because there is no ordering we have to check the contents of the MECs in a symmetrical way.
@@ -73,7 +80,8 @@ TEST(StronglyConnectedComponentDecomposition, FullSystem2) {
     ASSERT_TRUE(scc1 == storm::storage::StateBlock(correctScc1.begin(), correctScc1.end()) || scc1 == storm::storage::StateBlock(correctScc2.begin(), correctScc2.end()));
     ASSERT_TRUE(scc2 == storm::storage::StateBlock(correctScc1.begin(), correctScc1.end()) || scc2 == storm::storage::StateBlock(correctScc2.begin(), correctScc2.end()));
     
-    ASSERT_NO_THROW(sccDecomposition = storm::storage::StronglyConnectedComponentDecomposition<double>(*markovAutomaton, true, true));
+    options.onlyBottomSccs();
+    ASSERT_NO_THROW(sccDecomposition = storm::storage::StronglyConnectedComponentDecomposition<double>(markovAutomaton->getTransitionMatrix(), options));
     ASSERT_EQ(1ul, sccDecomposition.size());
 
     markovAutomaton = nullptr;

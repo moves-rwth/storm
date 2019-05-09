@@ -13,7 +13,7 @@ foreach (testsuite abstraction adapter builder logic modelchecker parser permiss
 
 	  file(GLOB_RECURSE TEST_${testsuite}_FILES ${STORM_TESTS_BASE_PATH}/${testsuite}/*.h ${STORM_TESTS_BASE_PATH}/${testsuite}/*.cpp)
       add_executable (test-${testsuite} ${TEST_${testsuite}_FILES} ${STORM_TESTS_BASE_PATH}/storm-test.cpp)
-	  target_link_libraries(test-${testsuite} storm)
+	  target_link_libraries(test-${testsuite} storm storm-parsers storm-conv)
 	  target_link_libraries(test-${testsuite} ${STORM_TEST_LINK_LIBRARIES})
 
 	  add_dependencies(test-${testsuite} test-resources)

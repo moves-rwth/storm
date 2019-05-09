@@ -27,7 +27,7 @@ namespace storm {
         
         template<typename ModelType>
         std::shared_ptr<ModelType> performNondeterministicSparseBisimulationMinimization(std::shared_ptr<ModelType> model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, storm::storage::BisimulationType type) {
-            typename storm::storage::DeterministicModelBisimulationDecomposition<ModelType>::Options options;
+            typename storm::storage::NondeterministicModelBisimulationDecomposition<ModelType>::Options options;
             if (!formulas.empty()) {
                 options = typename storm::storage::NondeterministicModelBisimulationDecomposition<ModelType>::Options(*model, formulas);
             }

@@ -6,6 +6,7 @@
 
 #include "storm/storage/expressions/Expressions.h"
 #include "storm/storage/expressions/ToRationalNumberVisitor.h"
+#include "storm/storage/expressions/ReduceNestingVisitor.h"
 
 namespace storm {
     namespace expressions {        
@@ -63,7 +64,7 @@ namespace storm {
         }
         
         std::shared_ptr<BaseExpression const> BaseExpression::getOperand(uint_fast64_t operandIndex) const {
-            STORM_LOG_THROW(false, storm::exceptions::InvalidAccessException, "Unable to access operand " << operandIndex << " in expression of arity 0.");
+            STORM_LOG_THROW(false, storm::exceptions::InvalidAccessException, "Unable to access operand " << operandIndex << " in expression '" << *this << "' of arity 0.");
         }
         
         std::string const& BaseExpression::getIdentifier() const {
@@ -72,6 +73,11 @@ namespace storm {
         
         OperatorType BaseExpression::getOperator() const {
             STORM_LOG_THROW(false, storm::exceptions::InvalidAccessException, "Unable to access operator of non-function application expression.");
+        }
+        
+        std::shared_ptr<BaseExpression const> BaseExpression::reduceNesting() const {
+            ReduceNestingVisitor v;
+            return v.reduceNesting(this->toExpression()).getBaseExpressionPointer();
         }
         
         bool BaseExpression::containsVariables() const {

@@ -52,7 +52,7 @@ namespace storm {
             }
         }
         
-        ExpressionManager::ExpressionManager() : nameToIndexMapping(), indexToNameMapping(), indexToTypeMapping(), numberOfBooleanVariables(0), numberOfIntegerVariables(0), numberOfBitVectorVariables(0), numberOfRationalVariables(0), numberOfAuxiliaryVariables(0), numberOfAuxiliaryBooleanVariables(0), numberOfAuxiliaryIntegerVariables(0), numberOfAuxiliaryBitVectorVariables(0), numberOfAuxiliaryRationalVariables(0), freshVariableCounter(0) {
+        ExpressionManager::ExpressionManager() : nameToIndexMapping(), indexToNameMapping(), indexToTypeMapping(), numberOfBooleanVariables(0), numberOfIntegerVariables(0), numberOfBitVectorVariables(0), numberOfRationalVariables(0), numberOfArrayVariables(0), numberOfAuxiliaryVariables(0), numberOfAuxiliaryBooleanVariables(0), numberOfAuxiliaryIntegerVariables(0), numberOfAuxiliaryBitVectorVariables(0), numberOfAuxiliaryRationalVariables(0), numberOfAuxiliaryArrayVariables(0), freshVariableCounter(0) {
             // Intentionally left empty.
         }
         
@@ -115,6 +115,11 @@ namespace storm {
             return rationalType.get();
         }
         
+        Type const& ExpressionManager::getArrayType(Type elementType) const {
+            Type type(this->getSharedPointer(), std::shared_ptr<BaseType>(new ArrayType(elementType)));
+            return *arrayTypes.insert(type).first;
+        }
+        
         bool ExpressionManager::isValidVariableName(std::string const& name) {
             return name.size() < 2 || name.at(0) != '_' || name.at(1) != '_';
         }
@@ -149,6 +154,10 @@ namespace storm {
         Variable ExpressionManager::declareRationalVariable(std::string const& name, bool auxiliary) {
             return this->declareVariable(name, this->getRationalType(), auxiliary);
         }
+        
+        Variable ExpressionManager::declareArrayVariable(std::string const& name, Type const& elementType, bool auxiliary) {
+            return this->declareVariable(name, this->getArrayType(elementType), auxiliary);
+        }
 
         Variable ExpressionManager::declareOrGetVariable(std::string const& name, storm::expressions::Type const& variableType, bool auxiliary) {
             return declareOrGetVariable(name, variableType, auxiliary, true);
@@ -158,6 +167,7 @@ namespace storm {
             STORM_LOG_THROW(!checkName || isValidVariableName(name), storm::exceptions::InvalidArgumentException, "Invalid variable name '" << name << "'.");
             auto nameIndexPair = nameToIndexMapping.find(name);
             if (nameIndexPair != nameToIndexMapping.end()) {
+                STORM_LOG_ASSERT(indexToTypeMapping.at(nameIndexPair->second) == variableType, "Tried to declareOrGet variable '" << name << "' of type '" << variableType << "' but there is a variable with that name and different type '" << indexToTypeMapping.at(nameIndexPair->second) << "'.");
                 return Variable(this->getSharedPointer(), nameIndexPair->second);
             } else {
                 uint_fast64_t offset = 0;
@@ -168,8 +178,12 @@ namespace storm {
                         offset = numberOfIntegerVariables++ + numberOfBitVectorVariables;
                     } else if (variableType.isBitVectorType()) {
                         offset = numberOfBitVectorVariables++ + numberOfIntegerVariables;
-                    } else {
+                    } else if (variableType.isRationalType()) {
                         offset = numberOfRationalVariables++;
+                    } else if (variableType.isArrayType()) {
+                        offset = numberOfArrayVariables++;
+                    } else {
+                        STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Trying to declare a variable of unsupported type: '" << variableType.getStringRepresentation() << "'.");
                     }
                 } else {
                     if (variableType.isBooleanType()) {
@@ -178,8 +192,12 @@ namespace storm {
                         offset = numberOfIntegerVariables++ + numberOfBitVectorVariables;
                     } else if (variableType.isBitVectorType()) {
                         offset = numberOfBitVectorVariables++ + numberOfIntegerVariables;
-                    } else {
+                    } else if (variableType.isRationalType()) {
                         offset = numberOfRationalVariables++;
+                    } else if (variableType.isArrayType()) {
+                        offset = numberOfArrayVariables++;
+                    } else {
+                        STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Trying to declare a variable of unsupported type: '" << variableType.getStringRepresentation() << "'.");
                     }
                 }
                 
@@ -240,12 +258,14 @@ namespace storm {
                 return numberOfBitVectorVariables;
             } else if (variableType.isRationalType()) {
                 return numberOfRationalVariables;
+            } else if (variableType.isArrayType()) {
+                return numberOfArrayVariables;
             }
             return 0;
         }
         
         uint_fast64_t ExpressionManager::getNumberOfVariables() const {
-            return numberOfBooleanVariables + numberOfIntegerVariables + numberOfBitVectorVariables + numberOfRationalVariables;
+            return numberOfBooleanVariables + numberOfIntegerVariables + numberOfBitVectorVariables + numberOfRationalVariables + numberOfArrayVariables;
         }
         
         uint_fast64_t ExpressionManager::getNumberOfBooleanVariables() const {
@@ -261,6 +281,10 @@ namespace storm {
         }
         
         uint_fast64_t ExpressionManager::getNumberOfRationalVariables() const {
+            return numberOfRationalVariables;
+        }
+        
+        uint_fast64_t ExpressionManager::getNumberOfArrayVariables() const {
             return numberOfRationalVariables;
         }
         
@@ -300,7 +324,7 @@ namespace storm {
             out << "manager {" << std::endl;
             
             for (auto const& variableTypePair : manager) {
-                std::cout << "\t" << variableTypePair.second << " " << variableTypePair.first.getName() << " [offset " << variableTypePair.first.getOffset() << "]" << std::endl;
+                out << "\t" << variableTypePair.second << " " << variableTypePair.first.getName() << " [offset " << variableTypePair.first.getOffset() << "]" << std::endl;
             }
             
             out << "}" << std::endl;

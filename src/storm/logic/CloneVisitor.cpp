@@ -70,7 +70,11 @@ namespace storm {
         
         boost::any CloneVisitor::visit(EventuallyFormula const& f, boost::any const& data) const {
             std::shared_ptr<Formula> subformula = boost::any_cast<std::shared_ptr<Formula>>(f.getSubformula().accept(*this, data));
-            return std::static_pointer_cast<Formula>(std::make_shared<EventuallyFormula>(subformula, f.getContext()));
+            if (f.hasRewardAccumulation()) {
+                return std::static_pointer_cast<Formula>(std::make_shared<EventuallyFormula>(subformula, f.getContext(), f.getRewardAccumulation()));
+            } else {
+                return std::static_pointer_cast<Formula>(std::make_shared<EventuallyFormula>(subformula, f.getContext()));
+            }
         }
         
         boost::any CloneVisitor::visit(TimeOperatorFormula const& f, boost::any const& data) const {
@@ -104,6 +108,11 @@ namespace storm {
             return std::static_pointer_cast<Formula>(std::make_shared<MultiObjectiveFormula>(subformulas));
         }
         
+        boost::any CloneVisitor::visit(QuantileFormula const& f, boost::any const& data) const {
+            std::shared_ptr<Formula> subformula = boost::any_cast<std::shared_ptr<Formula>>(f.getSubformula().accept(*this, data));
+            return std::static_pointer_cast<Formula>(std::make_shared<QuantileFormula>(f.getBoundVariables(), subformula));
+        }
+        
         boost::any CloneVisitor::visit(NextFormula const& f, boost::any const& data) const {
             std::shared_ptr<Formula> subformula = boost::any_cast<std::shared_ptr<Formula>>(f.getSubformula().accept(*this, data));
             return std::static_pointer_cast<Formula>(std::make_shared<NextFormula>(subformula));
@@ -119,8 +128,8 @@ namespace storm {
             return std::static_pointer_cast<Formula>(std::make_shared<RewardOperatorFormula>(subformula, f.getOptionalRewardModelName(), f.getOperatorInformation()));
         }
         
-        boost::any CloneVisitor::visit(TotalRewardFormula const&, boost::any const&) const {
-            return std::static_pointer_cast<Formula>(std::make_shared<TotalRewardFormula>());
+        boost::any CloneVisitor::visit(TotalRewardFormula const& f, boost::any const&) const {
+            return std::static_pointer_cast<Formula>(std::make_shared<TotalRewardFormula>(f));
         }
         
         boost::any CloneVisitor::visit(UnaryBooleanStateFormula const& f, boost::any const& data) const {

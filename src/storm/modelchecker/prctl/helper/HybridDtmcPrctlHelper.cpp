@@ -339,6 +339,12 @@ namespace storm {
             }
 
             template<storm::dd::DdType DdType, typename ValueType>
+            std::unique_ptr<CheckResult> HybridDtmcPrctlHelper<DdType, ValueType>::computeReachabilityTimes(Environment const& env, storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, storm::dd::Bdd<DdType> const& targetStates, bool qualitative) {
+                RewardModelType rewardModel(model.getManager().getConstant(storm::utility::one<ValueType>()), boost::none, boost::none);
+                return computeReachabilityRewards(env, model, transitionMatrix, rewardModel, targetStates, qualitative);
+            }
+            
+            template<storm::dd::DdType DdType, typename ValueType>
             std::unique_ptr<CheckResult> HybridDtmcPrctlHelper<DdType, ValueType>::computeLongRunAverageProbabilities(Environment const& env, storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, storm::dd::Bdd<DdType> const& targetStates) {
                 // Create ODD for the translation.
                 storm::utility::Stopwatch conversionWatch(true);

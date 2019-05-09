@@ -116,7 +116,10 @@ namespace storm {
             } else {
                 bool converged = false;
                 uint64_t numberOfIterations = 0;
-                uint64_t maxIter = env.solver().eigen().getMaximalNumberOfIterations();
+                StormEigen::Index maxIter = std::numeric_limits<StormEigen::Index>::max();
+                if (env.solver().eigen().getMaximalNumberOfIterations() < static_cast<uint64_t>(maxIter)) {
+                    maxIter = env.solver().eigen().getMaximalNumberOfIterations();
+                }
                 uint64_t restartThreshold = env.solver().eigen().getRestartThreshold();
                 ValueType precision = storm::utility::convertNumber<ValueType>(env.solver().eigen().getPrecision());
                 EigenLinearEquationSolverPreconditioner preconditioner = env.solver().eigen().getPreconditioner();
@@ -241,7 +244,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        LinearEquationSolverProblemFormat EigenLinearEquationSolver<ValueType>::getEquationProblemFormat(Environment const& env) const {
+        LinearEquationSolverProblemFormat EigenLinearEquationSolver<ValueType>::getEquationProblemFormat(Environment const&) const {
             return LinearEquationSolverProblemFormat::EquationSystem;
         }
         
@@ -256,7 +259,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> EigenLinearEquationSolverFactory<ValueType>::create(Environment const& env) const {
+        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> EigenLinearEquationSolverFactory<ValueType>::create(Environment const&) const {
             return std::make_unique<storm::solver::EigenLinearEquationSolver<ValueType>>();
         }
         

@@ -1,5 +1,6 @@
 #include "storm/storage/jani/Location.h"
 
+#include "storm/storage/jani/expressions/JaniExpressionSubstitutionVisitor.h"
 #include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidJaniException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
@@ -8,6 +9,10 @@ namespace storm {
     namespace jani {
         
         Location::Location(std::string const& name, std::vector<Assignment> const& transientAssignments) : name(name), assignments(transientAssignments) {
+            // Intentionally left empty.
+        }
+
+        Location::Location(std::string const& name, OrderedAssignments const& assignments) : name(name), assignments(assignments) {
             // Intentionally left empty.
         }
         
@@ -19,14 +24,33 @@ namespace storm {
             return assignments;
         }
         
+        OrderedAssignments& Location::getAssignments() {
+            return assignments;
+        }
+        
         void Location::addTransientAssignment(storm::jani::Assignment const& assignment) {
             STORM_LOG_THROW(assignment.isTransient(), storm::exceptions::InvalidArgumentException, "Must not add non-transient assignment to location.");
             assignments.add(assignment);
         }
         
+        bool Location::hasTimeProgressInvariant() const {
+            return timeProgressInvariant.isInitialized();
+        }
+        
+        storm::expressions::Expression const& Location::getTimeProgressInvariant() const {
+            return timeProgressInvariant;
+        }
+        
+        void Location::setTimeProgressInvariant(storm::expressions::Expression const& expression) {
+            timeProgressInvariant = expression;
+        }
+        
         void Location::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {
             for (auto& assignment : assignments) {
                 assignment.substitute(substitution);
+            }
+            if (hasTimeProgressInvariant()) {
+                setTimeProgressInvariant(substituteJaniExpression(getTimeProgressInvariant(), substitution));
             }
         }
         

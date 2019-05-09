@@ -4,6 +4,7 @@
 
 #include <boost/optional.hpp>
 #include <boost/container/flat_set.hpp>
+#include <iostream>
 
 #include "storm/storage/jani/EdgeDestination.h"
 #include "storm/storage/jani/OrderedAssignments.h"
@@ -71,6 +72,11 @@ namespace storm {
             std::vector<EdgeDestination> const& getDestinations() const;
             
             /*!
+             * Retrieves the destinations of this edge.
+             */
+            std::vector<EdgeDestination>& getDestinations();
+            
+            /*!
              * Retrieves the number of destinations of this edge.
              */
             std::size_t getNumberOfDestinations() const;
@@ -103,7 +109,17 @@ namespace storm {
             /*!
              * Retrieves whether the edge uses an assignment level other than zero.
              */
-            bool usesAssignmentLevels() const;
+            bool usesAssignmentLevels(bool onlyTransient = false) const;
+
+            /*!
+             * Retrieves the color of the edge
+             */
+            uint64_t getColor() const;
+
+            /*!
+             * Sets the color of the edge
+             */
+            void setColor(uint64_t newColor);
 
             /*!
              *
@@ -112,6 +128,23 @@ namespace storm {
             void simplifyIndexedAssignments(VariableSet const& localVars);
             
             std::shared_ptr<TemplateEdge> const& getTemplateEdge();
+            void setTemplateEdge(std::shared_ptr<TemplateEdge> const& newTe);
+
+            /*!
+             * Retrieves the lowest assignment level occurring in a destination assignment.
+             * If no assignment exists, this value is the highest possible integer
+             */
+            int64_t const& getLowestAssignmentLevel() const;
+            
+            /*!
+             * Retrieves the highest assignment level occurring in a destination assignment
+             * If no assignment exists, this value is always zero
+             */
+            int64_t const& getHighestAssignmentLevel() const;
+
+            std::string toString() const;
+
+            void assertValid() const;
             
         private:
             /// The index of the source location.
@@ -129,7 +162,13 @@ namespace storm {
             
             /// The concrete destination objects.
             std::vector<EdgeDestination> destinations;
+
+            /// The color of the edge, used to persistently mark and identify specific edges (by the user)
+            uint64_t color = 0;
         };
+        
+        std::ostream& operator<<(std::ostream& stream, Edge const& edge);
+
         
     }
 }

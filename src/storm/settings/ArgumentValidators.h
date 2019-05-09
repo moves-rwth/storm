@@ -70,6 +70,7 @@ namespace storm {
         public:
             static std::shared_ptr<ArgumentValidator<int64_t>> createIntegerRangeValidatorExcluding(int_fast64_t lowerBound, int_fast64_t upperBound);
             static std::shared_ptr<ArgumentValidator<uint64_t>> createUnsignedRangeValidatorExcluding(uint64_t lowerBound, uint64_t upperBound);
+            static std::shared_ptr<ArgumentValidator<uint64_t>> createUnsignedRangeValidatorIncluding(uint64_t lowerBound, uint64_t upperBound);
             static std::shared_ptr<ArgumentValidator<double>> createDoubleRangeValidatorExcluding(double lowerBound, double upperBound);
             
             static std::shared_ptr<ArgumentValidator<double>> createDoubleRangeValidatorIncluding(double lowerBound, double upperBound);

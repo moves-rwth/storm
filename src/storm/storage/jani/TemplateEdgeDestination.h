@@ -23,11 +23,12 @@ namespace storm {
             void changeAssignmentVariables(std::map<Variable const*, std::reference_wrapper<Variable const>> const& remapping);
 
             OrderedAssignments const& getOrderedAssignments() const;
+            OrderedAssignments& getOrderedAssignments();
             
             // Convenience methods to access the assignments.
             bool hasAssignment(Assignment const& assignment) const;
             bool removeAssignment(Assignment const& assignment);
-            void addAssignment(Assignment const& assignment);
+            void addAssignment(Assignment const& assignment, bool addToExisting = false);
             
             /*!
              * Retrieves whether this destination has transient assignments.
@@ -37,7 +38,7 @@ namespace storm {
             /*!
              * Retrieves whether the edge uses an assignment level other than zero.
              */
-            bool usesAssignmentLevels() const;
+            bool usesAssignmentLevels(bool onlyTransient = false) const;
 
             /*!
              * Checks whether the templ. edge destination contains one or more assignments

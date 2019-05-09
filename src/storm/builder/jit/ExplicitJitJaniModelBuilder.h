@@ -110,7 +110,7 @@ namespace storm {
                 cpptempl::data_map generateSynchronizationVector(cpptempl::data_map& modelData, storm::jani::ParallelComposition const& parallelComposition, storm::jani::SynchronizationVector const& synchronizationVector, uint64_t synchronizationVectorIndex);
                 cpptempl::data_list generateLevels(storm::jani::Automaton const& automaton, uint64_t destinationLocationIndex, storm::jani::OrderedAssignments const& assignments);
                 cpptempl::data_map generateEdge(storm::jani::Automaton const& automaton, uint64_t edgeIndex, storm::jani::Edge const& edge);
-                cpptempl::data_map generateDestination(storm::jani::Automaton const& automaton, uint64_t destinationIndex, storm::jani::EdgeDestination const& destination, boost::optional<storm::expressions::Expression> const& rate = boost::none);
+                cpptempl::data_map generateDestination(storm::jani::Automaton const& automaton, uint64_t destinationIndex, storm::jani::EdgeDestination const& destination);
                 template <typename ValueTypePrime>
                 cpptempl::data_map generateAssignment(storm::jani::Variable const& variable, ValueTypePrime value) const;
                 cpptempl::data_map generateLocationAssignment(storm::jani::Automaton const& automaton, uint64_t value) const;

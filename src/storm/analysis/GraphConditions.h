@@ -4,11 +4,11 @@
 #include <unordered_set>
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/models/sparse/Dtmc.h"
-#include <carl/formula/Formula.h>
 
 namespace storm {
     namespace analysis {
 
+        
         template <typename ValueType, typename Enable=void>
         struct ConstraintType {
             typedef void* val;
@@ -16,9 +16,9 @@ namespace storm {
 
         template<typename ValueType>
         struct ConstraintType<ValueType, typename std::enable_if<std::is_same<storm::RationalFunction, ValueType>::value>::type> {
-            typedef carl::Formula<typename ValueType::PolyType::PolyType> val;
+            typedef storm::RationalFunctionConstraint val;
         };
-        
+
         /**
          * Class to collect constraints on parametric Markov chains.
          */

@@ -29,7 +29,7 @@ namespace storm {
                 std::vector<std::string> methods = { "jacobi", "gaussseidel", "sor", "walkerchae", "power", "sound-value-iteration", "svi", "interval-iteration", "ii", "ratsearch" };
                 this->addOption(storm::settings::OptionBuilder(moduleName, techniqueOptionName, true, "The method to be used for solving linear equation systems with the native engine.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the method to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(methods)).setDefaultValueString("jacobi").build()).build());
                 
-                this->addOption(storm::settings::OptionBuilder(moduleName, maximalIterationsOptionName, false, "The maximal number of iterations to perform before iterative solving is aborted.").setShortName(maximalIterationsOptionShortName).addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("count", "The maximal iteration count.").setDefaultValueUnsignedInteger(20000).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, maximalIterationsOptionName, false, "The maximal number of iterations to perform before iterative solving is aborted.").setShortName(maximalIterationsOptionShortName).addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("count", "The maximal iteration count.").build()).build());
                 
                 this->addOption(storm::settings::OptionBuilder(moduleName, precisionOptionName, false, "The precision used for detecting convergence of iterative methods.").addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to achieve.").setDefaultValueDouble(1e-06).addValidatorDouble(ArgumentValidatorFactory::createDoubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
                 
@@ -117,11 +117,6 @@ namespace storm {
             }
 
             bool NativeEquationSolverSettings::check() const {
-                // This list does not include the precision, because this option is shared with other modules.
-                bool optionSet = isLinearEquationSystemTechniqueSet() || isMaximalIterationCountSet() || isConvergenceCriterionSet();
-                
-                STORM_LOG_WARN_COND(storm::settings::getModule<storm::settings::modules::CoreSettings>().getEquationSolver() == storm::solver::EquationSolverType::Native || !optionSet, "Native is not selected as the preferred equation solver, so setting options for native might have no effect.");
-                
                 return true;
             }
             

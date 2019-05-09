@@ -168,7 +168,7 @@ namespace storm {
         template<typename ModelType, typename BlockDataType>
         BisimulationDecomposition<ModelType, BlockDataType>::BisimulationDecomposition(ModelType const& model, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, Options const& options) : model(model), backwardTransitions(backwardTransitions), options(options), partition(), comparator(), quotient(nullptr) {
             STORM_LOG_THROW(!options.getKeepRewards() || !model.hasRewardModel() || model.hasUniqueRewardModel(), storm::exceptions::IllegalFunctionCallException, "Bisimulation currently only supports models with at most one reward model.");
-            STORM_LOG_THROW(!options.getKeepRewards() || !model.hasRewardModel() || !model.getUniqueRewardModel().hasTransitionRewards(), storm::exceptions::IllegalFunctionCallException, "Bisimulation is currently supported for models with state or action rewards rewards only. Consider converting the transition rewards to state rewards (via suitable function calls).");
+            STORM_LOG_THROW(!options.getKeepRewards() || !model.hasRewardModel() || !model.getUniqueRewardModel().hasTransitionRewards(), storm::exceptions::IllegalFunctionCallException, "Bisimulation is currently supported for models with state or action rewards only. Consider converting the transition rewards to state rewards (via suitable function calls).");
             STORM_LOG_THROW(options.getType() != BisimulationType::Weak || !options.getBounded(), storm::exceptions::IllegalFunctionCallException, "Weak bisimulation cannot preserve bounded properties.");
             
             // Fix the respected atomic propositions if they were not explicitly given.
@@ -190,6 +190,7 @@ namespace storm {
             } else {
                 this->initializeLabelBasedPartition();
             }
+            STORM_LOG_WARN_COND(partition.size() > 1, "Initial partition consists only of a single block.");
             std::chrono::high_resolution_clock::duration initialPartitionTime = std::chrono::high_resolution_clock::now() - initialPartitionStart;
             
             this->initialize();
@@ -264,14 +265,32 @@ namespace storm {
             if (rewardModel.hasStateRewards()) {
                 this->splitInitialPartitionBasedOnRewards(rewardModel.getStateRewardVector());
             }
-            if (rewardModel.hasStateActionRewards() && (model.isOfType(storm::models::ModelType::Dtmc) || model.isOfType(storm::models::ModelType::Ctmc))) {
-                this->splitInitialPartitionBasedOnRewards(rewardModel.getStateActionRewardVector());
+            if (rewardModel.hasStateActionRewards()) {
+                if (model.isNondeterministicModel()) {
+                    std::vector<std::set<ValueType>> actionRewards;
+                    actionRewards.reserve(model.getNumberOfStates());
+                    for (storm::storage::sparse::state_type state = 0; state <  model.getNumberOfStates(); ++state) {
+                        std::set<ValueType> rewardsAtState;
+                        for (auto choice = model.getTransitionMatrix().getRowGroupIndices()[state]; choice < model.getTransitionMatrix().getRowGroupIndices()[state + 1]; ++choice) {
+                            rewardsAtState.insert(rewardModel.getStateActionReward(choice));
+                        }
+                        actionRewards.push_back(std::move(rewardsAtState));
+                    }
+                    this->splitInitialPartitionBasedOnActionRewards(actionRewards);
+                } else {
+                    this->splitInitialPartitionBasedOnRewards(rewardModel.getStateActionRewardVector());
+                }
             }
         }
         
         template<typename ModelType, typename BlockDataType>
         void BisimulationDecomposition<ModelType, BlockDataType>::splitInitialPartitionBasedOnRewards(std::vector<ValueType> const& rewardVector) {
             partition.split([&rewardVector] (storm::storage::sparse::state_type const& a, storm::storage::sparse::state_type const& b) { return rewardVector[a] < rewardVector[b]; });
+        }
+        
+        template<typename ModelType, typename BlockDataType>
+        void BisimulationDecomposition<ModelType, BlockDataType>::splitInitialPartitionBasedOnActionRewards(std::vector<std::set<ValueType>> const& actionRewards) {
+            partition.split([&actionRewards] (storm::storage::sparse::state_type const& a, storm::storage::sparse::state_type const& b) { return actionRewards[a] < actionRewards[b]; });
         }
         
         template<typename ModelType, typename BlockDataType>

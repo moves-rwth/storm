@@ -68,7 +68,7 @@ namespace storm {
             
             storm::Environment sccSolverEnvironment = getEnvironmentForUnderlyingSolver(env, needAdaptPrecision);
             
-            STORM_LOG_INFO("Found " << this->sortedSccDecomposition->size() << "SCCs. Average size is " << static_cast<double>(this->getMatrixRowCount()) / static_cast<double>(this->sortedSccDecomposition->size()) << ".");
+            STORM_LOG_INFO("Found " << this->sortedSccDecomposition->size() << " SCC(s). Average size is " << static_cast<double>(this->getMatrixRowCount()) / static_cast<double>(this->sortedSccDecomposition->size()) << ".");
             if (this->longestSccChainSize) {
                 STORM_LOG_INFO("Longest SCC chain size is " << this->longestSccChainSize.get() << ".");
             }
@@ -80,7 +80,7 @@ namespace storm {
             } else {
                 storm::storage::BitVector sccAsBitVector(x.size(), false);
                 for (auto const& scc : *this->sortedSccDecomposition) {
-                    if (scc.isTrivial()) {
+                    if (scc.size() == 1) {
                         returnValue = solveTrivialScc(*scc.begin(), x, b) && returnValue;
                     } else {
                         sccAsBitVector.clear();
@@ -105,12 +105,9 @@ namespace storm {
         template<typename ValueType>
         void TopologicalLinearEquationSolver<ValueType>::createSortedSccDecomposition(bool needLongestChainSize) const {
             // Obtain the scc decomposition
-            this->sortedSccDecomposition = std::make_unique<storm::storage::StronglyConnectedComponentDecomposition<ValueType>>(*this->A);
+            this->sortedSccDecomposition = std::make_unique<storm::storage::StronglyConnectedComponentDecomposition<ValueType>>(*this->A, storm::storage::StronglyConnectedComponentDecompositionOptions().forceTobologicalSort().computeSccDepths(needLongestChainSize));
             if (needLongestChainSize) {
-                this->longestSccChainSize = 0;
-                this->sortedSccDecomposition->sortTopologically(*this->A, &(this->longestSccChainSize.get()));
-            } else {
-                this->sortedSccDecomposition->sortTopologically(*this->A);
+                this->longestSccChainSize = this->sortedSccDecomposition->getMaxSccDepth() + 1;
             }
         }
         
@@ -131,7 +128,11 @@ namespace storm {
             }
             
             if (hasDiagonalEntry) {
-                xi /= denominator;
+                    if (storm::utility::isZero(denominator)) {
+                        STORM_LOG_THROW(storm::utility::isZero(xi), storm::exceptions::InvalidOperationException, "The equation system has no solution.");
+                    } else {
+                        xi /= denominator;
+                    }
             }
             return true;
         }
@@ -169,8 +170,8 @@ namespace storm {
             if (asEquationSystem) {
                 sccA.convertToEquationSystem();
             }
-            //std::cout << "Solving SCC " << scc << std::endl;
-            //std::cout << "Matrix is " << sccA << std::endl;
+//            std::cout << "Solving SCC " << scc << std::endl;
+//            std::cout << "Matrix is " << sccA << std::endl;
             this->sccSolver->setMatrix(std::move(sccA));
             
             // x Vector

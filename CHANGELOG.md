@@ -4,12 +4,73 @@ Changelog
 This changelog lists only the most important changes. Smaller (bug)fixes as well as non-mature features are not part of the changelog.
 The releases of major and minor versions contain an overview of changes since the last major/minor update.
 
+Version 1.3.x
+-------------
+
+### Version 1.3.1 (under development)
+- Added support for multi-dimensional quantile queries
+- Allow to quickly check a benchmark from the [Quantitative Verification Benchmark Set](http://qcomp.org/benchmarks/) using the --qvbs option.
+- Added script resources/examples/download_qvbs.sh to download the QVBS.
+- If an option is unknown, Storm now prints a hint to similar option names.
+- JANI: Allow bounded types for constants
+- JANI: Support for non-trivial reward accumulations.
+- JANI: Fixed support for reward expressions over non-transient variables.
+- Fixed sparse bisimulation of MDPs (which failed if all non-absorbing states in the quotient are initial)
+- Fixed linking with Mathsat on macOS
+- Fixed compilation for macOS mojave
+
+### Version 1.3.0 (2018/12)
+- Slightly improved scheduler extraction
+- Environments are now part of the c++ API
+- Heavily extended JANI support, in particular:
+	 * arrays, functions, state-exit-rewards (all engines)
+	 * indexed assignments, complex reward expressions (sparse engine)
+	 * several jani-related bug fixes
+- New binary `storm-conv` that handles conversions between model files
+- New binary `storm-pomdp` that handles the translation of POMDPs to pMCs.
+- Maximal progress assumption is now applied while building Markov Automata (sparse engine).
+- Improved Unif+ implementation for Markov Automata, significantly reduced memory consumption.
+- Added support for expected time properties for discrete time models
+- Bug fix in the parser for DRN (MDPs and MAs might have been affected).
+- `storm-gspn`: Improved .pnpro parser
+- `storm-gspn`: Added support for single/infinite/k-server semantics for GSPNs given in the .pnpro format
+- `storm-gspn`: Added option to set a global capacity for all places
+- `storm-gspn`: Added option to include a set of standard properties when converting GSPNs to jani
+- `storm-pars`: Added possibility to compute the extremal value within a given region using parameter lifting
+- `storm-dft`: DFT translation to GSPN supports Don't Care propagation
+- `storm-dft`: Support DFT analysis via transformation from DFT to GSPN to JANI
+- `storm-dft`: Added SMT encoding for DFTs
+- `storm-dft`: Improved Galileo and JSON parser
+- Several bug fixes
+- Storm uses the `master14` branch of carl from now on
+
+### Comparison with Version 1.2.0 (details see below)
+- Heavily extended JANI-support
+- New binary `storm-conv` that handles conversion between model files
+- New binary `storm-pomdp` that  handles the translation of POMDPs to pMCs.
+- `storm-gspn` improved
+- Sound value iteration
+
 Version 1.2.x
 -------------
 
-### Version 1.2.2 (to be released)
+### Version 1.2.3 (2018/07)
+- Fix in version parsing
+
+### Version 1.2.2 (2018/07)
+- Sound value iteration (SVI) for DTMCs and MDPs
+- Topological solver for linear equation systems and MinMax equation systems (enabled by default)
+- Added support for expected total rewards in the sparse engine
+- By default, iteration-based solvers are no longer aborted after a given number of steps.
+- Improved export for jani models
+- A fix in parsing jani properties
+- Several extensions to high-level counterexamples
+- `storm-parsers` extracted to reduce linking time
+- `storm-counterexamples` extracted to reduce linking time
 - `storm-dft`: improvements in Galileo parser
 - `storm-dft`: test cases for DFT analysis
+- Improved Storm installation
+- Several bug fixes
 
 ### Version 1.2.1 (2018/02)
 - Multi-dimensional reward bounded reachability properties for DTMCs.

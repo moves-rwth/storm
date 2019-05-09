@@ -211,7 +211,7 @@ namespace storm {
             }
             
             // Finally construct the quotient model.
-            this->quotient = std::make_shared<ModelType>(builder.build(), std::move(newLabeling), std::move(rewardModels));
+            this->quotient = std::make_shared<ModelType>(builder.build(0,this->size(), this->size()), std::move(newLabeling), std::move(rewardModels));
         }
         
         template<typename ModelType>
@@ -367,7 +367,7 @@ namespace storm {
                                                         bool result = quotientDistributionsLess(state1, state2);
                                                         return result;
                                                     },
-                                                    [this, &block, &splitterQueue, &newBlocks] (Block<BlockDataType>& newBlock) {
+                                                    [&newBlocks] (Block<BlockDataType>& newBlock) {
                                                         newBlocks.push_back(&newBlock);
                                                     });
             

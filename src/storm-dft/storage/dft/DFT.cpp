@@ -3,7 +3,9 @@
 #include <boost/container/flat_set.hpp>
 #include <map>
 
+#include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/WrongFormatException.h"
 #include "storm/utility/iota_n.h"
 #include "storm/utility/vector.h"
 
@@ -16,20 +18,22 @@ namespace storm {
 
         template<typename ValueType>
         DFT<ValueType>::DFT(DFTElementVector const& elements, DFTElementPointer const& tle) : mElements(elements), mNrOfBEs(0), mNrOfSpares(0), mTopLevelIndex(tle->id()), mMaxSpareChildCount(0) {
+            // Check that ids correspond to indices in the element vector
             STORM_LOG_ASSERT(elementIndicesCorrect(), "Ids incorrect.");
             size_t nrRepresentatives = 0;
-            
+
             for (auto& elem : mElements) {
                 if (isRepresentative(elem->id())) {
                     ++nrRepresentatives;
                 }
                 if(elem->isBasicElement()) {
                     ++mNrOfBEs;
-                }
-                else if (elem->isSpareGate()) {
+                } else if (elem->isSpareGate()) {
+                    // Build spare modules by setting representatives and representants
                     ++mNrOfSpares;
                     mMaxSpareChildCount = std::max(mMaxSpareChildCount, std::static_pointer_cast<DFTSpare<ValueType>>(elem)->children().size());
                     for(auto const& spareReprs : std::static_pointer_cast<DFTSpare<ValueType>>(elem)->children()) {
+                        STORM_LOG_THROW(spareReprs->isGate() || spareReprs->isBasicElement(), storm::exceptions::WrongFormatException, "Child '" << spareReprs->name() << "' of spare '" << elem->name() << "' must be gate or BE.");
                         std::set<size_t> module = {spareReprs->id()};
                         spareReprs->extendSpareModule(module);
                         std::vector<size_t> sparesAndBes;
@@ -41,12 +45,11 @@ namespace storm {
                         }
                         mSpareModules.insert(std::make_pair(spareReprs->id(), sparesAndBes));
                     }
-
                 } else if (elem->isDependency()) {
                     mDependencies.push_back(elem->id());
                 }
             }
-          
+
             // For the top module, we assume, contrary to [Jun15], that we have all spare gates and basic elements which are not in another module.
             std::set<size_t> topModuleSet;
             // Initialize with all ids.
@@ -64,10 +67,13 @@ namespace storm {
             // Extend top module and insert those elements which are part of the top module and a spare module
             mElements[mTopLevelIndex]->extendSpareModule(topModuleSet);
             mTopModule = std::vector<size_t>(topModuleSet.begin(), topModuleSet.end());
-            // Clear all spare modules where at least one element is also in the top module
+
+            // Clear all spare modules where at least one element is also in the top module.
+            // These spare modules will be activated from the beginning.
             if (!mTopModule.empty()) {
                 for (auto& module : mSpareModules) {
                     if (std::find(module.second.begin(), module.second.end(), mTopModule.front()) != module.second.end()) {
+                        STORM_LOG_WARN("Elements of spare module '" << getElement(module.first)->name() << "' also contained in top module. All elements of this spare module will be activated from the beginning on.");
                         module.second.clear();
                     }
                 }
@@ -83,11 +89,12 @@ namespace storm {
         DFTStateGenerationInfo DFT<ValueType>::buildStateGenerationInfo(storm::storage::DFTIndependentSymmetries const& symmetries) const {
             DFTStateGenerationInfo generationInfo(nrElements(), mMaxSpareChildCount);
             
-            // Generate Pre and Post info for restrictions
+            // Generate Pre and Post info for restrictions, and mutexes
             for(auto const& elem : mElements) {
                 if(!elem->isDependency() && !elem->isRestriction()) {
                     generationInfo.setRestrictionPreElements(elem->id(), elem->seqRestrictionPres());
                     generationInfo.setRestrictionPostElements(elem->id(), elem->seqRestrictionPosts());
+                    generationInfo.setMutexElements(elem->id(), elem->mutexRestrictionElements());
                 }
             }
 
@@ -344,9 +351,8 @@ namespace storm {
                     case DFTElementType::OR:
                         builder.addOrElement(newParentName, childrenNames);
                         break;
-                    case DFTElementType::BE:
-                    case DFTElementType::CONSTF:
-                    case DFTElementType::CONSTS:
+                    case DFTElementType::BE_EXP:
+                    case DFTElementType::BE_CONST:
                     case DFTElementType::VOT:
                     case DFTElementType::PAND:
                     case DFTElementType::SPARE:
@@ -387,9 +393,8 @@ namespace storm {
                     case DFTElementType::AND:
                     case DFTElementType::OR:
                     case DFTElementType::VOT:
-                    case DFTElementType::BE:
-                    case DFTElementType::CONSTF:
-                    case DFTElementType::CONSTS:
+                    case DFTElementType::BE_EXP:
+                    case DFTElementType::BE_CONST:
                         break;
                     case DFTElementType::PAND:
                     case DFTElementType::SPARE:
@@ -408,10 +413,37 @@ namespace storm {
         }
 
         template<typename ValueType>
+        size_t DFT<ValueType>::nrStaticElements() const {
+            size_t noStatic = 0;
+            for (auto const& elem : mElements) {
+                switch (elem->type()) {
+                    case DFTElementType::AND:
+                    case DFTElementType::OR:
+                    case DFTElementType::VOT:
+                        ++noStatic;
+                        break;
+                    case DFTElementType::BE_EXP:
+                    case DFTElementType::BE_CONST:
+                    case DFTElementType::PAND:
+                    case DFTElementType::SPARE:
+                    case DFTElementType::POR:
+                    case DFTElementType::SEQ:
+                    case DFTElementType::MUTEX:
+                    case DFTElementType::PDEP:
+                        break;
+                    default:
+                        STORM_LOG_ASSERT(false, "DFT element type " << elem->type() << " not known.");
+                        break;
+                }
+            }
+            return noStatic;
+        }
+
+        template<typename ValueType>
         std::string DFT<ValueType>::getElementsString() const {
             std::stringstream stream;
             for (auto const& elem : mElements) {
-                stream << "[" << elem->id() << "]" << elem->toString() << std::endl;
+                stream << "[" << elem->id() << "]" << *elem << std::endl;
             }
             return stream.str();
         }
@@ -463,7 +495,7 @@ namespace storm {
             std::stringstream stream;
             for (auto const& elem : mElements) {
                 stream << "[" << elem->id() << "]";
-                stream << elem->toString();
+                stream << *elem;
                 if (elem->isDependency()) {
                     stream << "\t** " << storm::storage::toChar(state->getDependencyState(elem->id())) << "[dep]";
                 } else {
@@ -508,12 +540,10 @@ namespace storm {
             std::stringstream stream;
             stream << "(" << id << ") ";
             for (auto const& elem : mElements) {
-                size_t elemIndex = stateGenerationInfo.getStateIndex(elem->id());
-                int elementState = DFTState<ValueType>::getElementStateInt(status, elemIndex);
                 if (elem->isDependency()) {
-                    stream << storm::storage::toChar(static_cast<DFTDependencyState>(elementState)) << "[dep]";
+                    stream << storm::storage::toChar(DFTState<ValueType>::getDependencyState(status, stateGenerationInfo, elem->id())) << "[dep]";
                 } else {
-                    stream << storm::storage::toChar(static_cast<DFTElementState>(elementState));
+                    stream << storm::storage::toChar(DFTState<ValueType>::getElementState(status, stateGenerationInfo, elem->id()));
                     if(elem->isSpareGate()) {
                         stream << "[";
                         size_t nrUsedChild = status.getAsInt(stateGenerationInfo.getSpareUsageIndex(elem->id()), stateGenerationInfo.usageInfoBits());
@@ -572,6 +602,27 @@ namespace storm {
         template<typename ValueType>
         bool DFT<ValueType>::canHaveNondeterminism() const {
             return !getDependencies().empty();
+        }
+
+        template<typename ValueType>
+        bool DFT<ValueType>::checkWellFormedness(std::ostream& stream) const {
+            bool wellformed = true;
+            // Check independence of spare modules
+            // TODO: comparing one element of each spare module sufficient?
+            for (auto module1 = mSpareModules.begin() ; module1 != mSpareModules.end() ; ++module1) {
+                size_t firstElement = module1->second.front();
+                for (auto module2 = std::next(module1); module2 != mSpareModules.end(); ++module2) {
+                    if (std::find(module2->second.begin(), module2->second.end(), firstElement) != module2->second.end()) {
+                        if (!wellformed) {
+                            stream << std::endl;
+                        }
+                        stream << "Spare modules of '" << getElement(module1->first)->name() << "' and '" << getElement(module2->first)->name() << "' should not overlap.";
+                        wellformed = false;
+                    }
+                }
+            }
+            // TODO check VOT gates
+            return wellformed;
         }
 
         template<typename ValueType>
@@ -745,31 +796,31 @@ namespace storm {
 
         template<typename ValueType>
         std::vector<size_t> DFT<ValueType>::findModularisationRewrite() const {
-            for (auto const& element : mElements) {
-                if (element->isGate() && (element->type() == DFTElementType::AND || element->type() == DFTElementType::OR) ) {
-                    // suitable parent gate! - Lets check the independent submodules of the children
-                    auto const& children = std::static_pointer_cast<DFTGate<ValueType>>(element)->children();
-                    for(auto const& child : children) {
+           for(auto const& e : mElements) {
+               if(e->isGate() && (e->type() == DFTElementType::AND || e->type() == DFTElementType::OR) ) {
+                   // suitable parent gate! - Lets check the independent submodules of the children
+                   auto const& children = std::static_pointer_cast<DFTGate<ValueType>>(e)->children();
+                   for(auto const& child : children) {
 
-                        auto independentSubtree = std::static_pointer_cast<DFTGate<ValueType>>(child)->independentSubDft(true);
-                        // In the independent subtree, check for other children:
+                       auto ISD = std::static_pointer_cast<DFTGate<ValueType>>(child)->independentSubDft(true);
+                       // In the ISD, check for other children:
 
-                        std::vector<size_t> rewrite = {element->id(), child->id()};
-                        for(size_t independentSubtreeElementId : independentSubtree) {
-                            if (independentSubtreeElementId == child->id()) continue;
-                            if (std::find_if(children.begin(), children.end(), [&independentSubtreeElementId](std::shared_ptr<DFTElement<ValueType>> const& e) { return e->id() == independentSubtreeElementId; } ) != children.end()) {
-                                // element in subtree is also child
-                                rewrite.push_back(independentSubtreeElementId);
-                            }
-                        }
-                        if(rewrite.size() > 2 && rewrite.size() < children.size() - 1) {
-                            return rewrite;
-                        }
+                       std::vector<size_t> rewrite = {e->id(), child->id()};
+                       for(size_t isdElemId : ISD) {
+                           if(isdElemId == child->id()) continue;
+                           if(std::find_if(children.begin(), children.end(), [&isdElemId](std::shared_ptr<DFTElement<ValueType>> const& e) { return e->id() == isdElemId; } ) != children.end()) {
+                               // element in subtree is also child
+                               rewrite.push_back(isdElemId);
+                           }
+                       }
+                       if(rewrite.size() > 2 && rewrite.size() < children.size() - 1) {
+                           return rewrite;
+                       }
 
-                    }
-                }
-            }
-            return {};
+                   }
+               }
+           }
+           return {};
         }
 
 
@@ -796,10 +847,157 @@ namespace storm {
         }
 
         template<typename ValueType>
+        std::set<size_t> DFT<ValueType>::getAllIds() const {
+            std::set<size_t> ids;
+            for (auto const& elem : mElements) {
+                ids.insert(elem->id());
+            }
+            return ids;
+        }
+
+        template<typename ValueType>
+        size_t DFT<ValueType>::getIndex(std::string const& name) const {
+            auto iter = std::find_if(mElements.begin(), mElements.end(), [&name](DFTElementPointer const& e) { return e->name() == name; });
+            STORM_LOG_THROW(iter != mElements.end(), storm::exceptions::InvalidArgumentException, "Event name '" << name << "' not known.");
+            return (*iter)->id();
+        }
+
+        template<typename ValueType>
+        void DFT<ValueType>::setRelevantEvents(std::set<size_t> const& relevantEvents, bool allowDCForRelevantEvents) const {
+            for (auto const& elem : mElements) {
+                if (relevantEvents.find(elem->id()) != relevantEvents.end()) {
+                    elem->setRelevance(true);
+                    elem->setAllowDC(allowDCForRelevantEvents);
+                } else {
+                    elem->setRelevance(false);
+                    elem->setAllowDC(true);
+                }
+            }
+        }
+
+        template<typename ValueType>
+        std::set<size_t> DFT<ValueType>::getRelevantEvents() const {
+            std::set<size_t> relevantEvents;
+            for (auto const& elem : mElements) {
+                if (elem->isRelevant()) {
+                    relevantEvents.insert(elem->id());
+                }
+            }
+            return relevantEvents;
+        }
+
+
+        template<typename ValueType>
+        std::string DFT<ValueType>::getRelevantEventsString() const {
+            std::stringstream stream;
+            bool first = true;
+            for (auto const& elem : mElements) {
+                if (elem->isRelevant()) {
+                    if (first) {
+                        first = false;
+                    } else {
+                        stream << ", ";
+                    }
+                    stream << elem->name() << " [" << elem->id() << "]";
+                }
+            }
+            return stream.str();
+        }
+
+        template<typename ValueType>
         void DFT<ValueType>::writeStatsToStream(std::ostream& stream) const {
+            // Count individual types of elements
+            size_t noBE = 0;
+            size_t noAnd = 0;
+            size_t noOr = 0;
+            size_t noVot = 0;
+            size_t noPand = 0;
+            size_t noPor = 0;
+            size_t noSpare = 0;
+            size_t noDependency = 0;
+            size_t noRestriction = 0;
+            for (auto const& elem : mElements) {
+                switch (elem->type()) {
+                    case DFTElementType::BE_EXP:
+                    case DFTElementType::BE_CONST:
+                        ++noBE;
+                        break;
+                    case DFTElementType::AND:
+                        ++noAnd;
+                        break;
+                    case DFTElementType::OR:
+                        ++noOr;
+                        break;
+                    case DFTElementType::VOT:
+                        ++noVot;
+                        break;
+                    case DFTElementType::PAND:
+                        ++noPand;
+                        break;
+                    case DFTElementType::POR:
+                        ++noPor;
+                        break;
+                    case DFTElementType::SPARE:
+                        ++noSpare;
+                        break;
+                    case DFTElementType::PDEP:
+                        ++noDependency;
+                        break;
+                    case DFTElementType::SEQ:
+                    case DFTElementType::MUTEX:
+                        ++noRestriction;
+                        break;
+                    default:
+                        STORM_LOG_ASSERT(false, "DFT element type " << elem->type() << " not known.");
+                        break;
+                }
+            }
+            size_t noStatic = nrStaticElements();
+            size_t noDynamic = nrDynamicElements();
+
+            // Check whether numbers are correct
+            STORM_LOG_ASSERT(noBE == nrBasicElements(), "No. of BEs does not match.");
+            STORM_LOG_ASSERT(noSpare == mNrOfSpares, "No. of SPAREs does not match.");
+            STORM_LOG_ASSERT(noDependency == mDependencies.size(), "No. of Dependencies does not match.");
+            STORM_LOG_ASSERT(noAnd + noOr + noVot == noStatic, "No. of static gates does not match.");
+            STORM_LOG_ASSERT(noPand + noPor + noSpare + noDependency + noRestriction == noDynamic, "No. of dynamic gates does not match.");
+            STORM_LOG_ASSERT(noBE + noStatic + noDynamic == nrElements(), "No. of elements does not match.");
+
+            // Print output
+            stream << "=============DFT Statistics==============" << std::endl;
             stream << "Number of BEs: " << nrBasicElements() << std::endl;
-            stream << "Number of dynamic elements: " << nrDynamicElements() << std::endl;
+            stream << "Number of static elements: " << noStatic << std::endl;
+            stream << "Number of dynamic elements: " << noDynamic << std::endl;
             stream << "Number of elements: " << nrElements() << std::endl;
+            stream << "-----------------------------------------" << std::endl;
+            if (noBE > 0) {
+                stream << "Number of BEs: " << noBE << std::endl;
+            }
+            if (noAnd > 0) {
+                stream << "Number of AND gates: " << noAnd << std::endl;
+            }
+            if (noOr > 0) {
+                stream << "Number of OR gates: " << noOr << std::endl;
+            }
+            if (noVot > 0) {
+                stream << "Number of VOT gates: " << noVot << std::endl;
+            }
+            if (noPand > 0) {
+                stream << "Number of PAND gates: " << noPand << std::endl;
+            }
+            if (noPor > 0) {
+                stream << "Number of POR gates: " << noPor << std::endl;
+            }
+            if (noSpare > 0) {
+                stream << "Number of SPARE gates: " << noSpare << std::endl;
+            }
+            if (noDependency > 0) {
+                stream << "Number of Dependencies: " << noDependency << std::endl;
+            }
+            if (noRestriction > 0) {
+                stream << "Number of Restrictions: " << noRestriction << std::endl;
+            }
+            stream << "=========================================" << std::endl;
         }
         
         // Explicitly instantiate the class.

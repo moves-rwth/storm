@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
-#include "storm/parser/FormulaParser.h"
+#include "storm-parsers/parser/FormulaParser.h"
 #include "storm/logic/FragmentSpecification.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/storage/expressions/ExpressionManager.h"

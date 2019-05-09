@@ -31,7 +31,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        LinearEquationSolverRequirements LinearEquationSolver<ValueType>::getRequirements(Environment const& env) const {
+        LinearEquationSolverRequirements LinearEquationSolver<ValueType>::getRequirements(Environment const&) const {
             return LinearEquationSolverRequirements();
         }
         
@@ -88,9 +88,9 @@ namespace storm {
             EquationSolverType type = env.solver().getLinearEquationSolverType();
             
              // Adjust the solver type if it is not supported by this value type
-            if (type == EquationSolverType::Gmmxx) {
-                    type = EquationSolverType::Eigen;
-                    STORM_LOG_INFO("Selecting '" + toString(type) + "' as the linear equation solver since the selected one does not support exact computations.");
+            if (type != EquationSolverType::Eigen && type != EquationSolverType::Topological && (env.solver().isLinearEquationSolverTypeSetFromDefaultValue() || type == EquationSolverType::Gmmxx)) {
+                STORM_LOG_INFO("Selecting '" + toString(EquationSolverType::Eigen) + "' as the linear equation solver since the previously selected one (" << toString(type) << ") does not support exact computations.");
+                type = EquationSolverType::Eigen;
             }
            
             switch (type) {
@@ -110,8 +110,8 @@ namespace storm {
             
              // Adjust the solver type if it is not supported by this value type
             if (type == EquationSolverType::Gmmxx || type == EquationSolverType::Native) {
+                STORM_LOG_INFO("Selecting '" + toString(EquationSolverType::Eigen) + "' as the linear equation solver since the previously selected one (" << toString(type) << ") does not support parametric computations.");
                 type = EquationSolverType::Eigen;
-                STORM_LOG_INFO("Selecting '" + toString(type) + "' as the linear equation solver since the selected one does not support parametric computations.");
             }
            
             switch (type) {

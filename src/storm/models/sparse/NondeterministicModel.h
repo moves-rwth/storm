@@ -57,11 +57,11 @@ namespace storm {
                  * @param scheduler the considered scheduler.
                  * @param dropUnreachableStates if set, the resulting model only considers the states that are reachable from an initial state
                  */
-                std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> applyScheduler(storm::storage::Scheduler<ValueType> const& scheduler, bool dropUnreachableStates = true);
+                std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> applyScheduler(storm::storage::Scheduler<ValueType> const& scheduler, bool dropUnreachableStates = true) const;
                 
                 virtual void printModelInformationToStream(std::ostream& out) const override;
                 
-                virtual void writeDotToStream(std::ostream& outStream, bool includeLabeling = true, storm::storage::BitVector const* subsystem = nullptr, std::vector<ValueType> const* firstValue = nullptr, std::vector<ValueType> const* secondValue = nullptr, std::vector<uint_fast64_t> const* stateColoring = nullptr, std::vector<std::string> const* colors = nullptr, std::vector<uint_fast64_t>* scheduler = nullptr, bool finalizeOutput = true) const override;
+                virtual void writeDotToStream(std::ostream& outStream, bool includeLabeling = true, bool linebreakLabel = false, storm::storage::BitVector const* subsystem = nullptr, std::vector<ValueType> const* firstValue = nullptr, std::vector<ValueType> const* secondValue = nullptr, std::vector<uint_fast64_t> const* stateColoring = nullptr, std::vector<std::string> const* colors = nullptr, std::vector<uint_fast64_t>* scheduler = nullptr, bool finalizeOutput = true) const override;
             };
             
         } // namespace sparse

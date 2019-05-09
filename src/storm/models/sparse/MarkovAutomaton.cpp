@@ -5,8 +5,11 @@
 #include "storm/solver/stateelimination/StateEliminator.h"
 #include "storm/storage/FlexibleSparseMatrix.h"
 #include "storm/utility/constants.h"
+#include "storm/utility/ConstantsComparator.h"
 #include "storm/utility/vector.h"
 #include "storm/utility/macros.h"
+#include "storm/utility/graph.h"
+#include "storm/transformer/SubsystemBuilder.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
 
@@ -117,20 +120,11 @@ namespace storm {
                             exitRates[state] = storm::utility::zero<ValueType>();
                         }
                     }
-                    // Remove the Markovian choices for the different model ingredients
-                    this->getTransitionMatrix() = this->getTransitionMatrix().restrictRows(keptChoices);
-                    for(auto& rewModel : this->getRewardModels()) {
-                        if(rewModel.second.hasStateActionRewards()) {
-                            storm::utility::vector::filterVectorInPlace(rewModel.second.getStateActionRewardVector(), keptChoices);
-                        }
-                        if(rewModel.second.hasTransitionRewards()) {
-                            rewModel.second.getTransitionRewardMatrix() = rewModel.second.getTransitionRewardMatrix().restrictRows(keptChoices);
-                        }
+                    
+                    if (!keptChoices.full()) {
+                        *this = std::move(*storm::transformer::buildSubsystem(*this, storm::storage::BitVector(this->getNumberOfStates(), true), keptChoices, false).model->template as<MarkovAutomaton<ValueType, RewardModelType>>());
                     }
-                    if(this->hasChoiceLabeling()) {
-                        this->getOptionalChoiceLabeling() = this->getChoiceLabeling().getSubLabeling(keptChoices);
-                    }
-
+                    
                     // Mark the automaton as closed.
                     closed = true;
                 }
@@ -144,6 +138,7 @@ namespace storm {
                     this->exitRates.reserve(this->getNumberOfStates());
                 }
                 
+                storm::utility::ConstantsComparator<ValueType> comparator;
                 for (uint_fast64_t state = 0; state< this->getNumberOfStates(); ++state) {
                     uint_fast64_t row = this->getTransitionMatrix().getRowGroupIndices()[state];
                     if (this->markovianStates.get(state)) {
@@ -158,20 +153,20 @@ namespace storm {
                         ++row;
                     } else {
                         if (assertRates) {
-                            STORM_LOG_THROW(storm::utility::isZero<ValueType>(this->exitRates[state]), storm::exceptions::InvalidArgumentException, "The specified exit rate for (non-Markovian) choice should be 0.");
+                            STORM_LOG_THROW(comparator.isZero(this->exitRates[state]), storm::exceptions::InvalidArgumentException, "The specified exit rate for (non-Markovian) choice should be 0.");
                         } else {
                             this->exitRates.push_back(storm::utility::zero<ValueType>());
                         }
                     }
                     for (; row < this->getTransitionMatrix().getRowGroupIndices()[state+1]; ++row) {
-                        STORM_LOG_THROW(storm::utility::isOne(this->getTransitionMatrix().getRowSum(row)), storm::exceptions::InvalidArgumentException, "Entries of transition matrix do not sum up to one for (non-Markovian) choice " << row << " of state " << state << " (sum is " << this->getTransitionMatrix().getRowSum(row) << ").");
+                        STORM_LOG_THROW(comparator.isOne(this->getTransitionMatrix().getRowSum(row)), storm::exceptions::InvalidArgumentException, "Entries of transition matrix do not sum up to one for (non-Markovian) choice " << row << " of state " << state << " (sum is " << this->getTransitionMatrix().getRowSum(row) << ").");
                     }
                 }
             }
             
             template <typename ValueType, typename RewardModelType>
             bool MarkovAutomaton<ValueType, RewardModelType>::isConvertibleToCtmc() const {
-                return markovianStates.full();
+                return isClosed() && markovianStates.full();
             }
             
             template <typename ValueType, typename RewardModelType>
@@ -203,6 +198,21 @@ namespace storm {
             
             template <typename ValueType, typename RewardModelType>
             std::shared_ptr<storm::models::sparse::Ctmc<ValueType, RewardModelType>> MarkovAutomaton<ValueType, RewardModelType>::convertToCtmc() const {
+                if (isClosed() && markovianStates.full()) {
+                    storm::storage::sparse::ModelComponents<ValueType, RewardModelType> components(this->getTransitionMatrix(), this->getStateLabeling(), this->getRewardModels(), false);
+                    components.transitionMatrix.makeRowGroupingTrivial();
+                    components.exitRates = this->getExitRates();
+                    if (this->hasChoiceLabeling()) {
+                        components.choiceLabeling = this->getChoiceLabeling();
+                    }
+                    if (this->hasStateValuations()) {
+                        components.stateValuations = this->getStateValuations();
+                    }
+                    if (this->hasChoiceOrigins()) {
+                        components.choiceOrigins = this->getChoiceOrigins();
+                    }
+                    return std::make_shared<storm::models::sparse::Ctmc<ValueType, RewardModelType>>(std::move(components));
+                }
                 STORM_LOG_TRACE("MA matrix:" << std::endl << this->getTransitionMatrix());
                 STORM_LOG_TRACE("Markovian states: " << getMarkovianStates());
 
@@ -249,12 +259,10 @@ namespace storm {
 
                 //TODO update reward models and choice labels according to kept states
                 STORM_LOG_WARN_COND(this->getRewardModels().empty(), "Conversion of MA to CTMC does not preserve rewards.");
-                std::unordered_map<std::string, RewardModelType> rewardModels = this->getRewardModels();
                 STORM_LOG_WARN_COND(!this->hasChoiceLabeling(), "Conversion of MA to CTMC does not preserve choice labels.");
                 STORM_LOG_WARN_COND(!this->hasStateValuations(), "Conversion of MA to CTMC does not preserve choice labels.");
                 STORM_LOG_WARN_COND(!this->hasChoiceOrigins(), "Conversion of MA to CTMC does not preserve choice labels.");
-
-                return std::make_shared<storm::models::sparse::Ctmc<ValueType, RewardModelType>>(std::move(rateMatrix), std::move(stateLabeling), std::move(rewardModels));
+                return std::make_shared<storm::models::sparse::Ctmc<ValueType, RewardModelType>>(std::move(rateMatrix), std::move(stateLabeling));
             }
 
             

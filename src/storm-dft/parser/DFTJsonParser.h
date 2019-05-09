@@ -3,7 +3,7 @@
 #include <map>
 
 #include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/parser/ExpressionParser.h"
+#include "storm-parsers/parser/ExpressionParser.h"
 #include "storm/storage/expressions/ExpressionEvaluator.h"
 
 #include "storm-dft/storage/dft/DFT.h"
@@ -33,14 +33,18 @@ namespace storm {
             DFTJsonParser() : manager(new storm::expressions::ExpressionManager()), parser(*manager), evaluator(*manager) {
             }
 
-            storm::storage::DFT<ValueType> parseJson(std::string const& filename);
-            
-        private:
-            void readFile(std::string const& filename);
+            storm::storage::DFT<ValueType> parseJsonFromString(std::string const& jsonString);
 
-            std::string generateUniqueName(std::string const& id, std::string const& name);
+            storm::storage::DFT<ValueType> parseJsonFromFile(std::string const& filename);
+
+        private:
+            storm::storage::DFT<ValueType> parseJson(json const& jsonInput);
+
+            std::string generateUniqueName(std::string const& name);
 
             ValueType parseRationalExpression(std::string const& expr);
+
+            std::string parseJsonNumber(json number);
         };
     }
 }

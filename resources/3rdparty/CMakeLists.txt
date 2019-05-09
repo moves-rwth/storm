@@ -141,32 +141,45 @@ find_package(Z3 QUIET)
 # Z3 Defines
 set(STORM_HAVE_Z3 ${Z3_FOUND})
 
+
 if(Z3_FOUND)
-    # Check whether the version of z3 supports optimization
-    if (Z3_EXEC)
-        execute_process (COMMAND ${Z3_EXEC} -version
-                OUTPUT_VARIABLE z3_version_output
-                ERROR_QUIET
-                OUTPUT_STRIP_TRAILING_WHITESPACE)
+    # Get the z3 version by compiling and running a simple program
+    try_run(version_run_result version_compile_result "${STORM_3RDPARTY_BINARY_DIR}/z3/" "${PROJECT_SOURCE_DIR}/resources/3rdparty/z3/output_version.cpp" CMAKE_FLAGS "-DINCLUDE_DIRECTORIES=${Z3_INCLUDE_DIR}" LINK_LIBRARIES "${Z3_LIBRARIES}" RUN_OUTPUT_VARIABLE z3_version_output)
+    if (version_compile_result AND version_run_result EQUAL 0)
         if (z3_version_output MATCHES "([0-9]*\\.[0-9]*\\.[0-9]*)")
             set(Z3_VERSION "${CMAKE_MATCH_1}")
-            if(NOT "${Z3_VERSION}" VERSION_LESS "4.5.0")
-                set(STORM_HAVE_Z3_OPTIMIZE ON)
-            endif()
         endif()
     endif()
 
-    if(STORM_HAVE_Z3_OPTIMIZE)
-        message (STATUS "Storm - Linking with Z3. (Z3 version supports optimization)")
+    if(Z3_VERSION)
+        # Split Z3 version into its components
+        string(REPLACE "." ";" Z3_VERSION_LIST ${Z3_VERSION})
+        list(GET Z3_VERSION_LIST 0 STORM_Z3_VERSION_MAJOR)
+        list(GET Z3_VERSION_LIST 1 STORM_Z3_VERSION_MINOR)
+        list(GET Z3_VERSION_LIST 2 STORM_Z3_VERSION_PATCH)
+
+        # Check whether the version of z3 supports optimization
+        if(NOT "${Z3_VERSION}" VERSION_LESS "4.5.0")
+            set(STORM_HAVE_Z3_OPTIMIZE ON)
+            message (STATUS "Storm - Linking with Z3 (version ${Z3_VERSION}). (Z3 version supports optimization)")
+        else()
+            message (STATUS "Storm - Linking with Z3 (version ${Z3_VERSION}). (Z3 version does not support optimization)")
+        endif()
+        if (NOT "${Z3_VERSION}" VERSION_LESS "4.7.1")
+            set(STORM_Z3_API_USES_STANDARD_INTEGERS ON)
+        endif()
+
+        add_imported_library(z3 SHARED ${Z3_LIBRARIES} ${Z3_INCLUDE_DIRS})
+        list(APPEND STORM_DEP_TARGETS z3_SHARED)
     else()
-        message (STATUS "Storm - Linking with Z3. (Z3 version does not support optimization)")
+        message(WARNING "Storm - Could not obtain Z3 version. Building of Prism/JANI models will not be supported.")
+        set(Z3_FOUND FALSE)
     endif()
 
-    add_imported_library(z3 SHARED ${Z3_LIBRARIES} ${Z3_INCLUDE_DIRS})
-    list(APPEND STORM_DEP_TARGETS z3_SHARED)
 else()
     message (WARNING "Storm - Z3 not found. Building of Prism/JANI models will not be supported.")
 endif(Z3_FOUND)
+
 
 #############################################################
 ##
@@ -186,9 +199,16 @@ if (STORM_USE_GUROBI)
     find_package(Gurobi QUIET REQUIRED)
     set(STORM_HAVE_GUROBI ${GUROBI_FOUND})
     if (GUROBI_FOUND)
-        message (STATUS "Storm - Linking with Gurobi.")
-        add_imported_library(Gurobi SHARED ${GUROBI_LIBRARY} ${GUROBI_INCLUDE_DIRS})
-		list(APPEND STORM_DEP_TARGETS Gurobi_SHARED)
+		if (EXISTS ${GUROBI_LIBRARY})
+            message (STATUS "Storm - Linking with Gurobi.")
+            add_imported_library(Gurobi SHARED ${GUROBI_LIBRARY} ${GUROBI_INCLUDE_DIRS})
+            list(APPEND STORM_DEP_TARGETS Gurobi_SHARED)
+        else()
+            # The FindGurobi.cmake script needs to be updated every now and then as the library file contains the version number...
+            message(SEND_ERROR "Gurobi Library ${GUROBI_LIBRARY} not found. If your Gurobi Version is higher then 8.1.0, please contact the Storm developers.")
+        endif()
+    else()
+        message(SEND_ERROR "Gurobi Library requested but was not found. Make sure that GUROBI_ROOT points to the correct directory (containing include/ and lib/ subdirectories).")
     endif()
 else()
     set(STORM_HAVE_GUROBI OFF)
@@ -201,6 +221,7 @@ endif()
 #############################################################
 include(${STORM_3RDPARTY_SOURCE_DIR}/include_cudd.cmake)
 
+
 #############################################################
 ##
 ##      carl
@@ -209,6 +230,7 @@ include(${STORM_3RDPARTY_SOURCE_DIR}/include_cudd.cmake)
 
 set(STORM_HAVE_CARL OFF)
 set(CARL_MINVERSION "17.12")
+set(CARL_C14VERSION "14")
 if (NOT STORM_FORCE_SHIPPED_CARL)
     if (NOT "${STORM_CARL_DIR_HINT}" STREQUAL "")
 		find_package(carl QUIET PATHS ${STORM_CARL_DIR_HINT} NO_DEFAULT_PATH)
@@ -226,7 +248,10 @@ if(carl_FOUND AND NOT STORM_FORCE_SHIPPED_CARL)
     else()
         message(SEND_ERROR "File ${carlLOCATION} does not exist, did you build carl?")
     endif()
-    if("${carl_VERSION_MAJOR}.${carl_VERSION_MINOR}" VERSION_LESS "${CARL_MINVERSION}")
+    if("${carl_VERSION_MAJOR}" STREQUAL "${CARL_C14VERSION}")
+        message(STATUS "Storm - Found carl using master14 branch.")
+        # empty on purpose. Maybe put a warning here?
+    elseif("${carl_VERSION_MAJOR}.${carl_VERSION_MINOR}" VERSION_LESS "${CARL_MINVERSION}")
     	message(SEND_ERROR "Carl outdated, require ${CARL_MINVERSION}, have ${carl_VERSION}")
     endif()
 
@@ -239,16 +264,16 @@ if(carl_FOUND AND NOT STORM_FORCE_SHIPPED_CARL)
 else()
 	set(STORM_SHIPPED_CARL ON)
 	# The first external project will be built at *configure stage*
-	message("START CARL CONFIG PROCESS")
-	file(MAKE_DIRECTORY ${STORM_3RDPARTY_BINARY_DIR}/carl_download) 
+	message(STATUS "Carl - Start of config process")
+	file(MAKE_DIRECTORY ${STORM_3RDPARTY_BINARY_DIR}/carl_download)
 	execute_process(
 	COMMAND ${CMAKE_COMMAND} ${STORM_3RDPARTY_SOURCE_DIR}/carl "-DSTORM_3RDPARTY_BINARY_DIR=${STORM_3RDPARTY_BINARY_DIR}" "-DBoost_LIBRARY_DIRS=${Boost_LIBRARY_DIRS}" "-DBoost_INCLUDE_DIRS=${Boost_INCLUDE_DIRS}"
 	WORKING_DIRECTORY ${STORM_3RDPARTY_BINARY_DIR}/carl_download
 	OUTPUT_VARIABLE carlconfig_out
 	RESULT_VARIABLE carlconfig_result)
-								
+
 	if(NOT carlconfig_result)
-		message("${carlconfig_out}")
+		message(STATUS "${carlconfig_out}")
 	endif()
 	execute_process(
 		COMMAND ${CMAKE_COMMAND} --build . --target carl-config
@@ -257,10 +282,10 @@ else()
 		RESULT_VARIABLE carlconfig_result
 		)
 		if(NOT carlconfig_result)
-		message("${carlconfig_out}")
+		message(STATUS "${carlconfig_out}")
 	endif()
-    message("END CARL CONFIG PROCESS")
-    	
+    message(STATUS "Carl - End of config process")
+
     message(STATUS "Storm - Using shipped version of carl.")
     ExternalProject_Add(
             carl
@@ -285,7 +310,7 @@ else()
     set(STORM_HAVE_CARL ON)
 
     message(STATUS "Storm - Linking with shipped carl ${carl_VERSION} (include: ${carl_INCLUDE_DIR}, library ${carl_LIBRARIES}, CARL_USE_CLN_NUMBERS: ${CARL_USE_CLN_NUMBERS}, CARL_USE_GINAC: ${CARL_USE_GINAC}).")
-        
+
     # install the carl dynamic library if we built it
     install(FILES ${STORM_3RDPARTY_BINARY_DIR}/carl/lib/libcarl.${carl_VERSION}${DYNAMIC_EXT} DESTINATION lib)
 endif()
@@ -383,10 +408,35 @@ endif()
 set(STORM_HAVE_MSAT ${ENABLE_MSAT})
 if (ENABLE_MSAT)
     message (STATUS "Storm - Linking with MathSAT.")
-    find_library(MSAT_LIB mathsat PATHS "${MSAT_ROOT}/lib")
-    add_imported_library(msat SHARED ${MSAT_LIB} "${MSAT_ROOT}/include")
-    list(APPEND STORM_DEP_TARGETS msat_SHARED)
+    if(${OPERATING_SYSTEM} MATCHES "Linux")
+        find_library(MSAT_LIB mathsat PATHS "${MSAT_ROOT}/lib")
+        add_imported_library(msat SHARED ${MSAT_LIB} "${MSAT_ROOT}/include")
+        list(APPEND STORM_DEP_TARGETS msat_SHARED)
+    else()
+		# on macOS, the .dylib file has some hard coded path (Version 5.5.4).
+		# we thus link statically
+        find_library(MSAT_LIB NAMES libmathsat${STATIC_EXT} mathsat PATHS "${MSAT_ROOT}/lib")
+        add_imported_library(msat STATIC ${MSAT_LIB} "${MSAT_ROOT}/include")
+        list(APPEND STORM_DEP_TARGETS msat_STATIC)
+    endif()
 endif(ENABLE_MSAT)
+
+#############################################################
+##
+##	QVBS (Quantitative verification benchmark set)
+##
+#############################################################
+
+set(STORM_HAVE_QVBS OFF)
+if (NOT "${STORM_QVBS_ROOT}" STREQUAL "")
+	if( EXISTS "${STORM_QVBS_ROOT}/index.json")
+       set(STORM_HAVE_QVBS ON)
+       message (STATUS "Storm - Enabled inputs from QVBS located at ${STORM_QVBS_ROOT}")
+	else()
+   		message(FATAL_ERROR "No file 'index.json' in provided QVBS root directory ${STORM_QVBS_ROOT}")
+	endif()
+endif()
+
 
 #############################################################
 ##

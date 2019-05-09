@@ -75,6 +75,18 @@ namespace storm {
                  */
                 bool isBuildStateValuationsSet() const;
 
+                /*!
+                 * Retrieves whether out of bounds state should be added
+                 * @return
+                 */
+                bool isBuildOutOfBoundsStateSet() const;
+                
+                /*!
+                 * Retrieves the number of bits that should be used to represent unbounded integer variables
+                 * @return
+                 */
+                uint64_t getBitsForUnboundedVariables() const;
+
 
                 // The name of the module.
                 static const std::string moduleName;

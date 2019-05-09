@@ -321,6 +321,16 @@ namespace storm {
                 
                 virtual bool isSymbolicModel() const override;
 
+                virtual bool supportsParameters() const override;
+                
+                /*!
+                 * Checks whether the model has parameters.
+                 * Performance warning: the worst-case complexity is linear in the number of transitions.
+                 *
+                 * @return True iff the model has parameters.
+                 */
+                virtual bool hasParameters() const override;
+
                 std::vector<std::string> getLabels() const;
                 
                 void addParameters(std::set<storm::RationalFunctionVariable> const& parameters);

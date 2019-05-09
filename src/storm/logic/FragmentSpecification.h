@@ -1,8 +1,14 @@
 #ifndef STORM_LOGIC_FRAGMENTSPECIFICATION_H_
 #define STORM_LOGIC_FRAGMENTSPECIFICATION_H_
 
+#include <map>
+#include <string>
+
 namespace storm {
     namespace logic {
+        
+        class RewardAccumulation;
+        
         class FragmentSpecification {
         public:
             FragmentSpecification();
@@ -27,6 +33,9 @@ namespace storm {
             
             bool areMultiObjectiveFormulasAllowed() const;
             FragmentSpecification& setMultiObjectiveFormulasAllowed( bool newValue);
+            
+            bool areQuantileFormulasAllowed() const;
+            FragmentSpecification& setQuantileFormulasAllowed( bool newValue);
 
             bool areGloballyFormulasAllowed() const;
             FragmentSpecification& setGloballyFormulasAllowed(bool newValue);
@@ -139,6 +148,13 @@ namespace storm {
             bool areOperatorsAtTopLevelOfMultiObjectiveFormulasRequired() const;
             FragmentSpecification& setOperatorsAtTopLevelOfMultiObjectiveFormulasRequired(bool newValue);
             
+            bool isQuantileFormulaAtTopLevelRequired() const;
+            FragmentSpecification& setQuantileFormulaAtTopLevelRequired(bool newValue);
+            
+            bool isRewardAccumulationAllowed() const;
+            FragmentSpecification& setRewardAccumulationAllowed(bool newValue);
+
+            
             FragmentSpecification& setOperatorsAllowed(bool newValue);
             FragmentSpecification& setTimeAllowed(bool newValue);
             FragmentSpecification& setLongRunAverageProbabilitiesAllowed(bool newValue);
@@ -151,6 +167,7 @@ namespace storm {
             bool longRunAverageOperator;
             
             bool multiObjectiveFormula;
+            bool quantileFormula;
             
             bool globallyFormula;
             bool reachabilityProbabilityFormula;
@@ -194,7 +211,10 @@ namespace storm {
             bool qualitativeOperatorResults;
             bool operatorAtTopLevelRequired;
             bool multiObjectiveFormulaAtTopLevelRequired;
+            bool quantileFormulaAtTopLevelRequired;
             bool operatorsAtTopLevelOfMultiObjectiveFormulasRequired;
+            
+            bool rewardAccumulation;
         };
         
         // Propositional.
@@ -220,6 +240,9 @@ namespace storm {
         
         // Multi-Objective formulas.
         FragmentSpecification multiObjective();
+        
+        // Quantile formulas.
+        FragmentSpecification quantiles();
 
     }
 }

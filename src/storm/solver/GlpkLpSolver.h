@@ -93,6 +93,9 @@ namespace storm {
             // Methods to print the LP problem to a file.
             virtual void writeModelToFile(std::string const& filename) const override;
             
+            virtual void push() override;
+            virtual void pop() override;
+
         private:
             /*!
              * Adds a variable with the given name, type, lower and upper bound and objective function coefficient.
@@ -233,6 +236,15 @@ namespace storm {
             virtual void writeModelToFile(std::string const& filename) const override {
                 throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for glpk. Yet, a method was called that requires this support. Please choose a version of support with glpk support.";
             }
+            
+            virtual void push() override {
+                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for glpk. Yet, a method was called that requires this support. Please choose a version of support with glpk support.";
+            }
+            
+            virtual void pop() override {
+                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for glpk. Yet, a method was called that requires this support. Please choose a version of support with glpk support.";
+            }
+
         };
 #endif
     }

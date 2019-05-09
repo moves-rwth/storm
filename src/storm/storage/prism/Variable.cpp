@@ -5,11 +5,11 @@
 
 namespace storm {
     namespace prism {
-        Variable::Variable(storm::expressions::Variable const& variable, storm::expressions::Expression const& initialValueExpression, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), variable(variable), initialValueExpression(initialValueExpression) {
+        Variable::Variable(storm::expressions::Variable const& variable, storm::expressions::Expression const& initialValueExpression, bool observable, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), variable(variable), initialValueExpression(initialValueExpression), observable(observable) {
             // Nothing to do here.
         }
         
-        Variable::Variable(storm::expressions::ExpressionManager& manager, Variable const& oldVariable, std::string const& newName, std::map<storm::expressions::Variable, storm::expressions::Expression> const& renaming, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), variable(manager.declareVariable(newName, oldVariable.variable.getType())), initialValueExpression(oldVariable.getInitialValueExpression().substitute(renaming)) {
+        Variable::Variable(storm::expressions::ExpressionManager& manager, Variable const& oldVariable, std::string const& newName, std::map<storm::expressions::Variable, storm::expressions::Expression> const& renaming, bool observable, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), variable(manager.declareVariable(newName, oldVariable.variable.getType())), initialValueExpression(oldVariable.getInitialValueExpression().substitute(renaming)), observable(observable) {
             // Intentionally left empty.
         }
         
@@ -35,6 +35,10 @@ namespace storm {
         
         storm::expressions::Expression Variable::getExpression() const {
             return variable.getExpression();
+        }
+
+        bool Variable::isObservable() const {
+            return this->observable;
         }
         
     } // namespace prism

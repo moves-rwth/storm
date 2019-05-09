@@ -116,6 +116,11 @@ namespace storm {
             bool isNondeterministicModel() const;
             
             /*!
+             * Returns true if the model is a descrete-time model.
+             */
+            bool isDiscreteTimeModel() const;
+            
+            /*!
              * Checks whether the model supports parameters.
              *
              * @return True iff the model supports parameters.

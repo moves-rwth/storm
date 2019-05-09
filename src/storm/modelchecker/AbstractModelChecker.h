@@ -1,6 +1,7 @@
 #ifndef STORM_MODELCHECKER_ABSTRACTMODELCHECKER_H_
 #define STORM_MODELCHECKER_ABSTRACTMODELCHECKER_H_
 
+#include <string>
 #include <boost/optional.hpp>
 
 #include "storm/modelchecker/CheckTask.h"
@@ -24,7 +25,12 @@ namespace storm {
             }
 
             typedef typename ModelType::ValueType ValueType;
-            
+
+            /*!
+             * Returns the name of the model checker class (e.g., for display in error messages).
+             */
+            virtual std::string getClassName() const;
+
             /*!
              * Determines whether the model checker can handle the given verification task. If this method returns
              * false, the task must not be checked using this model checker.
@@ -63,6 +69,7 @@ namespace storm {
             virtual std::unique_ptr<CheckResult> computeCumulativeRewards(Environment const& env, storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::CumulativeRewardFormula, ValueType> const& checkTask);
             virtual std::unique_ptr<CheckResult> computeInstantaneousRewards(Environment const& env, storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::InstantaneousRewardFormula, ValueType> const& checkTask);
             virtual std::unique_ptr<CheckResult> computeReachabilityRewards(Environment const& env, storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask);
+            virtual std::unique_ptr<CheckResult> computeTotalRewards(Environment const& env, storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::TotalRewardFormula, ValueType> const& checkTask);
             virtual std::unique_ptr<CheckResult> computeLongRunAverageRewards(Environment const& env, storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::LongRunAverageRewardFormula, ValueType> const& checkTask);
             
             // The methods to compute the long-run average probabilities and timing measures.
@@ -84,7 +91,10 @@ namespace storm {
   
             // The methods to check multi-objective formulas.
             virtual std::unique_ptr<CheckResult> checkMultiObjectiveFormula(Environment const& env, CheckTask<storm::logic::MultiObjectiveFormula, ValueType> const& checkTask);
-                  
+  
+            // The methods to check quantile formulas.
+            virtual std::unique_ptr<CheckResult> checkQuantileFormula(Environment const& env, CheckTask<storm::logic::QuantileFormula, ValueType> const& checkTask);
+            
         };
     }
 }

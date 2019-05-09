@@ -15,6 +15,7 @@
 
 #include "storm/models/symbolic/StandardRewardModel.h"
 
+#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/dd.h"
 
@@ -361,6 +362,26 @@ namespace storm {
             template<storm::dd::DdType Type, typename ValueType>
             bool Model<Type, ValueType>::isSymbolicModel() const {
                 return true;
+            }
+
+            template<storm::dd::DdType Type, typename ValueType>
+            bool Model<Type, ValueType>::supportsParameters() const {
+                return std::is_same<ValueType, storm::RationalFunction>::value;
+            }
+            
+            template<storm::dd::DdType Type, typename ValueType>
+            bool Model<Type, ValueType>::hasParameters() const {
+                if (!this->supportsParameters()) {
+                    return false;
+                }
+                // Check for parameters
+                for (auto it = this->getTransitionMatrix().begin(false); it != this->getTransitionMatrix().end(); ++it) {
+                    if (!storm::utility::isConstant((*it).second)) {
+                        return true;
+                    }
+                }
+                // Only constant values present
+                return false;
             }
             
             template<storm::dd::DdType Type, typename ValueType>

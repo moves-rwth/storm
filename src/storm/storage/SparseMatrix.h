@@ -579,6 +579,12 @@ namespace storm {
              */
             std::vector<index_type> const& getRowGroupIndices() const;
             
+            /*!
+             * Swaps the grouping of rows of this matrix.
+             *
+             * @return The old grouping of rows of this matrix.
+             */
+            std::vector<index_type> swapRowGroupIndices(std::vector<index_type>&& newRowGrouping);
             
             /*!
              * Sets the row grouping to the given one.
@@ -687,7 +693,7 @@ namespace storm {
              *
              * @param useGroups If set to true, the constraint for the rows is interpreted as selecting whole row groups.
              * If it is not set, the row constraint is interpreted over the actual rows. Note that empty row groups will
-             * be dropped altogether. That is, if no row of a row group is selected *or* the row group is alread empty,
+             * be dropped altogether. That is, if no row of a row group is selected *or* the row group is already empty,
              * the submatrix will not have this row group.
              * @param constraint A bit vector indicating which rows to keep.
              * @param columnConstraint A bit vector indicating which columns to keep.
@@ -750,7 +756,7 @@ namespace storm {
             
             /*!
              * Selects the rows that are given by the sequence of row indices, allowing to select rows arbitrarily often and with an arbitrary order
-             * The resulting matrix will have a trivial row grouping
+             * The resulting matrix will have a trivial row grouping.
              *
              * @param rowIndexSequence the sequence of row indices which specifies, which rows are contained in the new matrix
              * @param insertDiagonalEntries If set to true, the resulting matrix will have zero entries in column i for
@@ -850,15 +856,24 @@ namespace storm {
              * @param vector The vector with which to multiply the matrix.
              * @param summand If given, this summand will be added to the result of the multiplication.
              * @param result The vector that is supposed to hold the result of the multiplication after the operation.
-             * @param choices If given, the choices made in the reduction process will be written to this vector.
+             * @param choices If given, the choices made in the reduction process will be written to this vector. Note
+             * that if the direction is maximize, the choice for a row group is only updated if the value obtained with
+             * the 'new' choice has a value strictly better (wrt. to the optimization direction) value.
              * @return The resulting vector the content of the given result vector.
              */
             void multiplyAndReduce(storm::solver::OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType> const& vector, std::vector<ValueType> const* summand, std::vector<ValueType>& result, std::vector<uint_fast64_t>* choices) const;
             
             void multiplyAndReduceForward(storm::solver::OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType> const& vector, std::vector<ValueType> const* b, std::vector<ValueType>& result, std::vector<uint_fast64_t>* choices) const;
+            template<typename Compare>
+            void multiplyAndReduceForward(std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType> const& vector, std::vector<ValueType> const* summand, std::vector<ValueType>& result, std::vector<uint_fast64_t>* choices) const;
+            
             void multiplyAndReduceBackward(storm::solver::OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType> const& vector, std::vector<ValueType> const* b, std::vector<ValueType>& result, std::vector<uint_fast64_t>* choices) const;
+            template<typename Compare>
+            void multiplyAndReduceBackward(std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType> const& vector, std::vector<ValueType> const* b, std::vector<ValueType>& result, std::vector<uint_fast64_t>* choices) const;
 #ifdef STORM_HAVE_INTELTBB
             void multiplyAndReduceParallel(storm::solver::OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType> const& vector, std::vector<ValueType> const* b, std::vector<ValueType>& result, std::vector<uint_fast64_t>* choices) const;
+            template<typename Compare>
+            void multiplyAndReduceParallel(std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType> const& vector, std::vector<ValueType> const* b, std::vector<ValueType>& result, std::vector<uint_fast64_t>* choices) const;
 #endif
 
             /*!
@@ -953,6 +968,11 @@ namespace storm {
             template<typename TPrime>
             friend std::ostream& operator<<(std::ostream& out, SparseMatrix<TPrime> const& matrix);
 
+            /*!
+             * Returns a string describing the dimensions of the matrix.
+             */
+            std::string getDimensionsAsString() const;
+            
             /*!
              * Prints the matrix in a dense format, as also used by e.g. Matlab.
              * Notice that the format does not support multiple rows in a rowgroup.

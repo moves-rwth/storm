@@ -142,6 +142,13 @@ namespace storm {
                     expression.getSecondOperand()->accept(*this, data);
                     stream << ")";
                     break;
+                case BinaryNumericalFunctionExpression::OperatorType::Modulo:
+                    stream << "(";
+                    expression.getFirstOperand()->accept(*this, data);
+                    stream << " % ";
+                    expression.getSecondOperand()->accept(*this, data);
+                    stream << ")";
+                    break;
             }
             return boost::none;
         }

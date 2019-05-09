@@ -20,6 +20,7 @@ namespace storm {
             const std::string RegionSettings::hypothesisOptionName = "hypothesis";
             const std::string RegionSettings::hypothesisShortOptionName = "hyp";
             const std::string RegionSettings::refineOptionName = "refine";
+            const std::string RegionSettings::extremumOptionName = "extremum";
             const std::string RegionSettings::checkEngineOptionName = "engine";
             const std::string RegionSettings::printNoIllustrationOptionName = "noillustration";
             const std::string RegionSettings::printFullResultOptionName = "printfullresult";
@@ -35,6 +36,11 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, refineOptionName, false, "Enables region refinement.")
                                 .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("coverage-threshold", "Refinement converges if the fraction of unknown area falls below this threshold.").setDefaultValueDouble(0.05).addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleRangeValidatorIncluding(0.0,1.0)).build())
                                 .addArgument(storm::settings::ArgumentBuilder::createIntegerArgument("depth-limit", "If given, limits the number of times a region is refined.").setDefaultValueInteger(-1).build()).build());
+                
+                std::vector<std::string> directions = {"min", "max"};
+                this->addOption(storm::settings::OptionBuilder(moduleName, extremumOptionName, false, "Computes the extremum within the region.")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("direction", "The optimization direction").addValidatorString(storm::settings::ArgumentValidatorFactory::createMultipleChoiceValidator(directions)).build())
+                                .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("precision", "The desired precision").setDefaultValueDouble(0.05).addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleRangeValidatorIncluding(0.0,1.0)).build()).build());
                 
                 std::vector<std::string> engines = {"pl", "exactpl", "validatingpl"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, checkEngineOptionName, true, "Sets which engine is used for analyzing regions.")
@@ -93,6 +99,24 @@ namespace storm {
                 return (uint64_t) depth;
             }
             
+            bool RegionSettings::isExtremumSet() const {
+                return this->getOption(extremumOptionName).getHasOptionBeenSet();
+            }
+				
+            storm::solver::OptimizationDirection RegionSettings::getExtremumDirection() const {
+                auto str = this->getOption(extremumOptionName).getArgumentByName("direction").getValueAsString();
+                if (str == "min") {
+                    return storm::solver::OptimizationDirection::Minimize;
+                } else {
+                    assert(str == "max");
+                    return storm::solver::OptimizationDirection::Maximize;
+                }
+            }
+				
+            double RegionSettings::getExtremumValuePrecision() const {
+                return this->getOption(extremumOptionName).getArgumentByName("precision").getValueAsDouble();
+            }
+
             storm::modelchecker::RegionCheckEngine RegionSettings::getRegionCheckEngine() const {
                 std::string engineString = this->getOption(checkEngineOptionName).getArgumentByName("name").getValueAsString();
                 
@@ -110,6 +134,14 @@ namespace storm {
                 return result;
             }
             
+            bool RegionSettings::check() const {
+                if (isRefineSet() && isExtremumSet()) {
+                    STORM_LOG_ERROR("Can not compute extremum values AND perform region refinement.");
+                    return false;
+                }
+                return true;
+            }
+
             bool RegionSettings::isPrintNoIllustrationSet() const {
                 return this->getOption(printNoIllustrationOptionName).getHasOptionBeenSet();
             }

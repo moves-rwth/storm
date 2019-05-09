@@ -7,29 +7,29 @@
 namespace storm {
     namespace storage {
 
-        template<typename ValueType>
-        BucketPriorityQueue<ValueType>::BucketPriorityQueue(size_t nrBuckets, double lowerValue, double ratio) : lowerValue(lowerValue), logBase(std::log(ratio)), nrBuckets(nrBuckets), nrUnsortedItems(0), buckets(nrBuckets), currentBucket(nrBuckets) {
-            compare = ([this](HeuristicPointer a, HeuristicPointer b) {
+        template<typename PriorityType>
+        BucketPriorityQueue<PriorityType>::BucketPriorityQueue(size_t nrBuckets, double lowerValue, double ratio, bool higher) : buckets(nrBuckets), currentBucket(nrBuckets), nrUnsortedItems(0), lowerValue(lowerValue), higher(higher), logBase(std::log(ratio)), nrBuckets(nrBuckets) {
+            compare = ([](PriorityTypePointer a, PriorityTypePointer b) {
                 return *a < *b;
             });
         }
 
-        template<typename ValueType>
-        void BucketPriorityQueue<ValueType>::fix() {
+        template<typename PriorityType>
+        void BucketPriorityQueue<PriorityType>::fix() {
             if (currentBucket < nrBuckets && nrUnsortedItems > buckets[currentBucket].size() / 10) {
-                // Fix current bucket
+                // Sort current bucket
                 std::make_heap(buckets[currentBucket].begin(), buckets[currentBucket].end(), compare);
                 nrUnsortedItems = 0;
             }
         }
 
-        template<typename ValueType>
-        bool BucketPriorityQueue<ValueType>::empty() const {
+        template<typename PriorityType>
+        bool BucketPriorityQueue<PriorityType>::empty() const {
             return currentBucket == nrBuckets && immediateBucket.empty();
         }
 
-        template<typename ValueType>
-        std::size_t BucketPriorityQueue<ValueType>::size() const {
+        template<typename PriorityType>
+        size_t BucketPriorityQueue<PriorityType>::size() const {
             size_t size = immediateBucket.size();
             for (size_t i = currentBucket; currentBucket < nrBuckets; ++i) {
                 size += buckets[i].size();
@@ -37,8 +37,8 @@ namespace storm {
             return size;
         }
 
-        template<typename ValueType>
-        typename BucketPriorityQueue<ValueType>::HeuristicPointer const& BucketPriorityQueue<ValueType>::top() const {
+        template<typename PriorityType>
+        typename BucketPriorityQueue<PriorityType>::PriorityTypePointer const& BucketPriorityQueue<PriorityType>::top() const {
             if (!immediateBucket.empty()) {
                 return immediateBucket.back();
             }
@@ -46,8 +46,8 @@ namespace storm {
             return buckets[currentBucket].front();
         }
 
-        template<typename ValueType>
-        void BucketPriorityQueue<ValueType>::push(HeuristicPointer const& item) {
+        template<typename PriorityType>
+        void BucketPriorityQueue<PriorityType>::push(PriorityTypePointer const& item) {
             if (item->isExpand()) {
                 immediateBucket.push_back(item);
                 return;
@@ -59,7 +59,7 @@ namespace storm {
             }
             buckets[bucket].push_back(item);
             if (bucket == currentBucket) {
-                // Insert in first bucket
+                // Inserted in first bucket
                 if (AUTOSORT) {
                     std::push_heap(buckets[currentBucket].begin(), buckets[currentBucket].end(), compare);
                 } else {
@@ -68,8 +68,8 @@ namespace storm {
             }
         }
 
-        template<typename ValueType>
-        void BucketPriorityQueue<ValueType>::update(HeuristicPointer const& item, double oldPriority) {
+        template<typename PriorityType>
+        void BucketPriorityQueue<PriorityType>::update(PriorityTypePointer const& item, double oldPriority) {
             STORM_LOG_ASSERT(!item->isExpand(), "Item is marked for expansion");
             size_t newBucket = getBucket(item->getPriority());
             size_t oldBucket = getBucket(oldPriority);
@@ -87,7 +87,7 @@ namespace storm {
                 }
             } else {
                 // Move to new bucket
-                STORM_LOG_ASSERT(newBucket < oldBucket, "Will update to higher bucket");
+                STORM_LOG_ASSERT(newBucket < oldBucket, "Will update item "<< item->getId() << " from " << oldBucket << " to higher bucket " << newBucket);
                 if (newBucket < currentBucket) {
                     currentBucket = newBucket;
                     nrUnsortedItems = 0;
@@ -95,7 +95,7 @@ namespace storm {
                 // Remove old entry by swap-and-pop
                 if (buckets[oldBucket].size() >= 2) {
                     // Find old index by linear search
-                    // Notice: using a map to rememeber index was not efficient
+                    // Notice: using a map to remember index was not efficient
                     size_t oldIndex = 0;
                     for ( ; oldIndex < buckets[oldBucket].size(); ++oldIndex) {
                         if (buckets[oldBucket][oldIndex]->getId() == item->getId()) {
@@ -120,14 +120,16 @@ namespace storm {
         }
 
 
-        template<typename ValueType>
-        void BucketPriorityQueue<ValueType>::pop() {
+        template<typename PriorityType>
+        typename BucketPriorityQueue<PriorityType>::PriorityTypePointer BucketPriorityQueue<PriorityType>::pop() {
             if (!immediateBucket.empty()) {
+                PriorityTypePointer item = immediateBucket.back();
                 immediateBucket.pop_back();
-                return;
+                return item;
             }
             STORM_LOG_ASSERT(!empty(), "BucketPriorityQueue is empty");
             std::pop_heap(buckets[currentBucket].begin(), buckets[currentBucket].end(), compare);
+            PriorityTypePointer item = buckets[currentBucket].back();
             buckets[currentBucket].pop_back();
             if (buckets[currentBucket].empty()) {
                 // Find next bucket with elements
@@ -141,17 +143,11 @@ namespace storm {
                     }
                 }
             }
-        }
-
-        template<typename ValueType>
-        typename BucketPriorityQueue<ValueType>::HeuristicPointer BucketPriorityQueue<ValueType>::popTop() {
-            HeuristicPointer item = top();
-            pop();
             return item;
         }
 
-        template<typename ValueType>
-        size_t BucketPriorityQueue<ValueType>::getBucket(double priority) const {
+        template<typename PriorityType>
+        size_t BucketPriorityQueue<PriorityType>::getBucket(double priority) const {
             STORM_LOG_ASSERT(priority >= lowerValue, "Priority " << priority << " is too low");
 
             // For possible values greater 1
@@ -160,41 +156,39 @@ namespace storm {
             if (tmpBucket < 0) {
                 tmpBucket = 0;
             }
-            size_t newBucket = tmpBucket;
+            size_t newBucket = static_cast<size_t>(tmpBucket);
             // For values ensured to be lower 1
-            //size_t newBucket = std::log(priority - lowerValue) / logBase;
             if (newBucket >= nrBuckets) {
                 newBucket = nrBuckets - 1;
             }
-            if (!HIGHER) {
+            if (!higher) {
                 newBucket = nrBuckets-1 - newBucket;
             }
-            //std::cout << "get Bucket: " << priority << ", " << newBucket << std::endl;
             STORM_LOG_ASSERT(newBucket < nrBuckets, "Priority " << priority << " is too high");
             return newBucket;
         }
 
-        template<typename ValueType>
-        void BucketPriorityQueue<ValueType>::print(std::ostream& out) const {
+        template<typename PriorityType>
+        void BucketPriorityQueue<PriorityType>::print(std::ostream& out) const {
             out << "Bucket priority queue with size " << buckets.size() << ", lower value: " << lowerValue << " and logBase: " << logBase << std::endl;
             out << "Immediate bucket: ";
-            for (HeuristicPointer heuristic : immediateBucket) {
-                out << heuristic->getId() << ", ";
+            for (auto item : immediateBucket) {
+                out << item->getId() << ", ";
             }
             out << std::endl;
             out << "Current bucket (" << currentBucket << ") has " << nrUnsortedItems  << " unsorted items" << std::endl;
             for (size_t bucket = 0; bucket < buckets.size(); ++bucket) {
                 if (!buckets[bucket].empty()) {
                     out << "Bucket " << bucket << ":" << std::endl;
-                    for (HeuristicPointer heuristic : buckets[bucket]) {
-                        out << "\t" << heuristic->getId() << ": " << heuristic->getPriority() << std::endl;
+                    for (auto item : buckets[bucket]) {
+                        out << "\t" << item->getId() << ": " << item->getPriority() << std::endl;
                     }
                 }
             }
         }
 
-        template<typename ValueType>
-        void BucketPriorityQueue<ValueType>::printSizes(std::ostream& out) const {
+        template<typename PriorityType>
+        void BucketPriorityQueue<PriorityType>::printSizes(std::ostream& out) const {
             out << "Bucket sizes: " << immediateBucket.size() << " | ";
             for (size_t bucket = 0; bucket < buckets.size(); ++bucket) {
                 out << buckets[bucket].size() << " ";
@@ -203,10 +197,16 @@ namespace storm {
         }
 
         // Template instantiations
-        template class BucketPriorityQueue<double>;
+        template class BucketPriorityQueue<storm::builder::DFTExplorationHeuristic<double>>;
+        template class BucketPriorityQueue<storm::builder::DFTExplorationHeuristicDepth<double>>;
+        template class BucketPriorityQueue<storm::builder::DFTExplorationHeuristicProbability<double>>;
+        template class BucketPriorityQueue<storm::builder::DFTExplorationHeuristicBoundDifference<double>>;
 
 #ifdef STORM_HAVE_CARL
-        template class BucketPriorityQueue<storm::RationalFunction>;
+        template class BucketPriorityQueue<storm::builder::DFTExplorationHeuristic<storm::RationalFunction>>;
+        template class BucketPriorityQueue<storm::builder::DFTExplorationHeuristicDepth<storm::RationalFunction>>;
+        template class BucketPriorityQueue<storm::builder::DFTExplorationHeuristicProbability<storm::RationalFunction>>;
+        template class BucketPriorityQueue<storm::builder::DFTExplorationHeuristicBoundDifference<storm::RationalFunction>>;
 #endif
     }
 }

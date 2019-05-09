@@ -25,20 +25,41 @@ namespace storm {
                  * @return True iff the option was set.
                  */
                 bool useSymmetryReduction() const;
-                
+
                 /*!
                  * Retrieves whether the option to use modularisation is set.
                  *
                  * @return True iff the option was set.
                  */
                 bool useModularisation() const;
-                
+
                 /*!
                  * Retrieves whether the option to disable Dont Care propagation is set.
                  *
                  * @return True iff the option was set.
                  */
                 bool isDisableDC() const;
+
+                /*!
+                 * Retrieves whether the option to allow Dont Care propagation for relevant events is set.
+                 *
+                 * @return True iff the option was set.
+                 */
+                bool isAllowDCForRelevantEvents() const;
+
+                /*!
+                 * Retrieves whether the option to give relevant events is set.
+                 *
+                 * @return True iff the option was set.
+                 */
+                bool areRelevantEventsSet() const;
+
+                /*!
+                 * Retrieves the relevant events which should be present throughout the analysis.
+                 *
+                 * @return The list of relevant events.
+                 */
+                std::vector<std::string> getRelevantEvents() const;
 
                 /*!
                  * Retrieves whether the option to compute an approximation is set.
@@ -67,28 +88,33 @@ namespace storm {
                  * @return True iff the option was set.
                  */
                 bool isTakeFirstDependency() const;
-                
+
 #ifdef STORM_HAVE_Z3
+
                 /*!
                  * Retrieves whether the DFT should be checked via SMT.
                  *
                  * @return True iff the option was set.
                  */
                 bool solveWithSMT() const;
+
 #endif
-                
+
                 bool check() const override;
+
                 void finalize() override;
 
                 // The name of the module.
                 static const std::string moduleName;
 
             private:
-               // Define the string names of the options as constants.
+                // Define the string names of the options as constants.
                 static const std::string symmetryReductionOptionName;
                 static const std::string symmetryReductionOptionShortName;
                 static const std::string modularisationOptionName;
                 static const std::string disableDCOptionName;
+                static const std::string allowDCRelevantOptionName;
+                static const std::string relevantEventsOptionName;
                 static const std::string approximationErrorOptionName;
                 static const std::string approximationErrorOptionShortName;
                 static const std::string approximationHeuristicOptionName;

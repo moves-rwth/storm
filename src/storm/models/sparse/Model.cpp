@@ -10,6 +10,8 @@
 
 #include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/exceptions/IllegalFunctionCallException.h"
+#include "storm/models/sparse/Ctmc.h"
+#include "storm/models/sparse/MarkovAutomaton.h"
 
 namespace storm {
     namespace models {
@@ -40,9 +42,9 @@ namespace storm {
                 // general components for all model types.
                 STORM_LOG_THROW(this->getTransitionMatrix().getColumnCount() == stateCount, storm::exceptions::IllegalArgumentException, "Invalid column count of transition matrix.");
                 STORM_LOG_ASSERT(components.rateTransitions || this->hasParameters() || this->getTransitionMatrix().isProbabilistic(), "The matrix is not probabilistic.");
-                STORM_LOG_THROW(this->getStateLabeling().getNumberOfItems() == stateCount, storm::exceptions::IllegalArgumentException, "Invalid item count of state labeling.");
+                STORM_LOG_THROW(this->getStateLabeling().getNumberOfItems() == stateCount, storm::exceptions::IllegalArgumentException, "Invalid item count (" << this->getStateLabeling().getNumberOfItems() << ") of state labeling (states: " << stateCount << ").");
                 for (auto const& rewardModel : this->getRewardModels()) {
-                    STORM_LOG_THROW(!rewardModel.second.hasStateRewards() || rewardModel.second.getStateRewardVector().size() == stateCount, storm::exceptions::IllegalArgumentException, "Invalid size of state reward vector.");
+                    STORM_LOG_THROW(!rewardModel.second.hasStateRewards() || rewardModel.second.getStateRewardVector().size() == stateCount, storm::exceptions::IllegalArgumentException, "Invalid size (" << rewardModel.second.getStateRewardVector().size() << ") of state reward vector (states:" << stateCount  << ").");
                     STORM_LOG_THROW(!rewardModel.second.hasStateActionRewards() || rewardModel.second.getStateActionRewardVector().size() == choiceCount, storm::exceptions::IllegalArgumentException, "Invalid size of state reward vector.");
                     STORM_LOG_ASSERT(!rewardModel.second.hasTransitionRewards() || rewardModel.second.getTransitionRewardMatrix().isSubmatrixOf(this->getTransitionMatrix()), "The transition reward matrix is not a submatrix of the transition matrix, i.e. there are rewards for transitions that do not exist.");
                 }
@@ -56,8 +58,8 @@ namespace storm {
                     STORM_LOG_THROW(stateCount == this->getTransitionMatrix().getRowCount(), storm::exceptions::IllegalArgumentException, "Can not create deterministic model: Number of rows of transition matrix does not match state count.");
                     STORM_LOG_THROW(stateCount == this->getTransitionMatrix().getColumnCount(), storm::exceptions::IllegalArgumentException, "Can not create deterministic model: Number of columns of transition matrix does not match state count.");
                     STORM_LOG_ERROR_COND(!components.player1Matrix.is_initialized(), "Player 1 matrix given for a model that is no stochastic game (will be ignored).");
-                } else if (this->isOfType(ModelType::Mdp) || this->isOfType(ModelType::MarkovAutomaton)) {
-                    STORM_LOG_THROW(stateCount == this->getTransitionMatrix().getRowGroupCount(), storm::exceptions::IllegalArgumentException, "Can not create nondeterministic model: Number of row groups of transition matrix does not match state count.");
+                } else if (this->isOfType(ModelType::Mdp) || this->isOfType(ModelType::MarkovAutomaton) || this->isOfType(ModelType::Pomdp)) {
+                    STORM_LOG_THROW(stateCount == this->getTransitionMatrix().getRowGroupCount(), storm::exceptions::IllegalArgumentException, "Can not create nondeterministic model: Number of row groups (" << this->getTransitionMatrix().getRowGroupCount() << ") of transition matrix does not match state count (" << stateCount << ").");
                     STORM_LOG_THROW(stateCount == this->getTransitionMatrix().getColumnCount(), storm::exceptions::IllegalArgumentException, "Can not create nondeterministic model: Number of columns of transition matrix does not match state count.");
                     STORM_LOG_ERROR_COND(!components.player1Matrix.is_initialized(), "Player 1 matrix given for a model that is no stochastic game (will be ignored).");
                 } else {
@@ -334,9 +336,9 @@ namespace storm {
             }
             
             template<typename ValueType, typename RewardModelType>
-            void Model<ValueType, RewardModelType>::writeDotToStream(std::ostream& outStream, bool includeLabeling, storm::storage::BitVector const* subsystem, std::vector<ValueType> const* firstValue, std::vector<ValueType> const* secondValue, std::vector<uint_fast64_t> const* stateColoring, std::vector<std::string> const* colors, std::vector<uint_fast64_t>*, bool finalizeOutput) const {
+            void Model<ValueType, RewardModelType>::writeDotToStream(std::ostream& outStream, bool includeLabeling, bool linebreakLabel, storm::storage::BitVector const* subsystem, std::vector<ValueType> const* firstValue, std::vector<ValueType> const* secondValue, std::vector<uint_fast64_t> const* stateColoring, std::vector<std::string> const* colors, std::vector<uint_fast64_t>*, bool finalizeOutput) const {
                 outStream << "digraph model {" << std::endl;
-                
+
                 // Write all states to the stream.
                 for (uint_fast64_t state = 0, highestStateIndex = this->getNumberOfStates() - 1; state <= highestStateIndex; ++state) {
                     if (subsystem == nullptr || subsystem->get(state)) {
@@ -358,7 +360,11 @@ namespace storm {
                                     bool includeComma = false;
                                     for (std::string const& label : this->getLabelsOfState(state)) {
                                         if (includeComma) {
-                                            outStream << ", ";
+                                            if (linebreakLabel) {
+                                                outStream << ",\n";
+                                            } else {
+                                                outStream << ", ";
+                                            }
                                         } else {
                                             includeComma = true;
                                         }
@@ -423,11 +429,7 @@ namespace storm {
             
             template<typename ValueType, typename RewardModelType>
             bool Model<ValueType, RewardModelType>::supportsParameters() const {
-#ifdef STORM_HAVE_CARL
                 return std::is_same<ValueType, storm::RationalFunction>::value;
-#else
-		return false;
-#endif
             }
             
             template<typename ValueType, typename RewardModelType>
@@ -473,8 +475,29 @@ namespace storm {
                 }
                 return result;
             }
+
+            std::set<storm::RationalFunctionVariable> getRateParameters(Model<storm::RationalFunction> const& model) {
+                if (model.isOfType(storm::models::ModelType::Ctmc)) {
+                    auto const& ctmc = model.template as<storm::models::sparse::Ctmc<storm::RationalFunction>>();
+                    return storm::utility::vector::getVariables(ctmc->getExitRateVector());
+                } else if (model.isOfType(storm::models::ModelType::MarkovAutomaton)) {
+                    auto const& ma = model.template as<storm::models::sparse::MarkovAutomaton<storm::RationalFunction>>();
+                    return storm::utility::vector::getVariables(ma->getExitRates());
+                } else {
+                    return {};
+                }
+            }
+
+            std::set<storm::RationalFunctionVariable> getAllParameters(Model<storm::RationalFunction> const& model) {
+                std::set<storm::RationalFunctionVariable> parameters = getProbabilityParameters(model);
+                std::set<storm::RationalFunctionVariable> rewardParameters = getRewardParameters(model);
+                parameters.insert(rewardParameters.begin(), rewardParameters.end());
+                std::set<storm::RationalFunctionVariable> rateParameters = getRewardParameters(model);
+                parameters.insert(rateParameters.begin(), rateParameters.end());
+                return parameters;
+            }
 #endif
-            
+
             template class Model<double>;
             template class Model<float>;
 

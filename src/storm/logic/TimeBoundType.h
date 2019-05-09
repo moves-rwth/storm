@@ -1,5 +1,9 @@
 #pragma once
 
+#include <boost/optional.hpp>
+
+#include "storm/logic/RewardAccumulation.h"
+
 namespace storm {
     namespace logic {
 
@@ -13,16 +17,19 @@ namespace storm {
         class TimeBoundReference {
             TimeBoundType type;
             std::string rewardName;
-
+            boost::optional<RewardAccumulation> rewardAccumulation;
+            
         public:
             explicit TimeBoundReference(TimeBoundType t) : type(t) {
                 // For rewards, use the other constructor.
                 assert(t != TimeBoundType::Reward);
             }
 
-            explicit TimeBoundReference(std::string const& rewardName) : type(TimeBoundType::Reward), rewardName(rewardName) {
+            explicit TimeBoundReference(std::string const& rewardName, boost::optional<RewardAccumulation> rewardAccumulation = boost::none) : type(TimeBoundType::Reward), rewardName(rewardName), rewardAccumulation(rewardAccumulation) {
                 assert(rewardName != ""); // Empty reward name is reserved.
             }
+
+            TimeBoundReference(TimeBoundReference const& other) = default;
 
             TimeBoundType getType() const {
                 return type;
@@ -44,6 +51,21 @@ namespace storm {
                 assert(isRewardBound());
                 return rewardName;
             }
+            
+            bool hasRewardAccumulation() const {
+                return rewardAccumulation.is_initialized();
+            }
+            
+            RewardAccumulation const& getRewardAccumulation() const {
+                assert(isRewardBound());
+                return rewardAccumulation.get();
+            }
+            
+            boost::optional<RewardAccumulation> const& getOptionalRewardAccumulation() const {
+                assert(isRewardBound());
+                return rewardAccumulation;
+            }
+            
         };
 
 

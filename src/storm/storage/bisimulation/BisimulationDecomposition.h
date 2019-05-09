@@ -260,6 +260,11 @@ namespace storm {
              * Splits the initial partition based on the given reward vector.
              */
             virtual void splitInitialPartitionBasedOnRewards(std::vector<ValueType> const& rewardVector);
+
+            /*!
+             * Splits the initial partition based on the given vector of action rewards.
+             */
+            virtual void splitInitialPartitionBasedOnActionRewards(std::vector<std::set<ValueType>> const& rewardVector);
             
             /*!
              * Constructs the blocks of the decomposition object based on the current partition.

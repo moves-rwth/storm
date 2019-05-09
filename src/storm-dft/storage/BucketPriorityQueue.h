@@ -10,60 +10,116 @@
 namespace storm {
     namespace storage {
 
-        template<typename ValueType>
+        /*!
+         * Priority queue based on buckets.
+         * Can be used to keep track of states during state space exploration.
+         * @tparam PriorityType Underlying priority data type
+         */
+        template<class PriorityType>
         class BucketPriorityQueue {
 
-            using HeuristicPointer = std::shared_ptr<storm::builder::DFTExplorationHeuristicDepth<ValueType>>;
+            using PriorityTypePointer = std::shared_ptr<PriorityType>;
 
         public:
-            explicit BucketPriorityQueue(size_t nrBuckets, double lowerValue, double ratio);
+            /*!
+             * Create new priority queue.
+             * @param nrBuckets
+             * @param lowerValue
+             * @param ratio
+             * @param higher
+             */
+            explicit BucketPriorityQueue(size_t nrBuckets, double lowerValue, double ratio, bool higher);
+
+            BucketPriorityQueue(BucketPriorityQueue const& queue) = default;
+
+            virtual ~BucketPriorityQueue() = default;
 
             void fix();
 
+            /*!
+             * Check whether queue is empty.
+             * @return True iff queue is empty.
+             */
             bool empty() const;
 
+            /*!
+             * Return number of entries.
+             * @return Size of queue.
+             */
             std::size_t size() const;
 
-            HeuristicPointer const& top() const;
+            /*!
+             * Get element with highest priority.
+             * @return Top element.
+             */
+            PriorityTypePointer const& top() const;
 
-            void push(HeuristicPointer const& item);
+            /*!
+             * Add element.
+             * @param item Element.
+             */
+            void push(PriorityTypePointer const& item);
 
-            void update(HeuristicPointer const& item, double oldPriority);
+            /*!
+             * Update existing element.
+             * @param item Element with changes.
+             * @param oldPriority Old priority.
+             */
+            void update(PriorityTypePointer const& item, double oldPriority);
 
-            void pop();
+            /*!
+             * Get element with highest priority and remove it from the queue.
+             * @return Top element.
+             */
+            PriorityTypePointer pop();
 
-            HeuristicPointer popTop();
-
+            /*!
+             * Print info about priority queue.
+             * @param out Output stream.
+             */
             void print(std::ostream& out) const;
 
+            /*!
+             * Print sizes of buckets.
+             * @param out Output stream.
+             */
             void printSizes(std::ostream& out) const;
 
         private:
 
+            /*!
+             * Get bucket for given priority.
+             * @param priority Priority.
+             * @return Bucket containing the priority.
+             */
             size_t getBucket(double priority) const;
 
-            const double lowerValue;
-
-            const bool HIGHER = true;
-
-            const bool AUTOSORT = false;
-
-            const double logBase;
-
-            const size_t nrBuckets;
-
-            size_t nrUnsortedItems;
-
             // List of buckets
-            std::vector<std::vector<HeuristicPointer>> buckets;
+            std::vector<std::vector<PriorityTypePointer>> buckets;
 
             // Bucket containing all items which should be considered immediately
-            std::vector<HeuristicPointer> immediateBucket;
+            std::vector<PriorityTypePointer> immediateBucket;
 
             // Index of first bucket which contains items
             size_t currentBucket;
 
-            std::function<bool(HeuristicPointer, HeuristicPointer)> compare;
+            // Number of unsorted items in current bucket
+            size_t nrUnsortedItems;
+
+            // Comparison function for priorities
+            std::function<bool(PriorityTypePointer, PriorityTypePointer)> compare;
+
+            // Minimal value
+            double lowerValue;
+
+            bool higher;
+
+            bool AUTOSORT = false;
+
+            double logBase;
+
+            // Number of available buckets
+            size_t nrBuckets;
 
         };
 

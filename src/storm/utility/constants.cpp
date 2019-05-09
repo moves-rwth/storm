@@ -45,6 +45,16 @@ namespace storm {
             return a == zero<ValueType>();
         }
         
+        template<typename ValueType>
+        bool isNan(ValueType const&) {
+            return false;
+        }
+        
+        template<>
+        bool isNan(double const& value) {
+            return isnan(value);
+        }
+        
         bool isAlmostZero(double const& a) {
             return a < 1e-12 && a > -1e-12;
         }
@@ -324,7 +334,12 @@ namespace storm {
         uint_fast64_t convertNumber(ClnRationalNumber const& number) {
             return carl::toInt<carl::uint>(number);
         }
-        
+
+        template<>
+        int_fast64_t convertNumber(ClnRationalNumber const& number) {
+            return carl::toInt<carl::sint>(number);
+        }
+
         template<>
         ClnRationalNumber convertNumber(double const& number) {
             return carl::rationalize<ClnRationalNumber>(number);
@@ -516,7 +531,12 @@ namespace storm {
         uint_fast64_t convertNumber(GmpRationalNumber const& number){
             return carl::toInt<carl::uint>(number);
         }
-        
+
+        template<>
+        int_fast64_t convertNumber(GmpRationalNumber const& number){
+            return carl::toInt<carl::sint>(number);
+        }
+
         template<>
         GmpRationalNumber convertNumber(double const& number){
             return carl::rationalize<GmpRationalNumber>(number);
@@ -940,6 +960,7 @@ namespace storm {
         template bool isZero(NumberTraits<storm::ClnRationalNumber>::IntegerType const& value);
         template bool isConstant(storm::ClnRationalNumber const& value);
         template bool isInfinity(storm::ClnRationalNumber const& value);
+        template bool isNan(storm::ClnRationalNumber const& value);
         template storm::NumberTraits<ClnRationalNumber>::IntegerType convertNumber(storm::NumberTraits<ClnRationalNumber>::IntegerType const& number);
         template storm::ClnRationalNumber convertNumber(storm::ClnRationalNumber const& number);
         template storm::ClnRationalNumber simplify(storm::ClnRationalNumber value);
@@ -964,6 +985,7 @@ namespace storm {
         template bool isZero(NumberTraits<storm::GmpRationalNumber>::IntegerType const& value);
         template bool isConstant(storm::GmpRationalNumber const& value);
         template bool isInfinity(storm::GmpRationalNumber const& value);
+        template bool isNan(storm::GmpRationalNumber const& value);
         template storm::NumberTraits<GmpRationalNumber>::IntegerType convertNumber(storm::NumberTraits<GmpRationalNumber>::IntegerType const& number);
         template storm::GmpRationalNumber convertNumber(storm::GmpRationalNumber const& number);
         template storm::GmpRationalNumber simplify(storm::GmpRationalNumber value);

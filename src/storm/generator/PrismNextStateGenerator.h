@@ -8,6 +8,13 @@
 #include "storm/storage/prism/Program.h"
 
 namespace storm {
+    namespace builder {
+        namespace jit {
+            template <typename StateType, typename ValueType>
+            class Distribution;
+        }
+    }
+    
     namespace generator {
         
         template<typename ValueType, typename StateType = uint32_t>
@@ -15,12 +22,14 @@ namespace storm {
         public:
             typedef typename NextStateGenerator<ValueType, StateType>::StateToIdCallback StateToIdCallback;
             typedef boost::container::flat_set<uint_fast64_t> CommandSet;
-            
+            enum class CommandFilter {All, Markovian, Probabilistic};
+
             PrismNextStateGenerator(storm::prism::Program const& program, NextStateGeneratorOptions const& options = NextStateGeneratorOptions());
 
             virtual ModelType getModelType() const override;
             virtual bool isDeterministicModel() const override;
             virtual bool isDiscreteTimeModel() const override;
+            virtual bool isPartiallyObservable() const override;
             virtual std::vector<StateType> getInitialStates(StateToIdCallback const& stateToIdCallback) override;
 
             virtual StateBehavior<ValueType, StateType> expand(StateToIdCallback const& stateToIdCallback) override;
@@ -67,7 +76,7 @@ namespace storm {
              * @param actionIndex The index of the action label to select.
              * @return A list of lists of active commands or nothing.
              */
-            boost::optional<std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>>> getActiveCommandsByActionIndex(uint_fast64_t const& actionIndex);
+            boost::optional<std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>>> getActiveCommandsByActionIndex(uint_fast64_t const& actionIndex, CommandFilter const& commandFilter = CommandFilter::All);
             
             /*!
              * Retrieves all unlabeled choices possible from the given state.
@@ -75,7 +84,7 @@ namespace storm {
              * @param state The state for which to retrieve the unlabeled choices.
              * @return The unlabeled choices of the state.
              */
-            std::vector<Choice<ValueType>> getUnlabeledChoices(CompressedState const& state, StateToIdCallback stateToIdCallback);
+            std::vector<Choice<ValueType>> getUnlabeledChoices(CompressedState const& state, StateToIdCallback stateToIdCallback, CommandFilter const& commandFilter = CommandFilter::All);
             
             /*!
              * Retrieves all labeled choices possible from the given state.
@@ -83,7 +92,12 @@ namespace storm {
              * @param state The state for which to retrieve the unlabeled choices.
              * @return The labeled choices of the state.
              */
-            std::vector<Choice<ValueType>> getLabeledChoices(CompressedState const& state, StateToIdCallback stateToIdCallback);
+            std::vector<Choice<ValueType>> getLabeledChoices(CompressedState const& state, StateToIdCallback stateToIdCallback, CommandFilter const& commandFilter = CommandFilter::All);
+            
+            /*!
+             * A recursive helper function to generate a synchronziing distribution.
+             */
+            void generateSynchronizedDistribution(storm::storage::BitVector const& state, ValueType const& probability, uint64_t position, std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>::const_iterator> const& iteratorList, storm::builder::jit::Distribution<StateType, ValueType>& distribution, StateToIdCallback stateToIdCallback);
             
             // The program used for the generation of next states.
             storm::prism::Program program;

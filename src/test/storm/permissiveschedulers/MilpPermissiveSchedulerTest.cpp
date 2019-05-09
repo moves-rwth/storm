@@ -1,8 +1,8 @@
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "gtest/gtest.h"
 #include "storm-config.h"
-#include "storm/parser/PrismParser.h"
-#include "storm/parser/FormulaParser.h"
+#include "storm-parsers/parser/PrismParser.h"
+#include "storm-parsers/parser/FormulaParser.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/logic/Formulas.h"
 #include "storm/permissivesched/PermissiveSchedulers.h"
@@ -19,13 +19,18 @@ TEST(MilpPermissiveSchedulerTest, DieSelection) {
     
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/die_c1.nm");
     storm::parser::FormulaParser formulaParser(program.getManager().getSharedPointer());
+    std::string formulaString = "";
+    formulaString += "P>=0.10 [ F \"one\"];\n";
+    formulaString += "P>=0.17 [ F \"one\"];\n";
+    formulaString += "P<=0.10 [ F \"one\"];\n";
+    formulaString += "P<=0.17 [ F \"one\"];\n";
+    auto formulas = formulaParser.parseFromString(formulaString);
     
-    auto formula02 = formulaParser.parseSingleFormulaFromString("P>=0.10 [ F \"one\"]")->asProbabilityOperatorFormula();
+    auto const& formula02 = formulas[0].getRawFormula()->asProbabilityOperatorFormula();
     ASSERT_TRUE(storm::logic::isLowerBound(formula02.getComparisonType()));
-    auto formula001 = formulaParser.parseSingleFormulaFromString("P>=0.17 [ F \"one\"]")->asProbabilityOperatorFormula();
-    
-    auto formula02b = formulaParser.parseSingleFormulaFromString("P<=0.10 [ F \"one\"]")->asProbabilityOperatorFormula();
-    auto formula001b = formulaParser.parseSingleFormulaFromString("P<=0.17 [ F \"one\"]")->asProbabilityOperatorFormula();
+    auto const& formula001 = formulas[1].getRawFormula()->asProbabilityOperatorFormula();
+    auto const& formula02b = formulas[2].getRawFormula()->asProbabilityOperatorFormula();
+    auto const& formula001b = formulas[3].getRawFormula()->asProbabilityOperatorFormula();
     
     // Customize and perform model-building.
     storm::generator::NextStateGeneratorOptions options;

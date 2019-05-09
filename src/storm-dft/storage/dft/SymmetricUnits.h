@@ -108,7 +108,7 @@ namespace storm {
                 }
                 // Sort by length of symmetry or (if equal) by lower first element
                 std::sort(sortedGroups.begin(), sortedGroups.end(), [&](const size_t left, const size_t right) {
-                    return groups.at(left).size() < groups.at(right).size() || (groups.at(left).size() == groups.at(right).size() && groups.at(left).front().front() < groups.at(left).front().front());
+                    return groups.at(left).size() < groups.at(right).size() || (groups.at(left).size() == groups.at(right).size() && groups.at(left).front().front() < groups.at(right).front().front());
                 });
                 
                 // Sort hierarchical

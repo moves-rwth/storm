@@ -10,7 +10,7 @@
 #include "storm/storage/jani/Compositions.h"
 
 #include "storm/models/symbolic/StandardRewardModel.h"
-#include "storm/parser/PrismParser.h"
+#include "storm-parsers/parser/PrismParser.h"
 #include "storm/builder/DdJaniModelBuilder.h"
 
 #include "storm/settings/SettingMemento.h"
@@ -441,15 +441,6 @@ TEST(DdJaniModelBuilderTest_Cudd, SynchronizationVectors) {
     model = builder.build(janiModel);
     EXPECT_EQ(4ul, model->getNumberOfStates());
     EXPECT_EQ(5ul, model->getNumberOfTransitions());
-    
-    inputVector.clear();
-    inputVector.push_back("b");
-    inputVector.push_back("c");
-    inputVector.push_back("b");
-    synchronizationVectors.push_back(storm::jani::SynchronizationVector(inputVector, "e"));
-    newComposition = std::make_shared<storm::jani::ParallelComposition>(automataCompositions, synchronizationVectors);
-    janiModel.setSystemComposition(newComposition);
-    EXPECT_THROW(model = builder.build(janiModel), storm::exceptions::WrongFormatException);
 }
 
 TEST(DdJaniModelBuilderTest_Sylvan, SynchronizationVectors) {
@@ -587,15 +578,6 @@ TEST(DdJaniModelBuilderTest_Sylvan, SynchronizationVectors) {
     model = builder.build(janiModel);
     EXPECT_EQ(4ul, model->getNumberOfStates());
     EXPECT_EQ(5ul, model->getNumberOfTransitions());
-    
-    inputVector.clear();
-    inputVector.push_back("b");
-    inputVector.push_back("c");
-    inputVector.push_back("b");
-    synchronizationVectors.push_back(storm::jani::SynchronizationVector(inputVector, "e"));
-    newComposition = std::make_shared<storm::jani::ParallelComposition>(automataCompositions, synchronizationVectors);
-    janiModel.setSystemComposition(newComposition);
-    EXPECT_THROW(model = builder.build(janiModel), storm::exceptions::WrongFormatException);
 }
 
 TEST(DdJaniModelBuilderTest_Sylvan, Composition) {

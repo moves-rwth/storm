@@ -1,65 +1,81 @@
-#pragma once 
+#pragma once
 
 #include "DFTGate.h"
+
 namespace storm {
     namespace storage {
-          template<typename ValueType>
+
+        /*!
+         * Priority AND (PAND) gate.
+         * Fails if all children fail in order from first to last child.
+         * If a child fails before its left sibling, the PAND becomes failsafe.
+         * For inclusive PAND<= gates, simultaneous failures are allowed.
+         * For exclusive PAND< gates, simultaneous failure make the gate failsafe.
+         */
+        template<typename ValueType>
         class DFTPand : public DFTGate<ValueType> {
 
         public:
-            DFTPand(size_t id, std::string const& name, bool inclusive, std::vector<std::shared_ptr<DFTElement<ValueType>>> const& children = {}) :
-                    DFTGate<ValueType>(id, name, children),
-                    inclusive(inclusive)
-            {}
+            /*!
+             * Constructor.
+             * @param id Id.
+             * @param name Name.
+             * @param inclusive If true, simultaneous failures are allowed.
+             * parame children Children.
+             */
+            DFTPand(size_t id, std::string const& name, bool inclusive, std::vector<std::shared_ptr<DFTElement<ValueType>>> const& children = {}) : DFTGate<ValueType>(id, name, children), inclusive(inclusive) {
+                    // Intentionally left empty.
+            }
 
-            void checkFails(storm::storage::DFTState<ValueType>& state,  DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
-                assert(inclusive);
-                if(state.isOperational(this->mId)) {
+            DFTElementType type() const override {
+                return DFTElementType::PAND;
+            }
+
+            std::string typestring() const override {
+                return this->isInclusive() ? "PAND (incl)" : "PAND (excl)";
+            }
+
+            /*!
+             * Return whether the PAND is inclusive.
+             * @return True iff PAND is inclusive.
+             */
+            bool isInclusive() const {
+                return inclusive;
+            }
+
+            void checkFails(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
+                STORM_LOG_ASSERT(isInclusive(), "Exclusive PAND not supported.");
+                if (state.isOperational(this->mId)) {
                     bool childOperationalBefore = false;
-                    for(auto const& child : this->mChildren)
-                    {
-                        if(!state.hasFailed(child->id())) {
+                    for (auto const& child : this->children()) {
+                        if (!state.hasFailed(child->id())) {
                             childOperationalBefore = true;
-                        } else if(childOperationalBefore && state.hasFailed(child->id())){
+                        } else if (childOperationalBefore && state.hasFailed(child->id())) {
+                            // Child failed before sibling -> failsafe
                             this->failsafe(state, queues);
                             this->childrenDontCare(state, queues);
                             return;
                         }
                     }
-                    if(!childOperationalBefore) {
+                    if (!childOperationalBefore) {
+                        // All children have failed
                         this->fail(state, queues);
                     }
                 }
             }
 
             void checkFailsafe(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
-                assert(inclusive);
+                STORM_LOG_ASSERT(isInclusive(), "Exclusive PAND not supported.");
                 STORM_LOG_ASSERT(this->hasFailsafeChild(state), "No failsafe child.");
-                if(state.isOperational(this->mId)) {
+                if (state.isOperational(this->mId)) {
                     this->failsafe(state, queues);
                     this->childrenDontCare(state, queues);
                 }
             }
 
-            virtual DFTElementType type() const override {
-                return DFTElementType::PAND;
-            }
-            
-            bool isInclusive() const {
-                return inclusive;
-            }
-            
-            std::string typestring() const override {
-                return inclusive ? "PAND-inc" : "PAND-ex";
-            }
         protected:
             bool inclusive;
         };
-        
-        template<typename ValueType>
-        inline std::ostream& operator<<(std::ostream& os, DFTPand<ValueType> const& gate) {
-             return os << gate.toString();
-        }
 
     }
 }

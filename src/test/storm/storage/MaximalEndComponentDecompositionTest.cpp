@@ -1,9 +1,13 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
-#include "storm/parser/AutoParser.h"
+#include "storm-parsers/parser/AutoParser.h"
 #include "storm/storage/MaximalEndComponentDecomposition.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
+#include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/builder/ExplicitModelBuilder.h"
+#include "storm/storage/SymbolicModelDescription.h"
+#include "storm-parsers/parser/PrismParser.h"
 
 TEST(MaximalEndComponentDecomposition, FullSystem1) {
     std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser<>::parseModel(STORM_TEST_RESOURCES_DIR "/tra/tiny1.tra", STORM_TEST_RESOURCES_DIR "/lab/tiny1.lab", "", "");
@@ -132,4 +136,43 @@ TEST(MaximalEndComponentDecomposition, Subsystem) {
         // This case must never happen as the only two existing MEC contains 3.
         ASSERT_TRUE(false);
     }
+}
+
+TEST(MaximalEndComponentDecomposition, Example1) {
+    std::string prismModelPath = STORM_TEST_RESOURCES_DIR "/mdp/prism-mec-example1.nm";
+    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(prismModelPath);
+    storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
+    
+    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program).build();
+    std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = model->as<storm::models::sparse::Mdp<double>>();
+    
+    storm::storage::MaximalEndComponentDecomposition<double> mecDecomposition(*mdp);
+    
+    EXPECT_EQ(2ull, mecDecomposition.size());
+    
+    ASSERT_TRUE(mecDecomposition[0].getStateSet() == storm::storage::MaximalEndComponent::set_type{2});
+    EXPECT_TRUE(mecDecomposition[0].getChoicesForState(2) == storm::storage::MaximalEndComponent::set_type{3});
+    
+    ASSERT_TRUE(mecDecomposition[1].getStateSet() == storm::storage::MaximalEndComponent::set_type{0});
+    EXPECT_TRUE(mecDecomposition[1].getChoicesForState(0) == storm::storage::MaximalEndComponent::set_type{0});
+}
+
+TEST(MaximalEndComponentDecomposition, Example2) {
+    std::string prismModelPath = STORM_TEST_RESOURCES_DIR "/mdp/prism-mec-example2.nm";
+    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(prismModelPath);
+    storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
+    
+    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program).build();
+    std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = model->as<storm::models::sparse::Mdp<double>>();
+    
+    storm::storage::MaximalEndComponentDecomposition<double> mecDecomposition(*mdp);
+    
+    EXPECT_EQ(2ull, mecDecomposition.size());
+    
+    ASSERT_TRUE(mecDecomposition[0].getStateSet() == storm::storage::MaximalEndComponent::set_type{2});
+    EXPECT_TRUE(mecDecomposition[0].getChoicesForState(2) == storm::storage::MaximalEndComponent::set_type{4});
+    
+    ASSERT_TRUE((mecDecomposition[1].getStateSet() == storm::storage::MaximalEndComponent::set_type{0, 1}));
+    EXPECT_TRUE((mecDecomposition[1].getChoicesForState(0) == storm::storage::MaximalEndComponent::set_type{0, 1}));
+    EXPECT_TRUE((mecDecomposition[1].getChoicesForState(1) == storm::storage::MaximalEndComponent::set_type{3}));
 }

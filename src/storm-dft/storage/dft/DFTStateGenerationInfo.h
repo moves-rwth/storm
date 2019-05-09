@@ -8,8 +8,9 @@ namespace storm {
             std::map<size_t, size_t> mSpareUsageIndex; // id spare -> index first bit in state
             std::map<size_t, size_t> mSpareActivationIndex; // id spare representative -> index in state
             std::vector<size_t> mIdToStateIndex; // id -> index first bit in state
-            std::map<size_t, std::vector<size_t>> mSeqRestrictionPreElements; // id -> list of restriction pre elements;
-            std::map<size_t, std::vector<size_t>> mSeqRestrictionPostElements; // id -> list of restriction post elements;
+            std::map<size_t, std::vector<size_t>> mSeqRestrictionPreElements; // id -> list of restriction pre elements
+            std::map<size_t, std::vector<size_t>> mSeqRestrictionPostElements; // id -> list of restriction post elements
+            std::map<size_t, std::vector<size_t>> mMutexRestrictionElements; // id -> list of elments in the same mutexes
             std::vector<std::pair<size_t, std::vector<size_t>>> mSymmetries; // pair (length of symmetry group, vector indicating the starting points of the symmetry groups)
 
         public:
@@ -37,12 +38,25 @@ namespace storm {
             void setRestrictionPostElements(size_t id, std::vector<size_t> const& elems) {
                 mSeqRestrictionPostElements[id] = elems;
             }
+
+            void setMutexElements(size_t id, std::vector<size_t> const& elems) {
+                mMutexRestrictionElements[id] = elems;
+            }
+
+            std::vector<size_t> const& seqRestrictionPreElements(size_t index) const {
+                STORM_LOG_ASSERT(mSeqRestrictionPreElements.count(index) > 0, "Index invalid.");
+                return mSeqRestrictionPreElements.at(index);
+            }
             
             std::vector<size_t> const& seqRestrictionPostElements(size_t index) const {
                 STORM_LOG_ASSERT(mSeqRestrictionPostElements.count(index) > 0, "Index invalid.");
                 return mSeqRestrictionPostElements.at(index);
             }
-            
+
+            std::vector<size_t> const& mutexRestrictionElements(size_t index) const {
+                STORM_LOG_ASSERT(mMutexRestrictionElements.count(index) > 0, "Index invalid.");
+                return mMutexRestrictionElements.at(index);
+            }
             
             void addSpareActivationIndex(size_t id, size_t index) {
                 mSpareActivationIndex[id] = index;

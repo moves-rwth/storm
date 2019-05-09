@@ -5,6 +5,7 @@
 #include "storm/storage/Scheduler.h"
 #include "storm/storage/memorystructure/MemoryStructureBuilder.h"
 #include "storm/storage/memorystructure/SparseModelMemoryProduct.h"
+#include "storm/transformer/SubsystemBuilder.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 
@@ -45,12 +46,22 @@ namespace storm {
             }
             
             template<typename ValueType, typename RewardModelType>
-            std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> NondeterministicModel<ValueType, RewardModelType>::applyScheduler(storm::storage::Scheduler<ValueType> const& scheduler, bool dropUnreachableStates) {
-                storm::storage::SparseModelMemoryProduct<ValueType, RewardModelType> memoryProduct(*this, scheduler);
-                if (!dropUnreachableStates) {
-                    memoryProduct.setBuildFullProduct();
+            std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> NondeterministicModel<ValueType, RewardModelType>::applyScheduler(storm::storage::Scheduler<ValueType> const& scheduler, bool dropUnreachableStates) const {
+                if (scheduler.isMemorylessScheduler() && scheduler.isDeterministicScheduler() && !scheduler.isPartialScheduler()) {
+                    // Special case with improved handling.
+                    storm::storage::BitVector actionSelection = scheduler.computeActionSupport(getNondeterministicChoiceIndices());
+                    storm::storage::BitVector allStates(this->getNumberOfStates(), true);
+                    auto res = storm::transformer::buildSubsystem(*this, allStates, actionSelection, !dropUnreachableStates);
+                    return res.model;
+                } else {
+                    storm::storage::SparseModelMemoryProduct<ValueType, RewardModelType> memoryProduct(*this, scheduler);
+                    if (!dropUnreachableStates) {
+                        memoryProduct.setBuildFullProduct();
+                    }
+                    return memoryProduct.build();
                 }
-                return memoryProduct.build();
+
+
             }
             
             template<typename ValueType, typename RewardModelType>
@@ -61,8 +72,8 @@ namespace storm {
             }
             
             template<typename ValueType, typename RewardModelType>
-            void NondeterministicModel<ValueType, RewardModelType>::writeDotToStream(std::ostream& outStream, bool includeLabeling, storm::storage::BitVector const* subsystem, std::vector<ValueType> const* firstValue, std::vector<ValueType> const* secondValue, std::vector<uint_fast64_t> const* stateColoring, std::vector<std::string> const* colors, std::vector<uint_fast64_t>* scheduler, bool finalizeOutput) const {
-                Model<ValueType, RewardModelType>::writeDotToStream(outStream, includeLabeling, subsystem, firstValue, secondValue, stateColoring, colors, scheduler, false);
+            void NondeterministicModel<ValueType, RewardModelType>::writeDotToStream(std::ostream& outStream, bool includeLabeling, bool linebreakLabel, storm::storage::BitVector const* subsystem, std::vector<ValueType> const* firstValue, std::vector<ValueType> const* secondValue, std::vector<uint_fast64_t> const* stateColoring, std::vector<std::string> const* colors, std::vector<uint_fast64_t>* scheduler, bool finalizeOutput) const {
+                Model<ValueType, RewardModelType>::writeDotToStream(outStream, includeLabeling, linebreakLabel, subsystem, firstValue, secondValue, stateColoring, colors, scheduler, false);
                 
                 // Write the probability distributions for all the states.
                 for (uint_fast64_t state = 0; state < this->getNumberOfStates(); ++state) {

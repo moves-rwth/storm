@@ -26,7 +26,6 @@ namespace storm {
         
         template<typename ValueType>
         Z3LpSolver<ValueType>::Z3LpSolver(std::string const& name, OptimizationDirection const& optDir) : LpSolver<ValueType>(optDir) {
-            STORM_LOG_WARN_COND(name == "", "Z3 does not support names for solvers");
             z3::config config;
             config.set("model", true);
             context = std::unique_ptr<z3::context>(new z3::context(config));
@@ -128,7 +127,7 @@ namespace storm {
         template<typename ValueType>
         storm::expressions::Variable Z3LpSolver<ValueType>::addBinaryVariable(std::string const& name, ValueType objectiveFunctionCoefficient) {
             storm::expressions::Variable newVariable = this->manager->declareVariable(name, this->manager->getIntegerType());
-            solver->add(expressionAdapter->translateExpression((newVariable.getExpression() >= this->manager->rational(storm::utility::one<storm::RationalNumber>())) && (newVariable.getExpression() <= this->manager->rational(storm::utility::one<storm::RationalNumber>()))));
+            solver->add(expressionAdapter->translateExpression((newVariable.getExpression() >= this->manager->rational(storm::utility::zero<storm::RationalNumber>())) && (newVariable.getExpression() <= this->manager->rational(storm::utility::one<storm::RationalNumber>()))));
             optimizationFunction = optimizationFunction + this->manager->rational(objectiveFunctionCoefficient) * newVariable;
             return newVariable;
         }
@@ -137,7 +136,6 @@ namespace storm {
         void Z3LpSolver<ValueType>::addConstraint(std::string const& name, storm::expressions::Expression const& constraint) {
             STORM_LOG_THROW(constraint.isRelationalExpression(), storm::exceptions::InvalidArgumentException, "Illegal constraint is not a relational expression.");
             STORM_LOG_THROW(constraint.getOperator() != storm::expressions::OperatorType::NotEqual, storm::exceptions::InvalidArgumentException, "Illegal constraint uses inequality operator.");
-            STORM_LOG_WARN_COND(name == "", "Z3 does not support names for constraints");
             solver->add(expressionAdapter->translateExpression(constraint));
         }
         
@@ -258,6 +256,16 @@ namespace storm {
         template<typename ValueType>
         void Z3LpSolver<ValueType>::writeModelToFile(std::string const& filename) const {
             STORM_LOG_THROW(!this->isUnbounded(), storm::exceptions::NotImplementedException, "Exporting LP Problems to a file is not implemented for z3.");
+        }
+        
+        template<typename ValueType>
+        void Z3LpSolver<ValueType>::push()  {
+            solver->push();
+        }
+        
+        template<typename ValueType>
+        void Z3LpSolver<ValueType>::pop()  {
+            solver->pop();
         }
 
 #else
@@ -384,9 +392,19 @@ namespace storm {
         ValueType Z3LpSolver<ValueType>::getObjectiveValue() const {
             throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. Yet, a method was called that requires this support.";
         }
-
+        
         template<typename ValueType>
-        void Z3LpSolver<ValueType>::writeModelToFile(std::string const&) const {
+        void Z3LpSolver<ValueType>::writeModelToFile(std::string const& filename) const {
+            throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. Yet, a method was called that requires this support.";
+        }
+        
+        template<typename ValueType>
+        void Z3LpSolver<ValueType>::push()  {
+            throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. Yet, a method was called that requires this support.";
+        }
+        
+        template<typename ValueType>
+        void Z3LpSolver<ValueType>::pop()  {
             throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. Yet, a method was called that requires this support.";
         }
 #endif

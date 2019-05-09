@@ -1,12 +1,15 @@
 #include "ExplicitDFTModelBuilder.h"
 
 #include <map>
+#include <storm/exceptions/IllegalArgumentException.h>
 
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/vector.h"
 #include "storm/utility/bitoperations.h"
+#include "storm/utility/ProgressMeasurement.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/logic/AtomicLabelFormula.h"
@@ -28,44 +31,25 @@ namespace storm {
         }
 
         template<typename ValueType, typename StateType>
-        ExplicitDFTModelBuilder<ValueType, StateType>::LabelOptions::LabelOptions(std::vector<std::shared_ptr<const storm::logic::Formula>> properties, bool buildAllLabels) : buildFailLabel(true), buildFailSafeLabel(false), buildAllLabels(buildAllLabels) {
-            // Get necessary labels from properties
-            std::vector<std::shared_ptr<storm::logic::AtomicLabelFormula const>> atomicLabels;
-            for (auto property : properties) {
-                property->gatherAtomicLabelFormulas(atomicLabels);
-            }
-            // Set usage of necessary labels
-            for (auto atomic : atomicLabels) {
-                std::string label = atomic->getLabel();
-                std::size_t foundIndex = label.find("_fail");
-                if (foundIndex != std::string::npos) {
-                    elementLabels.insert(label.substr(0, foundIndex));
-                } else if (label.compare("failed") == 0) {
-                    buildFailLabel = true;
-                } else if (label.compare("failsafe") == 0) {
-                    buildFailSafeLabel = true;
-                } else {
-                    STORM_LOG_WARN("Label '" << label << "' not known.");
-                }
-            }
-        }
-
-        template<typename ValueType, typename StateType>
-        ExplicitDFTModelBuilder<ValueType, StateType>::ExplicitDFTModelBuilder(storm::storage::DFT<ValueType> const& dft, storm::storage::DFTIndependentSymmetries const& symmetries, bool enableDC) :
+        ExplicitDFTModelBuilder<ValueType, StateType>::ExplicitDFTModelBuilder(storm::storage::DFT<ValueType> const& dft, storm::storage::DFTIndependentSymmetries const& symmetries, std::set<size_t> const& relevantEvents, bool allowDCForRelevantEvents) :
                 dft(dft),
                 stateGenerationInfo(std::make_shared<storm::storage::DFTStateGenerationInfo>(dft.buildStateGenerationInfo(symmetries))),
-                enableDC(enableDC),
-                usedHeuristic(storm::settings::getModule<storm::settings::modules::FaultTreeSettings>().getApproximationHeuristic()),
-                generator(dft, *stateGenerationInfo, enableDC, mergeFailedStates),
+                relevantEvents(relevantEvents),
+                generator(dft, *stateGenerationInfo),
                 matrixBuilder(!generator.isDeterministicModel()),
-                stateStorage(((dft.stateVectorSize() / 64) + 1) * 64),
-                // TODO Matthias: make choosable
-                //explorationQueue(dft.nrElements()+1, 0, 1)
-                explorationQueue(200, 0, 0.9)
+                stateStorage(dft.stateBitVectorSize()),
+                explorationQueue(1, 0, 0.9, false)
         {
-            // Intentionally left empty.
-            // TODO Matthias: remove again
-            usedHeuristic = storm::builder::ApproximationHeuristic::DEPTH;
+            // Set relevant events
+            this->dft.setRelevantEvents(this->relevantEvents, allowDCForRelevantEvents);
+            // Mark top level element as relevant
+            this->dft.getElement(this->dft.getTopLevelIndex())->setRelevance(true);
+            STORM_LOG_DEBUG("Relevant events: " << this->dft.getRelevantEventsString());
+            if (this->relevantEvents.empty()) {
+                // Only interested in top level event -> introduce unique failed state
+                this->uniqueFailedState = true;
+                STORM_LOG_DEBUG("Using unique failed state with id 0.");
+            }
 
             // Compute independent subtrees
             if (dft.topLevelType() == storm::storage::DFTElementType::OR) {
@@ -124,32 +108,54 @@ namespace storm {
         }
 
         template<typename ValueType, typename StateType>
-        void ExplicitDFTModelBuilder<ValueType, StateType>::buildModel(LabelOptions const& labelOpts, size_t iteration, double approximationThreshold) {
+        void ExplicitDFTModelBuilder<ValueType, StateType>::buildModel(size_t iteration, double approximationThreshold, storm::builder::ApproximationHeuristic approximationHeuristic) {
             STORM_LOG_TRACE("Generating DFT state space");
+            usedHeuristic = approximationHeuristic;
+
+            if (approximationThreshold > 0 && !this->uniqueFailedState) {
+                // Approximation requires unique failed states
+                // TODO lift this restriction
+                STORM_LOG_WARN("Approximation requires unique failed state. Forcing use of unique failed state.");
+                this->uniqueFailedState = true;
+            }
 
             if (iteration < 1) {
                 // Initialize
+                switch (usedHeuristic) {
+                    case storm::builder::ApproximationHeuristic::DEPTH:
+                        explorationQueue = storm::storage::BucketPriorityQueue<ExplorationHeuristic>(dft.nrElements()+1, 0, 0.9, false);
+                        break;
+                    case storm::builder::ApproximationHeuristic::PROBABILITY:
+                        explorationQueue = storm::storage::BucketPriorityQueue<ExplorationHeuristic>(200, 0, 0.9, true);
+                        break;
+                    case storm::builder::ApproximationHeuristic::BOUNDDIFFERENCE:
+                        explorationQueue = storm::storage::BucketPriorityQueue<ExplorationHeuristic>(200, 0, 0.9, true);
+                        break;
+                    default:
+                        STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Heuristic not known.");
+                }
                 modelComponents.markovianStates = storm::storage::BitVector(INITIAL_BITVECTOR_SIZE);
 
-                if(mergeFailedStates) {
+                if (this->uniqueFailedState) {
                     // Introduce explicit fail state
                     storm::generator::StateBehavior<ValueType, StateType> behavior = generator.createMergeFailedState([this] (DFTStatePointer const& state) {
-                        this->failedStateId = newIndex++;
+                        size_t failedStateId = newIndex++;
+                        STORM_LOG_ASSERT(failedStateId == 0, "Unique failed id is not 0.");
                         matrixBuilder.stateRemapping.push_back(0);
-                        return this->failedStateId;
+                        return failedStateId;
                     } );
 
-                    matrixBuilder.setRemapping(failedStateId);
+                    matrixBuilder.setRemapping(0);
                     STORM_LOG_ASSERT(!behavior.empty(), "Behavior is empty.");
                     matrixBuilder.newRowGroup();
                     setMarkovian(behavior.begin()->isMarkovian());
 
                     // Now add self loop.
-                    // TODO Matthias: maybe use general method.
+                    // TODO: maybe use general method.
                     STORM_LOG_ASSERT(behavior.getNumberOfChoices() == 1, "Wrong number of choices for failed state.");
                     STORM_LOG_ASSERT(behavior.begin()->size() == 1, "Wrong number of transitions for failed state.");
                     std::pair<StateType, ValueType> stateProbabilityPair = *(behavior.begin()->begin());
-                    STORM_LOG_ASSERT(stateProbabilityPair.first == failedStateId, "No self loop for failed state.");
+                    STORM_LOG_ASSERT(stateProbabilityPair.first == 0, "No self loop for failed state.");
                     STORM_LOG_ASSERT(storm::utility::isOne<ValueType>(stateProbabilityPair.second), "Probability for failed state != 1.");
                     matrixBuilder.addTransition(stateProbabilityPair.first, stateProbabilityPair.second);
                     matrixBuilder.finishRow();
@@ -162,7 +168,20 @@ namespace storm {
                 STORM_LOG_TRACE("Initial state: " << initialStateIndex);
                 // Initialize heuristic values for inital state
                 STORM_LOG_ASSERT(!statesNotExplored.at(initialStateIndex).second, "Heuristic for initial state is already initialized");
-                ExplorationHeuristicPointer heuristic = std::make_shared<ExplorationHeuristic>(initialStateIndex);
+                ExplorationHeuristicPointer heuristic;
+                switch (usedHeuristic) {
+                    case storm::builder::ApproximationHeuristic::DEPTH:
+                        heuristic = std::make_shared<DFTExplorationHeuristicDepth<ValueType>>(initialStateIndex);
+                        break;
+                    case storm::builder::ApproximationHeuristic::PROBABILITY:
+                        heuristic = std::make_shared<DFTExplorationHeuristicProbability<ValueType>>(initialStateIndex);
+                        break;
+                    case storm::builder::ApproximationHeuristic::BOUNDDIFFERENCE:
+                        heuristic = std::make_shared<DFTExplorationHeuristicBoundDifference<ValueType>>(initialStateIndex);
+                        break;
+                    default:
+                        STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Heuristic not known.");
+                }
                 heuristic->markExpand();
                 statesNotExplored[initialStateIndex].second = heuristic;
                 explorationQueue.push(heuristic);
@@ -170,30 +189,28 @@ namespace storm {
                 initializeNextIteration();
             }
 
-            if (approximationThreshold > 0) {
+            if (approximationThreshold > 0.0) {
                 switch (usedHeuristic) {
-                    case storm::builder::ApproximationHeuristic::NONE:
-                        // Do not change anything
-                        approximationThreshold = dft.nrElements()+10;
-                        break;
                     case storm::builder::ApproximationHeuristic::DEPTH:
                         approximationThreshold = iteration + 1;
                         break;
                     case storm::builder::ApproximationHeuristic::PROBABILITY:
                     case storm::builder::ApproximationHeuristic::BOUNDDIFFERENCE:
-                        approximationThreshold = 10 * std::pow(2, iteration);
+                        approximationThreshold = std::pow(2, -(double)iteration); // Need conversion to avoid overflow when negating
                         break;
+                    default:
+                        STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Heuristic not known.");
                 }
             }
             exploreStateSpace(approximationThreshold);
 
-            size_t stateSize = stateStorage.getNumberOfStates() + (mergeFailedStates ? 1 : 0);
+            size_t stateSize = stateStorage.getNumberOfStates() + (this->uniqueFailedState ? 1 : 0);
             modelComponents.markovianStates.resize(stateSize);
             modelComponents.deterministicModel = generator.isDeterministicModel();
 
             // Fix the entries in the transition matrix according to the mapping of ids to row group indices
             STORM_LOG_ASSERT(matrixBuilder.getRemapping(initialStateIndex) == initialStateIndex, "Initial state should not be remapped.");
-            // TODO Matthias: do not consider all rows?
+            // TODO: do not consider all rows?
             STORM_LOG_TRACE("Remap matrix: " << matrixBuilder.stateRemapping << ", offset: " << matrixBuilder.mappingOffset);
             matrixBuilder.remap();
 
@@ -210,23 +227,23 @@ namespace storm {
                 STORM_LOG_TRACE("Transition matrix: too big to print");
             }
 
-            buildLabeling(labelOpts);
+            buildLabeling();
         }
 
         template<typename ValueType, typename StateType>
         void ExplicitDFTModelBuilder<ValueType, StateType>::initializeNextIteration() {
             STORM_LOG_TRACE("Refining DFT state space");
 
-            // TODO Matthias: should be easier now as skipped states all are at the end of the matrix
+            // TODO: should be easier now as skipped states all are at the end of the matrix
             // Push skipped states to explore queue
-            // TODO Matthias: remove
+            // TODO: remove
             for (auto const& skippedState : skippedStates) {
                 statesNotExplored[skippedState.second.first->getId()] = skippedState.second;
                 explorationQueue.push(skippedState.second.second);
             }
 
             // Initialize matrix builder again
-            // TODO Matthias: avoid copy
+            // TODO: avoid copy
             std::vector<uint_fast64_t> copyRemapping = matrixBuilder.stateRemapping;
             matrixBuilder = MatrixBuilder(!generator.isDeterministicModel());
             matrixBuilder.stateRemapping = copyRemapping;
@@ -288,7 +305,7 @@ namespace storm {
             modelComponents.markovianStates = markovianStatesNew;
 
             // Build submatrix for expanded states
-            // TODO Matthias: only use row groups when necessary
+            // TODO: only use row groups when necessary
             for (StateType oldRowGroup = 0; oldRowGroup < modelComponents.transitionMatrix.getRowGroupCount(); ++oldRowGroup) {
                 if (indexRemapping[oldRowGroup] < nrExpandedStates) {
                     // State is expanded -> copy to new matrix
@@ -319,10 +336,12 @@ namespace storm {
         void ExplicitDFTModelBuilder<ValueType, StateType>::exploreStateSpace(double approximationThreshold) {
             size_t nrExpandedStates = 0;
             size_t nrSkippedStates = 0;
-            // TODO Matthias: do not empty queue every time but break before
+            storm::utility::ProgressMeasurement progress("explored states");
+            progress.startNewMeasurement(0);
+            // TODO: do not empty queue every time but break before
             while (!explorationQueue.empty()) {
                 // Get the first state in the queue
-                ExplorationHeuristicPointer currentExplorationHeuristic = explorationQueue.popTop();
+                ExplorationHeuristicPointer currentExplorationHeuristic = explorationQueue.pop();
                 StateType currentId = currentExplorationHeuristic->getId();
                 auto itFind = statesNotExplored.find(currentId);
                 STORM_LOG_ASSERT(itFind != statesNotExplored.end(), "Id " << currentId << " not found");
@@ -356,8 +375,9 @@ namespace storm {
                     STORM_LOG_TRACE("Skip expansion of state: " << dft.getStateString(currentState));
                     setMarkovian(true);
                     // Add transition to target state with temporary value 0
-                    // TODO Matthias: what to do when there is no unique target state?
-                    matrixBuilder.addTransition(failedStateId, storm::utility::zero<ValueType>());
+                    // TODO: what to do when there is no unique target state?
+                    STORM_LOG_ASSERT(this->uniqueFailedState, "Approximation only works with unique failed state");
+                    matrixBuilder.addTransition(0, storm::utility::zero<ValueType>());
                     // Remember skipped state
                     skippedStates[matrixBuilder.getCurrentRowGroup() - 1] = std::make_pair(currentState, currentExplorationHeuristic);
                     matrixBuilder.finishRow();
@@ -382,9 +402,23 @@ namespace storm {
                                 DFTStatePointer state = iter->second.first;
                                 if (!iter->second.second) {
                                     // Initialize heuristic values
-                                    ExplorationHeuristicPointer heuristic = std::make_shared<ExplorationHeuristic>(stateProbabilityPair.first, *currentExplorationHeuristic, stateProbabilityPair.second, choice.getTotalMass());
+                                    ExplorationHeuristicPointer heuristic;
+                                    switch (usedHeuristic) {
+                                        case storm::builder::ApproximationHeuristic::DEPTH:
+                                            heuristic = std::make_shared<DFTExplorationHeuristicDepth<ValueType>>(stateProbabilityPair.first, *currentExplorationHeuristic, stateProbabilityPair.second, choice.getTotalMass());
+                                            break;
+                                        case storm::builder::ApproximationHeuristic::PROBABILITY:
+                                            heuristic = std::make_shared<DFTExplorationHeuristicProbability<ValueType>>(stateProbabilityPair.first, *currentExplorationHeuristic, stateProbabilityPair.second, choice.getTotalMass());
+                                            break;
+                                        case storm::builder::ApproximationHeuristic::BOUNDDIFFERENCE:
+                                            heuristic = std::make_shared<DFTExplorationHeuristicBoundDifference<ValueType>>(stateProbabilityPair.first, *currentExplorationHeuristic, stateProbabilityPair.second, choice.getTotalMass());
+                                            break;
+                                        default:
+                                            STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Heuristic not known.");
+                                    }
+
                                     iter->second.second = heuristic;
-                                    if (state->hasFailed(dft.getTopLevelIndex()) || state->isFailsafe(dft.getTopLevelIndex()) || state->nrFailableDependencies() > 0 || (state->nrFailableDependencies() == 0 && state->nrFailableBEs() == 0)) {
+                                    if (state->hasFailed(dft.getTopLevelIndex()) || state->isFailsafe(dft.getTopLevelIndex()) || state->getFailableElements().hasDependencies() || (!state->getFailableElements().hasDependencies() && !state->getFailableElements().hasBEs())) {
                                         // Do not skip absorbing state or if reached by dependencies
                                         iter->second.second->markExpand();
                                     }
@@ -397,7 +431,7 @@ namespace storm {
                                         STORM_LOG_ASSERT(!currentState->isPseudoState(), "State is pseudo state.");
 
                                         // Initialize bounds
-                                        // TODO Mathias: avoid hack
+                                        // TODO: avoid hack
                                         ValueType lowerBound = getLowerBound(state);
                                         ValueType upperBound = getUpperBound(state);
                                         heuristic->setBounds(lowerBound, upperBound);
@@ -416,6 +450,10 @@ namespace storm {
                         matrixBuilder.finishRow();
                     }
                 }
+                // Output number of currently explored states
+                if (nrExpandedStates % 100 == 0) {
+                    progress.updateProgress(nrExpandedStates);
+                }
             } // end exploration
 
             STORM_LOG_INFO("Expanded " << nrExpandedStates << " states");
@@ -424,47 +462,54 @@ namespace storm {
         }
 
         template<typename ValueType, typename StateType>
-        void ExplicitDFTModelBuilder<ValueType, StateType>::buildLabeling(LabelOptions const& labelOpts) {
+        void ExplicitDFTModelBuilder<ValueType, StateType>::buildLabeling() {
             // Build state labeling
             modelComponents.stateLabeling = storm::models::sparse::StateLabeling(modelComponents.transitionMatrix.getRowGroupCount());
             // Initial state
             modelComponents.stateLabeling.addLabel("init");
             STORM_LOG_ASSERT(matrixBuilder.getRemapping(initialStateIndex) == initialStateIndex, "Initial state should not be remapped.");
             modelComponents.stateLabeling.addLabelToState("init", initialStateIndex);
-            // Label all states corresponding to their status (failed, failsafe, failed BE)
-            if(labelOpts.buildFailLabel) {
-                modelComponents.stateLabeling.addLabel("failed");
-            }
-            if(labelOpts.buildFailSafeLabel) {
-                modelComponents.stateLabeling.addLabel("failsafe");
-            }
+            // Label all states corresponding to their status (failed, failed/dont care BE)
+            modelComponents.stateLabeling.addLabel("failed");
 
             // Collect labels for all necessary elements
             for (size_t id = 0; id < dft.nrElements(); ++id) {
                 std::shared_ptr<storage::DFTElement<ValueType> const> element = dft.getElement(id);
-                if (labelOpts.buildAllLabels || labelOpts.elementLabels.count(element->name()) > 0) {
-                    modelComponents.stateLabeling.addLabel(element->name() + "_fail");
+                if (element->isRelevant()) {
+                    modelComponents.stateLabeling.addLabel(element->name() + "_failed");
+                    modelComponents.stateLabeling.addLabel(element->name() + "_dc");
                 }
             }
 
             // Set labels to states
-            if (mergeFailedStates) {
-                modelComponents.stateLabeling.addLabelToState("failed", failedStateId);
+            if (this->uniqueFailedState) {
+                modelComponents.stateLabeling.addLabelToState("failed", 0);
             }
             for (auto const& stateIdPair : stateStorage.stateToId) {
                 storm::storage::BitVector state = stateIdPair.first;
                 size_t stateId = matrixBuilder.getRemapping(stateIdPair.second);
-                if (!mergeFailedStates && labelOpts.buildFailLabel && dft.hasFailed(state, *stateGenerationInfo)) {
+                if (dft.hasFailed(state, *stateGenerationInfo)) {
                     modelComponents.stateLabeling.addLabelToState("failed", stateId);
                 }
-                if (labelOpts.buildFailSafeLabel && dft.isFailsafe(state, *stateGenerationInfo)) {
-                    modelComponents.stateLabeling.addLabelToState("failsafe", stateId);
-                }
-                // Set fail status for each necessary element
+                // Set fail/dont care status for each necessary element
                 for (size_t id = 0; id < dft.nrElements(); ++id) {
                     std::shared_ptr<storage::DFTElement<ValueType> const> element = dft.getElement(id);
-                    if ((labelOpts.buildAllLabels || labelOpts.elementLabels.count(element->name()) > 0) && storm::storage::DFTState<ValueType>::hasFailed(state, stateGenerationInfo->getStateIndex(element->id()))) {
-                        modelComponents.stateLabeling.addLabelToState(element->name() + "_fail", stateId);
+                    if (element->isRelevant()){
+                        storm::storage::DFTElementState elementState = storm::storage::DFTState<ValueType>::getElementState(state, *stateGenerationInfo, element->id());
+                        switch (elementState) {
+                            case storm::storage::DFTElementState::Failed:
+                                modelComponents.stateLabeling.addLabelToState(element->name() + "_failed", stateId);
+                                break;
+                            case storm::storage::DFTElementState::DontCare:
+                                modelComponents.stateLabeling.addLabelToState(element->name() + "_dc", stateId);
+                                break;
+                            case storm::storage::DFTElementState::Operational:
+                            case storm::storage::DFTElementState::Failsafe:
+                                // do nothing
+                                break;
+                            default:
+                                STORM_LOG_ASSERT(false, "Unknown element state " << elementState);
+                        }
                     }
                 }
             }
@@ -481,19 +526,19 @@ namespace storm {
         template<typename ValueType, typename StateType>
         std::shared_ptr<storm::models::sparse::Model<ValueType>> ExplicitDFTModelBuilder<ValueType, StateType>::getModelApproximation(bool lowerBound, bool expectedTime) {
             if (expectedTime) {
-                // TODO Matthias: handle case with no skipped states
+                // TODO: handle case with no skipped states
                 changeMatrixBound(modelComponents.transitionMatrix, lowerBound);
                 return createModel(true);
             } else {
                 // Change model for probabilities
-                // TODO Matthias: make nicer
+                // TODO: make nicer
                 storm::storage::SparseMatrix<ValueType> matrix = modelComponents.transitionMatrix;
                 storm::models::sparse::StateLabeling labeling = modelComponents.stateLabeling;
                 if (lowerBound) {
                     // Set self loop for lower bound
                     for (auto it = skippedStates.begin(); it != skippedStates.end(); ++it) {
                         auto matrixEntry = matrix.getRow(it->first, 0).begin();
-                        STORM_LOG_ASSERT(matrixEntry->getColumn() == failedStateId, "Transition has wrong target state.");
+                        STORM_LOG_ASSERT(matrixEntry->getColumn() == 0, "Transition has wrong target state.");
                         STORM_LOG_ASSERT(!it->second.first->isPseudoState(), "State is still pseudo state.");
                         matrixEntry->setValue(storm::utility::one<ValueType>());
                         matrixEntry->setColumn(it->first);
@@ -513,7 +558,7 @@ namespace storm {
                 } else {
                     // Build MA
                     // Compute exit rates
-                    // TODO Matthias: avoid computing multiple times
+                    // TODO: avoid computing multiple times
                     modelComponents.exitRates = std::vector<ValueType>(modelComponents.markovianStates.size());
                     std::vector<typename storm::storage::SparseMatrix<ValueType>::index_type> indices = matrix.getRowGroupIndices();
                     for (StateType stateIndex = 0; stateIndex < modelComponents.markovianStates.size(); ++stateIndex) {
@@ -532,7 +577,7 @@ namespace storm {
                     std::shared_ptr<storm::models::sparse::MarkovAutomaton<ValueType>> ma = std::make_shared<storm::models::sparse::MarkovAutomaton<ValueType>>(std::move(maComponents));
                     if (ma->hasOnlyTrivialNondeterminism()) {
                         // Markov automaton can be converted into CTMC
-                        // TODO Matthias: change components which were not moved accordingly
+                        // TODO: change components which were not moved accordingly
                         model = ma->convertToCtmc();
                     } else {
                         model = ma;
@@ -563,7 +608,7 @@ namespace storm {
             } else {
                 // Build MA
                 // Compute exit rates
-                // TODO Matthias: avoid computing multiple times
+                // TODO: avoid computing multiple times
                 modelComponents.exitRates = std::vector<ValueType>(modelComponents.markovianStates.size());
                 std::vector<typename storm::storage::SparseMatrix<ValueType>::index_type> indices = modelComponents.transitionMatrix.getRowGroupIndices();
                 for (StateType stateIndex = 0; stateIndex < modelComponents.markovianStates.size(); ++stateIndex) {
@@ -591,7 +636,7 @@ namespace storm {
                 }
                 if (ma->hasOnlyTrivialNondeterminism()) {
                     // Markov automaton can be converted into CTMC
-                    // TODO Matthias: change components which were not moved accordingly
+                    // TODO: change components which were not moved accordingly
                     model = ma->convertToCtmc();
                 } else {
                     model = ma;
@@ -611,11 +656,11 @@ namespace storm {
             // Set lower bound for skipped states
             for (auto it = skippedStates.begin(); it != skippedStates.end(); ++it) {
                 auto matrixEntry = matrix.getRow(it->first, 0).begin();
-                STORM_LOG_ASSERT(matrixEntry->getColumn() == failedStateId, "Transition has wrong target state.");
+                STORM_LOG_ASSERT(matrixEntry->getColumn() == 0, "Transition has wrong target state.");
                 STORM_LOG_ASSERT(!it->second.first->isPseudoState(), "State is still pseudo state.");
 
                 ExplorationHeuristicPointer heuristic = it->second.second;
-                if (storm::utility::isZero(heuristic->getUpperBound())) {
+                if (storm::utility::isInfinity(heuristic->getUpperBound())) {
                     // Initialize bounds
                     ValueType lowerBound = getLowerBound(it->second.first);
                     ValueType upperBound = getUpperBound(it->second.first);
@@ -635,9 +680,10 @@ namespace storm {
         ValueType ExplicitDFTModelBuilder<ValueType, StateType>::getLowerBound(DFTStatePointer const& state) const {
             // Get the lower bound by considering the failure of all possible BEs
             ValueType lowerBound = storm::utility::zero<ValueType>();
-            for (size_t index = 0; index < state->nrFailableBEs(); ++index) {
-                lowerBound += state->getFailableBERate(index);
+            for (state->getFailableElements().init(false); !state->getFailableElements().isEnd(); state->getFailableElements().next()) {
+                lowerBound += state->getBERate(state->getFailableElements().get());
             }
+            STORM_LOG_TRACE("Lower bound is " << lowerBound << " for state " << state->getId());
             return lowerBound;
         }
 
@@ -663,13 +709,26 @@ namespace storm {
                         ValueType rate = state->getBERate(id);
                         if (storm::utility::isZero<ValueType>(rate)) {
                             // Get active failure rate for cold BE
-                            rate = dft.getBasicElement(id)->activeFailureRate();
-                            if (storm::utility::isZero<ValueType>(rate)) {
-                                // Ignore BE which cannot fail
-                                continue;
+                            auto be = dft.getBasicElement(id);
+                            switch (be->type()) {
+                                case storm::storage::DFTElementType::BE_EXP:
+                                {
+                                    auto beExp = std::static_pointer_cast<storm::storage::BEExponential<ValueType> const>(be);
+                                    rate = beExp->activeFailureRate();
+                                    STORM_LOG_ASSERT(!storm::utility::isZero<ValueType>(rate), "Failure rate should not be zero.");
+                                    // Mark BE as cold
+                                    coldBEs.set(i, true);
+                                    break;
+                                }
+                                case storm::storage::DFTElementType::BE_CONST:
+                                {
+                                    // Ignore BE which cannot fail
+                                    continue;
+                                }
+                                default:
+                                    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "BE of type '" << be->type() << "' is not known.");
+                                    break;
                             }
-                            // Mark BE as cold
-                            coldBEs.set(i, true);
                         }
                         rates.push_back(rate);
                         rateSum += rate;
@@ -715,7 +774,7 @@ namespace storm {
                 return result;
             }
 
-            // TODO Matthias: works only for <64 BEs!
+            // TODO: works only for <64 BEs!
             // WARNING: this code produces wrong results for more than 32 BEs
             /*for (size_t i = 1; i < 4 && i <= rates.size(); ++i) {
                 size_t permutation = smallestIntWithNBitsSet(static_cast<size_t>(i));
@@ -787,7 +846,7 @@ namespace storm {
                         STORM_LOG_ASSERT(iter->second.first->status() == state->status(), "Pseudo states do not coincide.");
                         state->setId(stateId);
                         // Update mapping to map to concrete state now
-                        // TODO Matthias: just change pointer?
+                        // TODO: just change pointer?
                         statesNotExplored[stateId] = std::make_pair(state, iter->second.second);
                         // We do not push the new state on the exploration queue as the pseudo state was already pushed
                         STORM_LOG_TRACE("Created pseudo state " << dft.getStateString(state));

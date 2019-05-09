@@ -37,6 +37,8 @@ namespace storm {
                 
                 static std::unique_ptr<CheckResult> computeReachabilityRewards(Environment const& env, storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, RewardModelType const& rewardModel, storm::dd::Bdd<DdType> const& targetStates, bool qualitative);
 
+                static std::unique_ptr<CheckResult> computeReachabilityTimes(Environment const& env, storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, storm::dd::Bdd<DdType> const& targetStates, bool qualitative);
+
                 static std::unique_ptr<CheckResult> computeLongRunAverageProbabilities(Environment const& env, storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, storm::dd::Bdd<DdType> const& targetStates);
 
                 static std::unique_ptr<CheckResult> computeLongRunAverageRewards(Environment const& env, storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, RewardModelType const& rewardModel);

@@ -2,6 +2,7 @@
 
 #include "storm-pars/modelchecker/region/RegionCheckEngine.h"
 #include "storm-pars/modelchecker/region/RegionResultHypothesis.h"
+#include "storm/solver/OptimizationDirection.h"
 
 #include "storm/settings/modules/ModuleSettings.h"
 
@@ -61,6 +62,21 @@ namespace storm {
                  */
                 uint64_t getDepthLimit() const;
                 
+                /*!
+				 * Retrieves whether an extremal value is to be computed
+				 */
+				bool isExtremumSet() const;
+				
+				/*!
+				 * Retrieves whether to minimize or maximize when computing the extremal value
+				 */
+				storm::solver::OptimizationDirection getExtremumDirection() const;
+				
+				/*!
+				 * Retrieves the precision for the extremal value
+				 */
+				double getExtremumValuePrecision() const;
+
 				/*!
 				 * Retrieves which type of region check should be performed
 				 */
@@ -76,6 +92,8 @@ namespace storm {
                  */
                 bool isPrintFullResultSet() const;
                 
+                bool check() const override;
+                
                 const static std::string moduleName;
                 
             private:
@@ -84,6 +102,7 @@ namespace storm {
 				const static std::string hypothesisOptionName;
 				const static std::string hypothesisShortOptionName;
 				const static std::string refineOptionName;
+				const static std::string extremumOptionName;
 				const static std::string checkEngineOptionName;
 				const static std::string printNoIllustrationOptionName;
 				const static std::string printFullResultOptionName;
