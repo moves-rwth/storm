@@ -561,18 +561,19 @@ namespace storm {
         DFTASFChecker::checkFailsLeqWithEqNonMarkovianState(uint64_t checkbound, uint64_t nrNonMarkovian) {
             STORM_LOG_ASSERT(solver, "SMT Solver was not initialized, call toSolver() before checking queries");
             std::vector<uint64_t> markovianIndices;
-            // Get Markovian variable indices
+            // Get Markovian variable indices up until given timepoint
             for (uint64_t i = 0; i < checkbound; ++i) {
                 markovianIndices.push_back(markovianVariables.at(i));
             }
             // Set backtracking marker to check several properties without reconstructing DFT encoding
             solver->push();
-
+            // Constraint that TLE fails before or during given timepoint
             std::shared_ptr<SmtConstraint> tleFailedConstr = std::make_shared<IsLessEqualConstant>(
                     timePointVariables.at(dft.getTopLevelIndex()), checkbound);
             std::shared_ptr<storm::expressions::ExpressionManager> manager = solver->getManager().getSharedPointer();
             solver->add(tleFailedConstr->toExpression(varNames, manager));
-            // TODO comment
+
+            // Constraint that a given number of non-Markovian states are visited
             std::shared_ptr<SmtConstraint> nonMarkovianConstr = std::make_shared<FalseCountIsEqualConstant>(
                     markovianIndices, nrNonMarkovian);
             solver->add(nonMarkovianConstr->toExpression(varNames, manager));
