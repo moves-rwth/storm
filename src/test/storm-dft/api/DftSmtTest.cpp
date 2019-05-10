@@ -45,4 +45,15 @@ namespace {
         EXPECT_EQ(smtChecker.getLeastFailureBound(30), uint64_t(2));
         EXPECT_EQ(smtChecker.getAlwaysFailedBound(30), uint64_t(4));
     }
+
+    TEST(DftSmtTest, FDEPBoundTest) {
+        std::shared_ptr<storm::storage::DFT<double>> dft =
+                storm::api::loadDFTGalileoFile<double>(STORM_TEST_RESOURCES_DIR "/dft/fdep_bound.dft");
+        EXPECT_TRUE(storm::api::isWellFormed(*dft));
+        storm::modelchecker::DFTASFChecker smtChecker(*dft);
+        smtChecker.convert();
+        smtChecker.toSolver();
+        EXPECT_EQ(smtChecker.getLeastFailureBound(30), uint64_t(1));
+        EXPECT_EQ(smtChecker.getAlwaysFailedBound(30), uint64_t(5));
+    }
 }
