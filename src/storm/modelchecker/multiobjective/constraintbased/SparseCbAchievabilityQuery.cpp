@@ -9,7 +9,6 @@
 #include "storm/utility/vector.h"
 #include "storm/utility/solver.h"
 #include "storm/utility/Stopwatch.h"
-#include "storm/utility/ExpressionHelper.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/CoreSettings.h"
@@ -82,7 +81,7 @@ namespace storm {
                 uint_fast64_t numStates = this->preprocessedModel->getNumberOfStates();
                 uint_fast64_t numChoices = this->preprocessedModel->getNumberOfChoices();
                 uint_fast64_t numBottomStates = this->reward0EStates.getNumberOfSetBits();
-                
+                STORM_LOG_THROW(numBottomStates > 0, storm::exceptions::UnexpectedException, "No bottom states in the preprocessed model.");
                 storm::expressions::Expression zero = this->expressionManager->rational(storm::utility::zero<ValueType>());
                 storm::expressions::Expression one = this->expressionManager->rational(storm::utility::one<ValueType>());
                 
@@ -106,7 +105,7 @@ namespace storm {
                     solver->add(var.getExpression() >= zero);
                     bottomStateVarsAsExpression.push_back(var.getExpression());
                 }
-                auto bottomStateSum = storm::utility::ExpressionHelper(this->expressionManager).sum(std::move(bottomStateVarsAsExpression));
+                auto bottomStateSum = storm::expressions::sum(bottomStateVarsAsExpression).simplify();
                 solver->add(bottomStateSum == one);
                 
                 // assert that the "incoming" value of each state equals the "outgoing" value
@@ -149,7 +148,10 @@ namespace storm {
                             objectiveValues.push_back(this->expressionManager->rational(rewards[choice]) * expectedChoiceVariables[choice].getExpression());
                         }
                     }
-                    auto objValue = storm::utility::ExpressionHelper(this->expressionManager).sum(std::move(objectiveValues));
+                    if (objectiveValues.empty()) {
+                        objectiveValues.push_back(this->expressionManager->rational(storm::utility::zero<storm::RationalNumber>()));
+                    }
+                    auto objValue = storm::expressions::sum(objectiveValues).simplify();
                     
                     // We need to actually evaluate the threshold as rational number. Otherwise a threshold like '<=16/9' might be considered as 1 due to integer division
                     storm::expressions::Expression threshold = this->expressionManager->rational(obj.formula->getThreshold().evaluateAsRational());

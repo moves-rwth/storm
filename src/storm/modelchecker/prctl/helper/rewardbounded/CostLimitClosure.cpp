@@ -1,4 +1,3 @@
-#include <storm/utility/ExpressionHelper.h>
 #include "storm/modelchecker/prctl/helper/rewardbounded/CostLimitClosure.h"
 #include "storm/utility/macros.h"
 #include "storm/exceptions/IllegalArgumentException.h"

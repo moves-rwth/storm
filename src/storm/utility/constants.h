@@ -156,6 +156,9 @@ namespace storm {
         ValueType ceil(ValueType const& number);
 
         template<typename ValueType>
+        ValueType round(ValueType const& number);
+
+        template<typename ValueType>
         ValueType log(ValueType const& number);
 
         template<typename ValueType>

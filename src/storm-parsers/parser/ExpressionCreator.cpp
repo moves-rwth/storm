@@ -220,6 +220,17 @@ namespace storm {
             return manager.boolean(false);
         }
         
+        storm::expressions::Expression ExpressionCreator::createRoundExpression(storm::expressions::Expression const& e1, bool& pass) const {
+            if (this->createExpressions) {
+                try {
+                    return storm::expressions::round(e1);
+                } catch (storm::exceptions::InvalidTypeException const& e) {
+                    pass = false;
+                }
+            }
+            return manager.boolean(false);
+        }
+        
         storm::expressions::Expression ExpressionCreator::getIdentifierExpression(std::string const& identifier, bool& pass) const {
             if (this->createExpressions) {
                 STORM_LOG_THROW(this->identifiers != nullptr, storm::exceptions::WrongFormatException, "Unable to substitute identifier expressions without given mapping.");

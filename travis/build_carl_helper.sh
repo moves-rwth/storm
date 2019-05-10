@@ -13,17 +13,19 @@ travis_fold() {
 run() {
   travis_fold start install_dependencies
   apt-get update
-  apt-get install -qq -y openjdk-8-jdk maven uuid-dev pkg-config
+  #apt-get install -qq -y openjdk-8-jdk maven uuid-dev pkg-config
+  apt-get install -qq -y uuid-dev pkg-config
   travis_fold end install_dependencies
 
   travis_fold start install_carl
   git clone https://github.com/smtrat/carl.git
   cd carl
-  git checkout 18.08
+  git checkout master14
   mkdir build
   cd build
   cmake .. "${CMAKE_ARGS[@]}"
-  make lib_carl addons -j$N_JOBS
+  #make lib_carl addons -j$N_JOBS
+  make lib_carl -j$N_JOBS
   travis_fold end install_carl
 }
 

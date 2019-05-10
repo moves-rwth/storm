@@ -232,6 +232,7 @@ namespace storm {
             qi::rule<Iterator, storm::expressions::Expression(), Skipper> identifierExpression;
             qi::rule<Iterator, storm::expressions::Expression(), qi::locals<storm::expressions::OperatorType>, Skipper> minMaxExpression;
             qi::rule<Iterator, storm::expressions::Expression(), qi::locals<storm::expressions::OperatorType>, Skipper> floorCeilExpression;
+            qi::rule<Iterator, storm::expressions::Expression(), Skipper> roundExpression;
             qi::rule<Iterator, std::string(), Skipper> identifier;
             
             // Parser that is used to recognize doubles only (as opposed to Spirit's double_ parser).
