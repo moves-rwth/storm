@@ -332,14 +332,14 @@ namespace storm {
 
                 // TODO: checkend at ie niet invalid is
                 criticalTuple = extender->extendLattice(latticeCopy, assumption2.first);
-                if (somewhereMonotonicity(std::get<0>(criticalTuple))) {
+                if (assumption2.second != AssumptionStatus::INVALID && somewhereMonotonicity(std::get<0>(criticalTuple))) {
                     auto map = extendLatticeWithAssumptions(std::get<0>(criticalTuple), assumptionMaker,
                                                             std::get<1>(criticalTuple), std::get<2>(criticalTuple),
                                                             assumptionsCopy);
                     result.insert(map.begin(), map.end());
                 }
                 criticalTuple = extender->extendLattice(latticeCopy2, assumption3.first);
-                if (somewhereMonotonicity(std::get<0>(criticalTuple))) {
+                if (assumption3.second != AssumptionStatus::INVALID && somewhereMonotonicity(std::get<0>(criticalTuple))) {
                     auto map = extendLatticeWithAssumptions(std::get<0>(criticalTuple), assumptionMaker,
                                                             std::get<1>(criticalTuple), std::get<2>(criticalTuple),
                                                             assumptionsCopy2);

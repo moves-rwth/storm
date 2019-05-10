@@ -8,7 +8,7 @@ namespace storm {
     namespace analysis {
         typedef std::shared_ptr<storm::expressions::BinaryRelationExpression> AssumptionType;
         template<typename ValueType>
-        AssumptionMaker<ValueType>::AssumptionMaker(storm::analysis::AssumptionChecker<ValueType>* assumptionChecker, uint_fast64_t numberOfStates, bool validate) {
+        AssumptionMaker<ValueType>::AssumptionMaker(AssumptionChecker<ValueType>* assumptionChecker, uint_fast64_t numberOfStates, bool validate) {
             this->numberOfStates = numberOfStates;
             this->assumptionChecker = assumptionChecker;
             this->validate = validate;
@@ -21,7 +21,7 @@ namespace storm {
 
 
         template <typename ValueType>
-        std::map<std::shared_ptr<storm::expressions::BinaryRelationExpression>, AssumptionStatus> AssumptionMaker<ValueType>::createAndCheckAssumption(uint_fast64_t val1, uint_fast64_t val2, storm::analysis::Lattice* lattice) {
+        std::map<std::shared_ptr<storm::expressions::BinaryRelationExpression>, AssumptionStatus> AssumptionMaker<ValueType>::createAndCheckAssumption(uint_fast64_t val1, uint_fast64_t val2, Lattice* lattice) {
             std::map<std::shared_ptr<storm::expressions::BinaryRelationExpression>, AssumptionStatus> result;
 
             // TODO: alleen maar als validate true is results genereren
@@ -32,21 +32,38 @@ namespace storm {
                                                                                                                                   var1.getExpression().getBaseExpressionPointer(), var2.getExpression().getBaseExpressionPointer(),
                                                                                                                                   storm::expressions::BinaryRelationExpression::RelationType::Greater));
             // TODO: dischargen gebasseerd op monotonicity
-            auto result1 = assumptionChecker->validateAssumption(assumption1, lattice);
+            AssumptionStatus result1;
+            AssumptionStatus result2;
+            AssumptionStatus result3;
+            if (validate) {
+                result1 = assumptionChecker->validateAssumption(assumption1, lattice);
+            } else {
+                result1 = AssumptionStatus::UNKNOWN;
+            }
             result[assumption1] = result1;
+
 
             std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption2
                     = std::make_shared<storm::expressions::BinaryRelationExpression>(storm::expressions::BinaryRelationExpression(*expressionManager, expressionManager->getBooleanType(),
                                                                                                                                   var2.getExpression().getBaseExpressionPointer(), var1.getExpression().getBaseExpressionPointer(),
                                                                                                                                   storm::expressions::BinaryRelationExpression::RelationType::Greater));
-            auto result2 = assumptionChecker->validateAssumption(assumption2, lattice);
+
+            if (validate) {
+                result2 = assumptionChecker->validateAssumption(assumption2, lattice);
+            } else {
+                result2 = AssumptionStatus::UNKNOWN;
+            }
             result[assumption2] = result2;
 
             std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption3
                     = std::make_shared<storm::expressions::BinaryRelationExpression>(storm::expressions::BinaryRelationExpression(*expressionManager, expressionManager->getBooleanType(),
                                                                                                                                   var2.getExpression().getBaseExpressionPointer(), var1.getExpression().getBaseExpressionPointer(),
                                                                                                                                   storm::expressions::BinaryRelationExpression::RelationType::Equal));
-            auto result3 = assumptionChecker->validateAssumption(assumption3, lattice);
+            if (validate) {
+                result3 = assumptionChecker->validateAssumption(assumption3, lattice);
+            } else {
+                result3 = AssumptionStatus::UNKNOWN;
+            }
             result[assumption3] = result3;
 
             return result;

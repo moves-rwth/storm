@@ -26,12 +26,12 @@ namespace storm {
              * @param checker The AssumptionChecker which checks the assumptions at sample points.
              * @param numberOfStates The number of states of the model.
              */
-            AssumptionMaker( storm::analysis::AssumptionChecker<ValueType>* checker, uint_fast64_t numberOfStates, bool validate);
+            AssumptionMaker( AssumptionChecker<ValueType>* checker, uint_fast64_t numberOfStates, bool validate);
 
-            std::map<std::shared_ptr<storm::expressions::BinaryRelationExpression>, AssumptionStatus> createAndCheckAssumption(uint_fast64_t val1, uint_fast64_t val2, storm::analysis::Lattice* lattice);
+            std::map<std::shared_ptr<storm::expressions::BinaryRelationExpression>, AssumptionStatus> createAndCheckAssumption(uint_fast64_t val1, uint_fast64_t val2, Lattice* lattice);
 
         private:
-            storm::analysis::AssumptionChecker<ValueType>* assumptionChecker;
+            AssumptionChecker<ValueType>* assumptionChecker;
 
             std::shared_ptr<storm::expressions::ExpressionManager> expressionManager;
 
