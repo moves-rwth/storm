@@ -598,9 +598,9 @@ namespace storm {
             std::shared_ptr<SmtConstraint> elseConstraint;
         };
 
-        class BoolCountIsLessConstant : public SmtConstraint {
+        class TrueCountIsLessConstant : public SmtConstraint {
         public:
-            BoolCountIsLessConstant(std::vector<uint64_t> varIndices, uint64_t val) : varIndices(varIndices),
+            TrueCountIsLessConstant(std::vector<uint64_t> varIndices, uint64_t val) : varIndices(varIndices),
                                                                                       value(val) {
             }
 
@@ -631,9 +631,42 @@ namespace storm {
             uint64_t value;
         };
 
-        class BoolCountIsConstantValue : public SmtConstraint {
+        class FalseCountIsEqualConstant : public SmtConstraint {
         public:
-            BoolCountIsConstantValue(std::vector<uint64_t> varIndices, uint64_t val) : varIndices(varIndices),
+            FalseCountIsEqualConstant(std::vector<uint64_t> varIndices, uint64_t val) : varIndices(varIndices),
+                                                                                        value(val) {
+            }
+
+            std::string toSmtlib2(std::vector<std::string> const &varNames) const override {
+                std::stringstream sstr;
+                sstr << "(= (+ ";
+                for (uint64_t i = 0; i < varIndices.size(); ++i) {
+                    sstr << "(ite " << varNames.at(varIndices.at(i)) << " 0 1 )";
+                }
+                sstr << ") " << value << " )";
+                return sstr.str();
+            }
+
+            storm::expressions::Expression toExpression(std::vector<std::string> const &varNames,
+                                                        std::shared_ptr<storm::expressions::ExpressionManager> manager) const override {
+                std::vector<storm::expressions::Expression> boolToInt;
+                for (uint64_t i = 0; i < varIndices.size(); ++i) {
+                    boolToInt.push_back(
+                            ite(manager->getVariableExpression(varNames.at(varIndices.at(i))), // If variable is true
+                                manager->integer(0), // set 0
+                                manager->integer(1))); // else 1
+                }
+                return sum(boolToInt) == manager->integer(value);
+            }
+
+        private:
+            std::vector<uint64_t> varIndices;
+            uint64_t value;
+        };
+
+        class TrueCountIsConstantValue : public SmtConstraint {
+        public:
+            TrueCountIsConstantValue(std::vector<uint64_t> varIndices, uint64_t val) : varIndices(varIndices),
                                                                                        value(val) {
             }
 

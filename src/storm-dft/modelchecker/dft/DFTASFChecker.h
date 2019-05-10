@@ -110,13 +110,16 @@ namespace storm {
             
         private:
             /**
-             * Helper function that checks if the DFT can fail while visiting less than a given number of Markovian states
+             * Helper function to check if the TLE fails before or at a given timepoint while visiting exactly
+             * a given number of non-Markovian states
              *
-             * @param checkNumber the number to check against
-             * @return "Sat" if a sequence of BE failures exists such that less than checkNumber Markovian states are visited,
+             * @param checkbound timepoint to check against
+             * @param nrNonMarkovian the number of non-Markovian states to check against
+             * @return "Sat" if a sequence of BE failures exists such that the constraints are satisfied,
              * "Unsat" if it does not, otherwise "Unknown"
              */
-            storm::solver::SmtSolver::CheckResult checkFailsWithLessThanMarkovianState(uint64_t checkNumber);
+            storm::solver::SmtSolver::CheckResult
+            checkFailsLeqWithEqNonMarkovianState(uint64_t checkbound, uint64_t nrNonMarkovian);
 
             /**
              * Helper function that checks if the DFT can fail at a timepoint while visiting less than a given number of Markovian states
@@ -128,7 +131,10 @@ namespace storm {
             storm::solver::SmtSolver::CheckResult checkFailsAtTimepointWithOnlyMarkovianState(uint64_t timepoint);
 
             /**
-             * Helper function for correction of least failure bound when dependencies are present
+             * Helper function for correction of least failure bound when dependencies are present.
+             * The main idea is to check if a later point of failure for the TLE than the pre-computed bound exists, but
+             * up until that point the number of non-Markovian states visited is so large, that less than the pre-computed bound BEs fail by themselves.
+             * The corrected bound is then (newTLEFailureTimepoint)-(nrNonMarkovianStatesVisited). This term is minimized.
              *
              * @param bound known lower bound to be corrected
              * @param timeout timeout timeout for each query in seconds

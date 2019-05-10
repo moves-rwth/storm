@@ -558,21 +558,24 @@ namespace storm {
         }
 
         storm::solver::SmtSolver::CheckResult
-        DFTASFChecker::checkFailsWithLessThanMarkovianState(uint64_t checkNumber) {
+        DFTASFChecker::checkFailsLeqWithEqNonMarkovianState(uint64_t checkbound, uint64_t nrNonMarkovian) {
             STORM_LOG_ASSERT(solver, "SMT Solver was not initialized, call toSolver() before checking queries");
-            uint64_t nrMarkovian = dft.nrBasicElements();
             std::vector<uint64_t> markovianIndices;
             // Get Markovian variable indices
-            for (uint64_t i = 0; i < nrMarkovian; ++i) {
+            for (uint64_t i = 0; i < checkbound; ++i) {
                 markovianIndices.push_back(markovianVariables.at(i));
             }
             // Set backtracking marker to check several properties without reconstructing DFT encoding
             solver->push();
-            // Constraint that toplevel element can fail with less than 'checkNumber' Markovian states visited
-            std::shared_ptr<SmtConstraint> countConstr = std::make_shared<BoolCountIsLessConstant>(
-                    markovianIndices, checkNumber);
+
+            std::shared_ptr<SmtConstraint> tleFailedConstr = std::make_shared<IsLessEqualConstant>(
+                    timePointVariables.at(dft.getTopLevelIndex()), checkbound);
             std::shared_ptr<storm::expressions::ExpressionManager> manager = solver->getManager().getSharedPointer();
-            solver->add(countConstr->toExpression(varNames, manager));
+            solver->add(tleFailedConstr->toExpression(varNames, manager));
+            // TODO comment
+            std::shared_ptr<SmtConstraint> nonMarkovianConstr = std::make_shared<FalseCountIsEqualConstant>(
+                    markovianIndices, nrNonMarkovian);
+            solver->add(nonMarkovianConstr->toExpression(varNames, manager));
             storm::solver::SmtSolver::CheckResult res = solver->check();
             solver->pop();
             return res;
@@ -589,7 +592,7 @@ namespace storm {
             // Set backtracking marker to check several properties without reconstructing DFT encoding
             solver->push();
             // Constraint that toplevel element can fail with less than 'checkNumber' Markovian states visited
-            std::shared_ptr<SmtConstraint> countConstr = std::make_shared<BoolCountIsConstantValue>(
+            std::shared_ptr<SmtConstraint> countConstr = std::make_shared<TrueCountIsConstantValue>(
                     markovianIndices, timepoint);
             // Constraint that TLE fails at timepoint
             std::shared_ptr<SmtConstraint> timepointConstr = std::make_shared<IsConstantValue>(
@@ -605,24 +608,50 @@ namespace storm {
         uint64_t DFTASFChecker::correctLowerBound(uint64_t bound, uint_fast64_t timeout) {
             STORM_LOG_ASSERT(solver, "SMT Solver was not initialized, call toSolver() before checking queries");
             STORM_LOG_DEBUG("Lower bound correction - try to correct bound " << std::to_string(bound));
-            while (bound >= 0) {
+            uint64_t boundCandidate = bound;
+            uint64_t nrDepEvents = 0;
+            uint64_t nrNonMarkovian = 0;
+            // Count dependent events
+            for (size_t i = 0; i < dft.nrElements(); ++i) {
+                std::shared_ptr<storm::storage::DFTElement<ValueType> const> element = dft.getElement(i);
+                if (element->type() == storm::storage::DFTElementType::BE) {
+                    auto be = std::static_pointer_cast<storm::storage::DFTBE<double> const>(element);
+                    if (be->hasIngoingDependencies()) {
+                        ++nrDepEvents;
+                    }
+                }
+            }
+            // Only need to check as long as bound candidate + nr of non-Markovians to check is smaller than number of dependent events
+            while (nrNonMarkovian <= nrDepEvents && boundCandidate > 0) {
+                STORM_LOG_TRACE(
+                        "Lower bound correction - check possible bound " << std::to_string(boundCandidate) << " with "
+                                                                         << std::to_string(nrNonMarkovian)
+                                                                         << " non-Markovian states");
                 setSolverTimeout(timeout * 1000);
-                storm::solver::SmtSolver::CheckResult tmp_res = checkFailsWithLessThanMarkovianState(bound);
+                storm::solver::SmtSolver::CheckResult tmp_res =
+                        checkFailsLeqWithEqNonMarkovianState(boundCandidate + nrNonMarkovian, nrNonMarkovian);
                 unsetSolverTimeout();
                 switch (tmp_res) {
-                    case storm::solver::SmtSolver::CheckResult::Unsat:
-                        STORM_LOG_DEBUG("Lower bound correction - corrected bound to " << std::to_string(bound));
-                        return bound;
+                    case storm::solver::SmtSolver::CheckResult::Sat:
+                        /* If SAT, there is a sequence where only boundCandidate-many BEs fail directly and rest is nonMarkovian.
+                         * Bound candidate is vaild, therefore check the next one */
+                        STORM_LOG_TRACE("Lower bound correction - SAT");
+                        --boundCandidate;
+                        break;
                     case storm::solver::SmtSolver::CheckResult::Unknown:
-                        STORM_LOG_DEBUG("Lower bound correction - Solver returned 'Unknown', corrected to "
-                                                << std::to_string(bound));
-                        return bound;
+                        // If any query returns unknown, we cannot be sure about the bound and fall back to the naive one
+                        STORM_LOG_DEBUG("Lower bound correction - Solver returned 'Unknown', corrected to 1");
+                        return 1;
                     default:
-                        --bound;
+                        // if query is UNSAT, increase number of non-Markovian states and try again
+                        STORM_LOG_TRACE("Lower bound correction - UNSAT");
+                        ++nrNonMarkovian;
                         break;
                 }
             }
-            return bound;
+            // if for one candidate all queries are UNSAT, it is not valid. Return last valid candidate
+            STORM_LOG_DEBUG("Lower bound correction - corrected bound to " << std::to_string(boundCandidate + 1));
+            return boundCandidate + 1;
         }
 
         uint64_t DFTASFChecker::correctUpperBound(uint64_t bound, uint_fast64_t timeout) {
