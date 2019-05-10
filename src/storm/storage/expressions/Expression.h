@@ -56,6 +56,7 @@ namespace storm {
             friend Expression sign(Expression const& first);
             friend Expression floor(Expression const& first);
             friend Expression ceil(Expression const& first);
+            friend Expression round(Expression const& first);
             friend Expression minimum(Expression const& first, Expression const& second);
             friend Expression maximum(Expression const& first, Expression const& second);
 
@@ -434,6 +435,7 @@ namespace storm {
         Expression sign(Expression const& first);
         Expression floor(Expression const& first);
         Expression ceil(Expression const& first);
+        Expression round(Expression const& first);
         Expression minimum(Expression const& first, Expression const& second);
         Expression maximum(Expression const& first, Expression const& second);
         Expression disjunction(std::vector<storm::expressions::Expression> const& expressions);
