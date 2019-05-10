@@ -257,6 +257,11 @@ namespace storm {
         }
         
         template<typename ValueType>
+        ValueType round(ValueType const& number) {
+            return std::round(number);
+        }
+        
+        template<typename ValueType>
         ValueType log(ValueType const& number) {
             return std::log(number);
         }
@@ -415,6 +420,11 @@ namespace storm {
         template<>
         ClnRationalNumber ceil(storm::ClnRationalNumber const& number) {
             return carl::ceil(number);
+        }
+        
+        template<>
+        ClnRationalNumber round(storm::ClnRationalNumber const& number) {
+            return carl::round(number);
         }
         
         template<>
@@ -608,6 +618,11 @@ namespace storm {
         template<>
         GmpRationalNumber ceil(storm::GmpRationalNumber const& number) {
             return carl::ceil(number);
+        }
+        
+        template<>
+        GmpRationalNumber round(storm::GmpRationalNumber const& number) {
+            return carl::round(number);
         }
         
         template<>
@@ -886,6 +901,7 @@ namespace storm {
         template double abs(double const& number);
         template double floor(double const& number);
         template double ceil(double const& number);
+        template double round(double const& number);
         template double log(double const& number);
         template double log10(double const& number);
         template typename NumberTraits<double>::IntegerType trunc(double const& number);
@@ -918,6 +934,7 @@ namespace storm {
         template float abs(float const& number);
         template float floor(float const& number);
         template float ceil(float const& number);
+        template float round(float const& number);
         template float log(float const& number);
         template std::string to_string(float const& value);
 
