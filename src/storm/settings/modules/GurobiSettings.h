@@ -46,6 +46,21 @@ namespace storm {
                 uint_fast64_t getNumberOfThreads() const;
                 
                 /*!
+                 * Retrieves the selected high-level solution strategy for MILPs.
+                 *
+                 * @return The high-level solution strategy.
+                 */
+                uint_fast64_t getMIPFocus() const;
+                
+                
+                /*!
+                 * Retrieves the number of MIP solvers, Gurobi spawns in parallel.
+                 *
+                 * @return The number of MIP solvers Gurobi spawns in parallel..
+                 */
+                uint_fast64_t getNumberOfConcurrentMipThreads() const;
+                
+                /*!
                  * Retrieves whether the output option was set.
                  *
                  * @return True iff the output option was set.
@@ -62,6 +77,8 @@ namespace storm {
                 static const std::string integerToleranceOption;
                 static const std::string threadsOption;
                 static const std::string outputOption;
+                static const std::string mipFocusOption;
+                static const std::string concurrentMipThreadsOption;
             };
             
         } // namespace modules

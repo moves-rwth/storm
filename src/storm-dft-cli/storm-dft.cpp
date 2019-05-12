@@ -1,17 +1,18 @@
-#include "storm-dft/api/storm-dft.h"
+#include <boost/algorithm/string.hpp>
 
+#include "storm-dft/api/storm-dft.h"
 #include "storm-dft/settings/DftSettings.h"
+#include "storm-dft/settings/modules/DftGspnSettings.h"
 #include "storm-dft/settings/modules/DftIOSettings.h"
 #include "storm-dft/settings/modules/FaultTreeSettings.h"
-#include "storm-dft/settings/modules/DftGspnSettings.h"
+#include <storm/exceptions/UnmetRequirementException.h>
+#include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/IOSettings.h"
 #include "storm/settings/modules/ResourceSettings.h"
-#include "storm/settings/modules/GeneralSettings.h"
-
-
-#include "storm-parsers/api/storm-parsers.h"
 #include "storm/utility/initialize.h"
 #include "storm-cli-utilities/cli.h"
+#include "storm-parsers/api/storm-parsers.h"
+
 
 /*!
  * Process commandline options and start computations.
@@ -28,7 +29,7 @@ void processOptions() {
 
 
     if (!dftIOSettings.isDftFileSet() && !dftIOSettings.isDftJsonFileSet()) {
-        STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "No input model.");
+        STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "No input model given.");
     }
 
     // Build DFT from given file
@@ -48,7 +49,6 @@ void processOptions() {
     if (dftIOSettings.isExportToJson()) {
         // Export to json
         storm::api::exportDFTToJsonFile<ValueType>(*dft, dftIOSettings.getExportJsonFilename());
-        return;
     }
 
     if (dftIOSettings.isExportToSmt()) {
@@ -60,7 +60,7 @@ void processOptions() {
     // Check well-formedness of DFT
     std::stringstream stream;
     if (!dft->checkWellFormedness(stream)) {
-        STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "DFT is not well-formed: " << stream.str());
+        STORM_LOG_THROW(false, storm::exceptions::UnmetRequirementException, "DFT is not well-formed: " << stream.str());
     }
 
     if (dftGspnSettings.isTransformToGspn()) {
@@ -87,14 +87,16 @@ void processOptions() {
     }
 #endif
 
+    // From now on we analyse DFT via model checking
+
     // Set min or max
     std::string optimizationDirection = "min";
     if (dftIOSettings.isComputeMaximalValue()) {
-        STORM_LOG_THROW(!dftIOSettings.isComputeMinimalValue(), storm::exceptions::InvalidSettingsException, "Cannot compute minimal and maximal values at the same time.");
         optimizationDirection = "max";
     }
 
-    // Construct properties to analyse
+    // Construct properties to analyse.
+    // We allow multiple properties to be checked at once.
     std::vector<std::string> properties;
     if (ioSettings.isPropertySet()) {
         properties.push_back(ioSettings.getProperty());
@@ -119,21 +121,81 @@ void processOptions() {
     }
 
     // Build properties
-    STORM_LOG_THROW(!properties.empty(), storm::exceptions::InvalidSettingsException, "No property given.");
-    std::string propString = properties[0];
-    for (size_t i = 1; i < properties.size(); ++i) {
-        propString += ";" + properties[i];
+    std::vector<std::shared_ptr<storm::logic::Formula const>> props;
+    if (!properties.empty()) {
+        std::string propString;
+        for (size_t i = 0; i < properties.size(); ++i) {
+            propString += properties[i];
+            if (i + 1 < properties.size()) {
+                propString += ";";
+            }
+        }
+        props = storm::api::extractFormulasFromProperties(storm::api::parseProperties(propString));
     }
-    std::vector<std::shared_ptr<storm::logic::Formula const>> props = storm::api::extractFormulasFromProperties(storm::api::parseProperties(propString));
-    STORM_LOG_ASSERT(props.size() > 0, "No properties found.");
 
-    // Carry out the actual analysis
-    if (faultTreeSettings.isApproximationErrorSet()) {
-        // Approximate analysis
-        storm::api::analyzeDFTApprox<ValueType>(*dft, props, faultTreeSettings.useSymmetryReduction(), faultTreeSettings.useModularisation(), !faultTreeSettings.isDisableDC(),
-                                                faultTreeSettings.getApproximationError(), true);
+
+    // Set relevant event names
+    std::vector<std::string> relevantEventNames;
+    //Possible clash of relevantEvents and disableDC was already considered in FaultTreeSettings::check().
+    if (faultTreeSettings.areRelevantEventsSet()) {
+        relevantEventNames = faultTreeSettings.getRelevantEvents();
+    } else if (faultTreeSettings.isDisableDC()) {
+        // All events are relevant
+        relevantEventNames = {"all"};
+    }
+
+    // Events from properties are relevant as well
+    // Get necessary labels from properties
+    std::vector<std::shared_ptr<storm::logic::AtomicLabelFormula const>> atomicLabels;
+    for (auto property : props) {
+        property->gatherAtomicLabelFormulas(atomicLabels);
+    }
+    // Add relevant event names from properties
+    for (auto atomic : atomicLabels) {
+        std::string label = atomic->getLabel();
+        if (label == "failed" or label == "skipped") {
+            // Ignore as these label will always be added if necessary
+        } else {
+            // Get name of event
+            if (boost::ends_with(label, "_failed")) {
+                relevantEventNames.push_back(label.substr(0, label.size() - 7));
+            } else if (boost::ends_with(label, "_dc")) {
+                relevantEventNames.push_back(label.substr(0, label.size() - 3));
+            } else {
+                STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Label '" << label << "' not known.");
+            }
+        }
+    }
+
+    // Set relevant elements
+    std::set<size_t> relevantEvents; // Per default no event (except the toplevel event) is relevant
+    for (std::string const& relevantName : relevantEventNames) {
+        if (relevantName == "none") {
+            // Only toplevel event is relevant
+            relevantEvents = {};
+            break;
+        } else if (relevantName == "all") {
+            // All events are relevant
+            relevantEvents = dft->getAllIds();
+            break;
+        } else {
+            // Find and add corresponding event id
+            relevantEvents.insert(dft->getIndex(relevantName));
+        }
+    }
+
+
+    // Analyze DFT
+    // TODO allow building of state space even without properties
+    if (props.empty()) {
+        STORM_LOG_WARN("No property given. No analysis will be performed.");
     } else {
-        storm::api::analyzeDFT<ValueType>(*dft, props, faultTreeSettings.useSymmetryReduction(), faultTreeSettings.useModularisation(), !faultTreeSettings.isDisableDC(), true);
+        double approximationError = 0.0;
+        if (faultTreeSettings.isApproximationErrorSet()) {
+            approximationError = faultTreeSettings.getApproximationError();
+        }
+        storm::api::analyzeDFT<ValueType>(*dft, props, faultTreeSettings.useSymmetryReduction(), faultTreeSettings.useModularisation(), relevantEvents,
+                                          faultTreeSettings.isAllowDCForRelevantEvents(), approximationError, faultTreeSettings.getApproximationHeuristic(), true);
     }
 }
 
@@ -142,7 +204,7 @@ void processOptions() {
  *
  * @param argc The argc argument of main().
  * @param argv The argv argument of main().
- * @return Return code, 0 if successfull, not 0 otherwise.
+ * @return Return code, 0 if successful, > 0 otherwise.
  */
 int main(const int argc, const char** argv) {
     try {

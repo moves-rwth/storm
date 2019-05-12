@@ -1,0 +1,17 @@
+toplevel "T";
+"T" and "A" "B" "C";
+"A" or "D" "E";
+"B" or "F" "G";
+"C" or "H" "I";
+"D" or "K" "M";
+"F" or "N" "O";
+"H" or "P" "Q";
+"E" lambda=9 dorm=1;
+"G" lambda=1 dorm=1;
+"I" lambda=7 dorm=1;
+"K" lambda=4 dorm=1;
+"M" lambda=5 dorm=1;
+"N" lambda=3 dorm=1;
+"O" lambda=8 dorm=1;
+"P" lambda=6 dorm=1;
+"Q" lambda=2 dorm=1;

@@ -3,6 +3,7 @@
 #include <boost/container/flat_set.hpp>
 #include <map>
 
+#include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/utility/iota_n.h"
@@ -17,9 +18,10 @@ namespace storm {
 
         template<typename ValueType>
         DFT<ValueType>::DFT(DFTElementVector const& elements, DFTElementPointer const& tle) : mElements(elements), mNrOfBEs(0), mNrOfSpares(0), mTopLevelIndex(tle->id()), mMaxSpareChildCount(0) {
+            // Check that ids correspond to indices in the element vector
             STORM_LOG_ASSERT(elementIndicesCorrect(), "Ids incorrect.");
             size_t nrRepresentatives = 0;
-            
+
             for (auto& elem : mElements) {
                 if (isRepresentative(elem->id())) {
                     ++nrRepresentatives;
@@ -87,11 +89,12 @@ namespace storm {
         DFTStateGenerationInfo DFT<ValueType>::buildStateGenerationInfo(storm::storage::DFTIndependentSymmetries const& symmetries) const {
             DFTStateGenerationInfo generationInfo(nrElements(), mMaxSpareChildCount);
             
-            // Generate Pre and Post info for restrictions
+            // Generate Pre and Post info for restrictions, and mutexes
             for(auto const& elem : mElements) {
                 if(!elem->isDependency() && !elem->isRestriction()) {
                     generationInfo.setRestrictionPreElements(elem->id(), elem->seqRestrictionPres());
                     generationInfo.setRestrictionPostElements(elem->id(), elem->seqRestrictionPosts());
+                    generationInfo.setMutexElements(elem->id(), elem->mutexRestrictionElements());
                 }
             }
 
@@ -348,9 +351,8 @@ namespace storm {
                     case DFTElementType::OR:
                         builder.addOrElement(newParentName, childrenNames);
                         break;
-                    case DFTElementType::BE:
-                    case DFTElementType::CONSTF:
-                    case DFTElementType::CONSTS:
+                    case DFTElementType::BE_EXP:
+                    case DFTElementType::BE_CONST:
                     case DFTElementType::VOT:
                     case DFTElementType::PAND:
                     case DFTElementType::SPARE:
@@ -391,9 +393,8 @@ namespace storm {
                     case DFTElementType::AND:
                     case DFTElementType::OR:
                     case DFTElementType::VOT:
-                    case DFTElementType::BE:
-                    case DFTElementType::CONSTF:
-                    case DFTElementType::CONSTS:
+                    case DFTElementType::BE_EXP:
+                    case DFTElementType::BE_CONST:
                         break;
                     case DFTElementType::PAND:
                     case DFTElementType::SPARE:
@@ -421,9 +422,8 @@ namespace storm {
                     case DFTElementType::VOT:
                         ++noStatic;
                         break;
-                    case DFTElementType::BE:
-                    case DFTElementType::CONSTF:
-                    case DFTElementType::CONSTS:
+                    case DFTElementType::BE_EXP:
+                    case DFTElementType::BE_CONST:
                     case DFTElementType::PAND:
                     case DFTElementType::SPARE:
                     case DFTElementType::POR:
@@ -443,7 +443,7 @@ namespace storm {
         std::string DFT<ValueType>::getElementsString() const {
             std::stringstream stream;
             for (auto const& elem : mElements) {
-                stream << "[" << elem->id() << "]" << elem->toString() << std::endl;
+                stream << "[" << elem->id() << "]" << *elem << std::endl;
             }
             return stream.str();
         }
@@ -495,7 +495,7 @@ namespace storm {
             std::stringstream stream;
             for (auto const& elem : mElements) {
                 stream << "[" << elem->id() << "]";
-                stream << elem->toString();
+                stream << *elem;
                 if (elem->isDependency()) {
                     stream << "\t** " << storm::storage::toChar(state->getDependencyState(elem->id())) << "[dep]";
                 } else {
@@ -540,12 +540,10 @@ namespace storm {
             std::stringstream stream;
             stream << "(" << id << ") ";
             for (auto const& elem : mElements) {
-                size_t elemIndex = stateGenerationInfo.getStateIndex(elem->id());
-                int elementState = DFTState<ValueType>::getElementStateInt(status, elemIndex);
                 if (elem->isDependency()) {
-                    stream << storm::storage::toChar(static_cast<DFTDependencyState>(elementState)) << "[dep]";
+                    stream << storm::storage::toChar(DFTState<ValueType>::getDependencyState(status, stateGenerationInfo, elem->id())) << "[dep]";
                 } else {
-                    stream << storm::storage::toChar(static_cast<DFTElementState>(elementState));
+                    stream << storm::storage::toChar(DFTState<ValueType>::getElementState(status, stateGenerationInfo, elem->id()));
                     if(elem->isSpareGate()) {
                         stream << "[";
                         size_t nrUsedChild = status.getAsInt(stateGenerationInfo.getSpareUsageIndex(elem->id()), stateGenerationInfo.usageInfoBits());
@@ -623,6 +621,7 @@ namespace storm {
                     }
                 }
             }
+            // TODO check VOT gates
             return wellformed;
         }
 
@@ -847,6 +846,64 @@ namespace storm {
         }
 
         template<typename ValueType>
+        std::set<size_t> DFT<ValueType>::getAllIds() const {
+            std::set<size_t> ids;
+            for (auto const& elem : mElements) {
+                ids.insert(elem->id());
+            }
+            return ids;
+        }
+
+        template<typename ValueType>
+        size_t DFT<ValueType>::getIndex(std::string const& name) const {
+            auto iter = std::find_if(mElements.begin(), mElements.end(), [&name](DFTElementPointer const& e) { return e->name() == name; });
+            STORM_LOG_THROW(iter != mElements.end(), storm::exceptions::InvalidArgumentException, "Event name '" << name << "' not known.");
+            return (*iter)->id();
+        }
+
+        template<typename ValueType>
+        void DFT<ValueType>::setRelevantEvents(std::set<size_t> const& relevantEvents, bool allowDCForRelevantEvents) const {
+            for (auto const& elem : mElements) {
+                if (relevantEvents.find(elem->id()) != relevantEvents.end()) {
+                    elem->setRelevance(true);
+                    elem->setAllowDC(allowDCForRelevantEvents);
+                } else {
+                    elem->setRelevance(false);
+                    elem->setAllowDC(true);
+                }
+            }
+        }
+
+        template<typename ValueType>
+        std::set<size_t> DFT<ValueType>::getRelevantEvents() const {
+            std::set<size_t> relevantEvents;
+            for (auto const& elem : mElements) {
+                if (elem->isRelevant()) {
+                    relevantEvents.insert(elem->id());
+                }
+            }
+            return relevantEvents;
+        }
+
+
+        template<typename ValueType>
+        std::string DFT<ValueType>::getRelevantEventsString() const {
+            std::stringstream stream;
+            bool first = true;
+            for (auto const& elem : mElements) {
+                if (elem->isRelevant()) {
+                    if (first) {
+                        first = false;
+                    } else {
+                        stream << ", ";
+                    }
+                    stream << elem->name() << " [" << elem->id() << "]";
+                }
+            }
+            return stream.str();
+        }
+
+        template<typename ValueType>
         void DFT<ValueType>::writeStatsToStream(std::ostream& stream) const {
             // Count individual types of elements
             size_t noBE = 0;
@@ -860,9 +917,8 @@ namespace storm {
             size_t noRestriction = 0;
             for (auto const& elem : mElements) {
                 switch (elem->type()) {
-                    case DFTElementType::BE:
-                    case DFTElementType::CONSTF:
-                    case DFTElementType::CONSTS:
+                    case DFTElementType::BE_EXP:
+                    case DFTElementType::BE_CONST:
                         ++noBE;
                         break;
                     case DFTElementType::AND:
