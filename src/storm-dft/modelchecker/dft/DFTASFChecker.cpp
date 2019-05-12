@@ -95,7 +95,8 @@ namespace storm {
                 }
 
                 switch (element->type()) {
-                    case storm::storage::DFTElementType::BE:
+                    case storm::storage::DFTElementType::BE_EXP:
+                    case storm::storage::DFTElementType::BE_CONST:
                         // BEs were already considered before
                         break;
                     case storm::storage::DFTElementType::AND:
