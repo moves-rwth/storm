@@ -619,7 +619,8 @@ namespace storm {
             // Count dependent events
             for (size_t i = 0; i < dft.nrElements(); ++i) {
                 std::shared_ptr<storm::storage::DFTElement<ValueType> const> element = dft.getElement(i);
-                if (element->type() == storm::storage::DFTElementType::BE) {
+                if (element->type() == storm::storage::DFTElementType::BE_EXP ||
+                    element->type() == storm::storage::DFTElementType::BE_CONST) {
                     auto be = std::static_pointer_cast<storm::storage::DFTBE<double> const>(element);
                     if (be->hasIngoingDependencies()) {
                         ++nrDepEvents;
