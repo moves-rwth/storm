@@ -25,7 +25,8 @@ namespace storm {
         public:
             
             /*!
-             * Incorporates memory that stores whether a 'goal' state has already been reached.
+             * Incorporates memory that stores whether a 'goal' state has already been reached. This supports operatorformulas whose subformula is
+             * a (bounded-) until formula, eventually formula, or a globally formula. Total reward formulas and cumulative reward formulas will be ignored.
              */
             static std::shared_ptr<SparseModelType> incorporateGoalMemory(SparseModelType const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas);
             
