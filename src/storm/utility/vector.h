@@ -1,16 +1,12 @@
 #ifndef STORM_UTILITY_VECTOR_H_
 #define STORM_UTILITY_VECTOR_H_
 
-#include "storm-config.h"
-#ifdef STORM_HAVE_INTELTBB
-#include "tbb/tbb.h"
-#endif
-
 #include <iostream>
 #include <algorithm>
 #include <functional>
 #include <numeric>
 #include <storm/adapters/RationalFunctionAdapter.h>
+#include <storm/adapters/IntelTbbAdapter.h>
 
 #include <boost/optional.hpp>
 

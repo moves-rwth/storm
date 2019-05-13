@@ -12,6 +12,8 @@ Version 1.3.x
 - Allow to quickly check a benchmark from the [Quantitative Verification Benchmark Set](http://qcomp.org/benchmarks/) using the --qvbs option.
 - Added script resources/examples/download_qvbs.sh to download the QVBS.
 - If an option is unknown, Storm now prints a hint to similar option names.
+- Support for the new `round` operator in the PRISM language
+- Support for parsing of exact time bounds for properties, e.g., `P=? [F=27 "goal"]`
 - JANI: Allow bounded types for constants
 - JANI: Support for non-trivial reward accumulations.
 - JANI: Fixed support for reward expressions over non-transient variables.

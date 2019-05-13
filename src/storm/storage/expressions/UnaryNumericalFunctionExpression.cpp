@@ -40,6 +40,7 @@ namespace storm {
                 int_fast64_t result = this->getOperand()->evaluateAsInt(valuation);
                 return -result;
             } else {
+                // TODO: this should evaluate the operand as a rational.
                 double result = this->getOperand()->evaluateAsDouble(valuation);
                 switch (this->getOperatorType()) {
                     case OperatorType::Floor: return static_cast<int_fast64_t>(std::floor(result)); break;
@@ -67,39 +68,36 @@ namespace storm {
             std::shared_ptr<BaseExpression const> operandSimplified = this->getOperand()->simplify();
             
             if (operandSimplified->isLiteral()) {
-                boost::variant<int_fast64_t, storm::RationalNumber> operandEvaluation;
                 if (operandSimplified->hasIntegerType()) {
-                    operandEvaluation = operandSimplified->evaluateAsInt();
-                } else {
-                    operandEvaluation = operandSimplified->evaluateAsRational();
-                }
-                
-                bool rationalToInteger = this->getOperatorType() == OperatorType::Floor || this->getOperatorType() == OperatorType::Ceil;
-                if (operandSimplified->hasIntegerType()) {
-                    int_fast64_t value = 0;
+                    int_fast64_t value = operandSimplified->evaluateAsInt();
                     switch (this->getOperatorType()) {
-                        case OperatorType::Minus: value = -boost::get<int_fast64_t>(operandEvaluation); break;
-                        case OperatorType::Floor: value = std::floor(boost::get<int_fast64_t>(operandEvaluation)); break;
-                        case OperatorType::Ceil: value = std::ceil(boost::get<int_fast64_t>(operandEvaluation)); break;
-                    }
-                    return std::shared_ptr<BaseExpression>(new IntegerLiteralExpression(this->getManager(), value));
-                } else if (rationalToInteger) {
-                    int_fast64_t value = 0;
-                    switch (this->getOperatorType()) {
-                        case OperatorType::Floor: value = storm::utility::convertNumber<int_fast64_t>(storm::RationalNumber(carl::floor(boost::get<storm::RationalNumber>(operandEvaluation)))); break;
-                        case OperatorType::Ceil: value = storm::utility::convertNumber<int_fast64_t>(storm::RationalNumber(carl::ceil(boost::get<storm::RationalNumber>(operandEvaluation)))); break;
-                        default:
-                            STORM_LOG_ASSERT(false, "Unexpected rational to integer conversion.");
+                        case OperatorType::Minus: value = -value; break;
+                        // Nothing to be done for the other cases:
+                        // case OperatorType::Floor:
+                        // case OperatorType::Ceil:
                     }
                     return std::shared_ptr<BaseExpression>(new IntegerLiteralExpression(this->getManager(), value));
                 } else {
-                    storm::RationalNumber value = storm::utility::zero<storm::RationalNumber>();
+                    storm::RationalNumber value = operandSimplified->evaluateAsRational();
+                    bool convertToInteger = false;
                     switch (this->getOperatorType()) {
-                        case OperatorType::Minus: value = -boost::get<storm::RationalNumber>(operandEvaluation); break;
-                        case OperatorType::Floor: value = carl::floor(boost::get<storm::RationalNumber>(operandEvaluation)); break;
-                        case OperatorType::Ceil: value = carl::ceil(boost::get<storm::RationalNumber>(operandEvaluation)); break;
+                        case OperatorType::Minus:
+                            value = -value;
+                            break;
+                        case OperatorType::Floor:
+                            value = storm::utility::floor(value);
+                            convertToInteger = true;
+                            break;
+                        case OperatorType::Ceil:
+                            value = storm::utility::ceil(value);
+                            convertToInteger = true;
+                            break;
                     }
-                    return std::shared_ptr<BaseExpression>(new RationalLiteralExpression(this->getManager(), value));
+                    if (convertToInteger) {
+                        return std::shared_ptr<BaseExpression>(new IntegerLiteralExpression(this->getManager(), storm::utility::convertNumber<int64_t>(value)));
+                    } else {
+                        return std::shared_ptr<BaseExpression>(new RationalLiteralExpression(this->getManager(), value));
+                    }
                 }
             }
             

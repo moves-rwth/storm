@@ -17,9 +17,8 @@
 
 
 // Includes for the linked libraries and versions header.
-#ifdef STORM_HAVE_INTELTBB
-#	include "tbb/tbb_stddef.h"
-#endif
+#include "storm/adapters/IntelTbbAdapter.h"
+
 #ifdef STORM_HAVE_GLPK
 #	include "glpk.h"
 #endif

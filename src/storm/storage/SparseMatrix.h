@@ -16,6 +16,7 @@
 #include "storm/utility/macros.h"
 #include "storm/utility/constants.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/IntelTbbAdapter.h"
 
 // Forward declaration for adapter classes.
 namespace storm {

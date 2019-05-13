@@ -309,7 +309,7 @@ namespace storage {
                 case storm::storage::DFTElementType::BE_CONST:
                 {
                     auto beConst = std::static_pointer_cast<BEConst<ValueType> const>(be);
-                    depColour[dep->id()] = std::pair<ValueType, ValueType>(dep->probability(), beConst->failed());
+                    depColour[dep->id()] = std::pair<ValueType, ValueType>(dep->probability(), beConst->failed() ? storm::utility::one<ValueType>() : storm::utility::zero<ValueType>());
                     break;
                 }
                 default:

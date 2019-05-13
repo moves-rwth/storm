@@ -2,6 +2,7 @@
 
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/IntelTbbAdapter.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/CoreSettings.h"
