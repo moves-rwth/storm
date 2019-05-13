@@ -17,7 +17,7 @@ namespace storm {
         
         template <typename ValueType>
         Scheduler<ValueType>::Scheduler(uint_fast64_t numberOfModelStates, boost::optional<storm::storage::MemoryStructure>&& memoryStructure) : memoryStructure(std::move(memoryStructure)) {
-            uint_fast64_t numOfMemoryStates = memoryStructure ? memoryStructure->getNumberOfStates() : 1;
+            uint_fast64_t numOfMemoryStates = this->memoryStructure ? this->memoryStructure->getNumberOfStates() : 1;
             schedulerChoices = std::vector<std::vector<SchedulerChoice<ValueType>>>(numOfMemoryStates, std::vector<SchedulerChoice<ValueType>>(numberOfModelStates));
             numOfUndefinedChoices = numOfMemoryStates * numberOfModelStates;
             numOfDeterministicChoices = 0;
