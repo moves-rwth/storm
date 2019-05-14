@@ -31,7 +31,7 @@ namespace storm {
         class MonotonicityChecker {
 
         public:
-            MonotonicityChecker(std::shared_ptr<storm::models::ModelBase> model, std::vector<std::shared_ptr<storm::logic::Formula const>> formulas, bool validate);
+            MonotonicityChecker(std::shared_ptr<storm::models::ModelBase> model, std::vector<std::shared_ptr<storm::logic::Formula const>> formulas, bool validate, uint_fast64_t numberOfSamples = 100);
             /*!
              * Checks for all lattices in the map if they are monotone increasing or monotone decreasing.
              *
@@ -111,10 +111,6 @@ namespace storm {
                     assert (s.check() == storm::solver::SmtSolver::CheckResult::Sat);
                     s.add(exprToCheck);
                     monDecr = s.check() == storm::solver::SmtSolver::CheckResult::Unsat;
-//                    if (monIncr && monDecr) {
-//                        monIncr = false;
-//                        monDecr = false;
-//                    }
                 }
                 assert (!(monIncr && monDecr) || derivative.isZero());
 
@@ -123,9 +119,9 @@ namespace storm {
 
         private:
             //TODO: variabele type
-            std::map<carl::Variable, std::pair<bool, bool>> analyseMonotonicity(uint_fast64_t i, storm::analysis::Lattice* lattice, storm::storage::SparseMatrix<ValueType> matrix) ;
+            std::map<carl::Variable, std::pair<bool, bool>> analyseMonotonicity(uint_fast64_t i, Lattice* lattice, storm::storage::SparseMatrix<ValueType> matrix) ;
 
-            std::map<storm::analysis::Lattice*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> createLattice();
+            std::map<Lattice*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> createLattice();
 
             std::map<carl::Variable, std::pair<bool, bool>> checkOnSamples(std::shared_ptr<storm::models::sparse::Dtmc<ValueType>> model, uint_fast64_t numberOfSamples);
 
@@ -135,9 +131,7 @@ namespace storm {
 
             ValueType getDerivative(ValueType function, carl::Variable var);
 
-            std::vector<storm::storage::ParameterRegion<ValueType>> checkAssumptionsOnRegion(std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>> assumptions);
-
-            std::map<storm::analysis::Lattice*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> extendLatticeWithAssumptions(storm::analysis::Lattice* lattice, storm::analysis::AssumptionMaker<ValueType>* assumptionMaker, uint_fast64_t val1, uint_fast64_t val2, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>> assumptions);
+            std::map<Lattice*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> extendLatticeWithAssumptions(Lattice* lattice, AssumptionMaker<ValueType>* assumptionMaker, uint_fast64_t val1, uint_fast64_t val2, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>> assumptions);
 
             std::shared_ptr<storm::models::ModelBase> model;
 
@@ -147,13 +141,11 @@ namespace storm {
 
             std::map<carl::Variable, std::pair<bool, bool>> resultCheckOnSamples;
 
-            storm::analysis::LatticeExtender<ValueType> *extender;
+            LatticeExtender<ValueType> *extender;
 
             std::ofstream outfile;
 
             std::string filename = "results.txt";
-
-            storm::utility::Stopwatch totalWatch;
         };
     }
 }
