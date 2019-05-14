@@ -42,7 +42,7 @@ namespace storm {
                  */
                 bool transformContinuousModel() const;
 
-                /*
+                /*!
                  * Retrieves whether instead of model checking, only the wellformedness constraints should be obtained.
                  */
                 bool onlyObtainConstraints() const;
@@ -64,11 +64,25 @@ namespace storm {
                  */
                 bool isSampleExactSet() const;
 
+                /*!
+                 * Retrieves whether monotonicity analysis should be applied.
+                 */
                 bool isMonotonicityAnalysisSet() const;
-                // TODO: maybe move to other place
+
+                /*!
+                 * Retrieves whether SCCs in the monotonicity analysis should be eliminated.
+                 */
                 bool isSccEliminationSet() const;
 
+                /*!
+                 * Retrieves whether assumptions in monotonicity analysis should be validated
+                 */
                 bool isValidateAssumptionsSet() const;
+
+                /*!
+                 * Retrieves the number of samples used for sampling in the monotonicity analysis
+                 */
+                uint_fast64_t getNumberOfSamples() const;
 
                 const static std::string moduleName;
                 
@@ -84,6 +98,7 @@ namespace storm {
                 const static std::string monotonicityAnalysis;
                 const static std::string sccElimination;
                 const static std::string validateAssumptions;
+                const static std::string samplesMonotonicityAnalysis;
             };
             
         } // namespace modules

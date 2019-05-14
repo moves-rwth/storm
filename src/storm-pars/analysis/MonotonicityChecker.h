@@ -31,27 +31,23 @@ namespace storm {
         class MonotonicityChecker {
 
         public:
-            MonotonicityChecker(std::shared_ptr<storm::models::ModelBase> model, std::vector<std::shared_ptr<storm::logic::Formula const>> formulas, bool validate, uint_fast64_t numberOfSamples = 100);
             /*!
-             * Checks for all lattices in the map if they are monotone increasing or monotone decreasing.
-             *
-             * @param map The map with lattices and the assumptions made to create the lattices.
-             * @param matrix The transition matrix.
-             * @return TODO
+             * Constructor of MonotonicityChecker
+             * @param model the model considered
+             * @param formula the formula considered
+             * @param validate whether or not assumptions are to be validated
+             * @param numberOfSamples number of samples taken for monotonicity checking, default 0,
+             *          if 0then no check on samples is executed
              */
-            std::map<storm::analysis::Lattice*, std::map<carl::Variable, std::pair<bool, bool>>> checkMonotonicity(std::map<storm::analysis::Lattice*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> map, storm::storage::SparseMatrix<ValueType> matrix);
+            MonotonicityChecker(std::shared_ptr<storm::models::ModelBase> model, std::vector<std::shared_ptr<storm::logic::Formula const>> formulas, bool validate, uint_fast64_t numberOfSamples=0);
 
             /*!
-             * TODO
-             * @return
+             * Checks for model and formula as provided in constructor for monotonicity
              */
             std::map<storm::analysis::Lattice*, std::map<carl::Variable, std::pair<bool, bool>>> checkMonotonicity();
 
             /*!
-             * TODO
-             * @param lattice
-             * @param matrix
-             * @return
+             * Checks if monotonicity can be found in this lattice. Unordered states are not checked
              */
             bool somewhereMonotonicity(storm::analysis::Lattice* lattice) ;
 
@@ -118,6 +114,8 @@ namespace storm {
             }
 
         private:
+            std::map<storm::analysis::Lattice*, std::map<carl::Variable, std::pair<bool, bool>>> checkMonotonicity(std::map<storm::analysis::Lattice*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> map, storm::storage::SparseMatrix<ValueType> matrix);
+
             //TODO: variabele type
             std::map<carl::Variable, std::pair<bool, bool>> analyseMonotonicity(uint_fast64_t i, Lattice* lattice, storm::storage::SparseMatrix<ValueType> matrix) ;
 
@@ -139,13 +137,15 @@ namespace storm {
 
             bool validate;
 
+            bool checkSamples;
+
             std::map<carl::Variable, std::pair<bool, bool>> resultCheckOnSamples;
 
             LatticeExtender<ValueType> *extender;
 
             std::ofstream outfile;
 
-            std::string filename = "results.txt";
+            std::string filename = "monotonicity.txt";
         };
     }
 }

@@ -22,8 +22,9 @@ namespace storm {
             const std::string ParametricSettings::samplesGraphPreservingOptionName = "samples-graph-preserving";
             const std::string ParametricSettings::sampleExactOptionName = "sample-exact";
             const std::string ParametricSettings::monotonicityAnalysis = "monotonicity-analysis";
-            const std::string ParametricSettings::sccElimination = "elim-scc";
-            const std::string ParametricSettings::validateAssumptions = "validate-assumptions";
+            const std::string ParametricSettings::sccElimination = "mon-elim-scc";
+            const std::string ParametricSettings::validateAssumptions = "mon-validate-assumptions";
+            const std::string ParametricSettings::samplesMonotonicityAnalysis = "mon-samples";
 
             ParametricSettings::ParametricSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportResultOptionName, false, "A path to a file where the parametric result should be saved.")
@@ -36,8 +37,11 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, samplesGraphPreservingOptionName, false, "Sets whether it can be assumed that the samples are graph-preserving.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, sampleExactOptionName, false, "Sets whether to sample using exact arithmetic.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, monotonicityAnalysis, false, "Sets whether monotonicity analysis is done").build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, sccElimination, false, "Sets whether SCCs should be eliminated").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, sccElimination, false, "Sets whether SCCs should be eliminated in the monotonicity analysis").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, validateAssumptions, false, "Sets whether assumptions made in monotonicity analysis are validated").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, samplesMonotonicityAnalysis, false, "Sets whether monotonicity should be checked on samples")
+                                .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("mon-samples", "The number of samples taken in monotonicity-analysis can be given, default is 0, no samples").setDefaultValueUnsignedInteger(0).build()).build());
+
             }
             
             bool ParametricSettings::exportResultToFile() const {
@@ -82,6 +86,10 @@ namespace storm {
 
             bool ParametricSettings::isValidateAssumptionsSet() const {
                 return this->getOption(validateAssumptions).getHasOptionBeenSet();
+            }
+
+            uint_fast64_t ParametricSettings::getNumberOfSamples() const {
+                return this->getOption(samplesMonotonicityAnalysis).getArgumentByName("mon-samples").getValueAsUnsignedInteger();
             }
         } // namespace modules
     } // namespace settings

@@ -80,7 +80,7 @@ TEST(MonotonicityCheckerTest, Derivative_checker) {
     EXPECT_FALSE(functionRes.second);
 }
 
-TEST(MonotonicityCheckerTest, Brp_with_bisimulation) {
+TEST(MonotonicityCheckerTest, Brp_with_bisimulation_no_samples) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/brp16_2.pm";
     std::string formulaAsString = "P=? [F s=4 & i=N ]";
     std::string constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
@@ -111,6 +111,41 @@ TEST(MonotonicityCheckerTest, Brp_with_bisimulation) {
     EXPECT_EQ(1, result.size());
     EXPECT_EQ(2, result.begin()->second.size());
     auto monotone = result.begin()->second.begin();
-    EXPECT_EQ(monotone->second.first, true);
-    EXPECT_EQ(monotone->second.second, false);
+    EXPECT_EQ(true, monotone->second.first);
+    EXPECT_EQ(false, monotone->second.second);
+}
+
+TEST(MonotonicityCheckerTest, Brp_with_bisimulation_samples) {
+    std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/brp16_2.pm";
+    std::string formulaAsString = "P=? [F s=4 & i=N ]";
+    std::string constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
+
+    // Program and formula
+    storm::prism::Program program = storm::api::parseProgram(programFile);
+    program = storm::utility::prism::preprocess(program, constantsAsString);
+    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*dtmc);
+    ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
+    model = simplifier.getSimplifiedModel();
+
+    // Apply bisimulation
+    storm::storage::BisimulationType bisimType = storm::storage::BisimulationType::Strong;
+    if (storm::settings::getModule<storm::settings::modules::BisimulationSettings>().isWeakBisimulationSet()) {
+        bisimType = storm::storage::BisimulationType::Weak;
+    }
+
+    dtmc = storm::api::performBisimulationMinimization<storm::RationalFunction>(model, formulas, bisimType)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+
+    ASSERT_EQ(dtmc->getNumberOfStates(), 99ull);
+    ASSERT_EQ(dtmc->getNumberOfTransitions(), 195ull);
+
+    storm::analysis::MonotonicityChecker<storm::RationalFunction> monotonicityChecker = storm::analysis::MonotonicityChecker<storm::RationalFunction>(dtmc, formulas, true, 50);
+    auto result = monotonicityChecker.checkMonotonicity();
+    EXPECT_EQ(1, result.size());
+    EXPECT_EQ(2, result.begin()->second.size());
+    auto monotone = result.begin()->second.begin();
+    EXPECT_EQ(true, monotone->second.first);
+    EXPECT_EQ(false, monotone->second.second);
 }

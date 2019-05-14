@@ -28,24 +28,28 @@ namespace storm {
     namespace analysis {
         template <typename ValueType>
         MonotonicityChecker<ValueType>::MonotonicityChecker(std::shared_ptr<storm::models::ModelBase> model, std::vector<std::shared_ptr<storm::logic::Formula const>> formulas, bool validate, uint_fast64_t numberOfSamples) {
-            outfile.open(filename, std::ios_base::app);
             assert (model != nullptr);
             this->model = model;
             this->formulas = formulas;
             this->validate = validate;
 
-            // sampling
-            if ( model->isOfType(storm::models::ModelType::Dtmc)) {
-                this->resultCheckOnSamples = std::map<carl::Variable, std::pair<bool, bool>>(checkOnSamples(model->as<storm::models::sparse::Dtmc<ValueType>>(), numberOfSamples));
-            } else if (model->isOfType(storm::models::ModelType::Mdp)){
-                this->resultCheckOnSamples = std::map<carl::Variable, std::pair<bool, bool>>(checkOnSamples(model->as<storm::models::sparse::Mdp<ValueType>>(), numberOfSamples));
+            if (numberOfSamples > 0) {
+                // sampling
+                if (model->isOfType(storm::models::ModelType::Dtmc)) {
+                    this->resultCheckOnSamples = std::map<carl::Variable, std::pair<bool, bool>>(
+                            checkOnSamples(model->as<storm::models::sparse::Dtmc<ValueType>>(), numberOfSamples));
+                } else if (model->isOfType(storm::models::ModelType::Mdp)) {
+                    this->resultCheckOnSamples = std::map<carl::Variable, std::pair<bool, bool>>(
+                            checkOnSamples(model->as<storm::models::sparse::Mdp<ValueType>>(), numberOfSamples));
 
+                }
+                checkSamples= true;
+            } else {
+                checkSamples= false;
             }
 
             std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel = model->as<storm::models::sparse::Model<ValueType>>();
             this->extender = new storm::analysis::LatticeExtender<ValueType>(sparseModel);
-            outfile << model->getNumberOfStates() << ", " << model->getNumberOfTransitions() << ", ";
-            outfile.close();
         }
 
         template <typename ValueType>
@@ -96,10 +100,6 @@ namespace storm {
                                                                                                       matrix);
 
                     auto assumptions = itr->second;
-                    bool validSomewhere = false;
-                    for (auto itr2 = varsMonotone.begin(); !validSomewhere && itr2 != varsMonotone.end(); ++itr2) {
-                        validSomewhere = itr2->second.first || itr2->second.second;
-                    }
                     if (assumptions.size() > 0) {
                         bool first = true;
                         for (auto itr2 = assumptions.begin(); itr2 != assumptions.end(); ++itr2) {
@@ -115,12 +115,13 @@ namespace storm {
                         outfile << "No assumptions - ";
                     }
 
-                    if (validSomewhere && varsMonotone.size() == 0) {
+                    if (varsMonotone.size() == 0) {
                         outfile << "No params";
-                    } else if (validSomewhere) {
+                    } else {
                         auto itr2 = varsMonotone.begin();
                         while (itr2 != varsMonotone.end()) {
-                            if (resultCheckOnSamples.find(itr2->first) != resultCheckOnSamples.end() &&
+                            if (checkSamples &&
+                                resultCheckOnSamples.find(itr2->first) != resultCheckOnSamples.end() &&
                                 (!resultCheckOnSamples[itr2->first].first &&
                                  !resultCheckOnSamples[itr2->first].second)) {
                                 outfile << "X " << itr2->first;
@@ -143,11 +144,6 @@ namespace storm {
                         result.insert(
                                 std::pair<storm::analysis::Lattice *, std::map<carl::Variable, std::pair<bool, bool>>>(
                                         lattice, varsMonotone));
-                    } else {
-                        result.insert(
-                                std::pair<storm::analysis::Lattice *, std::map<carl::Variable, std::pair<bool, bool>>>(
-                                        lattice, varsMonotone));
-                        outfile << "no monotonicity found";
                     }
                     ++i;
                     outfile << ";";
@@ -156,7 +152,6 @@ namespace storm {
             outfile << ", ";
 
             monotonicityCheckWatch.stop();
-            outfile << monotonicityCheckWatch << ", ";
             outfile.close();
             return result;
         }
@@ -195,9 +190,6 @@ namespace storm {
                 assert(false);
             }
             latticeWatch.stop();
-            outfile.open(filename, std::ios_base::app);
-            outfile << latticeWatch << ", ";
-            outfile.close();
             return result;
         }
 
@@ -313,16 +305,27 @@ namespace storm {
                     }
 
                     // Copy info from checkOnSamples
-                    for (auto itr = vars.begin(); itr != vars.end(); ++itr) {
-                        assert (resultCheckOnSamples.find(*itr) != resultCheckOnSamples.end());
-                        if (varsMonotone.find(*itr) == varsMonotone.end()) {
-                            varsMonotone[*itr].first = resultCheckOnSamples[*itr].first;
-                            varsMonotone[*itr].second = resultCheckOnSamples[*itr].second;
-                        } else {
-                            varsMonotone[*itr].first &= resultCheckOnSamples[*itr].first;
-                            varsMonotone[*itr].second &= resultCheckOnSamples[*itr].second;
+                    if (checkSamples) {
+                        for (auto var : vars) {
+                            assert (resultCheckOnSamples.find(var) != resultCheckOnSamples.end());
+                            if (varsMonotone.find(var) == varsMonotone.end()) {
+                                varsMonotone[var].first = resultCheckOnSamples[var].first;
+                                varsMonotone[var].second = resultCheckOnSamples[var].second;
+                            } else {
+                                varsMonotone[var].first &= resultCheckOnSamples[var].first;
+                                varsMonotone[var].second &= resultCheckOnSamples[var].second;
+                            }
+                        }
+                    } else {
+                        for (auto var : vars) {
+                            if (varsMonotone.find(var) == varsMonotone.end()) {
+                                varsMonotone[var].first = true;
+                                varsMonotone[var].second = true;
+                            }
                         }
                     }
+
+
 
                     // Sort the states based on the lattice
                     auto sortedStates = lattice->sortStates(states);
@@ -426,14 +429,23 @@ namespace storm {
                     auto val = first.getValue();
                     auto vars = val.gatherVariables();
                     // Copy info from checkOnSamples
-                    for (auto itr = vars.begin(); itr != vars.end(); ++itr) {
-                        assert (resultCheckOnSamples.find(*itr) != resultCheckOnSamples.end());
-                        if (varsMonotone.find(*itr) == varsMonotone.end()) {
-                            varsMonotone[*itr].first = resultCheckOnSamples[*itr].first;
-                            varsMonotone[*itr].second = resultCheckOnSamples[*itr].second;
-                        } else {
-                            varsMonotone[*itr].first &= resultCheckOnSamples[*itr].first;
-                            varsMonotone[*itr].second &= resultCheckOnSamples[*itr].second;
+                    if (checkSamples) {
+                        for (auto var : vars) {
+                            assert (resultCheckOnSamples.find(var) != resultCheckOnSamples.end());
+                            if (varsMonotone.find(var) == varsMonotone.end()) {
+                                varsMonotone[var].first = resultCheckOnSamples[var].first;
+                                varsMonotone[var].second = resultCheckOnSamples[var].second;
+                            } else {
+                                varsMonotone[var].first &= resultCheckOnSamples[var].first;
+                                varsMonotone[var].second &= resultCheckOnSamples[var].second;
+                            }
+                        }
+                    } else {
+                        for (auto var : vars) {
+                            if (varsMonotone.find(var) == varsMonotone.end()) {
+                                varsMonotone[var].first = true;
+                                varsMonotone[var].second = true;
+                            }
                         }
                     }
 
