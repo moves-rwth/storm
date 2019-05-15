@@ -38,8 +38,6 @@ namespace storm {
 
         template <typename ValueType>
         std::tuple<Lattice*, uint_fast64_t, uint_fast64_t> LatticeExtender<ValueType>::toLattice(std::vector<std::shared_ptr<storm::logic::Formula const>> formulas) {
-//            storm::utility::Stopwatch latticeWatch(true);
-
             STORM_LOG_THROW((++formulas.begin()) == formulas.end(), storm::exceptions::NotSupportedException, "Only one formula allowed for monotonicity analysis");
             STORM_LOG_THROW((*(formulas[0])).isProbabilityOperatorFormula()
                             && ((*(formulas[0])).asProbabilityOperatorFormula().getSubformula().isUntilFormula()
@@ -71,7 +69,6 @@ namespace storm {
 
             auto initialMiddleStates = storm::storage::BitVector(numberOfStates);
             // Check if MC contains cycles
-            // TODO maybe move to other place?
             storm::storage::StronglyConnectedComponentDecompositionOptions const options;
             auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<ValueType>(model->getTransitionMatrix(), options);
             acyclic = true;
@@ -119,8 +116,6 @@ namespace storm {
             // Create the Lattice
             Lattice *lattice = new Lattice(&topStates, &bottomStates, &initialMiddleStates, numberOfStates);
 
-//            latticeWatch.stop();
-//            STORM_PRINT(std::endl << "Time for initialization of lattice: " << latticeWatch << "." << std::endl << std::endl);
             return this->extendLattice(lattice);
         }
 
@@ -325,11 +320,9 @@ namespace storm {
                     }
 
                 } else if (!acyclic) {
-                    // TODO: kan dit niet efficienter
                     auto addedStates = lattice->getAddedStates();
                     if (assumptionSeen) {
                         statesToHandle = addedStates;
-                        // TODO: statesSorted =
                     }
                     auto stateNumber = statesToHandle->getNextSetIndex(0);
                     while (stateNumber != numberOfStates) {
@@ -384,8 +377,6 @@ namespace storm {
                         }
                     }
 
-//                    addedStates = lattice->getAddedStates();
-//                    auto notAddedStates = addedStates->operator~();
                     if (!assumptionSeen) {
                         stateNumber = *(statesSorted.begin());
                         while (stateNumber != numberOfStates && (*(lattice->getAddedStates()))[stateNumber]) {
@@ -393,20 +384,17 @@ namespace storm {
                             stateNumber = *(statesSorted.begin());
                         }
 
-                        if (stateNumber == numberOfStates) {
-                            assert(false);
-                        }
-                            storm::storage::BitVector* successors = stateMap[stateNumber];
+                        storm::storage::BitVector* successors = stateMap[stateNumber];
 
-                            // Check if current state has not been added yet, and all successors have, ignore selfloop in this
-                            successors->set(stateNumber, false);
-                            if ((*successors & *addedStates) == *successors) {
-                                auto result = extendAllSuccAdded(lattice, stateNumber, successors);
-                                if (std::get<1>(result) != successors->size()) {
-                                    return result;
-                                }
-                                statesToHandle->set(stateNumber);
+                        // Check if current state has not been added yet, and all successors have, ignore selfloop in this
+                        successors->set(stateNumber, false);
+                        if ((*successors & *addedStates) == *successors) {
+                            auto result = extendAllSuccAdded(lattice, stateNumber, successors);
+                            if (std::get<1>(result) != successors->size()) {
+                                return result;
                             }
+                            statesToHandle->set(stateNumber);
+                        }
                     } else {
                         addedStates = lattice->getAddedStates();
                         auto notAddedStates = addedStates->operator~();
@@ -445,6 +433,7 @@ namespace storm {
                 lattice->setDoneBuilding(true);
             return std::make_tuple(lattice, numberOfStates, numberOfStates);
         }
+
         template class LatticeExtender<storm::RationalFunction>;
     }
 }

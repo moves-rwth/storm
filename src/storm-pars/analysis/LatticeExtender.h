@@ -1,7 +1,3 @@
-//
-// Created by Jip Spel on 28.08.18.
-//
-
 #ifndef STORM_LATTICEEXTENDER_H
 #define STORM_LATTICEEXTENDER_H
 
@@ -9,9 +5,6 @@
 #include "storm/models/sparse/Dtmc.h"
 #include "storm-pars/analysis/Lattice.h"
 #include "storm/api/storm.h"
-
-
-
 
 namespace storm {
     namespace analysis {
