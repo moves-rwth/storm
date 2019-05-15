@@ -1,7 +1,3 @@
-//
-// Created by Jip Spel on 05.09.18.
-//
-
 #include "MonotonicityChecker.h"
 #include "storm-pars/analysis/AssumptionMaker.h"
 #include "storm-pars/analysis/AssumptionChecker.h"
@@ -36,10 +32,10 @@ namespace storm {
             if (numberOfSamples > 0) {
                 // sampling
                 if (model->isOfType(storm::models::ModelType::Dtmc)) {
-                    this->resultCheckOnSamples = std::map<carl::Variable, std::pair<bool, bool>>(
+                    this->resultCheckOnSamples = std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>>(
                             checkOnSamples(model->as<storm::models::sparse::Dtmc<ValueType>>(), numberOfSamples));
                 } else if (model->isOfType(storm::models::ModelType::Mdp)) {
-                    this->resultCheckOnSamples = std::map<carl::Variable, std::pair<bool, bool>>(
+                    this->resultCheckOnSamples = std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>>(
                             checkOnSamples(model->as<storm::models::sparse::Mdp<ValueType>>(), numberOfSamples));
 
                 }
@@ -53,7 +49,7 @@ namespace storm {
         }
 
         template <typename ValueType>
-        std::map<storm::analysis::Lattice*, std::map<carl::Variable, std::pair<bool, bool>>> MonotonicityChecker<ValueType>::checkMonotonicity() {
+        std::map<storm::analysis::Lattice*, std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>>> MonotonicityChecker<ValueType>::checkMonotonicity() {
             auto map = createLattice();
             std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel = model->as<storm::models::sparse::Model<ValueType>>();
             auto matrix = sparseModel->getTransitionMatrix();
@@ -61,9 +57,9 @@ namespace storm {
         }
 
         template <typename ValueType>
-        std::map<storm::analysis::Lattice*, std::map<carl::Variable, std::pair<bool, bool>>> MonotonicityChecker<ValueType>::checkMonotonicity(std::map<storm::analysis::Lattice*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> map, storm::storage::SparseMatrix<ValueType> matrix) {
+        std::map<storm::analysis::Lattice*, std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>>> MonotonicityChecker<ValueType>::checkMonotonicity(std::map<storm::analysis::Lattice*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> map, storm::storage::SparseMatrix<ValueType> matrix) {
             storm::utility::Stopwatch monotonicityCheckWatch(true);
-            std::map<storm::analysis::Lattice *, std::map<carl::Variable, std::pair<bool, bool>>> result;
+            std::map<storm::analysis::Lattice *, std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>>> result;
 
             outfile.open(filename, std::ios_base::app);
 
@@ -96,7 +92,7 @@ namespace storm {
 
                     auto addedStates = lattice->getAddedStates()->getNumberOfSetBits();
                     assert (addedStates == lattice->getAddedStates()->size());
-                    std::map<carl::Variable, std::pair<bool, bool>> varsMonotone = analyseMonotonicity(i, lattice,
+                    std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>> varsMonotone = analyseMonotonicity(i, lattice,
                                                                                                       matrix);
 
                     auto assumptions = itr->second;
@@ -142,7 +138,7 @@ namespace storm {
                             }
                         }
                         result.insert(
-                                std::pair<storm::analysis::Lattice *, std::map<carl::Variable, std::pair<bool, bool>>>(
+                                std::pair<storm::analysis::Lattice *, std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>>>(
                                         lattice, varsMonotone));
                     }
                     ++i;
@@ -267,7 +263,7 @@ namespace storm {
         }
 
         template <typename ValueType>
-        ValueType MonotonicityChecker<ValueType>::getDerivative(ValueType function, carl::Variable var) {
+        ValueType MonotonicityChecker<ValueType>::getDerivative(ValueType function, typename utility::parametric::VariableType<ValueType>::type var) {
             if (function.isConstant()) {
                 return storm::utility::zero<ValueType>();
             }
@@ -279,8 +275,8 @@ namespace storm {
         }
 
         template <typename ValueType>
-        std::map<carl::Variable, std::pair<bool, bool>> MonotonicityChecker<ValueType>::analyseMonotonicity(uint_fast64_t j, storm::analysis::Lattice* lattice, storm::storage::SparseMatrix<ValueType> matrix) {
-            std::map<carl::Variable, std::pair<bool, bool>> varsMonotone;
+        std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>> MonotonicityChecker<ValueType>::analyseMonotonicity(uint_fast64_t j, storm::analysis::Lattice* lattice, storm::storage::SparseMatrix<ValueType> matrix) {
+            std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>> varsMonotone;
 
             // go over all rows, check for each row local monotonicity
             for (uint_fast64_t i = 0; i < matrix.getColumnCount(); ++i) {
@@ -292,7 +288,7 @@ namespace storm {
 
                     // Gather all states which are reached with a non constant probability
                     auto states = new storm::storage::BitVector(matrix.getColumnCount());
-                    std::set<carl::Variable> vars;
+                    std::set<typename utility::parametric::VariableType<ValueType>::type> vars;
                     for (auto const& entry : row) {
                         if (!entry.getValue().isConstant()) {
                             // only analyse take non constant transitions
@@ -413,7 +409,7 @@ namespace storm {
             std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel = model->as<storm::models::sparse::Model<ValueType>>();
             auto matrix = sparseModel->getTransitionMatrix();
 
-            std::map<carl::Variable, std::pair<bool, bool>> varsMonotone;
+            std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>> varsMonotone;
 
             for (uint_fast64_t i = 0; i < matrix.getColumnCount(); ++i) {
                 // go over all rows
@@ -502,14 +498,14 @@ namespace storm {
 
 
         template <typename ValueType>
-        std::map<carl::Variable, std::pair<bool, bool>> MonotonicityChecker<ValueType>::checkOnSamples(std::shared_ptr<storm::models::sparse::Dtmc<ValueType>> model, uint_fast64_t numberOfSamples) {
+        std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>> MonotonicityChecker<ValueType>::checkOnSamples(std::shared_ptr<storm::models::sparse::Dtmc<ValueType>> model, uint_fast64_t numberOfSamples) {
             storm::utility::Stopwatch samplesWatch(true);
 
-            std::map<carl::Variable, std::pair<bool, bool>> result;
+            std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>> result;
 
             auto instantiator = storm::utility::ModelInstantiator<storm::models::sparse::Dtmc<ValueType>, storm::models::sparse::Dtmc<double>>(*model);
             auto matrix = model->getTransitionMatrix();
-            std::set<carl::Variable> variables =  storm::models::sparse::getProbabilityParameters(*model);
+            std::set<typename utility::parametric::VariableType<ValueType>::type> variables =  storm::models::sparse::getProbabilityParameters(*model);
 
             for (auto itr = variables.begin(); itr != variables.end(); ++itr) {
                 double previous = -1;
@@ -521,13 +517,13 @@ namespace storm {
                     for (auto itr2 = variables.begin(); itr2 != variables.end(); ++itr2) {
                         // Only change value for current variable
                         if ((*itr) == (*itr2)) {
-                            auto val = std::pair<carl::Variable, storm::RationalFunctionCoefficient>(
-                                    (*itr2), storm::utility::convertNumber<storm::RationalFunctionCoefficient>(
+                            auto val = std::pair<typename utility::parametric::VariableType<ValueType>::type, typename utility::parametric::CoefficientType<ValueType>::type>(
+                                    (*itr2), storm::utility::convertNumber<typename utility::parametric::CoefficientType<ValueType>::type>(
                                             boost::lexical_cast<std::string>((i + 1) / (double(numberOfSamples + 1)))));
                             valuation.insert(val);
                         } else {
-                            auto val = std::pair<carl::Variable, storm::RationalFunctionCoefficient>(
-                                    (*itr2), storm::utility::convertNumber<storm::RationalFunctionCoefficient>(
+                            auto val = std::pair<typename utility::parametric::VariableType<ValueType>::type, typename utility::parametric::CoefficientType<ValueType>::type>(
+                                    (*itr2), storm::utility::convertNumber<typename utility::parametric::CoefficientType<ValueType>::type>(
                                             boost::lexical_cast<std::string>((1) / (double(numberOfSamples + 1)))));
                             valuation.insert(val);
                         }
@@ -565,7 +561,7 @@ namespace storm {
                     }
                     previous = initial;
                 }
-                result.insert(std::pair<carl::Variable, std::pair<bool, bool>>(*itr, std::pair<bool,bool>(monIncr, monDecr)));
+                result.insert(std::pair<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>>(*itr, std::pair<bool,bool>(monIncr, monDecr)));
             }
 
             samplesWatch.stop();
@@ -574,14 +570,14 @@ namespace storm {
         }
 
         template <typename ValueType>
-        std::map<carl::Variable, std::pair<bool, bool>> MonotonicityChecker<ValueType>::checkOnSamples(std::shared_ptr<storm::models::sparse::Mdp<ValueType>> model, uint_fast64_t numberOfSamples) {
+        std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>> MonotonicityChecker<ValueType>::checkOnSamples(std::shared_ptr<storm::models::sparse::Mdp<ValueType>> model, uint_fast64_t numberOfSamples) {
             storm::utility::Stopwatch samplesWatch(true);
 
-            std::map<carl::Variable, std::pair<bool, bool>> result;
+            std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>> result;
 
             auto instantiator = storm::utility::ModelInstantiator<storm::models::sparse::Mdp<ValueType>, storm::models::sparse::Mdp<double>>(*model);
             auto matrix = model->getTransitionMatrix();
-            std::set<carl::Variable> variables =  storm::models::sparse::getProbabilityParameters(*model);
+            std::set<typename utility::parametric::VariableType<ValueType>::type> variables =  storm::models::sparse::getProbabilityParameters(*model);
 
             for (auto itr = variables.begin(); itr != variables.end(); ++itr) {
                 double previous = -1;
@@ -593,13 +589,13 @@ namespace storm {
                     for (auto itr2 = variables.begin(); itr2 != variables.end(); ++itr2) {
                         // Only change value for current variable
                         if ((*itr) == (*itr2)) {
-                            auto val = std::pair<carl::Variable, storm::RationalFunctionCoefficient>(
-                                    (*itr2), storm::utility::convertNumber<storm::RationalFunctionCoefficient>(
+                            auto val = std::pair<typename utility::parametric::VariableType<ValueType>::type, typename utility::parametric::CoefficientType<ValueType>::type>(
+                                    (*itr2), storm::utility::convertNumber<typename utility::parametric::CoefficientType<ValueType>::type>(
                                             boost::lexical_cast<std::string>((i + 1) / (double(numberOfSamples + 1)))));
                             valuation.insert(val);
                         } else {
-                            auto val = std::pair<carl::Variable, storm::RationalFunctionCoefficient>(
-                                    (*itr2), storm::utility::convertNumber<storm::RationalFunctionCoefficient>(
+                            auto val = std::pair<typename utility::parametric::VariableType<ValueType>::type, typename utility::parametric::CoefficientType<ValueType>::type>(
+                                    (*itr2), storm::utility::convertNumber<typename utility::parametric::CoefficientType<ValueType>::type>(
                                             boost::lexical_cast<std::string>((1) / (double(numberOfSamples + 1)))));
                             valuation.insert(val);
                         }
@@ -635,7 +631,7 @@ namespace storm {
                     }
                     previous = initial;
                 }
-                result.insert(std::pair<carl::Variable, std::pair<bool, bool>>(*itr, std::pair<bool,bool>(monIncr, monDecr)));
+                result.insert(std::pair<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>>(*itr, std::pair<bool,bool>(monIncr, monDecr)));
             }
 
             samplesWatch.stop();

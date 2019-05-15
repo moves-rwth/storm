@@ -1,7 +1,3 @@
-//
-// Created by Jip Spel on 03.09.18.
-//
-
 #ifndef STORM_MONOTONICITYCHECKER_H
 #define STORM_MONOTONICITYCHECKER_H
 
@@ -14,7 +10,6 @@
 
 #include "storm/storage/expressions/RationalFunctionToExpression.h"
 #include "storm/utility/constants.h"
-#include "carl/core/Variable.h"
 #include "storm/models/ModelBase.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
@@ -44,7 +39,7 @@ namespace storm {
             /*!
              * Checks for model and formula as provided in constructor for monotonicity
              */
-            std::map<storm::analysis::Lattice*, std::map<carl::Variable, std::pair<bool, bool>>> checkMonotonicity();
+            std::map<storm::analysis::Lattice*, std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>>> checkMonotonicity();
 
             /*!
              * Checks if monotonicity can be found in this lattice. Unordered states are not checked
@@ -74,7 +69,7 @@ namespace storm {
 
                     storm::solver::Z3SmtSolver s(*manager);
 
-                    std::set<carl::Variable> variables = derivative.gatherVariables();
+                    std::set<typename utility::parametric::VariableType<ValueType>::type> variables = derivative.gatherVariables();
 
 
                     for (auto variable : variables) {
@@ -114,20 +109,20 @@ namespace storm {
             }
 
         private:
-            std::map<storm::analysis::Lattice*, std::map<carl::Variable, std::pair<bool, bool>>> checkMonotonicity(std::map<storm::analysis::Lattice*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> map, storm::storage::SparseMatrix<ValueType> matrix);
+            std::map<storm::analysis::Lattice*, std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>>> checkMonotonicity(std::map<storm::analysis::Lattice*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> map, storm::storage::SparseMatrix<ValueType> matrix);
 
             //TODO: variabele type
-            std::map<carl::Variable, std::pair<bool, bool>> analyseMonotonicity(uint_fast64_t i, Lattice* lattice, storm::storage::SparseMatrix<ValueType> matrix) ;
+            std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>> analyseMonotonicity(uint_fast64_t i, Lattice* lattice, storm::storage::SparseMatrix<ValueType> matrix) ;
 
             std::map<Lattice*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> createLattice();
 
-            std::map<carl::Variable, std::pair<bool, bool>> checkOnSamples(std::shared_ptr<storm::models::sparse::Dtmc<ValueType>> model, uint_fast64_t numberOfSamples);
+            std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>> checkOnSamples(std::shared_ptr<storm::models::sparse::Dtmc<ValueType>> model, uint_fast64_t numberOfSamples);
 
-            std::map<carl::Variable, std::pair<bool, bool>> checkOnSamples(std::shared_ptr<storm::models::sparse::Mdp<ValueType>> model, uint_fast64_t numberOfSamples);
+            std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>> checkOnSamples(std::shared_ptr<storm::models::sparse::Mdp<ValueType>> model, uint_fast64_t numberOfSamples);
 
-            std::unordered_map<ValueType, std::unordered_map<carl::Variable, ValueType>> derivatives;
+            std::unordered_map<ValueType, std::unordered_map<typename utility::parametric::VariableType<ValueType>::type, ValueType>> derivatives;
 
-            ValueType getDerivative(ValueType function, carl::Variable var);
+            ValueType getDerivative(ValueType function, typename utility::parametric::VariableType<ValueType>::type var);
 
             std::map<Lattice*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> extendLatticeWithAssumptions(Lattice* lattice, AssumptionMaker<ValueType>* assumptionMaker, uint_fast64_t val1, uint_fast64_t val2, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>> assumptions);
 
@@ -139,7 +134,7 @@ namespace storm {
 
             bool checkSamples;
 
-            std::map<carl::Variable, std::pair<bool, bool>> resultCheckOnSamples;
+            std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>> resultCheckOnSamples;
 
             LatticeExtender<ValueType> *extender;
 
