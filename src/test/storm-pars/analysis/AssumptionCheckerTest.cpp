@@ -257,7 +257,7 @@ TEST(AssumptionCheckerTest, Simple3) {
                                                          storm::expressions::BinaryRelationExpression::RelationType::Greater));
     EXPECT_EQ(storm::analysis::AssumptionStatus::UNKNOWN, checker.checkOnSamples(assumption));
     EXPECT_EQ(storm::analysis::AssumptionStatus::VALID, checker.validateAssumption(assumption, lattice));
-    EXPECT_EQ(storm::analysis::AssumptionStatus::VALID, checker.validateAssumptionSMTSolver(lattice,assumption));
+    EXPECT_EQ(storm::analysis::AssumptionStatus::VALID, checker.validateAssumptionSMTSolver(assumption, lattice));
 
     assumption = std::make_shared<storm::expressions::BinaryRelationExpression>(
             storm::expressions::BinaryRelationExpression(*expressionManager, expressionManager->getBooleanType(),
@@ -266,7 +266,7 @@ TEST(AssumptionCheckerTest, Simple3) {
                                                          storm::expressions::BinaryRelationExpression::RelationType::Greater));
     EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.checkOnSamples(assumption));
     EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, lattice));
-    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumptionSMTSolver(lattice, assumption));
+    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumptionSMTSolver(assumption, lattice));
 
     assumption = std::make_shared<storm::expressions::BinaryRelationExpression>(
             storm::expressions::BinaryRelationExpression(*expressionManager, expressionManager->getBooleanType(),
@@ -275,7 +275,7 @@ TEST(AssumptionCheckerTest, Simple3) {
                                                          storm::expressions::BinaryRelationExpression::RelationType::Equal));
     EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.checkOnSamples(assumption));
     EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, lattice));
-    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumptionSMTSolver(lattice,assumption));
+    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumptionSMTSolver(assumption, lattice));
 }
 
 
