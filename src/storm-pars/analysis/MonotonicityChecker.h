@@ -33,8 +33,9 @@ namespace storm {
              * @param validate whether or not assumptions are to be validated
              * @param numberOfSamples number of samples taken for monotonicity checking, default 0,
              *          if 0then no check on samples is executed
+             * @param precision precision on which the samples are compared
              */
-            MonotonicityChecker(std::shared_ptr<storm::models::ModelBase> model, std::vector<std::shared_ptr<storm::logic::Formula const>> formulas, bool validate, uint_fast64_t numberOfSamples=0);
+            MonotonicityChecker(std::shared_ptr<storm::models::ModelBase> model, std::vector<std::shared_ptr<storm::logic::Formula const>> formulas, bool validate, uint_fast64_t numberOfSamples=0, double const& precision=0.000001);
 
             /*!
              * Checks for model and formula as provided in constructor for monotonicity
@@ -141,6 +142,8 @@ namespace storm {
             std::ofstream outfile;
 
             std::string filename = "monotonicity.txt";
+
+            double precision;
         };
     }
 }

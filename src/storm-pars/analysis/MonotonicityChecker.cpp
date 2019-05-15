@@ -23,11 +23,12 @@
 namespace storm {
     namespace analysis {
         template <typename ValueType>
-        MonotonicityChecker<ValueType>::MonotonicityChecker(std::shared_ptr<storm::models::ModelBase> model, std::vector<std::shared_ptr<storm::logic::Formula const>> formulas, bool validate, uint_fast64_t numberOfSamples) {
+        MonotonicityChecker<ValueType>::MonotonicityChecker(std::shared_ptr<storm::models::ModelBase> model, std::vector<std::shared_ptr<storm::logic::Formula const>> formulas, bool validate, uint_fast64_t numberOfSamples, double const& precision) {
             assert (model != nullptr);
             this->model = model;
             this->formulas = formulas;
             this->validate = validate;
+            this->precision = precision;
 
             if (numberOfSamples > 0) {
                 // sampling
@@ -512,7 +513,7 @@ namespace storm {
                 bool monDecr = true;
                 bool monIncr = true;
 
-                for (auto i = 0; i < numberOfSamples; ++i) {
+                for (auto i = 0; (monDecr || monIncr) && i < numberOfSamples; ++i) {
                     auto valuation = storm::utility::parametric::Valuation<ValueType>();
                     for (auto itr2 = variables.begin(); itr2 != variables.end(); ++itr2) {
                         // Only change value for current variable
@@ -553,11 +554,10 @@ namespace storm {
                     for (auto i = initialStates.getNextSetIndex(0); i < model->getNumberOfStates(); i = initialStates.getNextSetIndex(i+1)) {
                         initial += values[i];
                     }
-                    float diff = previous - initial;
-                    // TODO: define precision
-                    if (previous != -1 && diff > 0.000005 && diff < -0.000005) {
-                        monDecr &= previous >= initial;
-                        monIncr &= previous <= initial;
+                    double diff = previous - initial;
+                    if (previous != -1 && (diff > precision || diff < -precision)) {
+                        monDecr &= diff > precision; // then previous value is larger than the current value from the initial states
+                        monIncr &= diff < -precision;
                     }
                     previous = initial;
                 }
