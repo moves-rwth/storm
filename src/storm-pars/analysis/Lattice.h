@@ -1,7 +1,3 @@
-//
-// Created by Jip Spel on 24.07.18.
-//
-
 #ifndef LATTICE_LATTICE_H
 #define LATTICE_LATTICE_H
 
@@ -15,9 +11,19 @@
 
 namespace storm {
             namespace analysis {
+
                 class Lattice {
 
                 public:
+                    /*!
+                     * Constants for comparison of nodes/states
+                     */
+                    enum NodeComparison {
+                        UNKNOWN,
+                        BELOW,
+                        ABOVE,
+                        SAME,
+                    };
                     struct Node {
                         boost::container::flat_set<uint_fast64_t> states;
                         storm::storage::BitVector statesAbove;
@@ -63,30 +69,23 @@ namespace storm {
                     void add(uint_fast64_t state);
 
                     /*!
-                   * Adds a new relation between two nodes to the lattice
-                   * @param above The node closest to the top Node of the Lattice.
-                   * @param below The node closest to the bottom Node of the Lattice.
-                   */
+                     * Adds a new relation between two nodes to the lattice
+                     * @param above The node closest to the top Node of the Lattice.
+                     * @param below The node closest to the bottom Node of the Lattice.
+                     */
                     void addRelationNodes(storm::analysis::Lattice::Node *above, storm::analysis::Lattice::Node * below);
-
-                    /*!
-                   * Adds a new relation between two nodes to the lattice
-                   * @param above The node closest to the top Node of the Lattice.
-                   * @param below The node closest to the bottom Node of the Lattice.
-                   */
-                    void addRelation(uint_fast64_t above, uint_fast64_t below);
 
                     /*!
                      * Compares the level of the nodes of the states.
                      * Behaviour unknown when one or more of the states doesnot occur at any Node in the Lattice.
                      * @param state1 The first state.
                      * @param state2 The second state.
-                     * @return 0 if the nodes are on the same level;
-                     * 1 if the node of the first state is closer to top then the node of the second state;
-                     * 2 if the node of the second state is closer to top then the node of the first state;
-                     * -1 if it is unclear from the structure of the lattice how the nodes relate.
+                     * @return SAME if the nodes are on the same level;
+                     * ABOVE if the node of the first state is closer to top then the node of the second state;
+                     * BELOW if the node of the second state is closer to top then the node of the first state;
+                     * UNKNOWN if it is unclear from the structure of the lattice how the nodes relate.
                      */
-                    int compare(uint_fast64_t state1, uint_fast64_t state2);
+                    Lattice::NodeComparison compare(uint_fast64_t state1, uint_fast64_t state2);
 
                     /*!
                      * Retrieves the pointer to a Node at which the state occurs.
@@ -127,13 +126,32 @@ namespace storm {
                      */
                     storm::storage::BitVector* getAddedStates();
 
+                    /*!
+                     * Returns true if done building the lattice.
+                     * @return
+                     */
                     bool getDoneBuilding();
 
-                    int compare(Node* node1, Node* node2);
+                    /*!
+                     * Compares two nodes in the lattice
+                     * @param node1
+                     * @param node2
+                     * @return BELOW, ABOVE, SAME or UNKNOWN
+                     */
+                    NodeComparison compare(Node* node1, Node* node2);
 
-
+                    /*!
+                     * Sorts the given stats if possible.
+                     *
+                     * @param states Bitvector of the states to sort
+                     * @return Vector with states sorted, length equals number of states to sort.
+                     * If states cannot be sorted, last state of the vector will always equal the length of the BitVector
+                     */
                     std::vector<uint_fast64_t> sortStates(storm::storage::BitVector* states);
 
+                    /*!
+                     * If the lattice is fully build, this can be set to true.
+                     */
                     void setDoneBuilding(bool done);
 
                     /*!
@@ -142,13 +160,6 @@ namespace storm {
                      * @param out The stream to output to.
                      */
                     void toString(std::ostream &out);
-
-                    /*!
-                     * Prints a dot representation of the lattice to the output stream.
-                     *
-                     * @param out The stream to output to.
-                     */
-                    void toDotFile(std::ostream &out);
 
                     /*!
                      * Merges node2 into node1
@@ -162,17 +173,6 @@ namespace storm {
                      * @param var2
                      */
                     void merge(uint_fast64_t var1, uint_fast64_t var2);
-
-
-                    /*!
-                     * Constants for comparison of nodes/states
-                     */
-                     enum {
-                         UNKNOWN = -1,
-                         BELOW = 2,
-                         ABOVE = 1,
-                         SAME = 0,
-                     };
 
                 private:
                     std::vector<Node*> nodes;
@@ -188,8 +188,6 @@ namespace storm {
                     bool above(Node * node1, Node * node2);
 
                     bool above(Node * node1, Node * node2, storm::analysis::Lattice::Node *nodePrev, storm::storage::BitVector *statesSeen);
-
-                    std::unordered_map<uint_fast64_t, std::unordered_map<uint_fast64_t, uint_fast64_t>> comparisons;
 
                     bool doneBuilding;
                 };

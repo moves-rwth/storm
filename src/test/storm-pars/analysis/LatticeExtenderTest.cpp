@@ -1,8 +1,3 @@
-//
-// Created by Jip Spel on 20.09.18.
-//
-
-// TODO: cleanup includes
 #include "gtest/gtest.h"
 #include "storm-config.h"
 #include "test/storm_gtest.h"
@@ -63,11 +58,11 @@ TEST(LatticeExtenderTest, Brp_with_bisimulation) {
     }
 
     // Check on some nodes
-    EXPECT_EQ(storm::analysis::Lattice::ABOVE, lattice->compare(1,0));
-    EXPECT_EQ(storm::analysis::Lattice::ABOVE, lattice->compare(1,5));
-    EXPECT_EQ(storm::analysis::Lattice::ABOVE, lattice->compare(5,0));
-    EXPECT_EQ(storm::analysis::Lattice::ABOVE, lattice->compare(94,5));
-    EXPECT_EQ(storm::analysis::Lattice::UNKNOWN, lattice->compare(7,13));
+    EXPECT_EQ(storm::analysis::Lattice::NodeComparison::ABOVE, lattice->compare(1,0));
+    EXPECT_EQ(storm::analysis::Lattice::NodeComparison::ABOVE, lattice->compare(1,5));
+    EXPECT_EQ(storm::analysis::Lattice::NodeComparison::ABOVE, lattice->compare(5,0));
+    EXPECT_EQ(storm::analysis::Lattice::NodeComparison::ABOVE, lattice->compare(94,5));
+    EXPECT_EQ(storm::analysis::Lattice::NodeComparison::UNKNOWN, lattice->compare(7,13));
 }
 
 TEST(LatticeExtenderTest, Brp_without_bisimulation) {

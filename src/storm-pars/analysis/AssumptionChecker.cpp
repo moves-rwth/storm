@@ -1,6 +1,3 @@
-//
-// Created by Jip Spel on 12.09.18.
-//
 #include <storm/solver/Z3SmtSolver.h>
 #include "AssumptionChecker.h"
 
@@ -166,7 +163,7 @@ namespace storm {
 
                     if (state1succ1->getColumn() == state2succ1->getColumn() && state1succ2->getColumn() == state2succ2->getColumn()) {
                         if (assumption->getRelationType() == expressions::BinaryRelationExpression::RelationType::Greater
-                            && lattice->compare(state1succ1->getColumn(), state1succ2->getColumn()) != Lattice::UNKNOWN) {
+                            && lattice->compare(state1succ1->getColumn(), state1succ2->getColumn()) != Lattice::NodeComparison::UNKNOWN) {
                             // The assumption should be the greater assumption
                             // If the result is unknown, we cannot compare, also SMTSolver will not help
                             result = validateAssumptionFunction(lattice, state1succ1, state1succ2, state2succ1,
@@ -206,10 +203,10 @@ namespace storm {
             // Calculate the difference in probability for the "highest" successor state
             ValueType prob;
             auto comp = lattice->compare(state1succ1->getColumn(), state1succ2->getColumn());
-            assert (comp == Lattice::ABOVE || comp == Lattice::BELOW);
-            if (comp == Lattice::ABOVE) {
+            assert (comp == Lattice::NodeComparison::ABOVE || comp == Lattice::NodeComparison::BELOW);
+            if (comp == Lattice::NodeComparison::ABOVE) {
                 prob = state1succ1->getValue() - state2succ1->getValue();
-            } else if (comp == Lattice::BELOW) {
+            } else if (comp == Lattice::NodeComparison::BELOW) {
                 prob = state1succ2->getValue() - state2succ2->getValue();
             }
 
@@ -266,13 +263,13 @@ namespace storm {
                             stateVariables.insert(manager->declareRationalVariable(varname2));
                         }
                         auto comp = lattice->compare(itr1->getColumn(), itr2->getColumn());
-                        if (comp == Lattice::ABOVE) {
+                        if (comp == Lattice::NodeComparison::ABOVE) {
                             exprOrderSucc = exprOrderSucc && !(manager->getVariable(varname1) <=
                                                               manager->getVariable(varname2));
-                        } else if (comp == Lattice::BELOW) {
+                        } else if (comp == Lattice::NodeComparison::BELOW) {
                             exprOrderSucc = exprOrderSucc && !(manager->getVariable(varname1) >=
                                                               manager->getVariable(varname2));
-                        } else if (comp == Lattice::SAME) {
+                        } else if (comp == Lattice::NodeComparison::SAME) {
                             exprOrderSucc = exprOrderSucc &&
                                             (manager->getVariable(varname1) = manager->getVariable(varname2));
                         } else {

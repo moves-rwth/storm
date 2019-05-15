@@ -1,7 +1,3 @@
-//
-// Created by Jip Spel on 24.07.18.
-//
-
 #include <iostream>
 #include <fstream>
 #include "Lattice.h"
@@ -23,7 +19,6 @@ namespace storm {
 
             top->statesAbove = storm::storage::BitVector(numberOfStates);
             bottom->statesAbove = storm::storage::BitVector(numberOfStates);
-
 
             for (auto const& i : *topStates) {
                 addedStates->set(i);
@@ -116,15 +111,11 @@ namespace storm {
             assert (compare(above, below) == ABOVE);
         }
 
-        void Lattice::addRelation(uint_fast64_t above, uint_fast64_t below) {
-            addRelationNodes(getNode(above), getNode(below));
-        }
-
-        int Lattice::compare(uint_fast64_t state1, uint_fast64_t state2) {
+        Lattice::NodeComparison Lattice::compare(uint_fast64_t state1, uint_fast64_t state2) {
             return compare(getNode(state1), getNode(state2));
         }
 
-        int Lattice::compare(Node* node1, Node* node2) {
+        Lattice::NodeComparison Lattice::compare(Node* node1, Node* node2) {
             if (node1 != nullptr && node2 != nullptr) {
                 if (node1 == node2) {
                     return SAME;
@@ -185,7 +176,6 @@ namespace storm {
         }
 
         std::vector<uint_fast64_t> Lattice::sortStates(storm::storage::BitVector* states) {
-            // TODO improve
             auto numberOfSetBits = states->getNumberOfSetBits();
             auto stateSize = states->size();
             auto result = std::vector<uint_fast64_t>(numberOfSetBits, stateSize);
@@ -201,7 +191,7 @@ namespace storm {
                             added = true;
                         } else {
                             auto compareRes = compare(state, result[i]);
-                            if (compareRes == Lattice::ABOVE) {
+                            if (compareRes == ABOVE) {
                                 auto temp = result[i];
                                 result[i] = state;
                                 for (auto j = i + 1; j < numberOfSetBits && result[j + 1] != stateSize; j++) {
@@ -210,9 +200,9 @@ namespace storm {
                                     temp = temp2;
                                 }
                                 added = true;
-                            } else if (compareRes == Lattice::UNKNOWN) {
+                            } else if (compareRes == UNKNOWN) {
                                 break;
-                            } else if (compareRes == Lattice::SAME) {
+                            } else if (compareRes == SAME) {
                                 ++i;
                                 auto temp = result[i];
                                 result[i] = state;
@@ -257,47 +247,6 @@ namespace storm {
             }
         }
 
-        void Lattice::toDotFile(std::ostream &out) {
-            assert (false);
-//            out << "digraph \"Lattice\" {" << std::endl;
-//
-//            // print all nodes
-//            std::vector<Node*> printed;
-//            out << "\t" << "node [shape=ellipse]" << std::endl;
-//            for (auto itr = nodes.begin(); itr != nodes.end(); ++itr) {
-//
-//                if ((*itr) != nullptr && find(printed.begin(), printed.end(), (*itr)) == printed.end()) {
-//                    out << "\t\"" << (*itr) << "\" [label = \"";
-//                    uint_fast64_t index = (*itr)->states.getNextSetIndex(0);
-//                    while (index < (*itr)->states.size()) {
-//                        out << index;
-//                        index = (*itr)->states.getNextSetIndex(index + 1);
-//                        if (index < (*itr)->states.size()) {
-//                            out << ", ";
-//                        }
-//                    }
-//
-//                    out << "\"]" << std::endl;
-//                    printed.push_back(*itr);
-//                }
-//            }
-//
-//            // print arcs
-//            printed.clear();
-//            for (auto itr = nodes.begin(); itr != nodes.end(); ++itr) {
-//                if ((*itr) != nullptr && find(printed.begin(), printed.end(), (*itr)) == printed.end()) {
-//                    auto below = getBelow(*itr);
-//                    for (auto itr2 = below.begin(); itr2 != below.end(); ++itr2) {
-//                        out << "\t\"" << (*itr) << "\" -> \"" << (*itr2) << "\";" << std::endl;
-//                    }
-//                    printed.push_back(*itr);
-//                }
-//            }
-//
-//            out << "}" << std::endl;
-        }
-
-
         bool Lattice::above(Node *node1, Node *node2) {
             bool found = false;
             for (auto const& state : node1->states) {
@@ -335,7 +284,6 @@ namespace storm {
                 }
             }
             if (!found) {
-                // TODO: kan dit niet anders?
                 nodePrev->statesAbove|=((node2->statesAbove));
                 statesSeen->operator|=(((node2->statesAbove)));
 

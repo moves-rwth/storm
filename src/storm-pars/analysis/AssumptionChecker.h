@@ -1,7 +1,3 @@
-//
-// Created by Jip Spel on 12.09.18.
-//
-
 #ifndef STORM_ASSUMPTIONCHECKER_H
 #define STORM_ASSUMPTIONCHECKER_H
 
