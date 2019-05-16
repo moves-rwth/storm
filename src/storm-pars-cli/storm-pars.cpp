@@ -598,10 +598,6 @@ namespace storm {
             if (parSettings.isMonotonicityAnalysisSet()) {
                 // Simplify the model
                 storm::utility::Stopwatch simplifyingWatch(true);
-                std::ofstream outfile;
-                outfile.open("results.txt", std::ios_base::app);
-                outfile << ioSettings.getPrismInputFilename() << ", ";
-
                 if (model->isOfType(storm::models::ModelType::Dtmc)) {
                     auto consideredModel = (model->as<storm::models::sparse::Dtmc<ValueType>>());
                     auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<ValueType>>(*consideredModel);
@@ -631,11 +627,9 @@ namespace storm {
                 simplifyingWatch.stop();
                 STORM_PRINT(std::endl << "Time for model simplification: " << simplifyingWatch << "." << std::endl << std::endl);
                 model->printModelInformationToStream(std::cout);
-                outfile << simplifyingWatch << ", ";
-                outfile.close();
             }
 
-            if (parSettings.isMonotonicityAnalysisSet() && model) {
+            if (model) {
                 auto preprocessingResult = storm::pars::preprocessModel<DdType, ValueType>(model, input);
                 if (preprocessingResult.changed) {
                     model = preprocessingResult.model;
@@ -722,20 +716,13 @@ namespace storm {
 
             if (parSettings.isMonotonicityAnalysisSet()) {
                 std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(input.properties);
-
                 // Monotonicity
-                std::ofstream outfile;
-                outfile.open("results.txt", std::ios_base::app);
                 storm::utility::Stopwatch monotonicityWatch(true);
-                auto numberOfSamples = parSettings.getNumberOfSamples();
-                auto monotonicityChecker = storm::analysis::MonotonicityChecker<ValueType>(model, formulas, parSettings.isValidateAssumptionsSet(), numberOfSamples);
+                auto monotonicityChecker = storm::analysis::MonotonicityChecker<ValueType>(model, formulas, parSettings.isValidateAssumptionsSet(), parSettings.getNumberOfSamples(), parSettings.getMonotonicityAnalysisPrecision());
                 monotonicityChecker.checkMonotonicity();
                 monotonicityWatch.stop();
                 STORM_PRINT(std::endl << "Total time for monotonicity checking: " << monotonicityWatch << "." << std::endl
                                     << std::endl);
-
-                outfile << monotonicityWatch << std::endl;
-                outfile.close();
             }
 
             std::vector<storm::storage::ParameterRegion<ValueType>> regions = parseRegions<ValueType>(model);

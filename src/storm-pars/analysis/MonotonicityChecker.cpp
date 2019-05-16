@@ -522,11 +522,13 @@ namespace storm {
                                     (*itr2), storm::utility::convertNumber<typename utility::parametric::CoefficientType<ValueType>::type>(
                                             boost::lexical_cast<std::string>((i + 1) / (double(numberOfSamples + 1)))));
                             valuation.insert(val);
+                            assert (0 < val.second && val.second < 1);
                         } else {
                             auto val = std::pair<typename utility::parametric::VariableType<ValueType>::type, typename utility::parametric::CoefficientType<ValueType>::type>(
                                     (*itr2), storm::utility::convertNumber<typename utility::parametric::CoefficientType<ValueType>::type>(
                                             boost::lexical_cast<std::string>((1) / (double(numberOfSamples + 1)))));
                             valuation.insert(val);
+                            assert (0 < val.second && val.second < 1);
                         }
                     }
                     storm::models::sparse::Dtmc<double> sampleModel = instantiator.instantiate(valuation);
@@ -551,10 +553,12 @@ namespace storm {
                     std::vector<double> values = quantitativeResult.getValueVector();
                     auto initialStates = model->getInitialStates();
                     double initial = 0;
-                    for (auto i = initialStates.getNextSetIndex(0); i < model->getNumberOfStates(); i = initialStates.getNextSetIndex(i+1)) {
-                        initial += values[i];
+                    for (auto j = initialStates.getNextSetIndex(0); j < model->getNumberOfStates(); j = initialStates.getNextSetIndex(j+1)) {
+                        initial += values[j];
                     }
+                    assert (initial >= precision && initial <= 1+precision);
                     double diff = previous - initial;
+                    assert (previous == -1 || diff >= -1-precision && diff <= 1 + precision);
                     if (previous != -1 && (diff > precision || diff < -precision)) {
                         monDecr &= diff > precision; // then previous value is larger than the current value from the initial states
                         monIncr &= diff < -precision;
@@ -625,9 +629,12 @@ namespace storm {
                     for (auto i = initialStates.getNextSetIndex(0); i < model->getNumberOfStates(); i = initialStates.getNextSetIndex(i+1)) {
                         initial += values[i];
                     }
-                    if (previous != -1) {
-                        monDecr &= previous >= initial;
-                        monIncr &= previous <= initial;
+                    assert (initial >= precision && initial <= 1+precision);
+                    double diff = previous - initial;
+                    assert (previous == -1 || diff >= -1-precision && diff <= 1 + precision);
+                    if (previous != -1 && (diff > precision || diff < -precision)) {
+                        monDecr &= diff > precision; // then previous value is larger than the current value from the initial states
+                        monIncr &= diff < -precision;
                     }
                     previous = initial;
                 }

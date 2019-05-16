@@ -84,6 +84,11 @@ namespace storm {
                  */
                 uint_fast64_t getNumberOfSamples() const;
 
+                /*!
+				 * Retrieves the precision for the extremal value
+				 */
+                double getMonotonicityAnalysisPrecision() const;
+
                 const static std::string moduleName;
                 
             private:
@@ -99,6 +104,7 @@ namespace storm {
                 const static std::string sccElimination;
                 const static std::string validateAssumptions;
                 const static std::string samplesMonotonicityAnalysis;
+                const static std::string precision;
             };
             
         } // namespace modules
