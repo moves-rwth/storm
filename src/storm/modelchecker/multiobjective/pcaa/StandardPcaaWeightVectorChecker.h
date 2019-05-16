@@ -34,7 +34,6 @@ namespace storm {
                  * @param possibleBottomStates The states for which it is posible to not collect further reward with prob. 1
                  *
                  */
-                
                 StandardPcaaWeightVectorChecker(preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType> const& preprocessorResult);
                 
                 /*!

@@ -38,6 +38,16 @@ namespace storm {
                         // Intentionally left empty
                     }
                     
+                    
+                    bool containsOnlyTotalRewardFormulas() const {
+                        for (auto const& obj : objectives) {
+                            if (!obj.formula->isRewardOperatorFormula() || !obj.formula->getSubformula().isTotalRewardFormula()) {
+                                return false;
+                            }
+                        }
+                        return true;
+                    }
+                    
                     bool containsOnlyTrivialObjectives() const {
                         // Trivial objectives are either total reward formulas or single-dimensional step or time bounded cumulative reward formulas
                         for (auto const& obj : objectives) {

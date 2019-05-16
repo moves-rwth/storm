@@ -283,7 +283,11 @@ namespace storm {
                     objectiveHelper.emplace_back(*model, obj);
                 }
                 lpChecker = std::make_shared<DeterministicSchedsLpChecker<SparseModelType, GeometryValueType>>(env, *model, objectiveHelper);
-                wvChecker = storm::modelchecker::multiobjective::WeightVectorCheckerFactory<SparseModelType>::create(preprocessorResult);
+                if (preprocessorResult.containsOnlyTotalRewardFormulas()) {
+                    wvChecker = storm::modelchecker::multiobjective::WeightVectorCheckerFactory<SparseModelType>::create(preprocessorResult);
+                } else {
+                    wvChecker = nullptr;
+                }
             }
 
             template <class SparseModelType, typename GeometryValueType>
@@ -395,14 +399,17 @@ namespace storm {
                 for (uint64_t objIndex = 0; objIndex < objectives.size(); ++objIndex) {
                     std::vector<GeometryValueType> weightVector(objectives.size(), storm::utility::zero<ModelValueType>());
                     weightVector[objIndex] = storm::utility::one<GeometryValueType>();
-                    //negateMinObjectives(weightVector);
-                    wvChecker->check(env, storm::utility::vector::convertNumericVector<ModelValueType>(weightVector));
-                    auto point = storm::utility::vector::convertNumericVector<GeometryValueType>(wvChecker->getUnderApproximationOfInitialStateResults());
-                    //lpChecker->setCurrentWeightVector(weightVector);
-                    //auto point = lpChecker->check(env, negateMinObjectives(this->overApproximation));
-                    //STORM_LOG_THROW(point.is_initialized(), storm::exceptions::UnexpectedException, "Unable to find a point in the current overapproximation.");
-                    //negateMinObjectives(weightVector);
-                    negateMinObjectives(point);
+                    std::vector<GeometryValueType> point;
+                    if (wvChecker) {
+                        wvChecker->check(env, storm::utility::vector::convertNumericVector<ModelValueType>(weightVector));
+                        point = storm::utility::vector::convertNumericVector<GeometryValueType>(wvChecker->getUnderApproximationOfInitialStateResults());
+                        negateMinObjectives(point);
+                    } else {
+                        lpChecker->setCurrentWeightVector(weightVector);
+                        auto optionalPoint = lpChecker->check(env, negateMinObjectives(this->overApproximation));
+                        STORM_LOG_THROW(optionalPoint.is_initialized(), storm::exceptions::UnexpectedException, "Unable to find a point in the current overapproximation.");
+                        point = std::move(optionalPoint.get());
+                    }
                     Point p(point);
                     p.setOnFacet();
                     // Adapt the overapproximation
@@ -483,20 +490,26 @@ namespace storm {
                 
                 // Invoke optimization and insert the explored points
                 boost::optional<PointId> optPointId;
-                wvChecker->check(env, storm::utility::vector::convertNumericVector<ModelValueType>(f.getHalfspace().normalVector()));
-                auto point = storm::utility::vector::convertNumericVector<GeometryValueType>(wvChecker->getUnderApproximationOfInitialStateResults());
-                //auto currentArea = negateMinObjectives(overApproximation->intersection(f.getHalfspace().invert()));
-                //auto point = lpChecker->check(env, currentArea);
- //               if (point.is_initialized()) {
-                negateMinObjectives(point);
+                std::vector<GeometryValueType> point;
+                if (wvChecker) {
+                    wvChecker->check(env, storm::utility::vector::convertNumericVector<ModelValueType>(f.getHalfspace().normalVector()));
+                    point = storm::utility::vector::convertNumericVector<GeometryValueType>(wvChecker->getUnderApproximationOfInitialStateResults());
+                    negateMinObjectives(point);
+                } else {
+                    auto currentArea = negateMinObjectives(overApproximation->intersection(f.getHalfspace().invert()));
+                    auto optionalPoint = lpChecker->check(env, currentArea);
+                    if (optionalPoint.is_initialized()) {
+                        point = std::move(optionalPoint.get());
+                    } else {
+                        // As we did not find any feasable solution in the given area, we take a point that lies on the facet
+                        point = pointset.getPoint(f.getPoints().front()).get();
+                    }
+                }
                 Point p(point);
                 p.setOnFacet();
                 GeometryValueType offset = storm::utility::vector::dotProduct(f.getHalfspace().normalVector(), p.get());
                 addHalfspaceToOverApproximation(env, f.getHalfspace().normalVector(), offset);
                 optPointId = pointset.addPoint(env, std::move(p));
-                //} else {
-                //    addHalfspaceToOverApproximation(env, f.getHalfspace().normalVector(), f.getHalfspace().offset());
-                //}
                 
                 // Potentially generate new facets
                 if (optPointId) {
