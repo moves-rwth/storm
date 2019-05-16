@@ -46,7 +46,10 @@ namespace storm {
                 std::pair<std::vector<Point>, std::vector<Polytope>> check(storm::Environment const& env, storm::storage::geometry::PolytopeTree<GeometryValueType>& polytopeTree, GeometryValueType const& eps);
 
             private:
+                std::vector<std::vector<storm::expressions::Variable>> createEcVariables(std::vector<storm::expressions::Expression> const& choiceVars);
                 void initializeLpModel(Environment const& env);
+
+                
                 
                 void checkRecursive(storm::storage::geometry::PolytopeTree<GeometryValueType>& polytopeTree, GeometryValueType const& eps, std::vector<Point>& foundPoints, std::vector<Polytope>& infeasableAreas, uint64_t const& depth);
                 
