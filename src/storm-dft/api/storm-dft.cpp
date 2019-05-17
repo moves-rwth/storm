@@ -45,19 +45,23 @@ namespace storm {
         template<>
         storm::api::SMTResult
         analyzeDFTSMT(storm::storage::DFT<double> const &dft, bool printOutput) {
+            uint64_t solverTimeout = 10;
+
             storm::modelchecker::DFTASFChecker smtChecker(dft);
             smtChecker.toSolver();
             storm::api::SMTResult results;
 
-            results.lowerBEBound = smtChecker.getLeastFailureBound();
-            results.upperBEBound = smtChecker.getAlwaysFailedBound();
+            results.lowerBEBound = smtChecker.getLeastFailureBound(solverTimeout);
+            results.upperBEBound = smtChecker.getAlwaysFailedBound(solverTimeout);
             if (printOutput) {
                 STORM_PRINT("BE FAILURE BOUNDS" << std::endl <<
                                                 "========================================" << std::endl <<
                                                 "Lower bound: " << std::to_string(results.lowerBEBound) << std::endl <<
                                                 "Upper bound: " << std::to_string(results.upperBEBound) << std::endl)
             }
-            results.fdepConflicts = smtChecker.getDependencyConflicts();
+
+            results.fdepConflicts = smtChecker.getDependencyConflicts(solverTimeout);
+
             if (printOutput) {
                 STORM_PRINT("========================================" << std::endl <<
                                                                        "FDEP CONFLICTS" << std::endl <<

@@ -798,21 +798,28 @@ namespace storm {
                 dep1Index = dft.getDependencies().at(i);
                 for (size_t j = i + 1; j < dft.getDependencies().size(); ++j) {
                     dep2Index = dft.getDependencies().at(j);
-                    switch (checkDependencyConflict(dep1Index, dep2Index, timeout)) {
-                        case storm::solver::SmtSolver::CheckResult::Sat:
-                            STORM_LOG_DEBUG("Conflict between " << dft.getElement(dep1Index)->name() << " and "
-                                                                << dft.getElement(dep2Index)->name());
-                            res.emplace_back(std::pair<uint64_t, uint64_t>(dep1Index, dep2Index));
-                            break;
-                        case storm::solver::SmtSolver::CheckResult::Unknown:
-                            STORM_LOG_DEBUG("Unknown: Conflict between " << dft.getElement(dep1Index)->name() << " and "
-                                                                         << dft.getElement(dep2Index)->name());
-                            res.emplace_back(std::pair<uint64_t, uint64_t>(dep1Index, dep2Index));
-                            break;
-                        default:
-                            STORM_LOG_DEBUG("No conflict between " << dft.getElement(dep1Index)->name() << " and "
-                                                                   << dft.getElement(dep2Index)->name());
-                            break;
+                    if (dft.getDependency(dep1Index)->triggerEvent() == dft.getDependency(dep2Index)->triggerEvent()) {
+                        STORM_LOG_DEBUG("Conflict between " << dft.getElement(dep1Index)->name() << " and "
+                                                            << dft.getElement(dep2Index)->name() << ": Same trigger");
+                        res.emplace_back(std::pair<uint64_t, uint64_t>(dep1Index, dep2Index));
+                    } else {
+                        switch (checkDependencyConflict(dep1Index, dep2Index, timeout)) {
+                            case storm::solver::SmtSolver::CheckResult::Sat:
+                                STORM_LOG_DEBUG("Conflict between " << dft.getElement(dep1Index)->name() << " and "
+                                                                    << dft.getElement(dep2Index)->name());
+                                res.emplace_back(std::pair<uint64_t, uint64_t>(dep1Index, dep2Index));
+                                break;
+                            case storm::solver::SmtSolver::CheckResult::Unknown:
+                                STORM_LOG_DEBUG(
+                                        "Unknown: Conflict between " << dft.getElement(dep1Index)->name() << " and "
+                                                                     << dft.getElement(dep2Index)->name());
+                                res.emplace_back(std::pair<uint64_t, uint64_t>(dep1Index, dep2Index));
+                                break;
+                            default:
+                                STORM_LOG_DEBUG("No conflict between " << dft.getElement(dep1Index)->name() << " and "
+                                                                       << dft.getElement(dep2Index)->name());
+                                break;
+                        }
                     }
                 }
             }
