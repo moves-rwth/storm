@@ -13,6 +13,12 @@
 
 namespace storm {
     namespace api {
+        struct SMTResult {
+            uint64_t lowerBEBound;
+            uint64_t upperBEBound;
+            std::vector<std::pair<uint64_t, uint64_t>> fdepConflicts;
+        };
+
 
         /*!
          * Load DFT from Galileo file.
@@ -100,7 +106,7 @@ namespace storm {
          * @return Result result vector
          */
         template<typename ValueType>
-        std::vector<storm::solver::SmtSolver::CheckResult>
+        storm::api::SMTResult
         analyzeDFTSMT(storm::storage::DFT<ValueType> const &dft, bool printOutput);
 
         /*!

@@ -43,33 +43,36 @@ namespace storm {
         }
 
         template<>
-        std::vector<storm::solver::SmtSolver::CheckResult>
+        storm::api::SMTResult
         analyzeDFTSMT(storm::storage::DFT<double> const &dft, bool printOutput) {
             storm::modelchecker::DFTASFChecker smtChecker(dft);
             smtChecker.toSolver();
-            std::vector<storm::solver::SmtSolver::CheckResult> results;
+            storm::api::SMTResult results;
 
-            results.push_back(smtChecker.checkTleNeverFailed());
-            uint64_t lower_bound = smtChecker.getLeastFailureBound();
-            uint64_t upper_bound = smtChecker.getAlwaysFailedBound();
+            results.lowerBEBound = smtChecker.getLeastFailureBound();
+            results.upperBEBound = smtChecker.getAlwaysFailedBound();
             if (printOutput) {
-                // TODO add suitable output function, maybe add query descriptions for better readability
-                for (size_t i = 0; i < results.size(); ++i) {
-                    std::string tmp = "unknown";
-                    if (results.at(i) == storm::solver::SmtSolver::CheckResult::Sat) {
-                        tmp = "SAT";
-                    } else if (results.at(i) == storm::solver::SmtSolver::CheckResult::Unsat) {
-                        tmp = "UNSAT";
-                    }
+                STORM_PRINT("BE FAILURE BOUNDS" << std::endl <<
+                                                "========================================" << std::endl <<
+                                                "Lower bound: " << std::to_string(results.lowerBEBound) << std::endl <<
+                                                "Upper bound: " << std::to_string(results.upperBEBound) << std::endl)
+            }
+            results.fdepConflicts = smtChecker.getDependencyConflicts();
+            if (printOutput) {
+                STORM_PRINT("========================================" << std::endl <<
+                                                                       "FDEP CONFLICTS" << std::endl <<
+                                                                       "========================================"
+                                                                       << std::endl)
+                for (auto pair: results.fdepConflicts) {
+                    STORM_PRINT("Conflict between " << dft.getElement(pair.first)->name() << " and "
+                                                    << dft.getElement(pair.second)->name() << std::endl)
                 }
-                std::cout << "Lower bound: " << std::to_string(lower_bound) << std::endl;
-                std::cout << "Upper bound: " << std::to_string(upper_bound) << std::endl;
             }
             return results;
         }
 
         template<>
-        std::vector<storm::solver::SmtSolver::CheckResult>
+        storm::api::SMTResult
         analyzeDFTSMT(storm::storage::DFT<storm::RationalFunction> const &dft, bool printOutput) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
                             "Analysis by SMT not supported for this data type.");
