@@ -610,6 +610,49 @@ namespace storm {
             return res;
         }
 
+        storm::solver::SmtSolver::CheckResult
+        DFTASFChecker::checkDependencyConflict(uint64_t dep1Index, uint64_t dep2Index, uint64_t timeout) {
+            std::vector<std::shared_ptr<SmtConstraint>> andConstr;
+            std::vector<std::shared_ptr<SmtConstraint>> orConstr;
+            STORM_LOG_DEBUG(
+                    "Check " << dft.getElement(dep1Index)->name() << " and " << dft.getElement(dep2Index)->name());
+            andConstr.clear();
+            // FDEP2 was triggered before dependent elements have failed
+            andConstr.push_back(std::make_shared<IsLess>(
+                    timePointVariables.at(dep2Index), dependencyVariables.at(dep2Index)));
+            // AND FDEP1 is triggered before FDEP2 is resolved
+            andConstr.push_back(std::make_shared<IsGreaterEqual>(
+                    timePointVariables.at(dep1Index), timePointVariables.at(dep2Index)));
+            andConstr.push_back(std::make_shared<IsLess>(
+                    timePointVariables.at(dep1Index), dependencyVariables.at(dep2Index)));
+            std::shared_ptr<SmtConstraint> betweenConstr1 = std::make_shared<And>(andConstr);
+
+            andConstr.clear();
+            // FDEP1 was triggered before dependent elements have failed
+            andConstr.push_back(std::make_shared<IsLess>(
+                    timePointVariables.at(dep1Index), dependencyVariables.at(dep1Index)));
+            // AND FDEP2 is triggered before FDEP1 is resolved
+            andConstr.push_back(std::make_shared<IsGreaterEqual>(
+                    timePointVariables.at(dep2Index), timePointVariables.at(dep1Index)));
+            andConstr.push_back(std::make_shared<IsLess>(
+                    timePointVariables.at(dep2Index), dependencyVariables.at(dep1Index)));
+            std::shared_ptr<SmtConstraint> betweenConstr2 = std::make_shared<And>(andConstr);
+
+            orConstr.clear();
+            // Either one of the above constraints holds
+            orConstr.push_back(betweenConstr1);
+            orConstr.push_back(betweenConstr2);
+            std::shared_ptr<SmtConstraint> checkConstr = std::make_shared<Or>(orConstr);
+            std::shared_ptr<storm::expressions::ExpressionManager> manager = solver->getManager().getSharedPointer();
+            solver->push();
+            solver->add(checkConstr->toExpression(varNames, manager));
+            setSolverTimeout(timeout * 1000);
+            storm::solver::SmtSolver::CheckResult res = solver->check();
+            unsetSolverTimeout();
+            solver->pop();
+            return res;
+        }
+
         uint64_t DFTASFChecker::correctLowerBound(uint64_t bound, uint_fast64_t timeout) {
             STORM_LOG_ASSERT(solver, "SMT Solver was not initialized, call toSolver() before checking queries");
             STORM_LOG_DEBUG("Lower bound correction - try to correct bound " << std::to_string(bound));
@@ -740,6 +783,36 @@ namespace storm {
                 }
             }
             return bound;
+        }
+
+        std::vector<std::pair<uint64_t, uint64_t>> DFTASFChecker::getDependencyConflicts(uint_fast64_t timeout) {
+            STORM_LOG_ASSERT(solver, "SMT Solver was not initialized, call toSolver() before checking queries");
+            std::vector<std::pair<uint64_t, uint64_t>> res;
+            uint64_t dep1Index;
+            uint64_t dep2Index;
+            for (size_t i = 0; i < dft.getDependencies().size(); ++i) {
+                dep1Index = dft.getDependencies().at(i);
+                for (size_t j = i + 1; j < dft.getDependencies().size(); ++j) {
+                    dep2Index = dft.getDependencies().at(j);
+                    switch (checkDependencyConflict(dep1Index, dep2Index, timeout)) {
+                        case storm::solver::SmtSolver::CheckResult::Sat:
+                            STORM_LOG_DEBUG("Conflict between " << dft.getElement(dep1Index)->name() << " and "
+                                                                << dft.getElement(dep2Index)->name());
+                            res.emplace_back(std::pair<uint64_t, uint64_t>(dep1Index, dep2Index));
+                            break;
+                        case storm::solver::SmtSolver::CheckResult::Unknown:
+                            STORM_LOG_DEBUG("Unknown: Conflict between " << dft.getElement(dep1Index)->name() << " and "
+                                                                         << dft.getElement(dep2Index)->name());
+                            res.emplace_back(std::pair<uint64_t, uint64_t>(dep1Index, dep2Index));
+                            break;
+                        default:
+                            STORM_LOG_DEBUG("No conflict between " << dft.getElement(dep1Index)->name() << " and "
+                                                                   << dft.getElement(dep2Index)->name());
+                            break;
+                    }
+                }
+            }
+            return res;
         }
     }
 }

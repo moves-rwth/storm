@@ -80,6 +80,19 @@ namespace storm {
             storm::solver::SmtSolver::CheckResult checkTleFailsWithLeq(uint64_t bound);
 
             /**
+             * Check if two given dependencies are conflicting in their resolution, i.e. check if non-determinism may occur.
+             * Note that this is a very conservative check using SMT formulae.
+             * We only check if sequences exist, where one of the dependencies is triggered before the other is completely resolved
+             *
+             * @param dep1Index Index of the first dependency
+             * @param dep2Index Index of the second dependency
+             * @param timeout timeout for the solver
+             * @return "Sat" if the dependencies are conflicting, "Unsat" if they are not, otherwise "Unknown"
+             */
+            storm::solver::SmtSolver::CheckResult
+            checkDependencyConflict(uint64_t dep1Index, uint64_t dep2Index, uint64_t timeout = 10);
+
+            /**
              * Get the minimal number of BEs necessary for the TLE to fail (lower bound for number of failures to check)
              *
              * @param timeout timeout for each query in seconds, defaults to 10 seconds
@@ -95,6 +108,14 @@ namespace storm {
              * @return the number
              */
             uint64_t getAlwaysFailedBound(uint_fast64_t timeout = 10);
+
+            /**
+             * Get a vector of index pairs of FDEPs which are conflicting according to a conservative definition
+             *
+             * @param timeout timeout for each query in seconds, defaults to 10 seconds
+             * @return a vector of pairs of FDEP indices which are conflicting
+             */
+            std::vector<std::pair<uint64_t, uint64_t>> getDependencyConflicts(uint_fast64_t timeout = 10);
 
             /**
              * Set the timeout of the solver
