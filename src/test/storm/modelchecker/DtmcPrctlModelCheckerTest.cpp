@@ -17,6 +17,7 @@
 #include "storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "storm/modelchecker/prctl/HybridDtmcPrctlModelChecker.h"
 #include "storm/modelchecker/prctl/SymbolicDtmcPrctlModelChecker.h"
+#include "storm/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
 #include "storm/modelchecker/results/QuantitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
@@ -644,5 +645,57 @@ namespace {
         EXPECT_NEAR(this->parseNumber("25/24"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
     }
 
+    TEST(DtmcPrctlModelCheckerTest, AllUntilProbabilities) {
+        std::string formulasString = "P=? [F \"one\"]";
+        formulasString += "; P=? [F \"two\"]";
+        formulasString += "; P=? [F \"three\"]";
+
+        storm::prism::Program program = storm::api::parseProgram(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm");
+        auto formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasString, program));
+        std::vector<storm::modelchecker::CheckTask<storm::logic::Formula, double>> tasks;
+        for (auto const& f : formulas) {
+            tasks.emplace_back(*f);
+        }
+        auto model = storm::api::buildSparseModel<double>(program, formulas)->template as<storm::models::sparse::Dtmc<double>>();
+        EXPECT_EQ(13ul, model->getNumberOfStates());
+        EXPECT_EQ(20ul, model->getNumberOfTransitions());
+
+        storm::storage::SparseMatrix<double> matrix = model->getTransitionMatrix();
+        storm::storage::BitVector initialStates(13);
+        initialStates.set(0);
+        storm::storage::BitVector phiStates(13);
+        storm::storage::BitVector psiStates(13);
+        psiStates.set(7);
+        psiStates.set(8);
+        psiStates.set(9);
+        psiStates.set(10);
+        psiStates.set(11);
+        psiStates.set(12);
+        storm::Environment env;
+        storm::solver::SolveGoal<double> goal(*model, tasks[0]);
+        std::vector<double> result = storm::modelchecker::helper::SparseDtmcPrctlHelper<double>::computeAllUntilProbabilities(env, std::move(goal), matrix, initialStates, phiStates, psiStates);
+
+        EXPECT_NEAR(1.0/6, result[7], 1e-6);
+        EXPECT_NEAR(1.0/6, result[8], 1e-6);
+        EXPECT_NEAR(1.0/6, result[9], 1e-6);
+        EXPECT_NEAR(1.0/6, result[10], 1e-6);
+        EXPECT_NEAR(1.0/6, result[11], 1e-6);
+        EXPECT_NEAR(1.0/6, result[12], 1e-6);
+
+        phiStates.set(6);
+        psiStates.set(1);
+        result = storm::modelchecker::helper::SparseDtmcPrctlHelper<double>::computeAllUntilProbabilities(env, std::move(goal), matrix, initialStates, phiStates, psiStates);
+
+        EXPECT_NEAR(1, result[0], 1e-6);
+        EXPECT_NEAR(0.5, result[1], 1e-6);
+        EXPECT_NEAR(0.5, result[2], 1e-6);
+        EXPECT_NEAR(0.25, result[5], 1e-6);
+        EXPECT_NEAR(0, result[7], 1e-6);
+        EXPECT_NEAR(0, result[8], 1e-6);
+        EXPECT_NEAR(0, result[9], 1e-6);
+        EXPECT_NEAR(0.125, result[10], 1e-6);
+        EXPECT_NEAR(0.125, result[11], 1e-6);
+        EXPECT_NEAR(0, result[12], 1e-6);
+    }
 
 }
