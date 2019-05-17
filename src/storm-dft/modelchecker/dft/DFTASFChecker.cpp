@@ -341,7 +341,7 @@ namespace storm {
             auto const &trigger = dependency->triggerEvent();
             std::vector<uint64_t> dependentIndices;
             for (size_t j = 0; j < dependentEvents.size(); ++j) {
-                dependentIndices.push_back(dependentEvents[j]->id());
+                dependentIndices.push_back(timePointVariables.at(dependentEvents[j]->id()));
             }
 
             constraints.push_back(std::make_shared<IsMaximum>(dependencyVariables.at(i), dependentIndices));
@@ -617,7 +617,9 @@ namespace storm {
             STORM_LOG_DEBUG(
                     "Check " << dft.getElement(dep1Index)->name() << " and " << dft.getElement(dep2Index)->name());
             andConstr.clear();
-            // FDEP2 was triggered before dependent elements have failed
+            // Both FDEPs were triggered before dependent elements have failed
+            andConstr.push_back(std::make_shared<IsLess>(
+                    timePointVariables.at(dep1Index), dependencyVariables.at(dep1Index)));
             andConstr.push_back(std::make_shared<IsLess>(
                     timePointVariables.at(dep2Index), dependencyVariables.at(dep2Index)));
             // AND FDEP1 is triggered before FDEP2 is resolved
@@ -628,9 +630,11 @@ namespace storm {
             std::shared_ptr<SmtConstraint> betweenConstr1 = std::make_shared<And>(andConstr);
 
             andConstr.clear();
-            // FDEP1 was triggered before dependent elements have failed
+            // Both FDEPs were triggered before dependent elements have failed
             andConstr.push_back(std::make_shared<IsLess>(
                     timePointVariables.at(dep1Index), dependencyVariables.at(dep1Index)));
+            andConstr.push_back(std::make_shared<IsLess>(
+                    timePointVariables.at(dep2Index), dependencyVariables.at(dep2Index)));
             // AND FDEP2 is triggered before FDEP1 is resolved
             andConstr.push_back(std::make_shared<IsGreaterEqual>(
                     timePointVariables.at(dep2Index), timePointVariables.at(dep1Index)));
