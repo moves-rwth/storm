@@ -1306,19 +1306,6 @@ namespace storm {
                 }
             }
         }
-
-        template<typename ValueType>
-        void SparseMatrix<ValueType>::deleteDiagonalEntries(storm::storage::BitVector const& states) {
-            // Iterate over all rows and negate all the elements that are not on the diagonal.
-            for (index_type group = 0; group < this->getRowGroupCount(); ++group) {
-                for (auto& entry : this->getRowGroup(group)) {
-                    if (entry.getColumn() == group && states[group]) {
-                        --this->nonzeroEntryCount;
-                        entry.setValue(storm::utility::zero<ValueType>());
-                    }
-                }
-            }
-        }
         
         template<typename ValueType>
         typename std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> SparseMatrix<ValueType>::getJacobiDecomposition() const {
