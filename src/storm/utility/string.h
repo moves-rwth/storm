@@ -19,6 +19,11 @@ namespace storm {
                 SimilarStrings(std::string reference, double similarityFactor = 0.6, bool caseSensitive = true);
                 
                 /*!
+                 * @return true, if the given string is considered similar.
+                 */
+                bool isSimilar(std::string const& string) const;
+                
+                /*!
                  * Adds the given string to the set of similar strings (if it is similar)
                  * @return true, if the given string is considered similar.
                  */
@@ -26,7 +31,6 @@ namespace storm {
                 
                 /*!
                  * Gets a list of all added strings that are similar to the reference string.
-                 * Erases all strings gathered so far.
                  */
                 std::vector<std::string> toList() const;
                 

@@ -9,9 +9,13 @@ namespace storm {
                 // intentionally left empty.
             }
             
-            bool SimilarStrings::add(std::string const& string) {
+            bool SimilarStrings::isSimilar(std::string const& string) const {
                 double distance = levenshteinDistance(reference, string, caseSensitive);
-                if (distance <= static_cast<double>(std::max(reference.size(), string.size())) * (1.0 - similarityFactor)) {
+                return distance <= static_cast<double>(std::max(reference.size(), string.size())) * (1.0 - similarityFactor);
+            }
+            
+            bool SimilarStrings::add(std::string const& string) {
+                if (isSimilar(string)) {
                     distances.emplace(storm::utility::string::levenshteinDistance(reference, string, caseSensitive), string);
                     return true;
                 }
