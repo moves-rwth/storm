@@ -55,11 +55,11 @@ namespace storm {
                     for (uint64_t col = 1; col < d[row].size(); ++col) {
                         uint64_t cost = 1;
                         if (caseSensitive) {
-                            if (tolower(lhs[row-1]) == tolower(rhs[col-1])) {
+                            if (lhs[row-1] == rhs[col-1]) {
                                 cost = 0;
                             }
                         } else {
-                            if (lhs[row-1] == rhs[col-1]) {
+                            if (tolower(lhs[row-1]) == tolower(rhs[col-1])) {
                                 cost = 0;
                             }
                         }
