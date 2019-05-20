@@ -275,8 +275,6 @@ bool parseOptions(const int argc, const char* argv[]) {
     try {
         storm::settings::mutableManager().setFromCommandLine(argc, argv);
     } catch (storm::exceptions::OptionParserException& e) {
-        storm::settings::manager().printHelp();
-        throw e;
         return false;
     }
     
@@ -289,7 +287,7 @@ bool parseOptions(const int argc, const char* argv[]) {
 
     bool result = true;
     if (general.isHelpSet()) {
-        storm::settings::manager().printHelp(general.getHelpModuleName());
+        storm::settings::manager().printHelp(general.getHelpFilterExpression());
         result = false;
     }
     

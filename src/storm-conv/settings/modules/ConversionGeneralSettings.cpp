@@ -22,8 +22,8 @@ namespace storm {
             const std::string ConversionGeneralSettings::configOptionShortName = "c";
 
             ConversionGeneralSettings::ConversionGeneralSettings() : ModuleSettings(moduleName) {
-                this->addOption(storm::settings::OptionBuilder(moduleName, helpOptionName, false, "Shows all available options, arguments and descriptions.").setShortName(helpOptionShortName)
-                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("hint", "A regular expression to show help for all matching entities or 'all' for the complete help.").setDefaultValueString("all").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, helpOptionName, false, "Shows available options, arguments and descriptions.").setShortName(helpOptionShortName)
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filter", "'frequent' for frequently used options, 'all' for the complete help, or a regular expression to show help for all matching entities.").setDefaultValueString("frequent").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, versionOptionName, false, "Prints the version information.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, verboseOptionName, false, "Enables more verbose output.").setShortName(verboseOptionShortName).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, debugOptionName, false, "Enables verbose and debug output.").build());
@@ -40,8 +40,8 @@ namespace storm {
                 return this->getOption(versionOptionName).getHasOptionBeenSet();
             }
             
-            std::string ConversionGeneralSettings::getHelpModuleName() const {
-                return this->getOption(helpOptionName).getArgumentByName("hint").getValueAsString();
+            std::string ConversionGeneralSettings::getHelpFilterExpression() const {
+                return this->getOption(helpOptionName).getArgumentByName("filter").getValueAsString();
             }
             
             bool ConversionGeneralSettings::isVerboseSet() const {
