@@ -385,7 +385,7 @@ namespace storm {
             for (uint_fast64_t i = 0; i < argumentCache.size(); ++i) {
                 ArgumentBase& argument = option->getArgument(i);
                 bool conversionOk = argument.setFromStringValue(argumentCache[i]);
-                STORM_LOG_THROW(conversionOk, storm::exceptions::OptionParserException, "Value '" << argumentCache[i] << "' is invalid for argument '" << argument.getName() << "' of option " << option->getModuleName() << ":" << option->getLongName() << ".");
+                STORM_LOG_THROW(conversionOk, storm::exceptions::OptionParserException, "Value '" << argumentCache[i] << "' is invalid for argument <" << argument.getName() << "> of option:\n" << *option);
             }
             
             // In case there are optional arguments that were not set, we set them to their default value.
