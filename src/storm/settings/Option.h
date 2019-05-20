@@ -40,9 +40,10 @@ namespace storm {
              * @param isOptionRequired Sets whether the option is required to appear.
              * @param requireModulePrefix A flag that indicates whether this option requires to be prefixed with the
              * module name.
+             * @param isAdvanced A flag that indicates whether this option is only displayed in the advanced help
              * @param optionArguments The arguments of the option.
              */
-            Option(std::string const& moduleName, std::string const& longOptionName, std::string const& optionDescription, bool isOptionRequired, bool requireModulePrefix, std::vector<std::shared_ptr<ArgumentBase>> const& optionArguments = std::vector<std::shared_ptr<ArgumentBase>>());
+            Option(std::string const& moduleName, std::string const& longOptionName, std::string const& optionDescription, bool isOptionRequired, bool requireModulePrefix, bool isAdvanced, std::vector<std::shared_ptr<ArgumentBase>> const& optionArguments = std::vector<std::shared_ptr<ArgumentBase>>());
             
             /*!
              * Creates an option with the given parameters.
@@ -53,10 +54,10 @@ namespace storm {
              * @param optionDescription The description of the option.
              * @param isOptionRequired Sets whether the option is required to appear.
              * @param requireModulePrefix A flag that indicates whether this option requires to be prefixed with the
-             * module name.
+             * @param isAdvanced A flag that indicates whether this option is only displayed in the advanced help
              * @param optionArguments The arguments of the option.
              */
-            Option(std::string const& moduleName, std::string const& longOptionName, std::string const& shortOptionName, std::string const& optionDescription, bool isOptionRequired, bool requireModulePrefix, std::vector<std::shared_ptr<ArgumentBase>> const& optionArguments = std::vector<std::shared_ptr<ArgumentBase>>());
+            Option(std::string const& moduleName, std::string const& longOptionName, std::string const& shortOptionName, std::string const& optionDescription, bool isOptionRequired, bool requireModulePrefix, bool isAdvanced, std::vector<std::shared_ptr<ArgumentBase>> const& optionArguments = std::vector<std::shared_ptr<ArgumentBase>>());
 
             /*!
              * Checks whether the given option is compatible with the current one. If not, an exception is thrown.
@@ -162,6 +163,11 @@ namespace storm {
             bool getHasOptionBeenSet() const;
 
             /*!
+             * Retrieves whether the option is only displayed in the advanced help.
+             */
+            bool getIsAdvanced() const;
+            
+            /*!
              * Retrieves the arguments of the option.
              *
              * @return The arguments of the option.
@@ -199,6 +205,9 @@ namespace storm {
             // A flag that indicates whether this option is required to be prefixed with the module name.
             bool requireModulePrefix;
             
+            // A flag that indicates whether this option is only displayed in the advanced help.
+            bool isAdvanced;
+            
             // A flag that indicates whether this option has been set.
             bool hasBeenSet;
 
@@ -219,9 +228,10 @@ namespace storm {
              * @param isOptionRequired Sets whether the option is required to appear.
              * @param requireModulePrefix A flag that indicates whether this option requires to be prefixed with the
              * module name.
+             * @param isAdvanced A flag that indicates whether this option is only displayed in the advanced help
              * @param optionArguments The arguments of the option.
              */
-            Option(std::string const& moduleName, std::string const& longOptionName, std::string const& shortOptionName, bool hasShortOptionName, std::string const& optionDescription, bool isOptionRequired, bool requireModulePrefix, std::vector<std::shared_ptr<ArgumentBase>> const& optionArguments = std::vector<std::shared_ptr<ArgumentBase>>());
+            Option(std::string const& moduleName, std::string const& longOptionName, std::string const& shortOptionName, bool hasShortOptionName, std::string const& optionDescription, bool isOptionRequired, bool requireModulePrefix, bool isAdvanced, std::vector<std::shared_ptr<ArgumentBase>> const& optionArguments = std::vector<std::shared_ptr<ArgumentBase>>());
             
             /*!
              * Sets the flag that marks the option as being (un)set.

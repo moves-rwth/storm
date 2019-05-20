@@ -86,13 +86,32 @@ namespace storm {
         void SettingsManager::handleUnknownOption(std::string const& optionName, bool isShort) const {
             std::string optionNameWithDashes = (isShort ? "-" : "--") + optionName;
             storm::utility::string::SimilarStrings similarStrings(optionNameWithDashes, 0.6, false);
+            std::map<std::string, std::vector<std::string>> similarOptionNames;
             for (auto const& longOption : longNameToOptions) {
-                similarStrings.add("--" + longOption.first);
+                if (similarStrings.add("--" + longOption.first)) {
+                    similarOptionNames["--" + longOption.first].push_back(longOption.first);
+                }
             }
             for (auto const& shortOption : shortNameToOptions) {
-                similarStrings.add("-" + shortOption.first);
+                if (similarStrings.add("-" + shortOption.first)) {
+                    for (auto const& option : shortOption.second) {
+                        similarOptionNames["-" + shortOption.first].push_back(option->getLongName());
+                    }
+                }
             }
-            STORM_LOG_THROW(false, storm::exceptions::OptionParserException, "Unknown option '" << optionNameWithDashes << "'. " << similarStrings.toDidYouMeanString());
+            std::string errorMessage = "Unknown option '" + optionNameWithDashes + "'.";
+            if (!similarOptionNames.empty()) {
+                errorMessage += " " + similarStrings.toDidYouMeanString() + "\n\n";
+                std::vector<std::string> sortedSimilarOptionNames;
+                auto similarStringsList = similarStrings.toList();
+                for (auto const& s : similarStringsList) {
+                    for (auto const& longOptionName : similarOptionNames.at(s)) {
+                        sortedSimilarOptionNames.push_back(longOptionName);
+                    }
+                }
+                errorMessage += getHelpForSelection({}, sortedSimilarOptionNames, "", "##### Suggested options:");
+            }
+            STORM_LOG_THROW(false, storm::exceptions::OptionParserException, errorMessage);
         }
         
         void SettingsManager::setFromExplodedString(std::vector<std::string> const& commandLineArguments) {
@@ -188,112 +207,184 @@ namespace storm {
             this->finalizeAllModules();
         }
         
-        void SettingsManager::printHelp(std::string const& hint) const {
+        void SettingsManager::printHelp(std::string const& filter) const {
             STORM_PRINT("usage: " << executableName << " [options]" << std::endl << std::endl);
             
-            if (hint == "all") {
+            if (filter == "frequent" || filter == "all") {
+                bool includeAdvanced = (filter == "all");
                 // Find longest option name.
-                uint_fast64_t maxLength = getPrintLengthOfLongestOption();
+                uint_fast64_t maxLength = getPrintLengthOfLongestOption(includeAdvanced);
+                
+                std::vector<std::string> invisibleModules;
+                uint64_t numHidden = 0;
                 for (auto const& moduleName : this->moduleNames) {
                     // Only print for visible modules.
                     if (hasModule(moduleName, true)) {
-                        printHelpForModule(moduleName, maxLength);
-                    };
+                        STORM_PRINT(getHelpForModule(moduleName, maxLength, includeAdvanced));
+                        // collect 'hidden' options
+                        if (!includeAdvanced) {
+                            auto moduleIterator = moduleOptions.find(moduleName);
+                            if (moduleIterator != this->moduleOptions.end()) {
+                                bool allAdvanced = true;
+                                for (auto const& option : moduleIterator->second) {
+                                    if (!option->getIsAdvanced()) {
+                                        allAdvanced = false;
+                                    } else {
+                                        ++numHidden;
+                                    }
+                                }
+                                if (!moduleIterator->second.empty() && allAdvanced) {
+                                    invisibleModules.push_back(moduleName);
+                                }
+                            }
+                        }
+                    }
+                }
+                if (numHidden > 0) {
+                    STORM_PRINT(numHidden << " hidden options." << std::endl);
+                }
+                if (!invisibleModules.empty()) {
+                    STORM_PRINT(invisibleModules.size() << " hidden modules (" << boost::join(invisibleModules, ", ") << ")." << std::endl);
+                }
+                if (numHidden > 0 || !invisibleModules.empty()) {
+                    STORM_PRINT(std::endl << "Type 'storm --help modulename' to display all options of a specific module or 'storm --help all' for a complete list of options." << std::endl);
                 }
             } else {
                 // Create a regular expression from the input hint.
-                std::regex hintRegex(hint, std::regex_constants::ECMAScript | std::regex_constants::icase);
-                
-                // Remember which options we printed, so we don't display options twice.
-                std::set<std::shared_ptr<Option>> printedOptions;
+                std::regex hintRegex(filter, std::regex_constants::ECMAScript | std::regex_constants::icase);
                 
                 // Try to match the regular expression against the known modules.
                 std::vector<std::string> matchingModuleNames;
-                uint_fast64_t maxLengthModules = 0;
                 for (auto const& moduleName : this->moduleNames) {
                     if (std::regex_search(moduleName, hintRegex)) {
                         if (hasModule(moduleName, true)) {
-                            // Only consider visible modules.
                             matchingModuleNames.push_back(moduleName);
-                            maxLengthModules = std::max(maxLengthModules, getPrintLengthOfLongestOption(moduleName));
-                            
-                            // Add all options of this module to the list of printed options so we don't print them twice.
-                            auto optionIterator = this->moduleOptions.find(moduleName);
-                            printedOptions.insert(optionIterator->second.begin(), optionIterator->second.end());
                         }
                     }
                 }
 
                 // Try to match the regular expression against the known options.
-                std::vector<std::shared_ptr<Option>> matchingOptions;
-                uint_fast64_t maxLengthOptions = 0;
+                std::vector<std::string> matchingOptionNames;
                 for (auto const& optionName : this->longOptionNames) {
                     if (std::regex_search(optionName, hintRegex)) {
-                        auto optionIterator = this->longNameToOptions.find(optionName);
-                        for (auto const& option : optionIterator->second) {
-                            // Only add the option if we have not already added it to the list of options that is going
-                            // to be printed anyway.
-                            if (printedOptions.find(option) == printedOptions.end()) {
-                                maxLengthOptions = std::max(maxLengthOptions, option->getPrintLength());
-                                matchingOptions.push_back(option);
-                            }
-                        }
+                        matchingOptionNames.push_back(optionName);
                     }
                 }
                 
-                // Print the matching modules.
-                uint_fast64_t maxLength = std::max(maxLengthModules, maxLengthOptions);
-                if (matchingModuleNames.size() > 0) {
-                    STORM_PRINT("Matching modules for hint '" << hint << "':" << std::endl)
-                    for (auto const& matchingModuleName : matchingModuleNames) {
-                        printHelpForModule(matchingModuleName, maxLength);
-                    }
-                }
-                
-                // Print the matching options.
-                if (matchingOptions.size() > 0) {
-                    STORM_PRINT("Matching options for hint '" << hint << "':" << std::endl);
-                    for (auto const& option : matchingOptions) {
-                        STORM_PRINT(std::setw(maxLength) << std::left << *option << std::endl);
-                    }
-                }
-                
-                if (matchingModuleNames.empty() && matchingOptions.empty()) {
-                    STORM_PRINT("Hint '" << hint << "' did not match any modules or options." << std::endl);
+                std::string optionList = getHelpForSelection(matchingModuleNames, matchingOptionNames, "Matching modules for filter '" + filter +"':", "Matching options for filter '" + filter +"':");
+                if (optionList.empty()) {
+                    STORM_PRINT("Filter '" << filter << "' did not match any modules or options." << std::endl);
+                } else {
+                    STORM_PRINT(optionList);
                 }
             }
         }
         
-        void SettingsManager::printHelpForModule(std::string const& moduleName, uint_fast64_t maxLength) const {
+        std::string SettingsManager::getHelpForSelection(std::vector<std::string> const& selectedModuleNames, std::vector<std::string> const& selectedLongOptionNames, std::string modulesHeader, std::string optionsHeader) const {
+            std::stringstream stream;
+        
+            // Remember which options we printed, so we don't display options twice.
+            std::set<std::shared_ptr<Option>> printedOptions;
+            
+            // Try to match the regular expression against the known modules.
+            uint_fast64_t maxLengthModules = 0;
+            for (auto const& moduleName : selectedModuleNames) {
+                maxLengthModules = std::max(maxLengthModules, getPrintLengthOfLongestOption(moduleName, true));
+                // Add all options of this module to the list of printed options so we don't print them twice.
+                auto optionIterator = this->moduleOptions.find(moduleName);
+                STORM_LOG_ASSERT(optionIterator != this->moduleOptions.end(), "Unable to find selected module " << moduleName << ".");
+                printedOptions.insert(optionIterator->second.begin(), optionIterator->second.end());
+            }
+
+            // Try to match the regular expression against the known options.
+            std::vector<std::shared_ptr<Option>> matchingOptions;
+            uint_fast64_t maxLengthOptions = 0;
+            for (auto const& optionName : selectedLongOptionNames) {
+                auto optionIterator = this->longNameToOptions.find(optionName);
+                STORM_LOG_ASSERT(optionIterator != this->longNameToOptions.end(), "Unable to find selected option " << optionName << ".");
+                for (auto const& option : optionIterator->second) {
+                    // Only add the option if we have not already added it to the list of options that is going
+                    // to be printed anyway.
+                    if (printedOptions.find(option) == printedOptions.end()) {
+                        maxLengthOptions = std::max(maxLengthOptions, option->getPrintLength());
+                        matchingOptions.push_back(option);
+                        printedOptions.insert(option);
+                    }
+                }
+            }
+            
+            // Print the matching modules.
+            uint_fast64_t maxLength = std::max(maxLengthModules, maxLengthOptions);
+            if (selectedModuleNames.size() > 0) {
+                if (modulesHeader != "") {
+                    stream << modulesHeader << std::endl;
+                }
+                for (auto const& matchingModuleName : selectedModuleNames) {
+                    stream << getHelpForModule(matchingModuleName, maxLength, true);
+                }
+            }
+            
+            // Print the matching options.
+            if (matchingOptions.size() > 0) {
+                if (optionsHeader != "") {
+                    stream << optionsHeader << std::endl;
+                }
+                for (auto const& option : matchingOptions) {
+                    stream << std::setw(maxLength) << std::left << *option << std::endl;
+                }
+            }
+            return stream.str();
+        }
+        
+        std::string SettingsManager::getHelpForModule(std::string const& moduleName, uint_fast64_t maxLength, bool includeAdvanced) const {
             auto moduleIterator = moduleOptions.find(moduleName);
             if(moduleIterator == this->moduleOptions.end()) {
-                return;
+                return "";
             }
             //STORM_LOG_THROW(moduleIterator != moduleOptions.end(), storm::exceptions::IllegalFunctionCallException, "Cannot print help for unknown module '" << moduleName << "'.");
-            STORM_PRINT("##### Module '" << moduleName << "' " << std::string(std::min(maxLength, maxLength - moduleName.length() - 16), '#') << std::endl);
             
-            // Save the flags for std::cout so we can manipulate them and be sure they will be restored as soon as this
-            // stream goes out of scope.
-            boost::io::ios_flags_saver out(std::cout);
-            
+            // Check whether there is at least one (enabled) option in this module
+            uint64_t numOfOptions = 0;
             for (auto const& option : moduleIterator->second) {
-                STORM_PRINT(std::setw(maxLength) << std::left << *option << std::endl);
+                if (includeAdvanced || !option->getIsAdvanced()) {
+                    ++numOfOptions;
+                }
             }
-            STORM_PRINT(std::endl);
+            
+            std::stringstream stream;
+            if (numOfOptions > 0) {
+                std::string displayedModuleName = "'" + moduleName + "'";
+                if (!includeAdvanced) {
+                    displayedModuleName += " (" + std::to_string(numOfOptions) + "/" + std::to_string(moduleIterator->second.size()) + " shown)";
+                }
+                stream << "##### Module " << displayedModuleName << " " << std::string(std::min(maxLength, maxLength - displayedModuleName.length() - 14), '#') << std::endl;
+                
+                // Save the flags for std::cout so we can manipulate them and be sure they will be restored as soon as this
+                // stream goes out of scope.
+                boost::io::ios_flags_saver out(std::cout);
+                
+                for (auto const& option : moduleIterator->second) {
+                    if (includeAdvanced || !option->getIsAdvanced()) {
+                        stream << std::setw(maxLength) << std::left << *option << std::endl;
+                    }
+                }
+                stream << std::endl;
+            }
+            return stream.str();
         }
         
-        uint_fast64_t SettingsManager::getPrintLengthOfLongestOption() const {
+        uint_fast64_t SettingsManager::getPrintLengthOfLongestOption(bool includeAdvanced) const {
             uint_fast64_t length = 0;
             for (auto const& moduleName : this->moduleNames) {
-                length = std::max(getPrintLengthOfLongestOption(moduleName), length);
+                length = std::max(getPrintLengthOfLongestOption(moduleName, includeAdvanced), length);
             }
             return length;
         }
         
-        uint_fast64_t SettingsManager::getPrintLengthOfLongestOption(std::string const& moduleName) const {
+        uint_fast64_t SettingsManager::getPrintLengthOfLongestOption(std::string const& moduleName, bool includeAdvanced) const {
             auto moduleIterator = modules.find(moduleName);
             STORM_LOG_THROW(moduleIterator != modules.end(), storm::exceptions::IllegalFunctionCallException, "Unable to retrieve option length of unknown module '" << moduleName << "'.");
-            return moduleIterator->second->getPrintLengthOfLongestOption();
+            return moduleIterator->second->getPrintLengthOfLongestOption(includeAdvanced);
         }
         
         void SettingsManager::addModule(std::unique_ptr<modules::ModuleSettings>&& moduleSettings, bool doRegister) {
@@ -387,10 +478,11 @@ namespace storm {
                 bool conversionOk = argument.setFromStringValue(argumentCache[i]);
                 STORM_LOG_THROW(conversionOk, storm::exceptions::OptionParserException, "Value '" << argumentCache[i] << "' is invalid for argument <" << argument.getName() << "> of option:\n" << *option);
             }
-            
+        
             // In case there are optional arguments that were not set, we set them to their default value.
             for (uint_fast64_t i = argumentCache.size(); i < option->getArgumentCount(); ++i) {
                 ArgumentBase& argument = option->getArgument(i);
+                STORM_LOG_THROW(argument.getHasDefaultValue() || argument.getIsOptional(), storm::exceptions::OptionParserException, "Non-optional argument <" << argument.getName() << "> of option:\n" << *option);
                 argument.setFromDefaultValue();
             }
             

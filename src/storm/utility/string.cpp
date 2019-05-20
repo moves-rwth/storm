@@ -36,9 +36,9 @@ namespace storm {
                 if (size == 0) {
                     return "";
                 } else if (size == 1) {
-                    return "Did you mean " + result + " ?";
+                    return "Did you mean '" + result + "'?";
                 } else {
-                    return "Did you mean any of [ " + result + " ] ?";
+                    return "Did you mean any of [" + result + "] ?";
                 }
             }
             

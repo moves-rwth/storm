@@ -69,10 +69,12 @@ namespace storm {
                 this->options.push_back(option);
             }
             
-            uint_fast64_t ModuleSettings::getPrintLengthOfLongestOption() const {
+            uint_fast64_t ModuleSettings::getPrintLengthOfLongestOption(bool includeAdvanced) const {
                 uint_fast64_t length = 0;
                 for (auto const& option : this->options) {
-                    length = std::max(length, option->getPrintLength());
+                    if (includeAdvanced || !option->getIsAdvanced()) {
+                        length = std::max(length, option->getPrintLength());
+                    }
                 }
                 return length;
             }

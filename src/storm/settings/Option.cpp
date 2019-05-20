@@ -14,11 +14,11 @@
 namespace storm {
     namespace settings {
        
-			Option::Option(std::string const& moduleName, std::string const& longOptionName, std::string const& optionDescription, bool isOptionRequired, bool requireModulePrefix, std::vector<std::shared_ptr<ArgumentBase>> const& optionArguments) : Option(moduleName, longOptionName, "", false, optionDescription, isOptionRequired, requireModulePrefix, optionArguments) {
+			Option::Option(std::string const& moduleName, std::string const& longOptionName, std::string const& optionDescription, bool isOptionRequired, bool requireModulePrefix, bool isAdvanced, std::vector<std::shared_ptr<ArgumentBase>> const& optionArguments) : Option(moduleName, longOptionName, "", false, optionDescription, isOptionRequired, requireModulePrefix, isAdvanced, optionArguments) {
 				// Intentionally left empty.
 			}
             
-            Option::Option(std::string const& moduleName, std::string const& longOptionName, std::string const& shortOptionName, std::string const& optionDescription, bool isOptionRequired, bool requireModulePrefix, std::vector<std::shared_ptr<ArgumentBase>> const& optionArguments) : Option(moduleName, longOptionName, shortOptionName, true, optionDescription, isOptionRequired, requireModulePrefix, optionArguments) {
+            Option::Option(std::string const& moduleName, std::string const& longOptionName, std::string const& shortOptionName, std::string const& optionDescription, bool isOptionRequired, bool requireModulePrefix, bool isAdvanced, std::vector<std::shared_ptr<ArgumentBase>> const& optionArguments) : Option(moduleName, longOptionName, shortOptionName, true, optionDescription, isOptionRequired, requireModulePrefix, isAdvanced, optionArguments) {
                 // Intentionally left empty.
             }
 
@@ -85,13 +85,11 @@ namespace storm {
 			std::string const& Option::getLongName() const {
 				return this->longName;
 			}
-
        
             bool Option::getHasShortName() const {
                 return this->hasShortName;
             }
             
-           
 			std::string const& Option::getShortName() const {
 				return this->shortName;
 			}
@@ -108,16 +106,19 @@ namespace storm {
 				return this->isRequired;
 			}
 
-           
             bool Option::getRequiresModulePrefix() const {
                 return this->requireModulePrefix;
             }
             
+			bool Option::getIsAdvanced() const {
+				return this->isAdvanced;
+			}
+   
 			bool Option::getHasOptionBeenSet() const {
 				return this->hasBeenSet;
 			}
 
-            Option::Option(std::string const& moduleName, std::string const& longOptionName, std::string const& shortOptionName, bool hasShortOptionName, std::string const& optionDescription, bool isOptionRequired, bool requireModulePrefix, std::vector<std::shared_ptr<ArgumentBase>> const& optionArguments) : longName(longOptionName), hasShortName(hasShortOptionName), shortName(shortOptionName), description(optionDescription), moduleName(moduleName), isRequired(isOptionRequired), requireModulePrefix(requireModulePrefix), hasBeenSet(false), arguments(optionArguments), argumentNameMap() {
+            Option::Option(std::string const& moduleName, std::string const& longOptionName, std::string const& shortOptionName, bool hasShortOptionName, std::string const& optionDescription, bool isOptionRequired, bool requireModulePrefix, bool isAdvanced, std::vector<std::shared_ptr<ArgumentBase>> const& optionArguments) : longName(longOptionName), hasShortName(hasShortOptionName), shortName(shortOptionName), description(optionDescription), moduleName(moduleName), isRequired(isOptionRequired), requireModulePrefix(requireModulePrefix), isAdvanced(isAdvanced), hasBeenSet(false), arguments(optionArguments), argumentNameMap() {
                 // First, do some sanity checks.
                 STORM_LOG_THROW(!longName.empty(), storm::exceptions::IllegalArgumentException, "Unable to construct option with empty name.");
                 STORM_LOG_THROW(!moduleName.empty(), storm::exceptions::IllegalArgumentException, "Unable to construct option with empty module name.");
