@@ -4,6 +4,9 @@
 #include <boost/optional.hpp>
 
 #include "storm/modelchecker/multiobjective/Objective.h"
+#include "storm/storage/SparseMatrix.h"
+#include "storm/storage/BitVector.h"
+
 
 
 namespace storm {
@@ -41,6 +44,8 @@ namespace storm {
                  */
                 bool isTotalRewardObjective() const;
                 
+                static std::vector<ValueType> computeUpperBoundOnExpectedVisitingTimes(storm::storage::SparseMatrix<ValueType> const& modelTransitions, storm::storage::BitVector const& bottomStates, storm::storage::BitVector const& nonBottomStates, bool hasEndComponents);
+
             private:
                 
                 mutable boost::optional<std::map<uint64_t, ValueType>> schedulerIndependentStateValues;

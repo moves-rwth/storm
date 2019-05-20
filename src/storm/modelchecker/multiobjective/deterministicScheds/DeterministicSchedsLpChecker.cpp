@@ -167,7 +167,6 @@ namespace storm {
             template <typename ValueType>
             std::map<storm::storage::BitVector, storm::storage::BitVector> getSubEndComponents(storm::storage::SparseMatrix<ValueType> const& mecTransitions) {
                 auto backwardTransitions = mecTransitions.transpose(true);
-                auto const& groups = mecTransitions.getRowGroupIndices();
                 std::map<storm::storage::BitVector, storm::storage::BitVector> unprocessed, processed;
                 storm::storage::BitVector allStates(mecTransitions.getRowGroupCount());
                 storm::storage::BitVector allChoices(mecTransitions.getRowCount());
@@ -237,7 +236,7 @@ namespace storm {
                             uint64_t subEcChoice = toGlobalChoiceIndexMapping[localSubEcChoiceIndex];
                             for (auto const& objHelper : objectiveHelper) {
                                 if (objHelper.getChoiceValueOffsets().count(subEcChoice) > 0) {
-                                    STORM_LOG_ASSERT(!storm::utility::isZero(objHelper.getChoiceValueOffsets().at(subEcChoice)), "Expectet non-zero choice-value offset.");
+                                    STORM_LOG_ASSERT(!storm::utility::isZero(objHelper.getChoiceValueOffsets().at(subEcChoice)), "Expected non-zero choice-value offset.");
                                     subEcChoicesWithValueZero.set(localSubEcChoiceIndex, false);
                                     break;
                                 }
@@ -275,12 +274,16 @@ namespace storm {
                                 }
                             }
                             // Assert that the ecVar is one iff the sum over the zero-value-choice variables equals the number of states in this ec
-                            lpModel->addConstraint("", ecVar >= one + storm::expressions::sum(ecChoiceVars) - lpModel->getConstant(storm::utility::convertNumber<ValueType>(numSubEcStatesWithMultipleChoices)));
+                            storm::expressions::Expression ecVarLowerBound = one - lpModel->getConstant(storm::utility::convertNumber<ValueType>(numSubEcStatesWithMultipleChoices)).simplify();
+                            if (!ecChoiceVars.empty()) {
+                                ecVarLowerBound = ecVarLowerBound + storm::expressions::sum(ecChoiceVars);
+                            }
+                            lpModel->addConstraint("", ecVar >= ecVarLowerBound);
                         }
                     }
                 }
                 
-                STORM_LOG_TRACE("Found " << ecCounter << " End components.");
+                STORM_LOG_TRACE("Found " << ecCounter << " end components.");
                 return result;
             }
             
@@ -353,24 +356,8 @@ namespace storm {
                     STORM_LOG_ERROR_COND(storm::utility::graph::performProb1A(model.getTransitionMatrix(), model.getNondeterministicChoiceIndices(), model.getBackwardTransitions(), nonBottomStates, bottomStates).full(), "End components not yet treated correctly.");
                     
                     // Compute upper bounds for each state
-                    std::vector<ValueType> visitingTimesUpperBounds;
-                    {
-                        // TODO: this doesn't work if there are end components.
-                        storm::storage::SparseMatrix<ValueType> transitions = model.getTransitionMatrix().getSubmatrix(true, nonBottomStates, nonBottomStates);
-                        std::vector<ValueType> probabilitiesToBottomStates = model.getTransitionMatrix().getConstrainedRowGroupSumVector(nonBottomStates, bottomStates);
-                        auto subsystemBounds = storm::modelchecker::helper::BaierUpperRewardBoundsComputer<ValueType>::computeUpperBoundOnExpectedVisitingTimes(transitions, probabilitiesToBottomStates);
-                        uint64_t subsystemState = 0;
-                        visitingTimesUpperBounds.reserve(bottomStates.size());
-                        for (uint64_t state = 0; state < bottomStates.size(); ++state) {
-                            if (bottomStates.get(state)) {
-                                visitingTimesUpperBounds.push_back(storm::utility::zero<ValueType>());
-                            } else {
-                                visitingTimesUpperBounds.push_back(subsystemBounds[subsystemState]);
-                                ++subsystemState;
-                            }
-                        }
-                        assert(subsystemState == subsystemBounds.size());
-                    }
+                    std::vector<ValueType> visitingTimesUpperBounds = DeterministicSchedsObjectiveHelper<ModelType>::computeUpperBoundOnExpectedVisitingTimes(model.getTransitionMatrix(), bottomStates, nonBottomStates, hasEndComponents);
+                    
                     // create choiceValue variables and assert deterministic ones.
                     std::vector<storm::expressions::Expression> choiceValVars(model.getNumberOfChoices());
                     for (auto const& state : nonBottomStates) {
@@ -561,12 +548,12 @@ namespace storm {
                                         if (objectiveHelper[objIndex].minimizing()) {
                                             // TODO: these are optional
                                             if (isMinNegativeEncoding()) {
-                                                lpModel->addConstraint("", stateVars[state] >= (ecVar.getExpression() - one) * objectiveHelper[objIndex].getUpperValueBoundAtState(env, state));
+                                                lpModel->addConstraint("", stateVars[state] >= (ecVar.getExpression() - one) * lpModel->getConstant(objectiveHelper[objIndex].getUpperValueBoundAtState(env, state)));
                                             } else {
-                                                lpModel->addConstraint("", stateVars[state] <= (one - ecVar.getExpression()) * objectiveHelper[objIndex].getUpperValueBoundAtState(env, state));
+                                                lpModel->addConstraint("", stateVars[state] <= (one - ecVar.getExpression()) * lpModel->getConstant(objectiveHelper[objIndex].getUpperValueBoundAtState(env, state)));
                                             }
                                         } else {
-                                            lpModel->addConstraint("", stateVars[state] <= (one - ecVar.getExpression()) * objectiveHelper[objIndex].getUpperValueBoundAtState(env, state));
+                                            lpModel->addConstraint("", stateVars[state] <= (one - ecVar.getExpression()) * lpModel->getConstant(objectiveHelper[objIndex].getUpperValueBoundAtState(env, state)));
                                         }
                                     }
                                 }
