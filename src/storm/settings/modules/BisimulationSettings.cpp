@@ -25,32 +25,32 @@ namespace storm {
             
             BisimulationSettings::BisimulationSettings() : ModuleSettings(moduleName) {
                 std::vector<std::string> types = { "strong", "weak" };
-                this->addOption(storm::settings::OptionBuilder(moduleName, typeOptionName, true, "Sets the kind of bisimulation quotienting used.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the type to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(types)).setDefaultValueString("strong").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, typeOptionName, true, "Sets the kind of bisimulation quotienting used.").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the type to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(types)).setDefaultValueString("strong").build()).build());
                 
                 std::vector<std::string> quotTypes = { "sparse", "dd" };
-                this->addOption(storm::settings::OptionBuilder(moduleName, quotientFormatOptionName, true, "Sets the format in which the quotient is extracted (only applies to DD-based bisimulation).").addArgument(storm::settings::ArgumentBuilder::createStringArgument("format", "The format of the quotient.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(quotTypes)).setDefaultValueString("dd").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, quotientFormatOptionName, true, "Sets the format in which the quotient is extracted (only applies to DD-based bisimulation).").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createStringArgument("format", "The format of the quotient.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(quotTypes)).setDefaultValueString("dd").build()).build());
                 
-                this->addOption(storm::settings::OptionBuilder(moduleName, representativeOptionName, false, "Sets whether to use representatives in the quotient rather than block numbers.").build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, originalVariablesOptionName, false, "Sets whether to use the original variables in the quotient rather than the block variables.").build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, exactArithmeticDdOptionName, false, "Sets whether to use exact arithmetic in dd-based bisimulation.").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, representativeOptionName, false, "Sets whether to use representatives in the quotient rather than block numbers.").setIsAdvanced().build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, originalVariablesOptionName, false, "Sets whether to use the original variables in the quotient rather than the block variables.").setIsAdvanced().build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, exactArithmeticDdOptionName, false, "Sets whether to use exact arithmetic in dd-based bisimulation.").setIsAdvanced().build());
 
                 std::vector<std::string> signatureModes = { "eager", "lazy" };
-                this->addOption(storm::settings::OptionBuilder(moduleName, signatureModeOptionName, false, "Sets the signature computation mode.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("mode", "The mode to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(signatureModes)).setDefaultValueString("eager").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, signatureModeOptionName, false, "Sets the signature computation mode.").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createStringArgument("mode", "The mode to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(signatureModes)).setDefaultValueString("eager").build()).build());
                 
                 std::vector<std::string> reuseModes = {"none", "blocks"};
-                this->addOption(storm::settings::OptionBuilder(moduleName, reuseOptionName, true, "Sets whether to reuse all results.")
+                this->addOption(storm::settings::OptionBuilder(moduleName, reuseOptionName, true, "Sets whether to reuse all results.").setIsAdvanced()
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("mode", "The mode to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(reuseModes))
                                              .setDefaultValueString("blocks").build())
                                 .build());
 
                 std::vector<std::string> initialPartitionModes = {"regular", "finer"};
-                this->addOption(storm::settings::OptionBuilder(moduleName, initialPartitionOptionName, true, "Sets which initial partition mode to use.")
+                this->addOption(storm::settings::OptionBuilder(moduleName, initialPartitionOptionName, true, "Sets which initial partition mode to use.").setIsAdvanced()
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("mode", "The mode to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(initialPartitionModes))
                                              .setDefaultValueString("finer").build())
                                 .build());
                 
                 std::vector<std::string> refinementModes = {"full", "changed"};
-                this->addOption(storm::settings::OptionBuilder(moduleName, refinementModeOptionName, true, "Sets which refinement mode to use.")
+                this->addOption(storm::settings::OptionBuilder(moduleName, refinementModeOptionName, true, "Sets which refinement mode to use.").setIsAdvanced()
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("mode", "The mode to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(refinementModes))
                                              .setDefaultValueString("full").build())
                                 .build());

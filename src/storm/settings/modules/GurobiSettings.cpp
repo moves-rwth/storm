@@ -19,15 +19,15 @@ namespace storm {
             const std::string GurobiSettings::concurrentMipThreadsOption = "concurrentmip";
             
             GurobiSettings::GurobiSettings() : ModuleSettings(moduleName) {
-                this->addOption(storm::settings::OptionBuilder(moduleName, threadsOption, true, "The number of threads that may be used by Gurobi.").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("count", "The number of threads.").setDefaultValueUnsignedInteger(1).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, threadsOption, true, "The number of threads that may be used by Gurobi.").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("count", "The number of threads.").setDefaultValueUnsignedInteger(1).build()).build());
                 
-                this->addOption(storm::settings::OptionBuilder(moduleName, outputOption, true, "If set, the Gurobi output will be printed to the command line.").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, outputOption, true, "If set, the Gurobi output will be printed to the command line.").setIsAdvanced().build());
                 
-                this->addOption(storm::settings::OptionBuilder(moduleName, integerToleranceOption, true, "Sets Gurobi's precision for integer variables.").addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to achieve.").setDefaultValueDouble(1e-06).addValidatorDouble(ArgumentValidatorFactory::createDoubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, integerToleranceOption, true, "Sets Gurobi's precision for integer variables.").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to achieve.").setDefaultValueDouble(1e-06).addValidatorDouble(ArgumentValidatorFactory::createDoubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
                 
-                this->addOption(storm::settings::OptionBuilder(moduleName, mipFocusOption, true, "The high level solution strategy used to solve MILPs.").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("value", "The number of the strategy.").setDefaultValueUnsignedInteger(0).addValidatorUnsignedInteger(ArgumentValidatorFactory::createUnsignedRangeValidatorIncluding(0, 3)).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, mipFocusOption, true, "The high level solution strategy used to solve MILPs.").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("value", "The number of the strategy.").setDefaultValueUnsignedInteger(0).addValidatorUnsignedInteger(ArgumentValidatorFactory::createUnsignedRangeValidatorIncluding(0, 3)).build()).build());
                 
-                this->addOption(storm::settings::OptionBuilder(moduleName, concurrentMipThreadsOption, true, "The number of MIP solvers Gurobi spawns in parallel. Shall not be larger then the number of threads.").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("value", "The number of parallel solvers.").setDefaultValueUnsignedInteger(1).addValidatorUnsignedInteger(ArgumentValidatorFactory::createUnsignedGreaterEqualValidator(1)).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, concurrentMipThreadsOption, true, "The number of MIP solvers Gurobi spawns in parallel. Shall not be larger then the number of threads.").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("value", "The number of parallel solvers.").setDefaultValueUnsignedInteger(1).addValidatorUnsignedInteger(ArgumentValidatorFactory::createUnsignedGreaterEqualValidator(1)).build()).build());
             }
             
             bool GurobiSettings::isIntegerToleranceSet() const {
