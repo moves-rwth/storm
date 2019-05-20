@@ -72,9 +72,10 @@ namespace storm {
                 /*!
                  * Retrieves the (print) length of the longest option.
                  *
+                 * @param includeAdvanced if set, also includes options flagged as advanced.
                  * @return The length of the longest option.
                  */
-                uint_fast64_t getPrintLengthOfLongestOption() const;
+                uint_fast64_t getPrintLengthOfLongestOption(bool includeAdvanced) const;
                 
                 /*!
                  * Restores the default values for all arguments of all options.

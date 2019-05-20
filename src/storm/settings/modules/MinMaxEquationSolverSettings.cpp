@@ -24,27 +24,27 @@ namespace storm {
 
             MinMaxEquationSolverSettings::MinMaxEquationSolverSettings() : ModuleSettings(moduleName) {
                 std::vector<std::string> minMaxSolvingTechniques = {"vi", "value-iteration", "pi", "policy-iteration", "lp", "linear-programming", "rs", "ratsearch", "ii", "interval-iteration", "svi", "sound-value-iteration", "topological", "vi-to-pi"};
-                this->addOption(storm::settings::OptionBuilder(moduleName, solvingMethodOptionName, false, "Sets which min/max linear equation solving technique is preferred.")
+                this->addOption(storm::settings::OptionBuilder(moduleName, solvingMethodOptionName, false, "Sets which min/max linear equation solving technique is preferred.").setIsAdvanced()
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of a min/max linear equation solving technique.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(minMaxSolvingTechniques)).setDefaultValueString("topological").build()).build());
                 
-                this->addOption(storm::settings::OptionBuilder(moduleName, maximalIterationsOptionName, false, "The maximal number of iterations to perform before iterative solving is aborted.").setShortName(maximalIterationsOptionShortName).addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("count", "The maximal iteration count.").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, maximalIterationsOptionName, false, "The maximal number of iterations to perform before iterative solving is aborted.").setShortName(maximalIterationsOptionShortName).setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("count", "The maximal iteration count.").build()).build());
                 
-                this->addOption(storm::settings::OptionBuilder(moduleName, precisionOptionName, false, "The precision used for detecting convergence of iterative methods.").addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to achieve.").setDefaultValueDouble(1e-06).addValidatorDouble(ArgumentValidatorFactory::createDoubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, precisionOptionName, false, "The precision used for detecting convergence of iterative methods.").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to achieve.").setDefaultValueDouble(1e-06).addValidatorDouble(ArgumentValidatorFactory::createDoubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
 
-                this->addOption(storm::settings::OptionBuilder(moduleName, absoluteOptionName, false, "Sets whether the relative or the absolute error is considered for detecting convergence.").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, absoluteOptionName, false, "Sets whether the relative or the absolute error is considered for detecting convergence.").setIsAdvanced().build());
 
                 std::vector<std::string> lraMethods = {"vi", "value-iteration", "linear-programming", "lp"};
-                this->addOption(storm::settings::OptionBuilder(moduleName, lraMethodOptionName, false, "Sets which method is preferred for computing long run averages.")
+                this->addOption(storm::settings::OptionBuilder(moduleName, lraMethodOptionName, false, "Sets which method is preferred for computing long run averages.").setIsAdvanced()
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of a long run average computation method.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(lraMethods)).setDefaultValueString("vi").build()).build());
 
                 std::vector<std::string> maMethods = {"imca", "unifplus"};
-                this->addOption(storm::settings::OptionBuilder(moduleName, markovAutomatonBoundedReachabilityMethodOptionName, false, "The method to use to solve bounded reachability queries on MAs.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the method to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(maMethods)).setDefaultValueString("unifplus").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, markovAutomatonBoundedReachabilityMethodOptionName, false, "The method to use to solve bounded reachability queries on MAs.").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the method to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(maMethods)).setDefaultValueString("unifplus").build()).build());
                 
                 std::vector<std::string> multiplicationStyles = {"gaussseidel", "regular", "gs", "r"};
-                this->addOption(storm::settings::OptionBuilder(moduleName, valueIterationMultiplicationStyleOptionName, false, "Sets which method multiplication style to prefer for value iteration.")
+                this->addOption(storm::settings::OptionBuilder(moduleName, valueIterationMultiplicationStyleOptionName, false, "Sets which method multiplication style to prefer for value iteration.").setIsAdvanced()
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of a multiplication style.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(multiplicationStyles)).setDefaultValueString("gaussseidel").build()).build());
                 
-                this->addOption(storm::settings::OptionBuilder(moduleName, intervalIterationSymmetricUpdatesOptionName, false, "If set, interval iteration performs an update on both, lower and upper bound in each iteration").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, intervalIterationSymmetricUpdatesOptionName, false, "If set, interval iteration performs an update on both, lower and upper bound in each iteration").setIsAdvanced().build());
                 
             }
             

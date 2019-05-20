@@ -21,15 +21,15 @@ namespace storm {
             
             EliminationSettings::EliminationSettings() : ModuleSettings(moduleName) {
                 std::vector<std::string> orders = {"fw", "fwrev", "bw", "bwrev", "rand", "spen", "dpen", "regex"};
-                this->addOption(storm::settings::OptionBuilder(moduleName, eliminationOrderOptionName, true, "The order that is to be used for the elimination techniques.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the order in which states are chosen for elimination.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(orders)).setDefaultValueString("fwrev").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, eliminationOrderOptionName, true, "The order that is to be used for the elimination techniques.").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the order in which states are chosen for elimination.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(orders)).setDefaultValueString("fwrev").build()).build());
                 
                 std::vector<std::string> methods = {"state", "hybrid"};
-                this->addOption(storm::settings::OptionBuilder(moduleName, eliminationMethodOptionName, true, "The elimination technique to use.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the elimination technique to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(methods)).setDefaultValueString("state").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, eliminationMethodOptionName, true, "The elimination technique to use.").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the elimination technique to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(methods)).setDefaultValueString("state").build()).build());
                 
-                this->addOption(storm::settings::OptionBuilder(moduleName, entryStatesLastOptionName, true, "Sets whether the entry states are eliminated last.").build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, maximalSccSizeOptionName, true, "Sets the maximal size of the SCCs for which state elimination is applied.")
+                this->addOption(storm::settings::OptionBuilder(moduleName, entryStatesLastOptionName, true, "Sets whether the entry states are eliminated last.").setIsAdvanced().build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, maximalSccSizeOptionName, true, "Sets the maximal size of the SCCs for which state elimination is applied.").setIsAdvanced()
                                 .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("maxsize", "The maximal size of an SCC on which state elimination is applied.").setDefaultValueUnsignedInteger(20).setIsOptional(true).build()).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, useDedicatedModelCheckerOptionName, true, "Sets whether to use the dedicated model elimination checker (only DTMCs).").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, useDedicatedModelCheckerOptionName, true, "Sets whether to use the dedicated model elimination checker (only DTMCs).").setIsAdvanced().build());
             }
             
             EliminationSettings::EliminationMethod EliminationSettings::getEliminationMethod() const {

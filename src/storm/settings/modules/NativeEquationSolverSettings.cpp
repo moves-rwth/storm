@@ -27,21 +27,21 @@ namespace storm {
 
             NativeEquationSolverSettings::NativeEquationSolverSettings() : ModuleSettings(moduleName) {
                 std::vector<std::string> methods = { "jacobi", "gaussseidel", "sor", "walkerchae", "power", "sound-value-iteration", "svi", "interval-iteration", "ii", "ratsearch" };
-                this->addOption(storm::settings::OptionBuilder(moduleName, techniqueOptionName, true, "The method to be used for solving linear equation systems with the native engine.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the method to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(methods)).setDefaultValueString("jacobi").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, techniqueOptionName, true, "The method to be used for solving linear equation systems with the native engine.").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the method to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(methods)).setDefaultValueString("jacobi").build()).build());
                 
-                this->addOption(storm::settings::OptionBuilder(moduleName, maximalIterationsOptionName, false, "The maximal number of iterations to perform before iterative solving is aborted.").setShortName(maximalIterationsOptionShortName).addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("count", "The maximal iteration count.").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, maximalIterationsOptionName, false, "The maximal number of iterations to perform before iterative solving is aborted.").setIsAdvanced().setShortName(maximalIterationsOptionShortName).addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("count", "The maximal iteration count.").build()).build());
                 
-                this->addOption(storm::settings::OptionBuilder(moduleName, precisionOptionName, false, "The precision used for detecting convergence of iterative methods.").addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to achieve.").setDefaultValueDouble(1e-06).addValidatorDouble(ArgumentValidatorFactory::createDoubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, precisionOptionName, false, "The precision used for detecting convergence of iterative methods.").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to achieve.").setDefaultValueDouble(1e-06).addValidatorDouble(ArgumentValidatorFactory::createDoubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
                 
-                this->addOption(storm::settings::OptionBuilder(moduleName, omegaOptionName, false, "The omega used for SOR.").addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The value of the SOR parameter.").setDefaultValueDouble(0.9).addValidatorDouble(ArgumentValidatorFactory::createDoubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, omegaOptionName, false, "The omega used for SOR.").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The value of the SOR parameter.").setDefaultValueDouble(0.9).addValidatorDouble(ArgumentValidatorFactory::createDoubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
                 
-                this->addOption(storm::settings::OptionBuilder(moduleName, absoluteOptionName, false, "Sets whether the relative or the absolute error is considered for detecting convergence.").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, absoluteOptionName, false, "Sets whether the relative or the absolute error is considered for detecting convergence.").setIsAdvanced().build());
                 
                 std::vector<std::string> multiplicationStyles = {"gaussseidel", "regular", "gs", "r"};
-                this->addOption(storm::settings::OptionBuilder(moduleName, powerMethodMultiplicationStyleOptionName, false, "Sets which method multiplication style to prefer for the power method.")
+                this->addOption(storm::settings::OptionBuilder(moduleName, powerMethodMultiplicationStyleOptionName, false, "Sets which method multiplication style to prefer for the power method.").setIsAdvanced()
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of a multiplication style.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(multiplicationStyles)).setDefaultValueString("gaussseidel").build()).build());
                                 
-                this->addOption(storm::settings::OptionBuilder(moduleName, intervalIterationSymmetricUpdatesOptionName, false, "If set, interval iteration performs an update on both, lower and upper bound in each iteration").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, intervalIterationSymmetricUpdatesOptionName, false, "If set, interval iteration performs an update on both, lower and upper bound in each iteration").setIsAdvanced().build());
             }
             
             bool NativeEquationSolverSettings::isLinearEquationSystemTechniqueSet() const {
