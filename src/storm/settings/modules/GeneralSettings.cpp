@@ -81,7 +81,6 @@ namespace storm {
                 return this->getOption(configOptionName).getArgumentByName("filename").getValueAsString();
             }
 
-
             bool GeneralSettings::isBisimulationSet() const {
                 return this->getOption(bisimulationOptionName).getHasOptionBeenSet();
             }
@@ -103,6 +102,7 @@ namespace storm {
             }
 
             bool GeneralSettings::check() const {
+                STORM_LOG_WARN_COND(!this->getOption(precisionOptionName).getHasOptionBeenSetWithModulePrefix(), "Setting the precision option with module prefix does not effect all solvers. Consider setting --" << precisionOptionName << " instead of --" << moduleName << ":" << precisionOptionName << ".");
                 return true;
             }
             
