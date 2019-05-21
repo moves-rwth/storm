@@ -117,8 +117,12 @@ namespace storm {
 			bool Option::getHasOptionBeenSet() const {
 				return this->hasBeenSet;
 			}
+   
+			bool Option::getHasOptionBeenSetWithModulePrefix() const {
+				return this->hasBeenSetWithModulePrefix;
+			}
 
-            Option::Option(std::string const& moduleName, std::string const& longOptionName, std::string const& shortOptionName, bool hasShortOptionName, std::string const& optionDescription, bool isOptionRequired, bool requireModulePrefix, bool isAdvanced, std::vector<std::shared_ptr<ArgumentBase>> const& optionArguments) : longName(longOptionName), hasShortName(hasShortOptionName), shortName(shortOptionName), description(optionDescription), moduleName(moduleName), isRequired(isOptionRequired), requireModulePrefix(requireModulePrefix), isAdvanced(isAdvanced), hasBeenSet(false), arguments(optionArguments), argumentNameMap() {
+            Option::Option(std::string const& moduleName, std::string const& longOptionName, std::string const& shortOptionName, bool hasShortOptionName, std::string const& optionDescription, bool isOptionRequired, bool requireModulePrefix, bool isAdvanced, std::vector<std::shared_ptr<ArgumentBase>> const& optionArguments) : longName(longOptionName), hasShortName(hasShortOptionName), shortName(shortOptionName), description(optionDescription), moduleName(moduleName), isRequired(isOptionRequired), requireModulePrefix(requireModulePrefix), isAdvanced(isAdvanced), hasBeenSet(false), hasBeenSetWithModulePrefix(false), arguments(optionArguments), argumentNameMap() {
                 // First, do some sanity checks.
                 STORM_LOG_THROW(!longName.empty(), storm::exceptions::IllegalArgumentException, "Unable to construct option with empty name.");
                 STORM_LOG_THROW(!moduleName.empty(), storm::exceptions::IllegalArgumentException, "Unable to construct option with empty module name.");
@@ -137,6 +141,10 @@ namespace storm {
             
             void  Option::setHasOptionBeenSet(bool newValue) {
                 this->hasBeenSet = newValue;
+            }
+            
+            void  Option::setHasOptionBeenSetWithModulePrefix(bool newValue) {
+                this->hasBeenSetWithModulePrefix = newValue;
             }
         
             uint_fast64_t Option::getPrintLength() const {

@@ -161,6 +161,13 @@ namespace storm {
              * @return True iff the option has been set.
              */
             bool getHasOptionBeenSet() const;
+            
+            /*!
+             * Retrieves whether the option has been set by including the module prefix.
+             *
+             * @return True iff the option has been set by including the module prefix.
+             */
+            bool getHasOptionBeenSetWithModulePrefix() const;
 
             /*!
              * Retrieves whether the option is only displayed in the advanced help.
@@ -210,6 +217,9 @@ namespace storm {
             
             // A flag that indicates whether this option has been set.
             bool hasBeenSet;
+            
+            // A flag that indicates whether this option has been set.
+            bool hasBeenSetWithModulePrefix;
 
             // The arguments of this option (possibly empty).
             std::vector<std::shared_ptr<ArgumentBase>> arguments;
@@ -239,6 +249,13 @@ namespace storm {
              * @param newValue The new status of the flag.
              */
             void setHasOptionBeenSet(bool newValue = true);
+            
+            /*!
+             * Sets the flag that marks the option as being (un)set by including the module prefix.
+             *
+             * @param newValue The new status of the flag.
+             */
+            void setHasOptionBeenSetWithModulePrefix(bool newValue = true);
 		};
 	}
 }

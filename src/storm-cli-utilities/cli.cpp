@@ -177,7 +177,7 @@ namespace storm {
             try {
                 storm::settings::mutableManager().setFromCommandLine(argc, argv);
             } catch (storm::exceptions::OptionParserException& e) {
-                STORM_LOG_ERROR("Unable to parse command line options. Type 'storm --help' or 'storm --help all' for help.");
+                STORM_LOG_ERROR("Unable to parse command line options. Type '" + std::string(argv[0]) + " --help' or '" + std::string(argv[0]) + " --help all' for help.");
                 return false;
             }
             
