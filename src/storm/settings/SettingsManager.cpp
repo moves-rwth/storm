@@ -494,6 +494,9 @@ namespace storm {
             }
             
             option->setHasOptionBeenSet();
+            if (optionName != option->getLongName() && optionName != option->getShortName() && boost::starts_with(optionName, option->getModuleName())) {
+                option->setHasOptionBeenSetWithModulePrefix();
+            }
         }
         
         void SettingsManager::setOptionsArguments(std::string const& optionName, std::unordered_map<std::string, std::vector<std::shared_ptr<Option>>> const& optionMap, std::vector<std::string> const& argumentCache) {

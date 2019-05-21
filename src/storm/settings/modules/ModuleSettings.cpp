@@ -26,6 +26,7 @@ namespace storm {
             
             void ModuleSettings::unset(std::string const& name) {
                 return this->getOption(name).setHasOptionBeenSet(false);
+                return this->getOption(name).setHasOptionBeenSetWithModulePrefix(false);
             }
             
             std::vector<std::shared_ptr<Option>> const& ModuleSettings::getOptions() const {
