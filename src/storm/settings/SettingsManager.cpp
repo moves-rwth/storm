@@ -240,15 +240,22 @@ namespace storm {
                         }
                     }
                 }
-                if (numHidden > 0) {
-                    STORM_PRINT(numHidden << " hidden options." << std::endl);
-                }
-                if (!invisibleModules.empty()) {
-                    STORM_PRINT(invisibleModules.size() << " hidden modules (" << boost::join(invisibleModules, ", ") << ")." << std::endl);
-                }
-                if (numHidden > 0 || !invisibleModules.empty()) {
-                    STORM_PRINT(std::endl << "Type 'storm --help modulename' to display all options of a specific module or 'storm --help all' for a complete list of options." << std::endl);
-                }
+                if (!includeAdvanced) {
+                    if (numHidden == 1) {
+                        STORM_PRINT(numHidden << " hidden option." << std::endl);
+                    } else {
+                        STORM_PRINT(numHidden << " hidden options." << std::endl);
+                    }
+                    if (!invisibleModules.empty()) {
+                        if (invisibleModules.size() == 1) {
+                            STORM_PRINT(invisibleModules.size() << " hidden module (" << boost::join(invisibleModules, ", ") << ")." << std::endl);
+                        } else {
+                            STORM_PRINT(invisibleModules.size() << " hidden modules (" << boost::join(invisibleModules, ", ") << ")." << std::endl);
+                        }
+                    }
+                        STORM_PRINT(std::endl << "Type '" + executableName + " --help modulename' to display all options of a specific module." << std::endl);
+                        STORM_PRINT("Type '" + executableName + " --help all' to display a complete list of options." << std::endl);
+                    }
             } else {
                 // Create a regular expression from the input hint.
                 std::regex hintRegex(filter, std::regex_constants::ECMAScript | std::regex_constants::icase);
