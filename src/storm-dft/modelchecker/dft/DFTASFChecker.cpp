@@ -29,8 +29,9 @@ namespace storm {
 
         void DFTASFChecker::convert() {
             std::vector<uint64_t> beVariables;
-            std::vector<uint64_t> failedBeVariables;
+            uint64_t failedBeVariables;
             std::vector<uint64_t> failsafeBeVariables;
+            bool failedBeIsSet = false;
             notFailed = dft.nrBasicElements() + 1; // Value indicating the element is not failed
 
             // Initialize variables
@@ -49,7 +50,10 @@ namespace storm {
                         // Constant BEs are initially either failed or failsafe, treat them differently
                         auto be = std::static_pointer_cast<storm::storage::BEConst<double> const>(element);
                         if (be->failed()) {
-                            failedBeVariables.push_back(varNames.size() - 1);
+                            STORM_LOG_THROW(!failedBeIsSet, storm::exceptions::NotSupportedException,
+                                            "DFTs containing more than one constantly failed BE are not supported");
+                            failedBeVariables = varNames.size() - 1;
+                            failedBeIsSet = true;
                         } else {
                             failsafeBeVariables.push_back(varNames.size() - 1);
                         }
@@ -94,13 +98,13 @@ namespace storm {
             }
 
             // Constantly failed BEs fail before other types
-            for (auto const &beV : failedBeVariables) {
-                constraints.push_back(std::make_shared<BetweenValues>(beV, 1, failedBeVariables.size()));
+            if (failedBeIsSet) {
+                constraints.push_back(std::make_shared<IsConstantValue>(failedBeVariables, 0));
             }
+
 
             std::vector<uint64_t> allBeVariables;
             allBeVariables.insert(std::end(allBeVariables), std::begin(beVariables), std::end(beVariables));
-            allBeVariables.insert(std::end(allBeVariables), std::begin(failedBeVariables), std::end(failedBeVariables));
             allBeVariables.insert(std::end(allBeVariables), std::begin(failsafeBeVariables),
                                   std::end(failsafeBeVariables));
 
@@ -676,6 +680,8 @@ namespace storm {
             std::shared_ptr<storm::expressions::ExpressionManager> manager = solver->getManager().getSharedPointer();
             solver->add(countConstr->toExpression(varNames, manager));
             solver->add(timepointConstr->toExpression(varNames, manager));
+            STORM_PRINT(countConstr->toSmtlib2(varNames) << std::endl);
+            STORM_PRINT(timepointConstr->toSmtlib2(varNames) << std::endl);
             storm::solver::SmtSolver::CheckResult res = solver->check();
             solver->pop();
             return res;
@@ -683,7 +689,6 @@ namespace storm {
 
         storm::solver::SmtSolver::CheckResult
         DFTASFChecker::checkDependencyConflict(uint64_t dep1Index, uint64_t dep2Index, uint64_t timeout) {
-            //TODO make constraints easier?
             std::vector<std::shared_ptr<SmtConstraint>> andConstr;
             std::vector<std::shared_ptr<SmtConstraint>> orConstr;
             STORM_LOG_DEBUG(
@@ -731,6 +736,8 @@ namespace storm {
 
         uint64_t DFTASFChecker::correctLowerBound(uint64_t bound, uint_fast64_t timeout) {
             STORM_LOG_ASSERT(solver, "SMT Solver was not initialized, call toSolver() before checking queries");
+            if (experimentalMode)
+                STORM_LOG_WARN("DFT-SMT-Checker now runs in experimental mode, bound correction is prone to errors!");
             STORM_LOG_DEBUG("Lower bound correction - try to correct bound " << std::to_string(bound));
             uint64_t boundCandidate = bound;
             uint64_t nrDepEvents = 0;
@@ -747,7 +754,7 @@ namespace storm {
                 }
             }
             // Only need to check as long as bound candidate + nr of non-Markovians to check is smaller than number of dependent events
-            while (nrNonMarkovian <= nrDepEvents && boundCandidate > 0) {
+            while (nrNonMarkovian <= nrDepEvents && boundCandidate >= 0) {
                 STORM_LOG_TRACE(
                         "Lower bound correction - check possible bound " << std::to_string(boundCandidate) << " with "
                                                                          << std::to_string(nrNonMarkovian)
@@ -761,6 +768,11 @@ namespace storm {
                         /* If SAT, there is a sequence where only boundCandidate-many BEs fail directly and rest is nonMarkovian.
                          * Bound candidate is vaild, therefore check the next one */
                         STORM_LOG_TRACE("Lower bound correction - SAT");
+                        // Prevent integer underflow
+                        if (boundCandidate == 0) {
+                            STORM_LOG_DEBUG("Lower bound correction - corrected bound to 0");
+                            return 0;
+                        }
                         --boundCandidate;
                         break;
                     case storm::solver::SmtSolver::CheckResult::Unknown:
@@ -781,9 +793,13 @@ namespace storm {
 
         uint64_t DFTASFChecker::correctUpperBound(uint64_t bound, uint_fast64_t timeout) {
             STORM_LOG_ASSERT(solver, "SMT Solver was not initialized, call toSolver() before checking queries");
+            if (experimentalMode)
+                STORM_LOG_WARN("DFT-SMT-Checker now runs in experimental mode, bound correction is prone to errors!");
+
             STORM_LOG_DEBUG("Upper bound correction - try to correct bound " << std::to_string(bound));
 
-            while (bound > 1) {
+            while (bound > 0) {
+                STORM_LOG_TRACE("Upper bound correction - check possible bound " << std::to_string(bound));
                 setSolverTimeout(timeout * 1000);
                 storm::solver::SmtSolver::CheckResult tmp_res =
                         checkFailsAtTimepointWithOnlyMarkovianState(bound);
@@ -796,6 +812,7 @@ namespace storm {
                         STORM_LOG_DEBUG("Upper bound correction - Solver returned 'Unknown', corrected to ");
                         return bound;
                     default:
+                        STORM_LOG_TRACE("Upper bound correction - UNSAT");
                         --bound;
                         break;
 
