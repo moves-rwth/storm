@@ -134,7 +134,7 @@ namespace storm {
          * @param file File.
          */
         template<typename ValueType>
-        void exportDFTToSMT(storm::storage::DFT<ValueType> const& dft, std::string const& file);
+        void exportDFTToSMT(storm::storage::DFT<ValueType> const &dft, std::string const &file, bool experimentalMode);
 
         /*!
          * Transform DFT to GSPN.

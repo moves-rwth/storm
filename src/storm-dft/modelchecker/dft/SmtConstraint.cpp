@@ -344,6 +344,31 @@ namespace storm {
             uint64_t value;
         };
 
+        class IsNotConstantValue : public SmtConstraint {
+        public:
+            IsNotConstantValue(uint64_t varIndex, uint64_t val) : varIndex(varIndex), value(val) {
+            }
+
+            virtual ~IsNotConstantValue() {
+            }
+
+            std::string toSmtlib2(std::vector<std::string> const &varNames) const override {
+                std::stringstream sstr;
+                assert(varIndex < varNames.size());
+                sstr << "(distinct " << varNames.at(varIndex) << " " << value << ")";
+                return sstr.str();
+            }
+
+            storm::expressions::Expression toExpression(std::vector<std::string> const &varNames,
+                                                        std::shared_ptr<storm::expressions::ExpressionManager> manager) const override {
+                return manager->getVariableExpression(varNames.at(varIndex)) != manager->integer(value);
+            }
+
+        private:
+            uint64_t varIndex;
+            uint64_t value;
+        };
+
 
         class IsLessConstant : public SmtConstraint {
         public:

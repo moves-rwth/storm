@@ -31,14 +31,18 @@ namespace storm {
         }
 
         template<>
-        void exportDFTToSMT(storm::storage::DFT<double> const& dft, std::string const& file) {
+        void exportDFTToSMT(storm::storage::DFT<double> const &dft, std::string const &file, bool experimentalMode) {
             storm::modelchecker::DFTASFChecker asfChecker(dft);
+            if (experimentalMode) {
+                asfChecker.activateExperimentalMode();
+            }
             asfChecker.convert();
             asfChecker.toFile(file);
         }
 
         template<>
-        void exportDFTToSMT(storm::storage::DFT<storm::RationalFunction> const& dft, std::string const& file) {
+        void exportDFTToSMT(storm::storage::DFT<storm::RationalFunction> const &dft, std::string const &file,
+                            bool experimentalMode) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Export to SMT does not support this data type.");
         }
 

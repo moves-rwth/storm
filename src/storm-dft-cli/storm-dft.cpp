@@ -27,6 +27,7 @@ void processOptions() {
     storm::settings::modules::FaultTreeSettings const& faultTreeSettings = storm::settings::getModule<storm::settings::modules::FaultTreeSettings>();
     storm::settings::modules::IOSettings const& ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
     storm::settings::modules::DftGspnSettings const& dftGspnSettings = storm::settings::getModule<storm::settings::modules::DftGspnSettings>();
+    auto const &debug = storm::settings::getModule<storm::settings::modules::DebugSettings>();
 
 
     if (!dftIOSettings.isDftFileSet() && !dftIOSettings.isDftJsonFileSet()) {
@@ -53,8 +54,8 @@ void processOptions() {
     }
 
     if (dftIOSettings.isExportToSmt()) {
-        // Export to json
-        storm::api::exportDFTToSMT<ValueType>(*dft, dftIOSettings.getExportSmtFilename());
+        // Export to smtlib2
+        storm::api::exportDFTToSMT<ValueType>(*dft, dftIOSettings.getExportSmtFilename(), debug.isTestSet());
         return;
     }
 
@@ -81,7 +82,6 @@ void processOptions() {
 
 #ifdef STORM_HAVE_Z3
     if (faultTreeSettings.solveWithSMT()) {
-        auto const& debug = storm::settings::getModule<storm::settings::modules::DebugSettings>();
         // Solve with SMT
         STORM_LOG_DEBUG("Running DFT analysis with use of SMT");
         storm::api::analyzeDFTSMT(*dft, true, debug.isTestSet());

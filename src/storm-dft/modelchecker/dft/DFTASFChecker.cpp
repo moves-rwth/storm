@@ -29,6 +29,8 @@ namespace storm {
 
         void DFTASFChecker::convert() {
             std::vector<uint64_t> beVariables;
+            std::vector<uint64_t> failedBeVariables;
+            std::vector<uint64_t> failsafeBeVariables;
             notFailed = dft.nrBasicElements() + 1; // Value indicating the element is not failed
 
             // Initialize variables
@@ -40,11 +42,19 @@ namespace storm {
                     case storm::storage::DFTElementType::BE_EXP:
                         beVariables.push_back(varNames.size() - 1);
                         break;
-                    case storm::storage::DFTElementType::BE_CONST:
+                    case storm::storage::DFTElementType::BE_CONST: {
                         STORM_LOG_THROW(experimentalMode, storm::exceptions::NotSupportedException,
                                         "Constant BEs are not supported in SMT translation.");
                         STORM_LOG_WARN("Constant BEs are only experimentally supported");
+                        // Constant BEs are initially either failed or failsafe, treat them differently
+                        auto be = std::static_pointer_cast<storm::storage::BEConst<double> const>(element);
+                        if (be->failed()) {
+                            failedBeVariables.push_back(varNames.size() - 1);
+                        } else {
+                            failsafeBeVariables.push_back(varNames.size() - 1);
+                        }
                         break;
+                    }
                     case storm::storage::DFTElementType::SPARE:
                     {
                         auto spare = std::static_pointer_cast<storm::storage::DFTSpare<double> const>(element);
@@ -73,13 +83,29 @@ namespace storm {
 
             // Generate constraints
 
-            // All BEs have to fail (first part of constraint 12)
+            // All exponential BEs have to fail (first part of constraint 12)
             for (auto const &beV : beVariables) {
                 constraints.push_back(std::make_shared<BetweenValues>(beV, 1, dft.nrBasicElements()));
             }
 
+            // Constantly failsafe BEs may also be fail-safe
+            for (auto const &beV : failsafeBeVariables) {
+                constraints.push_back(std::make_shared<BetweenValues>(beV, 1, notFailed));
+            }
+
+            // Constantly failed BEs fail before other types
+            for (auto const &beV : failedBeVariables) {
+                constraints.push_back(std::make_shared<BetweenValues>(beV, 1, failedBeVariables.size()));
+            }
+
+            std::vector<uint64_t> allBeVariables;
+            allBeVariables.insert(std::end(allBeVariables), std::begin(beVariables), std::end(beVariables));
+            allBeVariables.insert(std::end(allBeVariables), std::begin(failedBeVariables), std::end(failedBeVariables));
+            allBeVariables.insert(std::end(allBeVariables), std::begin(failsafeBeVariables),
+                                  std::end(failsafeBeVariables));
+
             // No two BEs fail at the same time (second part of constraint 12)
-            constraints.push_back(std::make_shared<PairwiseDifferent>(beVariables));
+            constraints.push_back(std::make_shared<PairwiseDifferent>(allBeVariables));
             constraints.back()->setDescription("No two BEs fail at the same time");
 
             // Initialize claim variables in [1, |BE|+1]
@@ -142,6 +168,44 @@ namespace storm {
 
             // Handle dependencies
             addMarkovianConstraints();
+
+            // Failsafe BEs may only fail in non-Markovian states (i.e. if they were triggered)
+            std::vector<std::shared_ptr<SmtConstraint>> failsafeNotIConstr;
+            for (uint64_t i = 0; i < dft.nrBasicElements(); ++i) {
+                failsafeNotIConstr.clear();
+                for (auto const &beV : failsafeBeVariables) {
+                    failsafeNotIConstr.push_back(std::make_shared<IsNotConstantValue>(beV, i));
+                }
+                constraints.push_back(
+                        std::make_shared<Implies>(std::make_shared<IsBoolValue>(markovianVariables.at(i), true),
+                                                  std::make_shared<And>(failsafeNotIConstr)));
+                if (i == 0) {
+                    constraints.back()->setDescription("Failsafe BEs fail only if they are triggered");
+                }
+            }
+
+
+            // A failsafe BE only stays failsafe if no trigger has been triggered
+            std::vector<std::shared_ptr<SmtConstraint>> triggerConstraints;
+            for (size_t i = 0; i < dft.nrElements(); ++i) {
+                std::shared_ptr<storm::storage::DFTElement<ValueType> const> element = dft.getElement(i);
+                if (element->type() == storm::storage::DFTElementType::BE_CONST) {
+                    auto be = std::static_pointer_cast<storm::storage::DFTBE<double> const>(element);
+                    triggerConstraints.clear();
+                    for (auto const &dependency : be->ingoingDependencies()) {
+                        triggerConstraints.push_back(std::make_shared<IsConstantValue>(
+                                timePointVariables.at(dependency->triggerEvent()->id()), notFailed));
+                    }
+                    if (!triggerConstraints.empty()) {
+                        constraints.push_back(std::make_shared<Implies>(
+                                std::make_shared<IsConstantValue>(timePointVariables.at(be->id()), notFailed),
+                                std::make_shared<And>(triggerConstraints)));
+                        constraints.back()->setDescription(
+                                "Failsafe BE " + be->name() + " stays failsafe if no trigger fails");
+                    }
+                }
+            }
+
         }
 
         // Constraint Generator Functions
