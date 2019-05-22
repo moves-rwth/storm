@@ -44,10 +44,13 @@ namespace storm {
 
         template<>
         storm::api::SMTResult
-        analyzeDFTSMT(storm::storage::DFT<double> const &dft, bool printOutput) {
+        analyzeDFTSMT(storm::storage::DFT<double> const &dft, bool printOutput, bool experimentalMode) {
             uint64_t solverTimeout = 10;
 
             storm::modelchecker::DFTASFChecker smtChecker(dft);
+            if (experimentalMode) {
+                smtChecker.activateExperimentalMode();
+            }
             smtChecker.toSolver();
             storm::api::SMTResult results;
 
@@ -77,7 +80,8 @@ namespace storm {
 
         template<>
         storm::api::SMTResult
-        analyzeDFTSMT(storm::storage::DFT<storm::RationalFunction> const &dft, bool printOutput) {
+        analyzeDFTSMT(storm::storage::DFT<storm::RationalFunction> const &dft, bool printOutput,
+                      bool experimentalMode) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
                             "Analysis by SMT not supported for this data type.");
         }

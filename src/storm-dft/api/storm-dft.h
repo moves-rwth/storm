@@ -107,7 +107,7 @@ namespace storm {
          */
         template<typename ValueType>
         storm::api::SMTResult
-        analyzeDFTSMT(storm::storage::DFT<ValueType> const &dft, bool printOutput);
+        analyzeDFTSMT(storm::storage::DFT<ValueType> const &dft, bool printOutput, bool experimentalMode);
 
         /*!
          * Export DFT to JSON file.

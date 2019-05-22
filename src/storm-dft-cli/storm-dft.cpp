@@ -7,6 +7,7 @@
 #include "storm-dft/settings/modules/FaultTreeSettings.h"
 #include <storm/exceptions/UnmetRequirementException.h>
 #include "storm/settings/modules/GeneralSettings.h"
+#include "storm/settings/modules/DebugSettings.h"
 #include "storm/settings/modules/IOSettings.h"
 #include "storm/settings/modules/ResourceSettings.h"
 #include "storm/utility/initialize.h"
@@ -80,9 +81,10 @@ void processOptions() {
 
 #ifdef STORM_HAVE_Z3
     if (faultTreeSettings.solveWithSMT()) {
+        auto const& debug = storm::settings::getModule<storm::settings::modules::DebugSettings>();
         // Solve with SMT
         STORM_LOG_DEBUG("Running DFT analysis with use of SMT");
-        storm::api::analyzeDFTSMT(*dft, true);
+        storm::api::analyzeDFTSMT(*dft, true, debug.isTestSet());
         return;
     }
 #endif

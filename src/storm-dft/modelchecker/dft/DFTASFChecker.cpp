@@ -18,6 +18,11 @@ namespace storm {
             // Intentionally left empty.
         }
 
+        void DFTASFChecker::activateExperimentalMode() {
+            STORM_LOG_WARN("DFT-SMT-Checker now runs in experimental mode, no guarantee for correct results is given!");
+            experimentalMode = true;
+        }
+
         uint64_t DFTASFChecker::getClaimVariableIndex(uint64_t spare, uint64_t child) const {
             return claimVariables.at(SpareAndChildPair(spare, child));
         }
@@ -36,7 +41,9 @@ namespace storm {
                         beVariables.push_back(varNames.size() - 1);
                         break;
                     case storm::storage::DFTElementType::BE_CONST:
-                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Constant BEs are not supported in SMT translation.");
+                        STORM_LOG_THROW(experimentalMode, storm::exceptions::NotSupportedException,
+                                        "Constant BEs are not supported in SMT translation.");
+                        STORM_LOG_WARN("Constant BEs are only experimentally supported");
                         break;
                     case storm::storage::DFTElementType::SPARE:
                     {
@@ -612,6 +619,7 @@ namespace storm {
 
         storm::solver::SmtSolver::CheckResult
         DFTASFChecker::checkDependencyConflict(uint64_t dep1Index, uint64_t dep2Index, uint64_t timeout) {
+            //TODO make constraints easier?
             std::vector<std::shared_ptr<SmtConstraint>> andConstr;
             std::vector<std::shared_ptr<SmtConstraint>> orConstr;
             STORM_LOG_DEBUG(
