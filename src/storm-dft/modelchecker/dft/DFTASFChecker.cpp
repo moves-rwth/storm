@@ -617,11 +617,6 @@ namespace storm {
             STORM_LOG_DEBUG(
                     "Check " << dft.getElement(dep1Index)->name() << " and " << dft.getElement(dep2Index)->name());
             andConstr.clear();
-            // Both FDEPs were triggered before dependent elements have failed
-            andConstr.push_back(std::make_shared<IsLess>(
-                    timePointVariables.at(dep1Index), dependencyVariables.at(dep1Index)));
-            andConstr.push_back(std::make_shared<IsLess>(
-                    timePointVariables.at(dep2Index), dependencyVariables.at(dep2Index)));
             // AND FDEP1 is triggered before FDEP2 is resolved
             andConstr.push_back(std::make_shared<IsGreaterEqual>(
                     timePointVariables.at(dep1Index), timePointVariables.at(dep2Index)));
@@ -630,11 +625,6 @@ namespace storm {
             std::shared_ptr<SmtConstraint> betweenConstr1 = std::make_shared<And>(andConstr);
 
             andConstr.clear();
-            // Both FDEPs were triggered before dependent elements have failed
-            andConstr.push_back(std::make_shared<IsLess>(
-                    timePointVariables.at(dep1Index), dependencyVariables.at(dep1Index)));
-            andConstr.push_back(std::make_shared<IsLess>(
-                    timePointVariables.at(dep2Index), dependencyVariables.at(dep2Index)));
             // AND FDEP2 is triggered before FDEP1 is resolved
             andConstr.push_back(std::make_shared<IsGreaterEqual>(
                     timePointVariables.at(dep2Index), timePointVariables.at(dep1Index)));
@@ -646,7 +636,17 @@ namespace storm {
             // Either one of the above constraints holds
             orConstr.push_back(betweenConstr1);
             orConstr.push_back(betweenConstr2);
-            std::shared_ptr<SmtConstraint> checkConstr = std::make_shared<Or>(orConstr);
+
+            // Both FDEPs were triggered before dependent elements have failed
+            andConstr.clear();
+            andConstr.push_back(std::make_shared<IsLess>(
+                    timePointVariables.at(dep1Index), dependencyVariables.at(dep1Index)));
+            andConstr.push_back(std::make_shared<IsLess>(
+                    timePointVariables.at(dep2Index), dependencyVariables.at(dep2Index)));
+            andConstr.push_back(std::make_shared<Or>(orConstr));
+
+            std::shared_ptr<SmtConstraint> checkConstr = std::make_shared<And>(andConstr);
+
             std::shared_ptr<storm::expressions::ExpressionManager> manager = solver->getManager().getSharedPointer();
             solver->push();
             solver->add(checkConstr->toExpression(varNames, manager));
