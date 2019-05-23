@@ -452,6 +452,10 @@ namespace storm {
                 GeometryValueType eps = storm::utility::convertNumber<GeometryValueType>(env.modelchecker().multi().getPrecision());
                 eps += eps; // The unknown area (box) can actually have size 2*eps
 
+                if (!wvChecker) {
+                    lpChecker->setCurrentWeightVector(f.getHalfspace().normalVector());
+                }
+                
                 if (optimizeAndSplitFacet(env, f, eps)) {
                     return;
                 }
@@ -464,7 +468,9 @@ namespace storm {
                     }
                 }
                 if (!polytopeTree.isEmpty()) {
-                    lpChecker->setCurrentWeightVector(f.getHalfspace().normalVector());
+                    if (wvChecker) {
+                        lpChecker->setCurrentWeightVector(f.getHalfspace().normalVector());
+                    }
                     auto res = lpChecker->check(env, polytopeTree, eps);
                     for (auto const& infeasableArea : res.second) {
                         addUnachievableArea(env, infeasableArea);
@@ -496,7 +502,7 @@ namespace storm {
                     point = storm::utility::vector::convertNumericVector<GeometryValueType>(wvChecker->getUnderApproximationOfInitialStateResults());
                     negateMinObjectives(point);
                 } else {
-                    auto currentArea = negateMinObjectives(overApproximation->intersection(f.getHalfspace().invert()));
+                    auto currentArea = overApproximation->intersection(f.getHalfspace().invert());
                     auto optionalPoint = lpChecker->check(env, currentArea);
                     if (optionalPoint.is_initialized()) {
                         point = std::move(optionalPoint.get());

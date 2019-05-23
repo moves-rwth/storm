@@ -220,7 +220,7 @@ namespace storm {
                 if (!upperResultBounds) {
                     upperResultBounds = computeValueBounds(env, false, model, *objective.formula);
                     auto upperResultBound = objective.upperResultBound;
-                    if (storm::utility::vector::hasInfinityEntry(upperResultBounds.get())) {
+                    if (!upperResultBound.is_initialized() && storm::utility::vector::hasInfinityEntry(upperResultBounds.get())) {
                         STORM_LOG_THROW(objective.formula->isRewardOperatorFormula(), storm::exceptions::NotSupportedException, "The upper bound for objective " << *objective.originalFormula << " is infinity at some state. This is only supported for reachability rewards / total rewards.");
                         STORM_LOG_THROW(objective.formula->getSubformula().isTotalRewardFormula() || objective.formula->getSubformula().isEventuallyFormula(), storm::exceptions::NotSupportedException, "The upper bound for objective " << *objective.originalFormula << " is infinity at some state. This is only supported for reachability rewards / total rewards.");
                         auto rewards = getTotalRewardVector(model, *objective.formula);
@@ -234,6 +234,7 @@ namespace storm {
                             }
                             upperBound += expVisits[state] * maxReward;
                         }
+                        upperResultBound = upperBound;
                     }
                     storm::utility::vector::clip(upperResultBounds.get(), objective.lowerResultBound, upperResultBound);
                 }
@@ -292,7 +293,7 @@ namespace storm {
                             lpath *= minProb;
                         }
                         STORM_LOG_ASSERT(!storm::utility::isZero(lpath), "unexpected value of lpath");
-                        uint64_t mecState = mecElimination.oldToNewStateMapping[mec.begin()->first];
+                        uint64_t mecState = modelToSubsystemStateMapping.get()[mec.begin()->first];
                         bool foundEntry = false;
                         for (uint64_t mecChoice = transitions.getRowGroupIndices()[mecState]; mecChoice < transitions.getRowGroupIndices()[mecState + 1]; ++mecChoice) {
                             if (transitions.getRow(mecChoice).getNumberOfEntries() == 1) {
@@ -329,7 +330,7 @@ namespace storm {
                         ++subsystemState;
                     }
                 }
-                assert(subsystemState == subsystemBounds.size());
+                return visitingTimesUpperBounds;
             }
             
 

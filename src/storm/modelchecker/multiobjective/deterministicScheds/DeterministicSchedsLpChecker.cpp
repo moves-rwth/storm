@@ -55,7 +55,6 @@ namespace storm {
             
             bool useNonOptimalSolutions() {
                 bool result = encodingSettings().get(58);
-                STORM_LOG_ERROR_COND(!result || inOutEncoding(), "Asserting bottom state sum is only relevant for in-out encoding.");
                 return result;
             }
             
@@ -168,8 +167,8 @@ namespace storm {
             std::map<storm::storage::BitVector, storm::storage::BitVector> getSubEndComponents(storm::storage::SparseMatrix<ValueType> const& mecTransitions) {
                 auto backwardTransitions = mecTransitions.transpose(true);
                 std::map<storm::storage::BitVector, storm::storage::BitVector> unprocessed, processed;
-                storm::storage::BitVector allStates(mecTransitions.getRowGroupCount());
-                storm::storage::BitVector allChoices(mecTransitions.getRowCount());
+                storm::storage::BitVector allStates(mecTransitions.getRowGroupCount(), true);
+                storm::storage::BitVector allChoices(mecTransitions.getRowCount(), true);
                 unprocessed[allStates] = allChoices;
                 while (!unprocessed.empty()) {
                     auto currentIt = unprocessed.begin();
@@ -212,25 +211,25 @@ namespace storm {
                 
                 for (auto const& mec : mecs) {
                     // Create a submatrix for the current mec as well as a mapping to map back to the original states.
-                    std::vector<uint64_t> toGlobalStateIndexMapping;
-                    std::vector<uint64_t> toGlobalChoiceIndexMapping;
                     storm::storage::BitVector mecStatesAsBitVector(model.getNumberOfStates(), false);
                     storm::storage::BitVector mecChoicesAsBitVector(model.getNumberOfChoices(), false);
                     for (auto const& stateChoices : mec) {
                         mecStatesAsBitVector.set(stateChoices.first, true);
-                        toGlobalStateIndexMapping.push_back(stateChoices.first);
                         for (auto const& choice : stateChoices.second) {
                             mecChoicesAsBitVector.set(choice, true);
-                            toGlobalChoiceIndexMapping.push_back(choice);
                         }
                     }
+                    std::vector<uint64_t> toGlobalStateIndexMapping(mecStatesAsBitVector.begin(), mecStatesAsBitVector.end());
+                    std::vector<uint64_t> toGlobalChoiceIndexMapping(mecChoicesAsBitVector.begin(), mecChoicesAsBitVector.end());
+                    //std::cout << "mec choices of ec" << ecCounter << ": " << mecChoicesAsBitVector << std::endl;
                     storm::storage::SparseMatrix<ValueType> mecTransitions = model.getTransitionMatrix().getSubmatrix(false, mecChoicesAsBitVector, mecStatesAsBitVector);
                     
                     // Create a variable for each subEC and add it for the corresponding states.
                     // Also assert that not every state takes an ec choice.
-                    auto const& subEcs = getSubEndComponents(mecTransitions);
+                    auto subEcs = getSubEndComponents(mecTransitions);
                     for (auto const& subEc : subEcs) {
                         // get the choices of the current EC with some non-zero value (i.e. reward).
+                        // std::cout << "sub ec choices of ec" << ecCounter << ": " << subEc.second << std::endl;
                         storm::storage::BitVector subEcChoicesWithValueZero = subEc.second;
                         for (auto const& localSubEcChoiceIndex : subEc.second) {
                             uint64_t subEcChoice = toGlobalChoiceIndexMapping[localSubEcChoiceIndex];
@@ -274,11 +273,15 @@ namespace storm {
                                 }
                             }
                             // Assert that the ecVar is one iff the sum over the zero-value-choice variables equals the number of states in this ec
-                            storm::expressions::Expression ecVarLowerBound = one - lpModel->getConstant(storm::utility::convertNumber<ValueType>(numSubEcStatesWithMultipleChoices)).simplify();
+                            storm::expressions::Expression ecVarBound = one - lpModel->getConstant(storm::utility::convertNumber<ValueType>(numSubEcStatesWithMultipleChoices)).simplify();
                             if (!ecChoiceVars.empty()) {
-                                ecVarLowerBound = ecVarLowerBound + storm::expressions::sum(ecChoiceVars);
+                                ecVarBound = ecVarBound + storm::expressions::sum(ecChoiceVars);
                             }
-                            lpModel->addConstraint("", ecVar >= ecVarLowerBound);
+                            if (inOutEncoding()) {
+                                lpModel->addConstraint("", ecVar <= ecVarBound);
+                            } else {
+                                lpModel->addConstraint("", ecVar >= ecVarBound);
+                            }
                         }
                     }
                 }
@@ -327,7 +330,6 @@ namespace storm {
                         }
                     }
                 }
-                
                 // Create ec Variables and assert for each sub-ec that not all choice variables stay there
                 auto ecVars = createEcVariables(choiceVars);
                 bool hasEndComponents = false;
@@ -353,7 +355,6 @@ namespace storm {
                     }
                     storm::storage::BitVector nonBottomStates = ~bottomStates;
                     STORM_LOG_TRACE("Found " << bottomStates.getNumberOfSetBits() << " bottom states.");
-                    STORM_LOG_ERROR_COND(storm::utility::graph::performProb1A(model.getTransitionMatrix(), model.getNondeterministicChoiceIndices(), model.getBackwardTransitions(), nonBottomStates, bottomStates).full(), "End components not yet treated correctly.");
                     
                     // Compute upper bounds for each state
                     std::vector<ValueType> visitingTimesUpperBounds = DeterministicSchedsObjectiveHelper<ModelType>::computeUpperBoundOnExpectedVisitingTimes(model.getTransitionMatrix(), bottomStates, nonBottomStates, hasEndComponents);
@@ -401,6 +402,7 @@ namespace storm {
                         }
                         if (ecValVars[state].isInitialized()) {
                             outs[state].push_back(ecValVars[state]);
+                            bottomStatesIn.push_back(ecValVars[state]);
                         }
                     }
                     
@@ -593,9 +595,10 @@ namespace storm {
                     STORM_LOG_TRACE("\tDone solving MILP...");
                     swLpSolve.stop();
                     
+                    //std::cout << "writing model to file out.lp"<< std::endl;
+                    //lpModel->writeModelToFile("out.lp");
                     if (lpModel->isInfeasible()) {
                         infeasableAreas.push_back(polytopeTree.getPolytope());
-                        lpModel->writeModelToFile("out.lp");
                         polytopeTree.clear();
                     } else {
                         STORM_LOG_ASSERT(!lpModel->isUnbounded(), "LP result is unbounded.");
