@@ -12,7 +12,7 @@ namespace storm {
         namespace multiobjective {
             
             template <typename ModelType>
-            PcaaWeightVectorChecker<ModelType>::PcaaWeightVectorChecker(std::vector<Objective<ValueType>> const& objectives) : objectives(objectives) {
+            PcaaWeightVectorChecker<ModelType>::PcaaWeightVectorChecker(std::vector<Objective<ValueType>> const& objectives) : objectives(objectives), weightedPrecision(storm::utility::zero<ValueType>()) {
                 // Intentionally left empty
             }
             
