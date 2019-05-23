@@ -116,6 +116,9 @@ namespace storm {
             mutable bool lastCheckUnbounded;
             mutable std::unique_ptr<z3::expr> lastCheckObjectiveValue;
             mutable std::unique_ptr<z3::model> lastCheckModel;
+            
+            // Stores whether this solver is used in an incremental way (with push() and pop())
+            bool isIncremental;
 
             // An expression adapter that is used for translating the expression into Z3's format.
             std::unique_ptr<storm::adapters::Z3ExpressionAdapter> expressionAdapter;
