@@ -1,38 +1,37 @@
 # Generate .travis.yml automatically
 
 # Configuration for Linux
-configs_linux = [
-    # OS, compiler, build type
-    ("ubuntu-18.04", "gcc", "DefaultDebug"),
-    ("ubuntu-18.04", "gcc", "DefaultRelease"),
-    ("debian-9", "gcc", "DefaultDebug"),
-    ("debian-9", "gcc", "DefaultRelease"),
-    ("ubuntu-18.10", "gcc", "DefaultDebug"),
-    ("ubuntu-18.10", "gcc", "DefaultRelease"),
-    ("ubuntu-19.04", "gcc", "DefaultDebugTravis"),
-    ("ubuntu-19.04", "gcc", "DefaultReleaseTravis"),
-]
-
-# Configurations for Mac
-configs_mac = [
-    # OS, compiler, build type
-#    ("osx", "clang", "DefaultDebug"),
-#    ("osx", "clang", "DefaultRelease"),
+configs = [
+    # OS, OS version, compiler, build type, task
+    ("ubuntu", "18.04", "gcc", "DefaultDebug", "Test"),
+    ("ubuntu", "18.04", "gcc", "DefaultRelease", "Test"),
+    ("debian", "9", "gcc", "DefaultDebug", "Test"),
+    ("debian", "9", "gcc", "DefaultRelease", "Test"),
+    ("ubuntu", "18.10", "gcc", "DefaultDebug", "Test"),
+    ("ubuntu", "18.10", "gcc", "DefaultRelease", "Test"),
+    ("ubuntu", "19.04", "gcc", "DefaultDebugTravis", "TestDocker"),
+    ("ubuntu", "19.04", "gcc", "DefaultReleaseTravis", "TestDockerDoxygen"),
+#    ("osx", "xcode9.3", "clang", "DefaultDebug", "Test"),
+#    ("osx", "xcode9.3", "clang", "DefaultRelease", "Test"),
 ]
 
 # Stages in travis
-stages = [
+build_stages = [
     ("Build (1st run)", "Build1"),
     ("Build (2nd run)", "Build2"),
     ("Build (3rd run)", "Build3"),
     ("Build (4th run)", "BuildLast"),
-    ("Test all", "TestAll"),
+    ("Tasks", "Tasks"),
 ]
+
+def get_env_string(os, os_version, compiler, build_type, task):
+    if os == "osx":
+        return "CONFIG={} TASK={} COMPILER={} STL=libc++\n".format(build_type, task, compiler)
+    else:
+        return "CONFIG={} TASK={} LINUX={} COMPILER={}\n".format(build_type, task, "{}-{}".format(os, os_version), compiler)
 
 
 if __name__ == "__main__":
-    allow_failures = []
-
     s = ""
     # Initial config
     s += "#\n"
@@ -43,7 +42,6 @@ if __name__ == "__main__":
     s += "  - master\n"
     s += "  - stable\n"
     s += "sudo: required\n"
-    s += "dist: trusty\n"
     s += "language: cpp\n"
     s += "\n"
     s += "git:\n"
@@ -79,97 +77,80 @@ if __name__ == "__main__":
     s += "    ###\n"
     s += "    # Stage: Build Carl\n"
     s += "    ###\n"
-    s += "\n"
-    for config in configs_linux:
-        linux = config[0]
-        compiler = config[1]
-        build_type = config[2]
+    for config in configs:
+        os, os_version, compiler, build_type, task = config
+        os_type = "osx" if os == "osx" else "linux"
         if "Travis" in build_type:
-            s += "    # {} - {}\n".format(linux, build_type)
+            s += "    # {}-{} - {}\n".format(os, os_version, build_type)
             buildConfig = ""
             buildConfig += "    - stage: Build Carl\n"
-            buildConfig += "      os: linux\n"
+            buildConfig += "      os: {}\n".format(os_type)
             buildConfig += "      compiler: {}\n".format(compiler)
-            buildConfig += "      env: CONFIG={} LINUX={} COMPILER={}\n".format(build_type, linux, compiler)
-            buildConfig += "      install:\n"
-            buildConfig += "        - travis/install_linux.sh\n"
+            buildConfig += "      env: {}".format(get_env_string(os, os_version, compiler, build_type, task))
             buildConfig += "      before_script:\n"
             buildConfig += '        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode\n'
             buildConfig += "      script:\n"
             buildConfig += "        - travis/build_carl.sh\n"
+            buildConfig += "      before_cache:\n"
+            buildConfig += "        - docker cp carl:/opt/carl/. .\n"
             # Upload to DockerHub
-            buildConfig += "      after_success:\n"
-            buildConfig += "        - travis/deploy_carl.sh\n"
+            buildConfig += "      deploy:\n"
+            buildConfig += "        - provider: script\n"
+            buildConfig += "          skip_cleanup: true\n"
+            buildConfig += "          script: bash travis/deploy_docker.sh carl\n"
             s += buildConfig
 
-    # Generate all configurations
-    for stage in stages:
+    # Generate all build configurations
+    for stage in build_stages:
         s += "\n"
         s += "    ###\n"
         s += "    # Stage: {}\n".format(stage[0])
         s += "    ###\n"
-        s += "\n"
-        # Mac OS X
-        for config in configs_mac:
-            osx = config[0]
-            compiler = config[1]
-            build_type = config[2]
-            s += "    # {} - {}\n".format(osx, build_type)
+        for config in configs:
+            os, os_version, compiler, build_type, task = config
+            os_type = "osx" if os == "osx" else "linux"
+            s += "    # {}-{} - {}\n".format(os, os_version, build_type)
             buildConfig = ""
             buildConfig += "    - stage: {}\n".format(stage[0])
-            buildConfig += "      os: osx\n"
-            buildConfig += "      osx_image: xcode9.1\n"
+            buildConfig += "      os: {}\n".format(os_type)
+            if os_type == "osx":
+                buildConfig += "      osx_image: {}\n".format(os_version)
             buildConfig += "      compiler: {}\n".format(compiler)
-            buildConfig += "      env: CONFIG={} COMPILER={} STL=libc++\n".format(build_type, compiler)
+            buildConfig += "      env: {}".format(get_env_string(os, os_version, compiler, build_type, task))
             buildConfig += "      install:\n"
             if stage[1] == "Build1":
                 buildConfig += "        - rm -rf build\n"
-            buildConfig += "        - travis/install_osx.sh\n"
+            buildConfig += "        - travis/skip_test.sh\n"
+            if os_type == "osx":
+                buildConfig += "        - travis/install_osx.sh\n"
             buildConfig += "      before_script:\n"
             buildConfig += '        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode\n'
             buildConfig += "      script:\n"
             buildConfig += "        - travis/build.sh {}\n".format(stage[1])
+            if os_type == "linux":
+                buildConfig += "      before_cache:\n"
+                buildConfig += "        - docker cp storm:/opt/storm/. .\n"
             buildConfig += "      after_failure:\n"
             buildConfig += "        - find build -iname '*err*.log' -type f -print -exec cat {} \;\n"
+
+            # Deployment
+            if stage[1] == "Tasks":
+                if "Docker" in task or "Doxygen" in task:
+                    buildConfig += "      deploy:\n"
+                if "Docker" in task:
+                    buildConfig += "        - provider: script\n"
+                    buildConfig += "          skip_cleanup: true\n"
+                    buildConfig += "          script: bash travis/deploy_docker.sh storm\n"
+                if "Doxygen" in task:
+                    buildConfig += "        - provider: pages\n"
+                    buildConfig += "          skip_cleanup: true\n"
+                    buildConfig += "          github_token: $GITHUB_TOKEN\n"
+                    buildConfig += "          local_dir: build/doc/html/\n"
+                    buildConfig += "          repo: moves-rwth/storm-doc\n"
+                    buildConfig += "          target_branch: master\n"
+                    buildConfig += "          on:\n"
+                    buildConfig += "            branch: master\n"
+
             s += buildConfig
 
-        # Linux via Docker
-        for config in configs_linux:
-            allow_fail = ""
-            linux = config[0]
-            compiler = config[1]
-            build_type = config[2]
-            s += "    # {} - {}\n".format(linux, build_type)
-            buildConfig = ""
-            buildConfig += "    - stage: {}\n".format(stage[0])
-            allow_fail += "    - stage: {}\n".format(stage[0])
-            buildConfig += "      os: linux\n"
-            allow_fail += "      os: linux\n"
-            buildConfig += "      compiler: {}\n".format(compiler)
-            buildConfig += "      env: CONFIG={} LINUX={} COMPILER={}\n".format(build_type, linux, compiler)
-            allow_fail += "      env: CONFIG={} LINUX={} COMPILER={}\n".format(build_type, linux, compiler)
-            buildConfig += "      install:\n"
-            if stage[1] == "Build1":
-                buildConfig += "        - rm -rf build\n"
-            buildConfig += "        - travis/install_linux.sh\n"
-            buildConfig += "      before_script:\n"
-            buildConfig += '        - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode\n'
-            buildConfig += "      script:\n"
-            buildConfig += "        - travis/build.sh {}\n".format(stage[1])
-            buildConfig += "      before_cache:\n"
-            buildConfig += "        - docker cp storm:/opt/storm/. .\n"
-            buildConfig += "      after_failure:\n"
-            buildConfig += "        - find build -iname '*err*.log' -type f -print -exec cat {} \;\n"
-            # Upload to DockerHub
-            if stage[1] == "TestAll" and "Travis" in build_type:
-                buildConfig += "      after_success:\n"
-                buildConfig += "        - travis/deploy_storm.sh\n"
-            s += buildConfig
-            if "Travis" in build_type and "Release" in build_type:
-                allow_failures.append(allow_fail)
-
-    if len(allow_failures) > 0:
-        s += "  allow_failures:\n"
-        for fail in allow_failures:
-            s += fail
     print(s)
