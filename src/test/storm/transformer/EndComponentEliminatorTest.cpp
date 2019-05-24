@@ -7,26 +7,26 @@ TEST(NeutralECRemover, SimpleModelTest) {
     
     
     storm::storage::SparseMatrixBuilder<double> builder(12, 5, 19, true, true, 5);
-    ASSERT_NO_THROW(builder.newRowGroup(0));
+    ASSERT_NO_THROW(builder.newRowGroup(0)); // Transitions for state 0:
     ASSERT_NO_THROW(builder.addNextValue(0, 0, 1.0));
     ASSERT_NO_THROW(builder.addNextValue(1, 1, 0.3));
     ASSERT_NO_THROW(builder.addNextValue(1, 2, 0.1));
     ASSERT_NO_THROW(builder.addNextValue(1, 3, 0.4));
     ASSERT_NO_THROW(builder.addNextValue(1, 4, 0.2));
-    ASSERT_NO_THROW(builder.newRowGroup(2));
+    ASSERT_NO_THROW(builder.newRowGroup(2)); // Transitions for state 1:
     ASSERT_NO_THROW(builder.addNextValue(2, 1, 0.7));
     ASSERT_NO_THROW(builder.addNextValue(2, 3, 0.3));
     ASSERT_NO_THROW(builder.addNextValue(3, 1, 0.1));
     ASSERT_NO_THROW(builder.addNextValue(3, 4, 0.9));
     ASSERT_NO_THROW(builder.addNextValue(4, 1, 0.2));
     ASSERT_NO_THROW(builder.addNextValue(4, 4, 0.8));
-    ASSERT_NO_THROW(builder.newRowGroup(5));
+    ASSERT_NO_THROW(builder.newRowGroup(5)); // Transitions for state 2:
     ASSERT_NO_THROW(builder.addNextValue(5, 2, 1.0));
-    ASSERT_NO_THROW(builder.newRowGroup(6));
+    ASSERT_NO_THROW(builder.newRowGroup(6)); // Transitions for state 3:
     ASSERT_NO_THROW(builder.addNextValue(6, 1, 1.0));
     ASSERT_NO_THROW(builder.addNextValue(7, 2, 1.0));
     ASSERT_NO_THROW(builder.addNextValue(8, 3, 1.0));
-    ASSERT_NO_THROW(builder.newRowGroup(9));
+    ASSERT_NO_THROW(builder.newRowGroup(9)); // Transitions for state 4:
     ASSERT_NO_THROW(builder.addNextValue(9, 4, 1.0));
     ASSERT_NO_THROW(builder.addNextValue(10, 1, 0.4));
     ASSERT_NO_THROW(builder.addNextValue(10, 4, 0.6));
@@ -48,28 +48,31 @@ TEST(NeutralECRemover, SimpleModelTest) {
     allowEmptyRows.set(1, false);
     allowEmptyRows.set(4, false);
     
-    
     auto res = storm::transformer::EndComponentEliminator<double>::transform(matrix, subsystem, possibleEcRows, allowEmptyRows);
     
     // Expected data
+    // State 0 is a singleton EC that is replaced by state 2
+    // States 1,4 build an EC that will be eliminated and replaced by state 1.
+    // State 2 is not part of the subsystem and thus disregarded
+    // State 3 is the only state that is kept as it is (except of the transition to 2) and will now be represented by state 0
     storm::storage::SparseMatrixBuilder<double> expectedBuilder(8, 3, 8, true, true, 3);
     ASSERT_NO_THROW(expectedBuilder.newRowGroup(0));
-    ASSERT_NO_THROW(expectedBuilder.addNextValue(0, 2, 1.0));
+    ASSERT_NO_THROW(expectedBuilder.addNextValue(0, 1, 1.0));
     ASSERT_NO_THROW(expectedBuilder.addNextValue(2, 0, 1.0));
     ASSERT_NO_THROW(expectedBuilder.newRowGroup(3));
-    ASSERT_NO_THROW(expectedBuilder.addNextValue(3, 0, 0.4));
-    ASSERT_NO_THROW(expectedBuilder.addNextValue(3, 2, 0.5));
-    ASSERT_NO_THROW(expectedBuilder.newRowGroup(5));
+    ASSERT_NO_THROW(expectedBuilder.addNextValue(3, 0, 0.3));
+    ASSERT_NO_THROW(expectedBuilder.addNextValue(3, 1, 0.7));
+    ASSERT_NO_THROW(expectedBuilder.addNextValue(4, 1, 1.0));
     ASSERT_NO_THROW(expectedBuilder.addNextValue(5, 0, 1.0));
-    ASSERT_NO_THROW(expectedBuilder.addNextValue(6, 0, 0.3));
-    ASSERT_NO_THROW(expectedBuilder.addNextValue(6, 2, 0.7));
-    ASSERT_NO_THROW(expectedBuilder.addNextValue(7, 2, 1.0));
+    ASSERT_NO_THROW(expectedBuilder.newRowGroup(6));
+    ASSERT_NO_THROW(expectedBuilder.addNextValue(6, 0, 0.4));
+    ASSERT_NO_THROW(expectedBuilder.addNextValue(6, 1, 0.5));
     storm::storage::SparseMatrix<double> expectedMatrix;
     ASSERT_NO_THROW(expectedMatrix = expectedBuilder.build());
     
-    std::vector<uint_fast64_t> expectedNewToOldRowMapping = {6,7,8,1,0,11,2,3};
+    std::vector<uint_fast64_t> expectedNewToOldRowMapping = {6,7,8,2,3,11,1,0};
     
-    std::vector<uint_fast64_t> expectedOldToNewStateMapping = {1,2,std::numeric_limits<uint_fast64_t>::max(), 0, 2};
+    std::vector<uint_fast64_t> expectedOldToNewStateMapping = {2,1,std::numeric_limits<uint_fast64_t>::max(), 0, 1};
     
     // Note that there are other possible solutions that yield equivalent matrices / vectors.
     // In particular, the ordering within the row groups depends on the MEC decomposition implementation.
