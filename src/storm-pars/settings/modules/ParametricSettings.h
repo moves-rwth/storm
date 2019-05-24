@@ -64,31 +64,6 @@ namespace storm {
                  */
                 bool isSampleExactSet() const;
 
-                /*!
-                 * Retrieves whether monotonicity analysis should be applied.
-                 */
-                bool isMonotonicityAnalysisSet() const;
-
-                /*!
-                 * Retrieves whether SCCs in the monotonicity analysis should be eliminated.
-                 */
-                bool isSccEliminationSet() const;
-
-                /*!
-                 * Retrieves whether assumptions in monotonicity analysis should be validated
-                 */
-                bool isValidateAssumptionsSet() const;
-
-                /*!
-                 * Retrieves the number of samples used for sampling in the monotonicity analysis
-                 */
-                uint_fast64_t getNumberOfSamples() const;
-
-                /*!
-				 * Retrieves the precision for the extremal value
-				 */
-                double getMonotonicityAnalysisPrecision() const;
-
                 const static std::string moduleName;
                 
             private:
@@ -100,11 +75,6 @@ namespace storm {
                 const static std::string samplesOptionName;
                 const static std::string samplesGraphPreservingOptionName;
                 const static std::string sampleExactOptionName;
-                const static std::string monotonicityAnalysis;
-                const static std::string sccElimination;
-                const static std::string validateAssumptions;
-                const static std::string samplesMonotonicityAnalysis;
-                const static std::string precision;
             };
             
         } // namespace modules

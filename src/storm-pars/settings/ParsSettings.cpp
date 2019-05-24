@@ -2,6 +2,8 @@
 
 #include "storm-pars/settings/modules/ParametricSettings.h"
 #include "storm-pars/settings/modules/RegionSettings.h"
+#include "storm-pars/settings/modules/MonotonicitySettings.h"
+
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GeneralSettings.h"
@@ -28,12 +30,13 @@ namespace storm {
     namespace settings {
         void initializeParsSettings(std::string const& name, std::string const& executableName) {
             storm::settings::mutableManager().setName(name, executableName);
-        
+
             // Register relevant settings modules.
             storm::settings::addModule<storm::settings::modules::GeneralSettings>();
             storm::settings::addModule<storm::settings::modules::IOSettings>();
             storm::settings::addModule<storm::settings::modules::CoreSettings>();
             storm::settings::addModule<storm::settings::modules::ParametricSettings>();
+            storm::settings::addModule<storm::settings::modules::MonotonicitySettings>();
             storm::settings::addModule<storm::settings::modules::RegionSettings>();
             storm::settings::addModule<storm::settings::modules::BuildSettings>();
             storm::settings::addModule<storm::settings::modules::ModelCheckerSettings>();

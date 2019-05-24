@@ -13,6 +13,7 @@
 
 #include "storm-pars/settings/ParsSettings.h"
 #include "storm-pars/settings/modules/ParametricSettings.h"
+#include "storm-pars/settings/modules/MonotonicitySettings.h"
 #include "storm-pars/settings/modules/RegionSettings.h"
 
 #include "storm-pars/transformer/SparseParametricMdpSimplifier.h"
@@ -558,6 +559,7 @@ namespace storm {
 
             auto buildSettings = storm::settings::getModule<storm::settings::modules::BuildSettings>();
             auto parSettings = storm::settings::getModule<storm::settings::modules::ParametricSettings>();
+            auto monSettings = storm::settings::getModule<storm::settings::modules::MonotonicitySettings>();
 
             auto engine = coreSettings.getEngine();
             STORM_LOG_THROW(engine == storm::settings::modules::CoreSettings::Engine::Sparse || engine == storm::settings::modules::CoreSettings::Engine::Hybrid || engine == storm::settings::modules::CoreSettings::Engine::Dd, storm::exceptions::InvalidSettingsException, "The selected engine is not supported for parametric models.");
@@ -595,7 +597,7 @@ namespace storm {
                 }
             }
 
-            if (parSettings.isMonotonicityAnalysisSet()) {
+            if (monSettings.isMonotonicityAnalysisSet()) {
                 // Simplify the model
                 storm::utility::Stopwatch simplifyingWatch(true);
                 if (model->isOfType(storm::models::ModelType::Dtmc)) {
@@ -650,7 +652,7 @@ namespace storm {
             }
 
 
-            if (parSettings.isSccEliminationSet()) {
+            if (monSettings.isSccEliminationSet()) {
                 storm::utility::Stopwatch eliminationWatch(true);
                 // TODO: check for correct Model type
                 STORM_PRINT("Applying scc elimination" << std::endl);
@@ -714,11 +716,11 @@ namespace storm {
                 model->printModelInformationToStream(std::cout);
             }
 
-            if (parSettings.isMonotonicityAnalysisSet()) {
+            if (monSettings.isMonotonicityAnalysisSet()) {
                 std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(input.properties);
                 // Monotonicity
                 storm::utility::Stopwatch monotonicityWatch(true);
-                auto monotonicityChecker = storm::analysis::MonotonicityChecker<ValueType>(model, formulas, parSettings.isValidateAssumptionsSet(), parSettings.getNumberOfSamples(), parSettings.getMonotonicityAnalysisPrecision());
+                auto monotonicityChecker = storm::analysis::MonotonicityChecker<ValueType>(model, formulas, monSettings.isValidateAssumptionsSet(), monSettings.getNumberOfSamples(), monSettings.getMonotonicityAnalysisPrecision());
                 monotonicityChecker.checkMonotonicity();
                 monotonicityWatch.stop();
                 STORM_PRINT(std::endl << "Total time for monotonicity checking: " << monotonicityWatch << "." << std::endl

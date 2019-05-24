@@ -21,11 +21,6 @@ namespace storm {
             const std::string ParametricSettings::samplesOptionName = "samples";
             const std::string ParametricSettings::samplesGraphPreservingOptionName = "samples-graph-preserving";
             const std::string ParametricSettings::sampleExactOptionName = "sample-exact";
-            const std::string ParametricSettings::monotonicityAnalysis = "monotonicity-analysis";
-            const std::string ParametricSettings::sccElimination = "mon-elim-scc";
-            const std::string ParametricSettings::validateAssumptions = "mon-validate-assumptions";
-            const std::string ParametricSettings::samplesMonotonicityAnalysis = "mon-samples";
-            const std::string ParametricSettings::precision = "mon-precision";
 
             ParametricSettings::ParametricSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportResultOptionName, false, "A path to a file where the parametric result should be saved.")
@@ -37,14 +32,6 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("samples", "The samples are semicolon-separated entries of the form 'Var1=Val1:Val2:...:Valk,Var2=... that span the sample spaces.").setDefaultValueString("").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, samplesGraphPreservingOptionName, false, "Sets whether it can be assumed that the samples are graph-preserving.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, sampleExactOptionName, false, "Sets whether to sample using exact arithmetic.").build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, monotonicityAnalysis, false, "Sets whether monotonicity analysis is done").build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, sccElimination, false, "Sets whether SCCs should be eliminated in the monotonicity analysis").build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, validateAssumptions, false, "Sets whether assumptions made in monotonicity analysis are validated").build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, samplesMonotonicityAnalysis, false, "Sets whether monotonicity should be checked on samples")
-                                .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("mon-samples", "The number of samples taken in monotonicity-analysis can be given, default is 0, no samples").setDefaultValueUnsignedInteger(0).build()).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, precision, false, "Sets precision of monotonicity checking on samples")
-                                        .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("mon-precision", "The precision of checking monotonicity on samples, default is 1e-6").setDefaultValueDouble(0.000001).build()).build());
-
             }
             
             bool ParametricSettings::exportResultToFile() const {
@@ -79,25 +66,6 @@ namespace storm {
                 return this->getOption(sampleExactOptionName).getHasOptionBeenSet();
             }
 
-            bool ParametricSettings::isMonotonicityAnalysisSet() const {
-                return this->getOption(monotonicityAnalysis).getHasOptionBeenSet();
-            }
-
-            bool ParametricSettings::isSccEliminationSet() const {
-                return this->getOption(sccElimination).getHasOptionBeenSet();
-            }
-
-            bool ParametricSettings::isValidateAssumptionsSet() const {
-                return this->getOption(validateAssumptions).getHasOptionBeenSet();
-            }
-
-            uint_fast64_t ParametricSettings::getNumberOfSamples() const {
-                return this->getOption(samplesMonotonicityAnalysis).getArgumentByName("mon-samples").getValueAsUnsignedInteger();
-            }
-
-            double ParametricSettings::getMonotonicityAnalysisPrecision() const {
-                return this->getOption(precision).getArgumentByName("mon-precision").getValueAsDouble();
-            }
         } // namespace modules
     } // namespace settings
 } // namespace storm
