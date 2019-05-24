@@ -556,7 +556,7 @@ namespace storm {
                     for (auto j = initialStates.getNextSetIndex(0); j < model->getNumberOfStates(); j = initialStates.getNextSetIndex(j+1)) {
                         initial += values[j];
                     }
-                    assert (initial >= precision && initial <= 1+precision);
+                    assert (initial >= 0-precision && initial <= 1+precision);
                     double diff = previous - initial;
                     assert (previous == -1 || diff >= -1-precision && diff <= 1 + precision);
                     if (previous != -1 && (diff > precision || diff < -precision)) {
