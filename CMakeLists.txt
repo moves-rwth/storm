@@ -386,22 +386,8 @@ endif()
 # in the the system does not have a library
 include(resources/3rdparty/CMakeLists.txt)
 
-#############################################################
-##
-##	Doxygen
-##
-#############################################################
-
-find_package(Doxygen)
-# Add a target to generate API documentation with Doxygen
-if(DOXYGEN_FOUND)
-    set(CMAKE_DOXYGEN_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/doc")
-    string(REGEX REPLACE ";" " " CMAKE_DOXYGEN_INPUT_LIST "${PROJECT_SOURCE_DIR}/src")
-
-    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/resources/doxygen/Doxyfile.in" "${CMAKE_CURRENT_BINARY_DIR}/Doxyfile" @ONLY)
-
-    add_custom_target(doc ${DOXYGEN_EXECUTABLE} "${CMAKE_CURRENT_BINARY_DIR}/Doxyfile" DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/Doxyfile" COMMENT "Generating API documentation with Doxygen" VERBATIM)
-endif(DOXYGEN_FOUND)
+# Include Doxygen
+include(resources/doxygen/CMakeLists.txt)
 
 #############################################################
 ##

@@ -1,13 +1,15 @@
 #ifndef STORM_LOGIC_LONGRUNAVERAGEREWARDFORMULA_H_
 #define STORM_LOGIC_LONGRUNAVERAGEREWARDFORMULA_H_
 
+#include <boost/optional.hpp>
 #include "storm/logic/PathFormula.h"
+#include "storm/logic/RewardAccumulation.h"
 
 namespace storm {
     namespace logic {
         class LongRunAverageRewardFormula : public PathFormula {
         public:
-            LongRunAverageRewardFormula();
+            LongRunAverageRewardFormula(boost::optional<RewardAccumulation> rewardAccumulation = boost::none);
             
             virtual ~LongRunAverageRewardFormula() {
                 // Intentionally left empty.
@@ -15,11 +17,15 @@ namespace storm {
             
             virtual bool isLongRunAverageRewardFormula() const override;
             virtual bool isRewardPathFormula() const override;
+            bool hasRewardAccumulation() const;
+            RewardAccumulation const& getRewardAccumulation() const;
 
             virtual boost::any accept(FormulaVisitor const& visitor, boost::any const& data) const override;
             
             virtual std::ostream& writeToStream(std::ostream& out) const override;
-            
+
+        private:
+            boost::optional<RewardAccumulation> rewardAccumulation;
         };
     }
 }

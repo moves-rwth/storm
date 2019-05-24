@@ -378,6 +378,18 @@ namespace storm {
             glp_write_lp(this->lp, 0, filename.c_str());
         }
         
+        
+        template<typename ValueType>
+        void GlpkLpSolver<ValueType>::push()  {
+            throw storm::exceptions::NotImplementedException() << "The glpk interface currently does not support push() operations. Select another LP solver.";
+        }
+        
+        template<typename ValueType>
+        void GlpkLpSolver<ValueType>::pop()  {
+            throw storm::exceptions::NotImplementedException() << "The glpk interface currently does not support pop() operations. Select another LP solver.";
+        }
+
+        
         template class GlpkLpSolver<double>;
         template class GlpkLpSolver<storm::RationalNumber>;
 #endif

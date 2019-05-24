@@ -16,8 +16,8 @@ namespace storm {
             const std::string SylvanSettings::threadCountOptionName = "threads";
             
             SylvanSettings::SylvanSettings() : ModuleSettings(moduleName) {
-                this->addOption(storm::settings::OptionBuilder(moduleName, maximalMemoryOptionName, true, "Sets the upper bound of memory available to Sylvan in MB.").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("value", "The memory available to Sylvan.").setDefaultValueUnsignedInteger(4096).build()).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, threadCountOptionName, true, "Sets the number of threads used by Sylvan.").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("value", "The number of threads available to Sylvan (0 means 'auto-detect').").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, maximalMemoryOptionName, true, "Sets the upper bound of memory available to Sylvan in MB.").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("value", "The memory available to Sylvan.").setDefaultValueUnsignedInteger(4096).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, threadCountOptionName, true, "Sets the number of threads used by Sylvan.").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("value", "The number of threads available to Sylvan (0 means 'auto-detect').").build()).build());
             }
             
             uint_fast64_t SylvanSettings::getMaximalMemory() const {

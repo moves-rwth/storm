@@ -25,7 +25,7 @@ namespace storm {
 
             struct FailableElements {
 
-                FailableElements(size_t nrElements) : currentlyFailableBE(nrElements), it(currentlyFailableBE.begin()) {
+                FailableElements(size_t nrElements, std::set<size_t> relevantEvents) : currentlyFailableBE(nrElements), remainingRelevantEvents(relevantEvents), it(currentlyFailableBE.begin()) {
                     // Intentionally left empty
                 }
 
@@ -103,10 +103,19 @@ namespace storm {
                     return !currentlyFailableBE.empty();
                 }
 
+                /*!
+                 * Check whether at least one relevant event has not failed yet.
+                 * @return True iff one relevant event is still operational.
+                 */
+                bool hasRemainingRelevantEvent() const {
+                    return !remainingRelevantEvents.empty();
+                }
+
                 mutable bool dependency;
 
                 storm::storage::BitVector currentlyFailableBE;
                 std::vector<size_t> mFailableDependencies;
+                std::set<size_t> remainingRelevantEvents;
 
                 mutable storm::storage::BitVector::const_iterator it;
                 mutable std::vector<size_t>::const_iterator itDep;
@@ -152,13 +161,13 @@ namespace storm {
             std::shared_ptr<DFTState<ValueType>> copy() const;
 
             DFTElementState getElementState(size_t id) const;
-            
+
+            static DFTElementState getElementState(storm::storage::BitVector const& state, DFTStateGenerationInfo const& stateGenerationInfo, size_t id);
+
             DFTDependencyState getDependencyState(size_t id) const;
 
-            int getElementStateInt(size_t id) const;
+            static DFTDependencyState getDependencyState(storm::storage::BitVector const& state, DFTStateGenerationInfo const& stateGenerationInfo, size_t id);
 
-            static int getElementStateInt(storm::storage::BitVector const& state, size_t indexId);
-            
             size_t getId() const;
 
             void setId(size_t id);
@@ -289,6 +298,13 @@ namespace storm {
              * @return true if failable dependent events exist
              */
             bool updateFailableDependencies(size_t id);
+
+            /**
+             * Sets all failable BEs due to restrictions from newly failed element.
+             * @param id Id of the newly failed element
+             * @return true if newly failable events exist
+             */
+            bool updateFailableInRestrictions(size_t id);
             
             /**
              * Sets all dependencies dont care whose dependent event is the newly failed BE.
@@ -296,12 +312,18 @@ namespace storm {
              */
             void updateDontCareDependencies(size_t id);
 
+            /*!
+             * Update remaining relevant events.
+             */
+            void updateRemainingRelevantEvents();
+
             /**
              * Sets the next BE as failed
              * @param index Index in currentlyFailableBE of BE to fail
+             * @param dueToDependency Whether the failure is due to a dependency.
              * @return Pair of BE which fails and flag indicating if the failure was due to functional dependencies
              */
-            std::pair<std::shared_ptr<DFTBE<ValueType> const>, bool> letNextBEFail(size_t index = 0);
+            std::pair<std::shared_ptr<DFTBE<ValueType> const>, bool> letNextBEFail(size_t index, bool dueToDependency);
             
             /**
              * Sets the dependency as unsuccesful meaning no BE will fail.
@@ -314,6 +336,13 @@ namespace storm {
              * @return True, if elements were swapped, false if nothing changed.
              */
             bool orderBySymmetry();
+
+            /*!
+             * Check whether the event cannot fail at the moment due to a restriction.
+             * @param id Event id.
+             * @return True iff a restriction prevents the failure of the event.
+             */
+            bool isEventDisabledViaRestriction(size_t id) const;
             
             /**
              * Checks whether operational post seq elements are present
@@ -356,6 +385,10 @@ namespace storm {
             
         private:
             void propagateActivation(size_t representativeId);
+
+            int getElementStateInt(size_t id) const;
+
+            static int getElementStateInt(storm::storage::BitVector const& state, DFTStateGenerationInfo const& stateGenerationInfo, size_t id);
 
         };
 

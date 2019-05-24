@@ -16,7 +16,7 @@ namespace storm {
             const std::string ModelCheckerSettings::filterRewZeroOptionName = "filterrewzero";
 
             ModelCheckerSettings::ModelCheckerSettings() : ModuleSettings(moduleName) {
-                this->addOption(storm::settings::OptionBuilder(moduleName, filterRewZeroOptionName, false, "If set, states with reward zero are filtered out, potentially reducing the size of the equation system").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, filterRewZeroOptionName, false, "If set, states with reward zero are filtered out, potentially reducing the size of the equation system").setIsAdvanced().build());
             }
             
             bool ModelCheckerSettings::isFilterRewZeroSet() const {

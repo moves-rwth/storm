@@ -285,7 +285,6 @@ namespace storm {
             template <typename ValueType>
             std::shared_ptr<Polytope<ValueType>> NativePolytope<ValueType>::affineTransformation(std::vector<Point> const& matrix, Point const& vector) const {
                 STORM_LOG_THROW(!matrix.empty(), storm::exceptions::InvalidArgumentException, "Invoked affine transformation with a matrix without rows.");
-                
                 StormEigen::Index rows = matrix.size();
                 StormEigen::Index columns = matrix.front().size();
                 EigenMatrix eigenMatrix(rows, columns);
@@ -296,6 +295,9 @@ namespace storm {
 
                 StormEigen::FullPivLU<EigenMatrix> luMatrix( eigenMatrix );
                 STORM_LOG_THROW(luMatrix.isInvertible(), storm::exceptions::NotImplementedException, "Affine Transformation of native polytope only implemented if the transformation matrix is invertable");
+                if (isUniversal()) {
+                    return std::make_shared<NativePolytope<ValueType>>(std::vector<Halfspace<ValueType>>());
+                }
                 EigenMatrix newA = A * luMatrix.inverse();
                 EigenVector newb = b + (newA * eigenVector);
                 return std::make_shared<NativePolytope<ValueType>>(emptyStatus, std::move(newA), std::move(newb));
@@ -394,6 +396,14 @@ namespace storm {
                     result.push_back(lhs <= manager.rational(b(row)));
                 }
                 return result;
+            }
+            
+            template <typename ValueType>
+            std::shared_ptr<Polytope<ValueType>> NativePolytope<ValueType>::clean() {
+                if (isEmpty()) {
+                    return create(boost::none, {});
+                }
+                return create(boost::none, getVertices());
             }
 
 

@@ -41,7 +41,7 @@ namespace storm {
                  *
                  * @return The name of the module for which to show the help or "all".
                  */
-                std::string getHelpModuleName() const;
+                std::string getHelpFilterExpression() const;
 
                 /*!
                  * Retrieves whether the verbose option was set.

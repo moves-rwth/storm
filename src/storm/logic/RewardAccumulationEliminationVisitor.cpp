@@ -91,6 +91,16 @@ namespace storm {
             return std::static_pointer_cast<Formula>(std::make_shared<CumulativeRewardFormula>(bounds, timeBoundReferences, rewAcc));
         }
         
+        boost::any RewardAccumulationEliminationVisitor::visit(LongRunAverageRewardFormula const& f, boost::any const& data) const {
+            STORM_LOG_THROW(!data.empty(), storm::exceptions::UnexpectedException, "Formula " << f << " does not seem to be a subformula of a reward operator.");
+            auto rewName = boost::any_cast<boost::optional<std::string>>(data);
+            if (!f.hasRewardAccumulation() || canEliminate(f.getRewardAccumulation(), rewName)) {
+                return std::static_pointer_cast<Formula>(std::make_shared<LongRunAverageRewardFormula>());
+            } else {
+                return std::static_pointer_cast<Formula>(std::make_shared<LongRunAverageRewardFormula>(f.getRewardAccumulation()));
+            }
+        }
+        
         boost::any RewardAccumulationEliminationVisitor::visit(EventuallyFormula const& f, boost::any const& data) const {
            std::shared_ptr<Formula> subformula = boost::any_cast<std::shared_ptr<Formula>>(f.getSubformula().accept(*this, data));
             if (f.hasRewardAccumulation()) {

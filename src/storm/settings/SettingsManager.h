@@ -70,21 +70,24 @@ namespace storm {
             void handleUnknownOption(std::string const& optionName, bool isShort) const;
             
             /*!
-             * This function prints a help message to the standard output. Optionally, a string can be given as a hint.
-             * If it is 'all', the complete help is shown. Otherwise, the string is interpreted as a regular expression
+             * This function prints a help message to the standard output. A string can be given as a filter.
+             * If it is 'frequent', only the options that are not flagged as advanced will be shown.
+             * If it is 'all', the complete help is shown.
+             * Otherwise, the string is interpreted as a regular expression
              * and matched against the known modules and options to restrict the help output.
              *
-             * @param hint A regular expression to restrict the help output or "all" for the full help text.
+             * @param filter A regular expression to restrict the help output or "all" for the full help text.
              */
-            void printHelp(std::string const& hint = "all") const;
+            void printHelp(std::string const& filter = "frequent") const;
             
             /*!
              * This function prints a help message for the specified module to the standard output.
              *
              * @param moduleName The name of the module for which to show the help.
              * @param maxLength The maximal length of an option name (necessary for proper alignment).
+             * @param includeAdvanced if set, also includes options flagged as advanced.
              */
-            void printHelpForModule(std::string const& moduleName, uint_fast64_t maxLength = 30) const;
+            std::string getHelpForModule(std::string const& moduleName, uint_fast64_t maxLength = 30, bool includeAdvanced = true) const;
 			
             /*!
              * Retrieves the only existing instance of a settings manager.
@@ -144,7 +147,17 @@ namespace storm {
 			 * This destructor is private, since we need to forbid explicit destruction of the manager.
 			 */
 			virtual ~SettingsManager();
-            
+   
+			/*!
+             * This function prints a help message to the standard output.
+             *
+             * @param moduleFilter only modules where this function returns true are included
+             * @param optionFilter only options where this function returns true are included
+             * @return true if at least one module or option matched the filter.
+             *
+             */
+            std::string getHelpForSelection(std::vector<std::string> const& selectedModuleNames, std::vector<std::string> const& selectedLongOptionNames, std::string modulesHeader = "", std::string optionsHeader = "") const;
+			
             // The name of the tool
             std::string name;
             std::string executableName;
@@ -213,17 +226,19 @@ namespace storm {
             /*!
              * Retrieves the (print) length of the longest option of all modules.
              *
+             * @param includeAdvanced if set, also includes options flagged as advanced.
              * @return The length of the longest option.
              */
-            uint_fast64_t getPrintLengthOfLongestOption() const;
+            uint_fast64_t getPrintLengthOfLongestOption(bool includeAdvanced) const;
             
             /*!
              * Retrieves the (print) length of the longest option in the given module, so we can align the options.
              *
              * @param moduleName The module name for which to retrieve the length of the longest option.
+             * @param includeAdvanced if set, also includes options flagged as advanced.
              * @return The length of the longest option name.
              */
-            uint_fast64_t getPrintLengthOfLongestOption(std::string const& moduleName) const;
+            uint_fast64_t getPrintLengthOfLongestOption(std::string const& moduleName, bool includeAdvanced) const;
             
             /*!
              * Parses the given file and stores the settings in the returned map.

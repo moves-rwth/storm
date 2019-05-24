@@ -57,6 +57,12 @@ namespace storm {
             GurobiLpSolver();
             
             /*!
+             * Creates a (deep) copy of this solver.
+             * @param other
+             */
+            GurobiLpSolver(GurobiLpSolver<ValueType> const& other);
+            
+            /*!
              * Destructs a solver by freeing the pointers to Gurobi's structures.
              */
             virtual ~GurobiLpSolver();
@@ -93,11 +99,34 @@ namespace storm {
             virtual int_fast64_t getIntegerValue(storm::expressions::Variable const& name) const override;
             virtual bool getBinaryValue(storm::expressions::Variable const& name) const override;
             virtual ValueType getObjectiveValue() const override;
-            
             // Methods to print the LP problem to a file.
             virtual void writeModelToFile(std::string const& filename) const override;
 
             virtual void toggleOutput(bool set) const;
+            
+            virtual void push() override;
+            virtual void pop() override;
+            
+            // Methods to retrieve values of sub-optimal solutions found along the way.
+            void setMaximalSolutionCount(uint64_t value); // How many solutions will be stored (at max)
+            uint64_t getSolutionCount() const; // How many solutions have been found
+            ValueType getContinuousValue(storm::expressions::Variable const& name, uint64_t const& solutionIndex) const;
+            int_fast64_t getIntegerValue(storm::expressions::Variable const& name, uint64_t const& solutionIndex) const;
+            bool getBinaryValue(storm::expressions::Variable const& name, uint64_t const& solutionIndex) const;
+            ValueType getObjectiveValue(uint64_t const& solutionIndex) const;
+            
+            /*!
+             * Specifies the maximum difference between lower- and upper objective bounds that triggers termination.
+             * That means a solution is considered optimal if
+             * upperBound - lowerBound < gap * (relative ? |upperBound| : 1).
+             * Only relevant for programs with integer/boolean variables.
+             */
+            void setMaximalMILPGap(ValueType const& gap, bool relative);
+            
+            /*!
+             * Returns the obtained gap after a call to optimize()
+             */
+            ValueType getMILPGap(bool relative) const;
             
         private:
             /*!
@@ -126,8 +155,17 @@ namespace storm {
             // The index of the next variable.
             int nextVariableIndex;
             
+            // The index of the next constraint.
+            int nextConstraintIndex;
+            
             // A mapping from variables to their indices.
             std::map<storm::expressions::Variable, int> variableToIndexMap;
+            
+            struct IncrementalLevel {
+                std::vector<storm::expressions::Variable> variables;
+                int firstConstraintIndex;
+            };
+            std::vector<IncrementalLevel> incrementalData;
         };
 
     }

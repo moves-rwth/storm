@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <string>
+#include <storm/exceptions/InvalidArgumentException.h>
 
 namespace storm {
     namespace storage {
@@ -60,10 +61,11 @@ namespace storm {
                     nodeData["voting"] = std::static_pointer_cast<storm::storage::DFTVot<ValueType> const>(element)->threshold();
                 }
             } else if (element->isRestriction()) {
+                // TODO use same method for gates and restrictions
                 // Set children for restriction
-                auto seq = std::static_pointer_cast<storm::storage::DFTRestriction<ValueType> const>(element);
+                auto restriction = std::static_pointer_cast<storm::storage::DFTRestriction<ValueType> const>(element);
                 std::vector<std::string> children;
-                for (DFTElementPointer const& child : seq->children()) {
+                for (DFTElementPointer const& child : restriction->children()) {
                     children.push_back(std::to_string(child->id()));
                 }
                 nodeData["children"] = children;
@@ -84,14 +86,33 @@ namespace storm {
                     nodeData["type"] = "fdep";
                 }
             } else if (element->isBasicElement()) {
-                // Set BE specific data
                 std::shared_ptr<DFTBE<ValueType> const> be = std::static_pointer_cast<DFTBE<ValueType> const>(element);
-                std::stringstream stream;
-                stream << be->activeFailureRate();
-                nodeData["rate"] = stream.str();
-                stream.str(std::string()); // Clear stringstream
-                stream << be->dormancyFactor();
-                nodeData["dorm"] = stream.str();
+                // Set BE specific data
+                switch (element->type()) {
+                    case storm::storage::DFTElementType::BE_EXP:
+                    {
+                        auto beExp = std::static_pointer_cast<BEExponential<ValueType> const>(be);
+                        std::stringstream stream;
+                        nodeData["distribution"] = "exp";
+                        stream << beExp->activeFailureRate();
+                        nodeData["rate"] = stream.str();
+                        stream.str(std::string()); // Clear stringstream
+                        stream << beExp->dormancyFactor();
+                        nodeData["dorm"] = stream.str();
+                        break;
+                    }
+                    case storm::storage::DFTElementType::BE_CONST:
+                    {
+                        auto beConst = std::static_pointer_cast<BEConst<ValueType> const>(be);
+                        std::stringstream stream;
+                        nodeData["distribution"] = "const";
+                        nodeData["failed"] = beConst->failed();
+                        break;
+                    }
+                    default:
+                        STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "BE of type '" << be->type() << "' is not known.");
+                        break;
+                }
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Element of type '" << element->type() << "' is not supported.");
             }

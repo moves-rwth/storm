@@ -53,27 +53,44 @@ run() {
     fi
     ;;
 
-  TestAll)
-    # Test all
-    travis_fold start test_all
-    cd build
-    ctest test --output-on-failure
-    travis_fold end test_all
+  Tasks)
+    # Perform tasks
+    if [[ "$TASK" == *Test* ]]
+    then
+        # Test all
+        travis_fold start test_all
+        cd build
+        ctest test --output-on-failure
+        travis_fold end test_all
 
-    # Check correctness of build types
-    echo "Checking correctness of build types"
-    case "$CONFIG" in
-    DefaultDebug*)
-        ./bin/storm --version | grep "with flags .* -g" || (echo "Error: Missing flag '-g' for debug build." && return 1)
-        ;;
-    DefaultRelease*)
-        ./bin/storm --version | grep "with flags .* -O3" || (echo "Error: Missing flag '-O3' for release build." && return 1)
-        ./bin/storm --version | grep "with flags .* -DNDEBUG" || (echo "Error: Missing flag '-DNDEBUG' for release build." && return 1)
-        ;;
-    *)
-        echo "Unrecognized value of CONFIG: $CONFIG"; exit 1
-        ;;
-    esac
+        # Check correctness of build types
+        echo "Checking correctness of build types"
+        case "$CONFIG" in
+        DefaultDebug*)
+            ./bin/storm --version | grep "with flags .* -g" || (echo "Error: Missing flag '-g' for debug build." && return 1)
+            ;;
+        DefaultRelease*)
+            ./bin/storm --version | grep "with flags .* -O3" || (echo "Error: Missing flag '-O3' for release build." && return 1)
+            ./bin/storm --version | grep "with flags .* -DNDEBUG" || (echo "Error: Missing flag '-DNDEBUG' for release build." && return 1)
+            ;;
+        *)
+            echo "Unrecognized value of CONFIG: $CONFIG"
+            exit 1
+        esac
+        cd ..
+    fi
+
+    if [[ "$TASK" == *Doxygen* ]]
+    then
+        # Generate doxygen doc
+        travis_fold start make_doc
+        cd build
+        make -j$N_JOBS doc
+        # Disable jekyll as otherwise files with starting underscore are not published
+        echo "" > doc/html/.nojekyll
+        cd ..
+        travis_fold end make_doc
+    fi
     ;;
 
   *)

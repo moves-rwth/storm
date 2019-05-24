@@ -33,7 +33,7 @@ namespace storm {
              * @param requireModulePrefix Sets whether this option can only be set by specifying the module name as its prefix.
              * @param description A description that explains the purpose of this option.
              */
-			OptionBuilder(std::string const& moduleName, std::string const& longName, bool requireModulePrefix, std::string const& description) : longName(longName), shortName(""), hasShortName(false), description(description), moduleName(moduleName), requireModulePrefix(requireModulePrefix), isRequired(false), isBuild(false), arguments(), argumentNameSet() {
+			OptionBuilder(std::string const& moduleName, std::string const& longName, bool requireModulePrefix, std::string const& description) : longName(longName), shortName(""), hasShortName(false), description(description), moduleName(moduleName), requireModulePrefix(requireModulePrefix), isRequired(false), isAdvanced(false), isBuild(false), arguments(), argumentNameSet() {
                 // Intentionally left empty.
             }
 
@@ -60,6 +60,14 @@ namespace storm {
 				return *this;
 			}
 
+            /*!
+             * Sets whether the option is only displayed in the advanced help.
+             */
+            OptionBuilder& setIsAdvanced(bool isAdvanced = true) {
+			    this->isAdvanced = isAdvanced;
+			    return *this;
+			}
+			
             /*!
              * Adds the given argument to the arguments of this option.
              *
@@ -89,9 +97,9 @@ namespace storm {
 				this->isBuild = true;
 
                 if (this->hasShortName) {
-                    return std::shared_ptr<Option>(new Option(this->moduleName, this->longName, this->shortName, this->description, this->isRequired, this->requireModulePrefix, this->arguments));
+                    return std::shared_ptr<Option>(new Option(this->moduleName, this->longName, this->shortName, this->description, this->isRequired, this->requireModulePrefix, this->isAdvanced, this->arguments));
                 } else {
-                    return std::shared_ptr<Option>(new Option(this->moduleName, this->longName, this->description, this->isRequired, this->requireModulePrefix, this->arguments));
+                    return std::shared_ptr<Option>(new Option(this->moduleName, this->longName, this->description, this->isRequired, this->requireModulePrefix, this->isAdvanced, this->arguments));
                 }
 			}
             
@@ -116,7 +124,10 @@ namespace storm {
             
             // A flag indicating whether the option is required.
 			bool isRequired;
-            
+   
+			// A flag that indicates whether this option is only displayed in the advanced help.
+            bool isAdvanced;
+
             // A flag indicating whether the builder has already been used to build an option.
 			bool isBuild;
 

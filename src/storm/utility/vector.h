@@ -1,16 +1,12 @@
 #ifndef STORM_UTILITY_VECTOR_H_
 #define STORM_UTILITY_VECTOR_H_
 
-#include "storm-config.h"
-#ifdef STORM_HAVE_INTELTBB
-#include "tbb/tbb.h"
-#endif
-
 #include <iostream>
 #include <algorithm>
 #include <functional>
 #include <numeric>
 #include <storm/adapters/RationalFunctionAdapter.h>
+#include <storm/adapters/IntelTbbAdapter.h>
 
 #include <boost/optional.hpp>
 
@@ -103,10 +99,11 @@ namespace storm {
             /*!
              * Constructs a vector [min, min+1, ...., max-1]
              */
-            inline std::vector<uint_fast64_t> buildVectorForRange(uint_fast64_t min, uint_fast64_t max) {
-                STORM_LOG_ASSERT(min < max, "Invalid range.");
-                uint_fast64_t diff = max - min;
-                std::vector<uint_fast64_t> v;
+            template<typename T>
+            inline std::vector<T> buildVectorForRange(T min, T max) {
+                STORM_LOG_ASSERT(min <= max, "Invalid range.");
+                T diff = max - min;
+                std::vector<T> v;
                 v.reserve(diff);
                 iota_n(std::back_inserter(v), diff, min);
                 return v;
@@ -119,7 +116,7 @@ namespace storm {
              */
             template<typename T>
             std::vector<uint_fast64_t> getSortedIndices(std::vector<T> const& v){
-                std::vector<uint_fast64_t> res = buildVectorForRange(0, v.size());
+                std::vector<uint_fast64_t> res = buildVectorForRange<uint_fast64_t>(0, v.size());
                 std::sort(res.begin(), res.end(), [&v](uint_fast64_t index1, uint_fast64_t index2) { return v[index1] > v[index2];});
                 return res;
             }
@@ -1153,6 +1150,16 @@ namespace storm {
             template<typename T>
             bool hasNonZeroEntry(std::vector<T> const& v){
                 return std::any_of(v.begin(), v.end(), [](T value){return !storm::utility::isZero(value);});
+            }
+            
+            template<typename T>
+            bool hasZeroEntry(std::vector<T> const& v){
+                return std::any_of(v.begin(), v.end(), [](T value){return storm::utility::isZero(value);});
+            }
+            
+            template<typename T>
+            bool hasInfinityEntry(std::vector<T> const& v){
+                return std::any_of(v.begin(), v.end(), [](T value){return storm::utility::isInfinity(value);});
             }
 
             inline std::set<storm::RationalFunctionVariable> getVariables(std::vector<storm::RationalFunction> const& vector) {

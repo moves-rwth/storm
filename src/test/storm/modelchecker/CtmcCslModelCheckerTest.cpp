@@ -16,6 +16,7 @@
 #include "storm/models/symbolic/Ctmc.h"
 #include "storm/modelchecker/csl/SparseCtmcCslModelChecker.h"
 #include "storm/modelchecker/csl/HybridCtmcCslModelChecker.h"
+#include "storm/modelchecker/csl/helper/SparseCtmcCslHelper.h"
 #include "storm/modelchecker/results/QuantitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
@@ -457,5 +458,24 @@ namespace {
             EXPECT_TRUE(storm::utility::isInfinity(this->getQuantitativeResultAtInitialState(model, result)));
         }
         
+    }
+
+    TEST(CtmcCslModelCheckerTest, TransientProbabilities) {
+        // Example from lecture
+        storm::storage::SparseMatrixBuilder<double> matrixBuilder;
+        matrixBuilder.addNextValue(0, 1, 3.0);
+        matrixBuilder.addNextValue(1, 0, 2.0);
+        storm::storage::SparseMatrix<double> matrix = matrixBuilder.build();
+
+        std::vector<double> exitRates = {3, 2};
+        storm::storage::BitVector initialStates(2);
+        initialStates.set(0);
+        storm::storage::BitVector phiStates(2);
+        storm::storage::BitVector psiStates(2);
+        storm::Environment env;
+        std::vector<double> result = storm::modelchecker::helper::SparseCtmcCslHelper::computeAllTransientProbabilities(env, matrix, initialStates, phiStates, psiStates, exitRates, 1);
+
+        EXPECT_NEAR(0.404043, result[0], 1e-6);
+        EXPECT_NEAR(0.595957, result[1], 1e-6);
     }
 }

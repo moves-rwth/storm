@@ -62,25 +62,18 @@ namespace storm {
                 void translateGSPNElements();
 
                 /*!
-                 * Translate a GSPN Basic Event.
+                 * Translate an exponential BE.
                  *
-                 * @param dftBE The Basic Event.
+                 * @param dftBE The exponential Basic Event.
                  */
-                void translateBE(std::shared_ptr<storm::storage::DFTBE<ValueType> const> dftBE);
+                void translateBEExponential(std::shared_ptr<storm::storage::BEExponential<ValueType> const> dftBE);
 
                 /*!
-                 * Translate a GSPN CONSTF (Constant Failure, a Basic Event that has already failed).
+                 * Translate a constant BE
                  *
-                 * @param dftPor The CONSTF Basic Event.
+                 * @param dftConst The constant Basic Event.
                  */
-                void translateCONSTF(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dftConstF);
-
-                /*!
-                 * Translate a GSPN CONSTS (Constant Save, a Basic Event that cannot fail).
-                 *
-                 * @param dftPor The CONSTS Basic Event.
-                 */
-                void translateCONSTS(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dftConstS);
+                void translateBEConst(std::shared_ptr<storm::storage::BEConst<ValueType> const> dftConst);
 
                 /*!
                  * Translate a GSPN AND.

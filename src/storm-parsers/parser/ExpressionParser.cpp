@@ -51,6 +51,13 @@ namespace storm {
             floorCeilExpression.name("floor/ceil expression");
             
             if (allowBacktracking) {
+                roundExpression = ((qi::lit("round") >> qi::lit("(")) >> expression >> qi::lit(")"))[qi::_val = phoenix::bind(&ExpressionCreator::createRoundExpression, phoenix::ref(*expressionCreator), qi::_1, qi::_pass)];
+            } else {
+                roundExpression = ((qi::lit("round") >> qi::lit("(")) > expression > qi::lit(")"))[qi::_val = phoenix::bind(&ExpressionCreator::createRoundExpression, phoenix::ref(*expressionCreator), qi::_1, qi::_pass)];
+            }
+            roundExpression.name("round expression");
+            
+            if (allowBacktracking) {
                 minMaxExpression = ((minMaxOperator_[qi::_a = qi::_1] >> qi::lit("(")) >> expression[qi::_val = qi::_1] >> +(qi::lit(",") >> expression)[qi::_val = phoenix::bind(&ExpressionCreator::createMinimumMaximumExpression, phoenix::ref(*expressionCreator), qi::_val, qi::_a, qi::_1, qi::_pass)]) >> qi::lit(")");
             } else {
                 minMaxExpression = ((minMaxOperator_[qi::_a = qi::_1] >> qi::lit("(")) > expression[qi::_val = qi::_1] > +(qi::lit(",") > expression)[qi::_val = phoenix::bind(&ExpressionCreator::createMinimumMaximumExpression, phoenix::ref(*expressionCreator), qi::_val, qi::_a, qi::_1, qi::_pass)]) > qi::lit(")");
@@ -75,7 +82,7 @@ namespace storm {
                 | qi::int_[qi::_val = phoenix::bind(&ExpressionCreator::createIntegerLiteralExpression, phoenix::ref(*expressionCreator), qi::_1, qi::_pass)];
             literalExpression.name("literal expression");
             
-            atomicExpression = floorCeilExpression | prefixPowerModuloExpression | minMaxExpression | (qi::lit("(") >> expression >> qi::lit(")")) | identifierExpression | literalExpression;
+            atomicExpression = floorCeilExpression | roundExpression | prefixPowerModuloExpression | minMaxExpression | (qi::lit("(") >> expression >> qi::lit(")")) | identifierExpression | literalExpression;
             atomicExpression.name("atomic expression");
             
             unaryExpression = (-unaryOperator_ >> atomicExpression)[qi::_val = phoenix::bind(&ExpressionCreator::createUnaryExpression, phoenix::ref(*expressionCreator), qi::_1, qi::_2, qi::_pass)];
@@ -173,6 +180,7 @@ namespace storm {
                 qi::on_error<qi::fail>(identifierExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
                 qi::on_error<qi::fail>(minMaxExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
                 qi::on_error<qi::fail>(floorCeilExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+                qi::on_error<qi::fail>(roundExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
             }
         }
         
