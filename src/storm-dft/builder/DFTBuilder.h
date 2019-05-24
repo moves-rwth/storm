@@ -43,7 +43,8 @@ namespace storm {
             std::unordered_map<std::string, storm::storage::DFTLayoutInfo> mLayoutInfo;
             
         public:
-            DFTBuilder(bool defaultInclusive = true, bool binaryDependencies = true) : pandDefaultInclusive(defaultInclusive), porDefaultInclusive(defaultInclusive), binaryDependencies(binaryDependencies) {
+            DFTBuilder(bool defaultInclusive = true) : pandDefaultInclusive(defaultInclusive),
+                                                       porDefaultInclusive(defaultInclusive) {
                 
             }
             
@@ -107,41 +108,13 @@ namespace storm {
                 std::string trigger = children[0];
 
                 //TODO: collect constraints for SMT solving
-                //0 <= probability <= 1
-                if (binaryDependencies && !storm::utility::isOne(probability) && children.size() > 2) {
-                    // Introduce additional element for first capturing the probabilistic dependency
-                    std::string nameAdditional = name + "_additional";
-                    addBasicElementConst(nameAdditional, false);
-                    // First consider probabilistic dependency
-                    addDepElement(name + "_pdep", {children.front(), nameAdditional}, probability);
-                    // Then consider dependencies to the children if probabilistic dependency failed
-                    std::vector<std::string> newChildren = children;
-                    newChildren[0] = nameAdditional;
-                    addDepElement(name, newChildren, storm::utility::one<ValueType>());
-                    return true;
-                } else {
-                    // Add dependencies
-                    if(binaryDependencies) {
-                        for (size_t i = 1; i < children.size(); ++i) {
-                            std::string nameDep = name + "_" + std::to_string(i);
-                            if (nameInUse(nameDep)) {
-                                STORM_LOG_ERROR("Element with name '" << name << "' already exists.");
-                                return false;
-                            }
-                            STORM_LOG_ASSERT(storm::utility::isOne(probability) || children.size() == 2, "PDep with multiple children supported.");
-                            DFTDependencyPointer element = std::make_shared<storm::storage::DFTDependency<ValueType>>(mNextId++, nameDep, probability);
-                            mElements[element->name()] = element;
-                            mDependencyChildNames[element] = {trigger, children[i]};
-                            mDependencies.push_back(element);
-                        }
-                    } else {
-                        DFTDependencyPointer element = std::make_shared<storm::storage::DFTDependency<ValueType>>(mNextId++, name, probability);
-                        mElements[element->name()] = element;
-                        mDependencyChildNames[element] = children;
-                        mDependencies.push_back(element);
-                    }
-                    return true;
-                }
+                DFTDependencyPointer element = std::make_shared<storm::storage::DFTDependency<ValueType>>(mNextId++,
+                                                                                                          name,
+                                                                                                          probability);
+                mElements[element->name()] = element;
+                mDependencyChildNames[element] = children;
+                mDependencies.push_back(element);
+                return true;
             }
 
             bool addVotElement(std::string const& name, unsigned threshold, std::vector<std::string> const& children) {
@@ -268,8 +241,6 @@ namespace storm {
             bool pandDefaultInclusive;
             // If true, the standard gate adders make a pand inclusive, and exclusive otherwise.
             bool porDefaultInclusive;
-
-            bool binaryDependencies;
             
         };
     }

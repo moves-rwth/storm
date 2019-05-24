@@ -13,6 +13,7 @@
 #include "storm/utility/initialize.h"
 #include "storm-cli-utilities/cli.h"
 #include "storm-parsers/api/storm-parsers.h"
+#include "storm-dft/transformations/DftTransformator.h"
 
 
 /*!
@@ -28,6 +29,8 @@ void processOptions() {
     storm::settings::modules::IOSettings const& ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
     storm::settings::modules::DftGspnSettings const& dftGspnSettings = storm::settings::getModule<storm::settings::modules::DftGspnSettings>();
     auto const &debug = storm::settings::getModule<storm::settings::modules::DebugSettings>();
+
+    auto dftTransformator = storm::transformations::dft::DftTransformator<ValueType>();
 
 
     if (!dftIOSettings.isDftFileSet() && !dftIOSettings.isDftJsonFileSet()) {
@@ -53,11 +56,8 @@ void processOptions() {
         storm::api::exportDFTToJsonFile<ValueType>(*dft, dftIOSettings.getExportJsonFilename());
     }
 
-    if (dftIOSettings.isExportToSmt()) {
-        // Export to smtlib2
-        storm::api::exportDFTToSMT<ValueType>(*dft, dftIOSettings.getExportSmtFilename(), debug.isTestSet());
-        return;
-    }
+    // Eliminate non-binary dependencies
+    dft = dftTransformator.transformBinaryFDEPs(*dft);
 
     // Check well-formedness of DFT
     std::stringstream stream;
@@ -79,6 +79,12 @@ void processOptions() {
         return;
     }
 
+    // SMT
+    if (dftIOSettings.isExportToSmt()) {
+        // Export to smtlib2
+        storm::api::exportDFTToSMT<ValueType>(*dft, dftIOSettings.getExportSmtFilename(), debug.isTestSet());
+        return;
+    }
 
 #ifdef STORM_HAVE_Z3
     if (faultTreeSettings.solveWithSMT()) {

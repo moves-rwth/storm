@@ -18,15 +18,17 @@ namespace storm {
                  *
                  * @param dft DFT
                  */
-                DftTransformator(storm::storage::DFT<ValueType> const &dft);
+                DftTransformator();
 
-                storm::storage::DFT<ValueType> transformUniqueFailedBe();
+                std::shared_ptr<storm::storage::DFT<ValueType>>
+                transformUniqueFailedBe(storm::storage::DFT<ValueType> const &dft);
+
+                std::shared_ptr<storm::storage::DFT<ValueType>>
+                transformBinaryFDEPs(storm::storage::DFT<ValueType> const &dft);
 
             private:
                 std::vector<std::string>
                 getChildrenVector(std::shared_ptr<storm::storage::DFTElement<ValueType> const> element);
-
-                storm::storage::DFT<ValueType> const &mDft;
             };
         }
     }
