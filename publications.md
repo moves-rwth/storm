@@ -11,6 +11,10 @@ If you want to cite Storm, please use the most recent paper in this category.
 
 <div id="papers_storm" class="publication_table"></div>
 
+## Competition Reports
+
+<div id="papers_storm_competition" class="publication_table"></div>
+
 ## Papers about features in Storm
 
 {:.alert .alert-info}
