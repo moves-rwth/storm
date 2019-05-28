@@ -285,9 +285,19 @@ namespace storm {
              * Retrieves the manager responsible for the expressions in the JANI model.
              */
             storm::expressions::ExpressionManager& getExpressionManager() const;
-
+            
             /*!
-             * Adds a (non-trivial) reward model, i.e., a reward model that does not consist of a single, global, numerical variable.
+             * Returns true iff there is a non-trivial reward model, i.e., a reward model that does not consist of a single, global, numerical, transient variable.
+             */
+            bool hasNonTrivialRewardExpression() const;
+            
+            /*!
+             * Returns true iff the given identifier corresponds to a non-trivial reward expression i.e., a reward model that does not consist of a single, global, numerical, transient variable.
+             */
+            bool isNonTrivialRewardModelExpression(std::string const& identifier) const;
+            
+            /*!
+             * Adds a  reward expression, i.e., a reward model that does not consist of a single, global, numerical, transient variable.
              * @return true if a new reward model was added and false if a reward model with this identifier is already present in the model (in which case no reward model is added)
              */
             bool addNonTrivialRewardExpression(std::string const& identifier, storm::expressions::Expression const& rewardExpression);
@@ -577,7 +587,7 @@ namespace storm {
             bool undefinedConstantsAreGraphPreserving() const;
             
             /*!
-             * Lifts the common edge destination assignments to edge assignments.
+             * Lifts the common edge destination assignments of transient variables to edge assignments.
              * @param maxLevel the maximum level of assignments that are to be lifted.
              */
             void liftTransientEdgeDestinationAssignments(int64_t maxLevel = 0);
