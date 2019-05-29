@@ -57,8 +57,9 @@ void processOptions() {
     }
 
     // Eliminate non-binary dependencies
-    dft = dftTransformator.transformBinaryFDEPs(*dft);
-
+    if (dft->getDependencies().size() > 0) {
+        dft = dftTransformator.transformBinaryFDEPs(*dft);
+    }
     // Check well-formedness of DFT
     std::stringstream stream;
     if (!dft->checkWellFormedness(stream)) {
@@ -88,6 +89,7 @@ void processOptions() {
 
 #ifdef STORM_HAVE_Z3
     if (faultTreeSettings.solveWithSMT()) {
+        dft = dftTransformator.transformUniqueFailedBe(*dft);
         // Solve with SMT
         STORM_LOG_DEBUG("Running DFT analysis with use of SMT");
         storm::api::analyzeDFTSMT(*dft, true, debug.isTestSet());
