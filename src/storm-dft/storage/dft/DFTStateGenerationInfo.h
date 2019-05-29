@@ -124,16 +124,20 @@ namespace storm {
                         size_t parentLength = mSymmetries[j].first;
                         // Check if child lies in parent
                         if (parentStart <= childStart && childStart + childLength < parentStart + parentLength) {
+                            // We add the symmetry of the child to all symmetric elements in the parent
                             std::vector<std::vector<size_t>> newSymmetries;
+                            // Start iteration at 1, because symmetry for child at 0 is already included
                             for (size_t index = 1; index < mSymmetries[j].second.size(); ++index) {
-                                // Get symmetric start by applying the bijection
                                 std::vector<size_t> newStarts;
+                                // Apply child symmetry to all symmetric elements of parent
                                 for (size_t symmetryStarts : mSymmetries[i].second) {
-                                    newStarts.push_back(symmetryStarts + mSymmetries[j].second[index]);
+                                    // Get symmetric element by applying the bijection
+                                    size_t symmetryOffset = symmetryStarts - parentStart;
+                                    newStarts.push_back(mSymmetries[j].second[index] + symmetryOffset);
                                 }
                                 newSymmetries.push_back(newStarts);
                             }
-                            // Insert after child
+                            // Insert new symmetry after child
                             for (size_t index = 0; index < newSymmetries.size(); ++index) {
                                 mSymmetries.insert(mSymmetries.begin() + i + 1 + index, std::make_pair(childLength, newSymmetries[index]));
                             }
