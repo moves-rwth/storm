@@ -28,7 +28,7 @@ namespace storm {
             /// Sets if only bottom SCCs, i.e. SCCs in which all states have no way of leaving the SCC), are kept.
             StronglyConnectedComponentDecompositionOptions& onlyBottomSccs(bool value = true) { areOnlyBottomSccsConsidered = value; return *this; }
             /// Enforces that the returned SCCs are sorted in a topological order.
-            StronglyConnectedComponentDecompositionOptions& forceTobologicalSort(bool value = true) { isTopologicalSortForced = value; return *this; }
+            StronglyConnectedComponentDecompositionOptions& forceTopologicalSort(bool value = true) { isTopologicalSortForced = value; return *this; }
             /// Sets if scc depths can be retrieved.
             StronglyConnectedComponentDecompositionOptions& computeSccDepths(bool value = true) { isComputeSccDepthsSet = value; return *this; }
             

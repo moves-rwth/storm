@@ -9,9 +9,13 @@ namespace storm {
                 // intentionally left empty.
             }
             
-            bool SimilarStrings::add(std::string const& string) {
+            bool SimilarStrings::isSimilar(std::string const& string) const {
                 double distance = levenshteinDistance(reference, string, caseSensitive);
-                if (distance <= static_cast<double>(std::max(reference.size(), string.size())) * (1.0 - similarityFactor)) {
+                return distance <= static_cast<double>(std::max(reference.size(), string.size())) * (1.0 - similarityFactor);
+            }
+            
+            bool SimilarStrings::add(std::string const& string) {
+                if (isSimilar(string)) {
                     distances.emplace(storm::utility::string::levenshteinDistance(reference, string, caseSensitive), string);
                     return true;
                 }
@@ -32,9 +36,9 @@ namespace storm {
                 if (size == 0) {
                     return "";
                 } else if (size == 1) {
-                    return "Did you mean " + result + " ?";
+                    return "Did you mean '" + result + "'?";
                 } else {
-                    return "Did you mean any of [ " + result + " ] ?";
+                    return "Did you mean any of [" + result + "] ?";
                 }
             }
             
@@ -51,11 +55,11 @@ namespace storm {
                     for (uint64_t col = 1; col < d[row].size(); ++col) {
                         uint64_t cost = 1;
                         if (caseSensitive) {
-                            if (tolower(lhs[row-1]) == tolower(rhs[col-1])) {
+                            if (lhs[row-1] == rhs[col-1]) {
                                 cost = 0;
                             }
                         } else {
-                            if (lhs[row-1] == rhs[col-1]) {
+                            if (tolower(lhs[row-1]) == tolower(rhs[col-1])) {
                                 cost = 0;
                             }
                         }

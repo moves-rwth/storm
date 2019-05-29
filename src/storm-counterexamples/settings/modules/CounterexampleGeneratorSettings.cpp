@@ -20,11 +20,11 @@ namespace storm {
 
             CounterexampleGeneratorSettings::CounterexampleGeneratorSettings() : ModuleSettings(moduleName) {
                 std::vector<std::string> techniques = {"maxsat", "milp"};
-                this->addOption(storm::settings::OptionBuilder(moduleName, minimalCommandSetOptionName, true, "Computes a counterexample for the given model in terms of a minimal command/edge set. Note that this requires the model to be given in a symbolic format.")
+                this->addOption(storm::settings::OptionBuilder(moduleName, minimalCommandSetOptionName, true, "Computes a counterexample for the given model in terms of a minimal command/edge set. Note that this requires the model to be given in a symbolic format.").setIsAdvanced()
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("method", "Sets which technique is used to derive the counterexample.").setDefaultValueString("maxsat").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(techniques)).build()).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, encodeReachabilityOptionName, true, "Sets whether to encode reachability for MAXSAT-based counterexample generation.").build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, schedulerCutsOptionName, true, "Sets whether to add the scheduler cuts for MILP-based counterexample generation.").build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, noDynamicConstraintsOptionName, true, "Disables the generation of dynamic constraints in the MAXSAT-based counterexample generation.").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, encodeReachabilityOptionName, true, "Sets whether to encode reachability for MAXSAT-based counterexample generation.").setIsAdvanced().build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, schedulerCutsOptionName, true, "Sets whether to add the scheduler cuts for MILP-based counterexample generation.").setIsAdvanced().build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, noDynamicConstraintsOptionName, true, "Disables the generation of dynamic constraints in the MAXSAT-based counterexample generation.").setIsAdvanced().build());
             }
             
             bool CounterexampleGeneratorSettings::isMinimalCommandSetGenerationSet() const {

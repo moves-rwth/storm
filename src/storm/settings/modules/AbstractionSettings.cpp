@@ -37,105 +37,106 @@ namespace storm {
             
             AbstractionSettings::AbstractionSettings() : ModuleSettings(moduleName) {
                 std::vector<std::string> methods = {"games", "bisimulation", "bisim"};
-                this->addOption(storm::settings::OptionBuilder(moduleName, methodOptionName, true, "Sets which abstraction-refinement method to use.")
+                this->addOption(storm::settings::OptionBuilder(moduleName, methodOptionName, true, "Sets which abstraction-refinement method to use.").setIsAdvanced()
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the method to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(methods))
                                              .setDefaultValueString("bisim").build())
                                 .build());
                 
-                this->addOption(storm::settings::OptionBuilder(moduleName, maximalAbstractionOptionName, false, "The maximal number of abstraction to perform before solving is aborted.").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("count", "The maximal abstraction count.").setDefaultValueUnsignedInteger(20000).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, maximalAbstractionOptionName, false, "The maximal number of abstraction to perform before solving is aborted.").setIsAdvanced()
+                                .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("count", "The maximal abstraction count.").setDefaultValueUnsignedInteger(20000).build()).build());
                 
                 std::vector<std::string> onOff = {"on", "off"};
                 
-                this->addOption(storm::settings::OptionBuilder(moduleName, useDecompositionOptionName, true, "Sets whether to apply decomposition during the abstraction.")
+                this->addOption(storm::settings::OptionBuilder(moduleName, useDecompositionOptionName, true, "Sets whether to apply decomposition during the abstraction.").setIsAdvanced()
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("value", "The value of the flag.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(onOff))
                                              .setDefaultValueString("on").build())
                                 .build());
                 
                 std::vector<std::string> splitModes = {"all", "none", "non-guard"};
-                this->addOption(storm::settings::OptionBuilder(moduleName, splitModeOptionName, true, "Sets which predicates are split into atoms for the refinement.")
+                this->addOption(storm::settings::OptionBuilder(moduleName, splitModeOptionName, true, "Sets which predicates are split into atoms for the refinement.").setIsAdvanced()
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("mode", "The mode to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(splitModes))
                                              .setDefaultValueString("all").build())
                                 .build());
 
                 std::vector<std::string> solveModes = {"dd", "sparse"};
-                this->addOption(storm::settings::OptionBuilder(moduleName, solveModeOptionName, true, "Sets how the abstractions are solved.")
+                this->addOption(storm::settings::OptionBuilder(moduleName, solveModeOptionName, true, "Sets how the abstractions are solved.").setIsAdvanced()
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("mode", "The mode to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(solveModes))
                                              .setDefaultValueString("sparse").build())
                                 .build());
 
-                this->addOption(storm::settings::OptionBuilder(moduleName, addAllGuardsOptionName, true, "Sets whether all guards are added as initial predicates.")
+                this->addOption(storm::settings::OptionBuilder(moduleName, addAllGuardsOptionName, true, "Sets whether all guards are added as initial predicates.").setIsAdvanced()
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("value", "The value of the flag.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(onOff))
                                              .setDefaultValueString("on").build())
                                 .build());
 
-                this->addOption(storm::settings::OptionBuilder(moduleName, addInitialExpressionsOptionName, true, "Sets whether all initial expressions are added as initial predicates.")
+                this->addOption(storm::settings::OptionBuilder(moduleName, addInitialExpressionsOptionName, true, "Sets whether all initial expressions are added as initial predicates.").setIsAdvanced()
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("value", "The value of the flag.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(onOff))
                                              .setDefaultValueString("on").build())
                                 .build());
 
-                this->addOption(storm::settings::OptionBuilder(moduleName, useInterpolationOptionName, true, "Sets whether interpolation is to be used to eliminate spurious pivot blocks.")
+                this->addOption(storm::settings::OptionBuilder(moduleName, useInterpolationOptionName, true, "Sets whether interpolation is to be used to eliminate spurious pivot blocks.").setIsAdvanced()
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("value", "The value of the flag.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(onOff))
                                              .setDefaultValueString("on").build())
                                 .build());
                 
-                this->addOption(storm::settings::OptionBuilder(moduleName, precisionOptionName, true, "The precision used for detecting convergence.").addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to achieve.").setDefaultValueDouble(1e-03).addValidatorDouble(ArgumentValidatorFactory::createDoubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, precisionOptionName, true, "The precision used for detecting convergence.").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to achieve.").setDefaultValueDouble(1e-03).addValidatorDouble(ArgumentValidatorFactory::createDoubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
                                 
-                this->addOption(storm::settings::OptionBuilder(moduleName, relativeOptionName, true, "Sets whether to use a relative termination criterion.")
+                this->addOption(storm::settings::OptionBuilder(moduleName, relativeOptionName, true, "Sets whether to use a relative termination criterion.").setIsAdvanced()
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("value", "The value of the flag.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(onOff))
                                              .setDefaultValueString("off").build())
                                 .build());
                 
                 std::vector<std::string> pivotHeuristic = {"nearest-max-dev", "most-prob-path", "max-weighted-dev"};
-                this->addOption(storm::settings::OptionBuilder(moduleName, pivotHeuristicOptionName, true, "Sets the pivot selection heuristic.")
+                this->addOption(storm::settings::OptionBuilder(moduleName, pivotHeuristicOptionName, true, "Sets the pivot selection heuristic.").setIsAdvanced()
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of an available heuristic.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(pivotHeuristic))
                                              .setDefaultValueString("nearest-max-dev").build()).build());
                 
                 std::vector<std::string> reuseModes = {"all", "none", "qualitative", "quantitative"};
-                this->addOption(storm::settings::OptionBuilder(moduleName, reuseResultsOptionName, true, "Sets whether to reuse all results.")
+                this->addOption(storm::settings::OptionBuilder(moduleName, reuseResultsOptionName, true, "Sets whether to reuse all results.").setIsAdvanced()
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("mode", "The mode to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(reuseModes))
                                              .setDefaultValueString("all").build())
                                 .build());
                 
-                this->addOption(storm::settings::OptionBuilder(moduleName, restrictToRelevantStatesOptionName, true, "Sets whether to restrict to relevant states during the abstraction.")
+                this->addOption(storm::settings::OptionBuilder(moduleName, restrictToRelevantStatesOptionName, true, "Sets whether to restrict to relevant states during the abstraction.").setIsAdvanced()
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("value", "The value of the flag.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(onOff))
                                              .setDefaultValueString("on").build())
                                 .build());
                 
-                this->addOption(storm::settings::OptionBuilder(moduleName, rankRefinementPredicatesOptionName, true, "Sets whether to rank the refinement predicates if there are multiple.")
+                this->addOption(storm::settings::OptionBuilder(moduleName, rankRefinementPredicatesOptionName, true, "Sets whether to rank the refinement predicates if there are multiple.").setIsAdvanced()
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("value", "The value of the flag.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(onOff))
                                              .setDefaultValueString("off").build())
                                 .build());
 
-                this->addOption(storm::settings::OptionBuilder(moduleName, useEagerRefinementOptionName, true, "Sets whether to refine eagerly.")
+                this->addOption(storm::settings::OptionBuilder(moduleName, useEagerRefinementOptionName, true, "Sets whether to refine eagerly.").setIsAdvanced()
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("value", "The value of the flag.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(onOff))
                                              .setDefaultValueString("off").build())
                                 .build());
 
-                this->addOption(storm::settings::OptionBuilder(moduleName, constraintsOptionName, true, "Specifies additional constraints used by the abstraction.")
+                this->addOption(storm::settings::OptionBuilder(moduleName, constraintsOptionName, true, "Specifies additional constraints used by the abstraction.").setIsAdvanced()
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("constraints", "The constraints to use.").setDefaultValueString("").build())
                                 .build());
 
-                this->addOption(storm::settings::OptionBuilder(moduleName, injectRefinementPredicatesOptionName, true, "Specifies predicates used by the refinement instead of the derived predicates.")
+                this->addOption(storm::settings::OptionBuilder(moduleName, injectRefinementPredicatesOptionName, true, "Specifies predicates used by the refinement instead of the derived predicates.").setIsAdvanced()
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("predicates", "The (semicolon-separated) refinement predicates to use.").setDefaultValueString("").build())
                                 .build());
                 
-                this->addOption(storm::settings::OptionBuilder(moduleName, fixPlayer1StrategyOptionName, true, "Sets whether to fix player 1 strategies.")
+                this->addOption(storm::settings::OptionBuilder(moduleName, fixPlayer1StrategyOptionName, true, "Sets whether to fix player 1 strategies.").setIsAdvanced()
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("value", "The value of the flag.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(onOff))
                                              .setDefaultValueString("on").build())
                                 .build());
 
-                this->addOption(storm::settings::OptionBuilder(moduleName, fixPlayer2StrategyOptionName, true, "Sets whether to fix player 2 strategies.")
+                this->addOption(storm::settings::OptionBuilder(moduleName, fixPlayer2StrategyOptionName, true, "Sets whether to fix player 2 strategies.").setIsAdvanced()
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("value", "The value of the flag.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(onOff))
                                              .setDefaultValueString("on").build())
                                 .build());
 
-                this->addOption(storm::settings::OptionBuilder(moduleName, debugOptionName, true, "Sets whether to enable debug mode.")
+                this->addOption(storm::settings::OptionBuilder(moduleName, debugOptionName, true, "Sets whether to enable debug mode.").setIsAdvanced()
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("value", "The value of the flag.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(onOff))
                                              .setDefaultValueString("off").build())
                                 .build());
                 
                 std::vector<std::string> validModes = {"morepreds", "blockenum"};
-                this->addOption(storm::settings::OptionBuilder(moduleName, validBlockModeOptionName, true, "Sets the mode to guarantee valid blocks only.")
+                this->addOption(storm::settings::OptionBuilder(moduleName, validBlockModeOptionName, true, "Sets the mode to guarantee valid blocks only.").setIsAdvanced()
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("mode", "The mode to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(validModes))
                                              .setDefaultValueString("morepreds").build())
                                 .build());

@@ -34,8 +34,8 @@ namespace storm {
             const std::string GeneralSettings::soundOptionName = "sound";
 
             GeneralSettings::GeneralSettings() : ModuleSettings(moduleName) {
-                this->addOption(storm::settings::OptionBuilder(moduleName, helpOptionName, false, "Shows all available options, arguments and descriptions.").setShortName(helpOptionShortName)
-                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("hint", "A regular expression to show help for all matching entities or 'all' for the complete help.").setDefaultValueString("all").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, helpOptionName, false, "Shows available options, arguments and descriptions.").setShortName(helpOptionShortName)
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filter", "'frequent' for frequently used options, 'all' for the complete help, or a regular expression to show help for all matching entities.").setDefaultValueString("frequent").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, versionOptionName, false, "Prints the version information.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, verboseOptionName, false, "Enables more verbose output.").setShortName(verboseOptionShortName).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, showProgressOptionName, false, "Sets when additional information (if available) about the progress is printed.").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("delay", "The delay to wait (in seconds) between emitting information (0 means never print progress).").setDefaultValueUnsignedInteger(5).build()).build());
@@ -44,7 +44,7 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, configOptionName, false, "If given, this file will be read and parsed for additional configuration settings.").setShortName(configOptionShortName)
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file from which to read the configuration.").addValidatorString(ArgumentValidatorFactory::createExistingFileValidator()).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, bisimulationOptionName, false, "Sets whether to perform bisimulation minimization.").setShortName(bisimulationOptionShortName).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, parametricOptionName, false, "Sets whether to enable parametric model checking.").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, parametricOptionName, false, "Sets whether to enable parametric model checking.").setIsAdvanced().build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, exactOptionName, false, "Sets whether to enable exact model checking.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, soundOptionName, false, "Sets whether to force sound model checking.").build());
             }
@@ -57,8 +57,8 @@ namespace storm {
                 return this->getOption(versionOptionName).getHasOptionBeenSet();
             }
             
-            std::string GeneralSettings::getHelpModuleName() const {
-                return this->getOption(helpOptionName).getArgumentByName("hint").getValueAsString();
+            std::string GeneralSettings::getHelpFilterExpression() const {
+                return this->getOption(helpOptionName).getArgumentByName("filter").getValueAsString();
             }
             
             bool GeneralSettings::isVerboseSet() const {
@@ -81,7 +81,6 @@ namespace storm {
                 return this->getOption(configOptionName).getArgumentByName("filename").getValueAsString();
             }
 
-
             bool GeneralSettings::isBisimulationSet() const {
                 return this->getOption(bisimulationOptionName).getHasOptionBeenSet();
             }
@@ -103,6 +102,7 @@ namespace storm {
             }
 
             bool GeneralSettings::check() const {
+                STORM_LOG_WARN_COND(!this->getOption(precisionOptionName).getHasOptionBeenSetWithModulePrefix(), "Setting the precision option with module prefix does not effect all solvers. Consider setting --" << precisionOptionName << " instead of --" << moduleName << ":" << precisionOptionName << ".");
                 return true;
             }
             

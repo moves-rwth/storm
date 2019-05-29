@@ -257,6 +257,12 @@ namespace storm {
         }
         
         template<typename ValueType>
+        ValueType round(ValueType const& number) {
+            // Rounding towards infinity
+            return floor<ValueType >(number + storm::utility::convertNumber<ValueType>(0.5));
+        }
+        
+        template<typename ValueType>
         ValueType log(ValueType const& number) {
             return std::log(number);
         }
@@ -886,6 +892,7 @@ namespace storm {
         template double abs(double const& number);
         template double floor(double const& number);
         template double ceil(double const& number);
+        template double round(double const& number);
         template double log(double const& number);
         template double log10(double const& number);
         template typename NumberTraits<double>::IntegerType trunc(double const& number);
@@ -918,6 +925,7 @@ namespace storm {
         template float abs(float const& number);
         template float floor(float const& number);
         template float ceil(float const& number);
+        template float round(float const& number);
         template float log(float const& number);
         template std::string to_string(float const& value);
 
@@ -974,6 +982,7 @@ namespace storm {
         template storm::ClnRationalNumber maximum(std::vector<storm::ClnRationalNumber> const&);
         template storm::ClnRationalNumber max(storm::ClnRationalNumber const& first, storm::ClnRationalNumber const& second);
         template storm::ClnRationalNumber min(storm::ClnRationalNumber const& first, storm::ClnRationalNumber const& second);
+        template storm::ClnRationalNumber round(storm::ClnRationalNumber const& number);
         template std::string to_string(storm::ClnRationalNumber const& value);
 #endif
 
@@ -998,6 +1007,7 @@ namespace storm {
         template storm::GmpRationalNumber maximum(std::vector<storm::GmpRationalNumber> const&);
         template storm::GmpRationalNumber max(storm::GmpRationalNumber const& first, storm::GmpRationalNumber const& second);
         template storm::GmpRationalNumber min(storm::GmpRationalNumber const& first, storm::GmpRationalNumber const& second);
+        template storm::GmpRationalNumber round(storm::GmpRationalNumber const& number);
         template std::string to_string(storm::GmpRationalNumber const& value);
 #endif
 
