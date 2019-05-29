@@ -144,6 +144,17 @@ namespace storm {
                 }
             }
 
+            void checkSymmetries() {
+                for (auto pair : mSymmetries) {
+                    STORM_LOG_ASSERT(pair.first > 0, "Empty symmetry.");
+                    STORM_LOG_ASSERT(pair.first < stateIndexSize, "Symmetry too long.");
+                    for (size_t index : pair.second) {
+                        STORM_LOG_ASSERT(index < stateIndexSize, "Symmetry starting point " << index << " invalid.");
+                        STORM_LOG_ASSERT(index + pair.first < stateIndexSize, "Symmetry ending point " << index << " invalid.");
+                    }
+                }
+            }
+
             size_t getSymmetrySize() const {
                 return mSymmetries.size();
             }

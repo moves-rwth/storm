@@ -197,7 +197,8 @@ namespace storm {
             STORM_LOG_TRACE(generationInfo);
             STORM_LOG_ASSERT(stateIndex == mStateVectorSize, "Id incorrect.");
             STORM_LOG_ASSERT(visited.full(), "Not all elements considered.");
-            
+            generationInfo.checkSymmetries();
+
             return generationInfo;
         }
         
@@ -337,7 +338,7 @@ namespace storm {
                 // Accumulate children names
                 std::vector<std::string> childrenNames;
                 for (size_t i = 1; i < rewrites.size(); ++i) {
-                    STORM_LOG_ASSERT(mElements[rewrites[i]]->parents().front()->id() == originalParent->id(), "Children have the same father");
+                    STORM_LOG_ASSERT(mElements[rewrites[i]]->parents().front()->id() == originalParent->id(), "Children '" << *(mElements[rewrites[i]]) << "' and  '" << *(mElements[rewrites[1]]) << "' have the same father.");
                     childrenNames.push_back(mElements[rewrites[i]]->name());
                 }
                 
