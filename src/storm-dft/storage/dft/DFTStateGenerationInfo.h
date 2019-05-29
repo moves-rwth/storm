@@ -5,21 +5,43 @@ namespace storm {
         class DFTStateGenerationInfo {
         private:
             const size_t mUsageInfoBits;
+            const size_t stateIndexSize;
             std::map<size_t, size_t> mSpareUsageIndex; // id spare -> index first bit in state
             std::map<size_t, size_t> mSpareActivationIndex; // id spare representative -> index in state
             std::vector<size_t> mIdToStateIndex; // id -> index first bit in state
             std::map<size_t, std::vector<size_t>> mSeqRestrictionPreElements; // id -> list of restriction pre elements
             std::map<size_t, std::vector<size_t>> mSeqRestrictionPostElements; // id -> list of restriction post elements
-            std::map<size_t, std::vector<size_t>> mMutexRestrictionElements; // id -> list of elments in the same mutexes
+            std::map<size_t, std::vector<size_t>> mMutexRestrictionElements; // id -> list of elements in the same mutexes
             std::vector<std::pair<size_t, std::vector<size_t>>> mSymmetries; // pair (length of symmetry group, vector indicating the starting points of the symmetry groups)
 
         public:
 
-            DFTStateGenerationInfo(size_t nrElements, size_t maxSpareChildCount) :
-                mUsageInfoBits(storm::utility::math::uint64_log2(maxSpareChildCount) + 1), 
-                mIdToStateIndex(nrElements)
-            {
+            DFTStateGenerationInfo(size_t nrElements, size_t nrOfSpares, size_t nrRepresentatives, size_t maxSpareChildCount) :
+                    mUsageInfoBits(getUsageInfoBits(maxSpareChildCount)),
+                    stateIndexSize(getStateVectorSize(nrElements, nrOfSpares, nrRepresentatives, maxSpareChildCount)),
+                    mIdToStateIndex(nrElements) {
                 STORM_LOG_ASSERT(maxSpareChildCount < pow(2, mUsageInfoBits), "Bit length incorrect.");
+            }
+
+            /*!
+             * Get number of bits required to store claiming information for spares in binary format.
+             * @param maxSpareChildCount Maximal number of children of a spare.
+             * @return Number of bits required to store claiming information.
+             */
+            static size_t getUsageInfoBits(size_t maxSpareChildCount) {
+                return storm::utility::math::uint64_log2(maxSpareChildCount) + 1;
+            }
+
+            /*!
+             * Get length of BitVector capturing DFT state.
+             * @param nrElements Number of DFT elements.
+             * @param nrOfSpares Number of Spares (needed for claiming).
+             * @param nrRepresentatives Number of representatives (needed for activation).
+             * @param maxSpareChildCount Maximal number of children of a spare.
+             * @return Length of required BitVector.
+             */
+            static size_t getStateVectorSize(size_t nrElements, size_t nrOfSpares, size_t nrRepresentatives, size_t maxSpareChildCount) {
+                return nrElements * 2 + nrOfSpares * getUsageInfoBits(maxSpareChildCount) + nrRepresentatives;
             }
 
             size_t usageInfoBits() const {
@@ -28,13 +50,14 @@ namespace storm {
 
             void addStateIndex(size_t id, size_t index) {
                 STORM_LOG_ASSERT(id < mIdToStateIndex.size(), "Id invalid.");
+                STORM_LOG_ASSERT(index < stateIndexSize, "Index invalid");
                 mIdToStateIndex[id] = index;
             }
 
             void setRestrictionPreElements(size_t id, std::vector<size_t> const& elems) {
                 mSeqRestrictionPreElements[id] = elems;
             }
-            
+
             void setRestrictionPostElements(size_t id, std::vector<size_t> const& elems) {
                 mSeqRestrictionPostElements[id] = elems;
             }
@@ -47,7 +70,7 @@ namespace storm {
                 STORM_LOG_ASSERT(mSeqRestrictionPreElements.count(index) > 0, "Index invalid.");
                 return mSeqRestrictionPreElements.at(index);
             }
-            
+
             std::vector<size_t> const& seqRestrictionPostElements(size_t index) const {
                 STORM_LOG_ASSERT(mSeqRestrictionPostElements.count(index) > 0, "Index invalid.");
                 return mSeqRestrictionPostElements.at(index);
@@ -57,12 +80,14 @@ namespace storm {
                 STORM_LOG_ASSERT(mMutexRestrictionElements.count(index) > 0, "Index invalid.");
                 return mMutexRestrictionElements.at(index);
             }
-            
+
             void addSpareActivationIndex(size_t id, size_t index) {
+                STORM_LOG_ASSERT(index < stateIndexSize, "Index invalid");
                 mSpareActivationIndex[id] = index;
             }
 
             void addSpareUsageIndex(size_t id, size_t index) {
+                STORM_LOG_ASSERT(index < stateIndexSize, "Index invalid");
                 mSpareUsageIndex[id] = index;
             }
 
@@ -84,7 +109,7 @@ namespace storm {
             void addSymmetry(size_t length, std::vector<size_t>& startingIndices) {
                 mSymmetries.push_back(std::make_pair(length, startingIndices));
             }
-            
+
             /**
              * Generate more symmetries by combining two symmetries
              */
@@ -94,7 +119,7 @@ namespace storm {
                     size_t childStart = mSymmetries[i].second[0];
                     size_t childLength = mSymmetries[i].first;
                     // Iterate over possible parents
-                    for (size_t j = i+1; j < mSymmetries.size(); ++j) {
+                    for (size_t j = i + 1; j < mSymmetries.size(); ++j) {
                         size_t parentStart = mSymmetries[j].second[0];
                         size_t parentLength = mSymmetries[j].first;
                         // Check if child lies in parent
@@ -122,7 +147,7 @@ namespace storm {
             size_t getSymmetrySize() const {
                 return mSymmetries.size();
             }
-            
+
             bool hasSymmetries() const {
                 return !mSymmetries.empty();
             }
@@ -138,6 +163,8 @@ namespace storm {
             }
 
             friend std::ostream& operator<<(std::ostream& os, DFTStateGenerationInfo const& info) {
+                os << "StateGenerationInfo:" << std::endl;
+                os << "Length of state vector: " << info.stateIndexSize << std::endl;
                 os << "Id to state index:" << std::endl;
                 for (size_t id = 0; id < info.mIdToStateIndex.size(); ++id) {
                     os << id << " -> " << info.getStateIndex(id) << std::endl;

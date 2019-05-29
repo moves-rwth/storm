@@ -17,14 +17,13 @@ namespace storm {
     namespace storage {
 
         template<typename ValueType>
-        DFT<ValueType>::DFT(DFTElementVector const& elements, DFTElementPointer const& tle) : mElements(elements), mNrOfBEs(0), mNrOfSpares(0), mTopLevelIndex(tle->id()), mMaxSpareChildCount(0) {
+        DFT<ValueType>::DFT(DFTElementVector const& elements, DFTElementPointer const& tle) : mElements(elements), mNrOfBEs(0), mNrOfSpares(0), mNrRepresentatives(0), mTopLevelIndex(tle->id()), mMaxSpareChildCount(0) {
             // Check that ids correspond to indices in the element vector
             STORM_LOG_ASSERT(elementIndicesCorrect(), "Ids incorrect.");
-            size_t nrRepresentatives = 0;
 
             for (auto& elem : mElements) {
                 if (isRepresentative(elem->id())) {
-                    ++nrRepresentatives;
+                    ++mNrRepresentatives;
                 }
                 if(elem->isBasicElement()) {
                     ++mNrOfBEs;
@@ -81,13 +80,12 @@ namespace storm {
 
             //Reserve space for failed spares
             ++mMaxSpareChildCount;
-            size_t usageInfoBits = storm::utility::math::uint64_log2(mMaxSpareChildCount) + 1;
-            mStateVectorSize = nrElements() * 2 + mNrOfSpares * usageInfoBits + nrRepresentatives;
+            mStateVectorSize = DFTStateGenerationInfo::getStateVectorSize(nrElements(), mNrOfSpares, mNrRepresentatives, mMaxSpareChildCount);
         }
 
         template<typename ValueType>
         DFTStateGenerationInfo DFT<ValueType>::buildStateGenerationInfo(storm::storage::DFTIndependentSymmetries const& symmetries) const {
-            DFTStateGenerationInfo generationInfo(nrElements(), mMaxSpareChildCount);
+            DFTStateGenerationInfo generationInfo(nrElements(), mNrOfSpares, mNrRepresentatives, mMaxSpareChildCount);
             
             // Generate Pre and Post info for restrictions, and mutexes
             for(auto const& elem : mElements) {
