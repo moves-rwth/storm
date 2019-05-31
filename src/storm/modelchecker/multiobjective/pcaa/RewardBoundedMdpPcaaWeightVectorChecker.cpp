@@ -318,6 +318,7 @@ namespace storm {
                     storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType> minMaxSolverFactory;
                     cachedData.minMaxSolver = minMaxSolverFactory.create(env, epochModel.epochMatrix);
                     cachedData.minMaxSolver->setHasUniqueSolution();
+                    cachedData.minMaxSolver->setHasNoEndComponents();
                     cachedData.minMaxSolver->setTrackScheduler(true);
                     cachedData.minMaxSolver->setCachingEnabled(true);
                     auto req = cachedData.minMaxSolver->getRequirements(env);

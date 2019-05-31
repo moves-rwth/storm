@@ -82,10 +82,10 @@ namespace storm {
                         requirements.clearValidInitialScheduler();
                     }
                     requirements.clearBounds();
-                    if (requirements.noEndComponents()) {
+                    if (requirements.uniqueSolution()) {
                         // Check whether there are end components
                         if (storm::utility::graph::performProb0E(model, transitionMatrix.notZero(), maybeStates, !maybeStates && model.getReachableStates()).isZero()) {
-                            requirements.clearNoEndComponents();
+                            requirements.clearUniqueSolution();
                         }
                     }
                     STORM_LOG_THROW(!requirements.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + requirements.getEnabledRequirementsAsString() + " not checked.");
@@ -253,10 +253,10 @@ namespace storm {
                         requirements.clearValidInitialScheduler();
                     }
                     requirements.clearLowerBounds();
-                    if (requirements.noEndComponents()) {
+                    if (requirements.uniqueSolution()) {
                         // Check whether there are end components
                         if (storm::utility::graph::performProb0E(model, transitionMatrixBdd, maybeStates, !maybeStates && model.getReachableStates()).isZero()) {
-                            requirements.clearNoEndComponents();
+                            requirements.clearUniqueSolution();
                         }
                     }
                     STORM_LOG_THROW(!requirements.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + requirements.getEnabledRequirementsAsString() + " not checked.");

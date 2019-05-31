@@ -310,13 +310,14 @@ namespace storm {
 
                     // Create solver.
                     storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType> minMaxLinearEquationSolverFactory;
-                    storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(env, true, dir);
+                    storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(env, true, true, dir);
                     requirements.clearBounds();
                     STORM_LOG_THROW(!requirements.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + requirements.getEnabledRequirementsAsString() + " not checked.");
                     
                     if (numberOfProbabilisticChoices > 0) {
                         solver = minMaxLinearEquationSolverFactory.create(env, probMatrix);
                         solver->setHasUniqueSolution();
+                        solver->setHasNoEndComponents();
                         solver->setBounds(storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
                         solver->setRequirementsChecked();
                         solver->setCachingEnabled(true);
@@ -486,14 +487,15 @@ namespace storm {
                 }
                 
                 // Check for requirements of the solver.
-                // The solution is unique as we assume non-zeno MAs.
+                // The min-max system has no end components as we assume non-zeno MAs.
                 storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType> minMaxLinearEquationSolverFactory;
-                storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(env, true, dir);
+                storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(env, true, true, dir);
                 requirements.clearBounds();
                 STORM_LOG_THROW(!requirements.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + requirements.getEnabledRequirementsAsString() + " not checked.");
                 
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = minMaxLinearEquationSolverFactory.create(env, aProbabilistic);
                 solver->setHasUniqueSolution();
+                solver->setHasNoEndComponents();
                 solver->setBounds(storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
                 solver->setRequirementsChecked();
                 solver->setCachingEnabled(true);
@@ -819,12 +821,13 @@ namespace storm {
                 
                 // Check for requirements of the solver.
                 storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType> minMaxLinearEquationSolverFactory;
-                storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(underlyingSolverEnvironment, true, dir);
+                storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(underlyingSolverEnvironment, true, true, dir);
                 requirements.clearBounds();
                 STORM_LOG_THROW(!requirements.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + requirements.getEnabledRequirementsAsString() + " not checked.");
 
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = minMaxLinearEquationSolverFactory.create(underlyingSolverEnvironment, sspMatrix);
                 solver->setHasUniqueSolution();
+                solver->setHasNoEndComponents();
                 solver->setLowerBound(storm::utility::zero<ValueType>());
                 solver->setUpperBound(*std::max_element(lraValuesForEndComponents.begin(), lraValuesForEndComponents.end()));
                 solver->setRequirementsChecked();
@@ -1053,13 +1056,14 @@ namespace storm {
                     // Check for requirements of the solver.
                     // The solution is unique as we assume non-zeno MAs.
                     storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType> minMaxLinearEquationSolverFactory;
-                    storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(env, true, dir);
+                    storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(env, true, true, dir);
                     requirements.clearLowerBounds();
                     STORM_LOG_THROW(!requirements.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + requirements.getEnabledRequirementsAsString() + " not checked.");
     
                     solver = minMaxLinearEquationSolverFactory.create(env, std::move(aProbabilistic));
                     solver->setLowerBound(storm::utility::zero<ValueType>());
                     solver->setHasUniqueSolution(true);
+                    solver->setHasNoEndComponents(true);
                     solver->setRequirementsChecked(true);
                     solver->setCachingEnabled(true);
                 }

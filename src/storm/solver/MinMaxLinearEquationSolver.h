@@ -76,9 +76,23 @@ namespace storm {
             void setHasUniqueSolution(bool value = true);
             
             /*!
-             * Retrieves whether the solution to the min max equation system is assumed to be unique
+             * Retrieves whether the solution to the min max equation system is assumed to be unique.
+             * Note that having no end components implies that the solution is unique. Thus, this also returns true if
+             * `hasNoEndComponents()` returns true.
+             * Also note that a unique solution does not imply the absence of ECs, because, e.g. in Rmin properties there
+             * can still be ECs in which infinite reward is collected.
              */
             bool hasUniqueSolution() const;
+            
+            /*!
+             * Sets whether the min max equation system is known to not have any end components
+             */
+            void setHasNoEndComponents(bool value = true);
+            
+            /*!
+             * Retrieves whether the min max equation system is known to not have any end components
+             */
+            bool hasNoEndComponents() const;
             
             /*!
              * Sets whether schedulers are generated when solving equation systems. If the argument is false, the currently
@@ -173,6 +187,9 @@ namespace storm {
             /// Whether the solver can assume that the min-max equation system has a unique solution
             bool uniqueSolution;
             
+            /// Whether the solver can assume that the min-max equation system has no end components
+            bool noEndComponents;
+            
             /// Whether some of the generated data during solver calls should be cached.
             bool cachingEnabled;
             
@@ -194,7 +211,7 @@ namespace storm {
              * Retrieves the requirements of the solver that would be created when calling create() right now. The
              * requirements are guaranteed to be ordered according to their appearance in the SolverRequirement type.
              */
-            MinMaxLinearEquationSolverRequirements getRequirements(Environment const& env, bool hasUniqueSolution = false, boost::optional<storm::solver::OptimizationDirection> const& direction = boost::none, bool hasInitialScheduler = false, bool trackScheduler = false) const;
+            MinMaxLinearEquationSolverRequirements getRequirements(Environment const& env, bool hasUniqueSolution = false, bool hasNoEndComponents = false, boost::optional<storm::solver::OptimizationDirection> const& direction = boost::none, bool hasInitialScheduler = false, bool trackScheduler = false) const;
             void setRequirementsChecked(bool value = true);
             bool isRequirementsCheckedSet() const;
 
