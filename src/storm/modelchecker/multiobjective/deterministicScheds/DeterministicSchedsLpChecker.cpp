@@ -204,11 +204,21 @@ namespace storm {
             
             template <typename ModelType, typename GeometryValueType>
             std::vector<std::vector<storm::expressions::Variable>> DeterministicSchedsLpChecker<ModelType, GeometryValueType>::createEcVariables(std::vector<storm::expressions::Expression> const& choiceVars) {
-                auto one = lpModel->getConstant(storm::utility::one<ValueType>());
-                std::vector<std::vector<storm::expressions::Variable>> result(model.getNumberOfStates());
-                storm::storage::MaximalEndComponentDecomposition<ValueType> mecs(model);
-                uint64_t ecCounter = 0;
                 
+                // Get the choices that do not induce a value (i.e. reward) for all objectives
+                storm::storage::BitVector choicesWithValueZero(model.getNumberOfChoices(), true);
+                for (auto const& objHelper : objectiveHelper) {
+                    for (auto const& value : objHelper.getChoiceValueOffsets()) {
+                        STORM_LOG_ASSERT(!storm::utility::isZero(value.second), "Expected non-zero choice-value offset.");
+                        choicesWithValueZero.set(value.first, false);
+                    }
+                }
+                storm::storage::MaximalEndComponentDecomposition<ValueType> mecs(model.getTransitionMatrix(), model.getBackwardTransitions(), storm::storage::BitVector(model.getNumberOfStates(), true), choicesWithValueZero);
+                
+                
+                auto one = lpModel->getConstant(storm::utility::one<ValueType>());
+                uint64_t ecCounter = 0;
+                std::vector<std::vector<storm::expressions::Variable>> result(model.getNumberOfStates());
                 for (auto const& mec : mecs) {
                     // Create a submatrix for the current mec as well as a mapping to map back to the original states.
                     storm::storage::BitVector mecStatesAsBitVector(model.getNumberOfStates(), false);
@@ -228,64 +238,38 @@ namespace storm {
                     // Also assert that not every state takes an ec choice.
                     auto subEcs = getSubEndComponents(mecTransitions);
                     for (auto const& subEc : subEcs) {
-                        // get the choices of the current EC with some non-zero value (i.e. reward).
-                        // std::cout << "sub ec choices of ec" << ecCounter << ": " << subEc.second << std::endl;
-                        storm::storage::BitVector subEcChoicesWithValueZero = subEc.second;
+                        // Create a variable that is one iff upon entering this subEC no more choice value is collected.
+                        auto ecVar = lpModel->addBoundedIntegerVariable("ec" + std::to_string(ecCounter++), storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
+                        // assign this variable to every state in the ec
+                        for (auto const& localSubEcStateIndex : subEc.first) {
+                            uint64_t subEcState = toGlobalStateIndexMapping[localSubEcStateIndex];
+                            result[subEcState].push_back(ecVar);
+                        }
+                        // Create the sum over all choice vars that induce zero choice value
+                        std::vector<storm::expressions::Expression> ecChoiceVars;
+                        uint64_t numSubEcStatesWithMultipleChoices = subEc.first.getNumberOfSetBits();
                         for (auto const& localSubEcChoiceIndex : subEc.second) {
                             uint64_t subEcChoice = toGlobalChoiceIndexMapping[localSubEcChoiceIndex];
-                            for (auto const& objHelper : objectiveHelper) {
-                                if (objHelper.getChoiceValueOffsets().count(subEcChoice) > 0) {
-                                    STORM_LOG_ASSERT(!storm::utility::isZero(objHelper.getChoiceValueOffsets().at(subEcChoice)), "Expected non-zero choice-value offset.");
-                                    subEcChoicesWithValueZero.set(localSubEcChoiceIndex, false);
-                                    break;
-                                }
-                            }
-                        }
-                        
-                        // Check whether each state has at least one zero-valued choice
-                        bool zeroValueSubEc = true;
-                        for (auto const& state : subEc.first) {
-                            if (subEcChoicesWithValueZero.getNextSetIndex(mecTransitions.getRowGroupIndices()[state]) >= mecTransitions.getRowGroupIndices()[state + 1]) {
-                                zeroValueSubEc = false;
-                                break;
-                            }
-                        }
-                        
-                        if (zeroValueSubEc) {
-                            // Create a variable that is one iff upon entering this subEC no more choice value is collected.
-                            auto ecVar = lpModel->addBoundedIntegerVariable("ec" + std::to_string(ecCounter++), storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
-                            // assign this variable to every state in the ec
-                            for (auto const& localSubEcStateIndex : subEc.first) {
-                                uint64_t subEcState = toGlobalStateIndexMapping[localSubEcStateIndex];
-                                result[subEcState].push_back(ecVar);
-                            }
-                            // Create the sum over all choice vars that induce zero choice value
-                            std::vector<storm::expressions::Expression> ecChoiceVars;
-                            uint64_t numSubEcStatesWithMultipleChoices = subEc.first.getNumberOfSetBits();
-                            for (auto const& localSubEcChoiceIndex : subEcChoicesWithValueZero) {
-                                uint64_t subEcChoice = toGlobalChoiceIndexMapping[localSubEcChoiceIndex];
-                                if (choiceVars[subEcChoice].isInitialized()) {
-                                    ecChoiceVars.push_back(choiceVars[subEcChoice]);
-                                } else {
-                                    // If there is no choiceVariable, it means that this corresponds to a state with just one choice.
-                                    assert(numSubEcStatesWithMultipleChoices > 0);
-                                    --numSubEcStatesWithMultipleChoices;
-                                }
-                            }
-                            // Assert that the ecVar is one iff the sum over the zero-value-choice variables equals the number of states in this ec
-                            storm::expressions::Expression ecVarBound = one - lpModel->getConstant(storm::utility::convertNumber<ValueType>(numSubEcStatesWithMultipleChoices)).simplify();
-                            if (!ecChoiceVars.empty()) {
-                                ecVarBound = ecVarBound + storm::expressions::sum(ecChoiceVars);
-                            }
-                            if (inOutEncoding()) {
-                                lpModel->addConstraint("", ecVar <= ecVarBound);
+                            if (choiceVars[subEcChoice].isInitialized()) {
+                                ecChoiceVars.push_back(choiceVars[subEcChoice]);
                             } else {
-                                lpModel->addConstraint("", ecVar >= ecVarBound);
+                                // If there is no choiceVariable, it means that this corresponds to a state with just one choice.
+                                assert(numSubEcStatesWithMultipleChoices > 0);
+                                --numSubEcStatesWithMultipleChoices;
                             }
+                        }
+                        // Assert that the ecVar is one iff the sum over the zero-value-choice variables equals the number of states in this ec
+                        storm::expressions::Expression ecVarBound = one - lpModel->getConstant(storm::utility::convertNumber<ValueType>(numSubEcStatesWithMultipleChoices)).simplify();
+                        if (!ecChoiceVars.empty()) {
+                            ecVarBound = ecVarBound + storm::expressions::sum(ecChoiceVars);
+                        }
+                        if (inOutEncoding()) {
+                            lpModel->addConstraint("", ecVar <= ecVarBound);
+                        } else {
+                            lpModel->addConstraint("", ecVar >= ecVarBound);
                         }
                     }
                 }
-                
                 STORM_LOG_TRACE("Found " << ecCounter << " end components.");
                 return result;
             }
