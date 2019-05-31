@@ -1,0 +1,15 @@
+toplevel "A";
+"A" or "B" "C";
+"B" and "D" "L";
+"C" and "M" "N";
+"D" and "I" "J" "K";
+"DEP1" fdep "T" "I" "J" "K";
+"DEP2" fdep "D" "L";
+
+"I" lambda=0.5 dorm=0;
+"J" lambda=0.5 dorm=0.5;
+"K" lambda=0.5 dorm=0.5;
+"L" lambda=0.5 dorm=0.5;
+"M" lambda=0.5 dorm=0.5;
+"N" lambda=0.5 dorm=0.5;
+"T" lambda=0.5 dorm=0.5;

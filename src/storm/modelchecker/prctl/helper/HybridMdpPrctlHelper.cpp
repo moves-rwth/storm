@@ -146,22 +146,23 @@ namespace storm {
                 } else {
                     // If there are maybe states, we need to solve an equation system.
                     if (!maybeStates.isZero()) {
-                        // If we minimize, we know that the solution to the equation system is unique.
-                        bool uniqueSolution = dir == storm::solver::OptimizationDirection::Minimize;
+                        // If we minimize, we know that the solution to the equation system has no end components
+                        bool hasNoEndComponents = dir == storm::solver::OptimizationDirection::Minimize;
                         // Check for requirements of the solver early so we can adjust the maybe state computation accordingly.
                         storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType> linearEquationSolverFactory;
-                        storm::solver::MinMaxLinearEquationSolverRequirements requirements = linearEquationSolverFactory.getRequirements(env, uniqueSolution, dir);
+                        storm::solver::MinMaxLinearEquationSolverRequirements requirements = linearEquationSolverFactory.getRequirements(env, hasNoEndComponents, hasNoEndComponents, dir);
                         storm::solver::MinMaxLinearEquationSolverRequirements clearedRequirements = requirements;
                         SolverRequirementsData<ValueType> solverRequirementsData;
                         bool extendMaybeStates = false;
                         
                         if (clearedRequirements.hasEnabledRequirement()) {
-                            if (clearedRequirements.noEndComponents()) {
-                                STORM_LOG_DEBUG("Scheduling EC elimination, because the solver requires it.");
+                            if (clearedRequirements.uniqueSolution()) {
+                                STORM_LOG_DEBUG("Scheduling EC elimination, because the solver requires a unique solution.");
                                 extendMaybeStates = true;
-                                clearedRequirements.clearNoEndComponents();
+                                clearedRequirements.clearUniqueSolution();
+                                hasNoEndComponents = true;
                             }
-                            if (clearedRequirements.validInitialScheduler()) {
+                            if (clearedRequirements.validInitialScheduler() && !hasNoEndComponents) {
                                 STORM_LOG_DEBUG("Scheduling valid scheduler computation, because the solver requires it.");
                                 clearedRequirements.clearValidInitialScheduler();
                             }
@@ -210,8 +211,6 @@ namespace storm {
                             // Eliminate the end components and remove the states that are not interesting (target or non-filter).
                             eliminateEndComponentsAndExtendedStatesUntilProbabilities(explicitRepresentation, solverRequirementsData, targetStates);
                             
-                            // The solution becomes unique after end components have been eliminated.
-                            uniqueSolution = true;
                         } else {
                             // Then compute the vector that contains the one-step probabilities to a state with probability 1 for all
                             // maybe states.
@@ -240,8 +239,9 @@ namespace storm {
                         
                         std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(env, std::move(explicitRepresentation.first));
                         
-                        // Set whether the equation system will have a unique solution
-                        solver->setHasUniqueSolution(uniqueSolution);
+                        // Set whether the equation system will have a unique solution / no end components
+                        solver->setHasUniqueSolution(hasNoEndComponents);
+                        solver->setHasNoEndComponents(hasNoEndComponents);
 
                         if (solverRequirementsData.initialScheduler) {
                             solver->setInitialScheduler(std::move(solverRequirementsData.initialScheduler.get()));
@@ -251,7 +251,7 @@ namespace storm {
                         solver->solveEquations(env, dir, x, explicitRepresentation.second);
                         
                         // If we included some target and non-filter states in the ODD, we need to expand the result from the solver.
-                        if (requirements.noEndComponents() && solverRequirementsData.ecInformation) {
+                        if (requirements.uniqueSolution() && solverRequirementsData.ecInformation) {
                             std::vector<ValueType> extendedVector(solverRequirementsData.properMaybeStates.getNumberOfSetBits());
                             solverRequirementsData.ecInformation.get().setValues(extendedVector, solverRequirementsData.properMaybeStates, x);
                             x = std::move(extendedVector);
@@ -543,17 +543,20 @@ namespace storm {
                     // If there are maybe states, we need to solve an equation system.
                     if (!maybeStates.isZero()) {
                         // If we maximize, we know that the solution to the equation system is unique.
-                        bool uniqueSolution = dir == storm::solver::OptimizationDirection::Maximize;
+                        bool hasNoEndComponents = dir == storm::solver::OptimizationDirection::Maximize;
+                        bool hasUniqueSolution = hasNoEndComponents;
                         // Check for requirements of the solver this early so we can adapt the maybe states accordingly.
                         storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType> linearEquationSolverFactory;
-                        storm::solver::MinMaxLinearEquationSolverRequirements requirements = linearEquationSolverFactory.getRequirements(env, uniqueSolution, dir);
+                        storm::solver::MinMaxLinearEquationSolverRequirements requirements = linearEquationSolverFactory.getRequirements(env, hasUniqueSolution, hasNoEndComponents, dir);
                         storm::solver::MinMaxLinearEquationSolverRequirements clearedRequirements = requirements;
                         bool extendMaybeStates = false;
                         if (clearedRequirements.hasEnabledRequirement()) {
-                            if (clearedRequirements.noEndComponents()) {
+                            if (clearedRequirements.uniqueSolution()) {
                                 STORM_LOG_DEBUG("Scheduling EC elimination, because the solver requires it.");
                                 extendMaybeStates = true;
-                                clearedRequirements.clearNoEndComponents();
+                                clearedRequirements.clearUniqueSolution();
+                                hasUniqueSolution = true;
+                                // There might still be end components in which reward is collected.
                             }
                             if (clearedRequirements.validInitialScheduler()) {
                                 STORM_LOG_DEBUG("Computing valid scheduler, because the solver requires it.");
@@ -611,11 +614,15 @@ namespace storm {
                             storm::storage::BitVector targetStates = computeTargetStatesForReachabilityRewardsFromExplicitRepresentation(explicitRepresentation.first);
                             solverRequirementsData.properMaybeStates = ~targetStates;
 
-                            if (requirements.noEndComponents()) {
+                            if (requirements.uniqueSolution()) {
+                                STORM_LOG_THROW(!requirements.validInitialScheduler(), storm::exceptions::UncheckedRequirementException, "The underlying solver requires a unique solution and an initial valid scheduler. This is currently not supported for expected reward properties.");
+                                // eliminate the end components with reward 0.
+                                // Note that this may also compute the oneStepTargetProbabilities if upper bounds are required.
                                 eliminateEndComponentsAndTargetStatesReachabilityRewards(explicitRepresentation, solverRequirementsData, targetStates, requirements.upperBounds());
                                 // The solution becomes unique after end components have been eliminated.
-                                uniqueSolution = true;
-                            } else {
+                                hasUniqueSolution = true;
+                            }
+                            else {
                                 if (requirements.validInitialScheduler()) {
                                     // Compute a valid initial scheduler.
                                     solverRequirementsData.initialScheduler = computeValidInitialSchedulerForReachabilityRewards<ValueType>(explicitRepresentation.first, solverRequirementsData.properMaybeStates, targetStates);
@@ -637,8 +644,9 @@ namespace storm {
                         // Now solve the resulting equation system.
                         std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(env);
                         
-                        // Set whether the equation system will have a unique solution
-                        solver->setHasUniqueSolution(uniqueSolution);
+                        // Set whether the equation system will have a unique solution / no end components
+                        solver->setHasUniqueSolution(hasUniqueSolution);
+                        solver->setHasNoEndComponents(hasNoEndComponents);
                         
                         // If the solver requires upper bounds, compute them now.
                         if (requirements.upperBounds()) {
@@ -657,7 +665,7 @@ namespace storm {
                         solver->solveEquations(env, dir, x, explicitRepresentation.second);
 
                         // If we eliminated end components, we need to extend the solution vector.
-                        if (requirements.noEndComponents() && solverRequirementsData.ecInformation) {
+                        if (requirements.uniqueSolution() && solverRequirementsData.ecInformation) {
                             std::vector<ValueType> extendedVector(solverRequirementsData.properMaybeStates.getNumberOfSetBits());
                             solverRequirementsData.ecInformation.get().setValues(extendedVector, solverRequirementsData.properMaybeStates, x);
                             x = std::move(extendedVector);

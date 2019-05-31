@@ -1975,13 +1975,13 @@ namespace storm {
             std::vector<storm::expressions::Variable> rewardVariables;
             if (options.isBuildAllRewardModelsSet()) {
                 for (auto const& rewExpr : model.getAllRewardModelExpressions()) {
-                    STORM_LOG_ERROR_COND(rewExpr.second.isVariable(), "The DD-builder can not build the non-trivial reward expression '" << rewExpr.second << "'.");
+                    STORM_LOG_THROW(!model.isNonTrivialRewardModelExpression(rewExpr.first), storm::exceptions::NotSupportedException, "The DD-builder can not build the non-trivial reward expression '" << rewExpr.second << "'.");
                     rewardVariables.push_back(rewExpr.second.getBaseExpression().asVariableExpression().getVariable());
                 }
             } else {
                 for (auto const& rewardModelName : options.getRewardModelNames()) {
+                    STORM_LOG_THROW(!model.isNonTrivialRewardModelExpression(rewardModelName), storm::exceptions::NotSupportedException, "The DD-builder can not build the non-trivial reward expression '" << rewardModelName << "'.");
                     auto const& rewExpr = model.getRewardModelExpression(rewardModelName);
-                    STORM_LOG_ERROR_COND(rewExpr.isVariable(), "The DD-builder can not build the non-trivial reward expression '" << rewExpr << "'.");
                     rewardVariables.push_back(rewExpr.getBaseExpression().asVariableExpression().getVariable());
                 }
             }
@@ -2070,6 +2070,7 @@ namespace storm {
             
             // Lift the transient edge destinations. We can do so, as we know that there are no assignment levels (because that's not supported anyway).
             if (preparedModel.hasTransientEdgeDestinationAssignments()) {
+                // This operation is correct as we are asserting that there are no assignment levels and no non-trivial reward expressions.
                 preparedModel.liftTransientEdgeDestinationAssignments();
             }
             

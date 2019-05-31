@@ -1,3 +1,12 @@
+/*! \mainpage Storm - A Modern Probabilistic Model Checker
+ *
+ * This document contains the Doxygen documentation of the Storm source code.
+ *
+ * \section more_info More information
+ * For more information, installation guides and tutorials on how to use Storm, visit the Storm website: http://www.stormchecker.org.
+ */
+
+
 #include "storm/utility/macros.h"
 #include "storm/exceptions/BaseException.h"
 

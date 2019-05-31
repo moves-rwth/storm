@@ -1,0 +1,24 @@
+toplevel "A";
+"A" or "B" "C";
+"B" and "J" "K" "L";
+"J" or "J1" "J2";
+"K" or "K1" "K2";
+"L" or "L1" "L2";
+"C" or "M" "N";
+"M" and "M1" "M2" "M3" "M4";
+"N" and "N1" "N2" "N3" "N4";
+"J1" lambda=0.5 dorm=0;
+"J2" lambda=0.5 dorm=0;
+"K1" lambda=0.5 dorm=0;
+"K2" lambda=0.5 dorm=0;
+"L1" lambda=0.5 dorm=0;
+"L2" lambda=0.5 dorm=0;
+"M1" lambda=0.5 dorm=0;
+"M2" lambda=0.5 dorm=0;
+"M3" lambda=1 dorm=0;
+"M4" lambda=1 dorm=0;
+"N1" lambda=0.5 dorm=0;
+"N2" lambda=0.5 dorm=0;
+"N3" lambda=1 dorm=0;
+"N4" lambda=1 dorm=0;
+

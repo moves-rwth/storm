@@ -117,7 +117,7 @@ namespace storm {
             
             // In case we need to retrieve a scheduler, the solution has to be unique
             if (!this->hasUniqueSolution() && this->isTrackSchedulerSet()) {
-                requirements.requireNoEndComponents();
+                requirements.requireUniqueSolution();
             }
             
             requirements.requireBounds(false);

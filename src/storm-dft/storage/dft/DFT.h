@@ -58,6 +58,7 @@ namespace storm {
             DFTElementVector mElements;
             size_t mNrOfBEs;
             size_t mNrOfSpares;
+            size_t mNrRepresentatives;
             size_t mTopLevelIndex;
             size_t mStateVectorSize;
             size_t mMaxSpareChildCount;

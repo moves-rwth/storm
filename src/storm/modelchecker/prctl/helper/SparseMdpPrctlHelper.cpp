@@ -205,7 +205,7 @@ namespace storm {
             
             template<typename ValueType>
             struct SparseMdpHintType {
-                SparseMdpHintType() : eliminateEndComponents(false), computeUpperBounds(false), uniqueSolution(false) {
+                SparseMdpHintType() : eliminateEndComponents(false), computeUpperBounds(false), uniqueSolution(false), noEndComponents(false) {
                     // Intentionally left empty.
                 }
                 
@@ -265,6 +265,10 @@ namespace storm {
                     return uniqueSolution;
                 }
                 
+                bool hasNoEndComponents() const {
+                    return noEndComponents;
+                }
+                
                 boost::optional<std::vector<uint64_t>> schedulerHint;
                 boost::optional<std::vector<ValueType>> valueHint;
                 boost::optional<ValueType> lowerResultBound;
@@ -273,6 +277,7 @@ namespace storm {
                 bool eliminateEndComponents;
                 bool computeUpperBounds;
                 bool uniqueSolution;
+                bool noEndComponents;
             };
             
             template<typename ValueType>
@@ -329,29 +334,36 @@ namespace storm {
             SparseMdpHintType<ValueType> computeHints(Environment const& env, SolutionType const& type, ModelCheckerHint const& hint, storm::OptimizationDirection const& dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& maybeStates, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& targetStates, bool produceScheduler, boost::optional<storm::storage::BitVector> const& selectedChoices = boost::none) {
                 SparseMdpHintType<ValueType> result;
 
-                // The solution to the min-max equation system is unique if we minimize until probabilities or
-                // maximize reachability rewards or if the hint tells us that there are no end-compontnes.
-                result.uniqueSolution = (dir == storm::solver::OptimizationDirection::Minimize && type == SolutionType::UntilProbabilities)
+                // There are no end components if we minimize until probabilities or
+                // maximize reachability rewards or if the hint tells us so.
+                result.noEndComponents = (dir == storm::solver::OptimizationDirection::Minimize && type == SolutionType::UntilProbabilities)
                                       || (dir == storm::solver::OptimizationDirection::Maximize && type == SolutionType::ExpectedRewards)
                                       || (hint.isExplicitModelCheckerHint() && hint.asExplicitModelCheckerHint<ValueType>().getNoEndComponentsInMaybeStates());
+                
+                // If there are no end components, the solution is unique. (Note that the other direction does not hold,
+                // e.g., end components in which infinite reward is collected.
+                result.uniqueSolution = result.hasNoEndComponents();
                 
                 // Check for requirements of the solver.
                 bool hasSchedulerHint = hint.isExplicitModelCheckerHint() && hint.template asExplicitModelCheckerHint<ValueType>().hasSchedulerHint();
                 storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType> minMaxLinearEquationSolverFactory;
-                storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(env, result.uniqueSolution, dir, hasSchedulerHint, produceScheduler);
+                storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(env, result.uniqueSolution, result.noEndComponents, dir, hasSchedulerHint, produceScheduler);
                 if (requirements.hasEnabledRequirement()) {
                     // If the solver still requires no end-components, we have to eliminate them later.
-                    if (requirements.noEndComponents()) {
+                    if (requirements.uniqueSolution()) {
                         STORM_LOG_ASSERT(!result.hasUniqueSolution(), "The solver requires to eliminate the end components although the solution is already assumed to be unique.");
-                        STORM_LOG_DEBUG("Scheduling EC elimination, because the solver requires it.");
+                        STORM_LOG_DEBUG("Scheduling EC elimination, because the solver requires a unique solution.");
                         result.eliminateEndComponents = true;
                         // If end components have been eliminated we can assume a unique solution.
                         result.uniqueSolution = true;
-                        requirements.clearNoEndComponents();
+                        requirements.clearUniqueSolution();
+                        // If we compute until probabilities, we can even assume the absence of end components.
+                        // Note that in the case of minimizing expected rewards there might still be end components in which reward is collected.
+                        result.noEndComponents = (type == SolutionType::UntilProbabilities);
                     }
                     
-                    // If the solver requires an initial scheduler, compute one now.
-                    if (requirements.validInitialScheduler()) {
+                    // If the solver requires an initial scheduler, compute one now. Note that any scheduler is valid if there are no end components.
+                    if (requirements.validInitialScheduler() && !result.noEndComponents) {
                         STORM_LOG_DEBUG("Computing valid scheduler, because the solver requires it.");
                         result.schedulerHint = computeValidSchedulerHint(env, type, transitionMatrix, backwardTransitions, maybeStates, phiStates, targetStates);
                         requirements.clearValidInitialScheduler();
@@ -429,6 +441,7 @@ namespace storm {
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = storm::solver::configureMinMaxLinearEquationSolver(env, std::move(goal), minMaxLinearEquationSolverFactory, std::move(submatrix));
                 solver->setRequirementsChecked();
                 solver->setHasUniqueSolution(hint.hasUniqueSolution());
+                solver->setHasNoEndComponents(hint.hasNoEndComponents());
                 if (hint.hasLowerResultBound()) {
                     solver->setLowerBound(hint.getLowerResultBound());
                 }
@@ -1348,7 +1361,7 @@ namespace storm {
                 
                 // Check for requirements of the solver.
                 storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType> minMaxLinearEquationSolverFactory;
-                storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(underlyingSolverEnvironment, true, goal.direction());
+                storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(underlyingSolverEnvironment, true, true, goal.direction());
                 requirements.clearBounds();
                 STORM_LOG_THROW(!requirements.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + requirements.getEnabledRequirementsAsString() + " not checked.");
 
@@ -1359,6 +1372,7 @@ namespace storm {
                 solver->setLowerBound(storm::utility::zero<ValueType>());
                 solver->setUpperBound(*std::max_element(lraValuesForEndComponents.begin(), lraValuesForEndComponents.end()));
                 solver->setHasUniqueSolution();
+                solver->setHasNoEndComponents();
                 solver->setRequirementsChecked();
                 solver->solveEquations(underlyingSolverEnvironment, sspResult, b);
                 

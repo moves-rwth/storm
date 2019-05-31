@@ -301,6 +301,7 @@ namespace storm {
                 storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType> minMaxSolverFactory;
                 result->solver = minMaxSolverFactory.create(env, PS.toPS);
                 result->solver->setHasUniqueSolution(true);
+                result->solver->setHasNoEndComponents(true); // Non-zeno MA
                 result->solver->setTrackScheduler(true);
                 result->solver->setCachingEnabled(true);
                 auto req = result->solver->getRequirements(env, storm::solver::OptimizationDirection::Maximize, false);

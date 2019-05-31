@@ -51,6 +51,12 @@ void processOptions() {
         storm::api::exportDFTToJsonFile<ValueType>(*dft, dftIOSettings.getExportJsonFilename());
     }
 
+    if (dftIOSettings.isExportToSmt()) {
+        // Export to json
+        storm::api::exportDFTToSMT<ValueType>(*dft, dftIOSettings.getExportSmtFilename());
+        return;
+    }
+
     // Check well-formedness of DFT
     std::stringstream stream;
     if (!dft->checkWellFormedness(stream)) {
@@ -76,8 +82,7 @@ void processOptions() {
     if (faultTreeSettings.solveWithSMT()) {
         // Solve with SMT
         STORM_LOG_DEBUG("Running DFT analysis with use of SMT");
-        storm::api::exportDFTToSMT(*dft, "test.smt2");
-        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Only exported to SMT file 'test.smt2' but analysis is not supported.");
+        storm::api::analyzeDFTSMT(*dft, true);
         return;
     }
 #endif
@@ -148,8 +153,8 @@ void processOptions() {
     // Add relevant event names from properties
     for (auto atomic : atomicLabels) {
         std::string label = atomic->getLabel();
-        if (label == "failed") {
-            // Ignore as this label will always be added
+        if (label == "failed" or label == "skipped") {
+            // Ignore as these label will always be added if necessary
         } else {
             // Get name of event
             if (boost::ends_with(label, "_failed")) {

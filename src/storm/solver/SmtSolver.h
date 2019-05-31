@@ -50,7 +50,7 @@ namespace storm {
                 storm::expressions::ExpressionManager const& getManager() const;
                 
             private:
-                // The expression manager responsible for the variableswhose value can be requested via this model
+                // The expression manager responsible for the variables whose value can be requested via this model
                 // reference.
                 storm::expressions::ExpressionManager const& manager;
 			};

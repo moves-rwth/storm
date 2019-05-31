@@ -97,7 +97,8 @@ namespace storm {
                     }
                 } else {
                     constantDefinitions.push_back("");
-                    janiFiles.push_back(janiFileName);
+                    janiFiles.push_back(modelPath + "/" + janiFileName);
+                    instanceInfos.push_back(janiFileName);
                 }
             }
         }

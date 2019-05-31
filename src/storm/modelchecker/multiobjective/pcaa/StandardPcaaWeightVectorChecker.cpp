@@ -163,6 +163,50 @@ namespace storm {
                 return result;
             }
             
+            template <typename ValueType>
+            std::vector<uint64_t> computeValidInitialScheduler(storm::storage::SparseMatrix<ValueType> const& matrix, storm::storage::BitVector const& rowsWithSumLessOne) {
+                std::vector<uint64_t> result(matrix.getRowGroupCount());
+                auto const& groups = matrix.getRowGroupIndices();
+                auto backwardsTransitions = matrix.transpose(true);
+                storm::storage::BitVector processedStates(result.size(), false);
+                for (uint64_t state = 0; state < result.size(); ++state) {
+                    if (rowsWithSumLessOne.getNextSetIndex(groups[state]) < groups[state + 1]) {
+                        result[state] = rowsWithSumLessOne.getNextSetIndex(groups[state]) - groups[state];
+                        processedStates.set(state, true);
+                    }
+                }
+                std::vector<uint64_t> stack(processedStates.begin(), processedStates.end());
+                while (!stack.empty()) {
+                    uint64_t current = stack.back();
+                    stack.pop_back();
+                    STORM_LOG_ASSERT(processedStates.get(current), "states on the stack shall be processed.");
+                    for (auto const& entry : backwardsTransitions.getRow(current)) {
+                        uint64_t pred = entry.getColumn();
+                        if (!processedStates.get(pred)) {
+                            // Find a choice that leads to a processed state
+                            uint64_t predChoice = groups[pred];
+                            bool foundSuccessor = false;
+                            for (; predChoice < groups[pred + 1]; ++predChoice) {
+                                for (auto const& predEntry : matrix.getRow(predChoice)) {
+                                    if (processedStates.get(predEntry.getColumn())) {
+                                        foundSuccessor = true;
+                                        break;
+                                    }
+                                }
+                                if (foundSuccessor) {
+                                    break;
+                                }
+                            }
+                            STORM_LOG_ASSERT(foundSuccessor && predChoice < groups[pred + 1], "Predecessor of a processed state should have a processed successor");
+                            result[pred] = predChoice - groups[pred];
+                            processedStates.set(pred, true);
+                            stack.push_back(pred);
+                        }
+                    }
+                }
+                return result;
+            }
+            
             template <class SparseModelType>
             void StandardPcaaWeightVectorChecker<SparseModelType>::unboundedWeightedPhase(Environment const& env, std::vector<ValueType> const& weightedRewardVector, std::vector<ValueType> const& weightVector) {
                 
@@ -188,6 +232,10 @@ namespace storm {
                 }
                 if (solver->hasUpperBound()) {
                     req.clearUpperBounds();
+                }
+                if (req.validInitialScheduler()) {
+                    solver->setInitialScheduler(computeValidInitialScheduler(ecQuotient->matrix, ecQuotient->rowsWithSumLessOne));
+                    req.clearValidInitialScheduler();
                 }
                 STORM_LOG_THROW(!req.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + req.getEnabledRequirementsAsString() + " not checked.");
                 solver->setRequirementsChecked(true);

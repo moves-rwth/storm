@@ -93,6 +93,17 @@ namespace storm {
         }
 
         /*!
+         * Analyze the DFT using the SMT encoding
+         *
+         * @param dft DFT.
+         *
+         * @return Result result vector
+         */
+        template<typename ValueType>
+        std::vector<storm::solver::SmtSolver::CheckResult>
+        analyzeDFTSMT(storm::storage::DFT<ValueType> const &dft, bool printOutput);
+
+        /*!
          * Export DFT to JSON file.
          *
          * @param dft DFT.

@@ -789,10 +789,19 @@ namespace storm {
             return *expressionManager;
         }
         
+        bool Model::hasNonTrivialRewardExpression() const {
+            return !nonTrivialRewardModels.empty();
+        }
+        
+        bool Model::isNonTrivialRewardModelExpression(std::string const& identifier) const {
+            return nonTrivialRewardModels.count(identifier) > 0;
+        }
+        
         bool Model::addNonTrivialRewardExpression(std::string const& identifier, storm::expressions::Expression const& rewardExpression) {
-            if (nonTrivialRewardModels.count(identifier) > 0) {
+            if (isNonTrivialRewardModelExpression(identifier)) {
                 return false;
             } else {
+                STORM_LOG_THROW(!globalVariables.hasVariable(identifier) || !globalVariables.getVariable(identifier).isTransient(), storm::exceptions::InvalidArgumentException, "Non trivial reward expression with identifier '" << identifier << "' clashes with global transient variable of the same name.");
                 nonTrivialRewardModels.emplace(identifier, rewardExpression);
                 return true;
             }

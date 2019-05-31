@@ -25,6 +25,7 @@ namespace storm {
             const std::string DftIOSettings::minValueOptionName = "min";
             const std::string DftIOSettings::maxValueOptionName = "max";
             const std::string DftIOSettings::exportToJsonOptionName = "export-json";
+            const std::string DftIOSettings::exportToSmtOptionName = "export-smt";
             const std::string DftIOSettings::displayStatsOptionName = "show-dft-stats";
 
 
@@ -55,6 +56,11 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, maxValueOptionName, false, "Compute maximal value in case of non-determinism.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportToJsonOptionName, false, "Export the model to the Cytoscape JSON format.")
                                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the JSON file to export to.").build())
+                                        .build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, exportToSmtOptionName, false,
+                                                               "Export the model as SMT encoding to the smtlib2 format.")
+                                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename",
+                                                                                                            "The name of the smtlib2 file to export to.").build())
                                         .build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, displayStatsOptionName, false, "Print stats to stdout").build());
             }
@@ -120,6 +126,14 @@ namespace storm {
 
             std::string DftIOSettings::getExportJsonFilename() const {
                 return this->getOption(exportToJsonOptionName).getArgumentByName("filename").getValueAsString();
+            }
+
+            bool DftIOSettings::isExportToSmt() const {
+                return this->getOption(exportToSmtOptionName).getHasOptionBeenSet();
+            }
+
+            std::string DftIOSettings::getExportSmtFilename() const {
+                return this->getOption(exportToSmtOptionName).getArgumentByName("filename").getValueAsString();
             }
 
             bool DftIOSettings::isDisplayStatsSet() const {

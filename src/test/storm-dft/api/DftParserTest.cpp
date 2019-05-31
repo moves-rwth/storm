@@ -20,4 +20,14 @@ namespace {
         EXPECT_EQ(2ul, dft->nrBasicElements());
         EXPECT_TRUE(storm::api::isWellFormed(*dft));
     }
+
+    TEST(DftParserTest, CatchCycles) {
+        std::string file = STORM_TEST_RESOURCES_DIR "/dft/cyclic.dft";
+        EXPECT_THROW(storm::api::loadDFTGalileoFile<double>(file), storm::exceptions::WrongFormatException);
+    }
+
+    TEST(DftParserTest, CatchSeqChildren) {
+        std::string file = STORM_TEST_RESOURCES_DIR "/dft/seqChild.dft";
+        EXPECT_THROW(storm::api::loadDFTGalileoFile<double>(file), storm::exceptions::WrongFormatException);
+    }
 }
