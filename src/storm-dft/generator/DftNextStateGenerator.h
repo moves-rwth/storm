@@ -31,6 +31,12 @@ namespace storm {
 
             void load(storm::storage::BitVector const& state);
             void load(DFTStatePointer const& state);
+
+            /*!
+             * Expand and explore current state.
+             * @param stateToIdCallback  Callback function which adds new state and returns the corresponding id.
+             * @return  StateBehavior containing successor choices and distributions.
+             */
             StateBehavior<ValueType, StateType> expand(StateToIdCallback const& stateToIdCallback);
 
             /*!
@@ -44,7 +50,14 @@ namespace storm {
 
         private:
 
-            StateBehavior<ValueType, StateType> exploreState(StateToIdCallback const& stateToIdCallback, bool exploreDependencies);
+            /*!
+             * Explore current state and generate all successor states.
+             * @param stateToIdCallback Callback function which adds new state and returns the corresponding id.
+             * @param exploreDependencies Flag indicating whether failures due to dependencies or due to BEs should be explored.
+             * @param takeFirstDependency If true, instead of exploring all possible orders of dependency failures, a fixed order is explored where always the first dependency is considered.
+             * @return StateBehavior containing successor choices and distributions.
+             */
+            StateBehavior<ValueType, StateType> exploreState(StateToIdCallback const& stateToIdCallback, bool exploreDependencies, bool takeFirstDependency);
 
             // The dft used for the generation of next states.
             storm::storage::DFT<ValueType> const& mDft;
@@ -55,11 +68,14 @@ namespace storm {
             // Current state
             DFTStatePointer state;
 
-            // Flag indication if all failed states should be merged into one unique failed state.
+            // Flag indicating whether all failed states should be merged into one unique failed state.
             bool uniqueFailedState;
 
-            // Flag indicating if the model is deterministic.
+            // Flag indicating whether the model is deterministic.
             bool deterministicModel = false;
+
+            // Flag indicating whether only the first dependency (instead of all) should be explored.
+            bool mTakeFirstDependency = false;
 
         };
         

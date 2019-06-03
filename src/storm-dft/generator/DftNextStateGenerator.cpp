@@ -12,6 +12,7 @@ namespace storm {
         template<typename ValueType, typename StateType>
         DftNextStateGenerator<ValueType, StateType>::DftNextStateGenerator(storm::storage::DFT<ValueType> const& dft, storm::storage::DFTStateGenerationInfo const& stateGenerationInfo) : mDft(dft), mStateGenerationInfo(stateGenerationInfo), state(nullptr), uniqueFailedState(false) {
             deterministicModel = !mDft.canHaveNondeterminism();
+            mTakeFirstDependency = storm::settings::getModule<storm::settings::modules::FaultTreeSettings>().isTakeFirstDependency();
         }
 
         template<typename ValueType, typename StateType>
@@ -48,11 +49,11 @@ namespace storm {
             STORM_LOG_DEBUG("Explore state: " << mDft.getStateString(state));
             // Initialization
             bool hasDependencies = state->getFailableElements().hasDependencies();
-            return exploreState(stateToIdCallback, hasDependencies);
+            return exploreState(stateToIdCallback, hasDependencies, mTakeFirstDependency);
         }
 
         template<typename ValueType, typename StateType>
-        StateBehavior<ValueType, StateType> DftNextStateGenerator<ValueType, StateType>::exploreState(StateToIdCallback const& stateToIdCallback, bool exploreDependencies) {
+        StateBehavior<ValueType, StateType> DftNextStateGenerator<ValueType, StateType>::exploreState(StateToIdCallback const& stateToIdCallback, bool exploreDependencies, bool takeFirstDependency) {
             // Prepare the result, in case we return early.
             StateBehavior<ValueType, StateType> result;
 
@@ -78,8 +79,7 @@ namespace storm {
             // Let BE fail
             bool isFirst = true;
             while (!state->getFailableElements().isEnd()) {
-                //TODO outside
-                if (storm::settings::getModule<storm::settings::modules::FaultTreeSettings>().isTakeFirstDependency() && exploreDependencies && !isFirst) {
+                if (takeFirstDependency && exploreDependencies && !isFirst) {
                     // We discard further exploration as we already chose one dependent event
                     break;
                 }
@@ -208,7 +208,7 @@ namespace storm {
                 if (result.empty()) {
                     // Dependencies might have been prevented from sequence enforcer
                     // -> explore BEs now
-                    return exploreState(stateToIdCallback, false);
+                    return exploreState(stateToIdCallback, false, takeFirstDependency);
                 }
             } else {
                 if (choice.size() == 0) {
