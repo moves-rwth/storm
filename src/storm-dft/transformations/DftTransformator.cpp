@@ -96,6 +96,8 @@ namespace storm {
 
                 }
                 // At this point the DFT is an exact copy of the original, except for all constant failure probabilities being 0
+
+                // Introduce new constantly failed BE and FDEPs to trigger all failures
                 if (!failedBEs.empty()) {
                     builder.addBasicElementConst("Unique_Constant_Failure", true);
                     failedBEs.insert(std::begin(failedBEs), "Unique_Constant_Failure");
@@ -104,7 +106,7 @@ namespace storm {
 
                 builder.setTopLevel(dft.getTopLevelGate()->name());
 
-                STORM_LOG_DEBUG("Transformation complete!");
+                STORM_LOG_DEBUG("Transformation UniqueFailedBe complete!");
                 return std::make_shared<storm::storage::DFT<ValueType>>(builder.build());
             }
 
@@ -229,7 +231,7 @@ namespace storm {
 
                 builder.setTopLevel(dft.getTopLevelGate()->name());
 
-                STORM_LOG_DEBUG("Transformation complete!");
+                STORM_LOG_DEBUG("Transformation BinaryFDEPs complete!");
                 return std::make_shared<storm::storage::DFT<ValueType>>(builder.build());
             }
 
