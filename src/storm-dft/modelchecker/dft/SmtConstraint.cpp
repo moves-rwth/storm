@@ -494,6 +494,29 @@ namespace storm {
             uint64_t var2Index;
         };
 
+        class IsUnequal : public SmtConstraint {
+        public:
+            IsUnequal(uint64_t varIndex1, uint64_t varIndex2) : var1Index(varIndex1), var2Index(varIndex2) {
+            }
+
+            virtual ~IsUnequal() {
+            }
+
+            std::string toSmtlib2(std::vector<std::string> const &varNames) const override {
+                return "(distinct " + varNames.at(var1Index) + " " + varNames.at(var2Index) + ")";
+            }
+
+            storm::expressions::Expression toExpression(std::vector<std::string> const &varNames,
+                                                        std::shared_ptr<storm::expressions::ExpressionManager> manager) const override {
+                return manager->getVariableExpression(varNames.at(var1Index)) !=
+                       manager->getVariableExpression(varNames.at(var2Index));
+            }
+
+        private:
+            uint64_t var1Index;
+            uint64_t var2Index;
+        };
+
 
         class IsLess : public SmtConstraint {
         public:

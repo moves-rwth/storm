@@ -52,6 +52,7 @@ namespace storm {
                         if (be->failed()) {
                             STORM_LOG_THROW(!failedBeIsSet, storm::exceptions::NotSupportedException,
                                             "DFTs containing more than one constantly failed BE are not supported");
+                            notFailed = dft.nrBasicElements();
                             failedBeVariables = varNames.size() - 1;
                             failedBeIsSet = true;
                         } else {
@@ -89,7 +90,7 @@ namespace storm {
 
             // All exponential BEs have to fail (first part of constraint 12)
             for (auto const &beV : beVariables) {
-                constraints.push_back(std::make_shared<BetweenValues>(beV, 1, dft.nrBasicElements()));
+                constraints.push_back(std::make_shared<BetweenValues>(beV, 1, notFailed - 1));
             }
 
             // Constantly failsafe BEs may also be fail-safe
@@ -108,9 +109,29 @@ namespace storm {
             allBeVariables.insert(std::end(allBeVariables), std::begin(failsafeBeVariables),
                                   std::end(failsafeBeVariables));
 
-            // No two BEs fail at the same time (second part of constraint 12)
-            constraints.push_back(std::make_shared<PairwiseDifferent>(allBeVariables));
-            constraints.back()->setDescription("No two BEs fail at the same time");
+            // No two exponential BEs fail at the same time (second part of constraint 12)
+            if (beVariables.size() > 1) {
+                constraints.push_back(std::make_shared<PairwiseDifferent>(beVariables));
+                constraints.back()->setDescription("No two BEs fail at the same time");
+            }
+
+            bool descFlag = true;
+            for (auto const &failsafeBe : failsafeBeVariables) {
+                std::vector <std::shared_ptr<SmtConstraint>> unequalConstraints;
+                for (auto const &otherBe: allBeVariables) {
+                    if (otherBe != failsafeBe) {
+                        unequalConstraints.push_back(std::make_shared<IsUnequal>(failsafeBe, otherBe));
+                    }
+                }
+                constraints.push_back(
+                        std::make_shared<Implies>(std::make_shared<IsNotConstantValue>(failsafeBe, notFailed),
+                                                  std::make_shared<And>(unequalConstraints)));
+                if (descFlag) {
+                    constraints.back()->setDescription(
+                            "Initially failsafe BEs don't fail at the same time as other BEs");
+                    descFlag = false;
+                }
+            }
 
             // Initialize claim variables in [1, |BE|+1]
             for (auto const &claimVariable : claimVariables) {
@@ -178,8 +199,9 @@ namespace storm {
             for (uint64_t i = 0; i < dft.nrBasicElements(); ++i) {
                 failsafeNotIConstr.clear();
                 for (auto const &beV : failsafeBeVariables) {
-                    failsafeNotIConstr.push_back(std::make_shared<IsNotConstantValue>(beV, i));
+                    failsafeNotIConstr.push_back(std::make_shared<IsNotConstantValue>(beV, i + 1));
                 }
+                // If state i+1 is Markovian (i.e. m_i = true), all failsafeBEVariables are not equal to i+1
                 constraints.push_back(
                         std::make_shared<Implies>(std::make_shared<IsBoolValue>(markovianVariables.at(i), true),
                                                   std::make_shared<And>(failsafeNotIConstr)));
@@ -588,7 +610,6 @@ namespace storm {
             for (auto const &constraint : constraints) {
                 solver->add(constraint->toExpression(varNames, manager));
             }
-
         }
 
         storm::solver::SmtSolver::CheckResult DFTASFChecker::checkTleFailsWithEq(uint64_t bound) {
@@ -753,12 +774,18 @@ namespace storm {
                     }
                 }
             }
+
             // Only need to check as long as bound candidate + nr of non-Markovians to check is smaller than number of dependent events
             while (nrNonMarkovian <= nrDepEvents && boundCandidate >= 0) {
+                if (nrNonMarkovian == 0 and boundCandidate == 0) {
+                    nrNonMarkovian = 1;
+                }
                 STORM_LOG_TRACE(
                         "Lower bound correction - check possible bound " << std::to_string(boundCandidate) << " with "
                                                                          << std::to_string(nrNonMarkovian)
                                                                          << " non-Markovian states");
+                // The uniqueness transformation for constantly failed BEs guarantees that a DFT never fails
+                // in step 0 without intermediate non-Markovians, thus forcibly set nrNonMarkovian
                 setSolverTimeout(timeout * 1000);
                 storm::solver::SmtSolver::CheckResult tmp_res =
                         checkFailsLeqWithEqNonMarkovianState(boundCandidate + nrNonMarkovian, nrNonMarkovian);
@@ -846,6 +873,7 @@ namespace storm {
                 }
 
             }
+
             return bound;
         }
 
