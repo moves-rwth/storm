@@ -82,6 +82,10 @@ void processOptions() {
 
     // SMT
     if (dftIOSettings.isExportToSmt()) {
+        dft = dftTransformator.transformUniqueFailedBe(*dft);
+        if (dft->getDependencies().size() > 0) {
+            dft = dftTransformator.transformBinaryFDEPs(*dft);
+        }
         // Export to smtlib2
         storm::api::exportDFTToSMT<ValueType>(*dft, dftIOSettings.getExportSmtFilename(), debug.isTestSet());
         return;
@@ -90,6 +94,10 @@ void processOptions() {
 #ifdef STORM_HAVE_Z3
     if (faultTreeSettings.solveWithSMT()) {
         dft = dftTransformator.transformUniqueFailedBe(*dft);
+        if (dft->getDependencies().size() > 0) {
+            // Making the constantly failed BE unique may introduce non-binary FDEPs
+            dft = dftTransformator.transformBinaryFDEPs(*dft);
+        }
         // Solve with SMT
         STORM_LOG_DEBUG("Running DFT analysis with use of SMT");
         storm::api::analyzeDFTSMT(*dft, true, debug.isTestSet());

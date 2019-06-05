@@ -683,26 +683,25 @@ namespace storm {
         }
 
         storm::solver::SmtSolver::CheckResult
-        DFTASFChecker::checkFailsAtTimepointWithOnlyMarkovianState(uint64_t timepoint) {
+        DFTASFChecker::checkFailsAtTimepointWithEqNonMarkovianState(uint64_t timepoint, uint64_t nrNonMarkovian) {
             STORM_LOG_ASSERT(solver, "SMT Solver was not initialized, call toSolver() before checking queries");
             std::vector<uint64_t> markovianIndices;
-            // Get Markovian variable indices
+            timepoint = std::min<int>(timepoint, markovianVariables.size());
+            // Get Markovian variable indices up until given timepoint
             for (uint64_t i = 0; i < timepoint; ++i) {
                 markovianIndices.push_back(markovianVariables.at(i));
             }
             // Set backtracking marker to check several properties without reconstructing DFT encoding
             solver->push();
-            // Constraint that toplevel element can fail with less than 'checkNumber' Markovian states visited
-            std::shared_ptr<SmtConstraint> countConstr = std::make_shared<TrueCountIsConstantValue>(
-                    markovianIndices, timepoint);
-            // Constraint that TLE fails at timepoint
-            std::shared_ptr<SmtConstraint> timepointConstr = std::make_shared<IsConstantValue>(
+            // Constraint that TLE fails before or during given timepoint
+            std::shared_ptr<SmtConstraint> tleFailedConstr = std::make_shared<IsConstantValue>(
                     timePointVariables.at(dft.getTopLevelIndex()), timepoint);
             std::shared_ptr<storm::expressions::ExpressionManager> manager = solver->getManager().getSharedPointer();
-            solver->add(countConstr->toExpression(varNames, manager));
-            solver->add(timepointConstr->toExpression(varNames, manager));
-            STORM_PRINT(countConstr->toSmtlib2(varNames) << std::endl);
-            STORM_PRINT(timepointConstr->toSmtlib2(varNames) << std::endl);
+            solver->add(tleFailedConstr->toExpression(varNames, manager));
+            // Constraint that a given number of non-Markovian states are visited
+            std::shared_ptr<SmtConstraint> nonMarkovianConstr = std::make_shared<FalseCountIsEqualConstant>(
+                    markovianIndices, nrNonMarkovian);
+            solver->add(nonMarkovianConstr->toExpression(varNames, manager));
             storm::solver::SmtSolver::CheckResult res = solver->check();
             solver->pop();
             return res;
@@ -822,31 +821,65 @@ namespace storm {
             STORM_LOG_ASSERT(solver, "SMT Solver was not initialized, call toSolver() before checking queries");
             if (experimentalMode)
                 STORM_LOG_WARN("DFT-SMT-Checker now runs in experimental mode, bound correction is prone to errors!");
-
             STORM_LOG_DEBUG("Upper bound correction - try to correct bound " << std::to_string(bound));
-
-            while (bound > 0) {
-                STORM_LOG_TRACE("Upper bound correction - check possible bound " << std::to_string(bound));
-                setSolverTimeout(timeout * 1000);
-                storm::solver::SmtSolver::CheckResult tmp_res =
-                        checkFailsAtTimepointWithOnlyMarkovianState(bound);
-                unsetSolverTimeout();
-                switch (tmp_res) {
-                    case storm::solver::SmtSolver::CheckResult::Sat:
-                        STORM_LOG_DEBUG("Upper bound correction - corrected bound to " << std::to_string(bound));
-                        return bound;
-                    case storm::solver::SmtSolver::CheckResult::Unknown:
-                        STORM_LOG_DEBUG("Upper bound correction - Solver returned 'Unknown', corrected to ");
-                        return bound;
-                    default:
-                        STORM_LOG_TRACE("Upper bound correction - UNSAT");
-                        --bound;
-                        break;
-
+            uint64_t boundCandidate = bound;
+            uint64_t nrDepEvents = 0;
+            uint64_t nrNonMarkovian = 0;
+            uint64_t currentTimepoint = 0;
+            // Count dependent events
+            for (size_t i = 0; i < dft.nrElements(); ++i) {
+                std::shared_ptr<storm::storage::DFTElement<ValueType> const> element = dft.getElement(i);
+                if (element->type() == storm::storage::DFTElementType::BE_EXP ||
+                    element->type() == storm::storage::DFTElementType::BE_CONST) {
+                    auto be = std::static_pointer_cast<storm::storage::DFTBE<double> const>(element);
+                    if (be->hasIngoingDependencies()) {
+                        ++nrDepEvents;
+                    }
                 }
             }
-            STORM_LOG_DEBUG("Upper bound correction - corrected bound to " << std::to_string(bound));
-            return bound;
+            while (boundCandidate >= 0) {
+                currentTimepoint = bound + 1;
+                while (currentTimepoint - boundCandidate > 0) {
+                    --currentTimepoint;
+                    nrNonMarkovian = currentTimepoint - boundCandidate;
+                    STORM_LOG_TRACE(
+                            "Upper bound correction - candidate " << std::to_string(boundCandidate) << " check split "
+                                                                  <<
+                                                                  std::to_string(currentTimepoint) << "|"
+                                                                  << std::to_string(nrNonMarkovian));
+                    setSolverTimeout(timeout * 1000);
+                    storm::solver::SmtSolver::CheckResult tmp_res =
+                            checkFailsAtTimepointWithEqNonMarkovianState(currentTimepoint, nrNonMarkovian);
+                    unsetSolverTimeout();
+                    switch (tmp_res) {
+                        case storm::solver::SmtSolver::CheckResult::Sat:
+                            STORM_LOG_TRACE("Upper bound correction - SAT");
+                            STORM_LOG_DEBUG("Upper bound correction - corrected to bound " << boundCandidate <<
+                                                                                           " (TLE can fail at sequence point "
+                                                                                           << std::to_string(
+                                                                                                   currentTimepoint)
+                                                                                           << " with "
+                                                                                           << std::to_string(
+                                                                                                   nrNonMarkovian)
+                                                                                           << " non-Markovian states)");
+                            return boundCandidate;
+                        case storm::solver::SmtSolver::CheckResult::Unknown:
+                            // If any query returns unknown, we cannot be sure about the bound and fall back to the naive one
+                            STORM_LOG_DEBUG(
+                                    "Upper bound correction - Solver returned 'Unknown', corrected to bound " << bound);
+                            return bound;
+                        default:
+                            // if query is UNSAT, increase number of non-Markovian states and try again
+                            STORM_LOG_TRACE("Lower bound correction - UNSAT");
+                            break;
+                    }
+                }
+                --boundCandidate;
+            }
+
+            // if for one candidate all queries are UNSAT, it is not valid. Return last valid candidate
+            STORM_LOG_DEBUG("Upper bound correction - corrected bound to " << std::to_string(boundCandidate));
+            return boundCandidate;
         }
 
         uint64_t DFTASFChecker::getLeastFailureBound(uint_fast64_t timeout) {

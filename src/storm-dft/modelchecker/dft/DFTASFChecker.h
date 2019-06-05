@@ -150,13 +150,14 @@ namespace storm {
             checkFailsLeqWithEqNonMarkovianState(uint64_t checkbound, uint64_t nrNonMarkovian);
 
             /**
-             * Helper function that checks if the DFT can fail at a timepoint while visiting less than a given number of Markovian states
+             * Helper function that checks if the DFT can fail at a timepoint while visiting a given number of Markovian states
              *
              * @param timepoint point in time to check
              * @return "Sat" if a sequence of BE failures exists such that less than checkNumber Markovian states are visited,
              * "Unsat" if it does not, otherwise "Unknown"
              */
-            storm::solver::SmtSolver::CheckResult checkFailsAtTimepointWithOnlyMarkovianState(uint64_t timepoint);
+            storm::solver::SmtSolver::CheckResult
+            checkFailsAtTimepointWithEqNonMarkovianState(uint64_t timepoint, uint64_t nrNonMarkovian);
 
             /**
              * Helper function for correction of least failure bound when dependencies are present.
