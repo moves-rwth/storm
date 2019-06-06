@@ -86,6 +86,9 @@ namespace storm {
             // Enable the following line to force Gurobi to be as precise about the binary variables as required by the given precision option.
             error = GRBsetdblparam(env, "IntFeasTol", storm::settings::getModule<storm::settings::modules::GurobiSettings>().getIntegerTolerance());
             STORM_LOG_THROW(error == 0, storm::exceptions::InvalidStateException, "Unable to set Gurobi Parameter IntFeasTol (" << GRBgeterrormsg(env) << ", error code " << error << ").");
+            
+            // error = GRBsetintparam(env, "NumericFocus", 3);
+            // STORM_LOG_THROW(error == 0, storm::exceptions::InvalidStateException, "Unable to set Gurobi Parameter NumericFocus (" << GRBgeterrormsg(env) << ", error code " << error << ").");
         }
         
         template<typename ValueType>
@@ -342,9 +345,9 @@ namespace storm {
             double value = 0;
             int error = GRBgetdblattrelement(model, GRB_DBL_ATTR_X, variableIndexPair->second, &value);
             STORM_LOG_THROW(error == 0, storm::exceptions::InvalidStateException, "Unable to get Gurobi solution (" << GRBgeterrormsg(env) << ", error code " << error << ").");
-            STORM_LOG_THROW(std::abs(static_cast<int>(value) - value) <= storm::settings::getModule<storm::settings::modules::GurobiSettings>().getIntegerTolerance(), storm::exceptions::InvalidStateException, "Illegal value for integer variable in Gurobi solution (" << value << ").");
+            STORM_LOG_THROW(std::abs(std::round(value) - value) <= storm::settings::getModule<storm::settings::modules::GurobiSettings>().getIntegerTolerance(), storm::exceptions::InvalidStateException, "Illegal value for integer variable in Gurobi solution (" << value << ").");
             
-            return static_cast<int_fast64_t>(value);
+            return static_cast<int_fast64_t>(std::round(value));
         }
         
         template<typename ValueType>
@@ -363,12 +366,12 @@ namespace storm {
             STORM_LOG_THROW(error == 0, storm::exceptions::InvalidStateException, "Unable to get Gurobi solution (" << GRBgeterrormsg(env) << ", error code " << error << ").");
 
             if (value > 0.5) {
-                STORM_LOG_THROW(std::abs(static_cast<int>(value) - 1) <= storm::settings::getModule<storm::settings::modules::GurobiSettings>().getIntegerTolerance(), storm::exceptions::InvalidStateException, "Illegal value for integer variable in Gurobi solution (" << value << ").");
+                STORM_LOG_THROW(std::abs(value - 1.0) <= storm::settings::getModule<storm::settings::modules::GurobiSettings>().getIntegerTolerance(), storm::exceptions::InvalidStateException, "Illegal value for integer variable in Gurobi solution (" << value << ").");
+                return true;
             } else {
-                STORM_LOG_THROW(value <= storm::settings::getModule<storm::settings::modules::GurobiSettings>().getIntegerTolerance(), storm::exceptions::InvalidStateException, "Illegal value for integer variable in Gurobi solution (" << value << ").");
+                STORM_LOG_THROW(std::abs(value) <= storm::settings::getModule<storm::settings::modules::GurobiSettings>().getIntegerTolerance(), storm::exceptions::InvalidStateException, "Illegal value for integer variable in Gurobi solution (" << value << ").");
+                return false;
             }
-            
-            return static_cast<bool>(value);
         }
         
         template<typename ValueType>
@@ -496,9 +499,9 @@ namespace storm {
             STORM_LOG_THROW(error == 0, storm::exceptions::InvalidStateException, "Unable to set Gurobi solution index (" << GRBgeterrormsg(env) << ", error code " << error << ").");
             error = GRBgetdblattrelement(model, GRB_DBL_ATTR_Xn, variableIndexPair->second, &value);
             STORM_LOG_THROW(error == 0, storm::exceptions::InvalidStateException, "Unable to get Gurobi solution (" << GRBgeterrormsg(env) << ", error code " << error << ").");
-            STORM_LOG_THROW(std::abs(static_cast<int>(value) - value) <= storm::settings::getModule<storm::settings::modules::GurobiSettings>().getIntegerTolerance(), storm::exceptions::InvalidStateException, "Illegal value for integer variable in Gurobi solution (" << value << ").");
+            STORM_LOG_THROW(std::abs(std::round(value) - value) <= storm::settings::getModule<storm::settings::modules::GurobiSettings>().getIntegerTolerance(), storm::exceptions::InvalidStateException, "Illegal value for integer variable in Gurobi solution (" << value << ").");
             
-            return static_cast<int_fast64_t>(value);
+            return static_cast<int_fast64_t>(std::round(value));
         }
         
         template<typename ValueType>
@@ -520,12 +523,12 @@ namespace storm {
             STORM_LOG_THROW(error == 0, storm::exceptions::InvalidStateException, "Unable to get Gurobi solution (" << GRBgeterrormsg(env) << ", error code " << error << ").");
 
             if (value > 0.5) {
-                STORM_LOG_THROW(std::abs(static_cast<int>(value) - 1) <= storm::settings::getModule<storm::settings::modules::GurobiSettings>().getIntegerTolerance(), storm::exceptions::InvalidStateException, "Illegal value for integer variable in Gurobi solution (" << value << ").");
+                STORM_LOG_THROW(std::abs(value - 1) <= storm::settings::getModule<storm::settings::modules::GurobiSettings>().getIntegerTolerance(), storm::exceptions::InvalidStateException, "Illegal value for integer variable in Gurobi solution (" << value << ").");
+                return true;
             } else {
-                STORM_LOG_THROW(value <= storm::settings::getModule<storm::settings::modules::GurobiSettings>().getIntegerTolerance(), storm::exceptions::InvalidStateException, "Illegal value for integer variable in Gurobi solution (" << value << ").");
+                STORM_LOG_THROW(std::abs(value) <= storm::settings::getModule<storm::settings::modules::GurobiSettings>().getIntegerTolerance(), storm::exceptions::InvalidStateException, "Illegal value for integer variable in Gurobi solution (" << value << ").");
+                return false;
             }
-            
-            return static_cast<bool>(value);
         }
         
         template<typename ValueType>
