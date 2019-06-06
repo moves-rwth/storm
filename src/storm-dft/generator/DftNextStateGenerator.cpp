@@ -60,10 +60,23 @@ namespace storm {
             //size_t failableCount = hasDependencies ? state->nrFailableDependencies() : state->nrFailableBEs();
             //size_t currentFailable = 0;
             state->getFailableElements().init(exploreDependencies);
+
+            // Check whether operational relevant event remains
+            bool remainingRelevantEvent = true;
+            if (mDft.hasFailed(state)) {
+                remainingRelevantEvent = false;
+                // Toplevel has failed already -> check for possible other relevant events
+                for (auto const& event : mDft.getRelevantEvents()) {
+                    if (state->isOperational(event)) {
+                        remainingRelevantEvent = true;
+                        break;
+                    }
+                }
+            }
             // Check for absorbing state:
             // - either no relevant event remains (i.e., all relevant events have failed already), or
             // - no BE can fail
-            if (!state->getFailableElements().hasRemainingRelevantEvent() || state->getFailableElements().isEnd()) {
+            if (!remainingRelevantEvent || state->getFailableElements().isEnd()) {
                 Choice<ValueType, StateType> choice(0, true);
                 // Add self loop
                 choice.addProbability(state->getId(), storm::utility::one<ValueType>());
@@ -121,8 +134,6 @@ namespace storm {
                     newState->updateFailableDependencies(next->id());
                     newState->updateFailableInRestrictions(next->id());
                 }
-
-                newState->updateRemainingRelevantEvents();
 
                 bool transient = false;
                 if (nextBE->type() == storm::storage::DFTElementType::BE_EXP) {

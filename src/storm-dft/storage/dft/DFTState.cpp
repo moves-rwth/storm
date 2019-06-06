@@ -7,7 +7,7 @@ namespace storm {
     namespace storage {
 
         template<typename ValueType>
-        DFTState<ValueType>::DFTState(DFT<ValueType> const& dft, DFTStateGenerationInfo const& stateGenerationInfo, size_t id) : mStatus(dft.stateBitVectorSize()), mId(id), failableElements(dft.nrElements(), dft.getRelevantEvents()), mPseudoState(false), mDft(dft), mStateGenerationInfo(stateGenerationInfo) {
+        DFTState<ValueType>::DFTState(DFT<ValueType> const& dft, DFTStateGenerationInfo const& stateGenerationInfo, size_t id) : mStatus(dft.stateBitVectorSize()), mId(id), failableElements(dft.nrElements()), mPseudoState(false), mDft(dft), mStateGenerationInfo(stateGenerationInfo) {
             // TODO: use construct()
             
             // Initialize uses
@@ -33,7 +33,7 @@ namespace storm {
         }
 
         template<typename ValueType>
-        DFTState<ValueType>::DFTState(storm::storage::BitVector const& status, DFT<ValueType> const& dft, DFTStateGenerationInfo const& stateGenerationInfo, size_t id) : mStatus(status), mId(id), failableElements(dft.nrElements(), dft.getRelevantEvents()), mPseudoState(true), mDft(dft), mStateGenerationInfo(stateGenerationInfo) {
+        DFTState<ValueType>::DFTState(storm::storage::BitVector const& status, DFT<ValueType> const& dft, DFTStateGenerationInfo const& stateGenerationInfo, size_t id) : mStatus(status), mId(id), failableElements(dft.nrElements()), mPseudoState(true), mDft(dft), mStateGenerationInfo(stateGenerationInfo) {
             // Intentionally left empty
         }
         
@@ -86,10 +86,6 @@ namespace storm {
                     STORM_LOG_TRACE("New dependency failure: " << *dependency);
                 }
             }
-
-            // Initialize remaining relevant events
-            failableElements.remainingRelevantEvents = mDft.getRelevantEvents();
-            this->updateRemainingRelevantEvents();
 
             mPseudoState = false;
         }
@@ -313,18 +309,6 @@ namespace storm {
                 STORM_LOG_ASSERT(dependency->dependentEvents()[0]->id() == id, "Ids do not match.");
                 setDependencyDontCare(dependency->id());
                 failableElements.removeDependency(dependency->id());
-            }
-        }
-
-        template<typename ValueType>
-        void DFTState<ValueType>::updateRemainingRelevantEvents() {
-            for (auto it = failableElements.remainingRelevantEvents.begin(); it != failableElements.remainingRelevantEvents.end(); ) {
-                if (isOperational(*it)) {
-                    ++it;
-                } else {
-                    // Element is not relevant anymore
-                    it = failableElements.remainingRelevantEvents.erase(it);
-                }
             }
         }
 

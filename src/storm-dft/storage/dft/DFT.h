@@ -68,6 +68,7 @@ namespace storm {
             std::map<size_t, size_t> mRepresentants; // id element -> id representative
             std::vector<std::vector<size_t>> mSymmetries;
             std::map<size_t, DFTLayoutInfo> mLayoutInfo;
+            mutable std::set<size_t> mRelevantEvents;
 
         public:
             DFT(DFTElementVector const& elements, DFTElementPointer const& tle);
@@ -327,7 +328,7 @@ namespace storm {
 
             /*!
              * Set the relevance flag for all elements according to the given relevant events.
-             * @param relevantEvents All elements which should be to relevant. All elements not occuring are set to irrelevant.
+             * @param relevantEvents All elements which should be to relevant. All elements not occurring are set to irrelevant.
              * @param allowDCForRelevantEvents Flag whether Don't Care propagation is allowed even for relevant events.
              */
             void setRelevantEvents(std::set<size_t> const& relevantEvents, bool allowDCForRelevantEvents) const;

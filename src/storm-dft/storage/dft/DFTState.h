@@ -25,7 +25,7 @@ namespace storm {
 
             struct FailableElements {
 
-                FailableElements(size_t nrElements, std::set<size_t> relevantEvents) : currentlyFailableBE(nrElements), remainingRelevantEvents(relevantEvents), it(currentlyFailableBE.begin()) {
+                FailableElements(size_t nrElements) : currentlyFailableBE(nrElements), it(currentlyFailableBE.begin()) {
                     // Intentionally left empty
                 }
 
@@ -103,19 +103,10 @@ namespace storm {
                     return !currentlyFailableBE.empty();
                 }
 
-                /*!
-                 * Check whether at least one relevant event has not failed yet.
-                 * @return True iff one relevant event is still operational.
-                 */
-                bool hasRemainingRelevantEvent() const {
-                    return !remainingRelevantEvents.empty();
-                }
-
                 mutable bool dependency;
 
                 storm::storage::BitVector currentlyFailableBE;
                 std::vector<size_t> mFailableDependencies;
-                std::set<size_t> remainingRelevantEvents;
 
                 mutable storm::storage::BitVector::const_iterator it;
                 mutable std::vector<size_t>::const_iterator itDep;
@@ -311,11 +302,6 @@ namespace storm {
              * @param id Id of the newly failed element
              */
             void updateDontCareDependencies(size_t id);
-
-            /*!
-             * Update remaining relevant events.
-             */
-            void updateRemainingRelevantEvents();
 
             /**
              * Sets the next BE as failed
