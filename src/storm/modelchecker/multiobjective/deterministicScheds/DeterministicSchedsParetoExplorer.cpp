@@ -426,7 +426,7 @@ namespace storm {
                             f.addPoint(p.first, p.second);
                         }
                     }
-                    STORM_LOG_ASSERT(std::count(f.getHalfspace().normalVector().begin(), f.getHalfspace().normalVector().end(), storm::utility::zero<GeometryValueType>()) + f.getNumberOfPoints() == objectives.size(), "Unexpected number of points on facet.");
+                    STORM_LOG_ASSERT(std::count(f.getHalfspace().normalVector().begin(), f.getHalfspace().normalVector().end(), storm::utility::zero<GeometryValueType>()) + f.getNumberOfPoints() >= objectives.size(), "Not enough points on facet.");
                     
                     unprocessedFacets.push(std::move(f));
                 }
