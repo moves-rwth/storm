@@ -46,18 +46,20 @@ namespace storm {
                 std::pair<std::vector<Point>, std::vector<Polytope>> check(storm::Environment const& env, storm::storage::geometry::PolytopeTree<GeometryValueType>& polytopeTree, GeometryValueType const& eps);
 
             private:
-                std::vector<std::vector<storm::expressions::Variable>> createEcVariables(std::vector<storm::expressions::Expression> const& choiceVars);
+                std::vector<std::vector<storm::expressions::Expression>> createEcVariables();
                 void initializeLpModel(Environment const& env);
+                
+                // Builds the induced markov chain of the current model and checks whether the resulting value coincide with the result of the lp solver.
+                void validateCurrentModel(Environment const& env) const;
 
-                
-                
-                void checkRecursive(storm::storage::geometry::PolytopeTree<GeometryValueType>& polytopeTree, GeometryValueType const& eps, std::vector<Point>& foundPoints, std::vector<Polytope>& infeasableAreas, uint64_t const& depth);
+                void checkRecursive(storm::Environment const& env, storm::storage::geometry::PolytopeTree<GeometryValueType>& polytopeTree, GeometryValueType const& eps, std::vector<Point>& foundPoints, std::vector<Polytope>& infeasableAreas, uint64_t const& depth);
                 
                 ModelType const& model;
                 std::vector<DeterministicSchedsObjectiveHelper<ModelType>> const& objectiveHelper;
 
                 std::unique_ptr<storm::solver::LpSolver<ValueType>> lpModel;
                 storm::solver::GurobiLpSolver<ValueType>* gurobiLpModel;
+                std::vector<storm::expressions::Expression> choiceVariables;
                 std::vector<storm::expressions::Expression> initialStateResults;
                 std::vector<storm::expressions::Variable> currentObjectiveVariables;
                 std::vector<GeometryValueType> currentWeightVector;
