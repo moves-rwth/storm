@@ -7,7 +7,7 @@ namespace storm {
     namespace storage {
 
         template<typename ValueType>
-        DFTState<ValueType>::DFTState(DFT<ValueType> const& dft, DFTStateGenerationInfo const& stateGenerationInfo, size_t id) : mStatus(dft.stateBitVectorSize()), mId(id), failableElements(dft.nrElements()), mPseudoState(false), mDft(dft), mStateGenerationInfo(stateGenerationInfo) {
+        DFTState<ValueType>::DFTState(DFT<ValueType> const& dft, DFTStateGenerationInfo const& stateGenerationInfo, size_t id) : mStatus(dft.stateBitVectorSize()), mId(id), failableElements(dft.nrElements()), indexRelevant(0), mPseudoState(false), mDft(dft), mStateGenerationInfo(stateGenerationInfo) {
             // TODO: use construct()
             
             // Initialize uses
@@ -33,7 +33,7 @@ namespace storm {
         }
 
         template<typename ValueType>
-        DFTState<ValueType>::DFTState(storm::storage::BitVector const& status, DFT<ValueType> const& dft, DFTStateGenerationInfo const& stateGenerationInfo, size_t id) : mStatus(status), mId(id), failableElements(dft.nrElements()), mPseudoState(true), mDft(dft), mStateGenerationInfo(stateGenerationInfo) {
+        DFTState<ValueType>::DFTState(storm::storage::BitVector const& status, DFT<ValueType> const& dft, DFTStateGenerationInfo const& stateGenerationInfo, size_t id) : mStatus(status), mId(id), failableElements(dft.nrElements()), indexRelevant(0), mPseudoState(true), mDft(dft), mStateGenerationInfo(stateGenerationInfo) {
             // Intentionally left empty
         }
         
@@ -465,6 +465,22 @@ namespace storm {
             for(size_t id : postIds) {
                 if(isOperational(id)) {
                     return true;
+                }
+            }
+            return false;
+        }
+
+        template<typename ValueType>
+        bool DFTState<ValueType>::hasOperationalRelevantEvent() {
+            // Iterate over remaining relevant events
+            // All events with index < indexRelevant are already failed
+            while (indexRelevant < mDft.getRelevantEvents().size()) {
+                if (isOperational(mDft.getRelevantEvents()[indexRelevant])) {
+                    // Relevant event is still operational
+                    return true;
+                } else {
+                    // Consider next relevant event
+                    ++indexRelevant;
                 }
             }
             return false;

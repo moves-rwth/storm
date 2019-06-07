@@ -42,8 +42,6 @@ namespace storm {
         {
             // Set relevant events
             this->dft.setRelevantEvents(this->relevantEvents, allowDCForRelevantEvents);
-            // Mark top level element as relevant
-            this->dft.getElement(this->dft.getTopLevelIndex())->setRelevance(true);
             STORM_LOG_DEBUG("Relevant events: " << this->dft.getRelevantEventsString());
             if (this->relevantEvents.empty()) {
                 // Only interested in top level event -> introduce unique failed state
@@ -477,9 +475,10 @@ namespace storm {
             modelComponents.stateLabeling.addLabel("init");
             STORM_LOG_ASSERT(matrixBuilder.getRemapping(initialStateIndex) == initialStateIndex, "Initial state should not be remapped.");
             modelComponents.stateLabeling.addLabelToState("init", initialStateIndex);
-            // Label all states corresponding to their status (failed, failed/dont care BE)
+            // System failure
             modelComponents.stateLabeling.addLabel("failed");
 
+            // Label all states corresponding to their status (failed, don't care BE)
             // Collect labels for all necessary elements
             for (size_t id = 0; id < dft.nrElements(); ++id) {
                 std::shared_ptr<storage::DFTElement<ValueType> const> element = dft.getElement(id);
@@ -491,6 +490,7 @@ namespace storm {
 
             // Set labels to states
             if (this->uniqueFailedState) {
+                // Unique failed state has label 0
                 modelComponents.stateLabeling.addLabelToState("failed", 0);
             }
             for (auto const& stateIdPair : stateStorage.stateToId) {
@@ -499,7 +499,7 @@ namespace storm {
                 if (dft.hasFailed(state, *stateGenerationInfo)) {
                     modelComponents.stateLabeling.addLabelToState("failed", stateId);
                 }
-                // Set fail/dont care status for each necessary element
+                // Set failed/don't care status for each necessary element
                 for (size_t id = 0; id < dft.nrElements(); ++id) {
                     std::shared_ptr<storage::DFTElement<ValueType> const> element = dft.getElement(id);
                     if (element->isRelevant()){

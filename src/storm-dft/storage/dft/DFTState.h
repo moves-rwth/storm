@@ -119,6 +119,7 @@ namespace storm {
             size_t mId;
             FailableElements failableElements;
             std::vector<size_t> mUsedRepresentants;
+            size_t indexRelevant;
             bool mPseudoState;
             bool mValid = true;
             const DFT<ValueType>& mDft;
@@ -330,12 +331,18 @@ namespace storm {
              */
             bool isEventDisabledViaRestriction(size_t id) const;
             
-            /**
+            /*!
              * Checks whether operational post seq elements are present
              * @param id
              * @return 
              */
             bool hasOperationalPostSeqElements(size_t id) const;
+
+            /*!
+             * Check whether at least one relevant event is still operational.
+             * @return True iff one operational relevant event exists.
+             */
+            bool hasOperationalRelevantEvent();
             
             std::string getCurrentlyFailableString() const {
                 std::stringstream stream;

@@ -873,11 +873,16 @@ namespace storm {
         template<typename ValueType>
         void DFT<ValueType>::setRelevantEvents(std::set<size_t> const& relevantEvents, bool allowDCForRelevantEvents) const {
             mRelevantEvents.clear();
+            // Top level element is first element
+            mRelevantEvents.push_back(this->getTopLevelIndex());
             for (auto const& elem : mElements) {
-                if (relevantEvents.find(elem->id()) != relevantEvents.end()) {
+                if (relevantEvents.find(elem->id()) != relevantEvents.end() || elem->id() == this->getTopLevelIndex()) {
                     elem->setRelevance(true);
                     elem->setAllowDC(allowDCForRelevantEvents);
-                    mRelevantEvents.insert(elem->id());
+                    if (elem->id() != this->getTopLevelIndex()) {
+                        // Top level element was already added
+                        mRelevantEvents.push_back(elem->id());
+                    }
                 } else {
                     elem->setRelevance(false);
                     elem->setAllowDC(true);
@@ -886,7 +891,7 @@ namespace storm {
         }
 
         template<typename ValueType>
-        std::set<size_t> DFT<ValueType>::getRelevantEvents() const {
+        std::vector<size_t> const& DFT<ValueType>::getRelevantEvents() const {
             return mRelevantEvents;
         }
 

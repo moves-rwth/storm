@@ -68,7 +68,7 @@ namespace storm {
             std::map<size_t, size_t> mRepresentants; // id element -> id representative
             std::vector<std::vector<size_t>> mSymmetries;
             std::map<size_t, DFTLayoutInfo> mLayoutInfo;
-            mutable std::set<size_t> mRelevantEvents;
+            mutable std::vector<size_t> mRelevantEvents;
 
         public:
             DFT(DFTElementVector const& elements, DFTElementPointer const& tle);
@@ -324,7 +324,7 @@ namespace storm {
              * Get all relevant events.
              * @return List of all relevant events.
              */
-            std::set<size_t> getRelevantEvents() const;
+            std::vector<size_t> const& getRelevantEvents() const;
 
             /*!
              * Set the relevance flag for all elements according to the given relevant events.
