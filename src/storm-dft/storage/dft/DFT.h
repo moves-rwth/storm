@@ -67,9 +67,11 @@ namespace storm {
             std::map<size_t, size_t> mRepresentants; // id element -> id representative
             std::vector<std::vector<size_t>> mSymmetries;
             std::map<size_t, DFTLayoutInfo> mLayoutInfo;
+            std::vector<bool> mDynamicBehavior;
 
         public:
-            DFT(DFTElementVector const& elements, DFTElementPointer const& tle);
+            DFT(DFTElementVector const &elements, DFTElementPointer const &tle,
+                std::vector<bool> const &dynamicBehavior);
             
             DFTStateGenerationInfo buildStateGenerationInfo(storm::storage::DFTIndependentSymmetries const& symmetries) const;
             
@@ -131,6 +133,10 @@ namespace storm {
             
             std::vector<size_t> const& getDependencies() const {
                 return mDependencies;
+            }
+
+            std::vector<bool> const &getDynamicBehavior() const {
+                return mDynamicBehavior;
             }
 
             std::vector<size_t> nonColdBEs() const {

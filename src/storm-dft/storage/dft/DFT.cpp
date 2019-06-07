@@ -17,7 +17,10 @@ namespace storm {
     namespace storage {
 
         template<typename ValueType>
-        DFT<ValueType>::DFT(DFTElementVector const& elements, DFTElementPointer const& tle) : mElements(elements), mNrOfBEs(0), mNrOfSpares(0), mTopLevelIndex(tle->id()), mMaxSpareChildCount(0) {
+        DFT<ValueType>::DFT(DFTElementVector const &elements, DFTElementPointer const &tle,
+                            std::vector<bool> const &dynamicBehavior) :
+                mElements(elements), mNrOfBEs(0), mNrOfSpares(0), mTopLevelIndex(tle->id()), mMaxSpareChildCount(0),
+                mDynamicBehavior(dynamicBehavior) {
             // Check that ids correspond to indices in the element vector
             STORM_LOG_ASSERT(elementIndicesCorrect(), "Ids incorrect.");
             size_t nrRepresentatives = 0;

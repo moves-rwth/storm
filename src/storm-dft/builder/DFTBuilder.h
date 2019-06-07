@@ -236,6 +236,8 @@ namespace storm {
             void topoVisit(DFTElementPointer const& n, std::map<DFTElementPointer, topoSortColour, storm::storage::OrderElementsById<ValueType>>& visited, DFTElementVector& L);
 
             DFTElementVector topoSort();
+
+            std::vector<bool> computeHasDynamicBehavior(DFTElementVector elements);
             
             // If true, the standard gate adders make a pand inclusive, and exclusive otherwise.
             bool pandDefaultInclusive;
