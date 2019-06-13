@@ -337,7 +337,10 @@ namespace storm {
                             if (!(*addedStates)[succ1]) {
                                 lattice->addToNode(succ1, lattice->getNode(stateNumber));
                                 statesToHandle->set(succ1, true);
-                                statesSorted.erase(std::find(statesSorted.begin(), statesSorted.end(), succ1));
+                                auto itr = std::find(statesSorted.begin(), statesSorted.end(), succ1);
+                                if (itr != statesSorted.end()) {
+                                    statesSorted.erase(itr);
+                                }
                             }
                             statesToHandle->set(stateNumber, false);
                             stateNumber = statesToHandle->getNextSetIndex(0);
@@ -351,13 +354,19 @@ namespace storm {
 
                             auto compare = lattice->compare(stateNumber, succ1);
                             if (compare == Lattice::ABOVE) {
-                                statesSorted.erase(std::find(statesSorted.begin(), statesSorted.end(), succ2));
+                                auto itr = std::find(statesSorted.begin(), statesSorted.end(), succ2);
+                                if (itr != statesSorted.end()) {
+                                    statesSorted.erase(itr);
+                                }
                                 lattice->addBetween(succ2, lattice->getTop(), lattice->getNode(stateNumber));
                                 statesToHandle->set(succ2);
                                 statesToHandle->set(stateNumber, false);
                                 stateNumber = statesToHandle->getNextSetIndex(0);
                             } else if (compare == Lattice::BELOW) {
-                                statesSorted.erase(std::find(statesSorted.begin(), statesSorted.end(), succ2));
+                                auto itr = std::find(statesSorted.begin(), statesSorted.end(), succ2);
+                                if (itr != statesSorted.end()) {
+                                    statesSorted.erase(itr);
+                                }
                                 lattice->addBetween(succ2, lattice->getNode(stateNumber), lattice->getBottom());
                                 statesToHandle->set(succ2);
                                 statesToHandle->set(stateNumber, false);
@@ -378,22 +387,33 @@ namespace storm {
                     }
 
                     if (!assumptionSeen) {
-                        stateNumber = *(statesSorted.begin());
-                        while (stateNumber != numberOfStates && (*(lattice->getAddedStates()))[stateNumber]) {
-                            statesSorted.erase(statesSorted.begin());
+                        if (statesSorted.size() > 0) {
                             stateNumber = *(statesSorted.begin());
+                        } else {
+                            stateNumber = numberOfStates;
+                        }
+                        while (stateNumber != numberOfStates
+                                && (*(lattice->getAddedStates()))[stateNumber]) {
+                            statesSorted.erase(statesSorted.begin());
+                            if (statesSorted.size() > 0) {
+                                stateNumber = *(statesSorted.begin());
+                            } else {
+                                stateNumber = numberOfStates;
+                            }
                         }
 
-                        storm::storage::BitVector* successors = stateMap[stateNumber];
+                        if (stateNumber != numberOfStates) {
+                            storm::storage::BitVector *successors = stateMap[stateNumber];
 
-                        // Check if current state has not been added yet, and all successors have, ignore selfloop in this
-                        successors->set(stateNumber, false);
-                        if ((*successors & *addedStates) == *successors) {
-                            auto result = extendAllSuccAdded(lattice, stateNumber, successors);
-                            if (std::get<1>(result) != successors->size()) {
-                                return result;
+                            // Check if current state has not been added yet, and all successors have, ignore selfloop in this
+                            successors->set(stateNumber, false);
+                            if ((*successors & *addedStates) == *successors) {
+                                auto result = extendAllSuccAdded(lattice, stateNumber, successors);
+                                if (std::get<1>(result) != successors->size()) {
+                                    return result;
+                                }
+                                statesToHandle->set(stateNumber);
                             }
-                            statesToHandle->set(stateNumber);
                         }
                     } else {
                         addedStates = lattice->getAddedStates();
@@ -417,13 +437,13 @@ namespace storm {
 
                     // if nothing changed and there are states left, then add a state between top and bottom
                     if (oldNumberSet == lattice->getAddedStates()->getNumberOfSetBits() && oldNumberSet != numberOfStates) {
-                        if (assumptionSeen) {
+                        if (assumptionSeen || statesSorted.size() == 0) {
                             stateNumber = lattice->getAddedStates()->getNextUnsetIndex(0);
                         } else {
                             stateNumber = *(statesSorted.begin());//lattice->getAddedStates()->getNextUnsetIndex(0);
+                            statesSorted.erase(statesSorted.begin());
                         }
 
-                        statesSorted.erase(statesSorted.begin());
                         lattice->add(stateNumber);
                         statesToHandle->set(stateNumber);
                     }
