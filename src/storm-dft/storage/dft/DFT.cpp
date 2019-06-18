@@ -17,12 +17,15 @@ namespace storm {
     namespace storage {
 
         template<typename ValueType>
-        DFT<ValueType>::DFT(DFTElementVector const &elements, DFTElementPointer const &tle,
-                            std::vector<bool> const &dynamicBehavior) :
-                mElements(elements), mNrOfBEs(0), mNrOfSpares(0), mTopLevelIndex(tle->id()), mMaxSpareChildCount(0),
-                mDynamicBehavior(dynamicBehavior) {
+        DFT<ValueType>::DFT(DFTElementVector const &elements, DFTElementPointer const &tle) :
+                mElements(elements), mNrOfBEs(0), mNrOfSpares(0), mTopLevelIndex(tle->id()), mMaxSpareChildCount(0) {
             // Check that ids correspond to indices in the element vector
             STORM_LOG_ASSERT(elementIndicesCorrect(), "Ids incorrect.");
+
+            // Initialize dynamic behavior vector with TRUE to preserve correct behavior
+            // We don't directly call setDynamicBehaviorInfo to not slow down DFT generation if possible
+            mDynamicBehavior = std::vector<bool>(mElements.size());
+            std::fill(mDynamicBehavior.begin(), mDynamicBehavior.end(), true);
             size_t nrRepresentatives = 0;
 
             for (auto& elem : mElements) {
@@ -86,6 +89,151 @@ namespace storm {
             ++mMaxSpareChildCount;
             size_t usageInfoBits = storm::utility::math::uint64_log2(mMaxSpareChildCount) + 1;
             mStateVectorSize = nrElements() * 2 + mNrOfSpares * usageInfoBits + nrRepresentatives;
+        }
+
+        template<typename ValueType>
+        void DFT<ValueType>::setDynamicBehaviorInfo() {
+            std::vector<bool> dynamicBehaviorVector(mElements.size());
+
+            std::queue <DFTElementPointer> elementQueue;
+
+            // deal with all dynamic elements
+            for (auto const &element : mElements) {
+                switch (element->type()) {
+                    case storage::DFTElementType::PAND:
+                    case storage::DFTElementType::POR:
+                    case storage::DFTElementType::MUTEX: {
+                        auto gate = std::static_pointer_cast<storm::storage::DFTChildren<ValueType>>(element);
+                        dynamicBehaviorVector[gate->id()] = true;
+                        for (auto const &child : gate->children()) {
+                            // only enqueue static children
+                            if (!dynamicBehaviorVector.at(child->id())) {
+                                elementQueue.push(child);
+                            }
+                        }
+                        break;
+                    }
+                        // TODO different cases
+                    case storage::DFTElementType::SPARE: {
+                        auto spare = std::static_pointer_cast<storm::storage::DFTSpare<ValueType>>(element);
+
+                        // Iterate over all children (representatives of spare modules)
+                        for (auto const &child : spare->children()) {
+                            // Case 1: Shared Module
+                            // If child only has one parent, it is this SPARE -> nothing to check
+                            if (child->nrParents() > 1) {
+                                // TODO make more efficient by directly setting ALL spares which share a module to be dynamic
+                                for (auto const &parent : child->parents()) {
+                                    if (parent->isSpareGate() and parent->id() != spare->id()) {
+                                        dynamicBehaviorVector[spare->id()] = true;
+                                        break; // inner loop
+                                    }
+                                }
+                            }
+                            // Case 2: Triggering outside events
+                            // If the SPARE was already detected to have dynamic behavior, do not proceed
+                            if (!dynamicBehaviorVector[spare->id()]) {
+                                for (auto const &memberID : module(child->id())) {
+                                    // Iterate over all members of the module child represents
+                                    auto member = getElement(memberID);
+                                    for (auto const dep : member->outgoingDependencies()) {
+                                        // If the member has outgoing dependencies, check if those trigger something outside the module
+                                        for (auto const depEvent : dep->dependentEvents()) {
+                                            // If a dependent event is not found in the module, SPARE is dynamic
+                                            if (std::find(module(child->id()).begin(), module(child->id()).end(),
+                                                          depEvent->id()) == module(child->id()).end()) {
+                                                dynamicBehaviorVector[spare->id()] = true;
+                                                break; //depEvent-loop
+                                            }
+                                        }
+                                        if (dynamicBehaviorVector[spare->id()]) { break; } //dependency-loop
+                                    }
+                                    if (dynamicBehaviorVector[spare->id()]) { break; } //module-loop
+                                }
+
+                            }
+                            if (dynamicBehaviorVector[spare->id()]) { break; } //child-loop
+                        }
+                        // if during the computation, dynamic behavior was detected, add children to queue
+                        if (dynamicBehaviorVector[spare->id()]) {
+                            for (auto const &child : spare->children()) {
+                                // only enqueue static children
+                                if (!dynamicBehaviorVector.at(child->id())) {
+                                    elementQueue.push(child);
+                                }
+                            }
+                        }
+                        break;
+                    }
+                    case storage::DFTElementType::SEQ: {
+                        auto seq = std::static_pointer_cast<storm::storage::DFTSeq<ValueType>>(element);
+                        // A SEQ only has dynamic behavior if not all children are BEs
+                        if (!seq->allChildrenBEs()) {
+                            dynamicBehaviorVector[seq->id()] = true;
+                            for (auto const &child : seq->children()) {
+                                // only enqueue static children
+                                if (!dynamicBehaviorVector.at(child->id())) {
+                                    elementQueue.push(child);
+                                }
+                            }
+                        }
+                        break;
+                    }
+                    default: {
+                        break;
+                    }
+
+                }
+            }
+            // propagate dynamic behavior
+            while (!elementQueue.empty()) {
+                DFTElementPointer currentElement = elementQueue.front();
+                elementQueue.pop();
+                switch (currentElement->type()) {
+                    // Static Gates
+                    case storage::DFTElementType::AND:
+                    case storage::DFTElementType::OR:
+                    case storage::DFTElementType::VOT: {
+                        // check all parents and if one has dynamic behavior, propagate it
+                        dynamicBehaviorVector[currentElement->id()] = true;
+                        auto gate = std::static_pointer_cast<storm::storage::DFTGate<ValueType>>(currentElement);
+                        for (auto const &child : gate->children()) {
+                            // only enqueue static children
+                            if (!dynamicBehaviorVector.at(child->id())) {
+                                elementQueue.push(child);
+                            }
+                        }
+                        break;
+                    }
+                        //BEs
+                    case storage::DFTElementType::BE_EXP:
+                    case storage::DFTElementType::BE_CONST:
+                    case storage::DFTElementType::BE: {
+                        auto be = std::static_pointer_cast<storm::storage::DFTBE<ValueType>>(currentElement);
+                        dynamicBehaviorVector[be->id()] = true;
+                        // add all ingoing dependencies to queue
+                        for (auto const &dep : be->ingoingDependencies()) {
+                            if (!dynamicBehaviorVector.at(dep->id())) {
+                                elementQueue.push(dep);
+                            }
+                        }
+                        break;
+                    }
+                    case storage::DFTElementType::PDEP: {
+                        auto dep = std::static_pointer_cast<storm::storage::DFTDependency<ValueType>>(currentElement);
+                        dynamicBehaviorVector[dep->id()] = true;
+                        // add all ingoing dependencies to queue
+                        auto trigger = dep->triggerEvent();
+                        if (!dynamicBehaviorVector.at(trigger->id())) {
+                            elementQueue.push(trigger);
+                        }
+                        break;
+                    }
+                    default:
+                        break;
+                }
+            }
+            mDynamicBehavior = dynamicBehaviorVector;
         }
 
         template<typename ValueType>

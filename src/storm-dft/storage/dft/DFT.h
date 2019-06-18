@@ -70,8 +70,7 @@ namespace storm {
             std::vector<bool> mDynamicBehavior;
 
         public:
-            DFT(DFTElementVector const &elements, DFTElementPointer const &tle,
-                std::vector<bool> const &dynamicBehavior);
+            DFT(DFTElementVector const &elements, DFTElementPointer const &tle);
             
             DFTStateGenerationInfo buildStateGenerationInfo(storm::storage::DFTIndependentSymmetries const& symmetries) const;
             
@@ -82,6 +81,8 @@ namespace storm {
             DFT<ValueType> optimize() const;
             
             void copyElements(std::vector<size_t> elements, storm::builder::DFTBuilder<ValueType> builder) const;
+
+            void setDynamicBehaviorInfo();
             
             size_t stateBitVectorSize() const {
                 // Ensure multiple of 64

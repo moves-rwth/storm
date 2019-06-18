@@ -948,7 +948,7 @@ namespace storm {
                 dep1Index = dft.getDependencies().at(i);
                 for (size_t j = i + 1; j < dft.getDependencies().size(); ++j) {
                     dep2Index = dft.getDependencies().at(j);
-                    if (dft.getDynamicBehavior()[dep1Index] || dft.getDynamicBehavior()[dep2Index]) {
+                    if (dft.getDynamicBehavior()[dep1Index] && dft.getDynamicBehavior()[dep2Index]) {
                         if (dft.getDependency(dep1Index)->triggerEvent() ==
                             dft.getDependency(dep2Index)->triggerEvent()) {
                             STORM_LOG_DEBUG("Conflict between " << dft.getElement(dep1Index)->name() << " and "

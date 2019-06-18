@@ -92,6 +92,17 @@ void processOptions() {
     }
 
 #ifdef STORM_HAVE_Z3
+    if(debug.isTestSet()){
+        dft->setDynamicBehaviorInfo();
+        for(size_t i = 0; i < dft->nrElements(); ++i){
+            if(dft->getDynamicBehavior()[i]) {
+                STORM_LOG_DEBUG("Element " << dft->getElement(i)->name() << " has dynamic behavior");
+            } else {
+                STORM_LOG_DEBUG("Element " << dft->getElement(i)->name() << " has static behavior");
+            }
+        }
+    }
+
     if (faultTreeSettings.solveWithSMT()) {
         dft = dftTransformator.transformUniqueFailedBe(*dft);
         if (dft->getDependencies().size() > 0) {
@@ -100,6 +111,8 @@ void processOptions() {
         }
         // Solve with SMT
         STORM_LOG_DEBUG("Running DFT analysis with use of SMT");
+        // Set dynamic behavior vector
+        dft->setDynamicBehaviorInfo();
         storm::api::analyzeDFTSMT(*dft, true, debug.isTestSet());
         return;
     }
