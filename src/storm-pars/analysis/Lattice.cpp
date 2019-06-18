@@ -223,28 +223,7 @@ namespace storm {
         }
 
         void Lattice::toString(std::ostream &out) {
-            std::vector<Node*> printedNodes = std::vector<Node*>({});
-            for (auto itr = nodes.begin(); itr != nodes.end(); ++itr) {
-
-                if ((*itr) != nullptr && std::find(printedNodes.begin(), printedNodes.end(), (*itr)) == printedNodes.end()) {
-                    Node *node = *itr;
-                    printedNodes.push_back(*itr);
-                    out << "Node: {";
-                    for (auto const & state:node->states) {
-                        out << state << "; ";
-
-                    }
-                    out << "}" << "\n";
-                    out << "  Address: " << node << "\n";
-                    out << "    Above: {";
-
-                    auto statesAbove = node->statesAbove;
-                    for (auto const & state:(node->statesAbove)) {
-                        out << state << "; ";
-                    }
-                    out << "}" << "\n";
-                }
-            }
+            
         }
 
         bool Lattice::above(Node *node1, Node *node2) {
