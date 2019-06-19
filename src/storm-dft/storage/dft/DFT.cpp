@@ -93,7 +93,7 @@ namespace storm {
 
         template<typename ValueType>
         void DFT<ValueType>::setDynamicBehaviorInfo() {
-            std::vector<bool> dynamicBehaviorVector(mElements.size());
+            std::vector<bool> dynamicBehaviorVector(mElements.size(), false);
 
             std::queue <DFTElementPointer> elementQueue;
 
