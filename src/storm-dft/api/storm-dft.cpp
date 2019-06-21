@@ -43,6 +43,39 @@ namespace storm {
         }
 
         template<>
+        std::vector<storm::solver::SmtSolver::CheckResult>
+        analyzeDFTSMT(storm::storage::DFT<double> const &dft, bool printOutput) {
+            storm::modelchecker::DFTASFChecker smtChecker(dft);
+            smtChecker.toSolver();
+            std::vector<storm::solver::SmtSolver::CheckResult> results;
+
+            results.push_back(smtChecker.checkTleNeverFailed());
+            uint64_t lower_bound = smtChecker.getLeastFailureBound();
+            uint64_t upper_bound = smtChecker.getAlwaysFailedBound();
+            if (printOutput) {
+                // TODO add suitable output function, maybe add query descriptions for better readability
+                for (size_t i = 0; i < results.size(); ++i) {
+                    std::string tmp = "unknown";
+                    if (results.at(i) == storm::solver::SmtSolver::CheckResult::Sat) {
+                        tmp = "SAT";
+                    } else if (results.at(i) == storm::solver::SmtSolver::CheckResult::Unsat) {
+                        tmp = "UNSAT";
+                    }
+                }
+                std::cout << "Lower bound: " << std::to_string(lower_bound) << std::endl;
+                std::cout << "Upper bound: " << std::to_string(upper_bound) << std::endl;
+            }
+            return results;
+        }
+
+        template<>
+        std::vector<storm::solver::SmtSolver::CheckResult>
+        analyzeDFTSMT(storm::storage::DFT<storm::RationalFunction> const &dft, bool printOutput) {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
+                            "Analysis by SMT not supported for this data type.");
+        }
+
+        template<>
         std::pair<std::shared_ptr<storm::gspn::GSPN>, uint64_t> transformToGSPN(storm::storage::DFT<double> const& dft) {
             storm::settings::modules::FaultTreeSettings const& ftSettings = storm::settings::getModule<storm::settings::modules::FaultTreeSettings>();
             storm::settings::modules::DftGspnSettings const& dftGspnSettings = storm::settings::getModule<storm::settings::modules::DftGspnSettings>();

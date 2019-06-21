@@ -333,6 +333,10 @@ namespace storm {
                 return visitingTimesUpperBounds;
             }
             
+            template <typename ModelType>
+            typename ModelType::ValueType DeterministicSchedsObjectiveHelper<ModelType>::evaluateOnModel(Environment const& env, ModelType const& evaluatedModel) const {
+                return evaluateOperatorFormula(env, evaluatedModel, *objective.formula)[*evaluatedModel.getInitialStates().begin()];
+            }
 
             template class DeterministicSchedsObjectiveHelper<storm::models::sparse::Mdp<double>>;
             template class DeterministicSchedsObjectiveHelper<storm::models::sparse::Mdp<storm::RationalNumber>>;

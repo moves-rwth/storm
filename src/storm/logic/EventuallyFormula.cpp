@@ -57,10 +57,10 @@ namespace storm {
                 
         std::ostream& EventuallyFormula::writeToStream(std::ostream& out) const {
             out << "F ";
-            this->getSubformula().writeToStream(out);
             if (hasRewardAccumulation()) {
                 out << "[" << getRewardAccumulation() << "]";
             }
+            this->getSubformula().writeToStream(out);
             return out;
         }
     }

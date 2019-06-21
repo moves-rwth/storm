@@ -44,6 +44,8 @@ namespace storm {
                  */
                 bool isTotalRewardObjective() const;
                 
+                ValueType evaluateOnModel(Environment const& env, ModelType const& evaluatedModel) const;
+                
                 static std::vector<ValueType> computeUpperBoundOnExpectedVisitingTimes(storm::storage::SparseMatrix<ValueType> const& modelTransitions, storm::storage::BitVector const& bottomStates, storm::storage::BitVector const& nonBottomStates, bool hasEndComponents);
 
             private:

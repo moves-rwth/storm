@@ -109,11 +109,25 @@ namespace storm {
                 bool isExportToJson() const;
 
                 /*!
+                 * Retrieves whether the export to smtlib2 file option was set.
+                 *
+                 * @return True if the export to smtlib2 file option was set.
+                 */
+                bool isExportToSmt() const;
+
+                /*!
                  * Retrieves the name of the json file to export to.
                  *
                  * @return The name of the json file to export to.
                  */
                 std::string getExportJsonFilename() const;
+
+                /*!
+                 * Retrieves the name of the smtlib2 file to export to.
+                 *
+                 * @return The name of the smtlib2 file to export to.
+                 */
+                std::string getExportSmtFilename() const;
 
                 /*!
                  * Retrieves whether statistics for the DFT should be displayed.
@@ -142,6 +156,7 @@ namespace storm {
                 static const std::string minValueOptionName;
                 static const std::string maxValueOptionName;
                 static const std::string exportToJsonOptionName;
+                static const std::string exportToSmtOptionName;
                 static const std::string displayStatsOptionName;
 
             };

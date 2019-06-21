@@ -37,6 +37,11 @@ linux)
         docker run -d -it --name storm --privileged movesrwth/storm-basesystem:$LINUX
         ;;
     esac
+    # Install doxygen if necessary
+    if [[ "$TASK" == *Doxygen* ]]
+    then
+        docker exec storm apt-get install -qq -y doxygen graphviz
+    fi
     # Copy local content into container
     docker exec storm mkdir /opt/storm
     docker cp . storm:/opt/storm
@@ -45,6 +50,7 @@ linux)
     # Execute main process
     docker exec storm bash -c "
         export CONFIG=$CONFIG;
+        export TASK=$TASK;
         export COMPILER=$COMPILER;
         export N_JOBS=$N_JOBS;
         export STLARG=;
@@ -57,7 +63,8 @@ linux)
 osx)
     # Mac OSX
     STLARG="-stdlib=libc++"
-    export CONFIG=$CONFIG
+    export CONFIG
+    export TASK
     export COMPILER
     export N_JOBS
     export STLARG

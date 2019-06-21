@@ -522,6 +522,8 @@ namespace storm {
                 do {
                     tmp = 0;
                     for (size_t i = 1; i < n; ++i) {
+                        STORM_LOG_ASSERT(symmetryIndices[i-1] + length <= mStatus.size(), "Symmetry index "<< symmetryIndices[i-1] << " + length " << length << " is larger than status vector " << mStatus.size());
+                        STORM_LOG_ASSERT(symmetryIndices[i] + length <= mStatus.size(), "Symmetry index "<< symmetryIndices[i] << " + length " << length << " is larger than status vector " << mStatus.size());
                         if (mStatus.compareAndSwap(symmetryIndices[i-1], symmetryIndices[i], length)) {
                             tmp = i;
                             changed = true;

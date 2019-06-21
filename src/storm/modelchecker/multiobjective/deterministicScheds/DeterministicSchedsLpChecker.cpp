@@ -9,6 +9,7 @@
 #include "storm/settings/modules/MultiObjectiveSettings.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/MaximalEndComponentDecomposition.h"
+#include "storm/storage/Scheduler.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/solver.h"
 
@@ -155,7 +156,7 @@ namespace storm {
                 
                 std::vector<Point> foundPoints;
                 std::vector<Polytope> infeasableAreas;
-                checkRecursive(polytopeTree, eps, foundPoints, infeasableAreas, 0);
+                checkRecursive(env, polytopeTree, eps, foundPoints, infeasableAreas, 0);
                 
                 swCheck.stop();
                 std::cout << " done!" << std::endl;
@@ -202,91 +203,144 @@ namespace storm {
                 return processed;
             }
             
-            template <typename ModelType, typename GeometryValueType>
-            std::vector<std::vector<storm::expressions::Variable>> DeterministicSchedsLpChecker<ModelType, GeometryValueType>::createEcVariables(std::vector<storm::expressions::Expression> const& choiceVars) {
-                auto one = lpModel->getConstant(storm::utility::one<ValueType>());
-                std::vector<std::vector<storm::expressions::Variable>> result(model.getNumberOfStates());
-                storm::storage::MaximalEndComponentDecomposition<ValueType> mecs(model);
-                uint64_t ecCounter = 0;
+            template <typename ValueType>
+            std::map<uint64_t, storm::expressions::Expression> processEc(storm::storage::MaximalEndComponent const& ec, storm::storage::SparseMatrix<ValueType> const& transitions, std::string const& varNameSuffix, std::vector<storm::expressions::Expression> const& choiceVars, storm::solver::LpSolver<ValueType>& lpModel) {
+                std::map<uint64_t, storm::expressions::Expression> ecStateVars, ecChoiceVars, ecFlowChoiceVars;
                 
-                for (auto const& mec : mecs) {
-                    // Create a submatrix for the current mec as well as a mapping to map back to the original states.
-                    storm::storage::BitVector mecStatesAsBitVector(model.getNumberOfStates(), false);
-                    storm::storage::BitVector mecChoicesAsBitVector(model.getNumberOfChoices(), false);
-                    for (auto const& stateChoices : mec) {
-                        mecStatesAsBitVector.set(stateChoices.first, true);
-                        for (auto const& choice : stateChoices.second) {
-                            mecChoicesAsBitVector.set(choice, true);
+                // Compute an upper bound on the expected number of visits of the states in this ec.
+                // First get a lower bound l on the probability of a path that leaves this MEC. 1-l is an upper bound on Pr_s(X F s).
+                // The desired upper bound is thus 1/(1-(1-l)) = 1/l. See Baier et al., CAV'17
+                ValueType expVisitsUpperBound = storm::utility::one<ValueType>();
+                uint64_t numStates = 0;
+                for (auto const& stateChoices : ec) {
+                    ++numStates;
+                    ValueType minProb = storm::utility::one<ValueType>();
+                    for (auto const& choice : stateChoices.second) {
+                        for (auto const& transition : transitions.getRow(choice)) {
+                            if (!storm::utility::isZero(transition.getValue())) {
+                                minProb = std::min(minProb, transition.getValue());
+                            }
                         }
                     }
-                    std::vector<uint64_t> toGlobalStateIndexMapping(mecStatesAsBitVector.begin(), mecStatesAsBitVector.end());
-                    std::vector<uint64_t> toGlobalChoiceIndexMapping(mecChoicesAsBitVector.begin(), mecChoicesAsBitVector.end());
-                    //std::cout << "mec choices of ec" << ecCounter << ": " << mecChoicesAsBitVector << std::endl;
-                    storm::storage::SparseMatrix<ValueType> mecTransitions = model.getTransitionMatrix().getSubmatrix(false, mecChoicesAsBitVector, mecStatesAsBitVector);
+                    expVisitsUpperBound *= minProb;
+                }
+                expVisitsUpperBound = storm::utility::one<ValueType>() / expVisitsUpperBound;
+                std::cout << "expVisits upper bound is " << expVisitsUpperBound  << "." << std::endl;
+                // create variables
+                for (auto const& stateChoices : ec) {
+                    ecStateVars.emplace(stateChoices.first, lpModel.addBoundedIntegerVariable("e" + std::to_string(stateChoices.first) + varNameSuffix, storm::utility::zero<ValueType>(), storm::utility::one<ValueType>()).getExpression());
+                    for (auto const& choice : stateChoices.second) {
+                        ecChoiceVars.emplace(choice, lpModel.addBoundedIntegerVariable("ec" + std::to_string(choice) + varNameSuffix, storm::utility::zero<ValueType>(), storm::utility::one<ValueType>()).getExpression());
+                        ecFlowChoiceVars.emplace(choice, lpModel.addBoundedContinuousVariable("f" + std::to_string(choice) + varNameSuffix, storm::utility::zero<ValueType>(), expVisitsUpperBound).getExpression());
+                    }
+                }
+                
+                // create constraints
+                std::map<uint64_t, std::vector<storm::expressions::Expression>> ins, outs;
+                for (auto const& stateChoices : ec) {
+                    std::vector<storm::expressions::Expression> ecChoiceVarsAtState;
+                    std::vector<storm::expressions::Expression> out;
+                    for (auto const& choice : stateChoices.second) {
+                        if (choiceVars[choice].isInitialized()) {
+                            lpModel.addConstraint("", ecChoiceVars[choice] <= choiceVars[choice]);
+                            lpModel.addConstraint("", ecFlowChoiceVars[choice] <= lpModel.getConstant(expVisitsUpperBound) * choiceVars[choice]);
+                        }
+                        ecChoiceVarsAtState.push_back(ecChoiceVars[choice]);
+                        out.push_back(ecFlowChoiceVars[choice]);
+                        for (auto const& transition : transitions.getRow(choice)) {
+                            if (!storm::utility::isZero(transition.getValue())) {
+                                lpModel.addConstraint("", ecChoiceVars[choice] <= ecStateVars[transition.getColumn()]);
+                                ins[transition.getColumn()].push_back(lpModel.getConstant(transition.getValue()) * ecFlowChoiceVars[choice]);
+                            }
+                        }
+                    }
+                    lpModel.addConstraint("", ecStateVars[stateChoices.first] == storm::expressions::sum(ecChoiceVarsAtState));
+                    out.push_back(lpModel.getConstant(expVisitsUpperBound) * ecStateVars[stateChoices.first]);
+                    // Iterate over choices that leave the ec
+                    for (uint64_t choice = transitions.getRowGroupIndices()[stateChoices.first]; choice < transitions.getRowGroupIndices()[stateChoices.first + 1]; ++choice) {
+                        if (stateChoices.second.find(choice) == stateChoices.second.end()) {
+                            assert(choiceVars[choice].isInitialized());
+                            out.push_back(lpModel.getConstant(expVisitsUpperBound) * choiceVars[choice]);
+                        }
+                    }
+                    outs.emplace(stateChoices.first, out);
+                }
+                for (auto const& stateChoices : ec) {
+                    auto in = ins.find(stateChoices.first);
+                    STORM_LOG_ASSERT(in != ins.end(), "ec state does not seem to have an incoming transition.");
+                    // Assume a uniform initial distribution
+                    in->second.push_back(lpModel.getConstant(storm::utility::one<ValueType>() / storm::utility::convertNumber<ValueType>(numStates)));
+                    auto out = outs.find(stateChoices.first);
+                    STORM_LOG_ASSERT(out != outs.end(), "out flow of ec state was not set.");
+                    lpModel.addConstraint("", storm::expressions::sum(in->second)<= storm::expressions::sum(out->second));
+                }
+
+                return ecStateVars;
+        }
+            
+            template <typename ModelType, typename GeometryValueType>
+            std::vector<std::vector<storm::expressions::Expression>> DeterministicSchedsLpChecker<ModelType, GeometryValueType>::createEcVariables() {
+                std::vector<std::vector<storm::expressions::Expression>> result(objectiveHelper.size(), std::vector<storm::expressions::Expression>(model.getNumberOfStates()));
+                uint64_t ecCounter = 0;
+                auto backwardTransitions = model.getBackwardTransitions();
+                
+                // Get the choices that do not induce a value (i.e. reward) for all objectives
+                storm::storage::BitVector choicesWithValueZero(model.getNumberOfChoices(), true);
+                for (auto const& objHelper : objectiveHelper) {
+                    for (auto const& value : objHelper.getChoiceValueOffsets()) {
+                        STORM_LOG_ASSERT(!storm::utility::isZero(value.second), "Expected non-zero choice-value offset.");
+                        choicesWithValueZero.set(value.first, false);
+                    }
+                }
+                storm::storage::MaximalEndComponentDecomposition<ValueType> mecs(model.getTransitionMatrix(), backwardTransitions, storm::storage::BitVector(model.getNumberOfStates(), true), choicesWithValueZero);
+
+                for (auto const& mec : mecs) {
+                    std::map<std::set<uint64_t>, std::vector<uint64_t>> excludedStatesToObjIndex;
+                    for (uint64_t objIndex = 0; objIndex < objectiveHelper.size(); ++objIndex) {
+                        std::set<uint64_t> excludedStates;
+                        for (auto const& stateChoices : mec) {
+                            auto schedIndValueIt = objectiveHelper[objIndex].getSchedulerIndependentStateValues().find(stateChoices.first);
+                            if (schedIndValueIt != objectiveHelper[objIndex].getSchedulerIndependentStateValues().end() && !storm::utility::isZero(schedIndValueIt->second)) {
+                                excludedStates.insert(stateChoices.first);
+                            }
+                        }
+                        excludedStatesToObjIndex[excludedStates].push_back(objIndex);
+                    }
                     
-                    // Create a variable for each subEC and add it for the corresponding states.
-                    // Also assert that not every state takes an ec choice.
-                    auto subEcs = getSubEndComponents(mecTransitions);
-                    for (auto const& subEc : subEcs) {
-                        // get the choices of the current EC with some non-zero value (i.e. reward).
-                        // std::cout << "sub ec choices of ec" << ecCounter << ": " << subEc.second << std::endl;
-                        storm::storage::BitVector subEcChoicesWithValueZero = subEc.second;
-                        for (auto const& localSubEcChoiceIndex : subEc.second) {
-                            uint64_t subEcChoice = toGlobalChoiceIndexMapping[localSubEcChoiceIndex];
-                            for (auto const& objHelper : objectiveHelper) {
-                                if (objHelper.getChoiceValueOffsets().count(subEcChoice) > 0) {
-                                    STORM_LOG_ASSERT(!storm::utility::isZero(objHelper.getChoiceValueOffsets().at(subEcChoice)), "Expected non-zero choice-value offset.");
-                                    subEcChoicesWithValueZero.set(localSubEcChoiceIndex, false);
-                                    break;
+                    for (auto const& exclStates : excludedStatesToObjIndex) {
+                        if (exclStates.first.empty()) {
+                            auto ecVars = processEc(mec, model.getTransitionMatrix(), "", choiceVariables, *lpModel);
+                            ++ecCounter;
+                            for (auto const& stateVar : ecVars) {
+                                for (auto const& objIndex : exclStates.second) {
+                                    result[objIndex][stateVar.first] = stateVar.second;
                                 }
                             }
-                        }
-                        
-                        // Check whether each state has at least one zero-valued choice
-                        bool zeroValueSubEc = true;
-                        for (auto const& state : subEc.first) {
-                            if (subEcChoicesWithValueZero.getNextSetIndex(mecTransitions.getRowGroupIndices()[state]) >= mecTransitions.getRowGroupIndices()[state + 1]) {
-                                zeroValueSubEc = false;
-                                break;
-                            }
-                        }
-                        
-                        if (zeroValueSubEc) {
-                            // Create a variable that is one iff upon entering this subEC no more choice value is collected.
-                            auto ecVar = lpModel->addBoundedIntegerVariable("ec" + std::to_string(ecCounter++), storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
-                            // assign this variable to every state in the ec
-                            for (auto const& localSubEcStateIndex : subEc.first) {
-                                uint64_t subEcState = toGlobalStateIndexMapping[localSubEcStateIndex];
-                                result[subEcState].push_back(ecVar);
-                            }
-                            // Create the sum over all choice vars that induce zero choice value
-                            std::vector<storm::expressions::Expression> ecChoiceVars;
-                            uint64_t numSubEcStatesWithMultipleChoices = subEc.first.getNumberOfSetBits();
-                            for (auto const& localSubEcChoiceIndex : subEcChoicesWithValueZero) {
-                                uint64_t subEcChoice = toGlobalChoiceIndexMapping[localSubEcChoiceIndex];
-                                if (choiceVars[subEcChoice].isInitialized()) {
-                                    ecChoiceVars.push_back(choiceVars[subEcChoice]);
-                                } else {
-                                    // If there is no choiceVariable, it means that this corresponds to a state with just one choice.
-                                    assert(numSubEcStatesWithMultipleChoices > 0);
-                                    --numSubEcStatesWithMultipleChoices;
+                        } else {
+                            // Compute sub-end components
+                            storm::storage::BitVector subEcStates(model.getNumberOfStates(), false), subEcChoices(model.getNumberOfChoices(), false);
+                            for (auto const& stateChoices : mec) {
+                                if (exclStates.first.count(stateChoices.first) == 0) {
+                                    subEcStates.set(stateChoices.first, true);
+                                    for (auto const& choice : stateChoices.second) {
+                                        subEcChoices.set(choice, true);
+                                    }
                                 }
                             }
-                            // Assert that the ecVar is one iff the sum over the zero-value-choice variables equals the number of states in this ec
-                            storm::expressions::Expression ecVarBound = one - lpModel->getConstant(storm::utility::convertNumber<ValueType>(numSubEcStatesWithMultipleChoices)).simplify();
-                            if (!ecChoiceVars.empty()) {
-                                ecVarBound = ecVarBound + storm::expressions::sum(ecChoiceVars);
-                            }
-                            if (inOutEncoding()) {
-                                lpModel->addConstraint("", ecVar <= ecVarBound);
-                            } else {
-                                lpModel->addConstraint("", ecVar >= ecVarBound);
+                            storm::storage::MaximalEndComponentDecomposition<ValueType> subEcs(model.getTransitionMatrix(), backwardTransitions, subEcStates, subEcChoices);
+                            for (auto const& subEc : subEcs) {
+                                auto ecVars = processEc(subEc, model.getTransitionMatrix(), "o" + std::to_string(*exclStates.second.begin()), choiceVariables, *lpModel);
+                                ++ecCounter;
+                                for (auto const& stateVar : ecVars) {
+                                    for (auto const& objIndex : exclStates.second) {
+                                        result[objIndex][stateVar.first] = stateVar.second;
+                                    }
+                                }
                             }
                         }
                     }
                 }
-                
-                STORM_LOG_TRACE("Found " << ecCounter << " end components.");
+                std::cout << "found " << ecCounter << "many ECs" << std::endl;
                 return result;
             }
             
@@ -306,12 +360,11 @@ namespace storm {
                 auto one = lpModel->getConstant(storm::utility::one<ValueType>());
                 auto const& groups = model.getTransitionMatrix().getRowGroupIndices();
                 // Create choice variables.
-                std::vector<storm::expressions::Expression> choiceVars;
-                choiceVars.reserve(model.getNumberOfChoices());
+                choiceVariables.reserve(model.getNumberOfChoices());
                 for (uint64_t state = 0; state < numStates; ++state) {
                     uint64_t numChoices = model.getNumberOfChoices(state);
                     if (numChoices == 1) {
-                        choiceVars.emplace_back();
+                        choiceVariables.emplace_back();
                     } else {
                         std::vector<storm::expressions::Expression> localChoices;
                         if (choiceVarReduction()) {
@@ -319,23 +372,28 @@ namespace storm {
                         }
                         for (uint64_t choice = 0; choice < numChoices; ++choice) {
                             localChoices.push_back(lpModel->addBoundedIntegerVariable("c" + std::to_string(state) + "_" + std::to_string(choice), 0, 1).getExpression());
-                            choiceVars.push_back(localChoices.back());
+                            choiceVariables.push_back(localChoices.back());
                         }
                             storm::expressions::Expression localChoicesSum = storm::expressions::sum(localChoices);
                         if (choiceVarReduction()) {
                             lpModel->addConstraint("", localChoicesSum <= one);
-                            choiceVars.push_back(one - localChoicesSum);
+                            choiceVariables.push_back(one - localChoicesSum);
                         } else {
                             lpModel->addConstraint("", localChoicesSum == one);
                         }
                     }
                 }
-                // Create ec Variables and assert for each sub-ec that not all choice variables stay there
-                auto ecVars = createEcVariables(choiceVars);
+                // Create ec Variables for each state/objective
+                auto ecVars = createEcVariables();
                 bool hasEndComponents = false;
-                for (auto const& stateEcVars : ecVars) {
-                    if (!stateEcVars.empty()) {
-                        hasEndComponents = true;
+                for (auto const& objEcVars : ecVars) {
+                    for (auto const& ecVar : objEcVars) {
+                        if (ecVar.isInitialized()) {
+                            hasEndComponents = true;
+                            break;
+                        }
+                    }
+                    if (hasEndComponents) {
                         break;
                     }
                 }
@@ -365,7 +423,7 @@ namespace storm {
                         for (uint64_t globalChoice = groups[state]; globalChoice < groups[state + 1]; ++globalChoice) {
                             choiceValVars[globalChoice] = lpModel->addBoundedContinuousVariable("y" + std::to_string(globalChoice), storm::utility::zero<ValueType>(), visitingTimesUpperBounds[state]).getExpression();
                             if (model.getNumberOfChoices(state) > 1) {;
-                                lpModel->addConstraint("", choiceValVars[globalChoice] <= lpModel->getConstant(visitingTimesUpperBounds[state]) * choiceVars[globalChoice]);
+                                lpModel->addConstraint("", choiceValVars[globalChoice] <= lpModel->getConstant(visitingTimesUpperBounds[state]) * choiceVariables[globalChoice]);
                             }
                         }
                     }
@@ -373,13 +431,10 @@ namespace storm {
                     std::vector<storm::expressions::Expression> ecValVars(model.getNumberOfStates());
                     if (hasEndComponents) {
                         for (auto const& state : nonBottomStates) {
-                            if (!ecVars[state].empty()) {
+                            // For the in-out-encoding, all objectives have the same ECs. Hence, we only care for the variables of the first objective.
+                            if (ecVars.front()[state].isInitialized()) {
                                 ecValVars[state] = lpModel->addBoundedContinuousVariable("z" + std::to_string(state), storm::utility::zero<ValueType>(), visitingTimesUpperBounds[state]).getExpression();
-                                std::vector<storm::expressions::Expression> ecValueSum;
-                                for (auto const& ecVar : ecVars[state]) {
-                                    ecValueSum.push_back(lpModel->getConstant(visitingTimesUpperBounds[state]) * ecVar.getExpression());
-                                }
-                                lpModel->addConstraint("", ecValVars[state] <= storm::expressions::sum(ecValueSum));
+                                lpModel->addConstraint("", ecValVars[state] <= lpModel->getConstant(visitingTimesUpperBounds[state]) * ecVars.front()[state]);
                             }
                         }
                     }
@@ -439,7 +494,6 @@ namespace storm {
                         auto const& schedulerIndependentStates = objectiveHelper[objIndex].getSchedulerIndependentStateValues();
                         // Create state variables and store variables of ecs which contain a state with a scheduler independent value
                         std::vector<storm::expressions::Expression> stateVars;
-                        std::set<storm::expressions::Variable> ecVarsWithValue;
                         stateVars.reserve(numStates);
                         for (uint64_t state = 0; state < numStates; ++state) {
                             auto valIt = schedulerIndependentStates.find(state);
@@ -455,11 +509,6 @@ namespace storm {
                                     value = -value;
                                 }
                                 stateVars.push_back(lpModel->getConstant(value));
-                                if (hasEndComponents) {
-                                    for (auto const& ecVar : ecVars[state]) {
-                                        ecVarsWithValue.insert(ecVar);
-                                    }
-                                }
                             }
                             if (state == initialState) {
                                 initialStateResults.push_back(stateVars.back());
@@ -500,7 +549,7 @@ namespace storm {
                                 } else {
                                     uint64_t globalChoiceIndex = groups[state] + choice;
                                     if (isMaxDiffEncoding()) {
-                                        storm::expressions::Expression maxDiff = upperValueBoundAtState * (one - choiceVars[globalChoiceIndex]);
+                                        storm::expressions::Expression maxDiff = upperValueBoundAtState * (one - choiceVariables[globalChoiceIndex]);
                                         if (objectiveHelper[objIndex].minimizing()) {
                                             lpModel->addConstraint("", stateVars[state] >= choiceValue - maxDiff);
                                         } else {
@@ -517,14 +566,14 @@ namespace storm {
                                     if (objectiveHelper[objIndex].minimizing()) {
                                         if (isMinNegativeEncoding()) {
                                             lpModel->addConstraint("", choiceValVar <= choiceValue);
-                                            lpModel->addConstraint("", choiceValVar <= -upperValueBoundAtState * (one - choiceVars[globalChoiceIndex]));
+                                            lpModel->addConstraint("", choiceValVar <= -upperValueBoundAtState * (one - choiceVariables[globalChoiceIndex]));
                                         } else {
-                                            lpModel->addConstraint("", choiceValVar + (upperValueBoundAtState * (one - choiceVars[globalChoiceIndex])) >= choiceValue);
+                                            lpModel->addConstraint("", choiceValVar + (upperValueBoundAtState * (one - choiceVariables[globalChoiceIndex])) >= choiceValue);
                                             // Optional: lpModel->addConstraint("", choiceValVar <= choiceValue);
                                         }
                                     } else {
                                         lpModel->addConstraint("", choiceValVar <= choiceValue);
-                                        lpModel->addConstraint("", choiceValVar <= upperValueBoundAtState * choiceVars[globalChoiceIndex]);
+                                        lpModel->addConstraint("", choiceValVar <= upperValueBoundAtState * choiceVariables[globalChoiceIndex]);
                                     }
                                     if (choice == 0) {
                                         stateValue = choiceValVar;
@@ -543,34 +592,31 @@ namespace storm {
                             } else {
                                 lpModel->addConstraint("", stateVars[state] <= stateValue);
                             }
-                            if (numChoices > 1) {
-                                for (auto const& ecVar : ecVars[state]) {
-                                    if (ecVarsWithValue.count(ecVar) == 0) {
-                                        // if this ec is taken, make sure to assign a value of zero
-                                        if (objectiveHelper[objIndex].minimizing()) {
-                                            // TODO: these are optional
-                                            if (isMinNegativeEncoding()) {
-                                                lpModel->addConstraint("", stateVars[state] >= (ecVar.getExpression() - one) * lpModel->getConstant(objectiveHelper[objIndex].getUpperValueBoundAtState(env, state)));
-                                            } else {
-                                                lpModel->addConstraint("", stateVars[state] <= (one - ecVar.getExpression()) * lpModel->getConstant(objectiveHelper[objIndex].getUpperValueBoundAtState(env, state)));
-                                            }
+                            if (numChoices > 1 && hasEndComponents) {
+                                auto& ecVar = ecVars[objIndex][state];
+                                if (ecVar.isInitialized()) {
+                                    // if this state is part of an ec, make sure to assign a value of zero.
+                                    if (objectiveHelper[objIndex].minimizing()) {
+                                        // TODO: these are optional
+                                        if (isMinNegativeEncoding()) {
+                                            lpModel->addConstraint("", stateVars[state] >= (ecVar - one) * lpModel->getConstant(objectiveHelper[objIndex].getUpperValueBoundAtState(env, state)));
                                         } else {
-                                            lpModel->addConstraint("", stateVars[state] <= (one - ecVar.getExpression()) * lpModel->getConstant(objectiveHelper[objIndex].getUpperValueBoundAtState(env, state)));
+                                            lpModel->addConstraint("", stateVars[state] <= (one - ecVar) * lpModel->getConstant(objectiveHelper[objIndex].getUpperValueBoundAtState(env, state)));
                                         }
+                                    } else {
+                                        lpModel->addConstraint("", stateVars[state] <= (one - ecVar) * lpModel->getConstant(objectiveHelper[objIndex].getUpperValueBoundAtState(env, state)));
                                     }
                                 }
                             }
                         }
                     }
                 }
-                swAux.start();
                 lpModel->update();
-                swAux.stop();
                 STORM_LOG_INFO("Done initializing LP model.");
             }
             
             template <typename ModelType, typename GeometryValueType>
-            void DeterministicSchedsLpChecker<ModelType, GeometryValueType>::checkRecursive(storm::storage::geometry::PolytopeTree <GeometryValueType>& polytopeTree, GeometryValueType const& eps, std::vector<Point>& foundPoints, std::vector<Polytope>& infeasableAreas, uint64_t const& depth) {
+            void DeterministicSchedsLpChecker<ModelType, GeometryValueType>::checkRecursive(Environment const& env, storm::storage::geometry::PolytopeTree <GeometryValueType>& polytopeTree, GeometryValueType const& eps, std::vector<Point>& foundPoints, std::vector<Polytope>& infeasableAreas, uint64_t const& depth) {
                 std::cout << ".";
                 std::cout.flush();
                 STORM_LOG_ASSERT(!polytopeTree.isEmpty(), "Tree node is empty");
@@ -602,6 +648,8 @@ namespace storm {
                         polytopeTree.clear();
                     } else {
                         STORM_LOG_ASSERT(!lpModel->isUnbounded(), "LP result is unbounded.");
+                        // TODO: only for debugging
+                        validateCurrentModel(env);
                         Point newPoint;
                         for (auto const& objVar : currentObjectiveVariables) {
                             newPoint.push_back(storm::utility::convertNumber<GeometryValueType>(lpModel->getContinuousValue(objVar)));
@@ -642,14 +690,14 @@ namespace storm {
                         }
                         swAux.stop();
                         if (!polytopeTree.isEmpty()) {
-                            checkRecursive(polytopeTree, eps, foundPoints, infeasableAreas, depth);
+                            checkRecursive(env, polytopeTree, eps, foundPoints, infeasableAreas, depth);
                         }
                     }
                 } else {
                     // Traverse all the children.
                     for (uint64_t childId = 0; childId < polytopeTree.getChildren().size(); ++childId) {
                         uint64_t newPointIndex = foundPoints.size();
-                        checkRecursive(polytopeTree.getChildren()[childId], eps, foundPoints, infeasableAreas, depth + 1);
+                        checkRecursive(env, polytopeTree.getChildren()[childId], eps, foundPoints, infeasableAreas, depth + 1);
                         STORM_LOG_ASSERT(polytopeTree.getChildren()[childId].isEmpty(), "expected empty children.");
                         // Make the new points known to the right siblings
                         for (; newPointIndex < foundPoints.size(); ++newPointIndex) {
@@ -667,6 +715,41 @@ namespace storm {
                 lpModel->pop();
                 lpModel->update();
                 swLpBuild.stop();
+            }
+            
+            template <typename ModelType, typename GeometryValueType>
+            void DeterministicSchedsLpChecker<ModelType, GeometryValueType>::validateCurrentModel(Environment const& env) const {
+                storm::storage::Scheduler<ValueType> scheduler(model.getNumberOfStates());
+                for (uint64_t state = 0; state < model.getNumberOfStates(); ++state) {
+                    uint64_t numChoices = model.getNumberOfChoices(state);
+                    if (numChoices == 1) {
+                        scheduler.setChoice(0, state);
+                    } else {
+                        uint64_t globalChoiceOffset = model.getTransitionMatrix().getRowGroupIndices()[state];
+                        bool choiceFound = false;
+                        for (uint64_t localChoice = 0; localChoice < numChoices; ++localChoice) {
+                            if (lpModel->getIntegerValue(choiceVariables[globalChoiceOffset + localChoice].getBaseExpression().asVariableExpression().getVariable()) == 1) {
+                                STORM_LOG_THROW(!choiceFound, storm::exceptions::UnexpectedException, "Multiple choices selected at state " << state);
+                                scheduler.setChoice(localChoice, state);
+                                choiceFound = true;
+                            }
+                        }
+                        STORM_LOG_THROW(choiceFound, storm::exceptions::UnexpectedException, "No choice selected at state " << state);
+                    }
+                }
+                auto inducedModel = model.applyScheduler(scheduler)->template as<ModelType>();
+                for (uint64_t objIndex = 0; objIndex < objectiveHelper.size(); ++objIndex) {
+                    ValueType expectedValue = lpModel->getContinuousValue(currentObjectiveVariables[objIndex]);
+                    if (objectiveHelper[objIndex].minimizing()) {
+                        expectedValue = -expectedValue;
+                    }
+                    ValueType actualValue = objectiveHelper[objIndex].evaluateOnModel(env, *inducedModel);
+                    std::cout << "obj" << objIndex << ": LpSolver: " << storm::utility::convertNumber<double>(expectedValue) << " (" << expectedValue << ")" << std::endl;
+                    std::cout << "obj" << objIndex << ": model checker: " << storm::utility::convertNumber<double>(actualValue) << " (" << actualValue << ")" << std::endl;
+                    STORM_LOG_THROW(storm::utility::convertNumber<double>(storm::utility::abs<ValueType>(actualValue - expectedValue)) <= 1e-4, storm::exceptions::UnexpectedException, "Invalid value for objective " << objIndex << ": expected " << expectedValue << " but got " << actualValue);
+                }
+                std::cout << std::endl;
+                
             }
             
             template class DeterministicSchedsLpChecker<storm::models::sparse::Mdp<double>, storm::RationalNumber>;

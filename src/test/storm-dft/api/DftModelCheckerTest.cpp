@@ -11,6 +11,7 @@ namespace {
         bool useSR;
         bool useMod;
         bool useDC;
+        bool allowDCForRelevantEvents;
     };
 
     class NoOptimizationsConfig {
@@ -18,7 +19,7 @@ namespace {
         typedef double ValueType;
 
         static DftAnalysisConfig createConfig() {
-            return DftAnalysisConfig{false, false, false};
+            return DftAnalysisConfig{false, false, false, true};
         }
     };
 
@@ -27,7 +28,7 @@ namespace {
         typedef double ValueType;
 
         static DftAnalysisConfig createConfig() {
-            return DftAnalysisConfig{false, false, true};
+            return DftAnalysisConfig{false, false, true, true};
         }
     };
 
@@ -36,7 +37,7 @@ namespace {
         typedef double ValueType;
 
         static DftAnalysisConfig createConfig() {
-            return DftAnalysisConfig{false, true, false};
+            return DftAnalysisConfig{false, true, false, true};
         }
     };
 
@@ -45,7 +46,7 @@ namespace {
         typedef double ValueType;
 
         static DftAnalysisConfig createConfig() {
-            return DftAnalysisConfig{true, false, false};
+            return DftAnalysisConfig{true, false, false, true};
         }
     };
 
@@ -54,7 +55,7 @@ namespace {
         typedef double ValueType;
 
         static DftAnalysisConfig createConfig() {
-            return DftAnalysisConfig{true, true, true};
+            return DftAnalysisConfig{true, true, true, true};
         }
     };
 
@@ -77,11 +78,26 @@ namespace {
             std::string property = "Tmin=? [F \"failed\"]";
             std::vector<std::shared_ptr<storm::logic::Formula const>> properties = storm::api::extractFormulasFromProperties(storm::api::parseProperties(property));
             std::set<size_t> relevantEvents;
-            if (config.useDC) {
+            if (!config.useDC) {
                 relevantEvents = dft->getAllIds();
             }
             typename storm::modelchecker::DFTModelChecker<double>::dft_results results = storm::api::analyzeDFT<double>(*dft, properties, config.useSR, config.useMod,
-                                                                                                                        relevantEvents, true);
+                                                                                                                        relevantEvents, config.allowDCForRelevantEvents);
+            return boost::get<double>(results[0]);
+        }
+
+        double analyzeReliability(std::string const& file, double bound) {
+            std::shared_ptr<storm::storage::DFT<double>> dft = storm::api::loadDFTGalileoFile<double>(file);
+            EXPECT_TRUE(storm::api::isWellFormed(*dft));
+            std::string property = "Pmin=? [F<=" + std::to_string(bound) + " \"failed\"]";
+            std::vector<std::shared_ptr<storm::logic::Formula const>> properties = storm::api::extractFormulasFromProperties(
+                    storm::api::parseProperties(property));
+            std::set<size_t> relevantEvents;
+            if (!config.useDC) {
+                relevantEvents = dft->getAllIds();
+            }
+            typename storm::modelchecker::DFTModelChecker<double>::dft_results results = storm::api::analyzeDFT<double>(*dft, properties, config.useSR, config.useMod,
+                                                                                                                        relevantEvents, config.allowDCForRelevantEvents);
             return boost::get<double>(results[0]);
         }
 
@@ -205,4 +221,15 @@ namespace {
         EXPECT_FLOAT_EQ(result, storm::utility::infinity<double>());
     }
 
+    TYPED_TEST(DftModelCheckerTest, Symmetry) {
+        double result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/symmetry6.dft");
+        EXPECT_FLOAT_EQ(result, 1.373226284);
+        result = this->analyzeReliability(STORM_TEST_RESOURCES_DIR "/dft/symmetry6.dft", 1.0);
+        EXPECT_FLOAT_EQ(result, 0.3421934224);
+    }
+
+    TYPED_TEST(DftModelCheckerTest, HecsReliability) {
+        double result = this->analyzeReliability(STORM_TEST_RESOURCES_DIR "/dft/hecs_2_2.dft", 1.0);
+        EXPECT_FLOAT_EQ(result, 0.00021997582);
+    }
 }
