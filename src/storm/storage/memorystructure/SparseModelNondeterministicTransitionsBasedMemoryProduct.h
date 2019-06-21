@@ -36,6 +36,7 @@ namespace storm {
         private:
             storm::storage::SparseMatrix<ValueType> buildTransitions();
             storm::models::sparse::StateLabeling buildStateLabeling() const;
+            storm::models::sparse::ChoiceLabeling buildChoiceLabeling(storm::storage::SparseMatrix<ValueType> const& transitions) const;
             storm::models::sparse::StandardRewardModel<ValueType> buildRewardModel(storm::models::sparse::StandardRewardModel<ValueType> const& rewardModel, storm::storage::BitVector const& reachableStates, storm::storage::SparseMatrix<ValueType> const& resultTransitionMatrix) const;
 
             std::vector<uint64_t> generateOffsetVector(storm::storage::BitVector const& reachableStates);
