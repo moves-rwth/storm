@@ -21,10 +21,12 @@ namespace boost {
                 return true;
             }
             
+#if BOOST_VERSION < 107000
             template<>
             bool is_equal_to_one(storm::RationalNumber const& value) {
                 return storm::utility::isOne(value);
             }
+#endif
             
             template<>
             storm::RationalNumber negate(bool neg, storm::RationalNumber const& number) {
