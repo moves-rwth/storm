@@ -3,11 +3,11 @@
 #include <memory>
 
 #include <boost/optional.hpp>
-#include <boost/container/flat_set.hpp>
 #include <iostream>
 
 #include "storm/storage/jani/EdgeDestination.h"
 #include "storm/storage/jani/OrderedAssignments.h"
+#include "storm/storage/BoostTypes.h"
 
 namespace storm {
     namespace jani {
@@ -89,7 +89,7 @@ namespace storm {
             /*!
              * Retrieves a set of (global) variables that are written by at least one of the edge's destinations.
              */
-            boost::container::flat_set<storm::expressions::Variable> const& getWrittenGlobalVariables() const;
+            storm::storage::FlatSet<storm::expressions::Variable> const& getWrittenGlobalVariables() const;
             
             /*!
              * Retrieves the assignments of this edge.

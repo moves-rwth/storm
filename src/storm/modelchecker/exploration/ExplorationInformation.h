@@ -6,13 +6,13 @@
 #include <unordered_map>
 
 #include <boost/optional.hpp>
-#include <boost/container/flat_set.hpp>
 
 #include "storm/solver/OptimizationDirection.h"
 
 #include "storm/generator/CompressedState.h"
 
 #include "storm/storage/SparseMatrix.h"
+#include "storm/storage/BoostTypes.h"
 
 #include "storm/settings/modules/ExplorationSettings.h"
 
@@ -23,7 +23,7 @@ namespace storm {
             class ExplorationInformation {
             public:
                 typedef StateType ActionType;
-                typedef boost::container::flat_set<StateType> StateSet;
+                typedef storm::storage::FlatSet<StateType> StateSet;
                 typedef std::unordered_map<StateType, storm::generator::CompressedState> IdToStateMap;
                 typedef typename IdToStateMap::const_iterator const_iterator;
                 typedef std::vector<std::vector<storm::storage::MatrixEntry<StateType, ValueType>>> MatrixType;

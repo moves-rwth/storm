@@ -81,7 +81,7 @@ namespace storm {
             return true;
         }
         
-        RewardModel RewardModel::restrictActionRelatedRewards(boost::container::flat_set<uint_fast64_t> const& actionIndicesToKeep) const {
+        RewardModel RewardModel::restrictActionRelatedRewards(storm::storage::FlatSet<uint_fast64_t> const& actionIndicesToKeep) const {
             std::vector<StateActionReward> newStateActionRewards;
             for (auto const& stateActionReward : this->getStateActionRewards()) {
                 if (actionIndicesToKeep.find(stateActionReward.getActionIndex()) != actionIndicesToKeep.end()) {

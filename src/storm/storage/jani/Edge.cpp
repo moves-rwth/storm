@@ -100,7 +100,7 @@ namespace storm {
             this->color = newColor;
         }
         
-        boost::container::flat_set<storm::expressions::Variable> const& Edge::getWrittenGlobalVariables() const {
+        storm::storage::FlatSet<storm::expressions::Variable> const& Edge::getWrittenGlobalVariables() const {
             return templateEdge->getWrittenGlobalVariables();
         }
         

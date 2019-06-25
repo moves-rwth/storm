@@ -10,6 +10,7 @@
 #include "storm/storage/prism/Program.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/sparse/PrismChoiceOrigins.h"
+#include "storm/storage/BoostTypes.h"
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "storm/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
 #include "storm/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
@@ -56,18 +57,18 @@ namespace storm {
                 storm::storage::BitVector relevantStates;
 
                 // The set of relevant labels.
-                boost::container::flat_set<uint_fast64_t> relevantLabels;
+                storm::storage::FlatSet<uint_fast64_t> relevantLabels;
                 
                 // The set of relevant label sets.
-                boost::container::flat_set<boost::container::flat_set<uint_fast64_t>> relevantLabelSets;
+                storm::storage::FlatSet<storm::storage::FlatSet<uint_fast64_t>> relevantLabelSets;
                 
                 // The set of labels that matter in terms of minimality.
-                boost::container::flat_set<uint_fast64_t> minimalityLabels;
+                storm::storage::FlatSet<uint_fast64_t> minimalityLabels;
 
                 // A set of labels that is definitely known to be taken in the final solution.
-                boost::container::flat_set<uint_fast64_t> knownLabels;
+                storm::storage::FlatSet<uint_fast64_t> knownLabels;
 
-                boost::container::flat_set<uint64_t> dontCareLabels;
+                storm::storage::FlatSet<uint64_t> dontCareLabels;
                 
                 // A list of relevant choices for each relevant state.
                 std::map<uint_fast64_t, std::list<uint_fast64_t>> relevantChoicesForRelevantStates;
@@ -124,7 +125,7 @@ namespace storm {
              * @param dontCareLabels A set of labels that are "don't care" labels wrt. minimality.
              * @return A structure containing the relevant labels as well as states.
              */
-            static RelevancyInformation determineRelevantStatesAndLabels(storm::models::sparse::Model<T> const& model, std::vector<boost::container::flat_set<uint_fast64_t>> const& labelSets, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, boost::container::flat_set<uint_fast64_t> const& dontCareLabels) {
+            static RelevancyInformation determineRelevantStatesAndLabels(storm::models::sparse::Model<T> const& model, std::vector<storm::storage::FlatSet<uint_fast64_t>> const& labelSets, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::FlatSet<uint_fast64_t> const& dontCareLabels) {
                 // Create result.
                 RelevancyInformation relevancyInformation;
                 
@@ -166,7 +167,7 @@ namespace storm {
                 // Compute the set of labels that are known to be taken in any case.
                 relevancyInformation.knownLabels = storm::utility::counterexamples::getGuaranteedLabelSet(model, labelSets, psiStates, relevancyInformation.relevantLabels);
                 if (!relevancyInformation.knownLabels.empty()) {
-                    boost::container::flat_set<uint_fast64_t> remainingLabels;
+                    storm::storage::FlatSet<uint_fast64_t> remainingLabels;
                     std::set_difference(relevancyInformation.relevantLabels.begin(), relevancyInformation.relevantLabels.end(), relevancyInformation.knownLabels.begin(), relevancyInformation.knownLabels.end(), std::inserter(remainingLabels, remainingLabels.end()));
                     relevancyInformation.relevantLabels = remainingLabels;
                 }
@@ -281,7 +282,7 @@ namespace storm {
                 return variableInformation;
             }
 
-            static storm::expressions::Expression getOtherSynchronizationEnabledFormula(boost::container::flat_set<uint_fast64_t> const& labelSet, std::map<uint_fast64_t, std::set<boost::container::flat_set<uint_fast64_t>>> const& synchronizingLabels, boost::container::flat_map<boost::container::flat_set<uint_fast64_t>, storm::expressions::Expression> const& labelSetToFormula, VariableInformation const& variableInformation, RelevancyInformation const& relevancyInformation) {
+            static storm::expressions::Expression getOtherSynchronizationEnabledFormula(storm::storage::FlatSet<uint_fast64_t> const& labelSet, std::map<uint_fast64_t, std::set<storm::storage::FlatSet<uint_fast64_t>>> const& synchronizingLabels, boost::container::flat_map<storm::storage::FlatSet<uint_fast64_t>, storm::expressions::Expression> const& labelSetToFormula, VariableInformation const& variableInformation, RelevancyInformation const& relevancyInformation) {
                 // Taking all commands of a combination does not necessarily mean that a following label set needs to be taken.
                 // This is because it could be that the commands are taken to enable other synchronizations. Therefore, we need
                 // to add an additional clause that says that the right-hand side of the implication is also true if all commands
@@ -290,7 +291,7 @@ namespace storm {
                     storm::expressions::Expression result = variableInformation.manager->boolean(true);
                     for (auto label : labelSet) {
                         storm::expressions::Expression alternativeExpressionForLabel = variableInformation.manager->boolean(false);
-                        std::set<boost::container::flat_set<uint_fast64_t>> const& synchsForCommand = synchronizingLabels.at(label);
+                        std::set<storm::storage::FlatSet<uint_fast64_t>> const& synchsForCommand = synchronizingLabels.at(label);
                         
                         for (auto const& synchSet : synchsForCommand) {
                             storm::expressions::Expression alternativeExpression = variableInformation.manager->boolean(true);
@@ -327,7 +328,7 @@ namespace storm {
              * @param context The Z3 context in which to build the expressions.
              * @param solver The solver to use for the satisfiability evaluation.
              */
-            static std::chrono::milliseconds assertCuts(storm::storage::SymbolicModelDescription const& symbolicModel, storm::models::sparse::Model<T> const& model, std::vector<boost::container::flat_set<uint_fast64_t>> const& labelSets, storm::storage::BitVector const& psiStates, VariableInformation const& variableInformation, RelevancyInformation const& relevancyInformation, storm::solver::SmtSolver& solver, bool addBackwardImplications) {
+            static std::chrono::milliseconds assertCuts(storm::storage::SymbolicModelDescription const& symbolicModel, storm::models::sparse::Model<T> const& model, std::vector<storm::storage::FlatSet<uint_fast64_t>> const& labelSets, storm::storage::BitVector const& psiStates, VariableInformation const& variableInformation, RelevancyInformation const& relevancyInformation, storm::solver::SmtSolver& solver, bool addBackwardImplications) {
                 // Walk through the model and
                 // * identify labels enabled in initial states
                 // * identify labels that can directly precede a given action
@@ -340,13 +341,13 @@ namespace storm {
                     STORM_LOG_THROW(!symbolicModel.isJaniModel() || !symbolicModel.asJaniModel().usesAssignmentLevels(), storm::exceptions::NotSupportedException, "Counterexample generation with backward implications is not supported for indexed assignments");
                 }
 
-                boost::container::flat_set<uint_fast64_t> initialLabels;
-                std::set<boost::container::flat_set<uint_fast64_t>> initialCombinations;
-                boost::container::flat_set<uint_fast64_t> targetLabels;
-                boost::container::flat_set<boost::container::flat_set<uint_fast64_t>> targetCombinations;
-                std::map<boost::container::flat_set<uint_fast64_t>, std::set<boost::container::flat_set<uint_fast64_t>>> precedingLabels;
-                std::map<boost::container::flat_set<uint_fast64_t>, std::set<boost::container::flat_set<uint_fast64_t>>> followingLabels;
-                std::map<uint_fast64_t, std::set<boost::container::flat_set<uint_fast64_t>>> synchronizingLabels;
+                storm::storage::FlatSet<uint_fast64_t> initialLabels;
+                std::set<storm::storage::FlatSet<uint_fast64_t>> initialCombinations;
+                storm::storage::FlatSet<uint_fast64_t> targetLabels;
+                storm::storage::FlatSet<storm::storage::FlatSet<uint_fast64_t>> targetCombinations;
+                std::map<storm::storage::FlatSet<uint_fast64_t>, std::set<storm::storage::FlatSet<uint_fast64_t>>> precedingLabels;
+                std::map<storm::storage::FlatSet<uint_fast64_t>, std::set<storm::storage::FlatSet<uint_fast64_t>>> followingLabels;
+                std::map<uint_fast64_t, std::set<storm::storage::FlatSet<uint_fast64_t>>> synchronizingLabels;
                 
                 // Get some data from the model for convenient access.
                 storm::storage::SparseMatrix<T> const& transitionMatrix = model.getTransitionMatrix();
@@ -413,7 +414,7 @@ namespace storm {
                 }
 
                 // Store the found implications in a container similar to the preceding label sets.
-                std::map<boost::container::flat_set<uint_fast64_t>, std::set<boost::container::flat_set<uint_fast64_t>>> backwardImplications;
+                std::map<storm::storage::FlatSet<uint_fast64_t>, std::set<storm::storage::FlatSet<uint_fast64_t>>> backwardImplications;
                 if (addBackwardImplications) {
                     // Create a new solver over the same variables as the given symbolic model description to use it for
                     // determining the symbolic cuts.
@@ -671,7 +672,7 @@ namespace storm {
                 STORM_LOG_DEBUG("Successfully gathered data for cuts.");
 
                 // Compute the sets of labels such that the transitions labeled with this set possess at least one known label.
-                boost::container::flat_set<boost::container::flat_set<uint_fast64_t>> hasKnownSuccessor;
+                storm::storage::FlatSet<storm::storage::FlatSet<uint_fast64_t>> hasKnownSuccessor;
                 for (auto const& labelSetFollowingSetsPair : followingLabels) {
                     for (auto const& set : labelSetFollowingSetsPair.second) {
                         if (std::includes(relevancyInformation.knownLabels.begin(), relevancyInformation.knownLabels.end(), set.begin(), set.end())) {
@@ -682,7 +683,7 @@ namespace storm {
                 }
 
                 // Compute the sets of labels such that the transitions labeled with this set possess at least one known predecessor.
-                boost::container::flat_set<boost::container::flat_set<uint_fast64_t>> hasKnownPredecessor;
+                storm::storage::FlatSet<storm::storage::FlatSet<uint_fast64_t>> hasKnownPredecessor;
                 for (auto const& labelSetImplicationsPair : backwardImplications) {
                     for (auto const& set : labelSetImplicationsPair.second) {
                         if (std::includes(relevancyInformation.knownLabels.begin(), relevancyInformation.knownLabels.end(), set.begin(), set.end())) {
@@ -700,7 +701,7 @@ namespace storm {
                     // combination that is already known. Otherwise this condition would be too strong.
                     bool initialCombinationKnown = false;
                     for (auto const& combination : initialCombinations) {
-                        boost::container::flat_set<uint_fast64_t> tmpSet;
+                        storm::storage::FlatSet<uint_fast64_t> tmpSet;
                         std::set_difference(combination.begin(), combination.end(), relevancyInformation.knownLabels.begin(), relevancyInformation.knownLabels.end(), std::inserter(tmpSet, tmpSet.end()));
                         if (tmpSet.size() == 0) {
                             initialCombinationKnown = true;
@@ -725,7 +726,7 @@ namespace storm {
                     // Likewise, if no target combination is known, we may assert that there is at least one.
                     bool targetCombinationKnown = false;
                     for (auto const& combination : targetCombinations) {
-                        boost::container::flat_set<uint_fast64_t> tmpSet;
+                        storm::storage::FlatSet<uint_fast64_t> tmpSet;
                         std::set_difference(combination.begin(), combination.end(), relevancyInformation.knownLabels.begin(), relevancyInformation.knownLabels.end(), std::inserter(tmpSet, tmpSet.end()));
                         if (tmpSet.size() == 0) {
                             targetCombinationKnown = true;
@@ -746,12 +747,12 @@ namespace storm {
                 if(addBackwardImplications) {
 
                     STORM_LOG_DEBUG("Asserting taken labels are followed and preceeded by another label if they are not a target label or an initial label, respectively.");
-                    boost::container::flat_map<boost::container::flat_set<uint_fast64_t>, storm::expressions::Expression> labelSetToFormula;
+                    boost::container::flat_map<storm::storage::FlatSet<uint_fast64_t>, storm::expressions::Expression> labelSetToFormula;
                     for (auto const &labelSet : relevancyInformation.relevantLabelSets) {
                         storm::expressions::Expression labelSetFormula = variableInformation.manager->boolean(false);
 
                         // Compute the set of unknown labels on the left-hand side of the implication.
-                        boost::container::flat_set<uint_fast64_t> unknownLhsLabels;
+                        storm::storage::FlatSet<uint_fast64_t> unknownLhsLabels;
                         std::set_difference(labelSet.begin(), labelSet.end(), relevancyInformation.knownLabels.begin(), relevancyInformation.knownLabels.end(), std::inserter(unknownLhsLabels, unknownLhsLabels.end()));
                         for (auto label : unknownLhsLabels) {
                             labelSetFormula = labelSetFormula || !variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(label));
@@ -766,7 +767,7 @@ namespace storm {
                             auto const &followingLabelSets = followingLabels.at(labelSet);
 
                             for (auto const &followingSet : followingLabelSets) {
-                                boost::container::flat_set<uint_fast64_t> tmpSet;
+                                storm::storage::FlatSet<uint_fast64_t> tmpSet;
 
                                 // Check which labels of the current following set are not known. This set must be non-empty, because
                                 // otherwise a successor combination would already be known and control cannot reach this point.
@@ -799,7 +800,7 @@ namespace storm {
                             auto const &preceedingLabelSets = backwardImplications.at(labelSet);
 
                             for (auto const &preceedingSet : preceedingLabelSets) {
-                                boost::container::flat_set<uint_fast64_t> tmpSet;
+                                storm::storage::FlatSet<uint_fast64_t> tmpSet;
 
                                 // Check which labels of the current following set are not known. This set must be non-empty, because
                                 // otherwise a predecessor combination would already be known and control cannot reach this point.
@@ -868,7 +869,7 @@ namespace storm {
             /*!
              * Asserts constraints necessary to encode the reachability of at least one target state from the initial states.
              */
-            static void assertReachabilityCuts(storm::models::sparse::Model<T> const& model, std::vector<boost::container::flat_set<uint_fast64_t>> const& labelSets, storm::storage::BitVector const& psiStates, VariableInformation const& variableInformation, RelevancyInformation const& relevancyInformation, storm::solver::SmtSolver& solver) {
+            static void assertReachabilityCuts(storm::models::sparse::Model<T> const& model, std::vector<storm::storage::FlatSet<uint_fast64_t>> const& labelSets, storm::storage::BitVector const& psiStates, VariableInformation const& variableInformation, RelevancyInformation const& relevancyInformation, storm::solver::SmtSolver& solver) {
                 
                 if (!variableInformation.hasReachabilityVariables) {
                     throw storm::exceptions::InvalidStateException() << "Impossible to assert reachability cuts without the necessary variables.";
@@ -885,14 +886,14 @@ namespace storm {
                 for (auto relevantState : relevancyInformation.relevantStates) {
                     if (!model.getInitialStates().get(relevantState)) {
                         // Assert the constraints (1).
-                        boost::container::flat_set<uint_fast64_t> relevantPredecessors;
+                        storm::storage::FlatSet<uint_fast64_t> relevantPredecessors;
                         for (auto const& predecessorEntry : backwardTransitions.getRow(relevantState)) {
                             if (relevantState != predecessorEntry.getColumn() && relevancyInformation.relevantStates.get(predecessorEntry.getColumn())) {
                                 relevantPredecessors.insert(predecessorEntry.getColumn());
                             }
                         }
                         
-                        boost::container::flat_set<uint_fast64_t> relevantSuccessors;
+                        storm::storage::FlatSet<uint_fast64_t> relevantSuccessors;
                         for (auto const& relevantChoice : relevancyInformation.relevantChoicesForRelevantStates.at(relevantState)) {
                             for (auto const& successorEntry : transitionMatrix.getRow(relevantChoice)) {
                                 if (relevantState != successorEntry.getColumn() && (relevancyInformation.relevantStates.get(successorEntry.getColumn()) || psiStates.get(successorEntry.getColumn()))) {
@@ -912,7 +913,7 @@ namespace storm {
                         solver.add(expression);
                     } else {
                         // Assert the constraints (2).
-                        boost::container::flat_set<uint_fast64_t> relevantSuccessors;
+                        storm::storage::FlatSet<uint_fast64_t> relevantSuccessors;
                         for (auto const& relevantChoice : relevancyInformation.relevantChoicesForRelevantStates.at(relevantState)) {
                             for (auto const& successorEntry : transitionMatrix.getRow(relevantChoice)) {
                                 if (relevantState != successorEntry.getColumn() && (relevancyInformation.relevantStates.get(successorEntry.getColumn()) || psiStates.get(successorEntry.getColumn()))) {
@@ -936,7 +937,7 @@ namespace storm {
                     uint_fast64_t targetState = statePairIndexPair.first.second;
                     
                     // Assert constraint for (1).
-                    boost::container::flat_set<uint_fast64_t> choicesForStatePair;
+                    storm::storage::FlatSet<uint_fast64_t> choicesForStatePair;
                     for (auto const& relevantChoice : relevancyInformation.relevantChoicesForRelevantStates.at(sourceState)) {
                         for (auto const& successorEntry : transitionMatrix.getRow(relevantChoice)) {
                             if (successorEntry.getColumn() == targetState) {
@@ -1163,8 +1164,8 @@ namespace storm {
              * @param model The model from which to extract the information.
              * @param variableInformation A structure with information about the variables of the solver.
              */
-            static boost::container::flat_set<uint_fast64_t> getUsedLabelSet(storm::solver::SmtSolver::ModelReference const& model, VariableInformation const& variableInformation) {
-                boost::container::flat_set<uint_fast64_t> result;
+            static storm::storage::FlatSet<uint_fast64_t> getUsedLabelSet(storm::solver::SmtSolver::ModelReference const& model, VariableInformation const& variableInformation) {
+                storm::storage::FlatSet<uint_fast64_t> result;
                 for (auto const& labelIndexPair : variableInformation.labelToIndexMap) {
                     bool commandIncluded = model.getBooleanValue(variableInformation.labelVariables.at(labelIndexPair.second));
                     
@@ -1213,7 +1214,7 @@ namespace storm {
              * in order to satisfy the constraint system.
              * @return The smallest set of labels such that the constraint system of the solver is satisfiable.
              */
-            static boost::optional<boost::container::flat_set<uint_fast64_t>> findSmallestCommandSet(storm::solver::SmtSolver& solver, VariableInformation& variableInformation, uint_fast64_t& currentBound) {
+            static boost::optional<storm::storage::FlatSet<uint_fast64_t>> findSmallestCommandSet(storm::solver::SmtSolver& solver, VariableInformation& variableInformation, uint_fast64_t& currentBound) {
                 // Check if we can find a solution with the current bound.
                 storm::expressions::Expression assumption = !variableInformation.auxiliaryVariables.back();
 
@@ -1239,10 +1240,10 @@ namespace storm {
                 return getUsedLabelSet(*solver.getModel(), variableInformation);
             }
             
-            static void ruleOutSingleSolution(storm::solver::SmtSolver& solver, boost::container::flat_set<uint_fast64_t> const& labelSet, VariableInformation& variableInformation, RelevancyInformation const& relevancyInformation) {
+            static void ruleOutSingleSolution(storm::solver::SmtSolver& solver, storm::storage::FlatSet<uint_fast64_t> const& labelSet, VariableInformation& variableInformation, RelevancyInformation const& relevancyInformation) {
                 std::vector<storm::expressions::Expression> formulae;
                 
-                boost::container::flat_set<uint_fast64_t> unknownLabels;
+                storm::storage::FlatSet<uint_fast64_t> unknownLabels;
                 std::set_intersection(labelSet.begin(), labelSet.end(), relevancyInformation.minimalityLabels.begin(), relevancyInformation.minimalityLabels.end(), std::inserter(unknownLabels, unknownLabels.end()));
 
                 //std::set_difference(labelSet.begin(), labelSet.end(), relevancyInformation.knownLabels.begin(), relevancyInformation.knownLabels.end(), std::inserter(unknownLabels, unknownLabels.end()));
@@ -1250,7 +1251,7 @@ namespace storm {
                     formulae.emplace_back(!variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(label)));
                 }
 
-                boost::container::flat_set<uint_fast64_t> remainingLabels;
+                storm::storage::FlatSet<uint_fast64_t> remainingLabels;
                 //std::set_difference(relevancyInformation.relevantLabels.begin(), relevancyInformation.relevantLabels.end(), labelSet.begin(), labelSet.end(), std::inserter(remainingLabels, remainingLabels.end()));
                 std::set_difference(relevancyInformation.minimalityLabels.begin(), relevancyInformation.minimalityLabels.end(), labelSet.begin(), labelSet.end(), std::inserter(remainingLabels, remainingLabels.end()));
 
@@ -1262,10 +1263,10 @@ namespace storm {
                 assertDisjunction(solver, formulae, *variableInformation.manager);
             }
 
-            static void ruleOutBiggerSolutions(storm::solver::SmtSolver& solver, boost::container::flat_set<uint_fast64_t> const& labelSet, VariableInformation& variableInformation, RelevancyInformation const& relevancyInformation) {
+            static void ruleOutBiggerSolutions(storm::solver::SmtSolver& solver, storm::storage::FlatSet<uint_fast64_t> const& labelSet, VariableInformation& variableInformation, RelevancyInformation const& relevancyInformation) {
                 std::vector<storm::expressions::Expression> formulae;
 
-                boost::container::flat_set<uint_fast64_t> unknownLabels;
+                storm::storage::FlatSet<uint_fast64_t> unknownLabels;
                 std::set_intersection(labelSet.begin(), labelSet.end(), relevancyInformation.minimalityLabels.begin(), relevancyInformation.minimalityLabels.end(), std::inserter(unknownLabels, unknownLabels.end()));
 
                 //std::set_difference(labelSet.begin(), labelSet.end(), relevancyInformation.knownLabels.begin(), relevancyInformation.knownLabels.end(), std::inserter(unknownLabels, unknownLabels.end()));
@@ -1289,7 +1290,7 @@ namespace storm {
              * @param commandSet The currently chosen set of commands.
              * @param variableInformation A structure with information about the variables of the solver.
              */
-            static void analyzeZeroProbabilitySolution(storm::solver::SmtSolver& solver, storm::models::sparse::Model<T> const& subModel, std::vector<boost::container::flat_set<uint_fast64_t>> const& subLabelSets, storm::models::sparse::Model<T> const& originalModel, std::vector<boost::container::flat_set<uint_fast64_t>> const& originalLabelSets, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, boost::container::flat_set<uint_fast64_t> const& commandSet, VariableInformation& variableInformation, RelevancyInformation const& relevancyInformation) {
+            static void analyzeZeroProbabilitySolution(storm::solver::SmtSolver& solver, storm::models::sparse::Model<T> const& subModel, std::vector<storm::storage::FlatSet<uint_fast64_t>> const& subLabelSets, storm::models::sparse::Model<T> const& originalModel, std::vector<storm::storage::FlatSet<uint_fast64_t>> const& originalLabelSets, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::FlatSet<uint_fast64_t> const& commandSet, VariableInformation& variableInformation, RelevancyInformation const& relevancyInformation) {
                 storm::storage::BitVector reachableStates(subModel.getNumberOfStates());
                 
                 STORM_LOG_DEBUG("Analyzing solution with zero probability.");
@@ -1307,7 +1308,7 @@ namespace storm {
                 std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = transitionMatrix.getRowGroupIndices();
                 
                 // Now determine which states and labels are actually reachable.
-                boost::container::flat_set<uint_fast64_t> reachableLabels;
+                storm::storage::FlatSet<uint_fast64_t> reachableLabels;
                 while (!stack.empty()) {
                     uint_fast64_t currentState = stack.back();
                     stack.pop_back();
@@ -1345,15 +1346,15 @@ namespace storm {
                 storm::storage::BitVector unreachableRelevantStates = ~reachableStates & relevancyInformation.relevantStates;
                 storm::storage::BitVector statesThatCanReachTargetStates = storm::utility::graph::performProbGreater0E(subModel.getBackwardTransitions(), phiStates, psiStates);
                 
-                boost::container::flat_set<uint_fast64_t> locallyRelevantLabels;
+                storm::storage::FlatSet<uint_fast64_t> locallyRelevantLabels;
                 std::set_difference(relevancyInformation.relevantLabels.begin(), relevancyInformation.relevantLabels.end(), commandSet.begin(), commandSet.end(), std::inserter(locallyRelevantLabels, locallyRelevantLabels.begin()));
                 
-                std::vector<boost::container::flat_set<uint_fast64_t>> guaranteedLabelSets = storm::utility::counterexamples::getGuaranteedLabelSets(originalModel, originalLabelSets, statesThatCanReachTargetStates, locallyRelevantLabels);
+                std::vector<storm::storage::FlatSet<uint_fast64_t>> guaranteedLabelSets = storm::utility::counterexamples::getGuaranteedLabelSets(originalModel, originalLabelSets, statesThatCanReachTargetStates, locallyRelevantLabels);
                 STORM_LOG_DEBUG("Found " << reachableLabels.size() << " reachable labels and " << reachableStates.getNumberOfSetBits() << " reachable states.");
                 
                 // Search for states on the border of the reachable state space, i.e. states that are still reachable
                 // and possess a (disabled) option to leave the reachable part of the state space.
-                std::set<boost::container::flat_set<uint_fast64_t>> cutLabels;
+                std::set<storm::storage::FlatSet<uint_fast64_t>> cutLabels;
                 for (auto state : reachableStates) {
                     for (auto currentChoice : relevancyInformation.relevantChoicesForRelevantStates.at(state)) {
                         if (!std::includes(commandSet.begin(), commandSet.end(), originalLabelSets[currentChoice].begin(), originalLabelSets[currentChoice].end())) {
@@ -1367,7 +1368,7 @@ namespace storm {
                             }
 
                             if (isBorderChoice) {
-                                boost::container::flat_set<uint_fast64_t> currentLabelSet;
+                                storm::storage::FlatSet<uint_fast64_t> currentLabelSet;
                                 std::set_difference(originalLabelSets[currentChoice].begin(), originalLabelSets[currentChoice].end(), commandSet.begin(), commandSet.end(), std::inserter(currentLabelSet, currentLabelSet.begin()));
                                 std::set_difference(guaranteedLabelSets[state].begin(), guaranteedLabelSets[state].end(), commandSet.begin(), commandSet.end(), std::inserter(currentLabelSet, currentLabelSet.end()));
 
@@ -1379,9 +1380,9 @@ namespace storm {
                 
                 // Given the results of the previous analysis, we construct the implications.
                 std::vector<storm::expressions::Expression> formulae;
-                boost::container::flat_set<uint_fast64_t> unknownReachableLabels;
+                storm::storage::FlatSet<uint_fast64_t> unknownReachableLabels;
                 std::set_difference(reachableLabels.begin(), reachableLabels.end(), relevancyInformation.knownLabels.begin(), relevancyInformation.knownLabels.end(), std::inserter(unknownReachableLabels, unknownReachableLabels.end()));
-                boost::container::flat_set<uint64_t> unknownReachableMinimalityLabels;
+                storm::storage::FlatSet<uint64_t> unknownReachableMinimalityLabels;
                 std::set_intersection(unknownReachableLabels.begin(), unknownReachableLabels.end(), relevancyInformation.minimalityLabels.begin(), relevancyInformation.minimalityLabels.end(), std::inserter(unknownReachableMinimalityLabels, unknownReachableMinimalityLabels.end()));
 
                 for (auto label : unknownReachableMinimalityLabels) {
@@ -1412,7 +1413,7 @@ namespace storm {
              * @param commandSet The currently chosen set of commands.
              * @param variableInformation A structure with information about the variables of the solver.
              */
-            static void analyzeInsufficientProbabilitySolution(storm::solver::SmtSolver& solver, storm::models::sparse::Model<T> const& subModel, std::vector<boost::container::flat_set<uint_fast64_t>> const& subLabelSets, storm::models::sparse::Model<T> const& originalModel, std::vector<boost::container::flat_set<uint_fast64_t>> const& originalLabelSets, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, boost::container::flat_set<uint_fast64_t> const& commandSet, VariableInformation& variableInformation, RelevancyInformation const& relevancyInformation) {
+            static void analyzeInsufficientProbabilitySolution(storm::solver::SmtSolver& solver, storm::models::sparse::Model<T> const& subModel, std::vector<storm::storage::FlatSet<uint_fast64_t>> const& subLabelSets, storm::models::sparse::Model<T> const& originalModel, std::vector<storm::storage::FlatSet<uint_fast64_t>> const& originalLabelSets, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::FlatSet<uint_fast64_t> const& commandSet, VariableInformation& variableInformation, RelevancyInformation const& relevancyInformation) {
 
                 STORM_LOG_DEBUG("Analyzing solution with insufficient probability.");
 
@@ -1430,7 +1431,7 @@ namespace storm {
                 std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = transitionMatrix.getRowGroupIndices();
                 
                 // Now determine which states and labels are actually reachable.
-                boost::container::flat_set<uint_fast64_t> reachableLabels;
+                storm::storage::FlatSet<uint_fast64_t> reachableLabels;
                 while (!stack.empty()) {
                     uint_fast64_t currentState = stack.back();
                     stack.pop_back();
@@ -1462,17 +1463,17 @@ namespace storm {
                 storm::storage::BitVector unreachableRelevantStates = ~reachableStates & relevancyInformation.relevantStates;
                 storm::storage::BitVector statesThatCanReachTargetStates = storm::utility::graph::performProbGreater0E(subModel.getBackwardTransitions(), phiStates, psiStates);
                 
-                boost::container::flat_set<uint_fast64_t> locallyRelevantLabels;
+                storm::storage::FlatSet<uint_fast64_t> locallyRelevantLabels;
                 std::set_difference(relevancyInformation.relevantLabels.begin(), relevancyInformation.relevantLabels.end(), commandSet.begin(), commandSet.end(), std::inserter(locallyRelevantLabels, locallyRelevantLabels.begin()));
                 
-                std::vector<boost::container::flat_set<uint_fast64_t>> guaranteedLabelSets = storm::utility::counterexamples::getGuaranteedLabelSets(originalModel, originalLabelSets, statesThatCanReachTargetStates, locallyRelevantLabels);
+                std::vector<storm::storage::FlatSet<uint_fast64_t>> guaranteedLabelSets = storm::utility::counterexamples::getGuaranteedLabelSets(originalModel, originalLabelSets, statesThatCanReachTargetStates, locallyRelevantLabels);
                 
                 // Search for states for which we could enable another option and possibly improve the reachability probability.
-                std::set<boost::container::flat_set<uint_fast64_t>> cutLabels;
+                std::set<storm::storage::FlatSet<uint_fast64_t>> cutLabels;
                 for (auto state : reachableStates) {
                     for (auto currentChoice : relevancyInformation.relevantChoicesForRelevantStates.at(state)) {
                         if (!std::includes(commandSet.begin(), commandSet.end(), originalLabelSets[currentChoice].begin(), originalLabelSets[currentChoice].end())) {
-                            boost::container::flat_set<uint_fast64_t> currentLabelSet;
+                            storm::storage::FlatSet<uint_fast64_t> currentLabelSet;
                             std::set_difference(originalLabelSets[currentChoice].begin(), originalLabelSets[currentChoice].end(), commandSet.begin(), commandSet.end(), std::inserter(currentLabelSet, currentLabelSet.begin()));
                             std::set_difference(guaranteedLabelSets[state].begin(), guaranteedLabelSets[state].end(), commandSet.begin(), commandSet.end(), std::inserter(currentLabelSet, currentLabelSet.end()));
 
@@ -1483,9 +1484,9 @@ namespace storm {
                 
                 // Given the results of the previous analysis, we construct the implications
                 std::vector<storm::expressions::Expression> formulae;
-                boost::container::flat_set<uint_fast64_t> unknownReachableLabels;
+                storm::storage::FlatSet<uint_fast64_t> unknownReachableLabels;
                 std::set_difference(reachableLabels.begin(), reachableLabels.end(), relevancyInformation.knownLabels.begin(), relevancyInformation.knownLabels.end(), std::inserter(unknownReachableLabels, unknownReachableLabels.end()));
-                boost::container::flat_set<uint64_t> unknownReachableMinimalityLabels;
+                storm::storage::FlatSet<uint64_t> unknownReachableMinimalityLabels;
                 std::set_intersection(unknownReachableLabels.begin(), unknownReachableLabels.end(), relevancyInformation.minimalityLabels.begin(), relevancyInformation.minimalityLabels.end(), std::inserter(unknownReachableMinimalityLabels, unknownReachableMinimalityLabels.end()));
 
                 for (auto label : unknownReachableMinimalityLabels) {
@@ -1510,11 +1511,11 @@ namespace storm {
              * Returns the sub-model obtained from removing all choices that do not originate from the specified filterLabelSet.
              * Also returns the Labelsets of the sub-model.
              */
-            static std::pair<std::shared_ptr<storm::models::sparse::Model<T>>, std::vector<boost::container::flat_set<uint_fast64_t>>> restrictModelToLabelSet(storm::models::sparse::Model<T> const& model,  boost::container::flat_set<uint_fast64_t> const& filterLabelSet, boost::optional<uint64_t> absorbState = boost::none) {
+            static std::pair<std::shared_ptr<storm::models::sparse::Model<T>>, std::vector<storm::storage::FlatSet<uint_fast64_t>>> restrictModelToLabelSet(storm::models::sparse::Model<T> const& model,  storm::storage::FlatSet<uint_fast64_t> const& filterLabelSet, boost::optional<uint64_t> absorbState = boost::none) {
 
                 bool customRowGrouping = model.isOfType(storm::models::ModelType::Mdp);
                 
-                std::vector<boost::container::flat_set<uint_fast64_t>> resultLabelSet;
+                std::vector<storm::storage::FlatSet<uint_fast64_t>> resultLabelSet;
                 storm::storage::SparseMatrixBuilder<T> transitionMatrixBuilder(0, model.getTransitionMatrix().getColumnCount(), 0, true, customRowGrouping, model.getTransitionMatrix().getRowGroupCount());
 
                 // Check for each choice of each state, whether the choice commands are fully contained in the given command set.
@@ -1643,11 +1644,11 @@ namespace storm {
              * @param strictBound Indicates whether the threshold needs to be achieved (true) or exceeded (false).
              * @param options A set of options for customization.
              */
-            static std::vector<boost::container::flat_set<uint_fast64_t>> getMinimalLabelSet(Environment const& env, GeneratorStats& stats, storm::storage::SymbolicModelDescription const& symbolicModel, storm::models::sparse::Model<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, std::vector<double> propertyThreshold, boost::optional<std::vector<std::string>> const& rewardName, bool strictBound, boost::container::flat_set<uint_fast64_t> const& dontCareLabels = boost::container::flat_set<uint_fast64_t>(), Options const& options = Options()) {
+            static std::vector<storm::storage::FlatSet<uint_fast64_t>> getMinimalLabelSet(Environment const& env, GeneratorStats& stats, storm::storage::SymbolicModelDescription const& symbolicModel, storm::models::sparse::Model<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, std::vector<double> propertyThreshold, boost::optional<std::vector<std::string>> const& rewardName, bool strictBound, storm::storage::FlatSet<uint_fast64_t> const& dontCareLabels = storm::storage::FlatSet<uint_fast64_t>(), Options const& options = Options()) {
 #ifdef STORM_HAVE_Z3
                 STORM_LOG_THROW(propertyThreshold.size() > 0, storm::exceptions::InvalidArgumentException, "At least one threshold has to be specified.");
                 STORM_LOG_THROW(propertyThreshold.size() == 1 || (rewardName &&  rewardName.get().size() == propertyThreshold.size()), storm::exceptions::InvalidArgumentException, "Multiple thresholds is only supported for multiple reward structures");
-                std::vector<boost::container::flat_set<uint_fast64_t>> result;
+                std::vector<storm::storage::FlatSet<uint_fast64_t>> result;
                 // Set up all clocks used for time measurement.
                 auto totalClock = std::chrono::high_resolution_clock::now();
                 auto timeOfLastMessage = std::chrono::high_resolution_clock::now();
@@ -1670,7 +1671,7 @@ namespace storm {
                 STORM_LOG_THROW(model.hasChoiceOrigins(), storm::exceptions::InvalidArgumentException, "Restriction to minimal command set is impossible for model without choice origins.");
                 STORM_LOG_THROW(model.getChoiceOrigins()->isPrismChoiceOrigins() || model.getChoiceOrigins()->isJaniChoiceOrigins(), storm::exceptions::InvalidArgumentException, "Restriction to label set is impossible for model without PRISM or JANI choice origins.");
                 
-                std::vector<boost::container::flat_set<uint_fast64_t>> labelSets(model.getNumberOfChoices());
+                std::vector<storm::storage::FlatSet<uint_fast64_t>> labelSets(model.getNumberOfChoices());
                 if (model.getChoiceOrigins()->isPrismChoiceOrigins()) {
                     storm::storage::sparse::PrismChoiceOrigins const& choiceOrigins = model.getChoiceOrigins()->asPrismChoiceOrigins();
                     for (uint_fast64_t choice = 0; choice < model.getNumberOfChoices(); ++choice) {
@@ -1730,7 +1731,7 @@ namespace storm {
                 // Otherwise, the current solution has to be ruled out and the next smallest solution is retrieved from
                 // the solver.
 
-                boost::container::flat_set<uint_fast64_t> commandSet(relevancyInformation.knownLabels);
+                storm::storage::FlatSet<uint_fast64_t> commandSet(relevancyInformation.knownLabels);
                 
                 // If there are no relevant labels, return directly.
                 if (relevancyInformation.relevantLabels.empty()) {
@@ -1758,7 +1759,7 @@ namespace storm {
                     }
                     STORM_LOG_DEBUG("Computing minimal command set.");
                     solverClock = std::chrono::high_resolution_clock::now();
-                    boost::optional<boost::container::flat_set<uint_fast64_t>> smallest = findSmallestCommandSet(*solver, variableInformation, currentBound);
+                    boost::optional<storm::storage::FlatSet<uint_fast64_t>> smallest = findSmallestCommandSet(*solver, variableInformation, currentBound);
                     totalSolverTime += std::chrono::high_resolution_clock::now() - solverClock;
                     if(smallest == boost::none) {
                         STORM_LOG_DEBUG("No further counterexamples.");
@@ -1784,7 +1785,7 @@ namespace storm {
 
                     auto subChoiceOrigins = restrictModelToLabelSet(model, commandSet, psiStates.getNextSetIndex(0));
                     std::shared_ptr<storm::models::sparse::Model<T>> const& subModel = subChoiceOrigins.first;
-                    std::vector<boost::container::flat_set<uint_fast64_t>> const& subLabelSets = subChoiceOrigins.second;
+                    std::vector<storm::storage::FlatSet<uint_fast64_t>> const& subLabelSets = subChoiceOrigins.second;
   
                     // Now determine the maximal reachability probability in the sub-model.
                     maximalPropertyValue = computeMaximalReachabilityProbability(env, *subModel, phiStates, psiStates, rewardName);
@@ -1864,7 +1865,7 @@ namespace storm {
                 stats.iterations = iterations;
 
                 if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
-                    boost::container::flat_set<uint64_t> allLabels;
+                    storm::storage::FlatSet<uint64_t> allLabels;
                     for (auto const& e : labelSets) {
                         allLabels.insert(e.begin(), e.end());
                     }
@@ -1894,7 +1895,7 @@ namespace storm {
 #endif
             }
             
-            static void extendLabelSetLowerBound(storm::models::sparse::Model<T> const& model, boost::container::flat_set<uint_fast64_t>& commandSet, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates,  bool silent = false) {
+            static void extendLabelSetLowerBound(storm::models::sparse::Model<T> const& model, storm::storage::FlatSet<uint_fast64_t>& commandSet, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates,  bool silent = false) {
                 auto startTime = std::chrono::high_resolution_clock::now();
                 
                 // Create sub-model that only contains the choices allowed by the given command set.
@@ -2080,7 +2081,7 @@ namespace storm {
             }
 
 
-            static std::vector<boost::container::flat_set<uint_fast64_t>> computeCounterexampleLabelSet(Environment const& env, GeneratorStats& stats, storm::storage::SymbolicModelDescription const& symbolicModel, storm::models::sparse::Model<T> const& model, CexInput const& counterexInput, boost::container::flat_set<uint_fast64_t> const& dontCareLabels = boost::container::flat_set<uint_fast64_t>(),  Options const& options = Options(true)) {
+            static std::vector<storm::storage::FlatSet<uint_fast64_t>> computeCounterexampleLabelSet(Environment const& env, GeneratorStats& stats, storm::storage::SymbolicModelDescription const& symbolicModel, storm::models::sparse::Model<T> const& model, CexInput const& counterexInput, storm::storage::FlatSet<uint_fast64_t> const& dontCareLabels = storm::storage::FlatSet<uint_fast64_t>(),  Options const& options = Options(true)) {
                 STORM_LOG_THROW(model.isOfType(storm::models::ModelType::Dtmc) || model.isOfType(storm::models::ModelType::Mdp), storm::exceptions::NotSupportedException, "MaxSAT-based counterexample generation is supported only for discrete-time models.");
 
                 // Delegate the actual computation work to the function of equal name.
