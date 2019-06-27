@@ -19,7 +19,6 @@
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 #include "storm/transformer/EndComponentEliminator.h"
 
-
 #include "storm/exceptions/UnexpectedException.h"
 namespace storm {
     namespace modelchecker {
@@ -261,6 +260,25 @@ namespace storm {
                 return objective.formula->isRewardOperatorFormula() && objective.formula->getSubformula().isTotalRewardFormula();
             }
             
+            template <typename ValueType>
+            ValueType getLpathDfs(uint64_t currentState, ValueType currentValue, storm::storage::BitVector& visited, storm::storage::BitVector const& mecStates, storm::storage::SparseMatrix<ValueType> const& transitions, uint64_t& counter) {
+                // exhausive dfs
+                if (visited.get(currentState)) {
+                    if (++counter % 1000000 == 0) {
+                        std::cout << "\t\t checked " << counter << " paths" << std::endl;
+                    }
+                    return currentValue;
+                } else {
+                    visited.set(currentState);
+                    ValueType result = storm::utility::one<ValueType>();
+                    for (auto const& transition : transitions.getRowGroup(currentState)) {
+                        result = std::min(result, getLpathDfs<ValueType>(transition.getColumn(), currentValue * transition.getValue(), visited, mecStates, transitions, counter));
+                    }
+                    visited.set(currentState, false);
+                    return result;
+                }
+            }
+            
             template <typename ModelType>
             std::vector<typename ModelType::ValueType> DeterministicSchedsObjectiveHelper<ModelType>::computeUpperBoundOnExpectedVisitingTimes(storm::storage::SparseMatrix<ValueType> const& modelTransitions, storm::storage::BitVector const& bottomStates, storm::storage::BitVector const& nonBottomStates, bool hasEndComponents) {
                 storm::storage::SparseMatrix<ValueType> transitions;
@@ -271,42 +289,102 @@ namespace storm {
                     // The approach is to give a lower bound lpath on a path that leaves the end component.
                     // Then we use end component elimination and add a self loop on the 'ec' states with probability 1-lpath
                     storm::storage::MaximalEndComponentDecomposition<ValueType> mecs(modelTransitions, modelTransitions.transpose(true), nonBottomStates);
-                    auto mecElimination = storm::transformer::EndComponentEliminator<ValueType>::transform(modelTransitions, mecs, nonBottomStates, nonBottomStates, true);
-                    transitions = std::move(mecElimination.matrix);
-                    modelToSubsystemStateMapping = std::move(mecElimination.oldToNewStateMapping);
-                    probabilitiesToBottomStates.reserve(transitions.getRowCount());
-                    for (uint64_t row = 0; row < transitions.getRowCount(); ++row) {
-                        probabilitiesToBottomStates.push_back(modelTransitions.getConstrainedRowSum(mecElimination.newToOldRowMapping[row], bottomStates));
+                    auto mecElimination = storm::transformer::EndComponentEliminator<ValueType>::transform(modelTransitions, mecs, nonBottomStates, nonBottomStates);
+                    
+                    probabilitiesToBottomStates.reserve(mecElimination.matrix.getRowCount());
+                    for (uint64_t row = 0; row < mecElimination.matrix.getRowCount(); ++row) {
+                        if (mecElimination.matrix.getRow(row).getNumberOfEntries() == 0) {
+                            probabilitiesToBottomStates.push_back(storm::utility::one<ValueType>());
+                        } else {
+                            probabilitiesToBottomStates.push_back(modelTransitions.getConstrainedRowSum(mecElimination.newToOldRowMapping[row], bottomStates));
+                        }
                     }
-                    // replace 'selfloop probability' for mec states by 1-lpath
+                    
+                    modelToSubsystemStateMapping = std::move(mecElimination.oldToNewStateMapping);
+                    transitions = storm::storage::SparseMatrix<ValueType>(mecElimination.matrix, true); // insert diagonal entries
+                    
+                    // slow down mec states by adding self loop probability 1-lpath
                     for (auto const& mec : mecs) {
                         ValueType lpath = storm::utility::one<ValueType>();
-                        for (auto const& stateChoices : mec) {
-                            ValueType minProb = storm::utility::one<ValueType>();
-                            for (auto const& choice : stateChoices.second) {
-                                for (auto const& transition : modelTransitions.getRow(choice)) {
-                                    if (!storm::utility::isZero(transition.getValue())) {
-                                        minProb = std::min(minProb, transition.getValue());
+                        if (true) {
+                            for (auto const& stateChoices : mec) {
+                                auto state = stateChoices.first;
+                                ValueType minProb = storm::utility::one<ValueType>();
+                                for (uint64_t choice = modelTransitions.getRowGroupIndices()[state]; choice < modelTransitions.getRowGroupIndices()[state + 1]; ++state) {
+                                    if (stateChoices.second.count(choice) > 0) {
+                                        for (auto const& transition : modelTransitions.getRow(choice)) {
+                                            if (!storm::utility::isZero(transition.getValue())) {
+                                                minProb = std::min(minProb, transition.getValue());
+                                            }
+                                        }
+                                    } else {
+                                        ValueType sum = storm::utility::zero<ValueType>();
+                                        for (auto const& transition : modelTransitions.getRow(choice)) {
+                                            if (!mec.containsState(transition.getColumn())) {
+                                                sum += transition.getValue();
+                                            }
+                                        }
+                                        minProb = std::min(minProb, sum);
                                     }
                                 }
+                                lpath *= minProb;
                             }
-                            lpath *= minProb;
                         }
-                        STORM_LOG_ASSERT(!storm::utility::isZero(lpath), "unexpected value of lpath");
-                        uint64_t mecState = modelToSubsystemStateMapping.get()[mec.begin()->first];
-                        bool foundEntry = false;
-                        for (uint64_t mecChoice = transitions.getRowGroupIndices()[mecState]; mecChoice < transitions.getRowGroupIndices()[mecState + 1]; ++mecChoice) {
-                            if (transitions.getRow(mecChoice).getNumberOfEntries() == 1) {
-                                auto& entry = *transitions.getRow(mecChoice).begin();
-                                if (entry.getColumn() == mecState && storm::utility::isOne(entry.getValue())) {
-                                    entry.setValue(storm::utility::one<ValueType>() - lpath);
-                                    foundEntry = true;
-                                    probabilitiesToBottomStates[mecChoice] = lpath;
-                                    break;
+                        if (false) {
+                            std::vector<ValueType> leastPathProbs(modelTransitions.getRowGroupCount(), storm::utility::one<ValueType>());
+                            std::vector<ValueType> prevLeastPathProbs(modelTransitions.getRowGroupCount(), storm::utility::one<ValueType>());
+                            uint64_t mecSize = std::distance(mec.begin(), mec.end());
+                            for (uint64_t i = 0; i < mecSize; ++i) {
+                                for (auto const& stateChoices : mec) {
+                                    auto state = stateChoices.first;
+                                    auto currVal = prevLeastPathProbs[state];
+                                    for (auto const& transition : modelTransitions.getRowGroup(state)) {
+                                        if (!storm::utility::isZero(transition.getValue()) && transition.getColumn() != state) {
+                                            currVal = std::min<ValueType>(currVal, transition.getValue() * prevLeastPathProbs[transition.getColumn()]);
+                                        }
+                                    }
+                                    leastPathProbs[state] = currVal;
+                                }
+                                leastPathProbs.swap(prevLeastPathProbs);
+                            }
+                            lpath = *std::min_element(leastPathProbs.begin(), leastPathProbs.end());
+                            //lpath = std::max(lpath, storm::utility::convertNumber<ValueType>(1e-2)); // TODO
+                        }
+                        if (false) {
+                            storm::storage::BitVector mecStates(modelTransitions.getRowGroupCount(), false);
+                            uint64_t numTransitions = 0;
+                            uint64_t numChoices = 0;
+                            for (auto const& stateChoices : mec) {
+                                mecStates.set(stateChoices.first);
+                                numTransitions += modelTransitions.getRowGroup(stateChoices.first).getNumberOfEntries();
+                                numChoices += modelTransitions.getRowGroupSize(stateChoices.first);
+                            }
+                            std::cout << "Checking a mec with " << mecStates.getNumberOfSetBits() << " states " << numChoices << " choices and " << numTransitions << " transitions." << std::endl;
+                            lpath = storm::utility::one<ValueType>();
+                            for (auto const& stateChoices : mec) {
+                                storm::storage::BitVector visited = ~mecStates;
+                                uint64_t counter = 0;
+                                ValueType lpathOld = lpath;
+                                lpath = std::min(lpath, getLpathDfs(stateChoices.first, storm::utility::one<ValueType>(), visited, mecStates, modelTransitions, counter));
+                                if (lpathOld > lpath) {
+                                    std::cout << "\tnew lpath is " << storm::utility::convertNumber<double>(lpath) << ". checked " << counter << " paths." << std::endl;
                                 }
                             }
                         }
-                        STORM_LOG_THROW(foundEntry, storm::exceptions::UnexpectedException, "Unable to find self loop entry at mec state.");
+                        STORM_LOG_ASSERT(!storm::utility::isZero(lpath), "unexpected value of lpath");
+                        STORM_LOG_WARN_COND(lpath >= storm::utility::convertNumber<ValueType>(0.01), "Small lower bound for the probability to leave a mec: " << storm::utility::convertNumber<double>(lpath) << ". Numerical issues might occur.");
+                        uint64_t mecState = modelToSubsystemStateMapping.get()[mec.begin()->first];
+                        // scale all the probabilities at this state with lpath
+                        for (uint64_t mecChoice = transitions.getRowGroupIndices()[mecState]; mecChoice < transitions.getRowGroupIndices()[mecState + 1]; ++mecChoice) {
+                            for (auto& entry : transitions.getRow(mecChoice)) {
+                                if (entry.getColumn() == mecState) {
+                                    entry.setValue(entry.getValue() * lpath + storm::utility::one<ValueType>() - lpath);
+                                } else {
+                                    entry.setValue(entry.getValue() * lpath);
+                                }
+                            }
+                            probabilitiesToBottomStates[mecChoice] *= lpath;
+                        }
                     }
                 } else {
                     transitions = modelTransitions.getSubmatrix(true, nonBottomStates, nonBottomStates);

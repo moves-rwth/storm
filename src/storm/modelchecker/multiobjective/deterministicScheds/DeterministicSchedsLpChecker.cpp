@@ -210,22 +210,28 @@ namespace storm {
                 // Compute an upper bound on the expected number of visits of the states in this ec.
                 // First get a lower bound l on the probability of a path that leaves this MEC. 1-l is an upper bound on Pr_s(X F s).
                 // The desired upper bound is thus 1/(1-(1-l)) = 1/l. See Baier et al., CAV'17
-                ValueType expVisitsUpperBound = storm::utility::one<ValueType>();
-                uint64_t numStates = 0;
-                for (auto const& stateChoices : ec) {
-                    ++numStates;
-                    ValueType minProb = storm::utility::one<ValueType>();
-                    for (auto const& choice : stateChoices.second) {
-                        for (auto const& transition : transitions.getRow(choice)) {
-                            if (!storm::utility::isZero(transition.getValue())) {
-                                minProb = std::min(minProb, transition.getValue());
+                ValueType expVisitsUpperBound;
+                uint64_t numStates = std::distance(ec.begin(), ec.end());
+                {
+                    std::vector<ValueType> leastPathProbs(transitions.getRowGroupCount(), storm::utility::one<ValueType>());
+                    std::vector<ValueType> prevLeastPathProbs(transitions.getRowGroupCount(), storm::utility::one<ValueType>());
+                    for (uint64_t i = 0; i < numStates; ++i) {
+                        for (auto const& stateChoices : ec) {
+                            auto state = stateChoices.first;
+                            auto currVal = prevLeastPathProbs[state];
+                            for (auto const& transition : transitions.getRowGroup(state)) {
+                                if (!storm::utility::isZero(transition.getValue())) {
+                                    currVal = std::min<ValueType>(currVal, transition.getValue() * prevLeastPathProbs[transition.getColumn()]);
+                                }
                             }
+                            leastPathProbs[state] = currVal;
                         }
+                        leastPathProbs.swap(prevLeastPathProbs);
                     }
-                    expVisitsUpperBound *= minProb;
+                    ValueType l = *std::min_element(leastPathProbs.begin(), leastPathProbs.end());
+                    expVisitsUpperBound = storm::utility::one<ValueType>() / l;
                 }
                 expVisitsUpperBound = storm::utility::one<ValueType>() / expVisitsUpperBound;
-                std::cout << "expVisits upper bound is " << expVisitsUpperBound  << "." << std::endl;
                 // create variables
                 for (auto const& stateChoices : ec) {
                     ecStateVars.emplace(stateChoices.first, lpModel.addBoundedIntegerVariable("e" + std::to_string(stateChoices.first) + varNameSuffix, storm::utility::zero<ValueType>(), storm::utility::one<ValueType>()).getExpression());
