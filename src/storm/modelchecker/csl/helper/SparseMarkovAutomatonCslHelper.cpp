@@ -777,7 +777,7 @@ namespace storm {
                     
                     for (auto const& stateChoicesPair : mec) {
                         uint64_t state = stateChoicesPair.first;
-                        boost::container::flat_set<uint64_t> const& choicesInMec = stateChoicesPair.second;
+                        storm::storage::FlatSet<uint64_t> const& choicesInMec = stateChoicesPair.second;
                         
                         for (uint64_t choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1]; ++choice) {
                             

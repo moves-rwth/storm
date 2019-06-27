@@ -1,7 +1,6 @@
 #pragma once
 
 #include <chrono>
-#include <boost/container/flat_set.hpp>
 
 #include "storm/models/sparse/Mdp.h"
 #include "storm/logic/Formulas.h"
@@ -26,6 +25,7 @@
 
 #include "storm/storage/sparse/PrismChoiceOrigins.h"
 #include "storm/storage/sparse/JaniChoiceOrigins.h"
+#include "storm/storage/BoostTypes.h"
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GeneralSettings.h"
@@ -72,8 +72,8 @@ namespace storm {
             struct ChoiceInformation {
                 std::unordered_map<uint_fast64_t, std::list<uint_fast64_t>> relevantChoicesForRelevantStates;
                 std::unordered_map<uint_fast64_t, std::list<uint_fast64_t>> problematicChoicesForProblematicStates;
-                boost::container::flat_set<uint_fast64_t> allRelevantLabels;
-                boost::container::flat_set<uint_fast64_t> knownLabels;
+                storm::storage::FlatSet<uint_fast64_t> allRelevantLabels;
+                storm::storage::FlatSet<uint_fast64_t> knownLabels;
             };
 
             /*!
@@ -125,7 +125,7 @@ namespace storm {
              * @return A structure that stores the relevant and problematic choices in the model as well as the set
              * of relevant labels.
              */
-            static struct ChoiceInformation determineRelevantAndProblematicChoices(storm::models::sparse::Mdp<T> const& mdp, std::vector<boost::container::flat_set<uint_fast64_t>> const& labelSets, StateInformation const& stateInformation, storm::storage::BitVector const& psiStates) {
+            static struct ChoiceInformation determineRelevantAndProblematicChoices(storm::models::sparse::Mdp<T> const& mdp, std::vector<storm::storage::FlatSet<uint_fast64_t>> const& labelSets, StateInformation const& stateInformation, storm::storage::BitVector const& psiStates) {
                 // Create result and shortcuts to needed data for convenience.
                 ChoiceInformation result;
                 storm::storage::SparseMatrix<T> const& transitionMatrix = mdp.getTransitionMatrix();
@@ -180,7 +180,7 @@ namespace storm {
              * @param relevantLabels The set of relevant labels of the model.
              * @return A mapping from labels to variable indices.
              */
-            static std::pair<std::unordered_map<uint_fast64_t, storm::expressions::Variable>, uint_fast64_t> createLabelVariables(storm::solver::LpSolver<double>& solver, boost::container::flat_set<uint_fast64_t> const& relevantLabels) {
+            static std::pair<std::unordered_map<uint_fast64_t, storm::expressions::Variable>, uint_fast64_t> createLabelVariables(storm::solver::LpSolver<double>& solver, storm::storage::FlatSet<uint_fast64_t> const& relevantLabels) {
                 std::stringstream variableNameBuffer;
                 std::unordered_map<uint_fast64_t, storm::expressions::Variable> resultingMap;
                 for (auto const& label : relevantLabels) {
@@ -489,7 +489,7 @@ namespace storm {
              * @param variableInformation A struct with information about the variables of the model.
              * @return The total number of constraints that were created.
              */
-            static uint_fast64_t assertChoicesImplyLabels(storm::solver::LpSolver<double>& solver, storm::models::sparse::Mdp<T> const& mdp, std::vector<boost::container::flat_set<uint_fast64_t>> const& labelSets, StateInformation const& stateInformation, ChoiceInformation const& choiceInformation, VariableInformation const& variableInformation) {
+            static uint_fast64_t assertChoicesImplyLabels(storm::solver::LpSolver<double>& solver, storm::models::sparse::Mdp<T> const& mdp, std::vector<storm::storage::FlatSet<uint_fast64_t>> const& labelSets, StateInformation const& stateInformation, ChoiceInformation const& choiceInformation, VariableInformation const& variableInformation) {
 
                 uint_fast64_t numberOfConstraintsCreated = 0;
 
@@ -817,7 +817,7 @@ namespace storm {
              * @param includeSchedulerCuts If set to true, additional constraints are asserted that reduce the set of
              * possible choices.
              */
-            static void buildConstraintSystem(storm::solver::LpSolver<double>& solver, storm::models::sparse::Mdp<T> const& mdp, std::vector<boost::container::flat_set<uint_fast64_t>> const& labelSets, storm::storage::BitVector const& psiStates, StateInformation const& stateInformation, ChoiceInformation const& choiceInformation, VariableInformation const& variableInformation, double probabilityThreshold, bool strictBound, bool includeSchedulerCuts = false) {
+            static void buildConstraintSystem(storm::solver::LpSolver<double>& solver, storm::models::sparse::Mdp<T> const& mdp, std::vector<storm::storage::FlatSet<uint_fast64_t>> const& labelSets, storm::storage::BitVector const& psiStates, StateInformation const& stateInformation, ChoiceInformation const& choiceInformation, VariableInformation const& variableInformation, double probabilityThreshold, bool strictBound, bool includeSchedulerCuts = false) {
                 // Assert that the reachability probability in the subsystem exceeds the given threshold.
                 uint_fast64_t numberOfConstraints = assertProbabilityGreaterThanThreshold(solver, variableInformation, probabilityThreshold, strictBound);
                 STORM_LOG_DEBUG("Asserted that reachability probability exceeds threshold.");
@@ -865,8 +865,8 @@ namespace storm {
              * @param solver The MILP solver.
              * @param variableInformation A struct with information about the variables of the model.
              */
-            static boost::container::flat_set<uint_fast64_t> getUsedLabelsInSolution(storm::solver::LpSolver<double> const& solver, VariableInformation const& variableInformation) {
-                boost::container::flat_set<uint_fast64_t> result;
+            static storm::storage::FlatSet<uint_fast64_t> getUsedLabelsInSolution(storm::solver::LpSolver<double> const& solver, VariableInformation const& variableInformation) {
+                storm::storage::FlatSet<uint_fast64_t> result;
 
                 for (auto const& labelVariablePair : variableInformation.labelToVariableMap) {
                     bool labelTaken = solver.getBinaryValue(labelVariablePair.second);
@@ -927,7 +927,7 @@ namespace storm {
             }
                 
         public:
-            static boost::container::flat_set<uint_fast64_t> getMinimalLabelSet(Environment const& env,storm::models::sparse::Mdp<T> const& mdp, std::vector<boost::container::flat_set<uint_fast64_t>> const& labelSets, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, double probabilityThreshold, bool strictBound, bool checkThresholdFeasible = false, bool includeSchedulerCuts = false) {
+            static storm::storage::FlatSet<uint_fast64_t> getMinimalLabelSet(Environment const& env,storm::models::sparse::Mdp<T> const& mdp, std::vector<storm::storage::FlatSet<uint_fast64_t>> const& labelSets, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, double probabilityThreshold, bool strictBound, bool checkThresholdFeasible = false, bool includeSchedulerCuts = false) {
                 // (0) Check whether the label sets are valid
                 STORM_LOG_THROW(mdp.getNumberOfChoices() == labelSets.size(), storm::exceptions::InvalidArgumentException, "The given number of labels does not match the number of choices.");
                 
@@ -962,7 +962,7 @@ namespace storm {
                 solver->optimize();
                 
                 // (4.4) Read off result from variables.
-                boost::container::flat_set<uint_fast64_t> usedLabelSet = getUsedLabelsInSolution(*solver, variableInformation);
+                storm::storage::FlatSet<uint_fast64_t> usedLabelSet = getUsedLabelsInSolution(*solver, variableInformation);
                 usedLabelSet.insert(choiceInformation.knownLabels.begin(), choiceInformation.knownLabels.end());
                 
                 // (5) Return result.
@@ -1020,7 +1020,7 @@ namespace storm {
                 }
                 
                 // Obtain the label sets for each choice.
-                std::vector<boost::container::flat_set<uint_fast64_t>> labelSets(mdp.getNumberOfChoices());
+                std::vector<storm::storage::FlatSet<uint_fast64_t>> labelSets(mdp.getNumberOfChoices());
                 if (mdp.getChoiceOrigins()->isPrismChoiceOrigins()) {
                     storm::storage::sparse::PrismChoiceOrigins const& choiceOrigins = mdp.getChoiceOrigins()->asPrismChoiceOrigins();
                     for (uint_fast64_t choice = 0; choice < mdp.getNumberOfChoices(); ++choice) {
@@ -1037,7 +1037,7 @@ namespace storm {
                 
                 // Delegate the actual computation work to the function of equal name.
                 auto startTime = std::chrono::high_resolution_clock::now();
-                boost::container::flat_set<uint_fast64_t> usedLabelSet = getMinimalLabelSet(env, mdp, labelSets, phiStates, psiStates, threshold, strictBound, true, storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>().isUseSchedulerCutsSet());
+                storm::storage::FlatSet<uint_fast64_t> usedLabelSet = getMinimalLabelSet(env, mdp, labelSets, phiStates, psiStates, threshold, strictBound, true, storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>().isUseSchedulerCutsSet());
                 auto endTime = std::chrono::high_resolution_clock::now();
                 std::cout << std::endl << "Computed minimal command set of size " << usedLabelSet.size() << " in " << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << "ms." << std::endl;
 
