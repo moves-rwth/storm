@@ -33,9 +33,18 @@ namespace storm {
                     currentlyFailableBE.set(id);
                 }
 
-                void addDependency(size_t id) {
-                    if (std::find(mFailableDependencies.begin(), mFailableDependencies.end(), id) == mFailableDependencies.end()) {
-                        mFailableDependencies.push_back(id);
+                void addDependency(size_t id, bool isConflicting) {
+                    if (isConflicting) {
+                        if (std::find(mFailableConflictingDependencies.begin(), mFailableConflictingDependencies.end(),
+                                      id) == mFailableConflictingDependencies.end()) {
+                            mFailableConflictingDependencies.push_back(id);
+                        }
+                    } else {
+                        if (std::find(mFailableNonconflictingDependencies.begin(),
+                                      mFailableNonconflictingDependencies.end(), id) ==
+                            mFailableNonconflictingDependencies.end()) {
+                            mFailableNonconflictingDependencies.push_back(id);
+                        }
                     }
                 }
 
@@ -44,21 +53,36 @@ namespace storm {
                 }
 
                 void removeDependency(size_t id) {
-                    auto it = std::find(mFailableDependencies.begin(), mFailableDependencies.end(), id);
-                    if (it != mFailableDependencies.end()) {
-                        mFailableDependencies.erase(it);
+                    auto it1 = std::find(mFailableConflictingDependencies.begin(),
+                                         mFailableConflictingDependencies.end(), id);
+                    if (it1 != mFailableConflictingDependencies.end()) {
+                        mFailableConflictingDependencies.erase(it1);
+                        return;
+                    }
+                    auto it2 = std::find(mFailableNonconflictingDependencies.begin(),
+                                         mFailableNonconflictingDependencies.end(), id);
+                    if (it2 != mFailableNonconflictingDependencies.end()) {
+                        mFailableNonconflictingDependencies.erase(it2);
+                        return;
                     }
                 }
 
                 void clear() {
                     currentlyFailableBE.clear();
-                    mFailableDependencies.clear();
+                    mFailableConflictingDependencies.clear();
+                    mFailableNonconflictingDependencies.clear();
                 }
 
                 void init(bool dependency) const {
                     this->dependency = dependency;
                     if (this->dependency) {
-                        itDep = mFailableDependencies.begin();
+                        if (!mFailableNonconflictingDependencies.empty()) {
+                            itDep = mFailableNonconflictingDependencies.begin();
+                            conflicting = false;
+                        } else {
+                            itDep = mFailableConflictingDependencies.begin();
+                            conflicting = true;
+                        }
                     } else {
                         it = currentlyFailableBE.begin();
                     }
@@ -77,7 +101,12 @@ namespace storm {
 
                 bool isEnd() const {
                     if (dependency) {
-                        return itDep == mFailableDependencies.end();
+                        if (!conflicting) {
+                            // If we are handling the non-conflicting FDEPs, end after the first element
+                            return itDep != mFailableNonconflictingDependencies.begin();
+                        } else {
+                            return itDep == mFailableConflictingDependencies.end();
+                        }
                     } else {
                         return it == currentlyFailableBE.end();
                     }
@@ -96,7 +125,7 @@ namespace storm {
                 };
 
                 bool hasDependencies() const {
-                    return !mFailableDependencies.empty();
+                    return !mFailableConflictingDependencies.empty() || !mFailableNonconflictingDependencies.empty();
                 }
 
                 bool hasBEs() const {
@@ -112,9 +141,11 @@ namespace storm {
                 }
 
                 mutable bool dependency;
+                mutable bool conflicting;
 
                 storm::storage::BitVector currentlyFailableBE;
-                std::vector<size_t> mFailableDependencies;
+                std::vector<size_t> mFailableConflictingDependencies;
+                std::vector<size_t> mFailableNonconflictingDependencies;
                 std::set<size_t> remainingRelevantEvents;
 
                 mutable storm::storage::BitVector::const_iterator it;

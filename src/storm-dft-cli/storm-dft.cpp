@@ -32,7 +32,6 @@ void processOptions() {
 
     auto dftTransformator = storm::transformations::dft::DftTransformator<ValueType>();
 
-
     if (!dftIOSettings.isDftFileSet() && !dftIOSettings.isDftJsonFileSet()) {
         STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "No input model given.");
     }
@@ -92,17 +91,6 @@ void processOptions() {
     }
 
 #ifdef STORM_HAVE_Z3
-    if(debug.isTestSet()){
-        dft->setDynamicBehaviorInfo();
-        for(size_t i = 0; i < dft->nrElements(); ++i){
-            if(dft->getDynamicBehavior()[i]) {
-                STORM_LOG_DEBUG("Element " << dft->getElement(i)->name() << " has dynamic behavior");
-            } else {
-                STORM_LOG_DEBUG("Element " << dft->getElement(i)->name() << " has static behavior");
-            }
-        }
-    }
-
     if (faultTreeSettings.solveWithSMT()) {
         dft = dftTransformator.transformUniqueFailedBe(*dft);
         if (dft->getDependencies().size() > 0) {
@@ -113,8 +101,18 @@ void processOptions() {
         STORM_LOG_DEBUG("Running DFT analysis with use of SMT");
         // Set dynamic behavior vector
         dft->setDynamicBehaviorInfo();
-        storm::api::analyzeDFTSMT(*dft, true, debug.isTestSet());
-        return;
+        auto smtResults = storm::api::analyzeDFTSMT(*dft, true, debug.isTestSet());
+        // Set the conflict map of the dft
+        std::set<size_t> conflict_set;
+        for (auto conflict : smtResults.fdepConflicts) {
+            conflict_set.insert(size_t(conflict.first));
+            conflict_set.insert(size_t(conflict.second));
+        }
+        for (size_t depId : dft->getDependencies()) {
+            if (!conflict_set.count(depId)) {
+                dft->setDependencyNotInConflict(depId);
+            }
+        }
     }
 #endif
 
@@ -214,7 +212,6 @@ void processOptions() {
             relevantEvents.insert(dft->getIndex(relevantName));
         }
     }
-
 
     // Analyze DFT
     // TODO allow building of state space even without properties

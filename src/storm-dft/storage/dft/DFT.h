@@ -68,6 +68,7 @@ namespace storm {
             std::vector<std::vector<size_t>> mSymmetries;
             std::map<size_t, DFTLayoutInfo> mLayoutInfo;
             std::vector<bool> mDynamicBehavior;
+            std::map<size_t, bool> mDependencyInConflict;
 
         public:
             DFT(DFTElementVector const &elements, DFTElementPointer const &tle);
@@ -130,6 +131,17 @@ namespace storm {
                     STORM_LOG_ASSERT(mSpareModules.count(representativeId) > 0, "Representative not found.");
                     return mSpareModules.find(representativeId)->second;
                 }
+            }
+
+            bool isDependencyInConflict(size_t id) const {
+                STORM_LOG_ASSERT(isDependency(id), "Not a dependency.");
+                return mDependencyInConflict.at(id);
+            }
+
+
+            void setDependencyNotInConflict(size_t id) {
+                STORM_LOG_ASSERT(isDependency(id), "Not a dependency.");
+                mDependencyInConflict.at(id) = false;
             }
             
             std::vector<size_t> const& getDependencies() const {

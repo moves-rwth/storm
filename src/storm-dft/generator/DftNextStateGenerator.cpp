@@ -76,14 +76,8 @@ namespace storm {
             Choice<ValueType, StateType> choice(0, !exploreDependencies);
 
             // Let BE fail
-            bool isFirst = true;
             while (!state->getFailableElements().isEnd()) {
                 //TODO outside
-                if (storm::settings::getModule<storm::settings::modules::FaultTreeSettings>().isTakeFirstDependency() && exploreDependencies && !isFirst) {
-                    // We discard further exploration as we already chose one dependent event
-                    break;
-                }
-                isFirst = false;
 
                 // Construct new state as copy from original one
                 DFTStatePointer newState = state->copy();
@@ -167,7 +161,7 @@ namespace storm {
 
                 // Set transitions
                 if (exploreDependencies) {
-                    // Failure is due to dependency -> add non-deterministic choice
+                    // Failure is due to dependency -> add non-deterministic choice if necessary
                     ValueType probability = mDft.getDependency(state->getFailableElements().get())->probability();
                     choice.addProbability(newStateId, probability);
                     STORM_LOG_TRACE("Added transition to " << newStateId << " with probability " << probability);

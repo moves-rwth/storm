@@ -53,6 +53,7 @@ namespace storm {
                     }
                 } else if (elem->isDependency()) {
                     mDependencies.push_back(elem->id());
+                    mDependencyInConflict.insert(std::make_pair(elem->id(), true));
                 }
             }
 
