@@ -796,7 +796,7 @@ namespace storm {
                 typeDescr["kind"] = "array";
                 typeDescr["base"] = buildTypeDescription(type.getElementType());
             } else {
-                assert(false);
+                STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unknown expression type.");
             }
             return typeDescr;
         }

@@ -9,6 +9,7 @@
 #include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/shortestPaths.h"
+#include "storm/exceptions/UnexpectedException.h"
 
 // FIXME: I've accidentally used k=0 *twice* now without realizing that k>=1 is required!
 // (Also, did I document this? I think so, somewhere. I went with k>=1 because
@@ -247,8 +248,7 @@ namespace storm {
 
                     // there is no such edge
                     // let's disallow that for now, because I'm not expecting it to happen
-                    assert(false);
-                    return zero<T>();
+                    STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Should not happen.");
                 } else {
                     // edge must be "virtual edge" to meta-target
                     assert(isMetaTargetPredecessor(tailNode));

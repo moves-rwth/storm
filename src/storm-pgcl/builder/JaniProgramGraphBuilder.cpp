@@ -1,6 +1,7 @@
 #include "JaniProgramGraphBuilder.h"
 
 #include "storm/storage/jani/EdgeDestination.h"
+#include "storm/exceptions/NotSupportedException.h"
 
 namespace storm {
     namespace builder {
@@ -23,12 +24,10 @@ namespace storm {
                             variables.emplace(v.first, janiVar);
                             automaton.addVariable(*janiVar);
                         } else {
-                            // Not yet supported.
-                            assert(false);
+                            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Unbounded right bound is not supported yet");
                         }
                     } else {
-                        // Not yet supported.
-                        assert(false);
+                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Unbounded left bound is not supported yet");
                     }
                 } else {
                     storm::jani::UnboundedIntegerVariable* janiVar = new storm::jani::UnboundedIntegerVariable(v.second.getName(), v.second, programGraph.getInitialValue(v.first), isRewardVariable(v.first));
