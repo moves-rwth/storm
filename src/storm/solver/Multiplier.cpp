@@ -12,6 +12,7 @@
 #include "storm/solver/NativeMultiplier.h"
 #include "storm/solver/GmmxxMultiplier.h"
 #include "storm/environment/solver/MultiplierEnvironment.h"
+#include "storm/exceptions/IllegalArgumentException.h"
 
 namespace storm {
     namespace solver {
@@ -79,6 +80,7 @@ namespace storm {
                 case MultiplierType::Native:
                     return std::make_unique<NativeMultiplier<ValueType>>(matrix);
             }
+            STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unknown MultiplierType");
         }
         
         template class Multiplier<double>;

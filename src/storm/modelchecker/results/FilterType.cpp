@@ -1,5 +1,7 @@
 #include "FilterType.h"
 
+#include "storm/utility/macros.h"
+#include "storm/exceptions/IllegalArgumentException.h"
 
 namespace storm {
     namespace modelchecker {
@@ -27,6 +29,7 @@ namespace storm {
                 case FilterType::VALUES:
                     return "the values";
             }
+            STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unknown FilterType");
         }
     }
 }
