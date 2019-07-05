@@ -18,6 +18,12 @@
 #include "storm/logic/CloneVisitor.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 #include "storm/transformer/EndComponentEliminator.h"
+#include "storm/utility/solver.h"
+#include "storm/solver/LpSolver.h"
+#include "storm/solver/GurobiLpSolver.h"
+#include "storm/solver/SmtSolver.h"
+#include "storm/storage/expressions/Expressions.h"
+
 
 #include "storm/exceptions/UnexpectedException.h"
 namespace storm {
@@ -260,6 +266,7 @@ namespace storm {
                 return objective.formula->isRewardOperatorFormula() && objective.formula->getSubformula().isTotalRewardFormula();
             }
             
+            /*
             template <typename ValueType>
             ValueType getLpathDfs(uint64_t currentState, ValueType currentValue, storm::storage::BitVector& visited, storm::storage::BitVector const& mecStates, storm::storage::SparseMatrix<ValueType> const& transitions, uint64_t& counter) {
                 // exhausive dfs
@@ -278,6 +285,82 @@ namespace storm {
                     return result;
                 }
             }
+            
+            void oneOfManyEncoding(std::vector<storm::expressions::Expression>& operands, storm::solver::SmtSolver& solver) {
+                assert(!operands.empty());
+                uint64_t currentOperand = 0;
+                while (currentOperand + 2 < operands.size()) {
+                    solver.add(!(operands[currentOperand] && operands[currentOperand + 1]));
+                    auto auxVar = solver.getManager().declareFreshBooleanVariable(true).getExpression();
+                    solver.add(storm::expressions::iff(auxVar, (operands[currentOperand] || operands[currentOperand + 1])));
+                    operands.push_back(auxVar);
+                    currentOperand += 2;
+                }
+                if (currentOperand + 1 == operands.size()) {
+                    solver.add(operands[currentOperand]);
+                } else if (currentOperand + 2 == operands.size()) {
+                    solver.add(storm::expressions::xclusiveor(operands[currentOperand], operands[currentOperand + 1]));
+                }
+            }
+            */
+            
+            /*
+            template <typename ValueType>
+            ValueType getExpVisitsUpperBoundForMec(storm::storage::BitVector const& mecStates, storm::storage::SparseMatrix<ValueType> const& transitions) {
+                auto generalSolver = storm::utility::solver::getLpSolver<ValueType>("mecBounds", storm::solver::LpSolverTypeSelection::Gurobi);
+                auto solver = dynamic_cast<storm::solver::GurobiLpSolver<ValueType>*>(generalSolver.get());
+                solver->setOptimizationDirection(storm::solver::OptimizationDirection::Maximize);
+
+                auto one = solver->getConstant(storm::utility::one<ValueType>());
+                auto zero = solver->getConstant(storm::utility::zero<ValueType>());
+                
+                std::vector<std::vector<storm::expressions::Expression>> ins(mecStates.size()), outs(mecStates.size());
+                std::vector<storm::expressions::Expression> choiceVars(transitions.getRowCount()), ecVars(mecStates.size());
+                std::vector<storm::expressions::Expression> choicesDisjunction;
+                std::vector<storm::expressions::Expression> leavingSum;
+                for (auto const& mecState : mecStates) {
+                    std::vector<storm::expressions::Expression> choiceIndicatorVars;
+                    ecVars[mecState] = solver->addLowerBoundedContinuousVariable("e" + std::to_string(mecState), storm::utility::zero<ValueType>()).getExpression();
+                    ins[mecState].push_back(one);
+                    outs[mecState].push_back(ecVars[mecState]);
+                    leavingSum.push_back(ecVars[mecState]);
+                    choiceIndicatorVars.push_back(solver->addBoundedIntegerVariable("c_mec" + std::to_string(mecState), storm::utility::zero<ValueType>(), storm::utility::one<ValueType>()));
+                    solver->addIndicatorConstraint("", choiceIndicatorVars.back().getBaseExpression().asVariableExpression().getVariable(), 0, ecVars[mecState] <= zero);
+                    for (uint64_t choice = transitions.getRowGroupIndices()[mecState]; choice < transitions.getRowGroupIndices()[mecState + 1]; ++choice) {
+                        choiceVars[choice] = solver->addLowerBoundedContinuousVariable("y" + std::to_string(choice), storm::utility::zero<ValueType>()).getExpression();
+                        choiceIndicatorVars.push_back(solver->addBoundedIntegerVariable("c" + std::to_string(choice), storm::utility::zero<ValueType>(), storm::utility::one<ValueType>()).getExpression());
+                        solver->addIndicatorConstraint("", choiceIndicatorVars.back().getBaseExpression().asVariableExpression().getVariable(), 0, choiceVars[choice] <= zero);
+                        choicesDisjunction.push_back(choiceVars[choice]);
+                        outs[mecState].push_back(choiceVars[choice]);
+                        for (auto const& entry : transitions.getRow(choice)) {
+                            if (!storm::utility::isZero(entry.getValue())) {
+                                if (mecStates.get(entry.getColumn())) {
+                                    ins[entry.getColumn()].push_back(choiceVars[choice] * solver->getConstant(entry.getValue()));
+                                } else {
+                                    leavingSum.push_back(choiceVars[choice] * solver->getConstant(entry.getValue()));
+                                }
+                            }
+                        }
+                    }
+                    //oneOfManyEncoding(choicesSum, *solver);
+                    solver->addConstraint("", storm::expressions::sum(choiceIndicatorVars) == one);
+                }
+                for (auto const& mecState : mecStates) {
+                    STORM_LOG_ASSERT(!ins[mecState].empty(), "empty in set at a state");
+                    STORM_LOG_ASSERT(!outs[mecState].empty(), "empty out set at a state");
+                    solver->addConstraint("", storm::expressions::sum(ins[mecState]) == storm::expressions::sum(outs[mecState]));
+                }
+                STORM_LOG_ASSERT(!leavingSum.empty(), "empty leaving sum at a mec");
+                solver->addConstraint("", storm::expressions::sum(leavingSum) == solver->getConstant(storm::utility::convertNumber<ValueType, uint64_t>(mecStates.getNumberOfSetBits())));
+                choicesDisjunction.push_back(one);
+                auto boundVar = solver->addUnboundedContinuousVariable("bound", storm::utility::one<ValueType>());
+                solver->addGeneralConstraint("", boundVar, storm::solver::GurobiLpSolver<ValueType>::GeneralConstraintOperator::Max, choicesDisjunction);
+                solver->optimize();
+                STORM_LOG_THROW(!solver->isInfeasible(), storm::exceptions::UnexpectedException, "MEC LP has infeasable solution");
+                STORM_LOG_THROW(!solver->isUnbounded(), storm::exceptions::UnexpectedException, "MEC LP has unbounded solution");
+                return solver->getObjectiveValue();
+            }
+            */
             
             template <typename ModelType>
             std::vector<typename ModelType::ValueType> DeterministicSchedsObjectiveHelper<ModelType>::computeUpperBoundOnExpectedVisitingTimes(storm::storage::SparseMatrix<ValueType> const& modelTransitions, storm::storage::BitVector const& bottomStates, storm::storage::BitVector const& nonBottomStates, bool hasEndComponents) {
@@ -306,31 +389,71 @@ namespace storm {
                     // slow down mec states by adding self loop probability 1-lpath
                     for (auto const& mec : mecs) {
                         ValueType lpath = storm::utility::one<ValueType>();
-                        if (true) {
+                        /* //smt/lp
+                            storm::storage::BitVector mecStates(modelTransitions.getRowGroupCount(), false);
+                            uint64_t numTransitions = 0;
+                            uint64_t numChoices = 0;
                             for (auto const& stateChoices : mec) {
-                                auto state = stateChoices.first;
-                                ValueType minProb = storm::utility::one<ValueType>();
-                                for (uint64_t choice = modelTransitions.getRowGroupIndices()[state]; choice < modelTransitions.getRowGroupIndices()[state + 1]; ++state) {
-                                    if (stateChoices.second.count(choice) > 0) {
-                                        for (auto const& transition : modelTransitions.getRow(choice)) {
-                                            if (!storm::utility::isZero(transition.getValue())) {
-                                                minProb = std::min(minProb, transition.getValue());
-                                            }
-                                        }
-                                    } else {
-                                        ValueType sum = storm::utility::zero<ValueType>();
-                                        for (auto const& transition : modelTransitions.getRow(choice)) {
-                                            if (!mec.containsState(transition.getColumn())) {
-                                                sum += transition.getValue();
-                                            }
-                                        }
-                                        minProb = std::min(minProb, sum);
-                                    }
-                                }
-                                lpath *= minProb;
+                                mecStates.set(stateChoices.first);
+                                numTransitions += modelTransitions.getRowGroup(stateChoices.first).getNumberOfEntries();
+                                numChoices += modelTransitions.getRowGroupSize(stateChoices.first);
                             }
+                            std::cout << "Checking a mec with " << mecStates.getNumberOfSetBits() << " states " << numChoices << " choices and " << numTransitions << " transitions." << std::endl;
+                            lpath = storm::utility::one<ValueType>() / getExpVisitsUpperBoundForMec(mecStates, modelTransitions);
+                        }*/
+                        // Multiply the smallest probability occurring at each state.
+                        for (auto const& stateChoices : mec) {
+                            auto state = stateChoices.first;
+                            ValueType minProb = storm::utility::one<ValueType>();
+                            for (uint64_t choice = modelTransitions.getRowGroupIndices()[state]; choice < modelTransitions.getRowGroupIndices()[state + 1]; ++state) {
+                                if (stateChoices.second.count(choice) > 0) {
+                                    for (auto const& transition : modelTransitions.getRow(choice)) {
+                                        if (!storm::utility::isZero(transition.getValue())) {
+                                            minProb = std::min(minProb, transition.getValue());
+                                        }
+                                    }
+                                } else {
+                                    ValueType sum = storm::utility::zero<ValueType>();
+                                    for (auto const& transition : modelTransitions.getRow(choice)) {
+                                        if (!mec.containsState(transition.getColumn())) {
+                                            sum += transition.getValue();
+                                        }
+                                    }
+                                    minProb = std::min(minProb, sum);
+                                }
+                            }
+                            lpath *= minProb;
                         }
-                        if (false) {
+                        // We multiply the smallest transition probabilities occurring at each state and MEC-Choice
+                        // as well as the smallest 'exit' probability
+                        ValueType minExitProbability = storm::utility::one<ValueType>();
+                        for (auto const& stateChoices : mec) {
+                            auto state = stateChoices.first;
+                            ValueType minProb = storm::utility::one<ValueType>();
+                            for (uint64_t choice = transitions.getRowGroupIndices()[state]; choice < transitions.getRowGroupIndices()[state + 1]; ++state) {
+                                if (stateChoices.second.count(choice) == 0) {
+                                    // The choice leaves the EC, so we take the sum over the exiting probabilities
+                                    ValueType exitProbabilitySum = storm::utility::zero<ValueType>();
+                                    for (auto const& transition : transitions.getRow(choice)) {
+                                        if (!mec.containsState(transition.getColumn())) {
+                                            exitProbabilitySum += transition.getValue();
+                                        }
+                                    }
+                                    minExitProbability = std::min(minExitProbability, exitProbabilitySum);
+                                } else {
+                                    // Get the minimum over all transition probabilities
+                                    for (auto const& transition : transitions.getRow(choice)) {
+                                        if (!storm::utility::isZero(transition.getValue())) {
+                                            minProb = std::min(minProb, transition.getValue());
+                                        }
+                                    }
+                                    
+                                }
+                            }
+                            lpath *= minProb;
+                        }
+                        lpath *= minExitProbability;
+                        /* other ideas...
                             std::vector<ValueType> leastPathProbs(modelTransitions.getRowGroupCount(), storm::utility::one<ValueType>());
                             std::vector<ValueType> prevLeastPathProbs(modelTransitions.getRowGroupCount(), storm::utility::one<ValueType>());
                             uint64_t mecSize = std::distance(mec.begin(), mec.end());
@@ -370,9 +493,9 @@ namespace storm {
                                     std::cout << "\tnew lpath is " << storm::utility::convertNumber<double>(lpath) << ". checked " << counter << " paths." << std::endl;
                                 }
                             }
-                        }
+                        }*/
                         STORM_LOG_ASSERT(!storm::utility::isZero(lpath), "unexpected value of lpath");
-                        STORM_LOG_WARN_COND(lpath >= storm::utility::convertNumber<ValueType>(0.01), "Small lower bound for the probability to leave a mec: " << storm::utility::convertNumber<double>(lpath) << ". Numerical issues might occur.");
+                        STORM_LOG_WARN_COND(lpath >= storm::utility::convertNumber<ValueType>(0.001), "Small lower bound for the probability to leave a mec: " << storm::utility::convertNumber<double>(lpath) << ". Numerical issues might occur.");
                         uint64_t mecState = modelToSubsystemStateMapping.get()[mec.begin()->first];
                         // scale all the probabilities at this state with lpath
                         for (uint64_t mecChoice = transitions.getRowGroupIndices()[mecState]; mecChoice < transitions.getRowGroupIndices()[mecState + 1]; ++mecChoice) {

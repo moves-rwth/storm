@@ -136,7 +136,7 @@ namespace storm {
 
             template <typename ModelType, typename GeometryValueType>
             std::pair<std::vector<std::vector<GeometryValueType>>, std::vector<std::shared_ptr<storm::storage::geometry::Polytope<GeometryValueType>>>> DeterministicSchedsLpChecker<ModelType, GeometryValueType>::check(storm::Environment const& env, storm::storage::geometry::PolytopeTree<GeometryValueType>& polytopeTree, GeometryValueType const& eps) {
-                std::cout << "Checking " << polytopeTree.toString() << std::endl << "\t";
+                STORM_LOG_INFO("Checking " << polytopeTree.toString());
                 swCheck.start();
                 STORM_LOG_ASSERT(!currentWeightVector.empty(), "Checking invoked before specifying a weight vector.");
                 if (polytopeTree.isEmpty()) {
@@ -159,7 +159,6 @@ namespace storm {
                 checkRecursive(env, polytopeTree, eps, foundPoints, infeasableAreas, 0);
                 
                 swCheck.stop();
-                std::cout << " done!" << std::endl;
                 return {foundPoints, infeasableAreas};
             }
             
@@ -210,28 +209,39 @@ namespace storm {
                 // Compute an upper bound on the expected number of visits of the states in this ec.
                 // First get a lower bound l on the probability of a path that leaves this MEC. 1-l is an upper bound on Pr_s(X F s).
                 // The desired upper bound is thus 1/(1-(1-l)) = 1/l. See Baier et al., CAV'17
-                ValueType expVisitsUpperBound;
-                uint64_t numStates = std::distance(ec.begin(), ec.end());
-                {
-                    std::vector<ValueType> leastPathProbs(transitions.getRowGroupCount(), storm::utility::one<ValueType>());
-                    std::vector<ValueType> prevLeastPathProbs(transitions.getRowGroupCount(), storm::utility::one<ValueType>());
-                    for (uint64_t i = 0; i < numStates; ++i) {
-                        for (auto const& stateChoices : ec) {
-                            auto state = stateChoices.first;
-                            auto currVal = prevLeastPathProbs[state];
-                            for (auto const& transition : transitions.getRowGroup(state)) {
-                                if (!storm::utility::isZero(transition.getValue())) {
-                                    currVal = std::min<ValueType>(currVal, transition.getValue() * prevLeastPathProbs[transition.getColumn()]);
+                
+                // To compute l, we multiply the smallest transition probabilities occurring at each state and MEC-Choice
+                // as well as the smallest 'exit' probability
+                ValueType lpath = storm::utility::one<ValueType>();
+                ValueType minExitProbability = storm::utility::one<ValueType>();
+                for (auto const& stateChoices : ec) {
+                    auto state = stateChoices.first;
+                    ValueType minProb = storm::utility::one<ValueType>();
+                    for (uint64_t choice = transitions.getRowGroupIndices()[state]; choice < transitions.getRowGroupIndices()[state + 1]; ++state) {
+                        if (stateChoices.second.count(choice) == 0) {
+                            // The choice leaves the EC, so we take the sum over the exiting probabilities
+                            ValueType exitProbabilitySum = storm::utility::zero<ValueType>();
+                            for (auto const& transition : transitions.getRow(choice)) {
+                                if (!ec.containsState(transition.getColumn())) {
+                                    exitProbabilitySum += transition.getValue();
                                 }
                             }
-                            leastPathProbs[state] = currVal;
+                            minExitProbability = std::min(minExitProbability, exitProbabilitySum);
+                        } else {
+                            // Get the minimum over all transition probabilities
+                            for (auto const& transition : transitions.getRow(choice)) {
+                                if (!storm::utility::isZero(transition.getValue())) {
+                                    minProb = std::min(minProb, transition.getValue());
+                                }
+                            }
+                            
                         }
-                        leastPathProbs.swap(prevLeastPathProbs);
                     }
-                    ValueType l = *std::min_element(leastPathProbs.begin(), leastPathProbs.end());
-                    expVisitsUpperBound = storm::utility::one<ValueType>() / l;
+                    lpath *= minProb;
                 }
-                expVisitsUpperBound = storm::utility::one<ValueType>() / expVisitsUpperBound;
+                lpath *= minExitProbability;
+                ValueType expVisitsUpperBound = storm::utility::one<ValueType>() / lpath;
+                STORM_LOG_WARN_COND(expVisitsUpperBound <= storm::utility::convertNumber<ValueType>(1000.0), "Large upper bound for expected visiting times: " << expVisitsUpperBound);
                 // create variables
                 for (auto const& stateChoices : ec) {
                     ecStateVars.emplace(stateChoices.first, lpModel.addBoundedIntegerVariable("e" + std::to_string(stateChoices.first) + varNameSuffix, storm::utility::zero<ValueType>(), storm::utility::one<ValueType>()).getExpression());
@@ -271,6 +281,7 @@ namespace storm {
                     }
                     outs.emplace(stateChoices.first, out);
                 }
+                uint64_t numStates = std::distance(ec.begin(), ec.end());
                 for (auto const& stateChoices : ec) {
                     auto in = ins.find(stateChoices.first);
                     STORM_LOG_ASSERT(in != ins.end(), "ec state does not seem to have an incoming transition.");
@@ -301,52 +312,59 @@ namespace storm {
                 storm::storage::MaximalEndComponentDecomposition<ValueType> mecs(model.getTransitionMatrix(), backwardTransitions, storm::storage::BitVector(model.getNumberOfStates(), true), choicesWithValueZero);
 
                 for (auto const& mec : mecs) {
+                    // For each objective we might need to split this mec into several subECs, if the objective yields a non-zero scheduler-independent state value for some states of this ec.
                     std::map<std::set<uint64_t>, std::vector<uint64_t>> excludedStatesToObjIndex;
+                    bool mecContainsSchedulerDependentValue = false;
                     for (uint64_t objIndex = 0; objIndex < objectiveHelper.size(); ++objIndex) {
                         std::set<uint64_t> excludedStates;
                         for (auto const& stateChoices : mec) {
                             auto schedIndValueIt = objectiveHelper[objIndex].getSchedulerIndependentStateValues().find(stateChoices.first);
-                            if (schedIndValueIt != objectiveHelper[objIndex].getSchedulerIndependentStateValues().end() && !storm::utility::isZero(schedIndValueIt->second)) {
+                            if (schedIndValueIt == objectiveHelper[objIndex].getSchedulerIndependentStateValues().end()) {
+                                mecContainsSchedulerDependentValue = true;
+                            } else if (!storm::utility::isZero(schedIndValueIt->second)) {
                                 excludedStates.insert(stateChoices.first);
                             }
                         }
                         excludedStatesToObjIndex[excludedStates].push_back(objIndex);
                     }
                     
-                    for (auto const& exclStates : excludedStatesToObjIndex) {
-                        if (exclStates.first.empty()) {
-                            auto ecVars = processEc(mec, model.getTransitionMatrix(), "", choiceVariables, *lpModel);
-                            ++ecCounter;
-                            for (auto const& stateVar : ecVars) {
-                                for (auto const& objIndex : exclStates.second) {
-                                    result[objIndex][stateVar.first] = stateVar.second;
-                                }
-                            }
-                        } else {
-                            // Compute sub-end components
-                            storm::storage::BitVector subEcStates(model.getNumberOfStates(), false), subEcChoices(model.getNumberOfChoices(), false);
-                            for (auto const& stateChoices : mec) {
-                                if (exclStates.first.count(stateChoices.first) == 0) {
-                                    subEcStates.set(stateChoices.first, true);
-                                    for (auto const& choice : stateChoices.second) {
-                                        subEcChoices.set(choice, true);
-                                    }
-                                }
-                            }
-                            storm::storage::MaximalEndComponentDecomposition<ValueType> subEcs(model.getTransitionMatrix(), backwardTransitions, subEcStates, subEcChoices);
-                            for (auto const& subEc : subEcs) {
-                                auto ecVars = processEc(subEc, model.getTransitionMatrix(), "o" + std::to_string(*exclStates.second.begin()), choiceVariables, *lpModel);
+                    // Skip this mec if all state values are independent of the scheduler (e.g. no reward is reachable from here).
+                    if (mecContainsSchedulerDependentValue) {
+                        for (auto const& exclStates : excludedStatesToObjIndex) {
+                            if (exclStates.first.empty()) {
+                                auto ecVars = processEc(mec, model.getTransitionMatrix(), "", choiceVariables, *lpModel);
                                 ++ecCounter;
                                 for (auto const& stateVar : ecVars) {
                                     for (auto const& objIndex : exclStates.second) {
                                         result[objIndex][stateVar.first] = stateVar.second;
                                     }
                                 }
+                            } else {
+                                // Compute sub-end components
+                                storm::storage::BitVector subEcStates(model.getNumberOfStates(), false), subEcChoices(model.getNumberOfChoices(), false);
+                                for (auto const& stateChoices : mec) {
+                                    if (exclStates.first.count(stateChoices.first) == 0) {
+                                        subEcStates.set(stateChoices.first, true);
+                                        for (auto const& choice : stateChoices.second) {
+                                            subEcChoices.set(choice, true);
+                                        }
+                                    }
+                                }
+                                storm::storage::MaximalEndComponentDecomposition<ValueType> subEcs(model.getTransitionMatrix(), backwardTransitions, subEcStates, subEcChoices);
+                                for (auto const& subEc : subEcs) {
+                                    auto ecVars = processEc(subEc, model.getTransitionMatrix(), "o" + std::to_string(*exclStates.second.begin()), choiceVariables, *lpModel);
+                                    ++ecCounter;
+                                    for (auto const& stateVar : ecVars) {
+                                        for (auto const& objIndex : exclStates.second) {
+                                            result[objIndex][stateVar.first] = stateVar.second;
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
                 }
-                std::cout << "found " << ecCounter << "many ECs" << std::endl;
+                STORM_LOG_WARN_COND(ecCounter == 0, "Processed " << ecCounter << " End components.");
                 return result;
             }
             
@@ -437,7 +455,8 @@ namespace storm {
                     std::vector<storm::expressions::Expression> ecValVars(model.getNumberOfStates());
                     if (hasEndComponents) {
                         for (auto const& state : nonBottomStates) {
-                            // For the in-out-encoding, all objectives have the same ECs. Hence, we only care for the variables of the first objective.
+                            // For the in-out-encoding, all objectives have the same ECs (because there are no non-zero scheduler independend state values).
+                            // Hence, we only care for the variables of the first objective.
                             if (ecVars.front()[state].isInitialized()) {
                                 ecValVars[state] = lpModel->addBoundedContinuousVariable("z" + std::to_string(state), storm::utility::zero<ValueType>(), visitingTimesUpperBounds[state]).getExpression();
                                 lpModel->addConstraint("", ecValVars[state] <= lpModel->getConstant(visitingTimesUpperBounds[state]) * ecVars.front()[state]);
@@ -490,10 +509,13 @@ namespace storm {
                             }
                         }
                         auto objValueVariable = lpModel->addBoundedContinuousVariable("x" + std::to_string(objIndex), objectiveHelper[objIndex].getLowerValueBoundAtState(env, initialState), objectiveHelper[objIndex].getUpperValueBoundAtState(env, initialState));
-                        lpModel->addConstraint("", objValueVariable == storm::expressions::sum(objValue));
+                        if (objValue.empty()) {
+                            lpModel->addConstraint("", objValueVariable == zero);
+                        } else {
+                            lpModel->addConstraint("", objValueVariable == storm::expressions::sum(objValue));
+                        }
                         initialStateResults.push_back(objValueVariable);
                     }
-                    
                 } else {
                     // 'classic' backward encoding.
                     for (uint64_t objIndex = 0; objIndex < objectiveHelper.size(); ++objIndex) {
@@ -622,7 +644,7 @@ namespace storm {
             }
             
             template <typename ModelType, typename GeometryValueType>
-            void DeterministicSchedsLpChecker<ModelType, GeometryValueType>::checkRecursive(Environment const& env, storm::storage::geometry::PolytopeTree <GeometryValueType>& polytopeTree, GeometryValueType const& eps, std::vector<Point>& foundPoints, std::vector<Polytope>& infeasableAreas, uint64_t const& depth) {
+            void DeterministicSchedsLpChecker<ModelType, GeometryValueType>::checkRecursive(Environment const& env, storm::storage::geometry::PolytopeTree<GeometryValueType>& polytopeTree, GeometryValueType const& eps, std::vector<Point>& foundPoints, std::vector<Polytope>& infeasableAreas, uint64_t const& depth) {
                 std::cout << ".";
                 std::cout.flush();
                 STORM_LOG_ASSERT(!polytopeTree.isEmpty(), "Tree node is empty");
@@ -646,16 +668,19 @@ namespace storm {
                     lpModel->optimize();
                     STORM_LOG_TRACE("\tDone solving MILP...");
                     swLpSolve.stop();
-                    
-                    //std::cout << "writing model to file out.lp"<< std::endl;
-                    //lpModel->writeModelToFile("out.lp");
+
+#ifndef NDEBUG
+                    STORM_PRINT_AND_LOG("Writing model to file '" << polytopeTree.toId() << ".lp'" << std::endl;);
+                    lpModel->writeModelToFile(polytopeTree.toId() + ".lp");
+#endif
                     if (lpModel->isInfeasible()) {
                         infeasableAreas.push_back(polytopeTree.getPolytope());
                         polytopeTree.clear();
                     } else {
                         STORM_LOG_ASSERT(!lpModel->isUnbounded(), "LP result is unbounded.");
-                        // TODO: only for debugging
+#ifndef NDEBUG
                         validateCurrentModel(env);
+#endif
                         Point newPoint;
                         for (auto const& objVar : currentObjectiveVariables) {
                             newPoint.push_back(storm::utility::convertNumber<GeometryValueType>(lpModel->getContinuousValue(objVar)));
@@ -688,20 +713,21 @@ namespace storm {
                         if (infeasableAreas.back()->isEmpty()) {
                             infeasableAreas.pop_back();
                         }
-                        swAux.start();
                         polytopeTree.setMinus(storm::storage::geometry::Polytope<GeometryValueType>::create({halfspace}));
                         for (auto const& p : newPoints) {
                             foundPoints.push_back(p);
                             polytopeTree.substractDownwardClosure(p, eps);
                         }
-                        swAux.stop();
                         if (!polytopeTree.isEmpty()) {
                             checkRecursive(env, polytopeTree, eps, foundPoints, infeasableAreas, depth);
                         }
                     }
                 } else {
-                    // Traverse all the children.
+                    // Traverse all the non-empty children.
                     for (uint64_t childId = 0; childId < polytopeTree.getChildren().size(); ++childId) {
+                        if (polytopeTree.getChildren()[childId].isEmpty()) {
+                            continue;
+                        }
                         uint64_t newPointIndex = foundPoints.size();
                         checkRecursive(env, polytopeTree.getChildren()[childId], eps, foundPoints, infeasableAreas, depth + 1);
                         STORM_LOG_ASSERT(polytopeTree.getChildren()[childId].isEmpty(), "expected empty children.");
@@ -734,7 +760,13 @@ namespace storm {
                         uint64_t globalChoiceOffset = model.getTransitionMatrix().getRowGroupIndices()[state];
                         bool choiceFound = false;
                         for (uint64_t localChoice = 0; localChoice < numChoices; ++localChoice) {
-                            if (lpModel->getIntegerValue(choiceVariables[globalChoiceOffset + localChoice].getBaseExpression().asVariableExpression().getVariable()) == 1) {
+                            bool localChoiceEnabled = false;
+                            if (choiceVarReduction() && localChoice + 1 == numChoices) {
+                                localChoiceEnabled = !choiceFound;
+                            } else {
+                                localChoiceEnabled = (lpModel->getIntegerValue(choiceVariables[globalChoiceOffset + localChoice].getBaseExpression().asVariableExpression().getVariable()) == 1);
+                            }
+                            if (localChoiceEnabled) {
                                 STORM_LOG_THROW(!choiceFound, storm::exceptions::UnexpectedException, "Multiple choices selected at state " << state);
                                 scheduler.setChoice(localChoice, state);
                                 choiceFound = true;
@@ -750,9 +782,9 @@ namespace storm {
                         expectedValue = -expectedValue;
                     }
                     ValueType actualValue = objectiveHelper[objIndex].evaluateOnModel(env, *inducedModel);
-                    std::cout << "obj" << objIndex << ": LpSolver: " << storm::utility::convertNumber<double>(expectedValue) << " (" << expectedValue << ")" << std::endl;
-                    std::cout << "obj" << objIndex << ": model checker: " << storm::utility::convertNumber<double>(actualValue) << " (" << actualValue << ")" << std::endl;
-                    STORM_LOG_THROW(storm::utility::convertNumber<double>(storm::utility::abs<ValueType>(actualValue - expectedValue)) <= 1e-4, storm::exceptions::UnexpectedException, "Invalid value for objective " << objIndex << ": expected " << expectedValue << " but got " << actualValue);
+                    double diff = storm::utility::convertNumber<double>(storm::utility::abs<ValueType>(expectedValue - actualValue));
+                    STORM_PRINT_AND_LOG("Validating Lp solution for objective " << objIndex << ": LP" << storm::utility::convertNumber<double>(expectedValue) << " InducedScheduler=" << storm::utility::convertNumber<double>(actualValue) << " (difference is " << diff << ")" << std::endl);
+                    STORM_LOG_WARN_COND(diff <= 1e-4 * std::abs(storm::utility::convertNumber<double>(actualValue)), "Invalid value for objective " << objIndex << ": expected " << expectedValue << " but got " << actualValue << " (difference is " << diff << ")");
                 }
                 std::cout << std::endl;
                 

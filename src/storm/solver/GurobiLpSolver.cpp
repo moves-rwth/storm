@@ -184,7 +184,7 @@ namespace storm {
         
         template<typename ValueType>
         void GurobiLpSolver<ValueType>::addConstraint(std::string const& name, storm::expressions::Expression const& constraint) {
-            STORM_LOG_TRACE("Adding constraint " << name << " to GurobiLpSolver:" << std::endl << "\t" << constraint);
+            STORM_LOG_TRACE("Adding constraint " << (name == "" ? std::to_string(nextConstraintIndex) : name) << " to GurobiLpSolver:" << std::endl << "\t" << constraint);
             STORM_LOG_THROW(constraint.isRelationalExpression(), storm::exceptions::InvalidArgumentException, "Illegal constraint is not a relational expression.");
             STORM_LOG_THROW(constraint.getOperator() != storm::expressions::OperatorType::NotEqual, storm::exceptions::InvalidArgumentException, "Illegal constraint uses inequality operator.");
             
@@ -569,7 +569,7 @@ namespace storm {
             if (relative) {
                 return result;
             } else {
-                return result * getObjectiveValue();
+                return storm::utility::abs<ValueType>(result * getObjectiveValue());
             }
         }
         

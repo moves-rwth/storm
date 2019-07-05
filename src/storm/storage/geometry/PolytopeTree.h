@@ -114,6 +114,23 @@ namespace storm {
                     return children;
                 }
                 
+                std::string toId() {
+                    if (isEmpty()) {
+                        return "empty";
+                    }
+                    std::stringstream s;
+                    s << "p";
+                    auto vertices = getPolytope()->getVertices();
+                    for (auto const& v : vertices) {
+                        s << "_";
+                        for (auto const& vi : v) {
+                            s << storm::utility::convertNumber<double>(vi) << "-";
+                        }
+                    }
+                    s << "_id" << children.data();
+                    return s.str();
+                }
+                
                 /*!
                  * Returns a string representation of this node (for debugging purposes)
                  */
