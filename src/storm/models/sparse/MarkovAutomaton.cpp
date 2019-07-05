@@ -286,7 +286,7 @@ namespace storm {
                     return std::make_shared<MarkovAutomaton<ValueType, RewardModelType>>(std::move(components));
                 }
 
-                std::map<uint_fast64_t, uint_fast64_t> stateRemapping;
+                std::map<uint_fast64_t, uint_fast64_t> eliminationMapping;
                 std::set<uint_fast64_t> statesToKeep;
                 std::queue<uint_fast64_t> changedStates;
                 std::queue<uint_fast64_t> queue;
@@ -310,11 +310,11 @@ namespace storm {
                                  entryIt != entryIte; ++entryIt) {
                                 uint_fast64_t predecessor = entryIt->getColumn();
                                 if (!this->isMarkovianState(predecessor) && !statesToKeep.count(predecessor)) {
-                                    if (!stateRemapping.count(predecessor)) {
-                                        stateRemapping[predecessor] = base_state;
+                                    if (!eliminationMapping.count(predecessor)) {
+                                        eliminationMapping[predecessor] = base_state;
                                         queue.push(predecessor);
-                                    } else if (stateRemapping[predecessor] != base_state) {
-                                        stateRemapping.erase(predecessor);
+                                    } else if (eliminationMapping[predecessor] != base_state) {
+                                        eliminationMapping.erase(predecessor);
                                         statesToKeep.insert(predecessor);
                                         changedStates.push(predecessor);
                                     }
@@ -339,11 +339,11 @@ namespace storm {
                              entryIt != entryIte; ++entryIt) {
                             uint_fast64_t predecessor = entryIt->getColumn();
                             if (!this->isMarkovianState(predecessor) && !statesToKeep.count(predecessor)) {
-                                if (!stateRemapping.count(predecessor)) {
-                                    stateRemapping[predecessor] = base_state;
+                                if (!eliminationMapping.count(predecessor)) {
+                                    eliminationMapping[predecessor] = base_state;
                                     queue.push(predecessor);
-                                } else if (stateRemapping[predecessor] != base_state) {
-                                    stateRemapping.erase(predecessor);
+                                } else if (eliminationMapping[predecessor] != base_state) {
+                                    eliminationMapping.erase(predecessor);
                                     statesToKeep.insert(predecessor);
                                     changedStates.push(predecessor);
                                 }
@@ -356,15 +356,42 @@ namespace storm {
 
                 // At this point, we hopefully have a valid mapping which eliminates a lot of states
 
-                STORM_PRINT("Remapping \n")
-                for (auto entry : stateRemapping) {
-                    STORM_PRINT(std::to_string(entry.first) << " -> " << std::to_string(entry.second) << "\n")
+                STORM_PRINT("Elimination Mapping" << std::endl)
+                for (auto entry : eliminationMapping) {
+                    STORM_PRINT(std::to_string(entry.first) << " -> " << std::to_string(entry.second) << std::endl)
                 }
-                STORM_PRINT("Remapped States: " << stateRemapping.size() << "\n")
-                // TODO test some examples, especially ones containing non-determinism
+                STORM_PRINT("Eliminating " << eliminationMapping.size() << " states" << std::endl)
+
+                // TODO explore if one can construct elimination mapping and state remapping in one step
+
+                // Construct a mapping of old state space to new one
+                std::vector<uint_fast64_t> stateRemapping(this->getNumberOfStates(), -1);
+                uint_fast64_t currentNewState = 0;
+                for (uint_fast64_t state = 0; state < this->getNumberOfStates(); ++state) {
+                    if (eliminationMapping.count(state) > 0) {
+                        STORM_PRINT("Eliminate state " << state << std::endl)
+                        if (stateRemapping[eliminationMapping[state]] == uint_fast64_t(-1)) {
+                            STORM_PRINT(
+                                    "State " << eliminationMapping[state] << " is not mapped yet! Current New State: "
+                                             << currentNewState << std::endl)
+
+                            stateRemapping[eliminationMapping[state]] = currentNewState;
+                            stateRemapping[state] = currentNewState;
+                            ++currentNewState;
+                        } else {
+                            stateRemapping[state] = stateRemapping[eliminationMapping[state]];
+                        }
+                    } else if (stateRemapping[state] == uint_fast64_t(-1)) {
+                        stateRemapping[state] = currentNewState;
+                        ++currentNewState;
+                    }
+                }
+
+                for (uint_fast64_t state = 0; state < stateRemapping.size(); ++state) STORM_PRINT(
+                        state << "->" << stateRemapping[state] << std::endl)
 
                 // Build the new matrix
-                // TODO
+
 
                 return nullptr;
             }
