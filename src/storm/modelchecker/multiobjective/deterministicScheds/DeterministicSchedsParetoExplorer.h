@@ -171,7 +171,7 @@ namespace storm {
                  * 2. New facets are generated and (if not already precise enough) added to unprocessedFacets
                  * 3. true is returned
                  */
-                bool optimizeAndSplitFacet(Environment const& env, Facet& f, GeometryValueType const& eps);
+                bool optimizeAndSplitFacet(Environment const& env, Facet& f);
                 
                 Polytope negateMinObjectives(Polytope const& polytope) const;
                 void negateMinObjectives(std::vector<GeometryValueType>& vector) const;
@@ -180,7 +180,7 @@ namespace storm {
                 std::queue<Facet> unprocessedFacets;
                 Polytope overApproximation;
                 std::vector<Polytope> unachievableAreas;
-                
+                std::vector<GeometryValueType> eps;
                 std::shared_ptr<DeterministicSchedsLpChecker<SparseModelType, GeometryValueType>> lpChecker;
                 std::unique_ptr<PcaaWeightVectorChecker<SparseModelType>> wvChecker;
                 std::vector<DeterministicSchedsObjectiveHelper<SparseModelType>> objectiveHelper;

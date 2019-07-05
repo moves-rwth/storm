@@ -294,6 +294,21 @@ namespace storm {
             std::unique_ptr<CheckResult> DeterministicSchedsParetoExplorer<SparseModelType, GeometryValueType>::check(Environment const& env) {
                 clean();
                 initializeFacets(env);
+                
+                // Compute the relative precision in each dimension.
+                // Todo: also allow for absolute precision
+                eps = std::vector<GeometryValueType>(objectives.size(), storm::utility::zero<GeometryValueType>());
+                for (auto const& point : pointset) {
+                    for (uint64_t i = 0; i < eps.size(); ++i) {
+                        eps[i] += storm::utility::abs(point.second.get()[i]);
+                    }
+                }
+                GeometryValueType epsScalingFactor = storm::utility::convertNumber<GeometryValueType>(env.modelchecker().multi().getPrecision());
+                epsScalingFactor += epsScalingFactor;
+                epsScalingFactor = epsScalingFactor / storm::utility::convertNumber<GeometryValueType, uint64_t>(pointset.size());
+                storm::utility::vector::scaleVectorInPlace(eps, epsScalingFactor);
+                std::cout << "scaled precision is " << storm::utility::vector::toString(storm::utility::vector::convertNumericVector<double>(eps)) << std::endl;
+                
                 while (!unprocessedFacets.empty()) {
                     Facet f = std::move(unprocessedFacets.front());
                     unprocessedFacets.pop();
@@ -449,14 +464,11 @@ namespace storm {
 
             template <class SparseModelType, typename GeometryValueType>
             void DeterministicSchedsParetoExplorer<SparseModelType, GeometryValueType>::processFacet(Environment const& env, Facet& f) {
-                GeometryValueType eps = storm::utility::convertNumber<GeometryValueType>(env.modelchecker().multi().getPrecision());
-                eps += eps; // The unknown area (box) can actually have size 2*eps
-
                 if (!wvChecker) {
                     lpChecker->setCurrentWeightVector(f.getHalfspace().normalVector());
                 }
                 
-                if (optimizeAndSplitFacet(env, f, eps)) {
+                if (optimizeAndSplitFacet(env, f)) {
                     return;
                 }
                 
@@ -492,7 +504,7 @@ namespace storm {
             }
             
             template <class SparseModelType, typename GeometryValueType>
-            bool DeterministicSchedsParetoExplorer<SparseModelType, GeometryValueType>::optimizeAndSplitFacet(Environment const& env, Facet& f, GeometryValueType const& eps) {
+            bool DeterministicSchedsParetoExplorer<SparseModelType, GeometryValueType>::optimizeAndSplitFacet(Environment const& env, Facet& f) {
                 
                 // Invoke optimization and insert the explored points
                 boost::optional<PointId> optPointId;

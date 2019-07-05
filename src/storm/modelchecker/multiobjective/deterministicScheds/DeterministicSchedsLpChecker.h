@@ -43,7 +43,7 @@ namespace storm {
                  * Optimizes in the currently given direction, recursively checks for points in the given area.
                  * @return all pareto optimal points in the area given by polytopeTree as well as a set of area in which no solution lies (the points might be achievable via some point outside of this area, though)
                  */
-                std::pair<std::vector<Point>, std::vector<Polytope>> check(storm::Environment const& env, storm::storage::geometry::PolytopeTree<GeometryValueType>& polytopeTree, GeometryValueType const& eps);
+                std::pair<std::vector<Point>, std::vector<Polytope>> check(storm::Environment const& env, storm::storage::geometry::PolytopeTree<GeometryValueType>& polytopeTree, Point const& eps);
 
             private:
                 std::vector<std::vector<storm::expressions::Expression>> createEcVariables();
@@ -52,7 +52,7 @@ namespace storm {
                 // Builds the induced markov chain of the current model and checks whether the resulting value coincide with the result of the lp solver.
                 void validateCurrentModel(Environment const& env) const;
 
-                void checkRecursive(storm::Environment const& env, storm::storage::geometry::PolytopeTree<GeometryValueType>& polytopeTree, GeometryValueType const& eps, std::vector<Point>& foundPoints, std::vector<Polytope>& infeasableAreas, uint64_t const& depth);
+                void checkRecursive(storm::Environment const& env, storm::storage::geometry::PolytopeTree<GeometryValueType>& polytopeTree, Point const& eps, std::vector<Point>& foundPoints, std::vector<Polytope>& infeasableAreas, uint64_t const& depth);
                 
                 ModelType const& model;
                 std::vector<DeterministicSchedsObjectiveHelper<ModelType>> const& objectiveHelper;

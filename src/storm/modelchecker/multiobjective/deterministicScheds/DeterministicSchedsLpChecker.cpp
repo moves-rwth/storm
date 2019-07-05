@@ -135,7 +135,7 @@ namespace storm {
             }
 
             template <typename ModelType, typename GeometryValueType>
-            std::pair<std::vector<std::vector<GeometryValueType>>, std::vector<std::shared_ptr<storm::storage::geometry::Polytope<GeometryValueType>>>> DeterministicSchedsLpChecker<ModelType, GeometryValueType>::check(storm::Environment const& env, storm::storage::geometry::PolytopeTree<GeometryValueType>& polytopeTree, GeometryValueType const& eps) {
+            std::pair<std::vector<std::vector<GeometryValueType>>, std::vector<std::shared_ptr<storm::storage::geometry::Polytope<GeometryValueType>>>> DeterministicSchedsLpChecker<ModelType, GeometryValueType>::check(storm::Environment const& env, storm::storage::geometry::PolytopeTree<GeometryValueType>& polytopeTree, Point const& eps) {
                 STORM_LOG_INFO("Checking " << polytopeTree.toString());
                 swCheck.start();
                 STORM_LOG_ASSERT(!currentWeightVector.empty(), "Checking invoked before specifying a weight vector.");
@@ -145,11 +145,9 @@ namespace storm {
                 
                 if (gurobiLpModel) {
                     // For gurobi, it is possible to specify a gap between the obtained lower/upper objective bounds.
-                    GeometryValueType milpGap = storm::utility::zero<GeometryValueType>();
-                    for (auto const& wi : currentWeightVector) {
-                        milpGap += wi;
-                    }
-                    milpGap *= eps;
+                    // Let p be the found solution point, q be the optimal (unknown) solution point, and w be the current weight vector.
+                    // The gap between the solution p and q is |w*p - w*q| = |w*(p-q)|
+                    GeometryValueType milpGap = storm::utility::vector::dotProduct(currentWeightVector, eps);
                     gurobiLpModel->setMaximalMILPGap(storm::utility::convertNumber<ValueType>(milpGap), false);
                     gurobiLpModel->update();
                 }
@@ -644,7 +642,7 @@ namespace storm {
             }
             
             template <typename ModelType, typename GeometryValueType>
-            void DeterministicSchedsLpChecker<ModelType, GeometryValueType>::checkRecursive(Environment const& env, storm::storage::geometry::PolytopeTree<GeometryValueType>& polytopeTree, GeometryValueType const& eps, std::vector<Point>& foundPoints, std::vector<Polytope>& infeasableAreas, uint64_t const& depth) {
+            void DeterministicSchedsLpChecker<ModelType, GeometryValueType>::checkRecursive(Environment const& env, storm::storage::geometry::PolytopeTree<GeometryValueType>& polytopeTree, Point const& eps, std::vector<Point>& foundPoints, std::vector<Polytope>& infeasableAreas, uint64_t const& depth) {
                 std::cout << ".";
                 std::cout.flush();
                 STORM_LOG_ASSERT(!polytopeTree.isEmpty(), "Tree node is empty");
@@ -693,7 +691,7 @@ namespace storm {
                                 bool considerP = false;
                                 for (uint64_t objIndex = 0; objIndex < currentObjectiveVariables.size(); ++objIndex) {
                                     p.push_back(storm::utility::convertNumber<GeometryValueType>(gurobiLpModel->getContinuousValue(currentObjectiveVariables[objIndex], solutionIndex)));
-                                    if (p.back() > newPoint[objIndex] + eps / storm::utility::convertNumber<GeometryValueType>(2)) {
+                                    if (p.back() > newPoint[objIndex] + eps[objIndex] / storm::utility::convertNumber<GeometryValueType>(2)) {
                                         // The other solution dominates the newPoint in this dimension and is also not too close to the newPoint.
                                         considerP = true;
                                     }

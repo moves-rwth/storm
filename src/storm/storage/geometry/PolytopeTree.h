@@ -70,19 +70,22 @@ namespace storm {
                 /*!
                  * Substracts the downward closure of the given point from this set.
                  * @param point the given point
-                 * @param offset
+                 * @param offset coordinates that are added to the point before taking its downward closure
                  */
-                void substractDownwardClosure(std::vector<ValueType> const& point, ValueType const& offset = storm::utility::zero<ValueType>()) {
-                    if (storm::utility::isZero(offset)) {
-                        setMinus(Polytope<ValueType>::createDownwardClosure({point}));
-                    } else {
-                        std::vector<ValueType> pointPrime;
-                        pointPrime.reserve(point.size());
-                        for (auto const& coordinate : point) {
-                            pointPrime.push_back(coordinate + offset);
-                        }
-                        setMinus(Polytope<ValueType>::createDownwardClosure({pointPrime}));
-                    }
+                void substractDownwardClosure(std::vector<ValueType> const& point) {
+                    setMinus(Polytope<ValueType>::createDownwardClosure({point}));
+                }
+                
+                /*!
+                 * Substracts the downward closure of the given point from this set.
+                 * @param point the given point
+                 * @param offset coordinates that are added to the point before taking its downward closure
+                 */
+                void substractDownwardClosure(std::vector<ValueType> const& point, std::vector<ValueType> const& offset) {
+                    assert(point.size() == offset.size());
+                    std::vector<ValueType> pointPrime(point.size());
+                    storm::utility::vector::addVectors(point, offset, pointPrime);
+                    setMinus(Polytope<ValueType>::createDownwardClosure({pointPrime}));
                 }
                 
                 /*!
