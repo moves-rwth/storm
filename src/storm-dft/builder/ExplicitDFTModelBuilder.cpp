@@ -14,6 +14,7 @@
 #include "storm/settings/SettingsManager.h"
 #include "storm/logic/AtomicLabelFormula.h"
 #include "storm-dft/settings/modules/FaultTreeSettings.h"
+#include "storm/transformer/NonMarkovianChainTransformer.h"
 
 
 namespace storm {
@@ -653,8 +654,9 @@ namespace storm {
                 }
                 if (ma->hasOnlyTrivialNondeterminism()) {
                     // Markov automaton can be converted into CTMC
-                    // TODO: change components which were not moved accordingly
-                    model = ma->convertToCtmc();
+                    // TODO apply transformer to all MAs
+                    model = storm::transformer::NonMarkovianChainTransformer<ValueType>::eliminateNonmarkovianStates(
+                            ma);
                 } else {
                     model = ma;
                 }

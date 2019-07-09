@@ -148,7 +148,6 @@ namespace storm {
                  */
                 std::shared_ptr<storm::models::sparse::Ctmc<ValueType, RewardModelType>> convertToCtmc() const;
 
-                std::shared_ptr<MarkovAutomaton<ValueType, RewardModelType>> eliminateNonmarkovianStates() const;
                 
                 virtual void printModelInformationToStream(std::ostream& out) const override;
                 
