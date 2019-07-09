@@ -1,4 +1,5 @@
 #include <queue>
+#include <storm/generator/StateBehavior.h>
 
 #include "storm/models/sparse/MarkovAutomaton.h"
 
@@ -270,6 +271,9 @@ namespace storm {
             template<typename ValueType, typename RewardModelType>
             std::shared_ptr<MarkovAutomaton<ValueType, RewardModelType>>
             MarkovAutomaton<ValueType, RewardModelType>::eliminateNonmarkovianStates() const {
+                // TODO reward models
+
+                STORM_LOG_WARN("State elimination is currently not label preserving!");
                 if (isClosed() && markovianStates.full()) {
                     storm::storage::sparse::ModelComponents<ValueType, RewardModelType> components(
                             this->getTransitionMatrix(), this->getStateLabeling(), this->getRewardModels(), false);
@@ -356,10 +360,10 @@ namespace storm {
 
                 // At this point, we hopefully have a valid mapping which eliminates a lot of states
 
-                STORM_PRINT("Elimination Mapping" << std::endl)
+                /*STORM_PRINT("Elimination Mapping" << std::endl)
                 for (auto entry : eliminationMapping) {
                     STORM_PRINT(std::to_string(entry.first) << " -> " << std::to_string(entry.second) << std::endl)
-                }
+                }*/
                 STORM_PRINT("Eliminating " << eliminationMapping.size() << " states" << std::endl)
 
                 // TODO explore if one can construct elimination mapping and state remapping in one step
@@ -369,31 +373,95 @@ namespace storm {
                 uint_fast64_t currentNewState = 0;
                 for (uint_fast64_t state = 0; state < this->getNumberOfStates(); ++state) {
                     if (eliminationMapping.count(state) > 0) {
-                        STORM_PRINT("Eliminate state " << state << std::endl)
                         if (stateRemapping[eliminationMapping[state]] == uint_fast64_t(-1)) {
-                            STORM_PRINT(
-                                    "State " << eliminationMapping[state] << " is not mapped yet! Current New State: "
-                                             << currentNewState << std::endl)
-
                             stateRemapping[eliminationMapping[state]] = currentNewState;
                             stateRemapping[state] = currentNewState;
                             ++currentNewState;
+                            queue.push(eliminationMapping[state]);
                         } else {
                             stateRemapping[state] = stateRemapping[eliminationMapping[state]];
                         }
                     } else if (stateRemapping[state] == uint_fast64_t(-1)) {
                         stateRemapping[state] = currentNewState;
+                        queue.push(state);
                         ++currentNewState;
                     }
                 }
 
-                for (uint_fast64_t state = 0; state < stateRemapping.size(); ++state) STORM_PRINT(
-                        state << "->" << stateRemapping[state] << std::endl)
+                // Build the new MA
+                storm::storage::SparseMatrix<ValueType> newTransitionMatrix;
+                storm::models::sparse::StateLabeling newStateLabeling(
+                        this->getNumberOfStates() - eliminationMapping.size());
+                storm::storage::BitVector newMarkovianStates(this->getNumberOfStates() - eliminationMapping.size(),
+                                                             false);
+                std::vector<ValueType> newExitRates;
+                //TODO choice labeling
+                boost::optional <storm::models::sparse::ChoiceLabeling> choiceLabeling;
 
-                // Build the new matrix
+                // Initialize the matrix builder and helper variables
+                storm::storage::SparseMatrixBuilder<ValueType> matrixBuilder = storm::storage::SparseMatrixBuilder<ValueType>(
+                        0, 0, 0, false, true, 0);
+                uint_fast64_t currentRow = 0;
+                uint_fast64_t state = 0;
+                while (!queue.empty()) {
+                    state = queue.front();
+                    queue.pop();
 
+                    for (auto const &label : this->getLabelsOfState(state)) {
+                        if (!newStateLabeling.containsLabel(label)) {
+                            newStateLabeling.addLabel(label);
+                        }
 
-                return nullptr;
+                        newStateLabeling.addLabelToState(label, stateRemapping[state]);
+                    }
+
+                    // Use a set to not include redundant rows
+                    std::set<std::map<uint_fast64_t, ValueType>> rowSet;
+                    for (uint_fast64_t row = 0; row < this->getTransitionMatrix().getRowGroupSize(state); ++row) {
+                        std::map<uint_fast64_t, ValueType> transitions;
+                        for (typename storm::storage::SparseMatrix<ValueType>::const_iterator itEntry = this->getTransitionMatrix().getRow(
+                                state, row).begin();
+                             itEntry != this->getTransitionMatrix().getRow(state, row).end(); ++itEntry) {
+                            uint_fast64_t newId = stateRemapping[itEntry->getColumn()];
+                            if (transitions.count(newId) == 0) {
+                                transitions[newId] = itEntry->getValue();
+                            } else {
+                                transitions[newId] += itEntry->getValue();
+                            }
+                        }
+                        rowSet.insert(transitions);
+                    }
+
+                    // correctly set rates
+                    auto rate = storm::utility::zero<ValueType>();
+
+                    if (this->isMarkovianState(state)) {
+                        newMarkovianStates.set(stateRemapping[state], true);
+                        rate = this->exitRates.at(state);
+                    }
+
+                    newExitRates.push_back(rate);
+                    // Build matrix
+                    matrixBuilder.newRowGroup(currentRow);
+                    for (auto const &row : rowSet) {
+                        for (auto const &transition : row) {
+                            matrixBuilder.addNextValue(currentRow, transition.first, transition.second);
+                            //STORM_PRINT(stateRemapping[state] << "->" << transition.first << " : " << transition.second << std::endl)
+                        }
+                        ++currentRow;
+                    }
+                }
+                newTransitionMatrix = matrixBuilder.build();
+
+                storm::storage::sparse::ModelComponents<ValueType, RewardModelType> newComponents = storm::storage::sparse::ModelComponents<ValueType, RewardModelType>(
+                        std::move(newTransitionMatrix), std::move(newStateLabeling));
+
+                newComponents.rateTransitions = false;
+                newComponents.markovianStates = std::move(newMarkovianStates);
+                newComponents.exitRates = std::move(newExitRates);
+
+                return std::make_shared<storm::models::sparse::MarkovAutomaton<ValueType, RewardModelType>>(
+                        std::move(newComponents));
             }
 
 
