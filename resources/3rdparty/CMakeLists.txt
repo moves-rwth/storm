@@ -562,9 +562,35 @@ if (STORM_USE_INTELTBB)
         message(STATUS "Storm - Found Intel TBB with interface version ${TBB_INTERFACE_VERSION}.")
         message(STATUS "Storm - Linking with Intel TBB in ${TBB_LIBRARY_DIRS}.")
         set(STORM_HAVE_INTELTBB ON)
-        link_directories(${TBB_LIBRARY_DIRS})
-        include_directories(${TBB_INCLUDE_DIRS})
-        list(APPEND STORM_LINK_LIBRARIES tbb tbbmalloc)
+	# Under Linux libtbb.so contains a linker script to libtbb.so.2 instead of a symlink.
+	# This breaks CMake.
+        # As a workaround we manually try to add the necessary suffix ".2" to the so file and hope for the best.
+	if (LINUX)
+		# Check if the library is a linker script which only links to the correct library
+		# Read first bytes of file
+		file(READ "${TBB_LIBRARY}" TMPTXT LIMIT 128)
+		# Check if file starts with "INPUT (libtbb.so.2)"
+		if("${TMPTXT}" MATCHES "INPUT \\(libtbb\\.so\\.(.*)\\)")
+			# Manually set library by adding the suffix from the linker script.
+			# CMAKE_MATCH_1 contains the parsed suffix.
+			set(TBB_LIB_LINUX "${TBB_LIBRARY}.${CMAKE_MATCH_1}")
+			set(TBB_MALLOC_LIB_LINUX "${TBB_MALLOC_LIBRARY}.${CMAKE_MATCH_1}")
+			if (EXISTS "${TBB_LIB_LINUX}")
+				set(TBB_LIBRARY ${TBB_LIB_LINUX})
+				message(STATUS "Storm - Using Intel TBB library in manually set path ${TBB_LIBRARY}.")
+			endif()
+			if (EXISTS "${TBB_MALLOC_LIB_LINUX}")
+				set(TBB_MALLOC_LIBRARY ${TBB_MALLOC_LIB_LINUX})
+				message(STATUS "Storm - Using Intel TBB malloc library in manually set path ${TBB_MALLOC_LIBRARY}.")
+			endif()
+		endif()
+	endif()
+
+        add_imported_library(tbb SHARED ${TBB_LIBRARY} ${TBB_INCLUDE_DIRS})
+        list(APPEND STORM_DEP_TARGETS tbb_SHARED)
+        add_imported_library(tbb_malloc SHARED ${TBB_MALLOC_LIBRARY} ${TBB_INCLUDE_DIRS})
+        list(APPEND STORM_DEP_TARGETS tbb_malloc_SHARED)
+	
     else(TBB_FOUND)
         message(FATAL_ERROR "Storm - TBB was requested, but not found.")
     endif(TBB_FOUND)
