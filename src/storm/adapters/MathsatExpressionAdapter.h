@@ -257,13 +257,11 @@ namespace storm {
 				switch (expression.getOperatorType()) {
 					case storm::expressions::UnaryNumericalFunctionExpression::OperatorType::Minus:
 						return msat_make_times(env, msat_make_number(env, "-1"), childResult);
-						break;
                     case storm::expressions::UnaryNumericalFunctionExpression::OperatorType::Floor:
                         return msat_make_floor(env, childResult);
-                        break;
                     case storm::expressions::UnaryNumericalFunctionExpression::OperatorType::Ceil:
-                        return msat_make_plus(env, msat_make_floor(env, childResult), msat_make_number(env, "1"));
-                        break;
+                        // Mathsat does not support ceil... but ceil(x) = -floor(-x)  wheeii \o/
+                        return msat_make_times(env, msat_make_number(env, "-1"), msat_make_floor(env, msat_make_times(env, msat_make_number(env, "-1"), childResult)));
 					default:
                         STORM_LOG_THROW(false, storm::exceptions::ExpressionEvaluationException, "Cannot evaluate expression: unknown numerical unary operator: '" << static_cast<uint_fast64_t>(expression.getOperatorType()) << "' in expression " << expression << ".");
 				}

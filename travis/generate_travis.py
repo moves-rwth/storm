@@ -3,12 +3,14 @@
 # Configuration for Linux
 configs_linux = [
     # OS, compiler, build type
-    ("debian-9", "gcc", "DefaultDebug"),
-    ("debian-9", "gcc", "DefaultRelease"),
-    ("ubuntu-18.04", "gcc", "DefaultDebugTravis"),
-    ("ubuntu-18.04", "gcc", "DefaultReleaseTravis"),
     ("ubuntu-18.04", "gcc", "DefaultDebug"),
     ("ubuntu-18.04", "gcc", "DefaultRelease"),
+    ("debian-9", "gcc", "DefaultDebug"),
+    ("debian-9", "gcc", "DefaultRelease"),
+    ("ubuntu-18.10", "gcc", "DefaultDebug"),
+    ("ubuntu-18.10", "gcc", "DefaultRelease"),
+    ("ubuntu-19.04", "gcc", "DefaultDebugTravis"),
+    ("ubuntu-19.04", "gcc", "DefaultReleaseTravis"),
 ]
 
 # Configurations for Mac

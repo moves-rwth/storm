@@ -414,6 +414,11 @@ namespace storm {
             STORM_LOG_THROW(first.hasNumericalType(), storm::exceptions::InvalidTypeException, "Operator 'ceil' requires numerical operand.");
             return Expression(std::shared_ptr<BaseExpression>(new UnaryNumericalFunctionExpression(first.getBaseExpression().getManager(), first.getType().floorCeil(), first.getBaseExpressionPointer(), UnaryNumericalFunctionExpression::OperatorType::Ceil)));
         }
+        
+        Expression round(Expression const& first) {
+            STORM_LOG_THROW(first.hasNumericalType(), storm::exceptions::InvalidTypeException, "Operator 'round' requires numerical operand.");
+            return floor(first + first.getManager().rational(0.5));
+        }
 
         Expression abs(Expression const& first) {
             STORM_LOG_THROW(first.hasNumericalType(), storm::exceptions::InvalidTypeException, "Abs is only defined for numerical operands");
@@ -431,19 +436,19 @@ namespace storm {
         }
 
         Expression disjunction(std::vector<storm::expressions::Expression> const& expressions) {
-            return apply(expressions, [] (Expression const& e1, Expression const& e2) { return e1 || e2; });
+            return applyAssociative(expressions, [] (Expression const& e1, Expression const& e2) { return e1 || e2; });
         }
 
         Expression conjunction(std::vector<storm::expressions::Expression> const& expressions) {
-            return apply(expressions, [] (Expression const& e1, Expression const& e2) { return e1 && e2; });
+            return applyAssociative(expressions, [] (Expression const& e1, Expression const& e2) { return e1 && e2; });
         }
         
         Expression sum(std::vector<storm::expressions::Expression> const& expressions) {
-            return apply(expressions, [] (Expression const& e1, Expression const& e2) { return e1 + e2; });
+            return applyAssociative(expressions, [] (Expression const& e1, Expression const& e2) { return e1 + e2; });
         }
         
         Expression apply(std::vector<storm::expressions::Expression> const& expressions, std::function<Expression (Expression const&, Expression const&)> const& function) {
-            STORM_LOG_THROW(!expressions.empty(), storm::exceptions::InvalidArgumentException, "Cannot build disjunction of empty expression list.");
+            STORM_LOG_THROW(!expressions.empty(), storm::exceptions::InvalidArgumentException, "Cannot build function application of empty expression list.");
             auto it = expressions.begin();
             auto ite = expressions.end();
             Expression result = *it;
@@ -454,6 +459,46 @@ namespace storm {
             }
             
             return result;
+        }
+        
+        Expression applyAssociative(std::vector<storm::expressions::Expression> const& expressions, std::function<Expression (Expression const&, Expression const&)> const& function) {
+            STORM_LOG_THROW(!expressions.empty(), storm::exceptions::InvalidArgumentException, "Cannot build function application of empty expression list.");
+            
+            // Balance the syntax tree if there are enough operands
+            if (expressions.size() >= 4) {
+                // we treat operands and literals seperately so that a subsequent call to simplify() is more successful (see, e.g., (a + 1) + (b + 1))
+                std::vector<std::vector<storm::expressions::Expression>> operandTypes(2);
+                auto& nonliterals = operandTypes[0];
+                auto& literals = operandTypes[1];
+                for (auto const& expression : expressions) {
+                    if (expression.isLiteral()) {
+                        literals.push_back(expression);
+                    } else {
+                        nonliterals.push_back(expression);
+                    }
+                }
+                
+                for (auto& operands : operandTypes) {
+                    auto opIt = operands.begin();
+                    while (operands.size() > 1) {
+                        if (opIt == operands.end() || opIt == operands.end() - 1) {
+                            opIt = operands.begin();
+                        }
+                        *opIt = function(*opIt, operands.back());
+                        operands.pop_back();
+                        ++opIt;
+                    }
+                }
+                if (nonliterals.empty()) {
+                    return literals.front();
+                } else if (literals.empty()) {
+                    return nonliterals.front();
+                } else {
+                    return function(literals.front(), nonliterals.front());
+                }
+            } else {
+                return apply(expressions, function);
+            }
         }
     }
 }
