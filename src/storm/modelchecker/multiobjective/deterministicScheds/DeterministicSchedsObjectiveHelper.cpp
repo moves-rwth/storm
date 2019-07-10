@@ -401,40 +401,17 @@ namespace storm {
                             std::cout << "Checking a mec with " << mecStates.getNumberOfSetBits() << " states " << numChoices << " choices and " << numTransitions << " transitions." << std::endl;
                             lpath = storm::utility::one<ValueType>() / getExpVisitsUpperBoundForMec(mecStates, modelTransitions);
                         }*/
-                        // Multiply the smallest probability occurring at each state.
-                        for (auto const& stateChoices : mec) {
-                            auto state = stateChoices.first;
-                            ValueType minProb = storm::utility::one<ValueType>();
-                            for (uint64_t choice = modelTransitions.getRowGroupIndices()[state]; choice < modelTransitions.getRowGroupIndices()[state + 1]; ++state) {
-                                if (stateChoices.second.count(choice) > 0) {
-                                    for (auto const& transition : modelTransitions.getRow(choice)) {
-                                        if (!storm::utility::isZero(transition.getValue())) {
-                                            minProb = std::min(minProb, transition.getValue());
-                                        }
-                                    }
-                                } else {
-                                    ValueType sum = storm::utility::zero<ValueType>();
-                                    for (auto const& transition : modelTransitions.getRow(choice)) {
-                                        if (!mec.containsState(transition.getColumn())) {
-                                            sum += transition.getValue();
-                                        }
-                                    }
-                                    minProb = std::min(minProb, sum);
-                                }
-                            }
-                            lpath *= minProb;
-                        }
                         // We multiply the smallest transition probabilities occurring at each state and MEC-Choice
                         // as well as the smallest 'exit' probability
                         ValueType minExitProbability = storm::utility::one<ValueType>();
                         for (auto const& stateChoices : mec) {
                             auto state = stateChoices.first;
                             ValueType minProb = storm::utility::one<ValueType>();
-                            for (uint64_t choice = transitions.getRowGroupIndices()[state]; choice < transitions.getRowGroupIndices()[state + 1]; ++state) {
+                            for (uint64_t choice = modelTransitions.getRowGroupIndices()[state]; choice < modelTransitions.getRowGroupIndices()[state + 1]; ++choice) {
                                 if (stateChoices.second.count(choice) == 0) {
                                     // The choice leaves the EC, so we take the sum over the exiting probabilities
                                     ValueType exitProbabilitySum = storm::utility::zero<ValueType>();
-                                    for (auto const& transition : transitions.getRow(choice)) {
+                                    for (auto const& transition : modelTransitions.getRow(choice)) {
                                         if (!mec.containsState(transition.getColumn())) {
                                             exitProbabilitySum += transition.getValue();
                                         }
@@ -442,7 +419,7 @@ namespace storm {
                                     minExitProbability = std::min(minExitProbability, exitProbabilitySum);
                                 } else {
                                     // Get the minimum over all transition probabilities
-                                    for (auto const& transition : transitions.getRow(choice)) {
+                                    for (auto const& transition : modelTransitions.getRow(choice)) {
                                         if (!storm::utility::isZero(transition.getValue())) {
                                             minProb = std::min(minProb, transition.getValue());
                                         }

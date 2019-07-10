@@ -306,7 +306,13 @@ namespace storm {
                 GeometryValueType epsScalingFactor = storm::utility::convertNumber<GeometryValueType>(env.modelchecker().multi().getPrecision());
                 epsScalingFactor += epsScalingFactor;
                 epsScalingFactor = epsScalingFactor / storm::utility::convertNumber<GeometryValueType, uint64_t>(pointset.size());
-                storm::utility::vector::scaleVectorInPlace(eps, epsScalingFactor);
+                for (auto& ei : eps) {
+                    if (storm::utility::isZero(ei)) {
+                        // This is for the special case where the objective value was zero for all considered schedulers in the initialization phase.
+                        ei = storm::utility::convertNumber<GeometryValueType>(1e-8);
+                    }
+                    ei *=epsScalingFactor;
+                }
                 std::cout << "scaled precision is " << storm::utility::vector::toString(storm::utility::vector::convertNumericVector<double>(eps)) << std::endl;
                 
                 while (!unprocessedFacets.empty()) {

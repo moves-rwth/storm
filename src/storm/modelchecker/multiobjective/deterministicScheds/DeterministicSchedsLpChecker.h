@@ -46,7 +46,7 @@ namespace storm {
                 std::pair<std::vector<Point>, std::vector<Polytope>> check(storm::Environment const& env, storm::storage::geometry::PolytopeTree<GeometryValueType>& polytopeTree, Point const& eps);
 
             private:
-                std::vector<std::vector<storm::expressions::Expression>> createEcVariables();
+                bool processEndComponents(std::vector<std::vector<storm::expressions::Expression>>& ecVars);
                 void initializeLpModel(Environment const& env);
                 
                 // Builds the induced markov chain of the current model and checks whether the resulting value coincide with the result of the lp solver.
