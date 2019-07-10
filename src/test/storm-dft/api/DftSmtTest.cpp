@@ -1,3 +1,4 @@
+#include <storm-dft/utility/FDEPConflictFinder.h>
 #include "gtest/gtest.h"
 #include "storm-config.h"
 
@@ -65,11 +66,8 @@ namespace {
 
         dft->setDynamicBehaviorInfo();
         EXPECT_EQ(dft->getDynamicBehavior(), true_vector);
-        storm::modelchecker::DFTASFChecker smtChecker(*dft);
-        smtChecker.convert();
-        smtChecker.toSolver();
 
-        EXPECT_TRUE(smtChecker.getDependencyConflicts().empty());
+        EXPECT_TRUE(storm::dft::utility::FDEPConflictFinder::getDependencyConflicts(*dft, true).empty());
     }
 
     TEST(DftSmtTest, FDEPConflictSPARETest) {
@@ -80,11 +78,8 @@ namespace {
 
         dft->setDynamicBehaviorInfo();
         EXPECT_EQ(dft->getDynamicBehavior(), true_vector);
-        storm::modelchecker::DFTASFChecker smtChecker(*dft);
-        smtChecker.convert();
-        smtChecker.toSolver();
 
-        EXPECT_TRUE(smtChecker.getDependencyConflicts().empty());
+        EXPECT_TRUE(storm::dft::utility::FDEPConflictFinder::getDependencyConflicts(*dft, true).empty());
     }
 
     TEST(DftSmtTest, FDEPConflictSEQTest) {
@@ -96,10 +91,7 @@ namespace {
 
         dft->setDynamicBehaviorInfo();
         EXPECT_EQ(dft->getDynamicBehavior(), expected_dynamic_vector);
-        storm::modelchecker::DFTASFChecker smtChecker(*dft);
-        smtChecker.convert();
-        smtChecker.toSolver();
 
-        EXPECT_EQ(smtChecker.getDependencyConflicts().size(), uint64_t(3));
+        EXPECT_EQ(storm::dft::utility::FDEPConflictFinder::getDependencyConflicts(*dft, true).size(), uint64_t(3));
     }
 }

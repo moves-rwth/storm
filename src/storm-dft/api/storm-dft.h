@@ -13,7 +13,7 @@
 
 namespace storm {
     namespace api {
-        struct SMTResult {
+        struct PreprocessingResult {
             uint64_t lowerBEBound;
             uint64_t upperBEBound;
             std::vector<std::pair<uint64_t, uint64_t>> fdepConflicts;

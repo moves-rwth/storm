@@ -4,6 +4,7 @@
 #include "storm-dft/settings/modules/DftGspnSettings.h"
 #include "storm-conv/settings/modules/JaniExportSettings.h"
 #include "storm-conv/api/storm-conv.h"
+#include "storm-dft/utility/FDEPConflictFinder.h"
 
 namespace storm {
     namespace api {
@@ -67,7 +68,8 @@ namespace storm {
                                                 "Upper bound: " << std::to_string(results.upperBEBound) << std::endl)
             }
 
-            results.fdepConflicts = smtChecker.getDependencyConflicts(solverTimeout);
+            results.fdepConflicts = storm::dft::utility::FDEPConflictFinder::getDependencyConflicts(dft, true,
+                                                                                                    solverTimeout);
 
             if (printOutput) {
                 STORM_PRINT("========================================" << std::endl <<
