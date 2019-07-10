@@ -109,7 +109,7 @@ namespace storm {
          */
         template<typename ValueType>
         storm::api::PreprocessingResult
-        analyzeDFTSMT(storm::storage::DFT<ValueType> const &dft, bool printOutput, bool experimentalMode);
+        analyzeDFTSMT(storm::storage::DFT<ValueType> const &dft, bool printOutput);
 
         /*!
          * Export DFT to JSON file.
@@ -136,7 +136,7 @@ namespace storm {
          * @param file File.
          */
         template<typename ValueType>
-        void exportDFTToSMT(storm::storage::DFT<ValueType> const &dft, std::string const &file, bool experimentalMode);
+        void exportDFTToSMT(storm::storage::DFT<ValueType> const &dft, std::string const &file);
 
         /*!
          * Transform DFT to GSPN.

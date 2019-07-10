@@ -143,7 +143,6 @@ namespace storm {
                     STORM_LOG_TRACE("Compute lower bound for number of BE failures necessary for the DFT to fail");
 
                     storm::modelchecker::DFTASFChecker smtchecker(dft);
-                    smtchecker.activateExperimentalMode();
                     smtchecker.toSolver();
 
                     uint64_t bound = 0;
@@ -191,7 +190,6 @@ namespace storm {
                 if (useSMT) {
 
                     storm::modelchecker::DFTASFChecker smtchecker(dft);
-                    smtchecker.activateExperimentalMode();
                     smtchecker.toSolver();
 
                     if (smtchecker.checkTleNeverFailed() == storm::solver::SmtSolver::CheckResult::Sat) {

@@ -13,7 +13,6 @@ namespace storm {
                 if (useSMT) {
                     storm::modelchecker::DFTASFChecker checker(dft);
                     smtChecker = std::make_shared<storm::modelchecker::DFTASFChecker>(checker);
-                    smtChecker->activateExperimentalMode();
                     smtChecker->toSolver();
                 }
 

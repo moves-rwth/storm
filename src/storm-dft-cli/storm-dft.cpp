@@ -86,7 +86,7 @@ void processOptions() {
             dft = dftTransformator.transformBinaryFDEPs(*dft);
         }
         // Export to smtlib2
-        storm::api::exportDFTToSMT<ValueType>(*dft, dftIOSettings.getExportSmtFilename(), debug.isTestSet());
+        storm::api::exportDFTToSMT<ValueType>(*dft, dftIOSettings.getExportSmtFilename());
         return;
     }
 
@@ -101,7 +101,7 @@ void processOptions() {
         STORM_LOG_DEBUG("Running DFT analysis with use of SMT");
         // Set dynamic behavior vector
         dft->setDynamicBehaviorInfo();
-        auto smtResults = storm::api::analyzeDFTSMT(*dft, true, debug.isTestSet());
+        auto smtResults = storm::api::analyzeDFTSMT(*dft, true);
         // Set the conflict map of the dft
         std::set<size_t> conflict_set;
         for (auto conflict : smtResults.fdepConflicts) {
@@ -115,6 +115,8 @@ void processOptions() {
         }
     }
 #endif
+
+    //Proprocessing
 
     // From now on we analyse DFT via model checking
 

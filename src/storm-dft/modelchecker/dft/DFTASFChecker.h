@@ -46,12 +46,6 @@ namespace storm {
             DFTASFChecker(storm::storage::DFT<ValueType> const&);
 
             /**
-             * Activates the experimental support for constant BEs and possibly other not thoroughly tested features
-             *
-             */
-            void activateExperimentalMode();
-
-            /**
              * Generate general variables and constraints for the DFT and store them in the corresponding maps and vectors
              *
              */
@@ -235,7 +229,6 @@ namespace storm {
             std::unordered_map<uint64_t, uint64_t> markovianVariables;
             std::vector<uint64_t> tmpTimePointVariables;
             uint64_t notFailed;
-            bool experimentalMode = false;
         };
     }
 }

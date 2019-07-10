@@ -31,30 +31,23 @@ namespace storm {
         }
 
         template<>
-        void exportDFTToSMT(storm::storage::DFT<double> const &dft, std::string const &file, bool experimentalMode) {
+        void exportDFTToSMT(storm::storage::DFT<double> const &dft, std::string const &file) {
             storm::modelchecker::DFTASFChecker asfChecker(dft);
-            if (experimentalMode) {
-                asfChecker.activateExperimentalMode();
-            }
             asfChecker.convert();
             asfChecker.toFile(file);
         }
 
         template<>
-        void exportDFTToSMT(storm::storage::DFT<storm::RationalFunction> const &dft, std::string const &file,
-                            bool experimentalMode) {
+        void exportDFTToSMT(storm::storage::DFT<storm::RationalFunction> const &dft, std::string const &file) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Export to SMT does not support this data type.");
         }
 
         template<>
         storm::api::PreprocessingResult
-        analyzeDFTSMT(storm::storage::DFT<double> const &dft, bool printOutput, bool experimentalMode) {
+        analyzeDFTSMT(storm::storage::DFT<double> const &dft, bool printOutput) {
             uint64_t solverTimeout = 10;
 
             storm::modelchecker::DFTASFChecker smtChecker(dft);
-            if (experimentalMode) {
-                smtChecker.activateExperimentalMode();
-            }
             smtChecker.toSolver();
             storm::api::PreprocessingResult results;
 
@@ -87,8 +80,7 @@ namespace storm {
 
         template<>
         storm::api::PreprocessingResult
-        analyzeDFTSMT(storm::storage::DFT<storm::RationalFunction> const &dft, bool printOutput,
-                      bool experimentalMode) {
+        analyzeDFTSMT(storm::storage::DFT<storm::RationalFunction> const &dft, bool printOutput) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
                             "Analysis by SMT not supported for this data type.");
         }

@@ -18,11 +18,6 @@ namespace storm {
             // Intentionally left empty.
         }
 
-        void DFTASFChecker::activateExperimentalMode() {
-            STORM_LOG_WARN("DFT-SMT-Checker now runs in experimental mode, no guarantee for correct results is given!");
-            experimentalMode = true;
-        }
-
         uint64_t DFTASFChecker::getClaimVariableIndex(uint64_t spare, uint64_t child) const {
             return claimVariables.at(SpareAndChildPair(spare, child));
         }
@@ -44,9 +39,7 @@ namespace storm {
                         beVariables.push_back(varNames.size() - 1);
                         break;
                     case storm::storage::DFTElementType::BE_CONST: {
-                        STORM_LOG_THROW(experimentalMode, storm::exceptions::NotSupportedException,
-                                        "Constant BEs are not supported in SMT translation.");
-                        STORM_LOG_WARN("Constant BEs are only experimentally supported");
+                        STORM_LOG_WARN("Constant BEs are only experimentally supported in the SMT encoding");
                         // Constant BEs are initially either failed or failsafe, treat them differently
                         auto be = std::static_pointer_cast<storm::storage::BEConst<double> const>(element);
                         if (be->failed()) {
