@@ -28,7 +28,6 @@ void processOptions() {
     storm::settings::modules::FaultTreeSettings const& faultTreeSettings = storm::settings::getModule<storm::settings::modules::FaultTreeSettings>();
     storm::settings::modules::IOSettings const& ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
     storm::settings::modules::DftGspnSettings const& dftGspnSettings = storm::settings::getModule<storm::settings::modules::DftGspnSettings>();
-    auto const &debug = storm::settings::getModule<storm::settings::modules::DebugSettings>();
 
     auto dftTransformator = storm::transformations::dft::DftTransformator<ValueType>();
 
@@ -90,33 +89,72 @@ void processOptions() {
         return;
     }
 
+    // TODO introduce some flags
+    bool useSMT = false;
+    bool printOutput = false;
+    uint64_t solverTimeout = 10;
 #ifdef STORM_HAVE_Z3
     if (faultTreeSettings.solveWithSMT()) {
+        useSMT = true;
+        STORM_PRINT("Use SMT for preprocessing" << std::endl)
         dft = dftTransformator.transformUniqueFailedBe(*dft);
         if (dft->getDependencies().size() > 0) {
             // Making the constantly failed BE unique may introduce non-binary FDEPs
             dft = dftTransformator.transformBinaryFDEPs(*dft);
         }
-        // Solve with SMT
-        STORM_LOG_DEBUG("Running DFT analysis with use of SMT");
-        // Set dynamic behavior vector
-        dft->setDynamicBehaviorInfo();
-        auto smtResults = storm::api::analyzeDFTSMT(*dft, true);
-        // Set the conflict map of the dft
-        std::set<size_t> conflict_set;
-        for (auto conflict : smtResults.fdepConflicts) {
-            conflict_set.insert(size_t(conflict.first));
-            conflict_set.insert(size_t(conflict.second));
-        }
-        for (size_t depId : dft->getDependencies()) {
-            if (!conflict_set.count(depId)) {
-                dft->setDependencyNotInConflict(depId);
-            }
-        }
     }
 #endif
 
-    //Proprocessing
+    dft->setDynamicBehaviorInfo();
+
+    storm::api::PreprocessingResult preResults;
+    preResults.lowerBEBound = storm::dft::utility::FailureBoundFinder::getLeastFailureBound(*dft, useSMT,
+                                                                                            solverTimeout);
+    preResults.upperBEBound = storm::dft::utility::FailureBoundFinder::getAlwaysFailedBound(*dft, useSMT,
+                                                                                            solverTimeout);
+    if (printOutput) {
+        STORM_PRINT("BE FAILURE BOUNDS" << std::endl <<
+                                        "========================================" << std::endl <<
+                                        "Lower bound: " << std::to_string(preResults.lowerBEBound) << std::endl <<
+                                        "Upper bound: " << std::to_string(preResults.upperBEBound) << std::endl)
+    }
+
+    preResults.fdepConflicts = storm::dft::utility::FDEPConflictFinder::getDependencyConflicts(*dft, true,
+                                                                                               solverTimeout);
+
+    if (printOutput) {
+        STORM_PRINT("========================================" << std::endl <<
+                                                               "FDEP CONFLICTS" << std::endl <<
+                                                               "========================================"
+                                                               << std::endl)
+        for (auto pair: preResults.fdepConflicts) {
+            STORM_PRINT("Conflict between " << dft->getElement(pair.first)->name() << " and "
+                                            << dft->getElement(pair.second)->name() << std::endl)
+        }
+    }
+
+    // Set the conflict map of the dft
+    std::set<size_t> conflict_set;
+    for (auto conflict : preResults.fdepConflicts) {
+        conflict_set.insert(size_t(conflict.first));
+        conflict_set.insert(size_t(conflict.second));
+    }
+    for (size_t depId : dft->getDependencies()) {
+        if (!conflict_set.count(depId)) {
+            dft->setDependencyNotInConflict(depId);
+        }
+    }
+
+
+#ifdef STORM_HAVE_Z3
+    if (faultTreeSettings.solveWithSMT()) {
+        // Solve with SMT
+        STORM_LOG_DEBUG("Running DFT analysis with use of SMT");
+        // Set dynamic behavior vector
+        storm::api::analyzeDFTSMT(*dft, true);
+    }
+#endif
+
 
     // From now on we analyse DFT via model checking
 

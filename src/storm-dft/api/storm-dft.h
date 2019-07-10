@@ -108,7 +108,7 @@ namespace storm {
          * @return Result result vector
          */
         template<typename ValueType>
-        storm::api::PreprocessingResult
+        void
         analyzeDFTSMT(storm::storage::DFT<ValueType> const &dft, bool printOutput);
 
         /*!

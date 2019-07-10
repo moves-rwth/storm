@@ -43,43 +43,20 @@ namespace storm {
         }
 
         template<>
-        storm::api::PreprocessingResult
+        void
         analyzeDFTSMT(storm::storage::DFT<double> const &dft, bool printOutput) {
             uint64_t solverTimeout = 10;
 
             storm::modelchecker::DFTASFChecker smtChecker(dft);
             smtChecker.toSolver();
-            storm::api::PreprocessingResult results;
-
-            results.lowerBEBound = storm::dft::utility::FailureBoundFinder::getLeastFailureBound(dft, true,
-                                                                                                 solverTimeout);
-            results.upperBEBound = storm::dft::utility::FailureBoundFinder::getAlwaysFailedBound(dft, true,
-                                                                                                 solverTimeout);
-            if (printOutput) {
-                STORM_PRINT("BE FAILURE BOUNDS" << std::endl <<
-                                                "========================================" << std::endl <<
-                                                "Lower bound: " << std::to_string(results.lowerBEBound) << std::endl <<
-                                                "Upper bound: " << std::to_string(results.upperBEBound) << std::endl)
-            }
-
-            results.fdepConflicts = storm::dft::utility::FDEPConflictFinder::getDependencyConflicts(dft, true,
-                                                                                                    solverTimeout);
-
-            if (printOutput) {
-                STORM_PRINT("========================================" << std::endl <<
-                                                                       "FDEP CONFLICTS" << std::endl <<
-                                                                       "========================================"
-                                                                       << std::endl)
-                for (auto pair: results.fdepConflicts) {
-                    STORM_PRINT("Conflict between " << dft.getElement(pair.first)->name() << " and "
-                                                    << dft.getElement(pair.second)->name() << std::endl)
-                }
-            }
-            return results;
+            // Removed bound computation etc. here
+            smtChecker.setSolverTimeout(solverTimeout);
+            smtChecker.checkTleNeverFailed();
+            smtChecker.unsetSolverTimeout();
         }
 
         template<>
-        storm::api::PreprocessingResult
+        void
         analyzeDFTSMT(storm::storage::DFT<storm::RationalFunction> const &dft, bool printOutput) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
                             "Analysis by SMT not supported for this data type.");
