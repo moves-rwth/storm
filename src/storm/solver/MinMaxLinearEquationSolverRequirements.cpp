@@ -1,5 +1,8 @@
 #include "storm/solver/MinMaxLinearEquationSolverRequirements.h"
 
+#include "storm/utility/macros.h"
+#include "storm/exceptions/IllegalArgumentException.h"
+
 namespace storm {
     namespace solver {
         
@@ -56,6 +59,7 @@ namespace storm {
                 case Element::LowerBounds: return lowerBounds(); break;
                 case Element::UpperBounds: return upperBounds(); break;
             }
+            STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unknown ElementType");
         }
         
         void MinMaxLinearEquationSolverRequirements::clearUniqueSolution() {

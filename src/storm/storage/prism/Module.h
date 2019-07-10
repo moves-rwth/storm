@@ -6,12 +6,12 @@
 #include <string>
 #include <vector>
 #include <memory>
-#include <boost/container/flat_set.hpp>
 
 #include "storm/storage/prism/BooleanVariable.h"
 #include "storm/storage/prism/IntegerVariable.h"
 #include "storm/storage/prism/ClockVariable.h"
 #include "storm/storage/prism/Command.h"
+#include "storm/storage/BoostTypes.h"
 #include "storm/utility/OsDetection.h"
 
 namespace storm {
@@ -232,7 +232,7 @@ namespace storm {
              * @param indexSet The set of indices for which to keep the commands.
              * @return The module resulting from erasing all commands whose indices are not in the given set.
              */
-            Module restrictCommands(boost::container::flat_set<uint_fast64_t> const& indexSet) const;
+            Module restrictCommands(storm::storage::FlatSet<uint_fast64_t> const& indexSet) const;
             
             /*!
              * Creates a new module that drops all commands whose action indices are not in the given set.
@@ -240,7 +240,7 @@ namespace storm {
              * @param indexSet The set of action indices for which to keep the commands.
              * @return The module resulting from erasing all commands whose action indices are not in the given set.
              */
-            Module restrictActionIndices(boost::container::flat_set<uint_fast64_t> const& actionIndices) const;
+            Module restrictActionIndices(storm::storage::FlatSet<uint_fast64_t> const& actionIndices) const;
             
             /*!
              * Substitutes all variables in the module according to the given map.

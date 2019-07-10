@@ -1,7 +1,5 @@
 #include "storm/generator/Choice.h"
 
-#include <boost/container/flat_set.hpp>
-
 #include "storm/adapters/RationalFunctionAdapter.h"
 
 #include "storm/utility/constants.h"
@@ -10,6 +8,7 @@
 #include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/NotImplementedException.h"
+#include "storm/storage/BoostTypes.h"
 
 namespace storm {
     namespace generator {
@@ -101,9 +100,9 @@ namespace storm {
                 if (!data.empty()) {
                     // Reaching this point means that the both the existing and the given data are non-empty
                 
-                    auto existingDataAsIndexSet = boost::any_cast<boost::container::flat_set<uint_fast64_t>>(&this->originData.get());
+                    auto existingDataAsIndexSet = boost::any_cast<storm::storage::FlatSet<uint_fast64_t>>(&this->originData.get());
                     if (existingDataAsIndexSet != nullptr) {
-                        auto givenDataAsIndexSet = boost::any_cast<boost::container::flat_set<uint_fast64_t>>(&data);
+                        auto givenDataAsIndexSet = boost::any_cast<storm::storage::FlatSet<uint_fast64_t>>(&data);
                         STORM_LOG_THROW(givenDataAsIndexSet != nullptr, storm::exceptions::InvalidOperationException, "Types of existing and given choice origin data do not match.");
                         existingDataAsIndexSet->insert(givenDataAsIndexSet->begin(), givenDataAsIndexSet->end());
                     } else {

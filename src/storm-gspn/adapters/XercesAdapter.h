@@ -10,7 +10,8 @@
 #include <xercesc/sax/HandlerBase.hpp>
 #include <xercesc/util/PlatformUtils.hpp>
 
-
+#include "storm/utility/macros.h"
+#include "storm/exceptions/IllegalArgumentException.h"
 
 namespace storm {
     namespace adapters {
@@ -27,16 +28,12 @@ namespace storm {
                     auto elementNode = (xercesc::DOMElement *) node;
                     return XMLtoString(elementNode->getTagName());
                 }
-                case xercesc::DOMNode::NodeType::TEXT_NODE: {
+                case xercesc::DOMNode::NodeType::TEXT_NODE:
                     return XMLtoString(node->getNodeValue());
-                }
-                case xercesc::DOMNode::NodeType::ATTRIBUTE_NODE: {
+                case xercesc::DOMNode::NodeType::ATTRIBUTE_NODE:
                     return XMLtoString(node->getNodeName());
-                }
-                default: {
-                    assert(false);
-                    return "";
-                }
+                default:
+                    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unknown DOMNode type");
             }
         }
     }

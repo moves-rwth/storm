@@ -7,7 +7,6 @@
 #include <deque>
 #include <cstdint>
 #include <boost/functional/hash.hpp>
-#include <boost/container/flat_set.hpp>
 #include <boost/container/flat_map.hpp>
 #include <boost/variant.hpp>
 #include "storm/models/sparse/StandardRewardModel.h"

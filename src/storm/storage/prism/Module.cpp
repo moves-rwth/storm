@@ -180,7 +180,7 @@ namespace storm {
             }
         }
         
-        Module Module::restrictCommands(boost::container::flat_set<uint_fast64_t> const& indexSet) const {
+        Module Module::restrictCommands(storm::storage::FlatSet<uint_fast64_t> const& indexSet) const {
             // First construct the new vector of commands.
             std::vector<storm::prism::Command> newCommands;
             for (auto const& command : commands) {
@@ -192,7 +192,7 @@ namespace storm {
             return Module(this->getName(), this->getBooleanVariables(), this->getIntegerVariables(), this->getClockVariables(), this->getInvariant(), newCommands);
         }
         
-        Module Module::restrictActionIndices(boost::container::flat_set<uint_fast64_t> const& actionIndices) const {
+        Module Module::restrictActionIndices(storm::storage::FlatSet<uint_fast64_t> const& actionIndices) const {
             // First construct the new vector of commands.
             std::vector<storm::prism::Command> newCommands;
             for (auto const& command : commands) {

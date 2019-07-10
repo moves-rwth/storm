@@ -4,11 +4,11 @@
 #include <string>
 #include <vector>
 #include <map>
-#include <boost/container/flat_set.hpp>
 
 #include "storm/storage/prism/StateReward.h"
 #include "storm/storage/prism/StateActionReward.h"
 #include "storm/storage/prism/TransitionReward.h"
+#include "storm/storage/BoostTypes.h"
 #include "storm/utility/OsDetection.h"
 
 namespace storm {
@@ -113,7 +113,7 @@ namespace storm {
              * @param actionIndicesToKeep The set of action indices to keep.
              * @return The resulting reward model.
              */
-            RewardModel restrictActionRelatedRewards(boost::container::flat_set<uint_fast64_t> const& actionIndicesToKeep) const;
+            RewardModel restrictActionRelatedRewards(storm::storage::FlatSet<uint_fast64_t> const& actionIndicesToKeep) const;
             
             friend std::ostream& operator<<(std::ostream& stream, RewardModel const& rewardModel);
 

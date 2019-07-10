@@ -1,13 +1,12 @@
 #pragma once
 
-#include <boost/container/flat_set.hpp>
-
 #include "storm/generator/NextStateGenerator.h"
 #include "storm/generator/TransientVariableInformation.h"
 
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/ArrayEliminator.h"
 #include "storm/storage/jani/OrderedAssignments.h"
+#include "storm/storage/BoostTypes.h"
 
 namespace storm {
     namespace builder {
@@ -28,7 +27,7 @@ namespace storm {
         class JaniNextStateGenerator : public NextStateGenerator<ValueType, StateType> {
         public:
             typedef typename NextStateGenerator<ValueType, StateType>::StateToIdCallback StateToIdCallback;
-            typedef boost::container::flat_set<uint_fast64_t> EdgeIndexSet;
+            typedef storm::storage::FlatSet<uint_fast64_t> EdgeIndexSet;
             enum class EdgeFilter {All, WithRate, WithoutRate};
             
             JaniNextStateGenerator(storm::jani::Model const& model, NextStateGeneratorOptions const& options = NextStateGeneratorOptions());

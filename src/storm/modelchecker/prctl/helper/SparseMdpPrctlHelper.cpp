@@ -1320,7 +1320,7 @@ namespace storm {
                     
                     for (auto const& stateChoicesPair : mec) {
                         uint_fast64_t state = stateChoicesPair.first;
-                        boost::container::flat_set<uint_fast64_t> const& choicesInMec = stateChoicesPair.second;
+                        storm::storage::FlatSet<uint_fast64_t> const& choicesInMec = stateChoicesPair.second;
                         
                         for (uint_fast64_t choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1]; ++choice) {
                             // If the choice is not contained in the MEC itself, we have to add a similar distribution to the auxiliary state.
