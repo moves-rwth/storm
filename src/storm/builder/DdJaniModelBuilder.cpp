@@ -733,7 +733,7 @@ namespace storm {
                     // Intentionally left empty.
                 }
                 
-                bool setMarkovian(bool markovian) {
+                void setMarkovian(bool markovian) {
                     this->markovian = markovian;
                 }
                 

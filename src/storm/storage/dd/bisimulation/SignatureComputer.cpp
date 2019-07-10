@@ -6,6 +6,7 @@
 
 #include "storm/utility/macros.h"
 #include "storm/exceptions/OutOfRangeException.h"
+#include "storm/exceptions/IllegalArgumentException.h"
 
 namespace storm {
     namespace dd {
@@ -23,6 +24,7 @@ namespace storm {
                     case SignatureMode::Eager: return position < 1;
                     case SignatureMode::Lazy: return position < 2;
                 }
+                STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unknown SignatureMode");
             }
             
             template<storm::dd::DdType DdType, typename ValueType>
