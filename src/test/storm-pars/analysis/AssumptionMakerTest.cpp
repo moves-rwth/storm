@@ -28,7 +28,6 @@
 
 #include "storm-parsers/api/storm-parsers.h"
 
-//TODO: voor als validate uit staat
 TEST(AssumptionMakerTest, Brp_without_bisimulation) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/brp16_2.pm";
     std::string formulaAsString = "P=? [F s=4 & i=N ]";
@@ -45,6 +44,10 @@ TEST(AssumptionMakerTest, Brp_without_bisimulation) {
     model = simplifier.getSimplifiedModel();
     dtmc = model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
 
+    // Create the region
+    auto vars = storm::models::sparse::getProbabilityParameters(*dtmc);
+    auto region = storm::api::parseRegion<storm::RationalFunction>("0.00001 <= pK <= 0.999999, 0.00001 <= pL <= 0.999999", vars);
+
     ASSERT_EQ(dtmc->getNumberOfStates(), 193ull);
     ASSERT_EQ(dtmc->getNumberOfTransitions(), 383ull);
 
@@ -53,7 +56,7 @@ TEST(AssumptionMakerTest, Brp_without_bisimulation) {
     ASSERT_EQ(183, std::get<1>(criticalTuple));
     ASSERT_EQ(186, std::get<2>(criticalTuple));
 
-    auto assumptionChecker = storm::analysis::AssumptionChecker<storm::RationalFunction>(formulas[0], dtmc, 3);
+    auto assumptionChecker = storm::analysis::AssumptionChecker<storm::RationalFunction>(formulas[0], dtmc, region, 3);
     auto assumptionMaker = storm::analysis::AssumptionMaker<storm::RationalFunction>(&assumptionChecker, dtmc->getNumberOfStates(), true);
     auto result = assumptionMaker.createAndCheckAssumption(std::get<1>(criticalTuple), std::get<2>(criticalTuple), std::get<0>(criticalTuple));
 
@@ -111,6 +114,10 @@ TEST(AssumptionMakerTest, Brp_without_bisimulation_no_validation) {
     model = simplifier.getSimplifiedModel();
     dtmc = model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
 
+    // Create the region
+    auto vars = storm::models::sparse::getProbabilityParameters(*dtmc);
+    auto region = storm::api::parseRegion<storm::RationalFunction>("0.00001 <= pK <= 0.999999, 0.00001 <= pL <= 0.999999", vars);
+
     ASSERT_EQ(dtmc->getNumberOfStates(), 193ull);
     ASSERT_EQ(dtmc->getNumberOfTransitions(), 383ull);
 
@@ -119,7 +126,7 @@ TEST(AssumptionMakerTest, Brp_without_bisimulation_no_validation) {
     ASSERT_EQ(183, std::get<1>(criticalTuple));
     ASSERT_EQ(186, std::get<2>(criticalTuple));
 
-    auto assumptionChecker = storm::analysis::AssumptionChecker<storm::RationalFunction>(formulas[0], dtmc, 3);
+    auto assumptionChecker = storm::analysis::AssumptionChecker<storm::RationalFunction>(formulas[0], dtmc, region, 3);
     // This one does not validate the assumptions!
     auto assumptionMaker = storm::analysis::AssumptionMaker<storm::RationalFunction>(&assumptionChecker, dtmc->getNumberOfStates(), false);
     auto result = assumptionMaker.createAndCheckAssumption(std::get<1>(criticalTuple), std::get<2>(criticalTuple), std::get<0>(criticalTuple));
@@ -177,6 +184,10 @@ TEST(AssumptionMakerTest, Simple1) {
     model = simplifier.getSimplifiedModel();
     dtmc = model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
 
+    // Create the region
+    auto vars = storm::models::sparse::getProbabilityParameters(*dtmc);
+    auto region = storm::api::parseRegion<storm::RationalFunction>("0.00001 <= p <= 0.999999", vars);
+
     ASSERT_EQ(dtmc->getNumberOfStates(), 5);
     ASSERT_EQ(dtmc->getNumberOfTransitions(), 8);
 
@@ -188,7 +199,7 @@ TEST(AssumptionMakerTest, Simple1) {
 
     auto lattice = new storm::analysis::Lattice(&above, &below, &initialMiddle, 5);
 
-    auto assumptionChecker = storm::analysis::AssumptionChecker<storm::RationalFunction>(formulas[0], dtmc, 3);
+    auto assumptionChecker = storm::analysis::AssumptionChecker<storm::RationalFunction>(formulas[0], dtmc, region, 3);
     auto assumptionMaker = storm::analysis::AssumptionMaker<storm::RationalFunction>(&assumptionChecker, dtmc->getNumberOfStates(), true);
     auto result = assumptionMaker.createAndCheckAssumption(1, 2, lattice);
 
@@ -244,6 +255,9 @@ TEST(AssumptionMakerTest, Simple2) {
     ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
     model = simplifier.getSimplifiedModel();
     dtmc = model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    // Create the region
+    auto vars = storm::models::sparse::getProbabilityParameters(*dtmc);
+    auto region = storm::api::parseRegion<storm::RationalFunction>("0.00001 <= p <= 0.999999", vars);
 
     ASSERT_EQ(dtmc->getNumberOfStates(), 5);
     ASSERT_EQ(dtmc->getNumberOfTransitions(), 8);
@@ -256,7 +270,7 @@ TEST(AssumptionMakerTest, Simple2) {
 
     auto lattice = new storm::analysis::Lattice(&above, &below, &initialMiddle, 5);
 
-    auto assumptionChecker = storm::analysis::AssumptionChecker<storm::RationalFunction>(formulas[0], dtmc, 3);
+    auto assumptionChecker = storm::analysis::AssumptionChecker<storm::RationalFunction>(formulas[0], dtmc, region, 3);
     auto assumptionMaker = storm::analysis::AssumptionMaker<storm::RationalFunction>(&assumptionChecker, dtmc->getNumberOfStates(), true);
     auto result = assumptionMaker.createAndCheckAssumption(1, 2, lattice);
 

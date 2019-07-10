@@ -6,6 +6,7 @@
 #include "storm/models/sparse/Mdp.h"
 #include "storm/environment/Environment.h"
 #include "storm/storage/expressions/BinaryRelationExpression.h"
+#include "storm-pars/storage/ParameterRegion.h"
 #include "Lattice.h"
 
 namespace storm {
@@ -29,7 +30,7 @@ namespace storm {
              * @param model The dtmc model to check the formula on.
              * @param numberOfSamples Number of sample points.
              */
-            AssumptionChecker(std::shared_ptr<logic::Formula const> formula, std::shared_ptr<models::sparse::Dtmc<ValueType>> model, uint_fast64_t numberOfSamples);
+            AssumptionChecker(std::shared_ptr<logic::Formula const> formula, std::shared_ptr<models::sparse::Dtmc<ValueType>> model, storm::storage::ParameterRegion<ValueType> region, uint_fast64_t numberOfSamples);
 
             /*!
              * Constructs an AssumptionChecker based on the number of samples, for the given formula and model.
@@ -80,6 +81,8 @@ namespace storm {
                     typename storage::SparseMatrix<ValueType>::iterator state1succ2,
                     typename storage::SparseMatrix<ValueType>::iterator state2succ1,
                     typename storage::SparseMatrix<ValueType>::iterator state2succ2);
+
+            storm::storage::ParameterRegion<ValueType> region;
 
         };
     }

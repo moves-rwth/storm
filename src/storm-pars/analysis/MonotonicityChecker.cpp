@@ -23,7 +23,7 @@
 namespace storm {
     namespace analysis {
         template <typename ValueType>
-        MonotonicityChecker<ValueType>::MonotonicityChecker(std::shared_ptr<storm::models::ModelBase> model, std::vector<std::shared_ptr<storm::logic::Formula const>> formulas, bool validate, uint_fast64_t numberOfSamples, double const& precision) {
+        MonotonicityChecker<ValueType>::MonotonicityChecker(std::shared_ptr<storm::models::ModelBase> model, std::vector<std::shared_ptr<storm::logic::Formula const>> formulas,  std::vector<storm::storage::ParameterRegion<ValueType>> regions, bool validate, uint_fast64_t numberOfSamples, double const& precision) {
             assert (model != nullptr);
             this->model = model;
             this->formulas = formulas;
@@ -46,6 +46,24 @@ namespace storm {
             }
 
             std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel = model->as<storm::models::sparse::Model<ValueType>>();
+
+            if (regions.size() == 1) {
+                region = *(regions.begin());
+            } else {
+                assert (regions.size() == 0);
+                typename storm::storage::ParameterRegion<ValueType>::Valuation lowerBoundaries;
+                typename storm::storage::ParameterRegion<ValueType>::Valuation upperBoundaries;
+                std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> vars;
+                vars = storm::models::sparse::getProbabilityParameters(*sparseModel);
+                for (auto var : vars) {
+                    typename storm::storage::ParameterRegion<ValueType>::CoefficientType lb = storm::utility::convertNumber<typename storm::storage::ParameterRegion<ValueType>::CoefficientType>(0 + precision);
+                    typename storm::storage::ParameterRegion<ValueType>::CoefficientType ub = storm::utility::convertNumber<typename storm::storage::ParameterRegion<ValueType>::CoefficientType>(1 - precision);
+                    lowerBoundaries.insert(std::make_pair(var, lb));
+                    upperBoundaries.insert(std::make_pair(var, ub));
+                }
+                region =  storm::storage::ParameterRegion<ValueType>(std::move(lowerBoundaries), std::move(upperBoundaries));
+            }
+
             this->extender = new storm::analysis::LatticeExtender<ValueType>(sparseModel);
         }
 
@@ -173,7 +191,7 @@ namespace storm {
                 storm::analysis::AssumptionChecker<ValueType> *assumptionChecker;
                 if (model->isOfType(storm::models::ModelType::Dtmc)) {
                     auto dtmc = model->as<storm::models::sparse::Dtmc<ValueType>>();
-                    assumptionChecker = new storm::analysis::AssumptionChecker<ValueType>(formulas[0], dtmc, 3);
+                    assumptionChecker = new storm::analysis::AssumptionChecker<ValueType>(formulas[0], dtmc, region, 3);
                 } else if (model->isOfType(storm::models::ModelType::Mdp)) {
                     auto mdp = model->as<storm::models::sparse::Mdp<ValueType>>();
                     assumptionChecker = new storm::analysis::AssumptionChecker<ValueType>(formulas[0], mdp, 3);
@@ -348,7 +366,7 @@ namespace storm {
                                             // As the first state (itr2) is above the second state (itr3) it
                                             // is sufficient to look at the derivative of itr2.
                                             std::pair<bool, bool> mon2;
-                                            mon2 = checkDerivative(derivative2);
+                                            mon2 = checkDerivative(derivative2, region);
                                             value->first &= mon2.first;
                                             value->second &= mon2.second;
                                         } else if (compare == Lattice::BELOW) {
@@ -356,7 +374,7 @@ namespace storm {
                                             // is sufficient to look at the derivative of itr3.
                                             std::pair<bool, bool> mon3;
 
-                                            mon3 = checkDerivative(derivative3);
+                                            mon3 = checkDerivative(derivative3, region);
                                             value->first &= mon3.first;
                                             value->second &= mon3.second;
                                         } else if (compare == Lattice::SAME) {
@@ -381,7 +399,7 @@ namespace storm {
                             std::pair<bool, bool> *value = &varsMonotone.find(var)->second;
                             bool change = false;
                             for (auto const &i : sortedStates) {
-                                auto res = checkDerivative(getDerivative(transitions[i], var));
+                                auto res = checkDerivative(getDerivative(transitions[i], var), region);
                                 change = change || (!(value->first && value->second) // they do not hold both
                                                     && ((value->first && !res.first)
                                                         || (value->second && !res.second)));
@@ -466,7 +484,7 @@ namespace storm {
                                         // As the first state (itr2) is above the second state (itr3) it
                                         // is sufficient to look at the derivative of itr2.
                                         std::pair<bool, bool> mon2;
-                                        mon2 = checkDerivative(derivative2);
+                                        mon2 = checkDerivative(derivative2, region);
                                         value->first &= mon2.first;
                                         value->second &= mon2.second;
                                     } else if (compare == Lattice::BELOW) {
@@ -474,7 +492,7 @@ namespace storm {
                                         // is sufficient to look at the derivative of itr3.
                                         std::pair<bool, bool> mon3;
 
-                                        mon3 = checkDerivative(derivative3);
+                                        mon3 = checkDerivative(derivative3, region);
                                         value->first &= mon3.first;
                                         value->second &= mon3.second;
                                     } else if (compare == Lattice::SAME) {

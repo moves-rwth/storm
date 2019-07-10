@@ -6,6 +6,7 @@
 #include "storm-pars/analysis/Lattice.h"
 #include "storm/api/storm.h"
 
+
 namespace storm {
     namespace analysis {
 

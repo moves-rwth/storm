@@ -652,7 +652,7 @@ namespace storm {
             }
 
 
-            if (monSettings.isSccEliminationSet()) {
+            if (model && monSettings.isSccEliminationSet()) {
                 storm::utility::Stopwatch eliminationWatch(true);
                 // TODO: check for correct Model type
                 STORM_PRINT("Applying scc elimination" << std::endl);
@@ -720,12 +720,15 @@ namespace storm {
                 std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(input.properties);
                 // Monotonicity
                 storm::utility::Stopwatch monotonicityWatch(true);
-                auto monotonicityChecker = storm::analysis::MonotonicityChecker<ValueType>(model, formulas, monSettings.isValidateAssumptionsSet(), monSettings.getNumberOfSamples(), monSettings.getMonotonicityAnalysisPrecision());
+                std::vector<storm::storage::ParameterRegion<ValueType>> regions = parseRegions<ValueType>(model);
+
+                STORM_LOG_THROW(regions.size() > 1, storm::exceptions::InvalidArgumentException, "Monotonicity analysis only allowed on single region");
+                storm::analysis::MonotonicityChecker<ValueType> monotonicityChecker = storm::analysis::MonotonicityChecker<ValueType>(model, formulas, regions, monSettings.isValidateAssumptionsSet(), monSettings.getNumberOfSamples(), monSettings.getMonotonicityAnalysisPrecision());
                 monotonicityChecker.checkMonotonicity();
                 monotonicityWatch.stop();
                 STORM_PRINT(std::endl << "Total time for monotonicity checking: " << monotonicityWatch << "." << std::endl
                                     << std::endl);
-return;
+                return;
             }
 
             std::vector<storm::storage::ParameterRegion<ValueType>> regions = parseRegions<ValueType>(model);

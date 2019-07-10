@@ -20,9 +20,10 @@
 namespace storm {
     namespace analysis {
         template <typename ValueType>
-        AssumptionChecker<ValueType>::AssumptionChecker(std::shared_ptr<logic::Formula const> formula, std::shared_ptr<models::sparse::Dtmc<ValueType>> model, uint_fast64_t numberOfSamples) {
+        AssumptionChecker<ValueType>::AssumptionChecker(std::shared_ptr<logic::Formula const> formula, std::shared_ptr<models::sparse::Dtmc<ValueType>> model, storm::storage::ParameterRegion<ValueType> region, uint_fast64_t numberOfSamples) {
             this->formula = formula;
             this->matrix = model->getTransitionMatrix();
+            this->region = region;
 
             // Create sample points
             auto instantiator = utility::ModelInstantiator<models::sparse::Dtmc<ValueType>, models::sparse::Dtmc<double>>(*model);
@@ -31,9 +32,15 @@ namespace storm {
 
             for (auto i = 0; i < numberOfSamples; ++i) {
                 auto valuation = utility::parametric::Valuation<ValueType>();
-                for (auto itr = variables.begin(); itr != variables.end(); ++itr) {
-                    // Creates samples between 0 and 1, 1/(#samples+2), 2/(#samples+2), ..., (#samples+1)/(#samples+2)
-                    auto val = std::pair<typename utility::parametric::VariableType<ValueType>::type, typename utility::parametric::CoefficientType<ValueType>::type>((*itr), utility::convertNumber<typename utility::parametric::CoefficientType<ValueType>::type>(boost::lexical_cast<std::string>((i+1)/(double (numberOfSamples + 2)))));
+                // TODO: samplen over de region
+                for (auto var: variables) {
+
+                    auto lb = region.getLowerBoundary(var.name());
+                    auto ub = region.getUpperBoundary(var.name());
+                    // Creates samples between lb and ub, that is: lb, lb + (ub-lb)/(#samples -1), lb + 2* (ub-lb)/(#samples -1), ..., ub
+                    auto val =
+                            std::pair<typename utility::parametric::VariableType<ValueType>::type, typename utility::parametric::CoefficientType<ValueType>::type>
+                                    (var,utility::convertNumber<typename utility::parametric::CoefficientType<ValueType>::type>(lb + i*(ub-lb)/(numberOfSamples-1)));
                     valuation.insert(val);
                 }
                 models::sparse::Dtmc<double> sampleModel = instantiator.instantiate(valuation);
@@ -61,6 +68,7 @@ namespace storm {
 
         template <typename ValueType>
         AssumptionChecker<ValueType>::AssumptionChecker(std::shared_ptr<logic::Formula const> formula, std::shared_ptr<models::sparse::Mdp<ValueType>> model, uint_fast64_t numberOfSamples) {
+            STORM_LOG_THROW(false, exceptions::NotImplementedException, "Assumption checking for mdps not yet implemented");
             this->formula = formula;
             this->matrix = model->getTransitionMatrix();
 
@@ -166,8 +174,10 @@ namespace storm {
                             && lattice->compare(state1succ1->getColumn(), state1succ2->getColumn()) != Lattice::NodeComparison::UNKNOWN) {
                             // The assumption should be the greater assumption
                             // If the result is unknown, we cannot compare, also SMTSolver will not help
-                            result = validateAssumptionFunction(lattice, state1succ1, state1succ2, state2succ1,
-                                                                state2succ2);
+                            result = validateAssumptionSMTSolver(assumption, lattice);
+
+//                            result = validateAssumptionFunction(lattice, state1succ1, state1succ2, state2succ1,
+//                                                                state2succ2);
                         } else if (assumption->getRelationType() == expressions::BinaryRelationExpression::RelationType::Equal) {
                             // The assumption is equal, the successors are the same,
                             // so if the probability of reaching the successors is the same, we have a valid assumption
@@ -216,7 +226,7 @@ namespace storm {
             // This will give the smallest result
             std::map<typename utility::parametric::VariableType<ValueType>::type, typename utility::parametric::CoefficientType<ValueType>::type> substitutions;
             for (auto var : vars) {
-                auto monotonicity = MonotonicityChecker<ValueType>::checkDerivative(prob.derivative(var));
+                auto monotonicity = MonotonicityChecker<ValueType>::checkDerivative(prob.derivative(var), region);
                 if (monotonicity.first) {
                     // monotone increasing
                     substitutions[var] = 0;
@@ -301,7 +311,7 @@ namespace storm {
                 } else {
                     assert (assumption->getRelationType() ==
                         expressions::BinaryRelationExpression::RelationType::Equal);
-                    exprToCheck = expr1 > expr2;
+                    exprToCheck = expr1 != expr2 ;
                 }
 
                 auto variables = manager->getVariables();
@@ -313,7 +323,9 @@ namespace storm {
                         exprBounds = exprBounds && manager->rational(0) <= var && var <= manager->rational(1);
                     } else {
                         // the var is a parameter
-                        exprBounds = exprBounds && manager->rational(0) < var && var < manager->rational(1);
+                        auto lb = storm::utility::convertNumber<storm::RationalNumber>(region.getLowerBoundary(var.getName()));
+                        auto ub = storm::utility::convertNumber<storm::RationalNumber>(region.getUpperBoundary(var.getName()));
+                        exprBounds = exprBounds && manager->rational(lb) < var && var < manager->rational(ub);
                     }
                 }
 

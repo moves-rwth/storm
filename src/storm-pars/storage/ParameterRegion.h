@@ -24,7 +24,9 @@ namespace storm {
 
             std::set<VariableType> const& getVariables() const;
             CoefficientType const& getLowerBoundary(VariableType const& variable) const;
+            CoefficientType const& getLowerBoundary(const std::string varName) const;
             CoefficientType const& getUpperBoundary(VariableType const& variable) const;
+            CoefficientType const& getUpperBoundary(const std::string varName) const;
             Valuation const& getLowerBoundaries() const;
             Valuation const& getUpperBoundaries() const;
 

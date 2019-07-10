@@ -30,12 +30,13 @@ namespace storm {
              * Constructor of MonotonicityChecker
              * @param model the model considered
              * @param formula the formula considered
+             * @param regions the regions to consider
              * @param validate whether or not assumptions are to be validated
              * @param numberOfSamples number of samples taken for monotonicity checking, default 0,
-             *          if 0then no check on samples is executed
+             *          if 0 then no check on samples is executed
              * @param precision precision on which the samples are compared
              */
-            MonotonicityChecker(std::shared_ptr<storm::models::ModelBase> model, std::vector<std::shared_ptr<storm::logic::Formula const>> formulas, bool validate, uint_fast64_t numberOfSamples=0, double const& precision=0.000001);
+            MonotonicityChecker(std::shared_ptr<storm::models::ModelBase> model, std::vector<std::shared_ptr<storm::logic::Formula const>> formulas, std::vector<storm::storage::ParameterRegion<ValueType>> regions, bool validate, uint_fast64_t numberOfSamples=0, double const& precision=0.000001);
 
             /*!
              * Checks for model and formula as provided in constructor for monotonicity
@@ -52,7 +53,7 @@ namespace storm {
              * @param derivative The derivative you want to check
              * @return pair of bools, >= 0 and <= 0
              */
-            static std::pair<bool, bool> checkDerivative(ValueType derivative) {
+            static std::pair<bool, bool> checkDerivative(ValueType derivative, storm::storage::ParameterRegion<ValueType> reg) {
                 bool monIncr = false;
                 bool monDecr = false;
 
@@ -80,7 +81,9 @@ namespace storm {
                     storm::expressions::Expression exprBounds = manager->boolean(true);
                     auto managervars = manager->getVariables();
                     for (auto var : managervars) {
-                        exprBounds = exprBounds && manager->rational(0) < var && var < manager->rational(1);
+                        auto lb = storm::utility::convertNumber<storm::RationalNumber>(reg.getLowerBoundary(var.getName()));
+                        auto ub = storm::utility::convertNumber<storm::RationalNumber>(reg.getUpperBoundary(var.getName()));
+                        exprBounds = exprBounds && manager->rational(lb) < var && var < manager->rational(ub);
                     }
                     assert (s.check() == storm::solver::SmtSolver::CheckResult::Sat);
 
@@ -112,7 +115,6 @@ namespace storm {
         private:
             std::map<storm::analysis::Lattice*, std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>>> checkMonotonicity(std::map<storm::analysis::Lattice*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> map, storm::storage::SparseMatrix<ValueType> matrix);
 
-            //TODO: variabele type
             std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>> analyseMonotonicity(uint_fast64_t i, Lattice* lattice, storm::storage::SparseMatrix<ValueType> matrix) ;
 
             std::map<Lattice*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> createLattice();
@@ -144,6 +146,8 @@ namespace storm {
             std::string filename = "monotonicity.txt";
 
             double precision;
+
+            storm::storage::ParameterRegion<ValueType> region;
         };
     }
 }
