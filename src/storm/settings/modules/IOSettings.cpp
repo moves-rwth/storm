@@ -19,6 +19,7 @@ namespace storm {
             const std::string IOSettings::moduleName = "io";
             const std::string IOSettings::exportDotOptionName = "exportdot";
             const std::string IOSettings::exportExplicitOptionName = "exportexplicit";
+            const std::string IOSettings::exportDdOptionName = "exportdd";
             const std::string IOSettings::exportJaniDotOptionName = "exportjanidot";
             const std::string IOSettings::exportCdfOptionName = "exportcdf";
             const std::string IOSettings::exportCdfOptionShortName = "cdf";
@@ -56,6 +57,8 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportCdfOptionName, false, "Exports the cumulative density function for reward bounded properties into a .csv file.").setIsAdvanced().setShortName(exportCdfOptionShortName).addArgument(storm::settings::ArgumentBuilder::createStringArgument("directory", "A path to an existing directory where the cdf files will be stored.").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportExplicitOptionName, "", "If given, the loaded model will be written to the specified file in the drn format.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "the name of the file to which the model is to be writen.").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, exportDdOptionName, "", "If given, the loaded model will be written to the specified file in the drdd format.")
+                                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "the name of the file to which the model is to be writen.").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, explicitOptionName, false, "Parses the model given in an explicit (sparse) representation.").setShortName(explicitOptionShortName)
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("transition filename", "The name of the file from which to read the transitions.").addValidatorString(ArgumentValidatorFactory::createExistingFileValidator()).build())
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("labeling filename", "The name of the file from which to read the state labeling.").addValidatorString(ArgumentValidatorFactory::createExistingFileValidator()).build()).build());
@@ -123,6 +126,14 @@ namespace storm {
 
             std::string IOSettings::getExportExplicitFilename() const {
                 return this->getOption(exportExplicitOptionName).getArgumentByName("filename").getValueAsString();
+            }
+
+            bool IOSettings::isExportDdSet() const {
+                return this->getOption(exportDdOptionName).getHasOptionBeenSet();
+            }
+
+            std::string IOSettings::getExportDdFilename() const {
+                return this->getOption(exportDdOptionName).getArgumentByName("filename").getValueAsString();
             }
             
             bool IOSettings::isExportCdfSet() const {

@@ -233,8 +233,14 @@ namespace storm {
         }
         
         void InternalBdd<DdType::Sylvan>::exportToDot(std::string const& filename, std::vector<std::string> const&, bool) const {
-            FILE* filePointer = fopen(filename.c_str() , "w");
+            FILE* filePointer = fopen(filename.c_str() , "a+");
             this->sylvanBdd.PrintDot(filePointer);
+            fclose(filePointer);
+        }
+
+        void InternalBdd<DdType::Sylvan>::exportToText(std::string const& filename) const {
+            FILE* filePointer = fopen(filename.c_str() , "a+");
+            this->sylvanBdd.PrintText(filePointer);
             fclose(filePointer);
         }
         

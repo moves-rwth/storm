@@ -11,6 +11,7 @@
 #include "storm/utility/file.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/exceptions/NotSupportedException.h"
 
 namespace storm {
     namespace dd {
@@ -157,6 +158,10 @@ namespace storm {
             
             dotFile << "}" << std::endl;
             storm::utility::closeFile(dotFile);
+        }
+
+        void Odd::exportToText(std::string const& filename) const {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported");
         }
         
         void getEncodingRec(Odd const& odd, uint64_t index, uint64_t offset, storm::storage::BitVector& result) {

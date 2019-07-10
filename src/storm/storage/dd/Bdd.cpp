@@ -491,6 +491,11 @@ namespace storm {
         void Bdd<LibraryType>::exportToDot(std::string const& filename, bool showVariablesIfPossible) const {
             internalBdd.exportToDot(filename, this->getDdManager().getDdVariableNames(), showVariablesIfPossible);
         }
+
+        template<DdType LibraryType>
+        void Bdd<LibraryType>::exportToText(std::string const& filename) const {
+            internalBdd.exportToText(filename);
+        }
         
         template<DdType LibraryType>
         Bdd<LibraryType> Bdd<LibraryType>::getCube(DdManager<LibraryType> const& manager, std::set<storm::expressions::Variable> const& metaVariables) {

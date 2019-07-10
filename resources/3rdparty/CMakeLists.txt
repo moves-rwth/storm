@@ -478,7 +478,9 @@ ExternalProject_Add(
         LOG_BUILD ON
         DEPENDS ${sylvan_dep}
         BUILD_BYPRODUCTS ${STORM_3RDPARTY_BINARY_DIR}/sylvan/src/libsylvan${STATIC_EXT}
+        BUILD_ALWAYS 1
 )
+# BUILD ALWAYS ON due to: https://stackoverflow.com/questions/46708124/cmake-doesnt-rebuild-externalproject-on-changes
 
 ExternalProject_Get_Property(sylvan source_dir)
 ExternalProject_Get_Property(sylvan binary_dir)
