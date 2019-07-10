@@ -8,6 +8,8 @@
 #include "storm-dft/modelchecker/dft/DFTModelChecker.h"
 #include "storm-dft/modelchecker/dft/DFTASFChecker.h"
 #include "storm-dft/transformations/DftToGspnTransformator.h"
+#include "storm-dft/utility/FDEPConflictFinder.h"
+#include "storm-dft/utility/FailureBoundFinder.h"
 
 #include "storm-gspn/api/storm-gspn.h"
 
@@ -106,7 +108,7 @@ namespace storm {
          * @return Result result vector
          */
         template<typename ValueType>
-        storm::api::SMTResult
+        storm::api::PreprocessingResult
         analyzeDFTSMT(storm::storage::DFT<ValueType> const &dft, bool printOutput, bool experimentalMode);
 
         /*!

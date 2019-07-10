@@ -1,4 +1,5 @@
-#include <storm-dft/utility/FDEPConflictFinder.h>
+#include "storm-dft/utility/FDEPConflictFinder.h"
+#include "storm-dft/utility/FailureBoundFinder.h"
 #include "gtest/gtest.h"
 #include "storm-config.h"
 
@@ -43,8 +44,8 @@ namespace {
         storm::modelchecker::DFTASFChecker smtChecker(*dft);
         smtChecker.convert();
         smtChecker.toSolver();
-        EXPECT_EQ(smtChecker.getLeastFailureBound(30), uint64_t(2));
-        EXPECT_EQ(smtChecker.getAlwaysFailedBound(30), uint64_t(4));
+        EXPECT_EQ(storm::dft::utility::FailureBoundFinder::getLeastFailureBound(*dft, true, 30), uint64_t(2));
+        EXPECT_EQ(storm::dft::utility::FailureBoundFinder::getAlwaysFailedBound(*dft, true, 30), uint64_t(4));
     }
 
     TEST(DftSmtTest, FDEPBoundTest) {
@@ -54,8 +55,8 @@ namespace {
         storm::modelchecker::DFTASFChecker smtChecker(*dft);
         smtChecker.convert();
         smtChecker.toSolver();
-        EXPECT_EQ(smtChecker.getLeastFailureBound(30), uint64_t(1));
-        EXPECT_EQ(smtChecker.getAlwaysFailedBound(30), uint64_t(5));
+        EXPECT_EQ(storm::dft::utility::FailureBoundFinder::getLeastFailureBound(*dft, true, 30), uint64_t(1));
+        EXPECT_EQ(storm::dft::utility::FailureBoundFinder::getAlwaysFailedBound(*dft, true, 30), uint64_t(5));
     }
 
     TEST(DftSmtTest, FDEPConflictTest) {

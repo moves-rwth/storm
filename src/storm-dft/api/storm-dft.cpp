@@ -4,7 +4,6 @@
 #include "storm-dft/settings/modules/DftGspnSettings.h"
 #include "storm-conv/settings/modules/JaniExportSettings.h"
 #include "storm-conv/api/storm-conv.h"
-#include "storm-dft/utility/FDEPConflictFinder.h"
 
 namespace storm {
     namespace api {
@@ -48,7 +47,7 @@ namespace storm {
         }
 
         template<>
-        storm::api::SMTResult
+        storm::api::PreprocessingResult
         analyzeDFTSMT(storm::storage::DFT<double> const &dft, bool printOutput, bool experimentalMode) {
             uint64_t solverTimeout = 10;
 
@@ -57,10 +56,12 @@ namespace storm {
                 smtChecker.activateExperimentalMode();
             }
             smtChecker.toSolver();
-            storm::api::SMTResult results;
+            storm::api::PreprocessingResult results;
 
-            results.lowerBEBound = smtChecker.getLeastFailureBound(solverTimeout);
-            results.upperBEBound = smtChecker.getAlwaysFailedBound(solverTimeout);
+            results.lowerBEBound = storm::dft::utility::FailureBoundFinder::getLeastFailureBound(dft, true,
+                                                                                                 solverTimeout);
+            results.upperBEBound = storm::dft::utility::FailureBoundFinder::getAlwaysFailedBound(dft, true,
+                                                                                                 solverTimeout);
             if (printOutput) {
                 STORM_PRINT("BE FAILURE BOUNDS" << std::endl <<
                                                 "========================================" << std::endl <<
@@ -85,7 +86,7 @@ namespace storm {
         }
 
         template<>
-        storm::api::SMTResult
+        storm::api::PreprocessingResult
         analyzeDFTSMT(storm::storage::DFT<storm::RationalFunction> const &dft, bool printOutput,
                       bool experimentalMode) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
