@@ -17,12 +17,12 @@ namespace storm {
             storm::utility::openFile(filename,filestream,true,true);
             filestream << "%initial" << std::endl;
             storm::utility::closeFile(filestream);
-            symbolicModel->getInitialStates().exportToText(filename);
+            symbolicModel->getInitialStates().template toAdd<ValueType>().exportToText(filename);
             for(auto const& label : symbolicModel->getLabels()) {
                 storm::utility::openFile(filename,filestream,true,true);
                 filestream << std::endl << "%label " << label << std::endl;
                 storm::utility::closeFile(filestream);
-                symbolicModel->getStates(label).exportToText(filename);
+                symbolicModel->getStates(label).template toAdd<ValueType>().exportToText(filename);
             }
         }
 
