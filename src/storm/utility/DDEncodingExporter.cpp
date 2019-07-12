@@ -1,6 +1,6 @@
 #include "storm/utility/DDEncodingExporter.h"
 #include "storm/utility/file.h"
-
+#include "storm/models/symbolic/StandardRewardModel.h"
 
 namespace storm {
     namespace exporter {
