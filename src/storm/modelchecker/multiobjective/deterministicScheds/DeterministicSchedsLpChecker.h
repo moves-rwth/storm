@@ -26,7 +26,6 @@ namespace storm {
                 typedef typename std::vector<GeometryValueType> Point;
                 
                 DeterministicSchedsLpChecker(Environment const& env, ModelType const& model, std::vector<DeterministicSchedsObjectiveHelper<ModelType>> const& objectiveHelper);
-                ~DeterministicSchedsLpChecker();
 
                 /*!
                  * Specifies the current direction.
@@ -37,7 +36,7 @@ namespace storm {
                  * Optimizes in the currently given direction
                  * @return some optimal point found in that direction.
                  */
-                boost::optional<Point> check(storm::Environment const& env, Polytope area);
+                boost::optional<Point> check(storm::Environment const& env, Polytope overapproximation);
                 
                 /*!
                  * Optimizes in the currently given direction, recursively checks for points in the given area.
@@ -45,6 +44,12 @@ namespace storm {
                  */
                 std::pair<std::vector<Point>, std::vector<Polytope>> check(storm::Environment const& env, storm::storage::geometry::PolytopeTree<GeometryValueType>& polytopeTree, Point const& eps);
 
+                /*!
+                 * Returns usage statistics in a human readable format.
+                 * @param prefix will be prepended to each line
+                 */
+                std::string getStatistics(std::string const& prefix = "") const;
+                
             private:
                 bool processEndComponents(std::vector<std::vector<storm::expressions::Expression>>& ecVars);
                 void initializeLpModel(Environment const& env);
@@ -65,11 +70,10 @@ namespace storm {
                 std::vector<GeometryValueType> currentWeightVector;
 
                 storm::utility::Stopwatch swInit;
-                storm::utility::Stopwatch swCheck;
-                storm::utility::Stopwatch swCheckVertices;
-                storm::utility::Stopwatch swLpSolve;
-                storm::utility::Stopwatch swLpBuild;
-                storm::utility::Stopwatch swAux;
+                storm::utility::Stopwatch swCheckWeightVectors;
+                storm::utility::Stopwatch swCheckAreas;
+                storm::utility::Stopwatch swValidate;
+                uint64_t numLpQueries;
             };
             
         }

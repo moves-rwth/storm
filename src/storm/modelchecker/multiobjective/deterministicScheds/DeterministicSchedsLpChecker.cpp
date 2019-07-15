@@ -122,10 +122,9 @@ namespace storm {
                 boost::optional<Point> result;
                 if (!lpModel->isInfeasible()) {
                     STORM_LOG_ASSERT(!lpModel->isUnbounded(), "LP result is unbounded.");
-                    result = Point();
-                    for (auto const& objVar : currentObjectiveVariables) {
-                        result->push_back(storm::utility::convertNumber<GeometryValueType>(lpModel->getContinuousValue(objVar)));
-                    }
+                    swValidate.start();
+                    result = validateCurrentModel(env);
+                    swValidate.stop();
                 }
                 lpModel->pop();
                 return result;
