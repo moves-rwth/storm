@@ -221,38 +221,14 @@ namespace storm {
             }
             
             template <typename ModelType>
-            typename ModelType::ValueType const& DeterministicSchedsObjectiveHelper<ModelType>::getUpperValueBoundAtState(Environment const& env, uint64_t state) const{
-                if (!upperResultBounds) {
-                    upperResultBounds = computeValueBounds(env, false, model, *objective.formula);
-                    auto upperResultBound = objective.upperResultBound;
-                    if (!upperResultBound.is_initialized() && storm::utility::vector::hasInfinityEntry(upperResultBounds.get())) {
-                        STORM_LOG_THROW(objective.formula->isRewardOperatorFormula(), storm::exceptions::NotSupportedException, "The upper bound for objective " << *objective.originalFormula << " is infinity at some state. This is only supported for reachability rewards / total rewards.");
-                        STORM_LOG_THROW(objective.formula->getSubformula().isTotalRewardFormula() || objective.formula->getSubformula().isEventuallyFormula(), storm::exceptions::NotSupportedException, "The upper bound for objective " << *objective.originalFormula << " is infinity at some state. This is only supported for reachability rewards / total rewards.");
-                        auto rewards = getTotalRewardVector(model, *objective.formula);
-                        auto zeroValuedStates = storm::utility::vector::filterZero(upperResultBounds.get());
-                        auto expVisits = computeUpperBoundOnExpectedVisitingTimes(model.getTransitionMatrix(), zeroValuedStates, ~zeroValuedStates, true);
-                        ValueType upperBound = storm::utility::zero<ValueType>();
-                        for (uint64_t state = 0; state < expVisits.size(); ++state) {
-                            ValueType maxReward = storm::utility::zero<ValueType>();
-                            for (auto row = model.getTransitionMatrix().getRowGroupIndices()[state], endRow = model.getTransitionMatrix().getRowGroupIndices()[state + 1]; row < endRow; ++row) {
-                                maxReward = std::max(maxReward, rewards[row]);
-                            }
-                            upperBound += expVisits[state] * maxReward;
-                        }
-                        upperResultBound = upperBound;
-                    }
-                    storm::utility::vector::clip(upperResultBounds.get(), objective.lowerResultBound, upperResultBound);
-                }
+            typename ModelType::ValueType const& DeterministicSchedsObjectiveHelper<ModelType>::getUpperValueBoundAtState(Environment const& env, uint64_t state) const {
+                computeUpperBounds(env);
                 return upperResultBounds.get()[state];
             }
             
             template <typename ModelType>
-            typename ModelType::ValueType const& DeterministicSchedsObjectiveHelper<ModelType>::getLowerValueBoundAtState(Environment const& env, uint64_t state) const{
-                if (!lowerResultBounds) {
-                    lowerResultBounds = computeValueBounds(env, true, model, *objective.formula);
-                    storm::utility::vector::clip(lowerResultBounds.get(), objective.lowerResultBound, objective.upperResultBound);
-                    STORM_LOG_THROW(!storm::utility::vector::hasInfinityEntry(lowerResultBounds.get()), storm::exceptions::NotSupportedException, "The lower bound for objective " << *objective.originalFormula << " is infinity at some state. This is not supported.");
-                }
+            typename ModelType::ValueType const& DeterministicSchedsObjectiveHelper<ModelType>::getLowerValueBoundAtState(Environment const& env, uint64_t state) const {
+                computeLowerBounds(env);
                 return lowerResultBounds.get()[state];
             }
             
@@ -512,9 +488,52 @@ namespace storm {
             }
             
             template <typename ModelType>
+            typename ModelType::ValueType const& DeterministicSchedsObjectiveHelper<ModelType>::getLargestUpperBound(Environment const& env) const {
+                computeUpperBounds(env);
+                return *std::max_element(upperResultBounds->begin(), upperResultBounds->end());
+            }
+            
+            
+            template <typename ModelType>
+            void DeterministicSchedsObjectiveHelper<ModelType>::computeUpperBounds(Environment const& env) const {
+                if (!upperResultBounds) {
+                    upperResultBounds = computeValueBounds(env, false, model, *objective.formula);
+                    auto upperResultBound = objective.upperResultBound;
+                    if (!upperResultBound.is_initialized() && storm::utility::vector::hasInfinityEntry(upperResultBounds.get())) {
+                        STORM_LOG_THROW(objective.formula->isRewardOperatorFormula(), storm::exceptions::NotSupportedException, "The upper bound for objective " << *objective.originalFormula << " is infinity at some state. This is only supported for reachability rewards / total rewards.");
+                        STORM_LOG_THROW(objective.formula->getSubformula().isTotalRewardFormula() || objective.formula->getSubformula().isEventuallyFormula(), storm::exceptions::NotSupportedException, "The upper bound for objective " << *objective.originalFormula << " is infinity at some state. This is only supported for reachability rewards / total rewards.");
+                        auto rewards = getTotalRewardVector(model, *objective.formula);
+                        auto zeroValuedStates = storm::utility::vector::filterZero(upperResultBounds.get());
+                        auto expVisits = computeUpperBoundOnExpectedVisitingTimes(model.getTransitionMatrix(), zeroValuedStates, ~zeroValuedStates, true);
+                        ValueType upperBound = storm::utility::zero<ValueType>();
+                        for (uint64_t state = 0; state < expVisits.size(); ++state) {
+                            ValueType maxReward = storm::utility::zero<ValueType>();
+                            for (auto row = model.getTransitionMatrix().getRowGroupIndices()[state], endRow = model.getTransitionMatrix().getRowGroupIndices()[state + 1]; row < endRow; ++row) {
+                                maxReward = std::max(maxReward, rewards[row]);
+                            }
+                            upperBound += expVisits[state] * maxReward;
+                        }
+                        upperResultBound = upperBound;
+                    }
+                    storm::utility::vector::clip(upperResultBounds.get(), objective.lowerResultBound, upperResultBound);
+                }
+            }
+            
+            template <typename ModelType>
+            void DeterministicSchedsObjectiveHelper<ModelType>::computeLowerBounds(Environment const& env) const {
+                if (!lowerResultBounds) {
+                    lowerResultBounds = computeValueBounds(env, true, model, *objective.formula);
+                    storm::utility::vector::clip(lowerResultBounds.get(), objective.lowerResultBound, objective.upperResultBound);
+                    STORM_LOG_THROW(!storm::utility::vector::hasInfinityEntry(lowerResultBounds.get()), storm::exceptions::NotSupportedException, "The lower bound for objective " << *objective.originalFormula << " is infinity at some state. This is not supported.");
+                }
+            }
+            
+            template <typename ModelType>
             typename ModelType::ValueType DeterministicSchedsObjectiveHelper<ModelType>::evaluateOnModel(Environment const& env, ModelType const& evaluatedModel) const {
                 return evaluateOperatorFormula(env, evaluatedModel, *objective.formula)[*evaluatedModel.getInitialStates().begin()];
             }
+            
+
 
             template class DeterministicSchedsObjectiveHelper<storm::models::sparse::Mdp<double>>;
             template class DeterministicSchedsObjectiveHelper<storm::models::sparse::Mdp<storm::RationalNumber>>;

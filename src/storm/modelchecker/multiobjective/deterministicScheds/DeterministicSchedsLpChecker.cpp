@@ -45,7 +45,9 @@ namespace storm {
             }
             
             bool inOutEncoding() { // + 8
-                return encodingSettings().get(60);
+                bool result = encodingSettings().get(60);
+                STORM_LOG_ERROR_COND(!result || !isMinNegativeEncoding(), "inout-encoding only works without minnegative encoding.");
+                return result;
             }
             
             bool assertBottomStateSum() { // + 16
@@ -60,27 +62,26 @@ namespace storm {
             }
             
             template <typename ModelType, typename GeometryValueType>
-            DeterministicSchedsLpChecker<ModelType, GeometryValueType>::DeterministicSchedsLpChecker(Environment const& env, ModelType const& model, std::vector<DeterministicSchedsObjectiveHelper<ModelType>> const& objectiveHelper) : model(model) , objectiveHelper(objectiveHelper) {
+            DeterministicSchedsLpChecker<ModelType, GeometryValueType>::DeterministicSchedsLpChecker(Environment const& env, ModelType const& model, std::vector<DeterministicSchedsObjectiveHelper<ModelType>> const& objectiveHelper) : model(model) , objectiveHelper(objectiveHelper), numLpQueries(0) {
                 swInit.start();
                 initializeLpModel(env);
                 swInit.stop();
             }
             
             template <typename ModelType, typename GeometryValueType>
-            DeterministicSchedsLpChecker<ModelType, GeometryValueType>::~DeterministicSchedsLpChecker() {
-                std::cout << "Deterministic Scheds LP CHECKER STATISTICS: " << std::endl;
-                std::cout << "\t" << swInit << " seconds for initialization" << std::endl;
-                std::cout << "\t" << swCheck << " seconds for checking, including" << std::endl;
-                std::cout << "\t\t" << swLpBuild << " seconds for LP building" << std::endl;
-                std::cout << "\t\t" << swLpSolve << " seconds for LP solving, including" << std::endl;
-                std::cout << "\t\t\t" << swCheckVertices << " seconds for finding the vertices of the convex hull." << std::endl;
-                std::cout << "\t" << swAux << " seconds for aux stuff" << std::endl;
+            std::string  DeterministicSchedsLpChecker<ModelType, GeometryValueType>::getStatistics(std::string const& prefix) const {
+                std::stringstream out;
+                out << prefix << swInit << " seconds for LP initialization" << std::endl;
+                out << prefix << swCheckWeightVectors << " seconds for checking weight vectors" << std::endl;
+                out << prefix << swCheckAreas << " seconds for checking areas" << std::endl;
+                out << prefix << swValidate << " seconds for validating LP solutions" << std::endl;
+                out << prefix << numLpQueries << " calls to LP optimization" << std::endl;
+                return out.str();
             }
             
             template <typename ModelType, typename GeometryValueType>
             void DeterministicSchedsLpChecker<ModelType, GeometryValueType>::setCurrentWeightVector(std::vector<GeometryValueType> const& weightVector) {
                 STORM_LOG_ASSERT(weightVector.size() == objectiveHelper.size(), "Setting a weight vector with invalid number of entries.");
-                swLpBuild.start();
                 if (!currentWeightVector.empty()) {
                     // Pop information of the current weight vector.
                     lpModel->pop();
@@ -101,25 +102,22 @@ namespace storm {
                     }
                 }
                 lpModel->update();
-                swLpBuild.stop();
             }
             
             template <typename ModelType, typename GeometryValueType>
-            boost::optional<std::vector<GeometryValueType>> DeterministicSchedsLpChecker<ModelType, GeometryValueType>::check(storm::Environment const& env, Polytope area) {
+            boost::optional<std::vector<GeometryValueType>> DeterministicSchedsLpChecker<ModelType, GeometryValueType>::check(storm::Environment const& env, Polytope overapproximation) {
                 STORM_LOG_ASSERT(!currentWeightVector.empty(), "Checking invoked before specifying a weight vector.");
                 STORM_LOG_TRACE("Checking a vertex...");
-                swCheck.start();
-                swLpBuild.start();
                 lpModel->push();
-                auto areaConstraints = area->getConstraints(lpModel->getManager(), currentObjectiveVariables);
+                auto areaConstraints = overapproximation->getConstraints(lpModel->getManager(), currentObjectiveVariables);
                 for (auto const& c : areaConstraints) {
                     lpModel->addConstraint("", c);
                 }
                 lpModel->update();
-                swLpBuild.stop();
-                swLpSolve.start(); swCheckVertices.start();
+                swCheckWeightVectors.start();
                 lpModel->optimize();
-                swCheckVertices.stop(); swLpSolve.stop();
+                swCheckWeightVectors.stop();
+                ++numLpQueries;
                 STORM_LOG_TRACE("\t Done checking a vertex...");
                 boost::optional<Point> result;
                 if (!lpModel->isInfeasible()) {
@@ -130,14 +128,12 @@ namespace storm {
                     }
                 }
                 lpModel->pop();
-                swCheck.stop();
                 return result;
             }
 
             template <typename ModelType, typename GeometryValueType>
             std::pair<std::vector<std::vector<GeometryValueType>>, std::vector<std::shared_ptr<storm::storage::geometry::Polytope<GeometryValueType>>>> DeterministicSchedsLpChecker<ModelType, GeometryValueType>::check(storm::Environment const& env, storm::storage::geometry::PolytopeTree<GeometryValueType>& polytopeTree, Point const& eps) {
                 STORM_LOG_INFO("Checking " << polytopeTree.toString());
-                swCheck.start();
                 STORM_LOG_ASSERT(!currentWeightVector.empty(), "Checking invoked before specifying a weight vector.");
                 if (polytopeTree.isEmpty()) {
                     return {{}, {}};
@@ -156,7 +152,6 @@ namespace storm {
                 std::vector<Polytope> infeasableAreas;
                 checkRecursive(env, polytopeTree, eps, foundPoints, infeasableAreas, 0);
                 
-                swCheck.stop();
                 return {foundPoints, infeasableAreas};
             }
             
@@ -295,7 +290,6 @@ namespace storm {
             
             template <typename ModelType, typename GeometryValueType>
             bool DeterministicSchedsLpChecker<ModelType, GeometryValueType>::processEndComponents(std::vector<std::vector<storm::expressions::Expression>>& ecVars) {
-                bool hasEndComponents = false;
                 uint64_t ecCounter = 0;
                 auto backwardTransitions = model.getBackwardTransitions();
                 
@@ -362,7 +356,7 @@ namespace storm {
                         }
                     }
                 }
-                hasEndComponents = ecCounter > 0 || storm::utility::graph::checkIfECWithChoiceExists(model.getTransitionMatrix(), backwardTransitions, storm::storage::BitVector(model.getNumberOfStates(), true), ~choicesWithValueZero);
+                bool hasEndComponents = ecCounter > 0 || storm::utility::graph::checkIfECWithChoiceExists(model.getTransitionMatrix(), backwardTransitions, storm::storage::BitVector(model.getNumberOfStates(), true), ~choicesWithValueZero);
                 STORM_LOG_WARN_COND(!hasEndComponents, "Processed " << ecCounter << " End components.");
                 return hasEndComponents;
             }
@@ -428,7 +422,8 @@ namespace storm {
                     
                     // Compute upper bounds for each state
                     std::vector<ValueType> visitingTimesUpperBounds = DeterministicSchedsObjectiveHelper<ModelType>::computeUpperBoundOnExpectedVisitingTimes(model.getTransitionMatrix(), bottomStates, nonBottomStates, hasEndComponents);
-                    std::cout << "maximal visiting times upper bound is " << *std::max_element(visitingTimesUpperBounds.begin(), visitingTimesUpperBounds.end()) << std::endl;
+                    ValueType largestUpperBound = *std::max_element(visitingTimesUpperBounds.begin(), visitingTimesUpperBounds.end());
+                    STORM_LOG_WARN_COND(largestUpperBound < storm::utility::convertNumber<ValueType>(1e5), "Found a large upper bound '" << storm::utility::convertNumber<double>(largestUpperBound) << "' in the LP encoding. This might trigger numerical instabilities.");
                     // create choiceValue variables and assert deterministic ones.
                     std::vector<storm::expressions::Expression> choiceValVars(model.getNumberOfChoices());
                     for (auto const& state : nonBottomStates) {
@@ -507,6 +502,7 @@ namespace storm {
                 } else {
                     // 'classic' backward encoding.
                     for (uint64_t objIndex = 0; objIndex < objectiveHelper.size(); ++objIndex) {
+                        STORM_LOG_WARN_COND(objectiveHelper[objIndex].getLargestUpperBound(env) < storm::utility::convertNumber<ValueType>(1e5), "Found a large upper value bound '" << storm::utility::convertNumber<double>(objectiveHelper[objIndex].getLargestUpperBound(env)) << "' in the LP encoding. This might trigger numerical instabilities.");
                         auto const& schedulerIndependentStates = objectiveHelper[objIndex].getSchedulerIndependentStateValues();
                         // Create state variables and store variables of ecs which contain a state with a scheduler independent value
                         std::vector<storm::expressions::Expression> stateVars;
@@ -633,13 +629,10 @@ namespace storm {
             
             template <typename ModelType, typename GeometryValueType>
             void DeterministicSchedsLpChecker<ModelType, GeometryValueType>::checkRecursive(Environment const& env, storm::storage::geometry::PolytopeTree<GeometryValueType>& polytopeTree, Point const& eps, std::vector<Point>& foundPoints, std::vector<Polytope>& infeasableAreas, uint64_t const& depth) {
-                std::cout << ".";
-                std::cout.flush();
                 STORM_LOG_ASSERT(!polytopeTree.isEmpty(), "Tree node is empty");
                 STORM_LOG_ASSERT(!polytopeTree.getPolytope()->isEmpty(), "Tree node is empty.");
                 STORM_LOG_TRACE("Checking at depth " << depth << ": " << polytopeTree.toString());
                 
-                swLpBuild.start();
                 lpModel->push();
                 // Assert the constraints of the current polytope
                 auto nodeConstraints = polytopeTree.getPolytope()->getConstraints(lpModel->getManager(), currentObjectiveVariables);
@@ -647,20 +640,19 @@ namespace storm {
                     lpModel->addConstraint("", constr);
                 }
                 lpModel->update();
-                swLpBuild.stop();
                 
                 if (polytopeTree.getChildren().empty()) {
                     // At leaf nodes we need to perform the actual check.
-                    swLpSolve.start();
                     STORM_LOG_TRACE("\tSolving MILP...");
+                    swCheckAreas.start();
                     lpModel->optimize();
+                    swCheckAreas.stop();
+                    ++numLpQueries;
                     STORM_LOG_TRACE("\tDone solving MILP...");
-                    swLpSolve.stop();
 
-#ifndef NDEBUG
-                    STORM_PRINT_AND_LOG("Writing model to file '" << polytopeTree.toId() << ".lp'" << std::endl;);
-                    lpModel->writeModelToFile(polytopeTree.toId() + ".lp");
-#endif
+                    // STORM_PRINT_AND_LOG("Writing model to file '" << polytopeTree.toId() << ".lp'" << std::endl;);
+                    // lpModel->writeModelToFile(polytopeTree.toId() + ".lp");
+                    
                     if (lpModel->isInfeasible()) {
                         infeasableAreas.push_back(polytopeTree.getPolytope());
                         polytopeTree.clear();
@@ -731,10 +723,8 @@ namespace storm {
                 }
                 STORM_LOG_TRACE("Checking DONE at depth " << depth << " with node " << polytopeTree.toString());
 
-                swLpBuild.start();
                 lpModel->pop();
                 lpModel->update();
-                swLpBuild.stop();
             }
             
             template <typename ModelType, typename GeometryValueType>
