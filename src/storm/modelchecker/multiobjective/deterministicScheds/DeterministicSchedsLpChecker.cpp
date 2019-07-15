@@ -666,13 +666,9 @@ namespace storm {
                         polytopeTree.clear();
                     } else {
                         STORM_LOG_ASSERT(!lpModel->isUnbounded(), "LP result is unbounded.");
-#ifndef NDEBUG
-                        validateCurrentModel(env);
-#endif
-                        Point newPoint;
-                        for (auto const& objVar : currentObjectiveVariables) {
-                            newPoint.push_back(storm::utility::convertNumber<GeometryValueType>(lpModel->getContinuousValue(objVar)));
-                        }
+                        swValidate.start();
+                        Point newPoint = validateCurrentModel(env);
+                        swValidate.stop();
                         std::vector<Point> newPoints = {newPoint};
                         if (gurobiLpModel && useNonOptimalSolutions()) {
                             // gurobi might have other good solutions.
@@ -695,6 +691,10 @@ namespace storm {
                         if (gurobiLpModel) {
                             // Gurobi gives us the gap between the found solution and the known bound.
                             offset += storm::utility::convertNumber<GeometryValueType>(gurobiLpModel->getMILPGap(false));
+                        }
+                        // we might want to shift the halfspace to guarantee that our point is included.
+                        for (auto const& p : newPoints) {
+                            offset = std::max(offset, storm::utility::vector::dotProduct(currentWeightVector, p));
                         }
                         auto halfspace = storm::storage::geometry::Halfspace<GeometryValueType>(currentWeightVector, offset).invert();
                         infeasableAreas.push_back(polytopeTree.getPolytope()->intersection(halfspace));
@@ -738,7 +738,7 @@ namespace storm {
             }
             
             template <typename ModelType, typename GeometryValueType>
-            void DeterministicSchedsLpChecker<ModelType, GeometryValueType>::validateCurrentModel(Environment const& env) const {
+            typename DeterministicSchedsLpChecker<ModelType, GeometryValueType>::Point DeterministicSchedsLpChecker<ModelType, GeometryValueType>::validateCurrentModel(Environment const& env) const {
                 storm::storage::Scheduler<ValueType> scheduler(model.getNumberOfStates());
                 for (uint64_t state = 0; state < model.getNumberOfStates(); ++state) {
                     uint64_t numChoices = model.getNumberOfChoices(state);
@@ -764,16 +764,19 @@ namespace storm {
                     }
                 }
                 auto inducedModel = model.applyScheduler(scheduler)->template as<ModelType>();
+                Point inducedPoint;
                 for (uint64_t objIndex = 0; objIndex < objectiveHelper.size(); ++objIndex) {
-                    ValueType expectedValue = lpModel->getContinuousValue(currentObjectiveVariables[objIndex]);
+                    ValueType inducedValue = objectiveHelper[objIndex].evaluateOnModel(env, *inducedModel);
                     if (objectiveHelper[objIndex].minimizing()) {
-                        expectedValue = -expectedValue;
+                        inducedValue = -inducedValue;
                     }
-                    ValueType actualValue = objectiveHelper[objIndex].evaluateOnModel(env, *inducedModel);
-                    double diff = storm::utility::convertNumber<double>(storm::utility::abs<ValueType>(expectedValue - actualValue));
-                    STORM_PRINT_AND_LOG("Validating Lp solution for objective " << objIndex << ": LP" << storm::utility::convertNumber<double>(expectedValue) << " InducedScheduler=" << storm::utility::convertNumber<double>(actualValue) << " (difference is " << diff << ")" << std::endl);
-                    STORM_LOG_WARN_COND(diff <= 1e-4 * std::abs(storm::utility::convertNumber<double>(actualValue)), "Invalid value for objective " << objIndex << ": expected " << expectedValue << " but got " << actualValue << " (difference is " << diff << ")");
+                    inducedPoint.push_back(inducedValue);
+                    ValueType lpValue = lpModel->getContinuousValue(currentObjectiveVariables[objIndex]);
+                    double diff = storm::utility::convertNumber<double>(storm::utility::abs<ValueType>(inducedValue - lpValue));
+                    STORM_LOG_WARN_COND(diff <= 1e-4 * std::abs(storm::utility::convertNumber<double>(inducedValue)), "Imprecise value for objective " << objIndex << ": LP says " << lpValue << " but scheduler induces " << inducedValue << " (difference is " << diff << ")");
                 }
+                
+                return inducedPoint;
             }
             
             template class DeterministicSchedsLpChecker<storm::models::sparse::Mdp<double>, storm::RationalNumber>;

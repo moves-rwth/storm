@@ -50,7 +50,7 @@ namespace storm {
                 void initializeLpModel(Environment const& env);
                 
                 // Builds the induced markov chain of the current model and checks whether the resulting value coincide with the result of the lp solver.
-                void validateCurrentModel(Environment const& env) const;
+                Point validateCurrentModel(Environment const& env) const;
 
                 void checkRecursive(storm::Environment const& env, storm::storage::geometry::PolytopeTree<GeometryValueType>& polytopeTree, Point const& eps, std::vector<Point>& foundPoints, std::vector<Polytope>& infeasableAreas, uint64_t const& depth);
                 
