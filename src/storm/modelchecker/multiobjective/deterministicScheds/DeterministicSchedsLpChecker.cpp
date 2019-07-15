@@ -23,25 +23,20 @@ namespace storm {
     namespace modelchecker {
         namespace multiobjective {
 
-            bool inOutEncoding() { // + 8
-                bool result = encodingSettings().get(60);
-                STORM_LOG_ERROR_COND(!result || !isMinNegativeEncoding(), "inout-encoding only works without minnegative encoding.");
-                return result;
-            }
-            
-            bool assertBottomStateSum() { // + 16
-                bool result = encodingSettings().get(59);
-                STORM_LOG_ERROR_COND(!result || inOutEncoding(), "Asserting bottom state sum is only relevant for in-out encoding.");
-                return result;
-            }
-            
-            bool useNonOptimalSolutions() { // + 32
-                bool result = encodingSettings().get(58);
-                return result;
-            }
-            
             template <typename ModelType, typename GeometryValueType>
             DeterministicSchedsLpChecker<ModelType, GeometryValueType>::DeterministicSchedsLpChecker(Environment const& env, ModelType const& model, std::vector<DeterministicSchedsObjectiveHelper<ModelType>> const& objectiveHelper) : model(model) , objectiveHelper(objectiveHelper), numLpQueries(0) {
+                if (env.modelchecker().multi().getEncodingType() == storm::MultiObjectiveModelCheckerEnvironment::EncodingType::Auto) {
+                    flowEncoding = true;
+                    for (auto const& helper : objectiveHelper) {
+                        if (!helper.isTotalRewardObjective()) {
+                            flowEncoding = false;
+                        }
+                    }
+                } else {
+                    flowEncoding = env.modelchecker().multi().getEncodingType() == storm::MultiObjectiveModelCheckerEnvironment::EncodingType::Flow;
+                }
+                STORM_LOG_INFO_COND(flowEncoding, "Using classical encoding.");
+                STORM_LOG_INFO_COND(!flowEncoding, "Using flow encoding.");
                 swAll.start();
                 swInit.start();
                 initializeLpModel(env);
@@ -381,13 +376,13 @@ namespace storm {
                 std::vector<std::vector<storm::expressions::Expression>> ecVars(objectiveHelper.size(), std::vector<storm::expressions::Expression>(model.getNumberOfStates()));
                 bool hasEndComponents = processEndComponents(ecVars);
                 
-                if (inOutEncoding()) {
+                if (flowEncoding) {
                     storm::storage::BitVector bottomStates(model.getNumberOfStates(), true);
                     for (auto const& helper : objectiveHelper) {
                         STORM_LOG_THROW(helper.isTotalRewardObjective(), storm::exceptions::InvalidOperationException, "The given type of encoding is only supported if the objectives can be reduced to total reward objectives.");
                         storm::storage::BitVector objBottomStates(model.getNumberOfStates(), false);
                         for (auto const& stateVal : helper.getSchedulerIndependentStateValues()) {
-                            STORM_LOG_THROW(storm::utility::isZero(stateVal.second), storm::exceptions::InvalidOperationException, "Non-zero constant state-values not allowed for this type of encoding.");
+                            STORM_LOG_THROW(storm::utility::isZero(stateVal.second), storm::exceptions::InvalidOperationException, "Non-zero constant state-values not allowed for flow encoding.");
                             objBottomStates.set(stateVal.first, true);
                         }
                         bottomStates &= objBottomStates;
@@ -449,9 +444,8 @@ namespace storm {
                         lpModel->addConstraint("", storm::expressions::sum(ins[state]) == storm::expressions::sum(outs[state]));
                         
                     }
-                    if (assertBottomStateSum()) {
-                        lpModel->addConstraint("", storm::expressions::sum(bottomStatesIn) == one);
-                    }
+                    // Assert the sum for the bottom states
+                    lpModel->addConstraint("", storm::expressions::sum(bottomStatesIn) == one);
                     
                     // create initial state results for each objective
                     for (uint64_t objIndex = 0; objIndex < objectiveHelper.size(); ++objIndex) {
@@ -612,43 +606,21 @@ namespace storm {
                         swValidate.start();
                         Point newPoint = validateCurrentModel(env);
                         swValidate.stop();
-                        std::vector<Point> newPoints = {newPoint};
-                        if (gurobiLpModel && useNonOptimalSolutions()) {
-                            // gurobi might have other good solutions.
-                            for (uint64_t solutionIndex = 0; solutionIndex < gurobiLpModel->getSolutionCount(); ++ solutionIndex) {
-                                Point p;
-                                bool considerP = false;
-                                for (uint64_t objIndex = 0; objIndex < currentObjectiveVariables.size(); ++objIndex) {
-                                    p.push_back(storm::utility::convertNumber<GeometryValueType>(gurobiLpModel->getContinuousValue(currentObjectiveVariables[objIndex], solutionIndex)));
-                                    if (p.back() > newPoint[objIndex] + eps[objIndex] / storm::utility::convertNumber<GeometryValueType>(2)) {
-                                        // The other solution dominates the newPoint in this dimension and is also not too close to the newPoint.
-                                        considerP = true;
-                                    }
-                                }
-                                if (considerP) {
-                                    newPoints.push_back(std::move(p));
-                                }
-                            }
-                        }
                         GeometryValueType offset = storm::utility::convertNumber<GeometryValueType>(lpModel->getObjectiveValue());
                         if (gurobiLpModel) {
                             // Gurobi gives us the gap between the found solution and the known bound.
                             offset += storm::utility::convertNumber<GeometryValueType>(gurobiLpModel->getMILPGap(false));
                         }
                         // we might want to shift the halfspace to guarantee that our point is included.
-                        for (auto const& p : newPoints) {
-                            offset = std::max(offset, storm::utility::vector::dotProduct(currentWeightVector, p));
-                        }
+                        offset = std::max(offset, storm::utility::vector::dotProduct(currentWeightVector, newPoint));
                         auto halfspace = storm::storage::geometry::Halfspace<GeometryValueType>(currentWeightVector, offset).invert();
                         infeasableAreas.push_back(polytopeTree.getPolytope()->intersection(halfspace));
                         if (infeasableAreas.back()->isEmpty()) {
                             infeasableAreas.pop_back();
                         }
                         polytopeTree.setMinus(storm::storage::geometry::Polytope<GeometryValueType>::create({halfspace}));
-                        for (auto const& p : newPoints) {
-                            foundPoints.push_back(p);
-                            polytopeTree.substractDownwardClosure(p, eps);
-                        }
+                        foundPoints.push_back(newPoint);
+                        polytopeTree.substractDownwardClosure(newPoint, eps);
                         if (!polytopeTree.isEmpty()) {
                             checkRecursive(env, polytopeTree, eps, foundPoints, infeasableAreas, depth);
                         }
