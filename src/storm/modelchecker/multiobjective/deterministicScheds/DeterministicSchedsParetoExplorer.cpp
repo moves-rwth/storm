@@ -12,6 +12,9 @@
 #include "storm/environment/modelchecker/MultiObjectiveModelCheckerEnvironment.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/CoreSettings.h"
+
 #include "storm/utility/export.h"
 #include "storm/utility/solver.h"
 
@@ -340,6 +343,13 @@ namespace storm {
                     if (p.second.isParetoOptimal()) {
                         paretoPoints.push_back(storm::utility::vector::convertNumericVector<ModelValueType>(transformObjectiveValuesToOriginal(objectives, p.second.get())));
                     }
+                }
+                if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
+                    STORM_PRINT_AND_LOG("#STATS " << paretoPoints.size() << " Pareto points" << std::endl);
+                    STORM_PRINT_AND_LOG("#STATS " << unachievableAreas.size() << " unachievable Areas" << std::endl);
+                    STORM_PRINT_AND_LOG("#STATS " << overApproximation->getHalfspaces().size() << " unachievable Halfspaces" << std::endl);
+                    STORM_PRINT_AND_LOG(lpChecker->getStatistics("#STATS "));
+                    
                 }
                 return std::make_unique<storm::modelchecker::ExplicitParetoCurveCheckResult<ModelValueType>>(originalModelInitialState, std::move(paretoPoints), nullptr, nullptr);
             }

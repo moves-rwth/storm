@@ -69,6 +69,7 @@ namespace storm {
                 std::vector<storm::expressions::Variable> currentObjectiveVariables;
                 std::vector<GeometryValueType> currentWeightVector;
 
+                storm::utility::Stopwatch swAll;
                 storm::utility::Stopwatch swInit;
                 storm::utility::Stopwatch swCheckWeightVectors;
                 storm::utility::Stopwatch swCheckAreas;

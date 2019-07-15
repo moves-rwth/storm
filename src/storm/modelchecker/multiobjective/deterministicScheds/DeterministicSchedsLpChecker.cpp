@@ -63,24 +63,28 @@ namespace storm {
             
             template <typename ModelType, typename GeometryValueType>
             DeterministicSchedsLpChecker<ModelType, GeometryValueType>::DeterministicSchedsLpChecker(Environment const& env, ModelType const& model, std::vector<DeterministicSchedsObjectiveHelper<ModelType>> const& objectiveHelper) : model(model) , objectiveHelper(objectiveHelper), numLpQueries(0) {
+                swAll.start();
                 swInit.start();
                 initializeLpModel(env);
                 swInit.stop();
+                swAll.stop();
             }
             
             template <typename ModelType, typename GeometryValueType>
             std::string  DeterministicSchedsLpChecker<ModelType, GeometryValueType>::getStatistics(std::string const& prefix) const {
                 std::stringstream out;
-                out << prefix << swInit << " seconds for LP initialization" << std::endl;
-                out << prefix << swCheckWeightVectors << " seconds for checking weight vectors" << std::endl;
-                out << prefix << swCheckAreas << " seconds for checking areas" << std::endl;
-                out << prefix << swValidate << " seconds for validating LP solutions" << std::endl;
-                out << prefix << numLpQueries << " calls to LP optimization" << std::endl;
+                out << prefix << swAll << " seconds for LP Checker including... " << std::endl;
+                out << prefix << "  " << swInit << " seconds for LP initialization" << std::endl;
+                out << prefix << "  " << swCheckWeightVectors << " seconds for checking weight vectors" << std::endl;
+                out << prefix << "  " << swCheckAreas << " seconds for checking areas" << std::endl;
+                out << prefix << "  " << swValidate << " seconds for validating LP solutions" << std::endl;
+                out << prefix << "  " << numLpQueries << " calls to LP optimization" << std::endl;
                 return out.str();
             }
             
             template <typename ModelType, typename GeometryValueType>
             void DeterministicSchedsLpChecker<ModelType, GeometryValueType>::setCurrentWeightVector(std::vector<GeometryValueType> const& weightVector) {
+                swAll.start();
                 STORM_LOG_ASSERT(weightVector.size() == objectiveHelper.size(), "Setting a weight vector with invalid number of entries.");
                 if (!currentWeightVector.empty()) {
                     // Pop information of the current weight vector.
@@ -102,10 +106,12 @@ namespace storm {
                     }
                 }
                 lpModel->update();
+                swAll.stop();
             }
             
             template <typename ModelType, typename GeometryValueType>
             boost::optional<std::vector<GeometryValueType>> DeterministicSchedsLpChecker<ModelType, GeometryValueType>::check(storm::Environment const& env, Polytope overapproximation) {
+                swAll.start();
                 STORM_LOG_ASSERT(!currentWeightVector.empty(), "Checking invoked before specifying a weight vector.");
                 STORM_LOG_TRACE("Checking a vertex...");
                 lpModel->push();
@@ -127,11 +133,13 @@ namespace storm {
                     swValidate.stop();
                 }
                 lpModel->pop();
+                swAll.stop();
                 return result;
             }
 
             template <typename ModelType, typename GeometryValueType>
             std::pair<std::vector<std::vector<GeometryValueType>>, std::vector<std::shared_ptr<storm::storage::geometry::Polytope<GeometryValueType>>>> DeterministicSchedsLpChecker<ModelType, GeometryValueType>::check(storm::Environment const& env, storm::storage::geometry::PolytopeTree<GeometryValueType>& polytopeTree, Point const& eps) {
+                swAll.start();
                 STORM_LOG_INFO("Checking " << polytopeTree.toString());
                 STORM_LOG_ASSERT(!currentWeightVector.empty(), "Checking invoked before specifying a weight vector.");
                 if (polytopeTree.isEmpty()) {
@@ -150,7 +158,7 @@ namespace storm {
                 std::vector<Point> foundPoints;
                 std::vector<Polytope> infeasableAreas;
                 checkRecursive(env, polytopeTree, eps, foundPoints, infeasableAreas, 0);
-                
+                swAll.stop();
                 return {foundPoints, infeasableAreas};
             }
             
