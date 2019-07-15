@@ -18,21 +18,27 @@ namespace storm {
             const std::string MultiObjectiveSettings::maxStepsOptionName = "maxsteps";
             const std::string MultiObjectiveSettings::schedulerRestrictionOptionName = "schedrest";
             const std::string MultiObjectiveSettings::printResultsOptionName = "printres";
+            const std::string MultiObjectiveSettings::encodingOptionName = "encoding";
             
             MultiObjectiveSettings::MultiObjectiveSettings() : ModuleSettings(moduleName) {
                 std::vector<std::string> methods = {"pcaa", "constraintbased"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, methodOptionName, true, "The method to be used for multi objective model checking.").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the method to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(methods)).setDefaultValueString("pcaa").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportPlotOptionName, true, "Saves data for plotting of pareto curves and achievable values.").setIsAdvanced()
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("directory", "A path to an existing directory in which the results will be saved.").build()).build());
+                std::vector<std::string> precTypes = {"abs", "reldiff"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, precisionOptionName, true, "The precision used for the approximation of numerical- and pareto queries.").setIsAdvanced()
-                                .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision.").setDefaultValueDouble(1e-04).addValidatorDouble(ArgumentValidatorFactory::createDoubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
+                                .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision.").setDefaultValueDouble(1e-04).addValidatorDouble(ArgumentValidatorFactory::createDoubleRangeValidatorExcluding(0.0, 1.0)).build())
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("type", "The type of precision.").setDefaultValueString("abs").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(precTypes)).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, maxStepsOptionName, true, "Aborts the computation after the given number of refinement steps (= computed pareto optimal points).").setIsAdvanced()
                                 .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("value", "the threshold for the number of refinement steps to be performed.").build()).build());
                 std::vector<std::string> memoryPatterns = {"positional", "goalmemory", "arbitrary"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, schedulerRestrictionOptionName, false, "Restricts the class of considered schedulers to non-randomized schedulers with the provided memory pattern.")
-                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("memorypattern", "The Pattern of the memory.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(memoryPatterns)).build())
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("memorypattern", "The Pattern of the memory.").setDefaultValueString("positional").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(memoryPatterns)).build())
                                 .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("memorystates", "The Number of memory states (only if supported by the pattern).").setDefaultValueUnsignedInteger(0).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, printResultsOptionName, true, "Prints intermediate results of the computation to standard output.").build());
+                std::vector<std::string> encodingTypes = {"auto", "classic", "flow"};
+                this->addOption(storm::settings::OptionBuilder(moduleName, encodingOptionName, true, "The prefered type of encoding for constraint-based methods.")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("type", "The type.").setDefaultValueString("auto").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(encodingTypes)).build()).build());
             }
             
             storm::modelchecker::multiobjective::MultiObjectiveMethod MultiObjectiveSettings::getMultiObjectiveMethod() const {
@@ -59,6 +65,14 @@ namespace storm {
             
             double MultiObjectiveSettings::getPrecision() const {
                 return this->getOption(precisionOptionName).getArgumentByName("value").getValueAsDouble();
+            }
+            
+            bool MultiObjectiveSettings::getPrecisionRelativeToDiff() const {
+                return this->getOption(precisionOptionName).getArgumentByName("type").getValueAsString() == "reldiff";
+            }
+            
+            bool MultiObjectiveSettings::getPrecisionAbsolute() const {
+                return this->getOption(precisionOptionName).getArgumentByName("type").getValueAsString() == "abs";
             }
             
             bool MultiObjectiveSettings::isMaxStepsSet() const {
@@ -97,6 +111,18 @@ namespace storm {
 				
             bool MultiObjectiveSettings::isPrintResultsSet() const {
                 return this->getOption(printResultsOptionName).getHasOptionBeenSet();
+            }
+            
+            bool MultiObjectiveSettings::isClassicEncodingSet() const {
+                return this->getOption(encodingOptionName).getArgumentByName("type").getValueAsString() == "classic";
+            }
+            
+            bool MultiObjectiveSettings::isFlowEncodingSet() const {
+                return this->getOption(encodingOptionName).getArgumentByName("type").getValueAsString() == "flow";
+            }
+            
+            bool MultiObjectiveSettings::isAutoEncodingSet() const {
+                return this->getOption(encodingOptionName).getArgumentByName("type").getValueAsString() == "auto";
             }
             
             bool MultiObjectiveSettings::check() const {
