@@ -68,6 +68,7 @@ namespace storm {
                 std::vector<storm::expressions::Expression> initialStateResults;
                 std::vector<storm::expressions::Variable> currentObjectiveVariables;
                 std::vector<GeometryValueType> currentWeightVector;
+                bool flowEncoding;
 
                 storm::utility::Stopwatch swAll;
                 storm::utility::Stopwatch swInit;

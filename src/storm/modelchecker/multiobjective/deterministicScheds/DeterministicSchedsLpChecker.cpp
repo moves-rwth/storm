@@ -13,6 +13,8 @@
 #include "storm/utility/graph.h"
 #include "storm/utility/solver.h"
 
+#include "storm/environment/modelchecker/MultiObjectiveModelCheckerEnvironment.h"
+
 #include "storm/exceptions/InvalidOperationException.h"
 #include <set>
 #include <storm/exceptions/UnexpectedException.h>
@@ -28,10 +30,6 @@ namespace storm {
                     res.setFromInt(0, 64, storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>().getMaxSteps());
                 }
                 return res;
-            }
-            
-            bool isMinNegativeEncoding() { // + 1
-                return encodingSettings().get(63);
             }
             
             bool isMaxDiffEncoding() { // + 2
@@ -99,7 +97,7 @@ namespace storm {
                 // set up objective function for the given weight vector
                 for (uint64_t objIndex = 0; objIndex < initialStateResults.size(); ++objIndex) {
                     currentObjectiveVariables.push_back(lpModel->addUnboundedContinuousVariable("w_" + std::to_string(objIndex), storm::utility::convertNumber<ValueType>(weightVector[objIndex])));
-                    if (objectiveHelper[objIndex].minimizing() && !isMinNegativeEncoding()) {
+                    if (objectiveHelper[objIndex].minimizing() && flowEncoding) {
                         lpModel->addConstraint("", currentObjectiveVariables.back().getExpression() == -initialStateResults[objIndex]);
                     } else {
                         lpModel->addConstraint("", currentObjectiveVariables.back().getExpression() == initialStateResults[objIndex]);
@@ -517,14 +515,14 @@ namespace storm {
                         for (uint64_t state = 0; state < numStates; ++state) {
                             auto valIt = schedulerIndependentStates.find(state);
                             if (valIt == schedulerIndependentStates.end()) {
-                                if (objectiveHelper[objIndex].minimizing() && isMinNegativeEncoding()) {
+                                if (objectiveHelper[objIndex].minimizing()) {
                                     stateVars.push_back(lpModel->addBoundedContinuousVariable("x" + std::to_string(objIndex) + "_" + std::to_string(state), -objectiveHelper[objIndex].getUpperValueBoundAtState(env, state), -objectiveHelper[objIndex].getLowerValueBoundAtState(env, state)).getExpression());
                                 } else {
                                     stateVars.push_back(lpModel->addBoundedContinuousVariable("x" + std::to_string(objIndex) + "_" + std::to_string(state), objectiveHelper[objIndex].getLowerValueBoundAtState(env, state), objectiveHelper[objIndex].getUpperValueBoundAtState(env, state)).getExpression());
                                 }
                             } else {
                                 ValueType value = valIt->second;
-                                if (objectiveHelper[objIndex].minimizing() && isMinNegativeEncoding()) {
+                                if (objectiveHelper[objIndex].minimizing()) {
                                     value = -value;
                                 }
                                 stateVars.push_back(lpModel->getConstant(value));
@@ -548,7 +546,7 @@ namespace storm {
                                 storm::expressions::Expression choiceValue;
                                 auto valIt = choiceValueOffsets.find(choiceOffset + choice);
                                 if (valIt != choiceValueOffsets.end()) {
-                                    if (objectiveHelper[objIndex].minimizing() && isMinNegativeEncoding()) {
+                                    if (objectiveHelper[objIndex].minimizing()) {
                                         choiceValue = lpModel->getConstant(-valIt->second);
                                     } else {
                                         choiceValue = lpModel->getConstant(valIt->second);
@@ -577,21 +575,15 @@ namespace storm {
                                     }
                                     
                                     storm::expressions::Expression choiceValVar;
-                                    if (objectiveHelper[objIndex].minimizing() && isMinNegativeEncoding()) {
+                                    if (objectiveHelper[objIndex].minimizing()) {
                                         choiceValVar = lpModel->addBoundedContinuousVariable("x" + std::to_string(objIndex) + "_" + std::to_string(state) + "_" + std::to_string(choice), -objectiveHelper[objIndex].getUpperValueBoundAtState(env, state), storm::utility::zero<ValueType>()).getExpression();
                                     } else {
                                         choiceValVar = lpModel->addBoundedContinuousVariable("x" + std::to_string(objIndex) + "_" + std::to_string(state) + "_" + std::to_string(choice), storm::utility::zero<ValueType>(), objectiveHelper[objIndex].getUpperValueBoundAtState(env, state)).getExpression();
                                     }
+                                    lpModel->addConstraint("", choiceValVar <= choiceValue);
                                     if (objectiveHelper[objIndex].minimizing()) {
-                                        if (isMinNegativeEncoding()) {
-                                            lpModel->addConstraint("", choiceValVar <= choiceValue);
-                                            lpModel->addConstraint("", choiceValVar <= -upperValueBoundAtState * (one - choiceVariables[globalChoiceIndex]));
-                                        } else {
-                                            lpModel->addConstraint("", choiceValVar + (upperValueBoundAtState * (one - choiceVariables[globalChoiceIndex])) >= choiceValue);
-                                            // Optional: lpModel->addConstraint("", choiceValVar <= choiceValue);
-                                        }
+                                        lpModel->addConstraint("", choiceValVar <= -upperValueBoundAtState * (one - choiceVariables[globalChoiceIndex]));
                                     } else {
-                                        lpModel->addConstraint("", choiceValVar <= choiceValue);
                                         lpModel->addConstraint("", choiceValVar <= upperValueBoundAtState * choiceVariables[globalChoiceIndex]);
                                     }
                                     if (choice == 0) {
@@ -603,11 +595,7 @@ namespace storm {
                             }
                             stateValue.simplify().reduceNesting();
                             if (objectiveHelper[objIndex].minimizing()) {
-                                if (isMinNegativeEncoding()) {
-                                    lpModel->addConstraint("", stateVars[state] <= stateValue + (lpModel->getConstant(storm::utility::convertNumber<ValueType>(numChoices - 1)) * upperValueBoundAtState));
-                                } else {
-                                    lpModel->addConstraint("", stateVars[state] >= stateValue);
-                                }
+                                lpModel->addConstraint("", stateVars[state] <= stateValue + (lpModel->getConstant(storm::utility::convertNumber<ValueType>(numChoices - 1)) * upperValueBoundAtState));
                             } else {
                                 lpModel->addConstraint("", stateVars[state] <= stateValue);
                             }
@@ -616,12 +604,8 @@ namespace storm {
                                 if (ecVar.isInitialized()) {
                                     // if this state is part of an ec, make sure to assign a value of zero.
                                     if (objectiveHelper[objIndex].minimizing()) {
-                                        // TODO: these are optional
-                                        if (isMinNegativeEncoding()) {
-                                            lpModel->addConstraint("", stateVars[state] >= (ecVar - one) * lpModel->getConstant(objectiveHelper[objIndex].getUpperValueBoundAtState(env, state)));
-                                        } else {
-                                            lpModel->addConstraint("", stateVars[state] <= (one - ecVar) * lpModel->getConstant(objectiveHelper[objIndex].getUpperValueBoundAtState(env, state)));
-                                        }
+                                        // TODO: this is optional
+                                        lpModel->addConstraint("", stateVars[state] >= (ecVar - one) * lpModel->getConstant(objectiveHelper[objIndex].getUpperValueBoundAtState(env, state)));
                                     } else {
                                         lpModel->addConstraint("", stateVars[state] <= (one - ecVar) * lpModel->getConstant(objectiveHelper[objIndex].getUpperValueBoundAtState(env, state)));
                                     }
