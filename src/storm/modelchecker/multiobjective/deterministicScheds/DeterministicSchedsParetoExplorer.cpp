@@ -17,6 +17,7 @@
 
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/exceptions/InvalidOperationException.h"
+#include "storm/exceptions/IllegalArgumentException.h"
 
 
 namespace storm {
@@ -296,25 +297,37 @@ namespace storm {
                 initializeFacets(env);
                 
                 // Compute the relative precision in each dimension.
-                // Todo: also allow for absolute precision
-                eps = std::vector<GeometryValueType>(objectives.size(), storm::utility::zero<GeometryValueType>());
-                for (auto const& point : pointset) {
-                    for (uint64_t i = 0; i < eps.size(); ++i) {
-                        eps[i] += storm::utility::abs(point.second.get()[i]);
+                if (env.modelchecker().multi().getPrecisionType() == MultiObjectiveModelCheckerEnvironment::PrecisionType::RelativeToDiff) {
+                    std::vector<GeometryValueType> pmax, pmin;
+                    for (auto const& point : pointset) {
+                        auto const& coordinates = point.second.get();
+                        if (pmax.empty() && pmin.empty()) {
+                            pmax = coordinates;
+                            pmin = coordinates;
+                        } else {
+                            for (uint64_t i = 0; i < pmax.size(); ++i) {
+                                pmax[i] = std::max(pmax[i], coordinates[i]);
+                                pmin[i] = std::min(pmin[i], coordinates[i]);
+                            }
+                        }
                     }
-                }
-                GeometryValueType epsScalingFactor = storm::utility::convertNumber<GeometryValueType>(env.modelchecker().multi().getPrecision());
-                epsScalingFactor += epsScalingFactor;
-                epsScalingFactor = epsScalingFactor / storm::utility::convertNumber<GeometryValueType, uint64_t>(pointset.size());
-                for (auto& ei : eps) {
-                    if (storm::utility::isZero(ei)) {
-                        // This is for the special case where the objective value was zero for all considered schedulers in the initialization phase.
-                        ei = storm::utility::convertNumber<GeometryValueType>(1e-8);
+                    GeometryValueType epsScalingFactor = storm::utility::convertNumber<GeometryValueType>(env.modelchecker().multi().getPrecision());
+                    epsScalingFactor += epsScalingFactor;
+                    eps.clear();
+                    for (uint64_t i = 0; i < pmax.size(); ++i) {
+                        eps.push_back((pmax[i] - pmin[i]) * epsScalingFactor);
+                        if (eps.back() < storm::utility::convertNumber<GeometryValueType>(1e-8)) {
+                            STORM_LOG_WARN("Changing relative precision of objective " << i << " to 1e-8 since the difference between the highest and lowest value is below 1e-8.");
+                            eps.back() = storm::utility::convertNumber<GeometryValueType>(1e-8);
+                        }
                     }
-                    ei *=epsScalingFactor;
+                    STORM_PRINT_AND_LOG("Relative precision is " << storm::utility::vector::toString(storm::utility::vector::convertNumericVector<double>(eps)) << std::endl);
+                } else {
+                    STORM_LOG_THROW(env.modelchecker().multi().getPrecisionType() == MultiObjectiveModelCheckerEnvironment::PrecisionType::Absolute, storm::exceptions::IllegalArgumentException, "Unknown multiobjective precision type.");
+                    auto ei = storm::utility::convertNumber<GeometryValueType>(env.modelchecker().multi().getPrecision());
+                    ei += ei;
+                    eps = std::vector<GeometryValueType>(objectives.size(), ei);
                 }
-                std::cout << "scaled precision is " << storm::utility::vector::toString(storm::utility::vector::convertNumericVector<double>(eps)) << std::endl;
-                
                 while (!unprocessedFacets.empty()) {
                     Facet f = std::move(unprocessedFacets.front());
                     unprocessedFacets.pop();
