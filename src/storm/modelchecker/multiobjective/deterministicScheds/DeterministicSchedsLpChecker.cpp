@@ -23,25 +23,6 @@ namespace storm {
     namespace modelchecker {
         namespace multiobjective {
 
-            
-            storm::storage::BitVector encodingSettings() {
-                storm::storage::BitVector res(64, false);
-                if (storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>().isMaxStepsSet()) {
-                    res.setFromInt(0, 64, storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>().getMaxSteps());
-                }
-                return res;
-            }
-            
-            bool isMaxDiffEncoding() { // + 2
-                bool result = encodingSettings().get(62);
-                STORM_LOG_ERROR_COND(!result || !isMinNegativeEncoding(), "maxDiffEncoding only works without minnegative encoding.");
-                return result;
-            }
-            
-            bool choiceVarReduction() { // + 4
-                return encodingSettings().get(61);
-            }
-            
             bool inOutEncoding() { // + 8
                 bool result = encodingSettings().get(60);
                 STORM_LOG_ERROR_COND(!result || !isMinNegativeEncoding(), "inout-encoding only works without minnegative encoding.");
@@ -389,27 +370,16 @@ namespace storm {
                         choiceVariables.emplace_back();
                     } else {
                         std::vector<storm::expressions::Expression> localChoices;
-                        if (choiceVarReduction()) {
-                            --numChoices;
-                        }
                         for (uint64_t choice = 0; choice < numChoices; ++choice) {
                             localChoices.push_back(lpModel->addBoundedIntegerVariable("c" + std::to_string(state) + "_" + std::to_string(choice), 0, 1).getExpression());
                             choiceVariables.push_back(localChoices.back());
                         }
-                            storm::expressions::Expression localChoicesSum = storm::expressions::sum(localChoices);
-                        if (choiceVarReduction()) {
-                            lpModel->addConstraint("", localChoicesSum <= one);
-                            choiceVariables.push_back(one - localChoicesSum);
-                        } else {
-                            lpModel->addConstraint("", localChoicesSum == one);
-                        }
+                        lpModel->addConstraint("", storm::expressions::sum(localChoices) == one);
                     }
                 }
                 // Create ec Variables for each state/objective
                 std::vector<std::vector<storm::expressions::Expression>> ecVars(objectiveHelper.size(), std::vector<storm::expressions::Expression>(model.getNumberOfStates()));
                 bool hasEndComponents = processEndComponents(ecVars);
-                // ECs are not supported with choiceVarReduction.
-                STORM_LOG_THROW(!hasEndComponents || !choiceVarReduction(), storm::exceptions::InvalidOperationException, "Choice var reduction is not supported with end components.");
                 
                 if (inOutEncoding()) {
                     storm::storage::BitVector bottomStates(model.getNumberOfStates(), true);
@@ -565,15 +535,6 @@ namespace storm {
                                     stateValue = choiceValue;
                                 } else {
                                     uint64_t globalChoiceIndex = groups[state] + choice;
-                                    if (isMaxDiffEncoding()) {
-                                        storm::expressions::Expression maxDiff = upperValueBoundAtState * (one - choiceVariables[globalChoiceIndex]);
-                                        if (objectiveHelper[objIndex].minimizing()) {
-                                            lpModel->addConstraint("", stateVars[state] >= choiceValue - maxDiff);
-                                        } else {
-                                            lpModel->addConstraint("", stateVars[state] <= choiceValue + maxDiff);
-                                        }
-                                    }
-                                    
                                     storm::expressions::Expression choiceValVar;
                                     if (objectiveHelper[objIndex].minimizing()) {
                                         choiceValVar = lpModel->addBoundedContinuousVariable("x" + std::to_string(objIndex) + "_" + std::to_string(state) + "_" + std::to_string(choice), -objectiveHelper[objIndex].getUpperValueBoundAtState(env, state), storm::utility::zero<ValueType>()).getExpression();
@@ -604,7 +565,6 @@ namespace storm {
                                 if (ecVar.isInitialized()) {
                                     // if this state is part of an ec, make sure to assign a value of zero.
                                     if (objectiveHelper[objIndex].minimizing()) {
-                                        // TODO: this is optional
                                         lpModel->addConstraint("", stateVars[state] >= (ecVar - one) * lpModel->getConstant(objectiveHelper[objIndex].getUpperValueBoundAtState(env, state)));
                                     } else {
                                         lpModel->addConstraint("", stateVars[state] <= (one - ecVar) * lpModel->getConstant(objectiveHelper[objIndex].getUpperValueBoundAtState(env, state)));
@@ -730,11 +690,7 @@ namespace storm {
                         bool choiceFound = false;
                         for (uint64_t localChoice = 0; localChoice < numChoices; ++localChoice) {
                             bool localChoiceEnabled = false;
-                            if (choiceVarReduction() && localChoice + 1 == numChoices) {
-                                localChoiceEnabled = !choiceFound;
-                            } else {
-                                localChoiceEnabled = (lpModel->getIntegerValue(choiceVariables[globalChoiceOffset + localChoice].getBaseExpression().asVariableExpression().getVariable()) == 1);
-                            }
+                            localChoiceEnabled = (lpModel->getIntegerValue(choiceVariables[globalChoiceOffset + localChoice].getBaseExpression().asVariableExpression().getVariable()) == 1);
                             if (localChoiceEnabled) {
                                 STORM_LOG_THROW(!choiceFound, storm::exceptions::UnexpectedException, "Multiple choices selected at state " << state);
                                 scheduler.setChoice(localChoice, state);
