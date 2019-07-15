@@ -652,11 +652,8 @@ namespace storm {
                     maComponents.exitRates = std::move(modelComponents.exitRates);
                     ma = std::make_shared<storm::models::sparse::MarkovAutomaton<ValueType>>(std::move(maComponents));
                 }
-                if (ma->hasOnlyTrivialNondeterminism()) {
-                    // Markov automaton can be converted into CTMC
-                    // TODO apply transformer to all MAs
-                    model = storm::transformer::NonMarkovianChainTransformer<ValueType>::eliminateNonmarkovianStates(
-                            ma);
+                if (ma->isConvertibleToCtmc()) {
+                    model = ma->convertToCtmc();
                 } else {
                     model = ma;
                 }

@@ -23,6 +23,7 @@
 #include "storm-conv/settings/modules/JaniExportSettings.h"
 #include "storm-gspn/settings/modules/GSPNSettings.h"
 #include "storm-gspn/settings/modules/GSPNExportSettings.h"
+#include "storm/settings/modules/TransformationSettings.h"
 
 
 namespace storm {
@@ -37,6 +38,7 @@ namespace storm {
             storm::settings::addModule<storm::settings::modules::DftGspnSettings>();
             storm::settings::addModule<storm::settings::modules::IOSettings>();
             storm::settings::addModule<storm::settings::modules::CoreSettings>();
+            storm::settings::addModule<storm::settings::modules::TransformationSettings>();
 
             storm::settings::addModule<storm::settings::modules::DebugSettings>();
             storm::settings::addModule<storm::settings::modules::ModelCheckerSettings>();

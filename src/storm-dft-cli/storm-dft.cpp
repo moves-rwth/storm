@@ -10,6 +10,7 @@
 #include "storm/settings/modules/DebugSettings.h"
 #include "storm/settings/modules/IOSettings.h"
 #include "storm/settings/modules/ResourceSettings.h"
+#include "storm/settings/modules/TransformationSettings.h"
 #include "storm/utility/initialize.h"
 #include "storm-cli-utilities/cli.h"
 #include "storm-parsers/api/storm-parsers.h"
@@ -28,6 +29,7 @@ void processOptions() {
     storm::settings::modules::FaultTreeSettings const& faultTreeSettings = storm::settings::getModule<storm::settings::modules::FaultTreeSettings>();
     storm::settings::modules::IOSettings const& ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
     storm::settings::modules::DftGspnSettings const& dftGspnSettings = storm::settings::getModule<storm::settings::modules::DftGspnSettings>();
+    storm::settings::modules::TransformationSettings const &transformationSettings = storm::settings::getModule<storm::settings::modules::TransformationSettings>();
 
     auto dftTransformator = storm::transformations::dft::DftTransformator<ValueType>();
 
@@ -55,7 +57,7 @@ void processOptions() {
     }
 
     // Eliminate non-binary dependencies
-    if (dft->getDependencies().size() > 0) {
+    if (!dft->getDependencies().empty()) {
         dft = dftTransformator.transformBinaryFDEPs(*dft);
     }
     // Check well-formedness of DFT
@@ -81,7 +83,7 @@ void processOptions() {
     // SMT
     if (dftIOSettings.isExportToSmt()) {
         dft = dftTransformator.transformUniqueFailedBe(*dft);
-        if (dft->getDependencies().size() > 0) {
+        if (!dft->getDependencies().empty()) {
             dft = dftTransformator.transformBinaryFDEPs(*dft);
         }
         // Export to smtlib2
@@ -91,14 +93,13 @@ void processOptions() {
 
     // TODO introduce some flags
     bool useSMT = false;
-    bool printOutput = false;
     uint64_t solverTimeout = 10;
 #ifdef STORM_HAVE_Z3
     if (faultTreeSettings.solveWithSMT()) {
         useSMT = true;
         STORM_PRINT("Use SMT for preprocessing" << std::endl)
         dft = dftTransformator.transformUniqueFailedBe(*dft);
-        if (dft->getDependencies().size() > 0) {
+        if (!dft->getDependencies().empty()) {
             // Making the constantly failed BE unique may introduce non-binary FDEPs
             dft = dftTransformator.transformBinaryFDEPs(*dft);
         }
@@ -112,25 +113,20 @@ void processOptions() {
                                                                                             solverTimeout);
     preResults.upperBEBound = storm::dft::utility::FailureBoundFinder::getAlwaysFailedBound(*dft, useSMT,
                                                                                             solverTimeout);
-    if (printOutput) {
-        STORM_PRINT("BE FAILURE BOUNDS" << std::endl <<
-                                        "========================================" << std::endl <<
+    STORM_LOG_DEBUG("BE FAILURE BOUNDS" << std::endl << "========================================" << std::endl <<
                                         "Lower bound: " << std::to_string(preResults.lowerBEBound) << std::endl <<
-                                        "Upper bound: " << std::to_string(preResults.upperBEBound) << std::endl)
-    }
+                                        "Upper bound: " << std::to_string(preResults.upperBEBound) << std::endl);
 
     preResults.fdepConflicts = storm::dft::utility::FDEPConflictFinder::getDependencyConflicts(*dft, true,
                                                                                                solverTimeout);
 
-    if (printOutput) {
-        STORM_PRINT("========================================" << std::endl <<
+    STORM_LOG_DEBUG("========================================" << std::endl <<
                                                                "FDEP CONFLICTS" << std::endl <<
                                                                "========================================"
-                                                               << std::endl)
-        for (auto pair: preResults.fdepConflicts) {
-            STORM_PRINT("Conflict between " << dft->getElement(pair.first)->name() << " and "
-                                            << dft->getElement(pair.second)->name() << std::endl)
-        }
+                                                               << std::endl);
+    for (auto pair: preResults.fdepConflicts) {
+        STORM_LOG_DEBUG("Conflict between " << dft->getElement(pair.first)->name() << " and "
+                                            << dft->getElement(pair.second)->name() << std::endl);
     }
 
     // Set the conflict map of the dft
@@ -149,7 +145,7 @@ void processOptions() {
 #ifdef STORM_HAVE_Z3
     if (faultTreeSettings.solveWithSMT()) {
         // Solve with SMT
-        STORM_LOG_DEBUG("Running DFT analysis with use of SMT");
+        STORM_LOG_DEBUG("Running DFT analysis with use of SMT" << std::endl);
         // Set dynamic behavior vector
         storm::api::analyzeDFTSMT(*dft, true);
     }
@@ -263,7 +259,10 @@ void processOptions() {
             approximationError = faultTreeSettings.getApproximationError();
         }
         storm::api::analyzeDFT<ValueType>(*dft, props, faultTreeSettings.useSymmetryReduction(), faultTreeSettings.useModularisation(), relevantEvents,
-                                          faultTreeSettings.isAllowDCForRelevantEvents(), approximationError, faultTreeSettings.getApproximationHeuristic(), true);
+                                          faultTreeSettings.isAllowDCForRelevantEvents(), approximationError,
+                                          faultTreeSettings.getApproximationHeuristic(),
+                                          transformationSettings.isChainEliminationSet(),
+                                          transformationSettings.isIgnoreLabelingSet(), true);
     }
 }
 
