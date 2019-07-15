@@ -21,7 +21,7 @@ namespace storm {
                 bool preserveLabels) {
             // TODO reward models
 
-            STORM_LOG_WARN("State elimination is currently not label preserving!");
+            STORM_LOG_WARN_COND(preserveLabels, "Labels are not preserved! Results may be incorrect.");
             STORM_LOG_WARN("Reward Models and Choice Labelings are ignored!");
             if (ma->isClosed() && ma->getMarkovianStates().full()) {
                 storm::storage::sparse::ModelComponents<ValueType, RewardModelType> components(
@@ -48,7 +48,6 @@ namespace storm {
             storm::storage::SparseMatrix<ValueType> backwards = ma->getBackwardTransitions();
 
             // Determine the state remapping
-            // TODO Consider state labels
             for (uint_fast64_t base_state = 0; base_state < ma->getNumberOfStates(); ++base_state) {
                 STORM_LOG_ASSERT(!ma->isHybridState(base_state), "Base state is hybrid.");
                 if (ma->isMarkovianState(base_state)) {
@@ -57,6 +56,9 @@ namespace storm {
                     while (!queue.empty()) {
                         auto currState = queue.front();
                         queue.pop();
+
+                        auto currLabels = ma->getLabelsOfState(currState);
+
                         // Get predecessors from matrix
                         typename storm::storage::SparseMatrix<ValueType>::rows entriesInRow = backwards.getRow(
                                 currState);
@@ -64,11 +66,21 @@ namespace storm {
                              entryIt != entryIte; ++entryIt) {
                             uint_fast64_t predecessor = entryIt->getColumn();
                             if (!ma->isMarkovianState(predecessor) && !statesToKeep.count(predecessor)) {
-                                if (!eliminationMapping.count(predecessor)) {
-                                    eliminationMapping[predecessor] = base_state;
-                                    queue.push(predecessor);
-                                } else if (eliminationMapping[predecessor] != base_state) {
-                                    eliminationMapping.erase(predecessor);
+                                if (!preserveLabels || currLabels == ma->getLabelsOfState(predecessor)) {
+                                    // If labels are not to be preserved or states are labeled the same
+                                    if (!eliminationMapping.count(predecessor)) {
+                                        eliminationMapping[predecessor] = base_state;
+                                        queue.push(predecessor);
+                                    } else if (eliminationMapping[predecessor] != base_state) {
+                                        eliminationMapping.erase(predecessor);
+                                        statesToKeep.insert(predecessor);
+                                        changedStates.push(predecessor);
+                                    }
+                                } else {
+                                    // Labels are to be preserved and states have different labels
+                                    if (eliminationMapping.count(predecessor)) {
+                                        eliminationMapping.erase(predecessor);
+                                    }
                                     statesToKeep.insert(predecessor);
                                     changedStates.push(predecessor);
                                 }
@@ -108,13 +120,13 @@ namespace storm {
                 changedStates.pop();
             }
 
-            // At ma point, we hopefully have a valid mapping which eliminates a lot of states
+            // At this point, we hopefully have a valid mapping which eliminates a lot of states
 
-            /*STORM_PRINT("Elimination Mapping" << std::endl)
+            STORM_LOG_TRACE("Elimination Mapping" << std::endl);
             for (auto entry : eliminationMapping) {
-                STORM_PRINT(std::to_string(entry.first) << " -> " << std::to_string(entry.second) << std::endl)
-            }*/
-            STORM_PRINT("Eliminating " << eliminationMapping.size() << " states" << std::endl)
+                STORM_LOG_TRACE(std::to_string(entry.first) << " -> " << std::to_string(entry.second) << std::endl);
+            }
+            STORM_LOG_INFO("Eliminating " << eliminationMapping.size() << " states" << std::endl);
 
             // TODO explore if one can construct elimination mapping and state remapping in one step
 
@@ -146,7 +158,7 @@ namespace storm {
                                                          false);
             std::vector<ValueType> newExitRates;
             //TODO choice labeling
-            boost::optional<storm::models::sparse::ChoiceLabeling> choiceLabeling;
+            boost::optional<storm::models::sparse::ChoiceLabeling> newChoiceLabeling;
 
             // Initialize the matrix builder and helper variables
             storm::storage::SparseMatrixBuilder<ValueType> matrixBuilder = storm::storage::SparseMatrixBuilder<ValueType>(
@@ -196,7 +208,8 @@ namespace storm {
                 for (auto const &row : rowSet) {
                     for (auto const &transition : row) {
                         matrixBuilder.addNextValue(currentRow, transition.first, transition.second);
-                        //STORM_PRINT(stateRemapping[state] << "->" << transition.first << " : " << transition.second << std::endl)
+                        STORM_LOG_TRACE(stateRemapping[state] << "->" << transition.first << " : " << transition.second
+                                                              << std::endl);
                     }
                     ++currentRow;
                 }
@@ -222,10 +235,15 @@ namespace storm {
         template
         class NonMarkovianChainTransformer<double>;
 
+        template
+        class NonMarkovianChainTransformer<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
 #ifdef STORM_HAVE_CARL
 
         template
         class NonMarkovianChainTransformer<storm::RationalFunction>;
+
+        template
+        class NonMarkovianChainTransformer<storm::RationalNumber>;
 
 #endif
     }
