@@ -280,13 +280,13 @@ namespace storm {
             }
             
             template <class SparseModelType, typename GeometryValueType>
-            DeterministicSchedsParetoExplorer<SparseModelType, GeometryValueType>::DeterministicSchedsParetoExplorer(Environment const& env, preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType>& preprocessorResult) : model(preprocessorResult.preprocessedModel), objectives(preprocessorResult.objectives) {
+            DeterministicSchedsParetoExplorer<SparseModelType, GeometryValueType>::DeterministicSchedsParetoExplorer(preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType>& preprocessorResult) : model(preprocessorResult.preprocessedModel), objectives(preprocessorResult.objectives) {
                 originalModelInitialState = *preprocessorResult.originalModel.getInitialStates().begin();
                 objectiveHelper.reserve(objectives.size());
                 for (auto const& obj : objectives) {
                     objectiveHelper.emplace_back(*model, obj);
                 }
-                lpChecker = std::make_shared<DeterministicSchedsLpChecker<SparseModelType, GeometryValueType>>(env, *model, objectiveHelper);
+                lpChecker = std::make_shared<DeterministicSchedsLpChecker<SparseModelType, GeometryValueType>>(*model, objectiveHelper);
                 if (preprocessorResult.containsOnlyTotalRewardFormulas()) {
                     wvChecker = storm::modelchecker::multiobjective::WeightVectorCheckerFactory<SparseModelType>::create(preprocessorResult);
                 } else {
@@ -346,8 +346,8 @@ namespace storm {
                 }
                 if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
                     STORM_PRINT_AND_LOG("#STATS " << paretoPoints.size() << " Pareto points" << std::endl);
-                    STORM_PRINT_AND_LOG("#STATS " << unachievableAreas.size() << " unachievable Areas" << std::endl);
-                    STORM_PRINT_AND_LOG("#STATS " << overApproximation->getHalfspaces().size() << " unachievable Halfspaces" << std::endl);
+                    STORM_PRINT_AND_LOG("#STATS " << unachievableAreas.size() << " unachievable areas" << std::endl);
+                    STORM_PRINT_AND_LOG("#STATS " << overApproximation->getHalfspaces().size() << " unachievable halfspaces" << std::endl);
                     STORM_PRINT_AND_LOG(lpChecker->getStatistics("#STATS "));
                     
                 }
@@ -449,7 +449,7 @@ namespace storm {
                         point = storm::utility::vector::convertNumericVector<GeometryValueType>(wvChecker->getUnderApproximationOfInitialStateResults());
                         negateMinObjectives(point);
                     } else {
-                        lpChecker->setCurrentWeightVector(weightVector);
+                        lpChecker->setCurrentWeightVector(env, weightVector);
                         auto optionalPoint = lpChecker->check(env, negateMinObjectives(this->overApproximation));
                         STORM_LOG_THROW(optionalPoint.is_initialized(), storm::exceptions::UnexpectedException, "Unable to find a point in the current overapproximation.");
                         point = std::move(optionalPoint.get());
@@ -494,7 +494,7 @@ namespace storm {
             template <class SparseModelType, typename GeometryValueType>
             void DeterministicSchedsParetoExplorer<SparseModelType, GeometryValueType>::processFacet(Environment const& env, Facet& f) {
                 if (!wvChecker) {
-                    lpChecker->setCurrentWeightVector(f.getHalfspace().normalVector());
+                    lpChecker->setCurrentWeightVector(env, f.getHalfspace().normalVector());
                 }
                 
                 if (optimizeAndSplitFacet(env, f)) {
@@ -510,7 +510,7 @@ namespace storm {
                 }
                 if (!polytopeTree.isEmpty()) {
                     if (wvChecker) {
-                        lpChecker->setCurrentWeightVector(f.getHalfspace().normalVector());
+                        lpChecker->setCurrentWeightVector(env, f.getHalfspace().normalVector());
                     }
                     auto res = lpChecker->check(env, polytopeTree, eps);
                     for (auto const& infeasableArea : res.second) {

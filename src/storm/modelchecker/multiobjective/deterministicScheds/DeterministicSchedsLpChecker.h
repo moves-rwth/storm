@@ -25,12 +25,12 @@ namespace storm {
                 typedef typename std::shared_ptr<storm::storage::geometry::Polytope<GeometryValueType>> Polytope;
                 typedef typename std::vector<GeometryValueType> Point;
                 
-                DeterministicSchedsLpChecker(Environment const& env, ModelType const& model, std::vector<DeterministicSchedsObjectiveHelper<ModelType>> const& objectiveHelper);
-
+                DeterministicSchedsLpChecker(ModelType const& model, std::vector<DeterministicSchedsObjectiveHelper<ModelType>> const& objectiveHelper);
+                
                 /*!
                  * Specifies the current direction.
                  */
-                void setCurrentWeightVector(std::vector<GeometryValueType> const& weightVector);
+                void setCurrentWeightVector(Environment const& env, std::vector<GeometryValueType> const& weightVector);
                 
                 /*!
                  * Optimizes in the currently given direction
@@ -51,6 +51,8 @@ namespace storm {
                 std::string getStatistics(std::string const& prefix = "") const;
                 
             private:
+                void initialize(Environment const& env);
+                
                 bool processEndComponents(std::vector<std::vector<storm::expressions::Expression>>& ecVars);
                 void initializeLpModel(Environment const& env);
                 

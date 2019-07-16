@@ -24,24 +24,28 @@ namespace storm {
         namespace multiobjective {
 
             template <typename ModelType, typename GeometryValueType>
-            DeterministicSchedsLpChecker<ModelType, GeometryValueType>::DeterministicSchedsLpChecker(Environment const& env, ModelType const& model, std::vector<DeterministicSchedsObjectiveHelper<ModelType>> const& objectiveHelper) : model(model) , objectiveHelper(objectiveHelper), numLpQueries(0) {
-                if (env.modelchecker().multi().getEncodingType() == storm::MultiObjectiveModelCheckerEnvironment::EncodingType::Auto) {
-                    flowEncoding = true;
-                    for (auto const& helper : objectiveHelper) {
-                        if (!helper.isTotalRewardObjective()) {
-                            flowEncoding = false;
+            DeterministicSchedsLpChecker<ModelType, GeometryValueType>::DeterministicSchedsLpChecker(ModelType const& model, std::vector<DeterministicSchedsObjectiveHelper<ModelType>> const& objectiveHelper) : model(model) , objectiveHelper(objectiveHelper), numLpQueries(0) {
+                // intentionally left empty
+            }
+            
+            template <typename ModelType, typename GeometryValueType>
+            void DeterministicSchedsLpChecker<ModelType, GeometryValueType>::initialize(Environment const& env) {
+                if (!lpModel) {
+                    if (env.modelchecker().multi().getEncodingType() == storm::MultiObjectiveModelCheckerEnvironment::EncodingType::Auto) {
+                        flowEncoding = true;
+                        for (auto const& helper : objectiveHelper) {
+                            if (!helper.isTotalRewardObjective()) {
+                                flowEncoding = false;
+                            }
                         }
+                    } else {
+                        flowEncoding = env.modelchecker().multi().getEncodingType() == storm::MultiObjectiveModelCheckerEnvironment::EncodingType::Flow;
                     }
-                } else {
-                    flowEncoding = env.modelchecker().multi().getEncodingType() == storm::MultiObjectiveModelCheckerEnvironment::EncodingType::Flow;
+                    STORM_PRINT_AND_LOG("Using " << (flowEncoding ? "flow" : "classical") << " encoding." << std::endl);
+                    swInit.start();
+                    initializeLpModel(env);
+                    swInit.stop();
                 }
-                STORM_LOG_INFO_COND(flowEncoding, "Using classical encoding.");
-                STORM_LOG_INFO_COND(!flowEncoding, "Using flow encoding.");
-                swAll.start();
-                swInit.start();
-                initializeLpModel(env);
-                swInit.stop();
-                swAll.stop();
             }
             
             template <typename ModelType, typename GeometryValueType>
@@ -57,8 +61,9 @@ namespace storm {
             }
             
             template <typename ModelType, typename GeometryValueType>
-            void DeterministicSchedsLpChecker<ModelType, GeometryValueType>::setCurrentWeightVector(std::vector<GeometryValueType> const& weightVector) {
+            void DeterministicSchedsLpChecker<ModelType, GeometryValueType>::setCurrentWeightVector(Environment const& env, std::vector<GeometryValueType> const& weightVector) {
                 swAll.start();
+                initialize(env);
                 STORM_LOG_ASSERT(weightVector.size() == objectiveHelper.size(), "Setting a weight vector with invalid number of entries.");
                 if (!currentWeightVector.empty()) {
                     // Pop information of the current weight vector.
@@ -86,6 +91,7 @@ namespace storm {
             template <typename ModelType, typename GeometryValueType>
             boost::optional<std::vector<GeometryValueType>> DeterministicSchedsLpChecker<ModelType, GeometryValueType>::check(storm::Environment const& env, Polytope overapproximation) {
                 swAll.start();
+                initialize(env);
                 STORM_LOG_ASSERT(!currentWeightVector.empty(), "Checking invoked before specifying a weight vector.");
                 STORM_LOG_TRACE("Checking a vertex...");
                 lpModel->push();
@@ -114,6 +120,7 @@ namespace storm {
             template <typename ModelType, typename GeometryValueType>
             std::pair<std::vector<std::vector<GeometryValueType>>, std::vector<std::shared_ptr<storm::storage::geometry::Polytope<GeometryValueType>>>> DeterministicSchedsLpChecker<ModelType, GeometryValueType>::check(storm::Environment const& env, storm::storage::geometry::PolytopeTree<GeometryValueType>& polytopeTree, Point const& eps) {
                 swAll.start();
+                initialize(env);
                 STORM_LOG_INFO("Checking " << polytopeTree.toString());
                 STORM_LOG_ASSERT(!currentWeightVector.empty(), "Checking invoked before specifying a weight vector.");
                 if (polytopeTree.isEmpty()) {
