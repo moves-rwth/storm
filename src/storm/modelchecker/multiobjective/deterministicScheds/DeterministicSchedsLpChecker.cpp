@@ -104,7 +104,8 @@ namespace storm {
                 lpModel->optimize();
                 swCheckWeightVectors.stop();
                 ++numLpQueries;
-                STORM_LOG_TRACE("\t Done checking a vertex...");
+                //STORM_PRINT_AND_LOG("Writing model to file '" << std::to_string(numLpQueries) << ".lp'" << std::endl;);
+                //lpModel->writeModelToFile(std::to_string(numLpQueries) + ".lp");
                 boost::optional<Point> result;
                 if (!lpModel->isInfeasible()) {
                     STORM_LOG_ASSERT(!lpModel->isUnbounded(), "LP result is unbounded.");
@@ -113,6 +114,7 @@ namespace storm {
                     swValidate.stop();
                 }
                 lpModel->pop();
+                STORM_LOG_TRACE("\t Done checking a vertex...");
                 swAll.stop();
                 return result;
             }
@@ -687,11 +689,13 @@ namespace storm {
                         inducedValue = -inducedValue;
                     }
                     inducedPoint.push_back(inducedValue);
-                    ValueType lpValue = lpModel->getContinuousValue(currentObjectiveVariables[objIndex]);
-                    double diff = storm::utility::convertNumber<double>(storm::utility::abs<ValueType>(inducedValue - lpValue));
-                    STORM_LOG_WARN_COND(diff <= 1e-4 * std::abs(storm::utility::convertNumber<double>(inducedValue)), "Imprecise value for objective " << objIndex << ": LP says " << lpValue << " but scheduler induces " << inducedValue << " (difference is " << diff << ")");
+                    // If this objective has weight zero, the lp solution is not necessarily correct
+                    if (!storm::utility::isZero(currentWeightVector[objIndex])) {
+                        ValueType lpValue = lpModel->getContinuousValue(currentObjectiveVariables[objIndex]);
+                        double diff = storm::utility::convertNumber<double>(storm::utility::abs<ValueType>(inducedValue - lpValue));
+                        STORM_LOG_WARN_COND(diff <= 1e-4 * std::abs(storm::utility::convertNumber<double>(inducedValue)), "Imprecise value for objective " << objIndex << ": LP says " << lpValue << " but scheduler induces " << inducedValue << " (difference is " << diff << ")");
+                    }
                 }
-                
                 return inducedPoint;
             }
             
