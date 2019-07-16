@@ -44,6 +44,26 @@ namespace storm {
                 return checkResult->asExplicitQualitativeCheckResult().getTruthValuesVector();
             }
             
+            template <typename ValueType>
+            std::vector<ValueType> getTotalRewardVector(storm::models::sparse::MarkovAutomaton<ValueType> const& model, storm::logic::Formula const& formula) {
+                boost::optional<std::string> rewardModelName = formula.asRewardOperatorFormula().getOptionalRewardModelName();
+                typename storm::models::sparse::MarkovAutomaton<ValueType>::RewardModelType const& rewardModel = rewardModelName.is_initialized() ? model.getRewardModel(rewardModelName.get()) : model.getUniqueRewardModel();
+
+                // Get a reward model where the state rewards are scaled accordingly
+                std::vector<ValueType> stateRewardWeights(model.getNumberOfStates(), storm::utility::zero<ValueType>());
+                for (auto const markovianState : model.getMarkovianStates()) {
+                    stateRewardWeights[markovianState] = storm::utility::one<ValueType>() / model.getExitRate(markovianState);
+                }
+                return rewardModel.getTotalActionRewardVector(model.getTransitionMatrix(), stateRewardWeights);
+            }
+            
+            template <typename ValueType>
+            std::vector<ValueType> getTotalRewardVector(storm::models::sparse::Mdp<ValueType> const& model, storm::logic::Formula const& formula) {
+                boost::optional<std::string> rewardModelName = formula.asRewardOperatorFormula().getOptionalRewardModelName();
+                typename storm::models::sparse::Mdp<ValueType>::RewardModelType const& rewardModel = rewardModelName.is_initialized() ? model.getRewardModel(rewardModelName.get()) : model.getUniqueRewardModel();
+                return rewardModel.getTotalRewardVector(model.getTransitionMatrix());
+            }
+            
             template <typename ModelType>
             std::map<uint64_t, typename ModelType::ValueType> const& DeterministicSchedsObjectiveHelper<ModelType>::getSchedulerIndependentStateValues() const {
                 if (!schedulerIndependentStateValues) {
@@ -104,7 +124,8 @@ namespace storm {
                     } else if (formula.isRewardOperatorFormula() && (subformula.isTotalRewardFormula() || subformula.isEventuallyFormula())) {
                         auto const& baseRewardModel = formula.asRewardOperatorFormula().hasRewardModelName() ? model.getRewardModel(formula.asRewardOperatorFormula().getRewardModelName()) : model.getUniqueRewardModel();
                         auto rewardModel = subformula.isEventuallyFormula() ? storm::utility::createFilteredRewardModel(baseRewardModel, model.isDiscreteTimeModel(), subformula.asEventuallyFormula()) : storm::utility::createFilteredRewardModel(baseRewardModel, model.isDiscreteTimeModel(), subformula.asTotalRewardFormula());
-                        std::vector<ValueType> choiceBasedRewards = rewardModel.get().getTotalRewardVector(model.getTransitionMatrix());
+                        std::vector<ValueType> choiceBasedRewards = getTotalRewardVector(model, *objective.formula);
+                        
                         // Set entries for all non-zero reward choices at states whose value is not already known.
                         // This relies on the fact that for goal states in reachability reward formulas, getSchedulerIndependentStateValues()[state] is set to zero.
                         auto const& rowGroupIndices = model.getTransitionMatrix().getRowGroupIndices();
@@ -128,22 +149,20 @@ namespace storm {
                             rates = &ma->getExitRates();
                             ms = &ma->getMarkovianStates();
                         }
-                        if (model.isOfType(storm::models::ModelType::Mdp)) {
-                            // Set all choice offsets to one, except for the ones at states in scheduerIndependentStateValues.
-                            for (uint64_t state = 0; state < model.getNumberOfStates(); ++state) {
-                                if (stateValues.find(state) == stateValues.end()) {
-                                    ValueType value = storm::utility::one<ValueType>();
-                                    if (rates) {
-                                        if (ms->get(state)) {
-                                            value /= (*rates)[state];
-                                        } else {
-                                            // Nothing to be done for probabilistic states
-                                            continue;
-                                        }
+                        // Set all choice offsets to one, except for the ones at states in scheduerIndependentStateValues.
+                        for (uint64_t state = 0; state < model.getNumberOfStates(); ++state) {
+                            if (stateValues.find(state) == stateValues.end()) {
+                                ValueType value = storm::utility::one<ValueType>();
+                                if (rates) {
+                                    if (ms->get(state)) {
+                                        value /= (*rates)[state];
+                                    } else {
+                                        // Nothing to be done for probabilistic states
+                                        continue;
                                     }
-                                    for (uint64_t choice = rowGroupIndices[state]; choice < rowGroupIndices[state + 1]; ++choice) {
-                                        result[choice] = value;
-                                    }
+                                }
+                                for (uint64_t choice = rowGroupIndices[state]; choice < rowGroupIndices[state + 1]; ++choice) {
+                                    result[choice] = value;
                                 }
                             }
                         }
@@ -198,26 +217,6 @@ namespace storm {
                     }
                     return result;
                 }
-            }
-            
-            template <typename ValueType>
-            std::vector<ValueType> getTotalRewardVector(storm::models::sparse::MarkovAutomaton<ValueType> const& model, storm::logic::Formula const& formula) {
-                boost::optional<std::string> rewardModelName = formula.asRewardOperatorFormula().getOptionalRewardModelName();
-                typename storm::models::sparse::MarkovAutomaton<ValueType>::RewardModelType const& rewardModel = rewardModelName.is_initialized() ? model.getRewardModel(rewardModelName.get()) : model.getUniqueRewardModel();
-
-                // Get a reward model where the state rewards are scaled accordingly
-                std::vector<ValueType> stateRewardWeights(model.getNumberOfStates(), storm::utility::zero<ValueType>());
-                for (auto const markovianState : model.getMarkovianStates()) {
-                    stateRewardWeights[markovianState] = storm::utility::one<ValueType>() / model.getExitRate(markovianState);
-                }
-                return rewardModel.getTotalActionRewardVector(model.getTransitionMatrix(), stateRewardWeights);
-            }
-            
-            template <typename ValueType>
-            std::vector<ValueType> getTotalRewardVector(storm::models::sparse::Mdp<ValueType> const& model, storm::logic::Formula const& formula) {
-                boost::optional<std::string> rewardModelName = formula.asRewardOperatorFormula().getOptionalRewardModelName();
-                typename storm::models::sparse::Mdp<ValueType>::RewardModelType const& rewardModel = rewardModelName.is_initialized() ? model.getRewardModel(rewardModelName.get()) : model.getUniqueRewardModel();
-                return rewardModel.getTotalRewardVector(model.getTransitionMatrix());
             }
             
             template <typename ModelType>
