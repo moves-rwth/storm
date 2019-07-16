@@ -403,7 +403,38 @@ namespace storm {
                 if (isEmpty()) {
                     return create(boost::none, {});
                 }
-                return create(boost::none, getVertices());
+                std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
+                std::unique_ptr<storm::solver::SmtSolver> solver = storm::utility::solver::SmtSolverFactory().create(*manager);
+                auto variables = declareVariables(*manager, "x");
+                std::vector<storm::expressions::Expression> constraints = getConstraints(*manager, variables);
+                for (auto const& constraint : constraints) {
+                    solver->add(constraint);
+                }
+                storm::storage::BitVector keptConstraints(A.rows(), false);
+                for (StormEigen::Index row = 0; row < A.rows(); ++row) {
+                    storm::expressions::Expression lhs = manager->rational(A(row,0)) * variables[0].getExpression();
+                    for (StormEigen::Index col=1; col < A.cols(); ++col) {
+                        lhs = lhs + manager->rational(A(row,col)) * variables[col].getExpression();
+                    }
+                    solver->push();
+                    solver->add(lhs >= manager->rational(b(row)));
+                    switch(solver->check()) {
+                        case storm::solver::SmtSolver::CheckResult::Sat:
+                            keptConstraints.set(row, true);
+                        case storm::solver::SmtSolver::CheckResult::Unsat:
+                            break;
+                        default:
+                            STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected result of SMT solver during emptyness-check of Polytope.");
+                            break;
+                    }
+                    solver->pop();
+                }
+                std::vector<Halfspace<ValueType>> newHalfspaces;
+                newHalfspaces.reserve(keptConstraints.getNumberOfSetBits());
+                for (auto const& row : keptConstraints) {
+                    newHalfspaces.emplace_back(storm::adapters::EigenAdapter::toStdVector(EigenVector(A.row(row))), b(row));
+                }
+                return create(newHalfspaces, boost::none);
             }
 
 
