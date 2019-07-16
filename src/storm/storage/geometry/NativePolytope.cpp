@@ -228,7 +228,7 @@ namespace storm {
                     return std::make_shared<NativePolytope<ValueType>>(std::vector<Halfspace<ValueType>>());
                 }
 
-                STORM_LOG_WARN("Implementation of convex union of two polytopes only works if the polytopes are bounded. This is not checked.");
+                STORM_LOG_WARN_COND_DEBUG(false, "Implementation of convex union of two polytopes only works if the polytopes are bounded. This is not checked.");
 
                 std::vector<EigenVector> rhsVertices = dynamic_cast<NativePolytope<ValueType> const&>(*rhs).getEigenVertices();
                 std::vector<EigenVector> resultVertices = this->getEigenVertices();
