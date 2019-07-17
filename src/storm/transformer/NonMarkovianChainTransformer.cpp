@@ -2,6 +2,9 @@
 
 #include "NonMarkovianChainTransformer.h"
 
+#include "storm/logic/Formulas.h"
+#include "storm/logic/FragmentSpecification.h"
+
 #include "storm/storage/sparse/ModelComponents.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/models/sparse/StandardRewardModel.h"
@@ -98,6 +101,9 @@ namespace storm {
                 while (!queue.empty()) {
                     auto currState = queue.front();
                     queue.pop();
+
+                    auto currLabels = ma->getLabelsOfState(currState);
+
                     // Get predecessors from matrix
                     typename storm::storage::SparseMatrix<ValueType>::rows entriesInRow = backwards.getRow(
                             currState);
@@ -105,11 +111,21 @@ namespace storm {
                          entryIt != entryIte; ++entryIt) {
                         uint_fast64_t predecessor = entryIt->getColumn();
                         if (!ma->isMarkovianState(predecessor) && !statesToKeep.count(predecessor)) {
-                            if (!eliminationMapping.count(predecessor)) {
-                                eliminationMapping[predecessor] = base_state;
-                                queue.push(predecessor);
-                            } else if (eliminationMapping[predecessor] != base_state) {
-                                eliminationMapping.erase(predecessor);
+                            if (!preserveLabels || currLabels == ma->getLabelsOfState(predecessor)) {
+                                // If labels are not to be preserved or states are labeled the same
+                                if (!eliminationMapping.count(predecessor)) {
+                                    eliminationMapping[predecessor] = base_state;
+                                    queue.push(predecessor);
+                                } else if (eliminationMapping[predecessor] != base_state) {
+                                    eliminationMapping.erase(predecessor);
+                                    statesToKeep.insert(predecessor);
+                                    changedStates.push(predecessor);
+                                }
+                            } else {
+                                // Labels are to be preserved and states have different labels
+                                if (eliminationMapping.count(predecessor)) {
+                                    eliminationMapping.erase(predecessor);
+                                }
                                 statesToKeep.insert(predecessor);
                                 changedStates.push(predecessor);
                             }
@@ -229,6 +245,35 @@ namespace storm {
             } else {
                 return model;
             }
+        }
+
+        template<typename ValueType, typename RewardModelType>
+        bool NonMarkovianChainTransformer<ValueType, RewardModelType>::preservesFormula(
+                storm::logic::Formula const &formula) {
+            storm::logic::FragmentSpecification fragment = storm::logic::propositional();
+
+            fragment.setProbabilityOperatorsAllowed(true);
+            fragment.setGloballyFormulasAllowed(true);
+            fragment.setReachabilityProbabilityFormulasAllowed(true);
+            fragment.setUntilFormulasAllowed(true);
+
+            return formula.isInFragment(fragment);
+        }
+
+        template<typename ValueType, typename RewardModelType>
+        std::vector<std::shared_ptr<storm::logic::Formula const>>
+        NonMarkovianChainTransformer<ValueType, RewardModelType>::checkAndTransformFormulas(
+                std::vector<std::shared_ptr<storm::logic::Formula const>> const &formulas) {
+            std::vector<std::shared_ptr<storm::logic::Formula const>> result;
+
+            for (auto const &f : formulas) {
+                if (preservesFormula(*f)) {
+                    result.push_back(f);
+                } else {
+                    STORM_LOG_INFO("Non-Markovian chain elimination does not preserve formula " << *f);
+                }
+            }
+            return result;
         }
 
 
