@@ -1,3 +1,4 @@
+#include <storm/exceptions/NotSupportedException.h>
 #include "DirectEncodingExporter.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
@@ -88,9 +89,15 @@ namespace storm {
                     os << " {" << sparseModel->template as<storm::models::sparse::Pomdp<ValueType>>()->getObservation(group) << "}";
                 }
 
-                // Write labels
+                // Write labels. Only labels with a whitespace are put in (double) quotation marks.
                 for(auto const& label : sparseModel->getStateLabeling().getLabelsOfState(group)) {
-                    os << " " << label;
+                    STORM_LOG_THROW(std::count( label.begin(), label.end(), '\"' ) == 0, storm::exceptions::NotSupportedException, "Labels with quotation marks are not supported in the DRN format and therefore may not be exported.");
+                    // TODO consider escaping the quotation marks. Not sure whether that is a good idea.
+                    if (std::count_if( label.begin(), label.end(), isspace ) > 0) {
+                        os << " \"" << label << "\"";
+                    } else {
+                        os << " " << label;
+                    }
                 }
                 os << std::endl;
 
