@@ -255,6 +255,7 @@ namespace storm {
                     std::string valueStr = line.substr(posColon+2);
                     ValueType value = valueParser.parseValue(valueStr);
                     STORM_LOG_TRACE("Transition " << row << " -> " << target << ": " << value);
+                    STORM_LOG_THROW(target < stateSize, storm::exceptions::WrongFormatException, "Target state " << target << " is greater than state size " << stateSize);
                     builder.addNextValue(row, target, value);
                 }
             }
