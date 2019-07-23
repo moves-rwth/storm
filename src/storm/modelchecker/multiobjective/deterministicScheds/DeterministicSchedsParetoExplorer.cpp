@@ -281,6 +281,25 @@ namespace storm {
             
             template <class SparseModelType, typename GeometryValueType>
             DeterministicSchedsParetoExplorer<SparseModelType, GeometryValueType>::DeterministicSchedsParetoExplorer(preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType>& preprocessorResult) : model(preprocessorResult.preprocessedModel), objectives(preprocessorResult.objectives) {
+                if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
+                    std::string modelname = "original-model";
+                    std::vector<SparseModelType const*> models;
+                    models.push_back(&preprocessorResult.originalModel);
+                    models.push_back(model.get());
+                    for (SparseModelType const* m : models) {
+                        STORM_PRINT_AND_LOG("#STATS " << m->getNumberOfStates() << " states in " << modelname << std::endl);
+                        STORM_PRINT_AND_LOG("#STATS " << m->getNumberOfChoices() << " choices in " << modelname << std::endl);
+                        STORM_PRINT_AND_LOG("#STATS " << m->getNumberOfTransitions() << " transitions in " << modelname << std::endl);
+                        storm::RationalNumber numScheds = storm::utility::one<storm::RationalNumber>();
+                        for (uint64_t state = 0; state < m->getNumberOfStates(); ++state) {
+                            storm::RationalNumber numChoices = storm::utility::convertNumber<storm::RationalNumber, uint64_t>(m->getNumberOfChoices());
+                            numScheds *= storm::utility::max(storm::utility::one<storm::RationalNumber>(), numChoices);
+                        }
+                        STORM_PRINT_AND_LOG("#STATS " << numScheds << " memoryless deterministic schedulers in " << modelname << std::endl);
+                        
+                        modelname = "unfolded-model";
+                    }
+                }
                 originalModelInitialState = *preprocessorResult.originalModel.getInitialStates().begin();
                 objectiveHelper.reserve(objectives.size());
                 for (auto const& obj : objectives) {
