@@ -1,9 +1,10 @@
 #ifndef STORM_PARSER_SPARSECHOICELABELINGPARSER_H_
 #define	STORM_PARSER_SPARSECHOICELABELINGPARSER_H_
 
-#include <boost/container/flat_set.hpp>
 #include <vector>
 #include <string>
+
+#include "storm/storage/BoostTypes.h"
 
 namespace storm {
     namespace parser {
@@ -20,7 +21,7 @@ namespace storm {
              * @param filename The name of the file to parse.
              * @return The resulting choice labeling.
              */
-            static std::vector<boost::container::flat_set<uint_fast64_t>> parseChoiceLabeling(std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, std::string const& filename);
+            static std::vector<storm::storage::FlatSet<uint_fast64_t>> parseChoiceLabeling(std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, std::string const& filename);
         };
     }
 }

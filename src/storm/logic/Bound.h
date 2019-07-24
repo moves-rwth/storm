@@ -1,10 +1,11 @@
 #ifndef STORM_LOGIC_BOUND_H_
 #define	STORM_LOGIC_BOUND_H_
 
+#include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/logic/ComparisonType.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/utility/constants.h"
-
+#include "storm/utility/macros.h"
 
 namespace storm {
     namespace logic {
@@ -29,6 +30,7 @@ namespace storm {
                     case ComparisonType::LessEqual:
                         return compareValue <= thresholdAsValueType;
                 }
+                STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unknown ComparisonType");
             }
 
             friend std::ostream& operator<<(std::ostream& out, Bound const& bound);

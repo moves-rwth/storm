@@ -3,8 +3,6 @@
 #include <memory>
 
 
-#include <boost/container/flat_set.hpp>
-
 #include "storm/storage/jani/VariableSet.h"
 #include "storm/storage/jani/Action.h"
 #include "storm/storage/jani/ModelType.h"
@@ -17,6 +15,7 @@
 #include "storm/storage/jani/TemplateEdge.h"
 #include "storm/storage/jani/ModelFeatures.h"
 
+#include "storm/storage/BoostTypes.h"
 #include "storm/utility/solver.h"
 #include "storm/utility/vector.h"
 
@@ -158,7 +157,7 @@ namespace storm {
             /*!
              * Retrieves all non-silent action indices of the model.
              */
-            boost::container::flat_set<uint64_t> const& getNonsilentActionIndices() const;
+            storm::storage::FlatSet<uint64_t> const& getNonsilentActionIndices() const;
             
             /*!
              * Adds the given constant to the model.
@@ -630,7 +629,7 @@ namespace storm {
              * Creates a new model that only contains the selected edges. The edge indices encode the automata and
              * (local) indices of the edges within the automata.
              */
-            Model restrictEdges(boost::container::flat_set<uint_fast64_t> const& automataAndEdgeIndices) const;
+            Model restrictEdges(storm::storage::FlatSet<uint_fast64_t> const& automataAndEdgeIndices) const;
             
             void writeDotToStream(std::ostream& outStream = std::cout) const;
             
@@ -672,7 +671,7 @@ namespace storm {
             std::unordered_map<std::string, storm::expressions::Expression> nonTrivialRewardModels;
             
             /// The set of non-silent action indices.
-            boost::container::flat_set<uint64_t> nonsilentActionIndices;
+            storm::storage::FlatSet<uint64_t> nonsilentActionIndices;
             
             /// The constants defined by the model.
             std::vector<Constant> constants;

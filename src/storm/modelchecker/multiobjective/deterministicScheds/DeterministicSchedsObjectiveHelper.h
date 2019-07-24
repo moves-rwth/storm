@@ -37,6 +37,8 @@ namespace storm {
                 ValueType const& getUpperValueBoundAtState(Environment const& env, uint64_t state) const;
                 ValueType const& getLowerValueBoundAtState(Environment const& env, uint64_t state) const;
                 
+                ValueType const& getLargestUpperBound(Environment const& env) const;
+                
                 bool minimizing() const;
                 
                 /*!
@@ -49,6 +51,9 @@ namespace storm {
                 static std::vector<ValueType> computeUpperBoundOnExpectedVisitingTimes(storm::storage::SparseMatrix<ValueType> const& modelTransitions, storm::storage::BitVector const& bottomStates, storm::storage::BitVector const& nonBottomStates, bool hasEndComponents);
 
             private:
+                
+                void computeUpperBounds(Environment const& env) const;
+                void computeLowerBounds(Environment const& env) const;
                 
                 mutable boost::optional<std::map<uint64_t, ValueType>> schedulerIndependentStateValues;
                 mutable boost::optional<std::map<uint64_t, ValueType>> choiceValueOffsets;

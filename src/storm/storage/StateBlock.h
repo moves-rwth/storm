@@ -3,17 +3,17 @@
 
 #include <ostream>
 
-#include <boost/container/flat_set.hpp>
 #include <boost/container/container_fwd.hpp>
 
 #include "storm/utility/OsDetection.h"
 #include "storm/storage/sparse/StateType.h"
+#include "storm/storage/BoostTypes.h"
 
 namespace storm {
     namespace storage {
         
         // Typedef the most common state container.
-        typedef boost::container::flat_set<sparse::state_type> FlatSetStateContainer;
+        typedef storm::storage::FlatSet<sparse::state_type> FlatSetStateContainer;
         
         std::ostream& operator<<(std::ostream& out, FlatSetStateContainer const& block);
 

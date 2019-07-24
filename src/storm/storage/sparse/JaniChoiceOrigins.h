@@ -3,9 +3,8 @@
 #include <memory>
 #include <string>
 
-#include <boost/container/flat_set.hpp>
-
 #include "storm/storage/sparse/ChoiceOrigins.h"
+#include "storm/storage/BoostTypes.h"
 
 namespace storm {
     namespace jani {
@@ -21,7 +20,7 @@ namespace storm {
              */
             class JaniChoiceOrigins : public ChoiceOrigins {
             public:
-                typedef boost::container::flat_set<uint_fast64_t> EdgeIndexSet;
+                typedef storm::storage::FlatSet<uint_fast64_t> EdgeIndexSet;
 
                 /*!
                  * Creates a new representation of the choice indices to their origin in the Jani specification

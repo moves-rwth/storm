@@ -5,7 +5,6 @@
 #include <map>
 #include <vector>
 #include <set>
-#include <boost/container/flat_set.hpp>
 #include <boost/optional.hpp>
 
 #include "storm/storage/prism/Constant.h"
@@ -16,6 +15,7 @@
 #include "storm/storage/prism/SystemCompositionConstruct.h"
 #include "storm/storage/prism/InitialConstruct.h"
 #include "storm/storage/prism/Composition.h"
+#include "storm/storage/BoostTypes.h"
 #include "storm/utility/solver.h"
 #include "storm/utility/OsDetection.h"
 
@@ -580,7 +580,7 @@ namespace storm {
              *
              * @param indexSet The set of indices for which to keep the commands.
              */
-            Program restrictCommands(boost::container::flat_set<uint_fast64_t> const& indexSet) const;
+            Program restrictCommands(storm::storage::FlatSet<uint_fast64_t> const& indexSet) const;
             
             /*!
              * Defines the undefined constants according to the given map and returns the resulting program.

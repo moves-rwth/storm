@@ -1,6 +1,5 @@
 #include "DFT.h"
 
-#include <boost/container/flat_set.hpp>
 #include <map>
 
 #include "storm/exceptions/InvalidArgumentException.h"

@@ -7,6 +7,8 @@
 #include "storm/models/sparse/Pomdp.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 
+#include "storm/exceptions/InvalidModelException.h"
+
 namespace storm {
     namespace utility {
         namespace builder {
@@ -27,6 +29,7 @@ namespace storm {
                     case storm::models::ModelType::S2pg:
                         return std::make_shared<storm::models::sparse::StochasticTwoPlayerGame<ValueType, RewardModelType>>(std::move(components));
                 }
+                STORM_LOG_THROW(false, storm::exceptions::InvalidModelException, "Unknown model type");
             }
             
             template std::shared_ptr<storm::models::sparse::Model<double>> buildModelFromComponents(storm::models::ModelType modelType, storm::storage::sparse::ModelComponents<double>&& components);

@@ -2,6 +2,7 @@
 
 #include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/IllegalArgumentException.h"
 
 namespace storm {
     namespace storage {
@@ -110,6 +111,7 @@ namespace storm {
                 case PomdpMemoryPattern::Full:
                     return buildFullyConnectedMemory(numStates);
             }
+            STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unknown PomdpMemoryPattern");
         }
         
         PomdpMemory PomdpMemoryBuilder::buildTrivialMemory() const {

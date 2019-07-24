@@ -80,6 +80,7 @@ namespace storm {
                         out << "--------------------------------------------------------------" << std::endl;
                         for (auto const& obj : objectives) {
                             obj.printToStream(out);
+                            out << std::endl;
                         }
                         out << "--------------------------------------------------------------" << std::endl;
                         out << std::endl;

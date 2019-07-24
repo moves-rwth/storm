@@ -22,7 +22,8 @@ namespace storm {
             
             template <class SparseModelType, typename GeometryValueType>
             std::unique_ptr<CheckResult> SparsePcaaParetoQuery<SparseModelType, GeometryValueType>::check(Environment const& env) {
-                
+                STORM_LOG_THROW(env.modelchecker().multi().getPrecisionType() == MultiObjectiveModelCheckerEnvironment::PrecisionType::Absolute, storm::exceptions::IllegalArgumentException, "Unhandled multiobjective precision type.");
+
                 // Set the precision of the weight vector checker
                 typename SparseModelType::ValueType weightedPrecision = storm::utility::convertNumber<typename SparseModelType::ValueType>(env.modelchecker().multi().getPrecision());
                 weightedPrecision /= storm::utility::sqrt(storm::utility::convertNumber<typename SparseModelType::ValueType, uint_fast64_t>(this->objectives.size()));
@@ -51,7 +52,8 @@ namespace storm {
             
             template <class SparseModelType, typename GeometryValueType>
             void SparsePcaaParetoQuery<SparseModelType, GeometryValueType>::exploreSetOfAchievablePoints(Environment const& env) {
-            
+                STORM_LOG_THROW(env.modelchecker().multi().getPrecisionType() == MultiObjectiveModelCheckerEnvironment::PrecisionType::Absolute, storm::exceptions::IllegalArgumentException, "Unhandled multiobjective precision type.");
+
                 //First consider the objectives individually
                 for(uint_fast64_t objIndex = 0; objIndex<this->objectives.size() && !this->maxStepsPerformed(env); ++objIndex) {
                     WeightVector direction(this->objectives.size(), storm::utility::zero<GeometryValueType>());

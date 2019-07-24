@@ -128,11 +128,17 @@ namespace storm {
                     // get one hyperplane that holds all points
                     const uint_fast64_t dimension = points.front().rows();
                     EigenVector refPoint = points.front();
-                    EigenMatrix constraints(points.size() - 1, dimension);
-                    for (unsigned row = 1; row < points.size(); ++row) {
-                        constraints.row(row - 1) = points[row] - refPoint;
+                    EigenVector normal;
+                    if (points.size() == 1) {
+                        normal.resize(dimension);
+                        normal(0) = storm::utility::one<ValueType>();
+                    } else {
+                        EigenMatrix constraints(points.size() - 1, dimension);
+                        for (unsigned row = 1; row < points.size(); ++row) {
+                            constraints.row(row - 1) = points[row] - refPoint;
+                        }
+                        normal = constraints.fullPivLu().kernel().col(0);
                     }
-                    EigenVector normal = constraints.fullPivLu().kernel().col(0);
 
                     // Eigen returns the column vector 0...0 if the kernel is empty (i.e., there is no such hyperplane)
                     if (normal.isZero()) {

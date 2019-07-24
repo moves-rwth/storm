@@ -43,6 +43,16 @@ namespace storm {
 				 */
 				double getPrecision() const;
 				
+				/**
+				 * Retrieves whether the desired precision is considered to be absolute.
+				 */
+				bool getPrecisionAbsolute() const;
+				
+				/**
+				 * Retrieves whether the desired precision is considered to be relative to the difference between highest and lowest objective value(s)
+				 */
+				bool getPrecisionRelativeToDiff() const;
+				
                 /*!
                  * Retrieves whether or not a threshold for the number of performed refinement steps is given.
                  *
@@ -74,6 +84,20 @@ namespace storm {
 				 */
 				bool isPrintResultsSet() const;
 				
+				/*!
+				 * Retrieves whether the classic encoding for constraint-based methods is to be preferred.
+				 */
+                bool isClassicEncodingSet() const;
+                
+				/*!
+				 * Retrieves whether the flow encoding for constraint-based methods is to be preferred.
+				 */
+                bool isFlowEncodingSet() const;
+                
+				/*!
+				 * Retrieves whether the encoding for constraint-based methods should be picked automatically.
+				 */
+                bool isAutoEncodingSet() const;
                 
                 /*!
                  * Checks whether the settings are consistent. If they are inconsistent, an exception is thrown.
@@ -92,6 +116,7 @@ namespace storm {
 				const static std::string maxStepsOptionName;
 				const static std::string schedulerRestrictionOptionName;
 				const static std::string printResultsOptionName;
+				const static std::string encodingOptionName;
             };
             
         } // namespace modules
