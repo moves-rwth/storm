@@ -4,6 +4,7 @@
 
 #include "storm/modelchecker/multiobjective/deterministicScheds/DeterministicSchedsParetoExplorer.h"
 #include "storm/storage/geometry/coordinates.h"
+#include "storm/storage/MaximalEndComponentDecomposition.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
@@ -68,7 +69,7 @@ namespace storm {
                         return DominanceResult::Equal;
                     }
                 }
-                    
+                
                 if (*thisIt > *otherIt) {
                     // *this might dominate other
                     for (++thisIt, ++otherIt; thisIt != thisItE; ++thisIt, ++otherIt) {
@@ -281,7 +282,20 @@ namespace storm {
             
             template <class SparseModelType, typename GeometryValueType>
             DeterministicSchedsParetoExplorer<SparseModelType, GeometryValueType>::DeterministicSchedsParetoExplorer(preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType>& preprocessorResult) : model(preprocessorResult.preprocessedModel), objectives(preprocessorResult.objectives) {
+                
+                originalModelInitialState = *preprocessorResult.originalModel.getInitialStates().begin();
+                objectiveHelper.reserve(objectives.size());
+                for (auto const& obj : objectives) {
+                    objectiveHelper.emplace_back(*model, obj);
+                }
+                lpChecker = std::make_shared<DeterministicSchedsLpChecker<SparseModelType, GeometryValueType>>(*model, objectiveHelper);
+                if (preprocessorResult.containsOnlyTotalRewardFormulas()) {
+                    wvChecker = storm::modelchecker::multiobjective::WeightVectorCheckerFactory<SparseModelType>::create(preprocessorResult);
+                } else {
+                    wvChecker = nullptr;
+                }
                 if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
+                    storm::utility::Stopwatch sw(true);
                     std::string modelname = "original-model";
                     std::vector<SparseModelType const*> models;
                     models.push_back(&preprocessorResult.originalModel);
@@ -295,21 +309,31 @@ namespace storm {
                             storm::RationalNumber numChoices = storm::utility::convertNumber<storm::RationalNumber, uint64_t>(m->getNumberOfChoices());
                             numScheds *= storm::utility::max(storm::utility::one<storm::RationalNumber>(), numChoices);
                         }
-                        STORM_PRINT_AND_LOG("#STATS " << numScheds << " memoryless deterministic schedulers in " << modelname << std::endl);
-                        
+                        auto numSchedsStr = storm::utility::to_string(numScheds);
+                        STORM_PRINT_AND_LOG("#STATS " << numSchedsStr.front() << "e" << (numSchedsStr.size() - 1) << " memoryless deterministic schedulers in " << modelname << std::endl);
+                        storm::storage::MaximalEndComponentDecomposition<ModelValueType> mecs(*m);
+                        uint64_t nonConstMecCounter = 0;
+                        uint64_t nonConstMecStateCounter = 0;
+                        for (auto const& mec : mecs) {
+                            bool mecHasNonConstValue = false;
+                            for (auto const& stateChoices : mec) {
+                                for (auto const& helper : objectiveHelper) {
+                                    if (helper.getSchedulerIndependentStateValues().count(stateChoices.first) == 0) {
+                                        ++nonConstMecStateCounter;
+                                        mecHasNonConstValue = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (mecHasNonConstValue) ++nonConstMecCounter;
+                        }
+                        STORM_PRINT_AND_LOG("#STATS " << nonConstMecCounter << " non-constant MECS in " << modelname << std::endl);
+                        STORM_PRINT_AND_LOG("#STATS " << nonConstMecStateCounter << " non-constant MEC States in " << modelname << std::endl);
+                        // Print the same statistics for the unfolded model as well.
                         modelname = "unfolded-model";
                     }
-                }
-                originalModelInitialState = *preprocessorResult.originalModel.getInitialStates().begin();
-                objectiveHelper.reserve(objectives.size());
-                for (auto const& obj : objectives) {
-                    objectiveHelper.emplace_back(*model, obj);
-                }
-                lpChecker = std::make_shared<DeterministicSchedsLpChecker<SparseModelType, GeometryValueType>>(*model, objectiveHelper);
-                if (preprocessorResult.containsOnlyTotalRewardFormulas()) {
-                    wvChecker = storm::modelchecker::multiobjective::WeightVectorCheckerFactory<SparseModelType>::create(preprocessorResult);
-                } else {
-                    wvChecker = nullptr;
+                    sw.stop();
+                    STORM_PRINT_AND_LOG("#STATS " << sw << " seconds for computing these statistics." << std::endl);
                 }
             }
 
@@ -433,7 +457,7 @@ namespace storm {
                 }
                 unachievableAreas.push_back(area);
             }
-                
+            
             template <class SparseModelType, typename GeometryValueType>
             typename DeterministicSchedsParetoExplorer<SparseModelType, GeometryValueType>::Polytope DeterministicSchedsParetoExplorer<SparseModelType, GeometryValueType>::negateMinObjectives(Polytope const& polytope) const {
                 std::vector<GeometryValueType> zeroRow(objectives.size(), storm::utility::zero<GeometryValueType>());
