@@ -45,6 +45,7 @@ namespace storm {
             storm::storage::NondeterministicMemoryStructure const& memory;
             std::vector<uint64_t> productStates; // has a size equals to the number of states of the original model
             std::vector<uint64_t> fullProductStatesOffset; // has a size equal to the number of states of the full product
+            storm::storage::BitVector reachableStates;
             bool forceLabeling;
         };
 
