@@ -196,8 +196,9 @@ TEST(AssumptionMakerTest, Simple1) {
     storm::storage::BitVector below(5);
     below.set(4);
     storm::storage::BitVector initialMiddle(5);
+    std::vector<uint_fast64_t> statesSorted = storm::utility::graph::getTopologicalSort(model->getTransitionMatrix());
 
-    auto lattice = new storm::analysis::Lattice(&above, &below, &initialMiddle, 5);
+    auto lattice = new storm::analysis::Lattice(&above, &below, &initialMiddle, 5, &statesSorted);
 
     auto assumptionChecker = storm::analysis::AssumptionChecker<storm::RationalFunction>(formulas[0], dtmc, region, 3);
     auto assumptionMaker = storm::analysis::AssumptionMaker<storm::RationalFunction>(&assumptionChecker, dtmc->getNumberOfStates(), true);
@@ -268,7 +269,9 @@ TEST(AssumptionMakerTest, Simple2) {
     below.set(4);
     storm::storage::BitVector initialMiddle(5);
 
-    auto lattice = new storm::analysis::Lattice(&above, &below, &initialMiddle, 5);
+    std::vector<uint_fast64_t> statesSorted = storm::utility::graph::getTopologicalSort(model->getTransitionMatrix());
+
+    auto lattice = new storm::analysis::Lattice(&above, &below, &initialMiddle, 5, &statesSorted);
 
     auto assumptionChecker = storm::analysis::AssumptionChecker<storm::RationalFunction>(formulas[0], dtmc, region, 3);
     auto assumptionMaker = storm::analysis::AssumptionMaker<storm::RationalFunction>(&assumptionChecker, dtmc->getNumberOfStates(), true);

@@ -63,13 +63,9 @@ namespace storm {
 
             std::map<uint_fast64_t, storm::storage::BitVector*> stateMap;
 
-            std::vector<uint_fast64_t> statesSorted;
-
             bool acyclic;
 
             bool assumptionSeen;
-
-            storm::storage::BitVector* statesToHandle;
 
             storm::storage::StronglyConnectedComponentDecomposition<ValueType> sccs;
 
@@ -78,6 +74,8 @@ namespace storm {
             void handleAssumption(Lattice* lattice, std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption);
 
             std::tuple<Lattice*, uint_fast64_t, uint_fast64_t> extendAllSuccAdded(Lattice* lattice, uint_fast64_t const & stateNumber, storm::storage::BitVector* successors);
+
+            std::tuple<bool, uint_fast64_t, uint_fast64_t> allSuccAdded(Lattice* lattice, uint_fast64_t stateNumber);
         };
     }
 }

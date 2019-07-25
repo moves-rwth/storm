@@ -7,12 +7,15 @@ namespace storm {
         Lattice::Lattice(storm::storage::BitVector* topStates,
                          storm::storage::BitVector* bottomStates,
                          storm::storage::BitVector* initialMiddleStates,
-                         uint_fast64_t numberOfStates) {
+                         uint_fast64_t numberOfStates,
+                         std::vector<uint_fast64_t>* statesSorted) {
             nodes = std::vector<Node *>(numberOfStates);
 
             this->numberOfStates = numberOfStates;
             this->addedStates = new storm::storage::BitVector(numberOfStates);
             this->doneBuilding = false;
+            this->statesSorted = statesSorted;
+            this->statesToHandle = initialMiddleStates;
 
             top = new Node();
             bottom = new Node();
@@ -38,12 +41,14 @@ namespace storm {
             }
         }
 
-        Lattice::Lattice(uint_fast64_t topState, uint_fast64_t bottomState, uint_fast64_t numberOfStates) {
+        Lattice::Lattice(uint_fast64_t topState, uint_fast64_t bottomState, uint_fast64_t numberOfStates, std::vector<uint_fast64_t>* statesSorted) {
             nodes = std::vector<Node *>(numberOfStates);
 
             this->numberOfStates = numberOfStates;
             this->addedStates = new storm::storage::BitVector(numberOfStates);
             this->doneBuilding = false;
+            this->statesSorted = statesSorted;
+            this->statesToHandle = new storm::storage::BitVector(numberOfStates);
 
             top = new Node();
             bottom = new Node();
@@ -96,6 +101,9 @@ namespace storm {
                     newNode->statesAbove = storm::storage::BitVector((oldNode->statesAbove));
                 }
             }
+
+            this->statesSorted = lattice->statesSorted;
+            this->statesToHandle = lattice->statesToHandle;
         }
 
         void Lattice::addBetween(uint_fast64_t state, Node *above, Node *below) {

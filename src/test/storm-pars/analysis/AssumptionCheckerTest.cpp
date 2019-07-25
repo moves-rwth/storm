@@ -88,7 +88,9 @@ TEST(AssumptionCheckerTest, Brp_no_bisimulation) {
     below.set(1);
     storm::storage::BitVector initialMiddle(8);
 
-    auto dummyLattice = new storm::analysis::Lattice(&above, &below, &initialMiddle, 8);
+    std::vector<uint_fast64_t> statesSorted = storm::utility::graph::getTopologicalSort(model->getTransitionMatrix());
+
+    auto dummyLattice = new storm::analysis::Lattice(&above, &below, &initialMiddle, 8, &statesSorted);
     // Validate assumption
     EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, dummyLattice));
 //    EXPECT_FALSE(checker.validated(assumption));
@@ -105,7 +107,8 @@ TEST(AssumptionCheckerTest, Brp_no_bisimulation) {
     below = storm::storage::BitVector(13);
     below.set(9);
     initialMiddle = storm::storage::BitVector(13);
-    dummyLattice = new storm::analysis::Lattice(&above, &below, &initialMiddle, 13);
+
+    dummyLattice = new storm::analysis::Lattice(&above, &below, &initialMiddle, 13, &statesSorted);
     EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.checkOnSamples(assumption));
     EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, dummyLattice));
 //    EXPECT_EQ(checker.validated(assumption));
@@ -199,7 +202,9 @@ TEST(AssumptionCheckerTest, Simple2) {
     below.set(4);
     storm::storage::BitVector initialMiddle(5);
 
-    auto lattice = new storm::analysis::Lattice(&above, &below, &initialMiddle, 5);
+    std::vector<uint_fast64_t> statesSorted = storm::utility::graph::getTopologicalSort(model->getTransitionMatrix());
+
+    auto lattice = new storm::analysis::Lattice(&above, &below, &initialMiddle, 5, &statesSorted);
 
     // Checking on samples and validate
     auto assumption = std::make_shared<storm::expressions::BinaryRelationExpression>(
@@ -263,7 +268,9 @@ TEST(AssumptionCheckerTest, Simple3) {
     below.set(5);
     storm::storage::BitVector initialMiddle(6);
 
-    auto lattice = new storm::analysis::Lattice(&above, &below, &initialMiddle, 6);
+    std::vector<uint_fast64_t> statesSorted = storm::utility::graph::getTopologicalSort(model->getTransitionMatrix());
+
+    auto lattice = new storm::analysis::Lattice(&above, &below, &initialMiddle, 6, &statesSorted);
     lattice->add(3);
 
     // Checking on samples and validate
@@ -330,7 +337,9 @@ TEST(AssumptionCheckerTest, Simple4) {
     storm::storage::BitVector below(5);
     below.set(4);
     storm::storage::BitVector initialMiddle(5);
-    auto lattice = new storm::analysis::Lattice(&above, &below, &initialMiddle, 5);
+    std::vector<uint_fast64_t> statesSorted = storm::utility::graph::getTopologicalSort(model->getTransitionMatrix());
+
+    auto lattice = new storm::analysis::Lattice(&above, &below, &initialMiddle, 5, &statesSorted);
 
     auto assumption = std::make_shared<storm::expressions::BinaryRelationExpression>(
             storm::expressions::BinaryRelationExpression(*expressionManager, expressionManager->getBooleanType(),

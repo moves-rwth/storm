@@ -38,7 +38,8 @@ namespace storm {
                     Lattice(storm::storage::BitVector* topStates,
                             storm::storage::BitVector* bottomStates,
                             storm::storage::BitVector* initialMiddleStates,
-                            uint_fast64_t numberOfStates);
+                            uint_fast64_t numberOfStates,
+                            std::vector<uint_fast64_t>* statesSorted);
 
                     /*!
                      * Constructs a lattice with the given top state and bottom state.
@@ -49,7 +50,8 @@ namespace storm {
                      */
                     Lattice(uint_fast64_t top,
                             uint_fast64_t bottom,
-                            uint_fast64_t numberOfStates);
+                            uint_fast64_t numberOfStates,
+                            std::vector<uint_fast64_t>* statesSorted);
 
                     /*!
                      * Constructs a copy of the given lattice.
@@ -207,6 +209,10 @@ namespace storm {
                      * @param var2
                      */
                     void merge(uint_fast64_t var1, uint_fast64_t var2);
+
+                    storm::storage::BitVector* statesToHandle;
+
+                    std::vector<uint_fast64_t>* statesSorted;
 
                 private:
                     std::vector<Node*> nodes;
