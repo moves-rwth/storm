@@ -197,6 +197,7 @@ namespace storm {
             std::vector<double> maxValues = maxRes.getValueVector();
             // Create initial order
             std::tuple<storm::analysis::Order*, uint_fast64_t, uint_fast64_t> criticalTuple = extender->toOrder(formulas, minValues, maxValues);
+//            std::tuple<storm::analysis::Order*, uint_fast64_t, uint_fast64_t> criticalTuple = extender->toOrder(formulas);
 
 
             // Continue based on not (yet) sorted states

@@ -205,7 +205,7 @@ namespace storm {
                             }
                             if (!order->contains(max)) {
                                 // Because of construction min is in the order
-                                order->addBetween(max, order->getNode(min), order->getTop());
+                                order->addBetween(max, order->getTop(), order->getNode(min));
                             }
                             assert (order->compare(max, min) == Order::ABOVE);
                             order->addBetween(state, max, min);

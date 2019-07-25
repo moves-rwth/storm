@@ -716,13 +716,14 @@ namespace storm {
                 model->printModelInformationToStream(std::cout);
             }
 
+            std::vector<storm::storage::ParameterRegion<ValueType>> regions = parseRegions<ValueType>(model);
+
             if (monSettings.isMonotonicityAnalysisSet()) {
                 std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(input.properties);
                 // Monotonicity
                 storm::utility::Stopwatch monotonicityWatch(true);
-                std::vector<storm::storage::ParameterRegion<ValueType>> regions = parseRegions<ValueType>(model);
 
-                STORM_LOG_THROW(regions.size() > 1, storm::exceptions::InvalidArgumentException, "Monotonicity analysis only allowed on single region");
+                STORM_LOG_THROW(regions.size() <= 1, storm::exceptions::InvalidArgumentException, "Monotonicity analysis only allowed on single region");
                 storm::analysis::MonotonicityChecker<ValueType> monotonicityChecker = storm::analysis::MonotonicityChecker<ValueType>(model, formulas, regions, monSettings.isValidateAssumptionsSet(), monSettings.getNumberOfSamples(), monSettings.getMonotonicityAnalysisPrecision());
                 monotonicityChecker.checkMonotonicity();
                 monotonicityWatch.stop();
@@ -731,7 +732,6 @@ namespace storm {
                 return;
             }
 
-            std::vector<storm::storage::ParameterRegion<ValueType>> regions = parseRegions<ValueType>(model);
             std::string samplesAsString = parSettings.getSamples();
             SampleInformation<ValueType> samples;
             if (!samplesAsString.empty()) {
