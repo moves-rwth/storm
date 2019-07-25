@@ -33,7 +33,33 @@ namespace storm {
         template<typename ValueType>
         LatticeExtender<ValueType>::LatticeExtender(std::shared_ptr<storm::models::sparse::Model<ValueType>> model) {
             this->model = model;
-            assumptionSeen = false;
+            this->matrix = model->getTransitionMatrix();
+            this->assumptionSeen = false;
+            uint_fast64_t numberOfStates = this->model->getNumberOfStates();
+
+            // Build stateMap
+            // TODO: is dit wel nodig
+            for (uint_fast64_t i = 0; i < numberOfStates; ++i) {
+                stateMap[i] = new storm::storage::BitVector(numberOfStates, false);
+
+                auto row = matrix.getRow(i);
+                for (auto rowItr = row.begin(); rowItr != row.end(); ++rowItr) {
+                    // ignore self-loops when there are more transitions
+                    if (i != rowItr->getColumn() || row.getNumberOfEntries() == 1) {
+                        stateMap[i]->set(rowItr->getColumn(), true);
+                    }
+                }
+            }
+
+            // Check if MC contains cycles
+            storm::storage::StronglyConnectedComponentDecompositionOptions const options;
+            this->sccs = storm::storage::StronglyConnectedComponentDecomposition<ValueType>(matrix, options);
+            acyclic = true;
+            for (auto i = 0; acyclic && i < sccs.size(); ++i) {
+                acyclic &= sccs.getBlock(i).size() <= 1;
+            }
+            statesSorted = storm::utility::graph::getTopologicalSort(matrix);
+
         }
 
         template <typename ValueType>
@@ -45,6 +71,7 @@ namespace storm {
 
             uint_fast64_t numberOfStates = this->model->getNumberOfStates();
 
+            // TODO: dit moet anders kunnen
             storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Model<ValueType>> propositionalChecker(*model);
             storm::storage::BitVector phiStates;
             storm::storage::BitVector psiStates;
@@ -55,6 +82,7 @@ namespace storm {
                 phiStates = storm::storage::BitVector(numberOfStates, true);
                 psiStates = propositionalChecker.check((*(formulas[0])).asProbabilityOperatorFormula().getSubformula().asEventuallyFormula().getSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
             }
+
 
             // Get the maybeStates
             std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(this->model->getBackwardTransitions(), phiStates, psiStates);
@@ -75,10 +103,13 @@ namespace storm {
             for (auto i = 0; acyclic && i < decomposition.size(); ++i) {
                 acyclic &= decomposition.getBlock(i).size() <= 1;
             }
+            statesSorted = storm::utility::graph::getTopologicalSort(matrix);
+
+            // Create the Lattice
+            Lattice *lattice = new Lattice(&topStates, &bottomStates, &initialMiddleStates, numberOfStates);
+
             if (acyclic) {
-                statesSorted = storm::utility::graph::getTopologicalSort(matrix);
             } else {
-                statesSorted = storm::utility::graph::getTopologicalSort(matrix);
                 for (uint_fast64_t i = 0; i < numberOfStates; ++i) {
                     stateMap[i] = new storm::storage::BitVector(numberOfStates, false);
 
@@ -91,6 +122,7 @@ namespace storm {
                     }
                 }
                 for (auto i = 0; i < decomposition.size(); ++i) {
+                    // TODO: alleen als er nog geen van in de lattice zit
                     auto scc = decomposition.getBlock(i);
                     if (scc.size() > 1) {
                         auto states = scc.getStates();
@@ -103,6 +135,7 @@ namespace storm {
                                 auto intersection = bottomStates | topStates;
                                 if (intersection[succ1] || intersection[succ2]) {
                                     initialMiddleStates.set(state);
+                                    // ipv daaraan toevoegen, hem toevoegen aan de lattice die we eerder al gecreerd hebben
                                     break;
                                 }
                             }
@@ -110,14 +143,127 @@ namespace storm {
                     }
                 }
             }
-
             statesToHandle = &initialMiddleStates;
-
-            // Create the Lattice
-            Lattice *lattice = new Lattice(&topStates, &bottomStates, &initialMiddleStates, numberOfStates);
 
             return this->extendLattice(lattice);
         }
+
+
+        template <typename ValueType>
+        std::tuple<Lattice*, uint_fast64_t, uint_fast64_t> LatticeExtender<ValueType>::toLattice(std::vector<std::shared_ptr<storm::logic::Formula const>> formulas, std::vector<double> minValues, std::vector<double> maxValues) {
+            uint_fast64_t numberOfStates = this->model->getNumberOfStates();
+
+            // Compare min/max for all states
+            STORM_LOG_THROW((++formulas.begin()) == formulas.end(), storm::exceptions::NotSupportedException, "Only one formula allowed for monotonicity analysis");
+            STORM_LOG_THROW((*(formulas[0])).isProbabilityOperatorFormula()
+                            && ((*(formulas[0])).asProbabilityOperatorFormula().getSubformula().isUntilFormula()
+                                || (*(formulas[0])).asProbabilityOperatorFormula().getSubformula().isEventuallyFormula()), storm::exceptions::NotSupportedException, "Expecting until or eventually formula");
+
+            storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Model<ValueType>> propositionalChecker(*model);
+            storm::storage::BitVector phiStates;
+            storm::storage::BitVector psiStates;
+            if ((*(formulas[0])).asProbabilityOperatorFormula().getSubformula().isUntilFormula()) {
+                phiStates = propositionalChecker.check((*(formulas[0])).asProbabilityOperatorFormula().getSubformula().asUntilFormula().getLeftSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
+                psiStates = propositionalChecker.check((*(formulas[0])).asProbabilityOperatorFormula().getSubformula().asUntilFormula().getRightSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
+            } else {
+                phiStates = storm::storage::BitVector(numberOfStates, true);
+                psiStates = propositionalChecker.check((*(formulas[0])).asProbabilityOperatorFormula().getSubformula().asEventuallyFormula().getSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
+            }
+
+            // Get the maybeStates
+            std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(this->model->getBackwardTransitions(), phiStates, psiStates);
+            storm::storage::BitVector topStates = statesWithProbability01.second;
+            storm::storage::BitVector bottomStates = statesWithProbability01.first;
+
+            STORM_LOG_THROW(topStates.begin() != topStates.end(), storm::exceptions::NotImplementedException, "Formula yields to no 1 states");
+            STORM_LOG_THROW(bottomStates.begin() != bottomStates.end(), storm::exceptions::NotImplementedException, "Formula yields to no zero states");
+
+            uint_fast64_t bottom = bottomStates.getNextSetIndex(0);
+            uint_fast64_t top = topStates.getNextSetIndex(0);
+            Lattice* lattice = new Lattice(top, bottom, numberOfStates);
+
+
+            for (auto state : statesSorted) {
+                if (state != bottom && state != top) {
+                    assert (lattice != nullptr);
+                    auto successors = stateMap[state];
+                    if (successors->size() > 1) {
+                        uint_fast64_t min = numberOfStates;
+                        uint_fast64_t max = numberOfStates;
+                        bool allSorted = true;
+
+                        for (auto succ = successors->getNextSetIndex(0);
+                             succ < numberOfStates; succ = successors->getNextSetIndex(succ + 1)) {
+                            if (min == numberOfStates) {
+                                assert (max == numberOfStates);
+                                min = succ;
+                                max = succ;
+                            } else {
+                                if (minValues[succ] > maxValues[max]) {
+                                    max = succ;
+                                } else if (maxValues[succ] < minValues[min]) {
+                                    min = succ;
+                                } else {
+                                    allSorted = false;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (allSorted && min != max) {
+                            if (lattice->contains(min) && lattice->contains(max)) {
+                                assert (lattice->compare(min,max) == Lattice::UNKNOWN || lattice->compare(min,max) == Lattice::BELOW);
+                                if (lattice->compare(min, max) == Lattice::UNKNOWN) {
+                                    lattice->addRelation(max, min);
+                                }
+                            }
+                            if (!lattice->contains(min)) {
+                                if (lattice->contains(max)) {
+                                    lattice->addBetween(min, lattice->getNode(max), lattice->getBottom());
+                                } else {
+                                    lattice->add(min);
+                                }
+                            }
+                            if (!lattice->contains(max)) {
+                                // Because of construction min is in the lattice
+                                lattice->addBetween(max, lattice->getNode(min), lattice->getTop());
+                            }
+                            assert (lattice->compare(max, min) == Lattice::ABOVE);
+                            lattice->addBetween(state, max, min);
+                        }
+                    }
+                }
+            }
+
+            // Handle sccs
+            auto addedStates = lattice->getAddedStates();
+            for (auto scc : sccs) {
+                if (scc.size() > 1) {
+                    auto states = scc.getStates();
+                    auto candidate = -1;
+                    for (auto const& state : states) {
+                        if (addedStates->get(state)) {
+                            candidate = -1;
+                            break;
+                            // if there is a state of the scc already present in the lattice, there is no need to add one.
+                        }
+                        auto successors = stateMap[state];
+                        if (candidate == -1 && successors->getNumberOfSetBits() == 2) {
+                            auto succ1 = successors->getNextSetIndex(0);
+                            auto succ2 = successors->getNextSetIndex(succ1 + 1);
+                            if (addedStates->get(succ1) || addedStates->get(succ2)) {
+                                candidate = state;
+                            }
+                        }
+                    }
+                    if (candidate != -1) {
+                        lattice->add(candidate);
+                    }
+                }
+             }
+            return this->extendLattice(lattice);
+        }
+
 
         template <typename ValueType>
         void LatticeExtender<ValueType>::handleAssumption(Lattice* lattice, std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption) {
@@ -250,15 +396,15 @@ namespace storm {
 
                     if (statesSorted.size() > 0) {
                         auto nextState = *(statesSorted.begin());
-                        while ((*(lattice->getAddedStates()))[nextState] && statesSorted.size() > 1) {
+                        while (lattice->contains(nextState) && statesSorted.size() > 1) {
                             // states.size()>1 such that there is at least one state left after erase
                             statesSorted.erase(statesSorted.begin());
                             nextState = *(statesSorted.begin());
                         }
 
-                        if (!(*(lattice->getAddedStates()))[nextState]) {
+                        if (!lattice->contains(nextState)) {
                             auto row = this->model->getTransitionMatrix().getRow(nextState);
-                            auto successors = new storm::storage::BitVector(lattice->getAddedStates()->size());
+                            auto successors = new storm::storage::BitVector(numberOfStates);
                             for (auto rowItr = row.begin(); rowItr != row.end(); ++rowItr) {
                                 // ignore self-loops when there are more transitions
                                 if (nextState != rowItr->getColumn()) {
@@ -278,22 +424,22 @@ namespace storm {
                         }
                         auto added = lattice->getAddedStates()->getNumberOfSetBits();
                         assert (lattice->getNode(nextState) != nullptr);
-                        assert ((*lattice->getAddedStates())[nextState]);
+                        assert (lattice->contains(nextState));
                     }
                 } else if (assumptionSeen && acyclic) {
                     auto states = statesSorted;
 
                     if (states.size() > 0) {
                         auto nextState = *(states.begin());
-                        while ((*(lattice->getAddedStates()))[nextState] && states.size() > 1) {
+                        while (lattice->contains(nextState) && states.size() > 1) {
                             // states.size()>1 such that there is at least one state left after erase
                             states.erase(states.begin());
                             nextState = *(states.begin());
                         }
 
-                        if (!(*(lattice->getAddedStates()))[nextState]) {
+                        if (!lattice->contains(nextState)) {
                             auto row = this->model->getTransitionMatrix().getRow(nextState);
-                            auto successors = new storm::storage::BitVector(lattice->getAddedStates()->size());
+                            auto successors = new storm::storage::BitVector(numberOfStates);
                             for (auto rowItr = row.begin(); rowItr != row.end(); ++rowItr) {
                                 // ignore self-loops when there are more transitions
                                 if (nextState != rowItr->getColumn()) {
@@ -316,25 +462,23 @@ namespace storm {
                             }
                         }
                         assert (lattice->getNode(nextState) != nullptr);
-                        assert ((*lattice->getAddedStates())[nextState]);
+                        assert (lattice->contains(nextState));
                     }
 
                 } else if (!acyclic) {
-                    auto addedStates = lattice->getAddedStates();
                     if (assumptionSeen) {
-                        statesToHandle = addedStates;
+                        statesToHandle = lattice->getAddedStates();
                     }
                     auto stateNumber = statesToHandle->getNextSetIndex(0);
                     while (stateNumber != numberOfStates) {
-                        addedStates = lattice->getAddedStates();
                         storm::storage::BitVector* successors = stateMap[stateNumber];
                         // Checking for states which are already added to the lattice, and only have one successor left which haven't been added yet
                         auto succ1 = successors->getNextSetIndex(0);
                         auto succ2 = successors->getNextSetIndex(succ1 + 1);
 
-                        assert ((*addedStates)[stateNumber]);
+                        assert (lattice->contains(stateNumber));
                         if (successors->getNumberOfSetBits() == 1) {
-                            if (!(*addedStates)[succ1]) {
+                            if (!lattice->contains(succ1)) {
                                 lattice->addToNode(succ1, lattice->getNode(stateNumber));
                                 statesToHandle->set(succ1, true);
                                 auto itr = std::find(statesSorted.begin(), statesSorted.end(), succ1);
@@ -345,10 +489,10 @@ namespace storm {
                             statesToHandle->set(stateNumber, false);
                             stateNumber = statesToHandle->getNextSetIndex(0);
                         } else if (successors->getNumberOfSetBits() == 2
-                            && (((*(addedStates))[succ1] && !(*(addedStates))[succ2])
-                                || (!(*(addedStates))[succ1] && (*(addedStates))[succ2]))) {
+                            && ((lattice->contains(succ1) && !lattice->contains(succ2))
+                                || (!lattice->contains(succ1) && lattice->contains(succ2)))) {
 
-                            if (!(*(addedStates))[succ1]) {
+                            if (!lattice->contains(succ1)) {
                                 std::swap(succ1, succ2);
                             }
 
@@ -377,8 +521,8 @@ namespace storm {
                                 stateNumber = statesToHandle->getNextSetIndex(0);
                             }
 
-                        } else if (!(((*(addedStates))[succ1] && !(*(addedStates))[succ2])
-                                     || (!(*(addedStates))[succ1] && (*(addedStates))[succ2]))) {
+                        } else if (!((lattice->contains(succ1) && !lattice->contains(succ2))
+                                     || (!lattice->contains(succ1) && lattice->contains(succ2)))) {
                             stateNumber = statesToHandle->getNextSetIndex(stateNumber + 1);
                         } else {
                             statesToHandle->set(stateNumber, false);
@@ -393,7 +537,7 @@ namespace storm {
                             stateNumber = numberOfStates;
                         }
                         while (stateNumber != numberOfStates
-                                && (*(lattice->getAddedStates()))[stateNumber]) {
+                                && lattice->contains(stateNumber)) {
                             statesSorted.erase(statesSorted.begin());
                             if (statesSorted.size() > 0) {
                                 stateNumber = *(statesSorted.begin());
@@ -407,7 +551,7 @@ namespace storm {
 
                             // Check if current state has not been added yet, and all successors have, ignore selfloop in this
                             successors->set(stateNumber, false);
-                            if ((*successors & *addedStates) == *successors) {
+                            if ((*successors & *(lattice->getAddedStates())) == *successors) {
                                 auto result = extendAllSuccAdded(lattice, stateNumber, successors);
                                 if (std::get<1>(result) != successors->size()) {
                                     return result;
@@ -416,15 +560,14 @@ namespace storm {
                             }
                         }
                     } else {
-                        addedStates = lattice->getAddedStates();
-                        auto notAddedStates = addedStates->operator~();
+                        auto notAddedStates = lattice->getAddedStates()->operator~();
                             for (auto stateNumber : notAddedStates) {
                                 // Iterate over all not yet added states
                                 storm::storage::BitVector* successors = stateMap[stateNumber];
 
                                 // Check if current state has not been added yet, and all successors have, ignore selfloop in this
                                 successors->set(stateNumber, false);
-                                if ((*successors & *addedStates) == *successors) {
+                                if ((*successors & *(lattice->getAddedStates())) == *successors) {
                                     auto result = extendAllSuccAdded(lattice, stateNumber, successors);
                                     if (std::get<1>(result) != successors->size()) {
                                         return result;

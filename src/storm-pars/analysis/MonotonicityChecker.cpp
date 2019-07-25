@@ -175,8 +175,31 @@ namespace storm {
         std::map<storm::analysis::Lattice*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> MonotonicityChecker<ValueType>::createLattice() {
             // Transform to Lattices
             storm::utility::Stopwatch latticeWatch(true);
-            std::tuple<storm::analysis::Lattice*, uint_fast64_t, uint_fast64_t> criticalTuple = extender->toLattice(formulas);
 
+            // Use parameter lifting modelchecker to get initial min/max values for lattice creation
+            storm::modelchecker::SparseDtmcParameterLiftingModelChecker<storm::models::sparse::Dtmc<ValueType>, double> plaModelChecker;
+            std::unique_ptr<storm::modelchecker::CheckResult> checkResult;
+            auto env = Environment();
+
+            auto formula = formulas[0];
+            const storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> checkTask
+                = storm::modelchecker::CheckTask<storm::logic::Formula, ValueType>(*formula);
+            STORM_LOG_THROW(plaModelChecker.canHandle(model, checkTask), storm::exceptions::NotSupportedException,
+                           "Cannot handle this formula");
+            plaModelChecker.specify(env, model, checkTask);
+
+            std::unique_ptr<storm::modelchecker::CheckResult> minCheck = plaModelChecker.check(env, region,storm::solver::OptimizationDirection::Minimize);
+            std::unique_ptr<storm::modelchecker::CheckResult> maxCheck = plaModelChecker.check(env, region,storm::solver::OptimizationDirection::Maximize);
+            auto minRes = minCheck->asExplicitQuantitativeCheckResult<double>();
+            auto maxRes = maxCheck->asExplicitQuantitativeCheckResult<double>();
+
+            std::vector<double> minValues = minRes.getValueVector();
+            std::vector<double> maxValues = maxRes.getValueVector();
+            // Create initial lattice
+            std::tuple<storm::analysis::Lattice*, uint_fast64_t, uint_fast64_t> criticalTuple = extender->toLattice(formulas, minValues, maxValues);
+
+
+            // Continue based on not (yet) sorted states
             std::map<storm::analysis::Lattice*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> result;
 
             auto val1 = std::get<1>(criticalTuple);
@@ -514,7 +537,6 @@ namespace storm {
             }
             return result;
         }
-
 
         template <typename ValueType>
         std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>> MonotonicityChecker<ValueType>::checkOnSamples(std::shared_ptr<storm::models::sparse::Dtmc<ValueType>> model, uint_fast64_t numberOfSamples) {

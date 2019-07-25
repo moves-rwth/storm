@@ -41,6 +41,17 @@ namespace storm {
                             uint_fast64_t numberOfStates);
 
                     /*!
+                     * Constructs a lattice with the given top state and bottom state.
+                     *
+                     * @param top The top state of the resulting lattice.
+                     * @param bottom The bottom state of the resulting lattice.
+                     * @param numberOfStates Max number of states in endlattice.
+                     */
+                    Lattice(uint_fast64_t top,
+                            uint_fast64_t bottom,
+                            uint_fast64_t numberOfStates);
+
+                    /*!
                      * Constructs a copy of the given lattice.
                      *
                      * @param lattice The original lattice.
@@ -54,6 +65,15 @@ namespace storm {
                      * @param node2 The pointer to the node above which a new node (with state) is added
                      */
                     void addBetween(uint_fast64_t state, Node *node1, Node *node2);
+
+                    /*!
+                     * Adds a node with the given state between the nodes of below and above.
+                     * Result: below -> state -> above
+                     * @param state The given state.
+                     * @param above The state number of the state below which a new node (with state) is added
+                     * @param below The state number of the state above which a new node (with state) is added
+                     */
+                    void addBetween(uint_fast64_t state, uint_fast64_t above, uint_fast64_t below);
 
                     /*!
                      * Adds state to the states of the given node.
@@ -76,6 +96,13 @@ namespace storm {
                     void addRelationNodes(storm::analysis::Lattice::Node *above, storm::analysis::Lattice::Node * below);
 
                     /*!
+                    * Adds a new relation between two states to the lattice
+                    * @param above The state closest to the top Node of the Lattice.
+                    * @param below The state closest to the bottom Node of the Lattice.
+                    */
+                    void addRelation(uint_fast64_t above, uint_fast64_t below);
+
+                    /*!
                      * Compares the level of the nodes of the states.
                      * Behaviour unknown when one or more of the states doesnot occur at any Node in the Lattice.
                      * @param state1 The first state.
@@ -86,6 +113,13 @@ namespace storm {
                      * UNKNOWN if it is unclear from the structure of the lattice how the nodes relate.
                      */
                     Lattice::NodeComparison compare(uint_fast64_t state1, uint_fast64_t state2);
+
+                    /*!
+                     * Check if state is already in lattice
+                     * @param state
+                     * @return
+                     */
+                    bool contains(uint_fast64_t state);
 
                     /*!
                      * Retrieves the pointer to a Node at which the state occurs.

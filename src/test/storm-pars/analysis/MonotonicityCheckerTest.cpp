@@ -110,7 +110,7 @@ TEST(MonotonicityCheckerTest, Derivative_checker) {
 
 TEST(MonotonicityCheckerTest, Brp_with_bisimulation_no_samples) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/brp16_2.pm";
-    std::string formulaAsString = "P=? [F s=4 & i=N ]";
+    std::string formulaAsString = "P=? [true U s=4 & i=N ]";
     std::string constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
 
     // Program and formula
@@ -159,7 +159,7 @@ std::vector<storm::storage::ParameterRegion<storm::RationalFunction>> regions = 
 
 TEST(MonotonicityCheckerTest, Brp_with_bisimulation_samples) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/brp16_2.pm";
-    std::string formulaAsString = "P=? [F s=4 & i=N ]";
+    std::string formulaAsString = "P=? [true U s=4 & i=N ]";
     std::string constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
 
     // Program and formula

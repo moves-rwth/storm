@@ -38,6 +38,30 @@ namespace storm {
             }
         }
 
+        Lattice::Lattice(uint_fast64_t topState, uint_fast64_t bottomState, uint_fast64_t numberOfStates) {
+            nodes = std::vector<Node *>(numberOfStates);
+
+            this->numberOfStates = numberOfStates;
+            this->addedStates = new storm::storage::BitVector(numberOfStates);
+            this->doneBuilding = false;
+
+            top = new Node();
+            bottom = new Node();
+
+            top->statesAbove = storm::storage::BitVector(numberOfStates);
+            bottom->statesAbove = storm::storage::BitVector(numberOfStates);
+
+            addedStates->set(topState);
+            bottom->statesAbove.set(topState);
+            top->states.insert(topState);
+            nodes[topState] = top;
+
+            addedStates->set(bottomState);
+            bottom->states.insert(bottomState);
+            nodes[bottomState] = bottom;
+            assert (addedStates->getNumberOfSetBits() == 2);
+        }
+
         Lattice::Lattice(Lattice* lattice) {
             numberOfStates = lattice->getAddedStates()->size();
             nodes = std::vector<Node *>(numberOfStates);
@@ -90,6 +114,16 @@ namespace storm {
             addedStates->set(state);
         }
 
+        void Lattice::addBetween(uint_fast64_t state, uint_fast64_t above, uint_fast64_t below) {
+            assert(!(*addedStates)[state]);
+            assert(compare(above, below) == ABOVE);
+
+            assert (getNode(below)->states.find(below) != getNode(below)->states.end());
+            assert (getNode(above)->states.find(above) != getNode(above)->states.end());
+            addBetween(state, getNode(above), getNode(below));
+
+        }
+
         void Lattice::addToNode(uint_fast64_t state, Node *node) {
             assert(!(*addedStates)[state]);
             node->states.insert(state);
@@ -109,6 +143,10 @@ namespace storm {
             }
             below->statesAbove|=((above->statesAbove));
             assert (compare(above, below) == ABOVE);
+        }
+
+        void Lattice::addRelation(uint_fast64_t above, uint_fast64_t below) {
+            addRelationNodes(getNode(above), getNode(below));
         }
 
         Lattice::NodeComparison Lattice::compare(uint_fast64_t state1, uint_fast64_t state2) {
@@ -145,6 +183,11 @@ namespace storm {
                 }
             }
             return UNKNOWN;
+        }
+
+
+        bool Lattice::contains(uint_fast64_t state) {
+            return state >= 0 && state < addedStates->size() && addedStates->get(state);
         }
 
         Lattice::Node *Lattice::getNode(uint_fast64_t stateNumber) {

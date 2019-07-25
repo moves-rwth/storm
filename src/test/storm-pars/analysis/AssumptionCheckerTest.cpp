@@ -331,7 +331,7 @@ TEST(AssumptionCheckerTest, Simple4) {
     below.set(4);
     storm::storage::BitVector initialMiddle(5);
     auto lattice = new storm::analysis::Lattice(&above, &below, &initialMiddle, 5);
-    
+
     auto assumption = std::make_shared<storm::expressions::BinaryRelationExpression>(
             storm::expressions::BinaryRelationExpression(*expressionManager, expressionManager->getBooleanType(),
                                                          expressionManager->getVariable("1").getExpression().getBaseExpressionPointer(),
