@@ -12,8 +12,8 @@
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/api/builder.h"
 
-#include "storm-pars/analysis/Lattice.h"
-#include "storm-pars/analysis/LatticeExtender.h"
+#include "storm-pars/analysis/Order.h"
+#include "storm-pars/analysis/OrderExtender.h"
 #include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
 
 #include "storm-pars/api/storm-pars.h"
@@ -21,7 +21,7 @@
 
 #include "storm-parsers/api/storm-parsers.h"
 
-TEST(LatticeExtenderTest, Brp_with_bisimulation) {
+TEST(OrderExtenderTest, Brp_with_bisimulation) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/brp16_2.pm";
     std::string formulaAsString = "P=? [F s=4 & i=N ]";
     std::string constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
@@ -47,25 +47,25 @@ TEST(LatticeExtenderTest, Brp_with_bisimulation) {
     ASSERT_EQ(dtmc->getNumberOfStates(), 99ull);
     ASSERT_EQ(dtmc->getNumberOfTransitions(), 195ull);
 
-    auto *extender = new storm::analysis::LatticeExtender<storm::RationalFunction>(dtmc);
-    auto criticalTuple = extender->toLattice(formulas);
+    auto *extender = new storm::analysis::OrderExtender<storm::RationalFunction>(dtmc);
+    auto criticalTuple = extender->toOrder(formulas);
     EXPECT_EQ(dtmc->getNumberOfStates(), std::get<1>(criticalTuple));
     EXPECT_EQ(dtmc->getNumberOfStates(), std::get<2>(criticalTuple));
 
-    auto lattice = std::get<0>(criticalTuple);
+    auto order = std::get<0>(criticalTuple);
     for (auto i = 0; i < dtmc->getNumberOfStates(); ++i) {
-        EXPECT_TRUE((*lattice->getAddedStates())[i]);
+        EXPECT_TRUE((*order->getAddedStates())[i]);
     }
 
     // Check on some nodes
-    EXPECT_EQ(storm::analysis::Lattice::NodeComparison::ABOVE, lattice->compare(1,0));
-    EXPECT_EQ(storm::analysis::Lattice::NodeComparison::ABOVE, lattice->compare(1,5));
-    EXPECT_EQ(storm::analysis::Lattice::NodeComparison::ABOVE, lattice->compare(5,0));
-    EXPECT_EQ(storm::analysis::Lattice::NodeComparison::ABOVE, lattice->compare(94,5));
-    EXPECT_EQ(storm::analysis::Lattice::NodeComparison::UNKNOWN, lattice->compare(7,13));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(1,0));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(1,5));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(5,0));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(94,5));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order->compare(7,13));
 }
 
-TEST(LatticeExtenderTest, Brp_without_bisimulation) {
+TEST(OrderExtenderTest, Brp_without_bisimulation) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/brp16_2.pm";
     std::string formulaAsString = "P=? [F s=4 & i=N ]";
     std::string constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
@@ -84,8 +84,8 @@ TEST(LatticeExtenderTest, Brp_without_bisimulation) {
     ASSERT_EQ(dtmc->getNumberOfStates(), 193ull);
     ASSERT_EQ(dtmc->getNumberOfTransitions(), 383ull);
 
-    auto *extender = new storm::analysis::LatticeExtender<storm::RationalFunction>(dtmc);
-    auto criticalTuple = extender->toLattice(formulas);
+    auto *extender = new storm::analysis::OrderExtender<storm::RationalFunction>(dtmc);
+    auto criticalTuple = extender->toOrder(formulas);
     EXPECT_EQ(183, std::get<1>(criticalTuple));
     EXPECT_EQ(186, std::get<2>(criticalTuple));
 }

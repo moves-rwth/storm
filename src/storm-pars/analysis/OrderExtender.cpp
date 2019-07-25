@@ -2,7 +2,7 @@
 // Created by Jip Spel on 28.08.18.
 //
 
-#include "LatticeExtender.h"
+#include "OrderExtender.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/graph.h"
 #include "storm/storage/SparseMatrix.h"
@@ -31,7 +31,7 @@ namespace storm {
     namespace analysis {
 
         template<typename ValueType>
-        LatticeExtender<ValueType>::LatticeExtender(std::shared_ptr<storm::models::sparse::Model<ValueType>> model) {
+        OrderExtender<ValueType>::OrderExtender(std::shared_ptr<storm::models::sparse::Model<ValueType>> model) {
             this->model = model;
             this->matrix = model->getTransitionMatrix();
             this->assumptionSeen = false;
@@ -61,7 +61,7 @@ namespace storm {
         }
 
         template <typename ValueType>
-        std::tuple<Lattice*, uint_fast64_t, uint_fast64_t> LatticeExtender<ValueType>::toLattice(std::vector<std::shared_ptr<storm::logic::Formula const>> formulas) {
+        std::tuple<Order*, uint_fast64_t, uint_fast64_t> OrderExtender<ValueType>::toOrder(std::vector<std::shared_ptr<storm::logic::Formula const>> formulas) {
             STORM_LOG_THROW((++formulas.begin()) == formulas.end(), storm::exceptions::NotSupportedException, "Only one formula allowed for monotonicity analysis");
             STORM_LOG_THROW((*(formulas[0])).isProbabilityOperatorFormula()
                             && ((*(formulas[0])).asProbabilityOperatorFormula().getSubformula().isUntilFormula()
@@ -90,14 +90,14 @@ namespace storm {
             STORM_LOG_THROW(topStates.begin() != topStates.end(), storm::exceptions::NotImplementedException, "Formula yields to no 1 states");
             STORM_LOG_THROW(bottomStates.begin() != bottomStates.end(), storm::exceptions::NotImplementedException, "Formula yields to no zero states");
 
-            // Transform to Lattice
+            // Transform to Order
             auto matrix = this->model->getTransitionMatrix();
 
             auto initialMiddleStates = storm::storage::BitVector(numberOfStates);
             // Check if MC contains cycles
             storm::storage::StronglyConnectedComponentDecompositionOptions const options;
 
-            // Create the Lattice
+            // Create the Order
 
             if (!acyclic) {
                 for (auto i = 0; i < sccs.size(); ++i) {
@@ -121,14 +121,14 @@ namespace storm {
                 }
             }
             std::vector<uint_fast64_t> statesSorted = storm::utility::graph::getTopologicalSort(matrix);
-            Lattice *lattice = new Lattice(&topStates, &bottomStates, &initialMiddleStates, numberOfStates, &statesSorted);
+            Order *order = new Order(&topStates, &bottomStates, &initialMiddleStates, numberOfStates, &statesSorted);
 
-            return this->extendLattice(lattice);
+            return this->extendOrder(order);
         }
 
 
         template <typename ValueType>
-        std::tuple<Lattice*, uint_fast64_t, uint_fast64_t> LatticeExtender<ValueType>::toLattice(std::vector<std::shared_ptr<storm::logic::Formula const>> formulas, std::vector<double> minValues, std::vector<double> maxValues) {
+        std::tuple<Order*, uint_fast64_t, uint_fast64_t> OrderExtender<ValueType>::toOrder(std::vector<std::shared_ptr<storm::logic::Formula const>> formulas, std::vector<double> minValues, std::vector<double> maxValues) {
             uint_fast64_t numberOfStates = this->model->getNumberOfStates();
 
             // Compare min/max for all states
@@ -159,12 +159,12 @@ namespace storm {
             uint_fast64_t bottom = bottomStates.getNextSetIndex(0);
             uint_fast64_t top = topStates.getNextSetIndex(0);
             std::vector<uint_fast64_t> statesSorted = storm::utility::graph::getTopologicalSort(matrix);
-            Lattice *lattice = new Lattice(top, bottom, numberOfStates, &statesSorted);
+            Order *order = new Order(top, bottom, numberOfStates, &statesSorted);
 
 
-            for (auto state : *(lattice->statesSorted)) {
+            for (auto state : *(order->statesSorted)) {
                 if (state != bottom && state != top) {
-                    assert (lattice != nullptr);
+                    assert (order != nullptr);
                     auto successors = stateMap[state];
                     if (successors->size() > 1) {
                         uint_fast64_t min = numberOfStates;
@@ -190,32 +190,32 @@ namespace storm {
                         }
 
                         if (allSorted && min != max) {
-                            if (lattice->contains(min) && lattice->contains(max)) {
-                                assert (lattice->compare(min,max) == Lattice::UNKNOWN || lattice->compare(min,max) == Lattice::BELOW);
-                                if (lattice->compare(min, max) == Lattice::UNKNOWN) {
-                                    lattice->addRelation(max, min);
+                            if (order->contains(min) && order->contains(max)) {
+                                assert (order->compare(min,max) == Order::UNKNOWN || order->compare(min,max) == Order::BELOW);
+                                if (order->compare(min, max) == Order::UNKNOWN) {
+                                    order->addRelation(max, min);
                                 }
                             }
-                            if (!lattice->contains(min)) {
-                                if (lattice->contains(max)) {
-                                    lattice->addBetween(min, lattice->getNode(max), lattice->getBottom());
+                            if (!order->contains(min)) {
+                                if (order->contains(max)) {
+                                    order->addBetween(min, order->getNode(max), order->getBottom());
                                 } else {
-                                    lattice->add(min);
+                                    order->add(min);
                                 }
                             }
-                            if (!lattice->contains(max)) {
-                                // Because of construction min is in the lattice
-                                lattice->addBetween(max, lattice->getNode(min), lattice->getTop());
+                            if (!order->contains(max)) {
+                                // Because of construction min is in the order
+                                order->addBetween(max, order->getNode(min), order->getTop());
                             }
-                            assert (lattice->compare(max, min) == Lattice::ABOVE);
-                            lattice->addBetween(state, max, min);
+                            assert (order->compare(max, min) == Order::ABOVE);
+                            order->addBetween(state, max, min);
                         }
                     }
                 }
             }
 
             // Handle sccs
-            auto addedStates = lattice->getAddedStates();
+            auto addedStates = order->getAddedStates();
             for (auto scc : sccs) {
                 if (scc.size() > 1) {
                     auto states = scc.getStates();
@@ -224,7 +224,7 @@ namespace storm {
                         if (addedStates->get(state)) {
                             candidate = -1;
                             break;
-                            // if there is a state of the scc already present in the lattice, there is no need to add one.
+                            // if there is a state of the scc already present in the order, there is no need to add one.
                         }
                         auto successors = stateMap[state];
                         if (candidate == -1 && successors->getNumberOfSetBits() == 2) {
@@ -236,17 +236,17 @@ namespace storm {
                         }
                     }
                     if (candidate != -1) {
-                        lattice->add(candidate);
-                        lattice->statesToHandle->set(candidate);
+                        order->add(candidate);
+                        order->statesToHandle->set(candidate);
                     }
                 }
              }
-            return this->extendLattice(lattice);
+            return this->extendOrder(order);
         }
 
 
         template <typename ValueType>
-        void LatticeExtender<ValueType>::handleAssumption(Lattice* lattice, std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption) {
+        void OrderExtender<ValueType>::handleAssumption(Order* order, std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption) {
             assert (assumption != nullptr);
             assumptionSeen = true;
 
@@ -260,21 +260,21 @@ namespace storm {
                 storm::expressions::Variable var2 = expr.getSecondOperand()->asVariableExpression().getVariable();
                 auto val1 = std::stoul(var1.getName(), nullptr, 0);
                 auto val2 = std::stoul(var2.getName(), nullptr, 0);
-                auto comp = lattice->compare(val1, val2);
+                auto comp = order->compare(val1, val2);
 
-                assert (comp == Lattice::UNKNOWN);
-                Lattice::Node *n1 = lattice->getNode(val1);
-                Lattice::Node *n2 = lattice->getNode(val2);
+                assert (comp == Order::UNKNOWN);
+                Order::Node *n1 = order->getNode(val1);
+                Order::Node *n2 = order->getNode(val2);
 
                 if (n1 != nullptr && n2 != nullptr) {
-                    lattice->mergeNodes(n1,n2);
+                    order->mergeNodes(n1,n2);
                 } else if (n1 != nullptr) {
-                    lattice->addToNode(val2, n1);
+                    order->addToNode(val2, n1);
                 } else if (n2 != nullptr) {
-                    lattice->addToNode(val1, n2);
+                    order->addToNode(val1, n2);
                 } else {
-                    lattice->add(val1);
-                    lattice->addToNode(val2, lattice->getNode(val1));
+                    order->add(val1);
+                    order->addToNode(val2, order->getNode(val1));
                 }
             } else {
                 assert (expr.getFirstOperand()->isVariable() && expr.getSecondOperand()->isVariable());
@@ -282,59 +282,59 @@ namespace storm {
                 storm::expressions::Variable smallest = expr.getSecondOperand()->asVariableExpression().getVariable();
                 auto val1 = std::stoul(largest.getName(), nullptr, 0);
                 auto val2 = std::stoul(smallest.getName(), nullptr, 0);
-                auto compareRes = lattice->compare(val1, val2);
+                auto compareRes = order->compare(val1, val2);
 
-                assert(compareRes == Lattice::UNKNOWN);
-                Lattice::Node *n1 = lattice->getNode(val1);
-                Lattice::Node *n2 = lattice->getNode(val2);
+                assert(compareRes == Order::UNKNOWN);
+                Order::Node *n1 = order->getNode(val1);
+                Order::Node *n2 = order->getNode(val2);
 
                 if (n1 != nullptr && n2 != nullptr) {
-                    lattice->addRelationNodes(n1, n2);
+                    order->addRelationNodes(n1, n2);
                 } else if (n1 != nullptr) {
-                    lattice->addBetween(val2, n1, lattice->getBottom());
+                    order->addBetween(val2, n1, order->getBottom());
                 } else if (n2 != nullptr) {
-                    lattice->addBetween(val1, lattice->getTop(), n2);
+                    order->addBetween(val1, order->getTop(), n2);
                 } else {
-                    lattice->add(val1);
-                    lattice->addBetween(val2, lattice->getNode(val1), lattice->getBottom());
+                    order->add(val1);
+                    order->addBetween(val2, order->getNode(val1), order->getBottom());
                 }
             }
         }
 
         template <typename ValueType>
-        std::tuple<Lattice*, uint_fast64_t, uint_fast64_t> LatticeExtender<ValueType>::extendAllSuccAdded(Lattice* lattice, uint_fast64_t const & stateNumber, storm::storage::BitVector* successors) {
+        std::tuple<Order*, uint_fast64_t, uint_fast64_t> OrderExtender<ValueType>::extendAllSuccAdded(Order* order, uint_fast64_t const & stateNumber, storm::storage::BitVector* successors) {
             auto numberOfStates = successors->size();
-            assert (lattice->getAddedStates()->size() == numberOfStates);
+            assert (order->getAddedStates()->size() == numberOfStates);
 
             if (successors->getNumberOfSetBits() == 1) {
                 // As there is only one successor the current state and its successor must be at the same nodes.
-                lattice->addToNode(stateNumber, lattice->getNode(successors->getNextSetIndex(0)));
+                order->addToNode(stateNumber, order->getNode(successors->getNextSetIndex(0)));
             } else if (successors->getNumberOfSetBits() == 2) {
                 // Otherwise, check how the two states compare, and add if the comparison is possible.
                 uint_fast64_t successor1 = successors->getNextSetIndex(0);
                 uint_fast64_t successor2 = successors->getNextSetIndex(successor1 + 1);
 
-                int compareResult = lattice->compare(successor1, successor2);
-                if (compareResult == Lattice::ABOVE) {
+                int compareResult = order->compare(successor1, successor2);
+                if (compareResult == Order::ABOVE) {
                     // successor 1 is closer to top than successor 2
-                    lattice->addBetween(stateNumber, lattice->getNode(successor1),
-                                        lattice->getNode(successor2));
-                } else if (compareResult == Lattice::BELOW) {
+                    order->addBetween(stateNumber, order->getNode(successor1),
+                                        order->getNode(successor2));
+                } else if (compareResult == Order::BELOW) {
                     // successor 2 is closer to top than successor 1
-                    lattice->addBetween(stateNumber, lattice->getNode(successor2),
-                                        lattice->getNode(successor1));
-                } else if (compareResult == Lattice::SAME) {
+                    order->addBetween(stateNumber, order->getNode(successor2),
+                                        order->getNode(successor1));
+                } else if (compareResult == Order::SAME) {
                     // the successors are at the same level
-                    lattice->addToNode(stateNumber, lattice->getNode(successor1));
+                    order->addToNode(stateNumber, order->getNode(successor1));
                 } else {
-                    assert(lattice->compare(successor1, successor2) == Lattice::UNKNOWN);
-                    return std::make_tuple(lattice, successor1, successor2);
+                    assert(order->compare(successor1, successor2) == Order::UNKNOWN);
+                    return std::make_tuple(order, successor1, successor2);
                 }
             } else if (successors->getNumberOfSetBits() > 2) {
                 for (auto const& i : *successors) {
                     for (auto j = successors->getNextSetIndex(i+1); j < numberOfStates; j = successors->getNextSetIndex(j+1)) {
-                        if (lattice->compare(i,j) == Lattice::UNKNOWN) {
-                            return std::make_tuple(lattice, i, j);
+                        if (order->compare(i,j) == Order::UNKNOWN) {
+                            return std::make_tuple(order, i, j);
                         }
                     }
                 }
@@ -342,53 +342,53 @@ namespace storm {
                 auto highest = successors->getNextSetIndex(0);
                 auto lowest = highest;
                 for (auto i = successors->getNextSetIndex(highest+1); i < numberOfStates; i = successors->getNextSetIndex(i+1)) {
-                    if (lattice->compare(i, highest) == Lattice::ABOVE) {
+                    if (order->compare(i, highest) == Order::ABOVE) {
                         highest = i;
                     }
-                    if (lattice->compare(lowest, i) == Lattice::ABOVE) {
+                    if (order->compare(lowest, i) == Order::ABOVE) {
                         lowest = i;
                     }
                 }
                 if (lowest == highest) {
-                    lattice->addToNode(stateNumber, lattice->getNode(highest));
+                    order->addToNode(stateNumber, order->getNode(highest));
                 } else {
-                    lattice->addBetween(stateNumber, lattice->getNode(highest), lattice->getNode(lowest));
+                    order->addBetween(stateNumber, order->getNode(highest), order->getNode(lowest));
                 }
             }
-            return std::make_tuple(lattice, numberOfStates, numberOfStates);
+            return std::make_tuple(order, numberOfStates, numberOfStates);
         }
 
 
 
         template <typename ValueType>
-        std::tuple<Lattice*, uint_fast64_t, uint_fast64_t> LatticeExtender<ValueType>::extendLattice(Lattice* lattice, std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption) {
+        std::tuple<Order*, uint_fast64_t, uint_fast64_t> OrderExtender<ValueType>::extendOrder(Order* order, std::shared_ptr<storm::expressions::BinaryRelationExpression> assumption) {
             auto numberOfStates = this->model->getNumberOfStates();
 
             if (assumption != nullptr) {
-                handleAssumption(lattice, assumption);
+                handleAssumption(order, assumption);
             }
 
-            auto statesSorted = lattice->statesSorted;
+            auto statesSorted = order->statesSorted;
 
             auto oldNumberSet = numberOfStates;
-            while (oldNumberSet != lattice->getAddedStates()->getNumberOfSetBits()) {
-                oldNumberSet = lattice->getAddedStates()->getNumberOfSetBits();
+            while (oldNumberSet != order->getAddedStates()->getNumberOfSetBits()) {
+                oldNumberSet = order->getAddedStates()->getNumberOfSetBits();
 
                 // Forward reasoning for cycles;
                 if (!acyclic) {
-                    auto statesToHandle = lattice->statesToHandle;
+                    auto statesToHandle = order->statesToHandle;
                     auto stateNumber = statesToHandle->getNextSetIndex(0);
 
                     while (stateNumber != numberOfStates) {
                         storm::storage::BitVector *successors = stateMap[stateNumber];
-                        // Checking for states which are already added to the lattice, and only have one successor left which haven't been added yet
+                        // Checking for states which are already added to the order, and only have one successor left which haven't been added yet
                         auto succ1 = successors->getNextSetIndex(0);
                         auto succ2 = successors->getNextSetIndex(succ1 + 1);
 
-                        assert (lattice->contains(stateNumber));
+                        assert (order->contains(stateNumber));
                         if (successors->getNumberOfSetBits() == 1) {
-                            if (!lattice->contains(succ1)) {
-                                lattice->addToNode(succ1, lattice->getNode(stateNumber));
+                            if (!order->contains(succ1)) {
+                                order->addToNode(succ1, order->getNode(stateNumber));
                                 statesToHandle->set(succ1, true);
                                 auto itr = std::find(statesSorted->begin(), statesSorted->end(), succ1);
                                 if (itr != statesSorted->end()) {
@@ -398,29 +398,29 @@ namespace storm {
                             statesToHandle->set(stateNumber, false);
                             stateNumber = statesToHandle->getNextSetIndex(0);
                         } else if (successors->getNumberOfSetBits() == 2
-                                   && ((lattice->contains(succ1) && !lattice->contains(succ2))
-                                       || (!lattice->contains(succ1) && lattice->contains(succ2)))) {
+                                   && ((order->contains(succ1) && !order->contains(succ2))
+                                       || (!order->contains(succ1) && order->contains(succ2)))) {
 
-                            if (!lattice->contains(succ1)) {
+                            if (!order->contains(succ1)) {
                                 std::swap(succ1, succ2);
                             }
 
-                            auto compare = lattice->compare(stateNumber, succ1);
-                            if (compare == Lattice::ABOVE) {
+                            auto compare = order->compare(stateNumber, succ1);
+                            if (compare == Order::ABOVE) {
                                 auto itr = std::find(statesSorted->begin(), statesSorted->end(), succ2);
                                 if (itr != statesSorted->end()) {
                                     statesSorted->erase(itr);
                                 }
-                                lattice->addBetween(succ2, lattice->getTop(), lattice->getNode(stateNumber));
+                                order->addBetween(succ2, order->getTop(), order->getNode(stateNumber));
                                 statesToHandle->set(succ2);
                                 statesToHandle->set(stateNumber, false);
                                 stateNumber = statesToHandle->getNextSetIndex(0);
-                            } else if (compare == Lattice::BELOW) {
+                            } else if (compare == Order::BELOW) {
                                 auto itr = std::find(statesSorted->begin(), statesSorted->end(), succ2);
                                 if (itr != statesSorted->end()) {
                                     statesSorted->erase(itr);
                                 }
-                                lattice->addBetween(succ2, lattice->getNode(stateNumber), lattice->getBottom());
+                                order->addBetween(succ2, order->getNode(stateNumber), order->getBottom());
                                 statesToHandle->set(succ2);
                                 statesToHandle->set(stateNumber, false);
                                 stateNumber = statesToHandle->getNextSetIndex(0);
@@ -430,8 +430,8 @@ namespace storm {
                                 stateNumber = statesToHandle->getNextSetIndex(0);
                             }
 
-                        } else if (!((lattice->contains(succ1) && !lattice->contains(succ2))
-                                     || (!lattice->contains(succ1) && lattice->contains(succ2)))) {
+                        } else if (!((order->contains(succ1) && !order->contains(succ2))
+                                     || (!order->contains(succ1) && order->contains(succ2)))) {
                             stateNumber = statesToHandle->getNextSetIndex(stateNumber + 1);
                         } else {
                             statesToHandle->set(stateNumber, false);
@@ -444,56 +444,56 @@ namespace storm {
                 // Normal backwardreasoning
                 if (statesSorted->size() > 0) {
                     auto stateNumber = *(statesSorted->begin());
-                    while (lattice->contains(stateNumber) && statesSorted->size() > 1) {
+                    while (order->contains(stateNumber) && statesSorted->size() > 1) {
                         // states.size()>1 such that there is at least one state left after erase
                         statesSorted->erase(statesSorted->begin());
                         stateNumber = *(statesSorted->begin());
 
-                        if (lattice->contains(stateNumber)) {
-                            auto resAllAdded = allSuccAdded(lattice, stateNumber);
+                        if (order->contains(stateNumber)) {
+                            auto resAllAdded = allSuccAdded(order, stateNumber);
                             if (!std::get<0>(resAllAdded)) {
-                                return std::make_tuple(lattice, std::get<1>(resAllAdded), std::get<2>(resAllAdded));
+                                return std::make_tuple(order, std::get<1>(resAllAdded), std::get<2>(resAllAdded));
                             }
                         }
                     }
 
-                    if (!lattice->contains(stateNumber)) {
+                    if (!order->contains(stateNumber)) {
                         auto successors = stateMap[stateNumber];
 
-                        auto result = extendAllSuccAdded(lattice, stateNumber, successors);
+                        auto result = extendAllSuccAdded(order, stateNumber, successors);
                         if (std::get<1>(result) != numberOfStates) {
                             // So we don't know the relation between all successor states
                             return result;
                         } else {
-                            assert (lattice->getNode(stateNumber) != nullptr);
+                            assert (order->getNode(stateNumber) != nullptr);
                             if (!acyclic) {
-                                lattice->statesToHandle->set(stateNumber);
+                                order->statesToHandle->set(stateNumber);
                             }
                             statesSorted->erase(statesSorted->begin());
                         }
                     }
-                    assert (lattice->getNode(stateNumber) != nullptr);
-                    assert (lattice->contains(stateNumber));
+                    assert (order->getNode(stateNumber) != nullptr);
+                    assert (order->contains(stateNumber));
                 }
 
             }
-            assert (lattice->getAddedStates()->getNumberOfSetBits() == numberOfStates);
-            lattice->setDoneBuilding(true);
-            return std::make_tuple(lattice, numberOfStates, numberOfStates);
+            assert (order->getAddedStates()->getNumberOfSetBits() == numberOfStates);
+            order->setDoneBuilding(true);
+            return std::make_tuple(order, numberOfStates, numberOfStates);
         }
 
         template <typename ValueType>
-        std::tuple<bool, uint_fast64_t, uint_fast64_t> LatticeExtender<ValueType>::allSuccAdded(storm::analysis::Lattice *lattice, uint_fast64_t stateNumber) {
+        std::tuple<bool, uint_fast64_t, uint_fast64_t> OrderExtender<ValueType>::allSuccAdded(storm::analysis::Order *order, uint_fast64_t stateNumber) {
             auto successors = stateMap[stateNumber];
             auto numberOfStates = successors->size();
 
             if (successors->getNumberOfSetBits() == 1) {
                 auto succ = successors->getNextSetIndex(0);
-                return std::make_tuple(lattice->contains(succ), succ, succ);
+                return std::make_tuple(order->contains(succ), succ, succ);
             } else if (successors->getNumberOfSetBits() > 2) {
                 for (auto const& i : *successors) {
                     for (auto j = successors->getNextSetIndex(i+1); j < numberOfStates; j = successors->getNextSetIndex(j+1)) {
-                        if (lattice->compare(i,j) == Lattice::UNKNOWN) {
+                        if (order->compare(i,j) == Order::UNKNOWN) {
                             return std::make_tuple(false, i, j);
                         }
                     }
@@ -503,6 +503,6 @@ namespace storm {
 
         }
 
-        template class LatticeExtender<storm::RationalFunction>;
+        template class OrderExtender<storm::RationalFunction>;
     }
 }

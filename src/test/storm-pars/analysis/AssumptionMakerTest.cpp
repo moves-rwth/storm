@@ -17,10 +17,10 @@
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/api/builder.h"
 
-#include "storm-pars/analysis/Lattice.h"
+#include "storm-pars/analysis/Order.h"
 #include "storm-pars/analysis/AssumptionMaker.h"
 #include "storm-pars/analysis/AssumptionChecker.h"
-#include "storm-pars/analysis/LatticeExtender.h"
+#include "storm-pars/analysis/OrderExtender.h"
 #include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
 
 #include "storm-pars/api/storm-pars.h"
@@ -51,8 +51,8 @@ TEST(AssumptionMakerTest, Brp_without_bisimulation) {
     ASSERT_EQ(dtmc->getNumberOfStates(), 193ull);
     ASSERT_EQ(dtmc->getNumberOfTransitions(), 383ull);
 
-    auto *extender = new storm::analysis::LatticeExtender<storm::RationalFunction>(dtmc);
-    auto criticalTuple = extender->toLattice(formulas);
+    auto *extender = new storm::analysis::OrderExtender<storm::RationalFunction>(dtmc);
+    auto criticalTuple = extender->toOrder(formulas);
     ASSERT_EQ(183, std::get<1>(criticalTuple));
     ASSERT_EQ(186, std::get<2>(criticalTuple));
 
@@ -121,8 +121,8 @@ TEST(AssumptionMakerTest, Brp_without_bisimulation_no_validation) {
     ASSERT_EQ(dtmc->getNumberOfStates(), 193ull);
     ASSERT_EQ(dtmc->getNumberOfTransitions(), 383ull);
 
-    auto *extender = new storm::analysis::LatticeExtender<storm::RationalFunction>(dtmc);
-    auto criticalTuple = extender->toLattice(formulas);
+    auto *extender = new storm::analysis::OrderExtender<storm::RationalFunction>(dtmc);
+    auto criticalTuple = extender->toOrder(formulas);
     ASSERT_EQ(183, std::get<1>(criticalTuple));
     ASSERT_EQ(186, std::get<2>(criticalTuple));
 
@@ -198,11 +198,11 @@ TEST(AssumptionMakerTest, Simple1) {
     storm::storage::BitVector initialMiddle(5);
     std::vector<uint_fast64_t> statesSorted = storm::utility::graph::getTopologicalSort(model->getTransitionMatrix());
 
-    auto lattice = new storm::analysis::Lattice(&above, &below, &initialMiddle, 5, &statesSorted);
+    auto order = new storm::analysis::Order(&above, &below, &initialMiddle, 5, &statesSorted);
 
     auto assumptionChecker = storm::analysis::AssumptionChecker<storm::RationalFunction>(formulas[0], dtmc, region, 3);
     auto assumptionMaker = storm::analysis::AssumptionMaker<storm::RationalFunction>(&assumptionChecker, dtmc->getNumberOfStates(), true);
-    auto result = assumptionMaker.createAndCheckAssumption(1, 2, lattice);
+    auto result = assumptionMaker.createAndCheckAssumption(1, 2, order);
 
     EXPECT_EQ(3, result.size());
 
@@ -271,11 +271,11 @@ TEST(AssumptionMakerTest, Simple2) {
 
     std::vector<uint_fast64_t> statesSorted = storm::utility::graph::getTopologicalSort(model->getTransitionMatrix());
 
-    auto lattice = new storm::analysis::Lattice(&above, &below, &initialMiddle, 5, &statesSorted);
+    auto order = new storm::analysis::Order(&above, &below, &initialMiddle, 5, &statesSorted);
 
     auto assumptionChecker = storm::analysis::AssumptionChecker<storm::RationalFunction>(formulas[0], dtmc, region, 3);
     auto assumptionMaker = storm::analysis::AssumptionMaker<storm::RationalFunction>(&assumptionChecker, dtmc->getNumberOfStates(), true);
-    auto result = assumptionMaker.createAndCheckAssumption(1, 2, lattice);
+    auto result = assumptionMaker.createAndCheckAssumption(1, 2, order);
 
     auto itr = result.begin();
 

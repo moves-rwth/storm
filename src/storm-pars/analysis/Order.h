@@ -1,5 +1,5 @@
-#ifndef LATTICE_LATTICE_H
-#define LATTICE_LATTICE_H
+#ifndef ORDER_ORDER_H
+#define ORDER_ORDER_H
 
 #include <iostream>
 #include <set>
@@ -12,7 +12,7 @@
 namespace storm {
             namespace analysis {
 
-                class Lattice {
+                class Order {
 
                 public:
                     /*!
@@ -30,35 +30,35 @@ namespace storm {
                     };
 
                     /*!
-                     * Constructs a lattice with the given top node and bottom node.
+                     * Constructs an order with the given top node and bottom node.
                      *
-                     * @param topNode The top node of the resulting lattice.
-                     * @param bottomNode The bottom node of the resulting lattice.
+                     * @param topNode The top node of the resulting order.
+                     * @param bottomNode The bottom node of the resulting order.
                      */
-                    Lattice(storm::storage::BitVector* topStates,
+                    Order(storm::storage::BitVector* topStates,
                             storm::storage::BitVector* bottomStates,
                             storm::storage::BitVector* initialMiddleStates,
                             uint_fast64_t numberOfStates,
                             std::vector<uint_fast64_t>* statesSorted);
 
                     /*!
-                     * Constructs a lattice with the given top state and bottom state.
+                     * Constructs an order with the given top state and bottom state.
                      *
-                     * @param top The top state of the resulting lattice.
-                     * @param bottom The bottom state of the resulting lattice.
-                     * @param numberOfStates Max number of states in endlattice.
+                     * @param top The top state of the resulting order.
+                     * @param bottom The bottom state of the resulting order.
+                     * @param numberOfStates Max number of states in order.
                      */
-                    Lattice(uint_fast64_t top,
+                    Order(uint_fast64_t top,
                             uint_fast64_t bottom,
                             uint_fast64_t numberOfStates,
                             std::vector<uint_fast64_t>* statesSorted);
 
                     /*!
-                     * Constructs a copy of the given lattice.
+                     * Constructs a copy of the given order.
                      *
-                     * @param lattice The original lattice.
+                     * @param order The original order.
                      */
-                    Lattice(Lattice* lattice);
+                    Order(Order* order);
 
                     /*!
                      * Adds a node with the given state below node1 and above node2.
@@ -85,39 +85,39 @@ namespace storm {
                     void addToNode(uint_fast64_t state, Node *node);
 
                     /*!
-                     * Adds state between the top and bottom node of the lattice
+                     * Adds state between the top and bottom node of the order
                      * @param state The given state
                      */
                     void add(uint_fast64_t state);
 
                     /*!
-                     * Adds a new relation between two nodes to the lattice
-                     * @param above The node closest to the top Node of the Lattice.
-                     * @param below The node closest to the bottom Node of the Lattice.
+                     * Adds a new relation between two nodes to the order
+                     * @param above The node closest to the top Node of the Order.
+                     * @param below The node closest to the bottom Node of the Order.
                      */
-                    void addRelationNodes(storm::analysis::Lattice::Node *above, storm::analysis::Lattice::Node * below);
+                    void addRelationNodes(storm::analysis::Order::Node *above, storm::analysis::Order::Node * below);
 
                     /*!
-                    * Adds a new relation between two states to the lattice
-                    * @param above The state closest to the top Node of the Lattice.
-                    * @param below The state closest to the bottom Node of the Lattice.
+                    * Adds a new relation between two states to the order
+                    * @param above The state closest to the top Node of the Order.
+                    * @param below The state closest to the bottom Node of the Order.
                     */
                     void addRelation(uint_fast64_t above, uint_fast64_t below);
 
                     /*!
                      * Compares the level of the nodes of the states.
-                     * Behaviour unknown when one or more of the states doesnot occur at any Node in the Lattice.
+                     * Behaviour unknown when one or more of the states doesnot occur at any Node in the Order.
                      * @param state1 The first state.
                      * @param state2 The second state.
                      * @return SAME if the nodes are on the same level;
                      * ABOVE if the node of the first state is closer to top then the node of the second state;
                      * BELOW if the node of the second state is closer to top then the node of the first state;
-                     * UNKNOWN if it is unclear from the structure of the lattice how the nodes relate.
+                     * UNKNOWN if it is unclear from the structure of the order how the nodes relate.
                      */
-                    Lattice::NodeComparison compare(uint_fast64_t state1, uint_fast64_t state2);
+                    Order::NodeComparison compare(uint_fast64_t state1, uint_fast64_t state2);
 
                     /*!
-                     * Check if state is already in lattice
+                     * Check if state is already in order
                      * @param state
                      * @return
                      */
@@ -133,25 +133,25 @@ namespace storm {
                     Node *getNode(uint_fast64_t state);
 
                     /*!
-                     * Retrieves the top node of the lattice.
+                     * Retrieves the top node of the order.
                      *
                      * @return The top node.
                      */
                     Node* getTop();
 
                     /*!
-                     * Retrieves the bottom node of the lattice.
+                     * Retrieves the bottom node of the order.
                      *
                      * @return The bottom node.
                      */
                     Node* getBottom();
 
                     /*!
-                     * Returns the vector with the nodes of the lattice.
+                     * Returns the vector with the nodes of the order.
                      * Each index in the vector refers to a state.
                      * When the state is not yet added at a node, it will contain the nullptr.
                      *
-                     * @return The vector with nodes of the lattice.
+                     * @return The vector with nodes of the order.
                      */
                     std::vector<Node*> getNodes();
 
@@ -163,13 +163,13 @@ namespace storm {
                     storm::storage::BitVector* getAddedStates();
 
                     /*!
-                     * Returns true if done building the lattice.
+                     * Returns true if done building the order.
                      * @return
                      */
                     bool getDoneBuilding();
 
                     /*!
-                     * Compares two nodes in the lattice
+                     * Compares two nodes in the order
                      * @param node1
                      * @param node2
                      * @return BELOW, ABOVE, SAME or UNKNOWN
@@ -186,12 +186,12 @@ namespace storm {
                     std::vector<uint_fast64_t> sortStates(storm::storage::BitVector* states);
 
                     /*!
-                     * If the lattice is fully build, this can be set to true.
+                     * If the order is fully build, this can be set to true.
                      */
                     void setDoneBuilding(bool done);
 
                     /*!
-                     * Prints a string representation of the lattice to the output stream.
+                     * Prints a string representation of the order to the output stream.
                      *
                      * @param out The stream to output to.
                      */
@@ -227,10 +227,10 @@ namespace storm {
 
                     bool above(Node * node1, Node * node2);
 
-                    bool above(Node * node1, Node * node2, storm::analysis::Lattice::Node *nodePrev, storm::storage::BitVector *statesSeen);
+                    bool above(Node * node1, Node * node2, storm::analysis::Order::Node *nodePrev, storm::storage::BitVector *statesSeen);
 
                     bool doneBuilding;
                 };
             }
 }
-#endif //LATTICE_LATTICE_H
+#endif //ORDER_ORDER_H

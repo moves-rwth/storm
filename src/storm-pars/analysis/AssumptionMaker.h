@@ -2,8 +2,8 @@
 #define STORM_ASSUMPTIONMAKER_H
 
 #include "AssumptionChecker.h"
-#include "Lattice.h"
-#include "LatticeExtender.h"
+#include "Order.h"
+#include "OrderExtender.h"
 #include "storm/storage/expressions/BinaryRelationExpression.h"
 #include "storm-pars/utility/ModelInstantiator.h"
 
@@ -16,9 +16,9 @@ namespace storm {
             typedef std::shared_ptr<expressions::BinaryRelationExpression> AssumptionType;
         public:
             /*!
-             * Constructs AssumptionMaker based on the lattice extender, the assumption checker and number of states of the mode
+             * Constructs AssumptionMaker based on the order extender, the assumption checker and number of states of the mode
              *
-             * @param latticeExtender The LatticeExtender which needs the assumptions made by the AssumptionMaker.
+             * @param orderExtender The OrderExtender which needs the assumptions made by the AssumptionMaker.
              * @param checker The AssumptionChecker which checks the assumptions at sample points.
              * @param numberOfStates The number of states of the model.
              */
@@ -31,10 +31,10 @@ namespace storm {
              *
              * @param val1 First state number
              * @param val2 Second state number
-             * @param lattice The lattice on which the assumptions are checked
+             * @param order The order on which the assumptions are checked
              * @return Map with three assumptions, and the validation
              */
-            std::map<std::shared_ptr<expressions::BinaryRelationExpression>, AssumptionStatus> createAndCheckAssumption(uint_fast64_t val1, uint_fast64_t val2, Lattice* lattice);
+            std::map<std::shared_ptr<expressions::BinaryRelationExpression>, AssumptionStatus> createAndCheckAssumption(uint_fast64_t val1, uint_fast64_t val2, Order* order);
 
         private:
             AssumptionChecker<ValueType>* assumptionChecker;

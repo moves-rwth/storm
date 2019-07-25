@@ -130,7 +130,7 @@ namespace storm {
         }
 
         template <typename ValueType>
-        AssumptionStatus AssumptionChecker<ValueType>::validateAssumption(std::shared_ptr<expressions::BinaryRelationExpression> assumption, Lattice* lattice) {
+        AssumptionStatus AssumptionChecker<ValueType>::validateAssumption(std::shared_ptr<expressions::BinaryRelationExpression> assumption, Order* order) {
             // First check if based on sample points the assumption can be discharged
             auto result = checkOnSamples(assumption);
             assert (result != AssumptionStatus::VALID);
@@ -156,7 +156,7 @@ namespace storm {
                         std::stoi(assumption->getSecondOperand()->asVariableExpression().getVariableName()));
 
                 if (row1.getNumberOfEntries() == 2 && row2.getNumberOfEntries() == 2) {
-                    // If the states have the same successors for which we know the position in the lattice
+                    // If the states have the same successors for which we know the position in the order
                     // We can check with a function if the assumption holds
 
                     auto state1succ1 = row1.begin();
@@ -171,12 +171,12 @@ namespace storm {
 
                     if (state1succ1->getColumn() == state2succ1->getColumn() && state1succ2->getColumn() == state2succ2->getColumn()) {
                         if (assumption->getRelationType() == expressions::BinaryRelationExpression::RelationType::Greater
-                            && lattice->compare(state1succ1->getColumn(), state1succ2->getColumn()) != Lattice::NodeComparison::UNKNOWN) {
+                            && order->compare(state1succ1->getColumn(), state1succ2->getColumn()) != Order::NodeComparison::UNKNOWN) {
                             // The assumption should be the greater assumption
                             // If the result is unknown, we cannot compare, also SMTSolver will not help
-                            result = validateAssumptionSMTSolver(assumption, lattice);
+                            result = validateAssumptionSMTSolver(assumption, order);
 
-//                            result = validateAssumptionFunction(lattice, state1succ1, state1succ2, state2succ1,
+//                            result = validateAssumptionFunction(order, state1succ1, state1succ2, state2succ1,
 //                                                                state2succ2);
                         } else if (assumption->getRelationType() == expressions::BinaryRelationExpression::RelationType::Equal) {
                             // The assumption is equal, the successors are the same,
@@ -188,17 +188,17 @@ namespace storm {
                             result = AssumptionStatus::UNKNOWN;
                         }
                     } else {
-                        result = validateAssumptionSMTSolver(assumption, lattice);
+                        result = validateAssumptionSMTSolver(assumption, order);
                     }
                 } else {
-                    result = validateAssumptionSMTSolver(assumption, lattice);
+                    result = validateAssumptionSMTSolver(assumption, order);
                 }
             }
             return result;
         }
 
         template <typename ValueType>
-        AssumptionStatus AssumptionChecker<ValueType>::validateAssumptionFunction(Lattice* lattice,
+        AssumptionStatus AssumptionChecker<ValueType>::validateAssumptionFunction(Order* order,
                 typename storage::SparseMatrix<ValueType>::iterator state1succ1,
                 typename storage::SparseMatrix<ValueType>::iterator state1succ2,
                 typename storage::SparseMatrix<ValueType>::iterator state2succ1,
@@ -212,11 +212,11 @@ namespace storm {
 
             // Calculate the difference in probability for the "highest" successor state
             ValueType prob;
-            auto comp = lattice->compare(state1succ1->getColumn(), state1succ2->getColumn());
-            assert (comp == Lattice::NodeComparison::ABOVE || comp == Lattice::NodeComparison::BELOW);
-            if (comp == Lattice::NodeComparison::ABOVE) {
+            auto comp = order->compare(state1succ1->getColumn(), state1succ2->getColumn());
+            assert (comp == Order::NodeComparison::ABOVE || comp == Order::NodeComparison::BELOW);
+            if (comp == Order::NodeComparison::ABOVE) {
                 prob = state1succ1->getValue() - state2succ1->getValue();
-            } else if (comp == Lattice::NodeComparison::BELOW) {
+            } else if (comp == Order::NodeComparison::BELOW) {
                 prob = state1succ2->getValue() - state2succ2->getValue();
             }
 
@@ -246,7 +246,7 @@ namespace storm {
 
 
         template <typename ValueType>
-        AssumptionStatus AssumptionChecker<ValueType>::validateAssumptionSMTSolver(std::shared_ptr<expressions::BinaryRelationExpression> assumption, Lattice* lattice) {
+        AssumptionStatus AssumptionChecker<ValueType>::validateAssumptionSMTSolver(std::shared_ptr<expressions::BinaryRelationExpression> assumption, Order* order) {
             std::shared_ptr<utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<utility::solver::MathsatSmtSolverFactory>();
             std::shared_ptr<expressions::ExpressionManager> manager(new expressions::ExpressionManager());
 
@@ -272,14 +272,14 @@ namespace storm {
                         if (!manager->hasVariable(varname2)) {
                             stateVariables.insert(manager->declareRationalVariable(varname2));
                         }
-                        auto comp = lattice->compare(itr1->getColumn(), itr2->getColumn());
-                        if (comp == Lattice::NodeComparison::ABOVE) {
+                        auto comp = order->compare(itr1->getColumn(), itr2->getColumn());
+                        if (comp == Order::NodeComparison::ABOVE) {
                             exprOrderSucc = exprOrderSucc && !(manager->getVariable(varname1) <=
                                                               manager->getVariable(varname2));
-                        } else if (comp == Lattice::NodeComparison::BELOW) {
+                        } else if (comp == Order::NodeComparison::BELOW) {
                             exprOrderSucc = exprOrderSucc && !(manager->getVariable(varname1) >=
                                                               manager->getVariable(varname2));
-                        } else if (comp == Lattice::NodeComparison::SAME) {
+                        } else if (comp == Order::NodeComparison::SAME) {
                             exprOrderSucc = exprOrderSucc &&
                                             (manager->getVariable(varname1) = manager->getVariable(varname2));
                         } else {
@@ -331,7 +331,7 @@ namespace storm {
 
                 s.add(exprOrderSucc);
                 s.add(exprBounds);
-                // assert that sorting of successors in the lattice and the bounds on the expression are at least satisfiable
+                // assert that sorting of successors in the order and the bounds on the expression are at least satisfiable
                 assert (s.check() == solver::SmtSolver::CheckResult::Sat);
                 s.add(exprToCheck);
                 auto smtRes = s.check();

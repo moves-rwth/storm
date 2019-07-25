@@ -1,10 +1,10 @@
 #include <iostream>
 #include <fstream>
-#include "Lattice.h"
+#include "Order.h"
 
 namespace storm {
     namespace analysis {
-        Lattice::Lattice(storm::storage::BitVector* topStates,
+        Order::Order(storm::storage::BitVector* topStates,
                          storm::storage::BitVector* bottomStates,
                          storm::storage::BitVector* initialMiddleStates,
                          uint_fast64_t numberOfStates,
@@ -41,7 +41,7 @@ namespace storm {
             }
         }
 
-        Lattice::Lattice(uint_fast64_t topState, uint_fast64_t bottomState, uint_fast64_t numberOfStates, std::vector<uint_fast64_t>* statesSorted) {
+        Order::Order(uint_fast64_t topState, uint_fast64_t bottomState, uint_fast64_t numberOfStates, std::vector<uint_fast64_t>* statesSorted) {
             nodes = std::vector<Node *>(numberOfStates);
 
             this->numberOfStates = numberOfStates;
@@ -67,13 +67,13 @@ namespace storm {
             assert (addedStates->getNumberOfSetBits() == 2);
         }
 
-        Lattice::Lattice(Lattice* lattice) {
-            numberOfStates = lattice->getAddedStates()->size();
+        Order::Order(Order* order) {
+            numberOfStates = order->getAddedStates()->size();
             nodes = std::vector<Node *>(numberOfStates);
             addedStates = new storm::storage::BitVector(numberOfStates);
-            this->doneBuilding = lattice->getDoneBuilding();
+            this->doneBuilding = order->getDoneBuilding();
 
-            auto oldNodes = lattice->getNodes();
+            auto oldNodes = order->getNodes();
             // Create nodes
             for (auto itr = oldNodes.begin(); itr != oldNodes.end(); ++itr) {
                 Node *oldNode = (*itr);
@@ -84,14 +84,14 @@ namespace storm {
                         addedStates->set(i);
                         nodes[i] = newNode;
                     }
-                    if (oldNode == lattice->getTop()) {
+                    if (oldNode == order->getTop()) {
                         top = newNode;
-                    } else if (oldNode == lattice->getBottom()) {
+                    } else if (oldNode == order->getBottom()) {
                         bottom = newNode;
                     }
                 }
             }
-            assert(*addedStates == *(lattice->getAddedStates()));
+            assert(*addedStates == *(order->getAddedStates()));
 
             // set all states above and below
             for (auto itr = oldNodes.begin(); itr != oldNodes.end(); ++itr) {
@@ -102,11 +102,11 @@ namespace storm {
                 }
             }
 
-            this->statesSorted = lattice->statesSorted;
-            this->statesToHandle = lattice->statesToHandle;
+            this->statesSorted = order->statesSorted;
+            this->statesToHandle = order->statesToHandle;
         }
 
-        void Lattice::addBetween(uint_fast64_t state, Node *above, Node *below) {
+        void Order::addBetween(uint_fast64_t state, Node *above, Node *below) {
             assert(!(*addedStates)[state]);
             assert(compare(above, below) == ABOVE);
 
@@ -122,7 +122,7 @@ namespace storm {
             addedStates->set(state);
         }
 
-        void Lattice::addBetween(uint_fast64_t state, uint_fast64_t above, uint_fast64_t below) {
+        void Order::addBetween(uint_fast64_t state, uint_fast64_t above, uint_fast64_t below) {
             assert(!(*addedStates)[state]);
             assert(compare(above, below) == ABOVE);
 
@@ -132,19 +132,19 @@ namespace storm {
 
         }
 
-        void Lattice::addToNode(uint_fast64_t state, Node *node) {
+        void Order::addToNode(uint_fast64_t state, Node *node) {
             assert(!(*addedStates)[state]);
             node->states.insert(state);
             nodes[state] = node;
             addedStates->set(state);
         }
 
-        void Lattice::add(uint_fast64_t state) {
+        void Order::add(uint_fast64_t state) {
             assert(!(*addedStates)[state]);
             addBetween(state, top, bottom);
         }
 
-        void Lattice::addRelationNodes(Lattice::Node *above, Lattice::Node * below) {
+        void Order::addRelationNodes(Order::Node *above, Order::Node * below) {
             assert (compare(above, below) == UNKNOWN);
             for (auto const& state : above->states) {
                 below->statesAbove.set(state);
@@ -153,15 +153,15 @@ namespace storm {
             assert (compare(above, below) == ABOVE);
         }
 
-        void Lattice::addRelation(uint_fast64_t above, uint_fast64_t below) {
+        void Order::addRelation(uint_fast64_t above, uint_fast64_t below) {
             addRelationNodes(getNode(above), getNode(below));
         }
 
-        Lattice::NodeComparison Lattice::compare(uint_fast64_t state1, uint_fast64_t state2) {
+        Order::NodeComparison Order::compare(uint_fast64_t state1, uint_fast64_t state2) {
             return compare(getNode(state1), getNode(state2));
         }
 
-        Lattice::NodeComparison Lattice::compare(Node* node1, Node* node2) {
+        Order::NodeComparison Order::compare(Node* node1, Node* node2) {
             if (node1 != nullptr && node2 != nullptr) {
                 if (node1 == node2) {
                     return SAME;
@@ -194,39 +194,39 @@ namespace storm {
         }
 
 
-        bool Lattice::contains(uint_fast64_t state) {
+        bool Order::contains(uint_fast64_t state) {
             return state >= 0 && state < addedStates->size() && addedStates->get(state);
         }
 
-        Lattice::Node *Lattice::getNode(uint_fast64_t stateNumber) {
+        Order::Node *Order::getNode(uint_fast64_t stateNumber) {
             return nodes.at(stateNumber);
         }
 
-        Lattice::Node *Lattice::getTop() {
+        Order::Node *Order::getTop() {
             return top;
         }
 
-        Lattice::Node *Lattice::getBottom() {
+        Order::Node *Order::getBottom() {
             return bottom;
         }
 
-        std::vector<Lattice::Node*> Lattice::getNodes() {
+        std::vector<Order::Node*> Order::getNodes() {
             return nodes;
         }
 
-        storm::storage::BitVector* Lattice::getAddedStates() {
+        storm::storage::BitVector* Order::getAddedStates() {
             return addedStates;
         }
 
-        bool Lattice::getDoneBuilding() {
+        bool Order::getDoneBuilding() {
             return doneBuilding;
         }
 
-        void Lattice::setDoneBuilding(bool done) {
+        void Order::setDoneBuilding(bool done) {
             doneBuilding = done;
         }
 
-        std::vector<uint_fast64_t> Lattice::sortStates(storm::storage::BitVector* states) {
+        std::vector<uint_fast64_t> Order::sortStates(storm::storage::BitVector* states) {
             auto numberOfSetBits = states->getNumberOfSetBits();
             auto stateSize = states->size();
             auto result = std::vector<uint_fast64_t>(numberOfSetBits, stateSize);
@@ -273,11 +273,11 @@ namespace storm {
             return result;
         }
 
-        void Lattice::toString(std::ostream &out) {
+        void Order::toString(std::ostream &out) {
             
         }
 
-        bool Lattice::above(Node *node1, Node *node2) {
+        bool Order::above(Node *node1, Node *node2) {
             bool found = false;
             for (auto const& state : node1->states) {
                 found = ((node2->statesAbove))[state];
@@ -304,8 +304,8 @@ namespace storm {
             return found;
         }
 
-        bool Lattice::above(storm::analysis::Lattice::Node *node1, storm::analysis::Lattice::Node *node2,
-                            storm::analysis::Lattice::Node *nodePrev, storm::storage::BitVector *statesSeen) {
+        bool Order::above(storm::analysis::Order::Node *node1, storm::analysis::Order::Node *node2,
+                            storm::analysis::Order::Node *nodePrev, storm::storage::BitVector *statesSeen) {
             bool found = false;
             for (auto const& state : node1->states) {
                 found = ((node2->statesAbove))[state];
@@ -333,7 +333,7 @@ namespace storm {
             return found;
         }
 
-        void Lattice::mergeNodes(storm::analysis::Lattice::Node *node1, storm::analysis::Lattice::Node *node2) {
+        void Order::mergeNodes(storm::analysis::Order::Node *node1, storm::analysis::Order::Node *node2) {
             // Merges node2 into node 1
             // everything above n2 also above n1
             node1->statesAbove|=((node2->statesAbove));
@@ -347,7 +347,7 @@ namespace storm {
             }
         }
 
-        void Lattice::merge(uint_fast64_t var1, uint_fast64_t var2) {
+        void Order::merge(uint_fast64_t var1, uint_fast64_t var2) {
             mergeNodes(getNode(var1), getNode(var2));
         }
     }

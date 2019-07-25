@@ -7,7 +7,7 @@
 #include "storm/environment/Environment.h"
 #include "storm/storage/expressions/BinaryRelationExpression.h"
 #include "storm-pars/storage/ParameterRegion.h"
-#include "Lattice.h"
+#include "Order.h"
 
 namespace storm {
     namespace analysis {
@@ -50,22 +50,22 @@ namespace storm {
             AssumptionStatus checkOnSamples(std::shared_ptr<expressions::BinaryRelationExpression> assumption);
 
             /*!
-             * Tries to validate an assumption based on the lattice and underlying transition matrix.
+             * Tries to validate an assumption based on the order and underlying transition matrix.
              *
              * @param assumption The assumption to validate.
-             * @param lattice The lattice.
+             * @param order The order.
              * @return AssumptionStatus::VALID, or AssumptionStatus::UNKNOWN, or AssumptionStatus::INVALID
              */
-            AssumptionStatus validateAssumption(std::shared_ptr<expressions::BinaryRelationExpression> assumption, Lattice* lattice);
+            AssumptionStatus validateAssumption(std::shared_ptr<expressions::BinaryRelationExpression> assumption, Order* order);
 
             /*!
-             * Tries to validate an assumption based on the lattice, and SMT solving techniques
+             * Tries to validate an assumption based on the order, and SMT solving techniques
              *
              * @param assumption The assumption to validate.
-             * @param lattice The lattice.
+             * @param order The order.
              * @return AssumptionStatus::VALID, or AssumptionStatus::UNKNOWN, or AssumptionStatus::INVALID
              */
-            AssumptionStatus validateAssumptionSMTSolver(std::shared_ptr<expressions::BinaryRelationExpression> assumption, Lattice* lattice);
+            AssumptionStatus validateAssumptionSMTSolver(std::shared_ptr<expressions::BinaryRelationExpression> assumption, Order* order);
 
         private:
             std::shared_ptr<logic::Formula const> formula;
@@ -76,7 +76,7 @@ namespace storm {
 
             void createSamples();
 
-            AssumptionStatus validateAssumptionFunction(Lattice* lattice,
+            AssumptionStatus validateAssumptionFunction(Order* order,
                     typename storage::SparseMatrix<ValueType>::iterator state1succ1,
                     typename storage::SparseMatrix<ValueType>::iterator state1succ2,
                     typename storage::SparseMatrix<ValueType>::iterator state2succ1,

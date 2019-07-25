@@ -13,7 +13,7 @@
 #include "storm/api/builder.h"
 
 #include "storm-pars/analysis/AssumptionChecker.h"
-#include "storm-pars/analysis/Lattice.h"
+#include "storm-pars/analysis/Order.h"
 #include "storm/storage/expressions/BinaryRelationExpression.h"
 #include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
 #include "storm-pars/storage/ParameterRegion.h"
@@ -90,9 +90,9 @@ TEST(AssumptionCheckerTest, Brp_no_bisimulation) {
 
     std::vector<uint_fast64_t> statesSorted = storm::utility::graph::getTopologicalSort(model->getTransitionMatrix());
 
-    auto dummyLattice = new storm::analysis::Lattice(&above, &below, &initialMiddle, 8, &statesSorted);
+    auto dummyOrder = new storm::analysis::Order(&above, &below, &initialMiddle, 8, &statesSorted);
     // Validate assumption
-    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, dummyLattice));
+    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, dummyOrder));
 //    EXPECT_FALSE(checker.validated(assumption));
 
     expressionManager->declareRationalVariable("6");
@@ -108,9 +108,9 @@ TEST(AssumptionCheckerTest, Brp_no_bisimulation) {
     below.set(9);
     initialMiddle = storm::storage::BitVector(13);
 
-    dummyLattice = new storm::analysis::Lattice(&above, &below, &initialMiddle, 13, &statesSorted);
+    dummyOrder = new storm::analysis::Order(&above, &below, &initialMiddle, 13, &statesSorted);
     EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.checkOnSamples(assumption));
-    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, dummyLattice));
+    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, dummyOrder));
 //    EXPECT_EQ(checker.validated(assumption));
 //    EXPECT_FALSE(checker.valid(assumption));
 }
@@ -204,7 +204,7 @@ TEST(AssumptionCheckerTest, Simple2) {
 
     std::vector<uint_fast64_t> statesSorted = storm::utility::graph::getTopologicalSort(model->getTransitionMatrix());
 
-    auto lattice = new storm::analysis::Lattice(&above, &below, &initialMiddle, 5, &statesSorted);
+    auto order = new storm::analysis::Order(&above, &below, &initialMiddle, 5, &statesSorted);
 
     // Checking on samples and validate
     auto assumption = std::make_shared<storm::expressions::BinaryRelationExpression>(
@@ -213,7 +213,7 @@ TEST(AssumptionCheckerTest, Simple2) {
                                                          expressionManager->getVariable("2").getExpression().getBaseExpressionPointer(),
                                                          storm::expressions::BinaryRelationExpression::RelationType::Greater));
     EXPECT_EQ(storm::analysis::AssumptionStatus::UNKNOWN, checker.checkOnSamples(assumption));
-    EXPECT_EQ(storm::analysis::AssumptionStatus::VALID, checker.validateAssumption(assumption, lattice));
+    EXPECT_EQ(storm::analysis::AssumptionStatus::VALID, checker.validateAssumption(assumption, order));
 
     assumption = std::make_shared<storm::expressions::BinaryRelationExpression>(
             storm::expressions::BinaryRelationExpression(*expressionManager, expressionManager->getBooleanType(),
@@ -221,7 +221,7 @@ TEST(AssumptionCheckerTest, Simple2) {
                                                          expressionManager->getVariable("1").getExpression().getBaseExpressionPointer(),
                                                          storm::expressions::BinaryRelationExpression::RelationType::Greater));
     EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.checkOnSamples(assumption));
-    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, lattice));
+    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, order));
 
 
     assumption = std::make_shared<storm::expressions::BinaryRelationExpression>(
@@ -230,7 +230,7 @@ TEST(AssumptionCheckerTest, Simple2) {
                                                          expressionManager->getVariable("2").getExpression().getBaseExpressionPointer(),
                                                          storm::expressions::BinaryRelationExpression::RelationType::Equal));
     EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.checkOnSamples(assumption));
-    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, lattice));
+    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, order));
 }
 
 TEST(AssumptionCheckerTest, Simple3) {
@@ -270,8 +270,8 @@ TEST(AssumptionCheckerTest, Simple3) {
 
     std::vector<uint_fast64_t> statesSorted = storm::utility::graph::getTopologicalSort(model->getTransitionMatrix());
 
-    auto lattice = new storm::analysis::Lattice(&above, &below, &initialMiddle, 6, &statesSorted);
-    lattice->add(3);
+    auto order = new storm::analysis::Order(&above, &below, &initialMiddle, 6, &statesSorted);
+    order->add(3);
 
     // Checking on samples and validate
     auto assumption = std::make_shared<storm::expressions::BinaryRelationExpression>(
@@ -280,8 +280,8 @@ TEST(AssumptionCheckerTest, Simple3) {
                                                          expressionManager->getVariable("2").getExpression().getBaseExpressionPointer(),
                                                          storm::expressions::BinaryRelationExpression::RelationType::Greater));
     EXPECT_EQ(storm::analysis::AssumptionStatus::UNKNOWN, checker.checkOnSamples(assumption));
-    EXPECT_EQ(storm::analysis::AssumptionStatus::VALID, checker.validateAssumption(assumption, lattice));
-    EXPECT_EQ(storm::analysis::AssumptionStatus::VALID, checker.validateAssumptionSMTSolver(assumption, lattice));
+    EXPECT_EQ(storm::analysis::AssumptionStatus::VALID, checker.validateAssumption(assumption, order));
+    EXPECT_EQ(storm::analysis::AssumptionStatus::VALID, checker.validateAssumptionSMTSolver(assumption, order));
 
     assumption = std::make_shared<storm::expressions::BinaryRelationExpression>(
             storm::expressions::BinaryRelationExpression(*expressionManager, expressionManager->getBooleanType(),
@@ -289,8 +289,8 @@ TEST(AssumptionCheckerTest, Simple3) {
                                                          expressionManager->getVariable("1").getExpression().getBaseExpressionPointer(),
                                                          storm::expressions::BinaryRelationExpression::RelationType::Greater));
     EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.checkOnSamples(assumption));
-    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, lattice));
-    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumptionSMTSolver(assumption, lattice));
+    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, order));
+    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumptionSMTSolver(assumption, order));
 
     assumption = std::make_shared<storm::expressions::BinaryRelationExpression>(
             storm::expressions::BinaryRelationExpression(*expressionManager, expressionManager->getBooleanType(),
@@ -298,8 +298,8 @@ TEST(AssumptionCheckerTest, Simple3) {
                                                          expressionManager->getVariable("2").getExpression().getBaseExpressionPointer(),
                                                          storm::expressions::BinaryRelationExpression::RelationType::Equal));
     EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.checkOnSamples(assumption));
-    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, lattice));
-    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumptionSMTSolver(assumption, lattice));
+    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, order));
+    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumptionSMTSolver(assumption, order));
 }
 
 TEST(AssumptionCheckerTest, Simple4) {
@@ -331,7 +331,7 @@ TEST(AssumptionCheckerTest, Simple4) {
     expressionManager->declareRationalVariable("1");
     expressionManager->declareRationalVariable("2");
 
-    // Lattice
+    // Order
     storm::storage::BitVector above(5);
     above.set(3);
     storm::storage::BitVector below(5);
@@ -339,7 +339,7 @@ TEST(AssumptionCheckerTest, Simple4) {
     storm::storage::BitVector initialMiddle(5);
     std::vector<uint_fast64_t> statesSorted = storm::utility::graph::getTopologicalSort(model->getTransitionMatrix());
 
-    auto lattice = new storm::analysis::Lattice(&above, &below, &initialMiddle, 5, &statesSorted);
+    auto order = new storm::analysis::Order(&above, &below, &initialMiddle, 5, &statesSorted);
 
     auto assumption = std::make_shared<storm::expressions::BinaryRelationExpression>(
             storm::expressions::BinaryRelationExpression(*expressionManager, expressionManager->getBooleanType(),
@@ -347,8 +347,8 @@ TEST(AssumptionCheckerTest, Simple4) {
                                                          expressionManager->getVariable("2").getExpression().getBaseExpressionPointer(),
                                                          storm::expressions::BinaryRelationExpression::RelationType::Greater));
     EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.checkOnSamples(assumption));
-    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, lattice));
-    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumptionSMTSolver(assumption, lattice));
+    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, order));
+    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumptionSMTSolver(assumption, order));
 
     assumption = std::make_shared<storm::expressions::BinaryRelationExpression>(
             storm::expressions::BinaryRelationExpression(*expressionManager, expressionManager->getBooleanType(),
@@ -356,8 +356,8 @@ TEST(AssumptionCheckerTest, Simple4) {
                                                          expressionManager->getVariable("1").getExpression().getBaseExpressionPointer(),
                                                          storm::expressions::BinaryRelationExpression::RelationType::Greater));
     EXPECT_EQ(storm::analysis::AssumptionStatus::UNKNOWN, checker.checkOnSamples(assumption));
-    EXPECT_EQ(storm::analysis::AssumptionStatus::VALID, checker.validateAssumption(assumption, lattice));
-    EXPECT_EQ(storm::analysis::AssumptionStatus::VALID, checker.validateAssumptionSMTSolver(assumption, lattice));
+    EXPECT_EQ(storm::analysis::AssumptionStatus::VALID, checker.validateAssumption(assumption, order));
+    EXPECT_EQ(storm::analysis::AssumptionStatus::VALID, checker.validateAssumptionSMTSolver(assumption, order));
 
     assumption = std::make_shared<storm::expressions::BinaryRelationExpression>(
             storm::expressions::BinaryRelationExpression(*expressionManager, expressionManager->getBooleanType(),
@@ -365,8 +365,8 @@ TEST(AssumptionCheckerTest, Simple4) {
                                                          expressionManager->getVariable("2").getExpression().getBaseExpressionPointer(),
                                                          storm::expressions::BinaryRelationExpression::RelationType::Equal));
     EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.checkOnSamples(assumption));
-    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, lattice));
-    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumptionSMTSolver(assumption, lattice));
+    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, order));
+    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumptionSMTSolver(assumption, order));
 
 
 

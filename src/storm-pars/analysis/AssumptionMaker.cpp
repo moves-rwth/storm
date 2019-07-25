@@ -16,7 +16,7 @@ namespace storm {
 
 
         template <typename ValueType>
-        std::map<std::shared_ptr<expressions::BinaryRelationExpression>, AssumptionStatus> AssumptionMaker<ValueType>::createAndCheckAssumption(uint_fast64_t val1, uint_fast64_t val2, Lattice* lattice) {
+        std::map<std::shared_ptr<expressions::BinaryRelationExpression>, AssumptionStatus> AssumptionMaker<ValueType>::createAndCheckAssumption(uint_fast64_t val1, uint_fast64_t val2, Order* order) {
             std::map<std::shared_ptr<expressions::BinaryRelationExpression>, AssumptionStatus> result;
 
             expressions::Variable var1 = expressionManager->getVariable(std::to_string(val1));
@@ -29,7 +29,7 @@ namespace storm {
             AssumptionStatus result2;
             AssumptionStatus result3;
             if (validate) {
-                result1 = assumptionChecker->validateAssumption(assumption1, lattice);
+                result1 = assumptionChecker->validateAssumption(assumption1, order);
             } else {
                 result1 = AssumptionStatus::UNKNOWN;
             }
@@ -42,7 +42,7 @@ namespace storm {
                                                                                                                                   expressions::BinaryRelationExpression::RelationType::Greater));
 
             if (validate) {
-                result2 = assumptionChecker->validateAssumption(assumption2, lattice);
+                result2 = assumptionChecker->validateAssumption(assumption2, order);
             } else {
                 result2 = AssumptionStatus::UNKNOWN;
             }
@@ -53,7 +53,7 @@ namespace storm {
                                                                                                                                   var2.getExpression().getBaseExpressionPointer(), var1.getExpression().getBaseExpressionPointer(),
                                                                                                                                   expressions::BinaryRelationExpression::RelationType::Equal));
             if (validate) {
-                result3 = assumptionChecker->validateAssumption(assumption3, lattice);
+                result3 = assumptionChecker->validateAssumption(assumption3, order);
             } else {
                 result3 = AssumptionStatus::UNKNOWN;
             }

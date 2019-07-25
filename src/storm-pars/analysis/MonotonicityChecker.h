@@ -2,8 +2,8 @@
 #define STORM_MONOTONICITYCHECKER_H
 
 #include <map>
-#include "Lattice.h"
-#include "LatticeExtender.h"
+#include "Order.h"
+#include "OrderExtender.h"
 #include "AssumptionMaker.h"
 #include "storm/storage/expressions/BinaryRelationExpression.h"
 #include "storm/storage/expressions/ExpressionManager.h"
@@ -41,12 +41,12 @@ namespace storm {
             /*!
              * Checks for model and formula as provided in constructor for monotonicity
              */
-            std::map<storm::analysis::Lattice*, std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>>> checkMonotonicity();
+            std::map<storm::analysis::Order*, std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>>> checkMonotonicity();
 
             /*!
-             * Checks if monotonicity can be found in this lattice. Unordered states are not checked
+             * Checks if monotonicity can be found in this order. Unordered states are not checked
              */
-            bool somewhereMonotonicity(storm::analysis::Lattice* lattice) ;
+            bool somewhereMonotonicity(storm::analysis::Order* order) ;
 
             /*!
              * Checks if a derivative >=0 or/and <=0
@@ -113,11 +113,11 @@ namespace storm {
             }
 
         private:
-            std::map<storm::analysis::Lattice*, std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>>> checkMonotonicity(std::map<storm::analysis::Lattice*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> map, storm::storage::SparseMatrix<ValueType> matrix);
+            std::map<storm::analysis::Order*, std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>>> checkMonotonicity(std::map<storm::analysis::Order*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> map, storm::storage::SparseMatrix<ValueType> matrix);
 
-            std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>> analyseMonotonicity(uint_fast64_t i, Lattice* lattice, storm::storage::SparseMatrix<ValueType> matrix) ;
+            std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>> analyseMonotonicity(uint_fast64_t i, Order* order, storm::storage::SparseMatrix<ValueType> matrix) ;
 
-            std::map<Lattice*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> createLattice();
+            std::map<Order*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> createOrder();
 
             std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>> checkOnSamples(std::shared_ptr<storm::models::sparse::Dtmc<ValueType>> model, uint_fast64_t numberOfSamples);
 
@@ -127,7 +127,7 @@ namespace storm {
 
             ValueType getDerivative(ValueType function, typename utility::parametric::VariableType<ValueType>::type var);
 
-            std::map<Lattice*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> extendLatticeWithAssumptions(Lattice* lattice, AssumptionMaker<ValueType>* assumptionMaker, uint_fast64_t val1, uint_fast64_t val2, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>> assumptions);
+            std::map<Order*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> extendOrderWithAssumptions(Order* order, AssumptionMaker<ValueType>* assumptionMaker, uint_fast64_t val1, uint_fast64_t val2, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>> assumptions);
 
             std::shared_ptr<storm::models::ModelBase> model;
 
@@ -139,7 +139,7 @@ namespace storm {
 
             std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>> resultCheckOnSamples;
 
-            LatticeExtender<ValueType> *extender;
+            OrderExtender<ValueType> *extender;
 
             std::ofstream outfile;
 
