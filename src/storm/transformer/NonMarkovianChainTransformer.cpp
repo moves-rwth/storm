@@ -256,6 +256,7 @@ namespace storm {
             fragment.setGloballyFormulasAllowed(true);
             fragment.setReachabilityProbabilityFormulasAllowed(true);
             fragment.setUntilFormulasAllowed(true);
+            fragment.setTimeBoundedUntilFormulasAllowed(true);
 
             return formula.isInFragment(fragment);
         }
