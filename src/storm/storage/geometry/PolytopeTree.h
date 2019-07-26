@@ -49,19 +49,20 @@ namespace storm {
                         } else {
                             // This is an inner node. Traverse the children and set this to the convex union of its children.
                             std::vector<PolytopeTree<ValueType>> newChildren;
-                            std::shared_ptr<Polytope<ValueType>> newPolytope = nullptr;
+                            std::vector<std::vector<ValueType>> newPolytopeVertices;
                             for (auto& c : children) {
                                 c.setMinus(rhs);
                                 if (c.polytope != nullptr) {
                                     newChildren.push_back(c);
-                                    if (newPolytope) {
-                                        newPolytope = newPolytope->convexUnion(c.polytope);
-                                    } else {
-                                        newPolytope = c.polytope;
-                                    }
+                                    auto cVertices = c.polytope->getVertices();
+                                    newPolytopeVertices.insert(newPolytopeVertices.end(), cVertices.begin(), cVertices.end());
                                 }
                             }
-                            polytope = newPolytope; // nullptr, if no children left
+                            if (newPolytopeVertices.empty()) {
+                                polytope = nullptr;
+                            } else {
+                                polytope = storm::storage::geometry::Polytope<ValueType>::create(newPolytopeVertices);
+                            }
                             children = std::move(newChildren);
                         }
                     }
