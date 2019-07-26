@@ -2,6 +2,8 @@
 
 #include <iostream>
 #include <string>
+#include <regex>
+
 
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/predicate.hpp>
@@ -215,7 +217,29 @@ namespace storm {
                     // Parse labels
                     if (!line.empty()) {
                         std::vector<std::string> labels;
-                        boost::split(labels, line, boost::is_any_of(" "));
+                        // Labels are separated by whitespace and can optionally be enclosed in quotation marks
+                        // Regex for labels with two cases:
+                        // * Enclosed in quotation marks: \"([^\"]+?)\"(?=(\s|$|\"))
+                        //   - First part matches string enclosed in quotation marks with no quotation mark inbetween (\"([^\"]+?)\")
+                        //   - second part is lookahead which ensures that after the matched part either whitespace, end of line or a new quotation mark follows (?=(\s|$|\"))
+                        // * Separated by whitespace: [^\s\"]+?(?=(\s|$))
+                        //   - First part matches string without whitespace and quotation marks [^\s\"]+?
+                        //   - Second part is again lookahead matching whitespace or end of line (?=(\s|$))
+                        std::regex labelRegex(R"(\"([^\"]+?)\"(?=(\s|$|\"))|([^\s\"]+?(?=(\s|$))))");
+
+                        // Iterate over matches
+                        auto match_begin = std::sregex_iterator(line.begin(), line.end(), labelRegex);
+                        auto match_end = std::sregex_iterator();
+                        for (std::sregex_iterator i = match_begin; i != match_end; ++i) {
+                            std::smatch match = *i;
+                            // Find matched group and add as label
+                            if (match.length(1) > 0) {
+                                labels.push_back(match.str(1));
+                            } else {
+                                labels.push_back(match.str(3));
+                            }
+                        }
+
                         for (std::string label : labels) {
                             if (!modelComponents->stateLabeling.containsLabel(label)) {
                                 modelComponents->stateLabeling.addLabel(label);
@@ -255,6 +279,7 @@ namespace storm {
                     std::string valueStr = line.substr(posColon+2);
                     ValueType value = valueParser.parseValue(valueStr);
                     STORM_LOG_TRACE("Transition " << row << " -> " << target << ": " << value);
+                    STORM_LOG_THROW(target < stateSize, storm::exceptions::WrongFormatException, "Target state " << target << " is greater than state size " << stateSize);
                     builder.addNextValue(row, target, value);
                 }
             }

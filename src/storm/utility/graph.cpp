@@ -37,16 +37,22 @@ namespace storm {
                 uint_fast64_t numberOfStates = transitionMatrix.getRowGroupCount();
                 
                 // Initialize the stack used for the DFS with the states.
-                std::vector<uint_fast64_t> stack(initialStates.begin(), initialStates.end());
+                std::vector<uint_fast64_t> stack;
+                stack.reserve(initialStates.size());
+                for (auto const& state : initialStates) {
+                    if (constraintStates.get(state)) {
+                        stack.push_back(state);
+                    }
+                }
                 
                 // Initialize the stack for the step bound, if the number of steps is bounded.
                 std::vector<uint_fast64_t> stepStack;
                 std::vector<uint_fast64_t> remainingSteps;
                 if (useStepBound) {
                     stepStack.reserve(numberOfStates);
-                    stepStack.insert(stepStack.begin(), initialStates.getNumberOfSetBits(), maximalSteps);
+                    stepStack.insert(stepStack.begin(), stack.size(), maximalSteps);
                     remainingSteps.resize(numberOfStates);
-                    for (auto state : initialStates) {
+                    for (auto state : stack) {
                         remainingSteps[state] = maximalSteps;
                     }
                 }

@@ -17,6 +17,7 @@ namespace storm {
             // Gives for each state in the resulting model the corresponding state in the original model.
             std::vector<uint_fast64_t> newToOldStateIndexMapping;
             // Gives for each action in the resulting model the corresponding action in the original model.
+            // If this action was introduced to fix a deadlock, it will get index std::numeric_limits<uint64_t>::max()
             std::vector<uint64_t> newToOldActionIndexMapping;
             // marks the actions of the original model that are still available in the subsystem
             storm::storage::BitVector keptActions;
@@ -27,7 +28,7 @@ namespace storm {
             bool buildStateMapping = true;
             bool buildActionMapping = false;
             bool buildKeptActions = true;
-            bool fixDeadlocks = true;
+            bool fixDeadlocks = false;
         };
         
         /*
@@ -40,7 +41,9 @@ namespace storm {
          *    * it originates from a state that is part of the subsystem AND
          *    * it does not contain a transition leading to a state outside of the subsystem.
          *
-         * If this introduces a deadlock state (i.e., a state without an action) an exception is thrown.
+         * If this introduces a deadlock state (i.e., a state without an action) it is either
+         *    * fixed by inserting a selfloop (if fixDeadlocks is true) or
+         *    * an exception is thrown (otherwise).
          *
          * @param originalModel The original model.
          * @param subsystemStates The selected states.
@@ -49,5 +52,7 @@ namespace storm {
          */
         template <typename ValueType, typename RewardModelType = storm::models::sparse::StandardRewardModel<ValueType>>
         SubsystemBuilderReturnType<ValueType, RewardModelType> buildSubsystem(storm::models::sparse::Model<ValueType, RewardModelType> const& originalModel, storm::storage::BitVector const& subsystemStates, storm::storage::BitVector const& subsystemActions, bool keepUnreachableStates = true, SubsystemBuilderOptions options = SubsystemBuilderOptions());
+        
+
     }
 }

@@ -133,6 +133,13 @@ namespace storm {
              * @param filename The name of the file to which to write the dot output.
              */
             void exportToDot(std::string const& filename) const;
+
+            /*!
+             * Exports the ODD in the text format to the given file.
+             *
+             * @param filename The name of the file to which to write the dot output.
+             */
+            void exportToText(std::string const& filename) const;
             
             /*!
              * Retrieves the encoding for the given offset.

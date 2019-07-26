@@ -368,7 +368,17 @@ namespace storm {
             bool Model<Type, ValueType>::supportsParameters() const {
                 return std::is_same<ValueType, storm::RationalFunction>::value;
             }
-            
+
+            template<storm::dd::DdType Type, typename ValueType>
+            void Model<Type, ValueType>::writeDotToFile(std::string const& filename) const {
+
+                this->getTransitionMatrix().exportToDot(filename, true);
+                this->getInitialStates().exportToDot(filename, true);
+                for (auto const& lab : this->getLabels()) {
+                    this->getStates(lab).exportToDot(filename,true);
+                }
+            }
+
             template<storm::dd::DdType Type, typename ValueType>
             bool Model<Type, ValueType>::hasParameters() const {
                 if (!this->supportsParameters()) {
@@ -403,7 +413,10 @@ namespace storm {
             std::set<storm::RationalFunctionVariable> const& Model<storm::dd::DdType::Sylvan, storm::RationalFunction>::getParameters() const {
                 return parameters;
             }
-            
+
+
+
+
             template<storm::dd::DdType Type, typename ValueType>
             template<typename NewValueType>
             typename std::enable_if<!std::is_same<ValueType, NewValueType>::value, std::shared_ptr<Model<Type, NewValueType>>>::type Model<Type, ValueType>::toValueType() const {

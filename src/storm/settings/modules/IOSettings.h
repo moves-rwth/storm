@@ -59,12 +59,26 @@ namespace storm {
                 bool isExportExplicitSet() const;
                 
                 /*!
-                 * Retrieves thename in which to write the model in explicit format, if the option was set.
+                 * Retrieves the name in which to write the model in explicit format, if the option was set.
                  *
-                 * @return The name of the file in which to write the exported mode.
+                 * @return The name of the file in which to write the exported model.
                  */
                 std::string getExportExplicitFilename() const;
-                
+
+                /*!
+                 * Retrieves whether the export-to-dd option was set
+                 *
+                 * @return True if the export-to-explicit option was set
+                 */
+                bool isExportDdSet() const;
+
+                /*!
+                 * Retrieves the name in which to write the model in dd format, if the option was set.
+                 *
+                 * @return The name of the file in which to write the exported model.
+                 */
+                std::string getExportDdFilename() const;
+
                 /*!
                  * Retrieves whether the cumulative density function for reward bounded properties should be exported
                  */
@@ -308,6 +322,7 @@ namespace storm {
                 static const std::string exportDotOptionName;
                 static const std::string exportJaniDotOptionName;
                 static const std::string exportExplicitOptionName;
+                static const std::string exportDdOptionName;
                 static const std::string exportCdfOptionName;
                 static const std::string exportCdfOptionShortName;
                 static const std::string explicitOptionName;

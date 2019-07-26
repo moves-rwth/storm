@@ -386,7 +386,15 @@ namespace storm {
         
         template <storm::dd::DdType DdType, typename ValueType>
         void exportDdModel(std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> const& model, SymbolicInput const& input) {
-            // Intentionally left empty.
+            auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
+
+            if (ioSettings.isExportDdSet()) {
+                storm::api::exportSparseModelAsDrdd(model, ioSettings.getExportDdFilename());
+            }
+
+            if (ioSettings.isExportDotSet()) {
+                storm::api::exportSymbolicModelAsDot(model, ioSettings.getExportDotFilename());
+            }
         }
         
         template <storm::dd::DdType DdType, typename ValueType>

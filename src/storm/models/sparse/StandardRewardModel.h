@@ -123,9 +123,13 @@ namespace storm {
                  */
                 template<typename T>
                 void setStateActionReward(uint_fast64_t choiceIndex, T const& newValue);
-
-                //ValueType maximalStateActionReward() const;
-
+                
+                /*!
+                 * Sets all available rewards at this state to zero.
+                 */
+                template<typename MatrixValueType>
+                void clearRewardAtState(uint_fast64_t state, storm::storage::SparseMatrix<MatrixValueType> const& transitions);
+                
                 /*!
                  * Retrieves an optional value that contains the state-action reward vector if there is one.
                  *

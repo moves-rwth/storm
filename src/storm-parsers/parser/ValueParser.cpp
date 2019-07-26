@@ -7,7 +7,7 @@ namespace storm {
 
         template<typename ValueType>
         void ValueParser<ValueType>::addParameter(std::string const& parameter) {
-            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Parameters are not supported in this build.");
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Parameters are not supported in this build (Have you checked storm-pars?).");
         }
 
         template<>

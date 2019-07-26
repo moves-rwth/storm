@@ -2,6 +2,8 @@
 Mtbdd toDoubleMtbdd() const;
 Mtbdd toInt64Mtbdd() const;
 Mtbdd toStormRationalNumberMtbdd() const;
+
+void PrintText(FILE *out) const;
 #if defined(SYLVAN_HAVE_CARL) || defined(STORM_HAVE_CARL)
 Mtbdd toStormRationalFunctionMtbdd() const;
 #endif

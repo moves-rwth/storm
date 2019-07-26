@@ -1,4 +1,5 @@
 #include "storm_wrapper.h"
+#include "sylvan_bdd.h"
 #include "sylvan_mtbdd_storm.h"
 #include "sylvan_storm_rational_number.h"
 #include "sylvan_storm_rational_function.h"
@@ -19,6 +20,14 @@ Sylvan::initCustomMtbdd()
 /*********************************************
  Functions added to sylvan's Bdd class.
  *********************************************/
+
+void
+Bdd::PrintText(FILE *out) const {
+    sylvan_serialize_reset();
+    size_t v = sylvan_serialize_add(bdd);
+    fprintf(out, "bdd%s,", bdd&sylvan_complement?"-":"+");
+    sylvan_serialize_totext(out);
+}
 
 Mtbdd
 Bdd::toDoubleMtbdd() const {
@@ -90,6 +99,13 @@ Mtbdd::isValid() const {
 void
 Mtbdd::PrintDot(FILE *out) const {
     mtbdd_fprintdot(out, mtbdd);
+}
+
+void
+Mtbdd::PrintText(FILE *out) const {
+    LACE_ME;
+    MTBDD dds[1] = { mtbdd };
+    mtbdd_writer_totext(out, dds, 1);
 }
 
 std::string

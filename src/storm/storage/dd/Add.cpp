@@ -1009,6 +1009,11 @@ namespace storm {
         void Add<LibraryType, ValueType>::exportToDot(std::string const& filename, bool showVariablesIfPossible) const {
             internalAdd.exportToDot(filename, this->getDdManager().getDdVariableNames(), showVariablesIfPossible);
         }
+
+        template<DdType LibraryType, typename ValueType>
+        void Add<LibraryType, ValueType>::exportToText(std::string const& filename) const {
+            internalAdd.exportToText(filename);
+        }
         
         template<DdType LibraryType, typename ValueType>
         AddIterator<LibraryType, ValueType> Add<LibraryType, ValueType>::begin(bool enumerateDontCareMetaVariables) const {

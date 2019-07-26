@@ -9,6 +9,7 @@
 #include "storm/storage/PairHash.h"
 
 #include "storm/utility/macros.h"
+#include "storm/exceptions/NotSupportedException.h"
 
 namespace storm {
     namespace dd {
@@ -210,6 +211,10 @@ namespace storm {
             for (char* element : ddVariableNames) {
                 delete element;
             }
+        }
+
+        void InternalBdd<DdType::CUDD>::exportToText(std::string const&) const {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported");
         }
         
         cudd::BDD InternalBdd<DdType::CUDD>::getCuddBdd() const {
