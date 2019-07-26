@@ -29,6 +29,24 @@ namespace storm {
             this->formulas = formulas;
             this->validate = validate;
             this->precision = precision;
+            std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel = model->as<storm::models::sparse::Model<ValueType>>();
+
+            if (regions.size() == 1) {
+                this->region = *(regions.begin());
+            } else {
+                assert (regions.size() == 0);
+                typename storm::storage::ParameterRegion<ValueType>::Valuation lowerBoundaries;
+                typename storm::storage::ParameterRegion<ValueType>::Valuation upperBoundaries;
+                std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> vars;
+                vars = storm::models::sparse::getProbabilityParameters(*sparseModel);
+                for (auto var : vars) {
+                    typename storm::storage::ParameterRegion<ValueType>::CoefficientType lb = storm::utility::convertNumber<typename storm::storage::ParameterRegion<ValueType>::CoefficientType>(0 + precision);
+                    typename storm::storage::ParameterRegion<ValueType>::CoefficientType ub = storm::utility::convertNumber<typename storm::storage::ParameterRegion<ValueType>::CoefficientType>(1 - precision);
+                    lowerBoundaries.insert(std::make_pair(var, lb));
+                    upperBoundaries.insert(std::make_pair(var, ub));
+                }
+                this->region =  storm::storage::ParameterRegion<ValueType>(std::move(lowerBoundaries), std::move(upperBoundaries));
+            }
 
             if (numberOfSamples > 0) {
                 // sampling
@@ -43,25 +61,6 @@ namespace storm {
                 checkSamples= true;
             } else {
                 checkSamples= false;
-            }
-
-            std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel = model->as<storm::models::sparse::Model<ValueType>>();
-
-            if (regions.size() == 1) {
-                region = *(regions.begin());
-            } else {
-                assert (regions.size() == 0);
-                typename storm::storage::ParameterRegion<ValueType>::Valuation lowerBoundaries;
-                typename storm::storage::ParameterRegion<ValueType>::Valuation upperBoundaries;
-                std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> vars;
-                vars = storm::models::sparse::getProbabilityParameters(*sparseModel);
-                for (auto var : vars) {
-                    typename storm::storage::ParameterRegion<ValueType>::CoefficientType lb = storm::utility::convertNumber<typename storm::storage::ParameterRegion<ValueType>::CoefficientType>(0 + precision);
-                    typename storm::storage::ParameterRegion<ValueType>::CoefficientType ub = storm::utility::convertNumber<typename storm::storage::ParameterRegion<ValueType>::CoefficientType>(1 - precision);
-                    lowerBoundaries.insert(std::make_pair(var, lb));
-                    upperBoundaries.insert(std::make_pair(var, ub));
-                }
-                region =  storm::storage::ParameterRegion<ValueType>(std::move(lowerBoundaries), std::move(upperBoundaries));
             }
 
             this->extender = new storm::analysis::OrderExtender<ValueType>(sparseModel);
@@ -561,17 +560,20 @@ namespace storm {
                     for (auto itr2 = variables.begin(); itr2 != variables.end(); ++itr2) {
                         // Only change value for current variable
                         if ((*itr) == (*itr2)) {
-                            auto val = std::pair<typename utility::parametric::VariableType<ValueType>::type, typename utility::parametric::CoefficientType<ValueType>::type>(
-                                    (*itr2), storm::utility::convertNumber<typename utility::parametric::CoefficientType<ValueType>::type>(
-                                            boost::lexical_cast<std::string>((i + 1) / (double(numberOfSamples + 1)))));
+                            auto lb = region.getLowerBoundary(itr->name());
+                            auto ub = region.getUpperBoundary(itr->name());
+                            // Creates samples between lb and ub, that is: lb, lb + (ub-lb)/(#samples -1), lb + 2* (ub-lb)/(#samples -1), ..., ub
+                            auto val =
+                                    std::pair<typename utility::parametric::VariableType<ValueType>::type, typename utility::parametric::CoefficientType<ValueType>::type>
+                                            (*itr,utility::convertNumber<typename utility::parametric::CoefficientType<ValueType>::type>(lb + i*(ub-lb)/(numberOfSamples-1)));
                             valuation.insert(val);
-                            assert (0 < val.second && val.second < 1);
+
                         } else {
-                            auto val = std::pair<typename utility::parametric::VariableType<ValueType>::type, typename utility::parametric::CoefficientType<ValueType>::type>(
-                                    (*itr2), storm::utility::convertNumber<typename utility::parametric::CoefficientType<ValueType>::type>(
-                                            boost::lexical_cast<std::string>((1) / (double(numberOfSamples + 1)))));
+                            auto lb = region.getLowerBoundary(itr->name());
+                            auto val =
+                                    std::pair<typename utility::parametric::VariableType<ValueType>::type, typename utility::parametric::CoefficientType<ValueType>::type>
+                                            (*itr,utility::convertNumber<typename utility::parametric::CoefficientType<ValueType>::type>(lb));
                             valuation.insert(val);
-                            assert (0 < val.second && val.second < 1);
                         }
                     }
                     storm::models::sparse::Dtmc<double> sampleModel = instantiator.instantiate(valuation);
