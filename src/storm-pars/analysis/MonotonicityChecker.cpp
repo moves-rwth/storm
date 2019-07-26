@@ -195,6 +195,8 @@ namespace storm {
 
             std::vector<double> minValues = minRes.getValueVector();
             std::vector<double> maxValues = maxRes.getValueVector();
+            // TODO: zijn de value vectors nu precies omgedraaid?
+
             // Create initial order
             std::tuple<storm::analysis::Order*, uint_fast64_t, uint_fast64_t> criticalTuple = extender->toOrder(formulas, minValues, maxValues);
 //            std::tuple<storm::analysis::Order*, uint_fast64_t, uint_fast64_t> criticalTuple = extender->toOrder(formulas);

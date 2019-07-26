@@ -212,10 +212,21 @@ namespace storm {
 
                     storm::storage::BitVector* statesToHandle;
 
-                    std::vector<uint_fast64_t>* statesSorted;
+                    uint_fast64_t getNextSortedState();
+
+                    bool containsStatesSorted(uint_fast64_t state);
+
+                    void removeFirstStatesSorted();
+
+                    void removeStatesSorted(uint_fast64_t state);
+
+                protected:
+                    std::vector<uint_fast64_t> getStatesSorted();
 
                 private:
                     std::vector<Node*> nodes;
+
+                    std::vector<uint_fast64_t> statesSorted;
 
                     storm::storage::BitVector* addedStates;
 

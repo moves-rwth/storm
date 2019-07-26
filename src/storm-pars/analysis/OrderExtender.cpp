@@ -69,7 +69,6 @@ namespace storm {
 
             uint_fast64_t numberOfStates = this->model->getNumberOfStates();
 
-            // TODO: dit moet anders kunnen
             storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Model<ValueType>> propositionalChecker(*model);
             storm::storage::BitVector phiStates;
             storm::storage::BitVector psiStates;
@@ -130,43 +129,65 @@ namespace storm {
         template <typename ValueType>
         std::tuple<Order*, uint_fast64_t, uint_fast64_t> OrderExtender<ValueType>::toOrder(std::vector<std::shared_ptr<storm::logic::Formula const>> formulas, std::vector<double> minValues, std::vector<double> maxValues) {
             uint_fast64_t numberOfStates = this->model->getNumberOfStates();
-
-            // Compare min/max for all states
-            STORM_LOG_THROW((++formulas.begin()) == formulas.end(), storm::exceptions::NotSupportedException, "Only one formula allowed for monotonicity analysis");
-            STORM_LOG_THROW((*(formulas[0])).isProbabilityOperatorFormula()
-                            && ((*(formulas[0])).asProbabilityOperatorFormula().getSubformula().isUntilFormula()
-                                || (*(formulas[0])).asProbabilityOperatorFormula().getSubformula().isEventuallyFormula()), storm::exceptions::NotSupportedException, "Expecting until or eventually formula");
-
-            storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Model<ValueType>> propositionalChecker(*model);
-            storm::storage::BitVector phiStates;
-            storm::storage::BitVector psiStates;
-            if ((*(formulas[0])).asProbabilityOperatorFormula().getSubformula().isUntilFormula()) {
-                phiStates = propositionalChecker.check((*(formulas[0])).asProbabilityOperatorFormula().getSubformula().asUntilFormula().getLeftSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
-                psiStates = propositionalChecker.check((*(formulas[0])).asProbabilityOperatorFormula().getSubformula().asUntilFormula().getRightSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
-            } else {
-                phiStates = storm::storage::BitVector(numberOfStates, true);
-                psiStates = propositionalChecker.check((*(formulas[0])).asProbabilityOperatorFormula().getSubformula().asEventuallyFormula().getSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
-            }
-
-            // Get the maybeStates
-            std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(this->model->getBackwardTransitions(), phiStates, psiStates);
-            storm::storage::BitVector topStates = statesWithProbability01.second;
-            storm::storage::BitVector bottomStates = statesWithProbability01.first;
-
-            STORM_LOG_THROW(topStates.begin() != topStates.end(), storm::exceptions::NotImplementedException, "Formula yields to no 1 states");
-            STORM_LOG_THROW(bottomStates.begin() != bottomStates.end(), storm::exceptions::NotImplementedException, "Formula yields to no zero states");
-
-            uint_fast64_t bottom = bottomStates.getNextSetIndex(0);
-            uint_fast64_t top = topStates.getNextSetIndex(0);
+//
+//            // Compare min/max for all states
+//            STORM_LOG_THROW((++formulas.begin()) == formulas.end(), storm::exceptions::NotSupportedException, "Only one formula allowed for monotonicity analysis");
+//            STORM_LOG_THROW((*(formulas[0])).isProbabilityOperatorFormula()
+//                            && ((*(formulas[0])).asProbabilityOperatorFormula().getSubformula().isUntilFormula()
+//                                || (*(formulas[0])).asProbabilityOperatorFormula().getSubformula().isEventuallyFormula()), storm::exceptions::NotSupportedException, "Expecting until or eventually formula");
+//
+//            // TODO: dit moet anders kunnen
+//            storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Model<ValueType>> propositionalChecker(*model);
+//            storm::storage::BitVector phiStates;
+//            storm::storage::BitVector psiStates;
+//            if ((*(formulas[0])).asProbabilityOperatorFormula().getSubformula().isUntilFormula()) {
+//                phiStates = propositionalChecker.check((*(formulas[0])).asProbabilityOperatorFormula().getSubformula().asUntilFormula().getLeftSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
+//                psiStates = propositionalChecker.check((*(formulas[0])).asProbabilityOperatorFormula().getSubformula().asUntilFormula().getRightSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
+//            } else {
+//                phiStates = storm::storage::BitVector(numberOfStates, true);
+//                psiStates = propositionalChecker.check((*(formulas[0])).asProbabilityOperatorFormula().getSubformula().asEventuallyFormula().getSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
+//            }
+//
+//            // Get the maybeStates
+//            std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(this->model->getBackwardTransitions(), phiStates, psiStates);
+//            storm::storage::BitVector topStates = statesWithProbability01.second;
+//            storm::storage::BitVector bottomStates = statesWithProbability01.first;
+//
+//            STORM_LOG_THROW(topStates.begin() != topStates.end(), storm::exceptions::NotImplementedException, "Formula yields to no 1 states");
+//            STORM_LOG_THROW(bottomStates.begin() != bottomStates.end(), storm::exceptions::NotImplementedException, "Formula yields to no zero states");
+//
+            uint_fast64_t bottom = numberOfStates;
+            uint_fast64_t top = numberOfStates;
             std::vector<uint_fast64_t> statesSorted = storm::utility::graph::getTopologicalSort(matrix);
-            Order *order = new Order(top, bottom, numberOfStates, &statesSorted);
+            Order *order = nullptr;
 
+            for (auto state : statesSorted) {
+                if ((minValues[numberOfStates - 1 - state] == 1 || maxValues[numberOfStates - 1 - state] == 0)
+                        && minValues[numberOfStates - 1 - state] == maxValues[numberOfStates - 1 - state]) {
+                    if (maxValues[numberOfStates - 1 - state] == 0) {
+                        assert (bottom == numberOfStates);
+                        bottom = state;
+                    }
+                    if (minValues[numberOfStates - 1 - state] == 1) {
+                        assert (top == numberOfStates);
+                        top = state;
+                    }
+                    if (bottom != numberOfStates && top != numberOfStates) {
+                        order = new Order(top, bottom, numberOfStates, &statesSorted);
+                    }
 
-            for (auto state : *(order->statesSorted)) {
-                if (state != bottom && state != top) {
+                } else {
                     assert (order != nullptr);
                     auto successors = stateMap[state];
-                    if (successors->size() > 1) {
+                    if (successors->getNumberOfSetBits() == 1) {
+                        auto succ = successors->getNextSetIndex(0);
+                        if (succ != state) {
+                            if (!order->contains(succ)) {
+                                order->add(succ);
+                            }
+                            order->addToNode(state, order->getNode(succ));
+                        }
+                    } else if (successors->getNumberOfSetBits() > 1) {
                         uint_fast64_t min = numberOfStates;
                         uint_fast64_t max = numberOfStates;
                         bool allSorted = true;
@@ -178,9 +199,9 @@ namespace storm {
                                 min = succ;
                                 max = succ;
                             } else {
-                                if (minValues[succ] > maxValues[max]) {
+                                if (minValues[numberOfStates - 1 - succ] > maxValues[numberOfStates - 1 - max]) {
                                     max = succ;
-                                } else if (maxValues[succ] < minValues[min]) {
+                                } else if (maxValues[numberOfStates - 1 - succ] < minValues[numberOfStates - 1 - min]) {
                                     min = succ;
                                 } else {
                                     allSorted = false;
@@ -213,6 +234,8 @@ namespace storm {
                     }
                 }
             }
+
+            assert (order != nullptr);
 
             // Handle sccs
             auto addedStates = order->getAddedStates();
@@ -368,8 +391,6 @@ namespace storm {
                 handleAssumption(order, assumption);
             }
 
-            auto statesSorted = order->statesSorted;
-
             auto oldNumberSet = numberOfStates;
             while (oldNumberSet != order->getAddedStates()->getNumberOfSetBits()) {
                 oldNumberSet = order->getAddedStates()->getNumberOfSetBits();
@@ -390,9 +411,8 @@ namespace storm {
                             if (!order->contains(succ1)) {
                                 order->addToNode(succ1, order->getNode(stateNumber));
                                 statesToHandle->set(succ1, true);
-                                auto itr = std::find(statesSorted->begin(), statesSorted->end(), succ1);
-                                if (itr != statesSorted->end()) {
-                                    statesSorted->erase(itr);
+                                if (order->containsStatesSorted(succ1)) {
+                                    order->removeStatesSorted(succ1);
                                 }
                             }
                             statesToHandle->set(stateNumber, false);
@@ -407,18 +427,16 @@ namespace storm {
 
                             auto compare = order->compare(stateNumber, succ1);
                             if (compare == Order::ABOVE) {
-                                auto itr = std::find(statesSorted->begin(), statesSorted->end(), succ2);
-                                if (itr != statesSorted->end()) {
-                                    statesSorted->erase(itr);
+                                if (order->containsStatesSorted(succ2)) {
+                                    order->removeStatesSorted(succ2);
                                 }
                                 order->addBetween(succ2, order->getTop(), order->getNode(stateNumber));
                                 statesToHandle->set(succ2);
                                 statesToHandle->set(stateNumber, false);
                                 stateNumber = statesToHandle->getNextSetIndex(0);
                             } else if (compare == Order::BELOW) {
-                                auto itr = std::find(statesSorted->begin(), statesSorted->end(), succ2);
-                                if (itr != statesSorted->end()) {
-                                    statesSorted->erase(itr);
+                                if (order->containsStatesSorted(succ2)) {
+                                    order->removeStatesSorted(succ2);
                                 }
                                 order->addBetween(succ2, order->getNode(stateNumber), order->getBottom());
                                 statesToHandle->set(succ2);
@@ -442,39 +460,36 @@ namespace storm {
                 }
 
                 // Normal backwardreasoning
-                if (statesSorted->size() > 0) {
-                    auto stateNumber = *(statesSorted->begin());
-                    while (order->contains(stateNumber) && statesSorted->size() > 1) {
-                        // states.size()>1 such that there is at least one state left after erase
-                        statesSorted->erase(statesSorted->begin());
-                        stateNumber = *(statesSorted->begin());
+                auto stateNumber = order->getNextSortedState();
+                while (stateNumber != numberOfStates && order->contains(stateNumber)) {
+                    order->removeFirstStatesSorted();
+                    stateNumber = order->getNextSortedState();
 
-                        if (order->contains(stateNumber)) {
-                            auto resAllAdded = allSuccAdded(order, stateNumber);
-                            if (!std::get<0>(resAllAdded)) {
-                                return std::make_tuple(order, std::get<1>(resAllAdded), std::get<2>(resAllAdded));
-                            }
+                    if (stateNumber != numberOfStates && order->contains(stateNumber)) {
+                        auto resAllAdded = allSuccAdded(order, stateNumber);
+                        if (!std::get<0>(resAllAdded)) {
+                            return std::make_tuple(order, std::get<1>(resAllAdded), std::get<2>(resAllAdded));
                         }
                     }
-
-                    if (!order->contains(stateNumber)) {
-                        auto successors = stateMap[stateNumber];
-
-                        auto result = extendAllSuccAdded(order, stateNumber, successors);
-                        if (std::get<1>(result) != numberOfStates) {
-                            // So we don't know the relation between all successor states
-                            return result;
-                        } else {
-                            assert (order->getNode(stateNumber) != nullptr);
-                            if (!acyclic) {
-                                order->statesToHandle->set(stateNumber);
-                            }
-                            statesSorted->erase(statesSorted->begin());
-                        }
-                    }
-                    assert (order->getNode(stateNumber) != nullptr);
-                    assert (order->contains(stateNumber));
                 }
+
+                if (stateNumber != numberOfStates && !order->contains(stateNumber)) {
+                    auto successors = stateMap[stateNumber];
+
+                    auto result = extendAllSuccAdded(order, stateNumber, successors);
+                    if (std::get<1>(result) != numberOfStates) {
+                        // So we don't know the relation between all successor states
+                        return result;
+                    } else {
+                        assert (order->getNode(stateNumber) != nullptr);
+                        if (!acyclic) {
+                            order->statesToHandle->set(stateNumber);
+                        }
+                        order->removeFirstStatesSorted();
+                    }
+                }
+                assert (stateNumber == numberOfStates || order->getNode(stateNumber) != nullptr);
+                assert (stateNumber == numberOfStates || order->contains(stateNumber));
 
             }
             assert (order->getAddedStates()->getNumberOfSetBits() == numberOfStates);

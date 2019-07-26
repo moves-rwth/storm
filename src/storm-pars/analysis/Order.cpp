@@ -14,7 +14,7 @@ namespace storm {
             this->numberOfStates = numberOfStates;
             this->addedStates = new storm::storage::BitVector(numberOfStates);
             this->doneBuilding = false;
-            this->statesSorted = statesSorted;
+            this->statesSorted = *statesSorted;
             this->statesToHandle = initialMiddleStates;
 
             top = new Node();
@@ -47,7 +47,7 @@ namespace storm {
             this->numberOfStates = numberOfStates;
             this->addedStates = new storm::storage::BitVector(numberOfStates);
             this->doneBuilding = false;
-            this->statesSorted = statesSorted;
+            this->statesSorted = *statesSorted;
             this->statesToHandle = new storm::storage::BitVector(numberOfStates);
 
             top = new Node();
@@ -102,14 +102,16 @@ namespace storm {
                 }
             }
 
-            this->statesSorted = order->statesSorted;
-            this->statesToHandle = order->statesToHandle;
+            auto statesSortedOrder = order->getStatesSorted();
+            for (auto itr = statesSortedOrder.begin(); itr != statesSortedOrder.end(); ++itr) {
+                this->statesSorted.push_back(*itr);
+            }
+            this->statesToHandle = new storm::storage::BitVector(*(order->statesToHandle));
         }
 
         void Order::addBetween(uint_fast64_t state, Node *above, Node *below) {
             assert(!(*addedStates)[state]);
             assert(compare(above, below) == ABOVE);
-
             Node *newNode = new Node();
             nodes[state] = newNode;
 
@@ -195,10 +197,11 @@ namespace storm {
 
 
         bool Order::contains(uint_fast64_t state) {
-            return state >= 0 && state < addedStates->size() && addedStates->get(state);
+            return state < addedStates->size() && addedStates->get(state);
         }
 
         Order::Node *Order::getNode(uint_fast64_t stateNumber) {
+            assert (stateNumber < numberOfStates);
             return nodes.at(stateNumber);
         }
 
@@ -349,6 +352,31 @@ namespace storm {
 
         void Order::merge(uint_fast64_t var1, uint_fast64_t var2) {
             mergeNodes(getNode(var1), getNode(var2));
+        }
+
+        std::vector<uint_fast64_t> Order::getStatesSorted() {
+            return statesSorted;
+        }
+
+        uint_fast64_t Order::getNextSortedState() {
+            if (statesSorted.begin() != statesSorted.end()) {
+                return *(statesSorted.begin());
+            } else {
+                return numberOfStates;
+            }
+        }
+
+        void Order::removeFirstStatesSorted() {
+            statesSorted.erase(statesSorted.begin());
+        }
+
+        void Order::removeStatesSorted(uint_fast64_t state) {
+            assert(containsStatesSorted(state));
+            statesSorted.erase(std::find(statesSorted.begin(), statesSorted.end(), state));
+        }
+
+        bool Order::containsStatesSorted(uint_fast64_t state) {
+            return std::find(statesSorted.begin(), statesSorted.end(), state) != statesSorted.end();
         }
     }
 }
