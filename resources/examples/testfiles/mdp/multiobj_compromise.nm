@@ -1,0 +1,13 @@
+mdp
+module main
+	
+	x : [0..3];
+	[l] x=0 -> 0.5 : (x'=1) + 0.5 : (x'=0);
+	[r] x=0 -> (x'=2);
+	[c] x=0 -> 0.3 : (x'=1) + 0.3 : (x'=2) + 0.4 : (x'=3);
+	[] x=1 -> (x'=0);
+endmodule
+
+rewards "test"
+	[l] true : 1;
+endrewards

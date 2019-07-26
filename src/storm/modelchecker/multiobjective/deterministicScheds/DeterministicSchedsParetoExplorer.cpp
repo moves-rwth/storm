@@ -493,7 +493,7 @@ namespace storm {
                         negateMinObjectives(point);
                     } else {
                         lpChecker->setCurrentWeightVector(env, weightVector);
-                        auto optionalPoint = lpChecker->check(env, negateMinObjectives(this->overApproximation));
+                        auto optionalPoint = lpChecker->check(env, overApproximation);
                         STORM_LOG_THROW(optionalPoint.is_initialized(), storm::exceptions::UnexpectedException, "Unable to find a point in the current overapproximation.");
                         point = std::move(optionalPoint.get());
                     }

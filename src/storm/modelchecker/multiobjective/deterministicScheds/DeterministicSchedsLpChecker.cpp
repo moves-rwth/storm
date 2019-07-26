@@ -185,33 +185,19 @@ namespace storm {
                 // To compute l, we multiply the smallest transition probabilities occurring at each state and MEC-Choice
                 // as well as the smallest 'exit' probability
                 ValueType lpath = storm::utility::one<ValueType>();
-                ValueType minExitProbability = storm::utility::one<ValueType>();
                 for (auto const& stateChoices : ec) {
-                    auto state = stateChoices.first;
                     ValueType minProb = storm::utility::one<ValueType>();
-                    for (uint64_t choice = transitions.getRowGroupIndices()[state]; choice < transitions.getRowGroupIndices()[state + 1]; ++choice) {
-                        if (stateChoices.second.count(choice) == 0) {
-                            // The choice leaves the EC, so we take the sum over the exiting probabilities
-                            ValueType exitProbabilitySum = storm::utility::zero<ValueType>();
-                            for (auto const& transition : transitions.getRow(choice)) {
-                                if (!ec.containsState(transition.getColumn())) {
-                                    exitProbabilitySum += transition.getValue();
-                                }
+                    // Choices that leave the EC are not considered in the in[s] below. Hence, also do not need to consider them here.
+                    for (auto const& choice : stateChoices.second) {
+                        // Get the minimum over all transition probabilities
+                        for (auto const& transition : transitions.getRow(choice)) {
+                            if (!storm::utility::isZero(transition.getValue())) {
+                                minProb = std::min(minProb, transition.getValue());
                             }
-                            minExitProbability = std::min(minExitProbability, exitProbabilitySum);
-                        } else {
-                            // Get the minimum over all transition probabilities
-                            for (auto const& transition : transitions.getRow(choice)) {
-                                if (!storm::utility::isZero(transition.getValue())) {
-                                    minProb = std::min(minProb, transition.getValue());
-                                }
-                            }
-                            
                         }
                     }
                     lpath *= minProb;
                 }
-                lpath *= minExitProbability;
                 ValueType expVisitsUpperBound = storm::utility::one<ValueType>() / lpath;
                 STORM_LOG_WARN_COND(expVisitsUpperBound <= storm::utility::convertNumber<ValueType>(1000.0), "Large upper bound for expected visiting times: " << expVisitsUpperBound);
                 // create variables

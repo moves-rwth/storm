@@ -151,7 +151,7 @@ namespace storm {
                                 storm::storage::BitVector statesWithoutReward = rewardModel.get().getStatesWithZeroReward(model->getTransitionMatrix());
                                 absorbingStatesForSubformula = storm::utility::graph::performProb0A(backwardTransitions, statesWithoutReward, ~statesWithoutReward);
                             } else if (pathFormula.isTotalRewardFormula()) {
-                                auto rewardModel = storm::utility::createFilteredRewardModel(baseRewardModel, model->isDiscreteTimeModel(), pathFormula.asCumulativeRewardFormula());
+                                auto rewardModel = storm::utility::createFilteredRewardModel(baseRewardModel, model->isDiscreteTimeModel(), pathFormula.asTotalRewardFormula());
                                 storm::storage::BitVector statesWithoutReward = rewardModel.get().getStatesWithZeroReward(model->getTransitionMatrix());
                                 absorbingStatesForSubformula = storm::utility::graph::performProb0A(backwardTransitions, statesWithoutReward, ~statesWithoutReward);
                             } else {
