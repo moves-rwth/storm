@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include <cstdint>
@@ -20,11 +21,11 @@ namespace storm {
             MemoryPattern getMemoryPattern() const;
             bool isPositional() const;
             
-            SchedulerClass& setIsDeterministic(bool value);
+            SchedulerClass& setIsDeterministic(bool value = true);
             SchedulerClass& setMemoryStates(uint64_t value);
             SchedulerClass& unsetMemoryStates();
-            void setMemoryPattern(MemoryPattern const& pattern);
-            void setPositional();
+            SchedulerClass& setMemoryPattern(MemoryPattern const& pattern);
+            SchedulerClass& setPositional();
 
         private:
             bool deterministic;

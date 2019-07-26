@@ -45,13 +45,15 @@ namespace storm {
             return *this;
         }
         
-        void SchedulerClass::setMemoryPattern(MemoryPattern const& pattern) {
+        SchedulerClass& SchedulerClass::setMemoryPattern(MemoryPattern const& pattern) {
             memoryPattern = pattern;
+            return *this;
         }
         
-        void SchedulerClass::setPositional() {
+        SchedulerClass& SchedulerClass::setPositional() {
             setMemoryPattern(MemoryPattern::Arbitrary);
             setMemoryStates(1);
+            return *this;
         }
        
     }
