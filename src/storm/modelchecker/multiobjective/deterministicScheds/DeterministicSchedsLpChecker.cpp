@@ -6,7 +6,7 @@
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/MultiObjectiveSettings.h"
+#include "storm/settings/modules/CoreSettings.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/MaximalEndComponentDecomposition.h"
 #include "storm/storage/Scheduler.h"
@@ -31,17 +31,6 @@ namespace storm {
             template <typename ModelType, typename GeometryValueType>
             void DeterministicSchedsLpChecker<ModelType, GeometryValueType>::initialize(Environment const& env) {
                 if (!lpModel) {
-                    if (env.modelchecker().multi().getEncodingType() == storm::MultiObjectiveModelCheckerEnvironment::EncodingType::Auto) {
-                        flowEncoding = true;
-                        for (auto const& helper : objectiveHelper) {
-                            if (!helper.isTotalRewardObjective()) {
-                                flowEncoding = false;
-                            }
-                        }
-                    } else {
-                        flowEncoding = env.modelchecker().multi().getEncodingType() == storm::MultiObjectiveModelCheckerEnvironment::EncodingType::Flow;
-                    }
-                    STORM_PRINT_AND_LOG("Using " << (flowEncoding ? "flow" : "classical") << " encoding." << std::endl);
                     swInit.start();
                     initializeLpModel(env);
                     swInit.stop();
@@ -354,10 +343,30 @@ namespace storm {
             template <typename ModelType, typename GeometryValueType>
             void DeterministicSchedsLpChecker<ModelType, GeometryValueType>::initializeLpModel(Environment const& env) {
                 STORM_LOG_INFO("Initializing LP model with " << model.getNumberOfStates() << " states.");
+                if (env.modelchecker().multi().getEncodingType() == storm::MultiObjectiveModelCheckerEnvironment::EncodingType::Auto) {
+                    flowEncoding = true;
+                    for (auto const& helper : objectiveHelper) {
+                        if (!helper.isTotalRewardObjective()) {
+                            flowEncoding = false;
+                        }
+                    }
+                } else {
+                    flowEncoding = env.modelchecker().multi().getEncodingType() == storm::MultiObjectiveModelCheckerEnvironment::EncodingType::Flow;
+                }
+                STORM_PRINT_AND_LOG("Using " << (flowEncoding ? "flow" : "classical") << " encoding." << std::endl);
+
                 uint64_t numStates = model.getNumberOfStates();
                 uint64_t initialState = *model.getInitialStates().begin();
-
-                lpModel = storm::utility::solver::getLpSolver<ValueType>("model");
+                if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isLpSolverSetFromDefaultValue()) {
+#ifdef STORM_HAVE_GUROBI
+                    STORM_LOG_INFO("Using Gurobi as LPSolver");
+                    lpModel = storm::utility::solver::getLpSolver<ValueType>("model", storm::solver::LpSolverTypeSelection::Gurobi);
+#else
+                    STORM_LOG_WARN("Selected LP-solver might not support incremental solving. Consider installing Gurobi.");
+#endif
+                } else {
+                    lpModel = storm::utility::solver::getLpSolver<ValueType>("model");
+                }
                 gurobiLpModel = dynamic_cast<storm::solver::GurobiLpSolver<ValueType>*>(lpModel.get());
                 
                 lpModel->setOptimizationDirection(storm::solver::OptimizationDirection::Maximize);
