@@ -51,6 +51,11 @@ namespace storm {
                     };
                     
                     /*!
+                     * Removes states that are irrelevant for all objectives, e.g., because they are only reachable via goal states.
+                     */
+                    static void removeIrrelevantStates(std::shared_ptr<SparseModelType>& model, storm::logic::MultiObjectiveFormula const& originalFormula);
+                    
+                    /*!
                      * Apply the neccessary preprocessing for the given formula.
                      * @param formula the current (sub)formula
                      * @param opInfo the information of the resulting operator formula
@@ -78,26 +83,6 @@ namespace storm {
                      * Returns the query type
                      */
                      static typename ReturnType::QueryType getQueryType(std::vector<Objective<ValueType>> const& objectives);
-                    
-                    
-                    /*!
-                     * Computes the set of states that have zero expected reward w.r.t. all expected reward objectives
-                     */
-                    static void setReward0States(ReturnType& result, storm::storage::SparseMatrix<ValueType> const& backwardTransitions);
-    
-                    
-                    /*!
-                     * Checks whether the occurring expected rewards are finite and sets the RewardFinitenessType accordingly
-                     * Returns the set of states for which a scheduler exists that induces finite reward for all objectives
-                     */
-                    static void checkRewardFiniteness(ReturnType& result, storm::storage::BitVector const& finiteRewardCheckObjectives, storm::storage::SparseMatrix<ValueType> const& backwardTransitions);
-                    
-                    /*!
-                     * Finds an upper bound for the expected reward of the objective with the given index (assuming it considers an expected reward objective)
-                     */
-                    static boost::optional<ValueType> computeUpperResultBound(ReturnType const& result, uint64_t objIndex, storm::storage::SparseMatrix<ValueType> const& backwardTransitions);
-    
-                    
                 };
                 
             }

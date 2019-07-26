@@ -17,6 +17,8 @@
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
 #include "storm/utility/graph.h"
+#include "storm/utility/FilteredRewardModel.h"
+#include "storm/transformer/SubsystemBuilder.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GeneralSettings.h"
 
@@ -51,6 +53,9 @@ namespace storm {
                          model = storm::transformer::MemoryIncorporation<SparseModelType>::incorporateGoalMemory(originalModel, originalFormula.getSubformulas());
                     }
                     
+                    // Remove states that are irrelevant for all properties (e.g. because they are only reachable via goal states
+                    removeIrrelevantStates(model, originalFormula);
+                    
                     PreprocessorData data(model);
                     
                     //Invoke preprocessing on the individual objectives
@@ -60,11 +65,8 @@ namespace storm {
                         data.objectives.back()->originalFormula = subFormula;
                         data.finiteRewardCheckObjectives.resize(data.objectives.size(), false);
                         data.upperResultBoundObjectives.resize(data.objectives.size(), false);
-                        if (data.objectives.back()->originalFormula->isOperatorFormula()) {
-                            preprocessOperatorFormula(data.objectives.back()->originalFormula->asOperatorFormula(), data);
-                        } else {
-                            STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "Could not preprocess the subformula " << *subFormula << " of " << originalFormula << " because it is not supported");
-                        }
+                        STORM_LOG_THROW(data.objectives.back()->originalFormula->isOperatorFormula(), storm::exceptions::InvalidPropertyException, "Could not preprocess the subformula " << *subFormula << " of " << originalFormula << " because it is not supported");
+                        preprocessOperatorFormula(data.objectives.back()->originalFormula->asOperatorFormula(), data);
                     }
                     
                     // Remove reward models that are not needed anymore
@@ -76,6 +78,115 @@ namespace storm {
                     
                     // Build the actual result
                     return buildResult(originalModel, originalFormula, data);
+                }
+                
+                template <typename SparseModelType>
+                storm::storage::BitVector getOnlyReachableViaPhi(SparseModelType const& model, storm::storage::BitVector const& phi) {
+                    // Get the complement of the states that are reachable without visiting phi
+                    auto result = storm::utility::graph::getReachableStates(model.getTransitionMatrix(), model.getInitialStates(), ~phi, storm::storage::BitVector(phi.size(), false));
+                    result.complement();
+                    assert(phi.isSubsetOf(result));
+                    return result;
+                }
+                
+                template <typename SparseModelType>
+                storm::storage::BitVector getZeroRewardStates(SparseModelType const& model, storm::storage::SparseMatrix<typename SparseModelType::ValueType> const& backwardTransitions, typename SparseModelType::RewardModelType const& rewardModel, boost::optional<storm::storage::BitVector> const& rew0States) {
+                    storm::storage::BitVector statesWithoutReward = rewardModel.getStatesWithZeroReward(model.getTransitionMatrix());
+                    if (rew0States) {
+                        statesWithoutReward |= rew0States.get();
+                    }
+                    storm::storage::BitVector result = storm::utility::graph::performProbGreater0E(model.getBackwardTransitions(), statesWithoutReward, ~statesWithoutReward);
+                    result.complement();
+                    return result;
+                }
+                
+                template <typename SparseModelType>
+                void SparseMultiObjectivePreprocessor<SparseModelType>::removeIrrelevantStates(std::shared_ptr<SparseModelType>& model, storm::logic::MultiObjectiveFormula const& originalFormula) {
+                    storm::storage::BitVector absorbingStates(model->getNumberOfStates(), true);
+                    
+                    storm::modelchecker::SparsePropositionalModelChecker<SparseModelType> mc(*model);
+                    storm::storage::SparseMatrix<ValueType> backwardTransitions = model->getBackwardTransitions();
+                    
+                    for (auto const& opFormula : originalFormula.getSubformulas()) {
+                        // Compute a set of states from which we can make any subset absorbing without affecting this subformula
+                        storm::storage::BitVector absorbingStatesForSubformula;
+                        STORM_LOG_THROW(opFormula->isOperatorFormula(), storm::exceptions::InvalidPropertyException, "Could not preprocess the subformula " << *opFormula << " of " << originalFormula << " because it is not supported");
+                        auto const& pathFormula = opFormula->asOperatorFormula().getSubformula();
+                        if (opFormula->isProbabilityOperatorFormula()) {
+                            if (pathFormula.isUntilFormula()){
+                                auto lhs = mc.check(pathFormula.asUntilFormula().getLeftSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
+                                auto rhs = mc.check(pathFormula.asUntilFormula().getRightSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
+                                absorbingStatesForSubformula = storm::utility::graph::performProb0A(backwardTransitions, lhs, rhs);
+                                absorbingStatesForSubformula |= getOnlyReachableViaPhi(*model, ~lhs | rhs);
+                            } else if (pathFormula.isBoundedUntilFormula()) {
+                                if (!pathFormula.asBoundedUntilFormula().hasLowerBound()) {
+                                    auto lhs = mc.check(pathFormula.asBoundedUntilFormula().getLeftSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
+                                    auto rhs = mc.check(pathFormula.asBoundedUntilFormula().getRightSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
+                                    absorbingStatesForSubformula = storm::utility::graph::performProb0A(backwardTransitions, lhs, rhs);
+                                    absorbingStatesForSubformula |= getOnlyReachableViaPhi(*model, ~lhs | rhs);
+                                }
+                            } else if (pathFormula.isGloballyFormula()){
+                                auto phi = mc.check(pathFormula.asGloballyFormula().getSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
+                                auto notPhi = ~phi;
+                                absorbingStatesForSubformula = storm::utility::graph::performProb0A(backwardTransitions, phi, notPhi);
+                                absorbingStatesForSubformula |= getOnlyReachableViaPhi(*model, notPhi);
+                            } else if (pathFormula.isEventuallyFormula()){
+                                auto phi = mc.check(pathFormula.asEventuallyFormula().getSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
+                                absorbingStatesForSubformula = storm::utility::graph::performProb0A(backwardTransitions, ~phi, phi);
+                                absorbingStatesForSubformula |= getOnlyReachableViaPhi(*model, phi);
+                            } else {
+                                STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "The subformula of " << pathFormula << " is not supported.");
+                            }
+                        } else if (opFormula->isRewardOperatorFormula()) {
+                            auto const& baseRewardModel = opFormula->asRewardOperatorFormula().hasRewardModelName() ? model->getRewardModel(opFormula->asRewardOperatorFormula().getRewardModelName()) : model->getUniqueRewardModel();
+                            if (pathFormula.isEventuallyFormula()) {
+                                auto rewardModel = storm::utility::createFilteredRewardModel(baseRewardModel, model->isDiscreteTimeModel(), pathFormula.asEventuallyFormula());
+                                storm::storage::BitVector statesWithoutReward = rewardModel.get().getStatesWithZeroReward(model->getTransitionMatrix());
+                                absorbingStatesForSubformula = storm::utility::graph::performProb0A(backwardTransitions, statesWithoutReward, ~statesWithoutReward);
+                                auto phi = mc.check(pathFormula.asEventuallyFormula().getSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
+                                absorbingStatesForSubformula |= storm::utility::graph::performProb1A(model->getTransitionMatrix(), model->getTransitionMatrix().getRowGroupIndices(), backwardTransitions, statesWithoutReward, phi);
+                                absorbingStatesForSubformula |= getOnlyReachableViaPhi(*model, phi);
+                            } else if (pathFormula.isCumulativeRewardFormula()) {
+                                auto rewardModel = storm::utility::createFilteredRewardModel(baseRewardModel, model->isDiscreteTimeModel(), pathFormula.asCumulativeRewardFormula());
+                                storm::storage::BitVector statesWithoutReward = rewardModel.get().getStatesWithZeroReward(model->getTransitionMatrix());
+                                absorbingStatesForSubformula = storm::utility::graph::performProb0A(backwardTransitions, statesWithoutReward, ~statesWithoutReward);
+                            } else if (pathFormula.isTotalRewardFormula()) {
+                                auto rewardModel = storm::utility::createFilteredRewardModel(baseRewardModel, model->isDiscreteTimeModel(), pathFormula.asCumulativeRewardFormula());
+                                storm::storage::BitVector statesWithoutReward = rewardModel.get().getStatesWithZeroReward(model->getTransitionMatrix());
+                                absorbingStatesForSubformula = storm::utility::graph::performProb0A(backwardTransitions, statesWithoutReward, ~statesWithoutReward);
+                            } else {
+                                STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "The subformula of " << pathFormula << " is not supported.");
+                            }
+                        } else if (opFormula->isTimeOperatorFormula()) {
+                            if (pathFormula.isEventuallyFormula()){
+                                auto phi = mc.check(pathFormula.asEventuallyFormula().getSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
+                                absorbingStatesForSubformula |= getOnlyReachableViaPhi(*model, phi);
+                            } else {
+                                STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "The subformula of " << pathFormula << " is not supported.");
+                            }
+                        } else {
+                            STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "Could not preprocess the subformula " << *opFormula << " of " << originalFormula << " because it is not supported");
+                        }
+                        absorbingStates &= absorbingStatesForSubformula;
+                        if (absorbingStates.empty()) {
+                            break;
+                        }
+                    }
+                    
+                    if (!absorbingStates.empty()) {
+                        // We can make the states absorbing and delete unreachable states.
+                        storm::storage::BitVector subsystemActions(model->getNumberOfChoices(), true);
+                        for (auto const& absorbingState : absorbingStates) {
+                            for (uint64_t action = model->getTransitionMatrix().getRowGroupIndices()[absorbingState]; action < model->getTransitionMatrix().getRowGroupIndices()[absorbingState + 1]; ++action) {
+                                subsystemActions.set(action, false);
+                            }
+                        }
+                        storm::transformer::SubsystemBuilderOptions options;
+                        options.fixDeadlocks = true;
+                        auto const& submodel = storm::transformer::buildSubsystem(*model, storm::storage::BitVector(model->getNumberOfStates(), true), subsystemActions, false, options);
+                        STORM_LOG_INFO("Making states absorbing reduced the state space from " << model->getNumberOfStates() << " to " << submodel.model->getNumberOfStates() << ".");
+                        model = submodel.model->template as<SparseModelType>();
+                    }
                 }
                 
                 template <typename SparseModelType>
