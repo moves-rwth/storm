@@ -91,9 +91,9 @@ namespace storm {
             unaryExpression.name("unary expression");
             
             if (allowBacktracking) {
-                infixPowerModuloExpression = unaryExpression[qi::_val = qi::_1] >> -(infixPowerModuloOperator_ >> expression)[qi::_val = phoenix::bind(&ExpressionCreator::createPowerModuloExpression, phoenix::ref(*expressionCreator), qi::_val, qi::_1, qi::_2, qi::_pass)];
+                infixPowerModuloExpression = unaryExpression[qi::_val = qi::_1] >> -(infixPowerModuloOperator_ >> unaryExpression)[qi::_val = phoenix::bind(&ExpressionCreator::createPowerModuloExpression, phoenix::ref(*expressionCreator), qi::_val, qi::_1, qi::_2, qi::_pass)];
             } else {
-                infixPowerModuloExpression = unaryExpression[qi::_val = qi::_1] > -(infixPowerModuloOperator_ >> expression)[qi::_val = phoenix::bind(&ExpressionCreator::createPowerModuloExpression, phoenix::ref(*expressionCreator), qi::_val, qi::_1, qi::_2, qi::_pass)];
+                infixPowerModuloExpression = unaryExpression[qi::_val = qi::_1] > -(infixPowerModuloOperator_ >> unaryExpression)[qi::_val = phoenix::bind(&ExpressionCreator::createPowerModuloExpression, phoenix::ref(*expressionCreator), qi::_val, qi::_1, qi::_2, qi::_pass)];
             }
             infixPowerModuloExpression.name("(infix) power/modulo expression");
             
