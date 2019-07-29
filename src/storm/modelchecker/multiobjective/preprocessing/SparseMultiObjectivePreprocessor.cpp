@@ -113,16 +113,18 @@ namespace storm {
                         STORM_LOG_THROW(opFormula->isOperatorFormula(), storm::exceptions::InvalidPropertyException, "Could not preprocess the subformula " << *opFormula << " of " << originalFormula << " because it is not supported");
                         auto const& pathFormula = opFormula->asOperatorFormula().getSubformula();
                         if (opFormula->isProbabilityOperatorFormula()) {
-                            if (pathFormula.isUntilFormula()){
+                            if (pathFormula.isUntilFormula()) {
                                 auto lhs = mc.check(pathFormula.asUntilFormula().getLeftSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
                                 auto rhs = mc.check(pathFormula.asUntilFormula().getRightSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
                                 absorbingStatesForSubformula = storm::utility::graph::performProb0A(backwardTransitions, lhs, rhs);
                                 absorbingStatesForSubformula |= getOnlyReachableViaPhi(*model, ~lhs | rhs);
                             } else if (pathFormula.isBoundedUntilFormula()) {
-                                if (!pathFormula.asBoundedUntilFormula().hasLowerBound()) {
-                                    auto lhs = mc.check(pathFormula.asBoundedUntilFormula().getLeftSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
-                                    auto rhs = mc.check(pathFormula.asBoundedUntilFormula().getRightSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
-                                    absorbingStatesForSubformula = storm::utility::graph::performProb0A(backwardTransitions, lhs, rhs);
+                                auto lhs = mc.check(pathFormula.asBoundedUntilFormula().getLeftSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
+                                auto rhs = mc.check(pathFormula.asBoundedUntilFormula().getRightSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
+                                absorbingStatesForSubformula = storm::utility::graph::performProb0A(backwardTransitions, lhs, rhs);
+                                if (pathFormula.asBoundedUntilFormula().hasLowerBound()) {
+                                    absorbingStatesForSubformula |= getOnlyReachableViaPhi(*model, ~lhs);
+                                } else {
                                     absorbingStatesForSubformula |= getOnlyReachableViaPhi(*model, ~lhs | rhs);
                                 }
                             } else if (pathFormula.isGloballyFormula()){
@@ -160,7 +162,7 @@ namespace storm {
                         } else if (opFormula->isTimeOperatorFormula()) {
                             if (pathFormula.isEventuallyFormula()){
                                 auto phi = mc.check(pathFormula.asEventuallyFormula().getSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
-                                absorbingStatesForSubformula |= getOnlyReachableViaPhi(*model, phi);
+                                absorbingStatesForSubformula = getOnlyReachableViaPhi(*model, phi);
                             } else {
                                 STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "The subformula of " << pathFormula << " is not supported.");
                             }
