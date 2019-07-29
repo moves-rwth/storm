@@ -99,6 +99,16 @@ namespace storm {
                 } else {
                     carlIncludeDirectory = STORM_CARL_INCLUDE_DIR;
                 }
+#ifdef STORM_HAVE_CLN
+                clnIncludeDirectory = CLN_INCLUDE_DIR;
+#else
+                clnIncludeDirectory = "";
+#endif
+#ifdef STORM_HAVE_GMP
+                gmpIncludeDirectory = GMP_INCLUDE_DIR;
+#else
+                gmpIncludeDirectory = "";
+#endif
                 sparseppIncludeDirectory = STORM_BUILD_DIR "/include/resources/3rdparty/sparsepp/";
                 
                 // Register all transient variables as transient.
@@ -393,7 +403,13 @@ namespace storm {
                     boost::filesystem::path outputFile = temporaryFile;
                     outputFile += ".out";
                     std::string outputFilename = boost::filesystem::absolute(outputFile).string();
-                    boost::optional<std::string> error = execute(compiler + " " + compilerFlags + " " + temporaryFilename + " -I" + stormIncludeDirectory + " -I" + carlIncludeDirectory + " -o " + outputFilename);
+                    std::string includes = "";
+                    for (std::string const& dir : {stormIncludeDirectory, carlIncludeDirectory, clnIncludeDirectory, gmpIncludeDirectory}) {
+                        if (dir != "") {
+                            includes += " -I" + dir;
+                        }
+                    }
+                    boost::optional<std::string> error = execute(compiler + " " + compilerFlags + " " + temporaryFilename + includes + " -o " + outputFilename);
                     
                     if (error) {
                         result = false;
@@ -2488,8 +2504,13 @@ namespace storm {
                 auto dynamicLibraryPath = sourceFile;
                 dynamicLibraryPath += DYLIB_EXTENSION;
                 std::string dynamicLibraryFilename = boost::filesystem::absolute(dynamicLibraryPath).string();
-                
-                std::string command = compiler + " " + sourceFilename + " " + compilerFlags + " -I" + stormIncludeDirectory + " -I" + sparseppIncludeDirectory + " -I" + boostIncludeDirectory + " -I" + carlIncludeDirectory + " -o " + dynamicLibraryFilename;
+                std::string includes = "";
+                for (std::string const& dir : {stormIncludeDirectory, sparseppIncludeDirectory, boostIncludeDirectory, carlIncludeDirectory, clnIncludeDirectory, gmpIncludeDirectory}) {
+                    if (dir != "") {
+                        includes += " -I" + dir;
+                    }
+                }
+                std::string command = compiler + " " + sourceFilename + " " + compilerFlags + includes + " -o " + dynamicLibraryFilename;
                 boost::optional<std::string> error = execute(command);
                 
                 if (error) {

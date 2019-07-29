@@ -374,10 +374,6 @@ endif()
 ##	gmp
 ##
 #############################################################
-#
-#find_package(GMP QUIET REQUIRED)
-#
-
 
 get_target_property(GMPXX_LIB GMPXX_SHARED IMPORTED_LIB_LOCATION)
 get_target_property(GMP_LIB GMP_SHARED IMPORTED_LIB_LOCATION)
@@ -387,10 +383,13 @@ get_filename_component(GMP_LIB_LOCATION ${GMP_LIB} DIRECTORY)
 get_filename_component(GMPXX_LIB_LOCATION ${GMPXX_LIB} DIRECTORY)
 
 
+#############################################################
+##
+##	cln
+##
+#############################################################
 
-#message(STATUS "Storm - Linking with gmp.")
-#include_directories("${GMP_INCLUDE_DIR}")
-#list(APPEND STORM_LINK_LIBRARIES ${GMP_LIBRARY})
+get_target_property(CLN_INCLUDE_DIR CLN_SHARED INTERFACE_INCLUDE_DIRECTORIES)
 
 #############################################################
 ##
