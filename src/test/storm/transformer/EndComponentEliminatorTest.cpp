@@ -94,8 +94,12 @@ TEST(NeutralECRemover, SimpleModelTest) {
     for (uint64_t oldState = 0; oldState < expectedOldToNewStateMapping.size(); ++oldState) {
         uint64_t expectedNewState = expectedOldToNewStateMapping[oldState];
         uint64_t actualNewState = res.oldToNewStateMapping[oldState];
-        ASSERT_EQ(actualNewState < std::numeric_limits<uint_fast64_t>::max(), expectedNewState < std::numeric_limits<uint_fast64_t>::max()) << " Mapping does not match for oldState " << oldState;
-        actualToExpectedStateMapping[actualNewState] = expectedNewState;
+        if (actualNewState < std::numeric_limits<uint_fast64_t>::max()) {
+            ASSERT_LT(expectedNewState, std::numeric_limits<uint_fast64_t>::max()) << " Mapping does not match for oldState " << oldState;
+            actualToExpectedStateMapping[actualNewState] = expectedNewState;
+        } else {
+            ASSERT_LT(expectedNewState, actualNewState) << " Mapping does not match for oldState " << oldState;
+        }
     }
     std::vector<uint64_t> actualToExpectedRowMapping;
     for (uint64_t actualRow = 0; actualRow < res.matrix.getRowCount(); ++actualRow) {
