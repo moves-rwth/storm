@@ -119,13 +119,30 @@ namespace storm {
                                 absorbingStatesForSubformula = storm::utility::graph::performProb0A(backwardTransitions, lhs, rhs);
                                 absorbingStatesForSubformula |= getOnlyReachableViaPhi(*model, ~lhs | rhs);
                             } else if (pathFormula.isBoundedUntilFormula()) {
-                                auto lhs = mc.check(pathFormula.asBoundedUntilFormula().getLeftSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
-                                auto rhs = mc.check(pathFormula.asBoundedUntilFormula().getRightSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
-                                absorbingStatesForSubformula = storm::utility::graph::performProb0A(backwardTransitions, lhs, rhs);
-                                if (pathFormula.asBoundedUntilFormula().hasLowerBound()) {
-                                    absorbingStatesForSubformula |= getOnlyReachableViaPhi(*model, ~lhs);
+                                if (pathFormula.asBoundedUntilFormula().hasMultiDimensionalSubformulas()) {
+                                    absorbingStatesForSubformula = storm::storage::BitVector(model->getNumberOfStates(), true);
+                                    storm::storage::BitVector absorbingStatesForSubSubformula;
+                                    for (uint64_t i = 0; i < pathFormula.asBoundedUntilFormula().getDimension(); ++i) {
+                                        auto subPathFormula = pathFormula.asBoundedUntilFormula().restrictToDimension(i);
+                                        auto lhs = mc.check(pathFormula.asBoundedUntilFormula().getLeftSubformula(i))->asExplicitQualitativeCheckResult().getTruthValuesVector();
+                                        auto rhs = mc.check(pathFormula.asBoundedUntilFormula().getRightSubformula(i))->asExplicitQualitativeCheckResult().getTruthValuesVector();
+                                        absorbingStatesForSubSubformula = storm::utility::graph::performProb0A(backwardTransitions, lhs, rhs);
+                                        if (pathFormula.asBoundedUntilFormula().hasLowerBound(i)) {
+                                            absorbingStatesForSubSubformula |= getOnlyReachableViaPhi(*model, ~lhs);
+                                        } else {
+                                            absorbingStatesForSubSubformula |= getOnlyReachableViaPhi(*model, ~lhs | rhs);
+                                        }
+                                        absorbingStatesForSubformula &= absorbingStatesForSubSubformula;
+                                    }
                                 } else {
-                                    absorbingStatesForSubformula |= getOnlyReachableViaPhi(*model, ~lhs | rhs);
+                                    auto lhs = mc.check(pathFormula.asBoundedUntilFormula().getLeftSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
+                                    auto rhs = mc.check(pathFormula.asBoundedUntilFormula().getRightSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
+                                    absorbingStatesForSubformula = storm::utility::graph::performProb0A(backwardTransitions, lhs, rhs);
+                                    if (pathFormula.asBoundedUntilFormula().hasLowerBound()) {
+                                        absorbingStatesForSubformula |= getOnlyReachableViaPhi(*model, ~lhs);
+                                    } else {
+                                        absorbingStatesForSubformula |= getOnlyReachableViaPhi(*model, ~lhs | rhs);
+                                    }
                                 }
                             } else if (pathFormula.isGloballyFormula()){
                                 auto phi = mc.check(pathFormula.asGloballyFormula().getSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
