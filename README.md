@@ -11,7 +11,7 @@ Benchmarks
 Example input files for Storm can be obtained from  
 https://github.com/moves-rwth/storm-examples.
 
-Various Benchmarks together with example invocations of Storm can be found at the [Quantitative Verification Benchmark Suite (QVBS)](http://qcomp.org/benchmarks).
+Various Benchmarks together with example invocations of Storm can be found at the [Quantitative Verification Benchmark Set (QVBS)](http://qcomp.org/benchmarks).
 
 Further examples and benchmarks can be found in the following repositories:
 

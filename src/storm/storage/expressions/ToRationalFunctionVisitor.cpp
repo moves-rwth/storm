@@ -54,7 +54,7 @@ namespace storm {
                     return firstOperandAsRationalFunction / secondOperandAsRationalFunction;
                     break;
                 case BinaryNumericalFunctionExpression::OperatorType::Power:
-                    STORM_LOG_THROW(storm::utility::isInteger(secondOperandAsRationalFunction), storm::exceptions::InvalidArgumentException, "Exponent of power operator must be a positive integer.");
+                    STORM_LOG_THROW(storm::utility::isInteger(secondOperandAsRationalFunction), storm::exceptions::InvalidArgumentException, "Exponent of power operator must be a positive integer but is " << secondOperandAsRationalFunction << ".");
                     exponentAsInteger = storm::utility::convertNumber<uint_fast64_t>(secondOperandAsRationalFunction);
                     return storm::utility::pow(firstOperandAsRationalFunction, exponentAsInteger);
                     break;
