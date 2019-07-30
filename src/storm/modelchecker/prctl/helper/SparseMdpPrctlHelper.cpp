@@ -26,7 +26,6 @@
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/ModelCheckerSettings.h"
-#include "storm/settings/modules/MinMaxEquationSolverSettings.h"
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/settings/modules/IOSettings.h"
@@ -1410,12 +1409,11 @@ namespace storm {
                 }
                 
                 // Solve MEC with the method specified in the settings
-                auto minMaxSettings = storm::settings::getModule<storm::settings::modules::MinMaxEquationSolverSettings>();
-                storm::solver::LraMethod method = minMaxSettings.getLraMethod();
-                if (storm::NumberTraits<ValueType>::IsExact && minMaxSettings.isLraMethodSetFromDefaultValue() && method != storm::solver::LraMethod::LinearProgramming) {
+                storm::solver::LraMethod method = env.solver().minMax().getLraMethod();
+                if (storm::NumberTraits<ValueType>::IsExact && env.solver().minMax().isLraMethodSetFromDefault() && method != storm::solver::LraMethod::LinearProgramming) {
                     STORM_LOG_INFO("Selecting 'LP' as the solution technique for long-run properties to guarantee exact results. If you want to override this, please explicitly specify a different LRA method.");
                     method = storm::solver::LraMethod::LinearProgramming;
-                } else if (env.solver().isForceSoundness() && minMaxSettings.isLraMethodSetFromDefaultValue() && method != storm::solver::LraMethod::ValueIteration) {
+                } else if (env.solver().isForceSoundness() && env.solver().minMax().isLraMethodSetFromDefault() && method != storm::solver::LraMethod::ValueIteration) {
                     STORM_LOG_INFO("Selecting 'VI' as the solution technique for long-run properties to guarantee sound results. If you want to override this, please explicitly specify a different LRA method.");
                     method = storm::solver::LraMethod::ValueIteration;
                 }
