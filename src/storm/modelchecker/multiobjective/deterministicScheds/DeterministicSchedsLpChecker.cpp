@@ -177,26 +177,22 @@ namespace storm {
             template <typename ValueType>
             std::map<uint64_t, storm::expressions::Expression> processEc(storm::storage::MaximalEndComponent const& ec, storm::storage::SparseMatrix<ValueType> const& transitions, std::string const& varNameSuffix, std::vector<storm::expressions::Expression> const& choiceVars, storm::solver::LpSolver<ValueType>& lpModel) {
                 std::map<uint64_t, storm::expressions::Expression> ecStateVars, ecChoiceVars, ecFlowChoiceVars;
-                
                 // Compute an upper bound on the expected number of visits of the states in this ec.
                 // First get a lower bound l on the probability of a path that leaves this MEC. 1-l is an upper bound on Pr_s(X F s).
                 // The desired upper bound is thus 1/(1-(1-l)) = 1/l. See Baier et al., CAV'17
                 
                 // To compute l, we multiply the smallest transition probabilities occurring at each state and MEC-Choice
                 // as well as the smallest 'exit' probability
+                // Observe that the actual transition probabilities do not matter for this encoding.
+                // Hence, we assume that all distributions are uniform to achieve a better (numerically more stable) bound
                 ValueType lpath = storm::utility::one<ValueType>();
                 for (auto const& stateChoices : ec) {
-                    ValueType minProb = storm::utility::one<ValueType>();
+                    uint64_t maxEntryCount = transitions.getColumnCount();
                     // Choices that leave the EC are not considered in the in[s] below. Hence, also do not need to consider them here.
                     for (auto const& choice : stateChoices.second) {
-                        // Get the minimum over all transition probabilities
-                        for (auto const& transition : transitions.getRow(choice)) {
-                            if (!storm::utility::isZero(transition.getValue())) {
-                                minProb = std::min(minProb, transition.getValue());
-                            }
-                        }
+                        maxEntryCount = std::max(maxEntryCount, transitions.getRow(choice).getNumberOfEntries());
                     }
-                    lpath *= minProb;
+                    lpath *= storm::utility::one<ValueType>() / storm::utility::convertNumber<ValueType>(maxEntryCount);
                 }
                 ValueType expVisitsUpperBound = storm::utility::one<ValueType>() / lpath;
                 STORM_LOG_WARN_COND(expVisitsUpperBound <= storm::utility::convertNumber<ValueType>(1000.0), "Large upper bound for expected visiting times: " << expVisitsUpperBound);
@@ -210,7 +206,7 @@ namespace storm {
                 }
                 
                 // create constraints
-                std::map<uint64_t, std::vector<storm::expressions::Expression>> ins, outs;
+                std::map<uint64_t, std::vector<storm::expressions::Expression>> ins, outs, ecIns;
                 for (auto const& stateChoices : ec) {
                     std::vector<storm::expressions::Expression> ecChoiceVarsAtState;
                     std::vector<storm::expressions::Expression> out;
@@ -221,11 +217,11 @@ namespace storm {
                         }
                         ecChoiceVarsAtState.push_back(ecChoiceVars[choice]);
                         out.push_back(ecFlowChoiceVars[choice]);
+                        ValueType fakeProbability = storm::utility::one<ValueType>() / storm::utility::convertNumber<ValueType, uint64_t>(transitions.getRow(choice).getNumberOfEntries());
                         for (auto const& transition : transitions.getRow(choice)) {
-                            if (!storm::utility::isZero(transition.getValue())) {
-                                lpModel.addConstraint("", ecChoiceVars[choice] <= ecStateVars[transition.getColumn()]);
-                                ins[transition.getColumn()].push_back(lpModel.getConstant(transition.getValue()) * ecFlowChoiceVars[choice]);
-                            }
+                            lpModel.addConstraint("", ecChoiceVars[choice] <= ecStateVars[transition.getColumn()]);
+                            ins[transition.getColumn()].push_back(lpModel.getConstant(fakeProbability) * ecFlowChoiceVars[choice]);
+                            ecIns[transition.getColumn()].push_back(ecChoiceVars[choice]);
                         }
                     }
                     lpModel.addConstraint("", ecStateVars[stateChoices.first] == storm::expressions::sum(ecChoiceVarsAtState));
@@ -247,7 +243,10 @@ namespace storm {
                     in->second.push_back(lpModel.getConstant(storm::utility::one<ValueType>() / storm::utility::convertNumber<ValueType>(numStates)));
                     auto out = outs.find(stateChoices.first);
                     STORM_LOG_ASSERT(out != outs.end(), "out flow of ec state was not set.");
-                    lpModel.addConstraint("", storm::expressions::sum(in->second)<= storm::expressions::sum(out->second));
+                    lpModel.addConstraint("", storm::expressions::sum(in->second) <= storm::expressions::sum(out->second));
+                    auto ecIn = ecIns.find(stateChoices.first);
+                    STORM_LOG_ASSERT(ecIn != ecIns.end(), "ec state does not seem to have an incoming transition.");
+                    lpModel.addConstraint("", storm::expressions::sum(ecIn->second) >= ecStateVars[stateChoices.first]);
                 }
 
                 return ecStateVars;
@@ -270,6 +269,7 @@ namespace storm {
                 storm::storage::MaximalEndComponentDecomposition<ValueType> mecs(model.getTransitionMatrix(), backwardTransitions, storm::storage::BitVector(model.getNumberOfStates(), true), choicesWithValueZero);
                 for (auto const& mec : mecs) {
                     // For each objective we might need to split this mec into several subECs, if the objective yields a non-zero scheduler-independent state value for some states of this ec.
+                    // However, note that this split happens objective-wise which is why we can not consider a subsystem in the mec-decomposition above
                     std::map<std::set<uint64_t>, std::vector<uint64_t>> excludedStatesToObjIndex;
                     bool mecContainsSchedulerDependentValue = false;
                     for (uint64_t objIndex = 0; objIndex < objectiveHelper.size(); ++objIndex) {
@@ -339,7 +339,7 @@ namespace storm {
                 } else {
                     flowEncoding = env.modelchecker().multi().getEncodingType() == storm::MultiObjectiveModelCheckerEnvironment::EncodingType::Flow;
                 }
-                STORM_PRINT_AND_LOG("Using " << (flowEncoding ? "flow" : "classical") << " encoding." << std::endl);
+                STORM_LOG_INFO("Using " << (flowEncoding ? "flow" : "classical") << " encoding." << std::endl);
 
                 uint64_t numStates = model.getNumberOfStates();
                 uint64_t initialState = *model.getInitialStates().begin();
@@ -521,11 +521,13 @@ namespace storm {
                                     }
                                 }
                                 for (auto const& transition : model.getTransitionMatrix().getRow(state, choice)) {
-                                    storm::expressions::Expression transitionValue = lpModel->getConstant(transition.getValue()) * stateVars[transition.getColumn()];
-                                    if (choiceValue.isInitialized()) {
-                                        choiceValue = choiceValue + transitionValue;
-                                    } else {
-                                        choiceValue = transitionValue;
+                                    if (!storm::utility::isZero(transition.getValue())) {
+                                        storm::expressions::Expression transitionValue = lpModel->getConstant(transition.getValue()) * stateVars[transition.getColumn()];
+                                        if (choiceValue.isInitialized()) {
+                                            choiceValue = choiceValue + transitionValue;
+                                        } else {
+                                            choiceValue = transitionValue;
+                                        }
                                     }
                                 }
                                 choiceValue = choiceValue.simplify().reduceNesting();
@@ -563,6 +565,7 @@ namespace storm {
                                 if (ecVar.isInitialized()) {
                                     // if this state is part of an ec, make sure to assign a value of zero.
                                     if (objectiveHelper[objIndex].minimizing()) {
+                                        // This part is optional
                                         lpModel->addConstraint("", stateVars[state] >= (ecVar - one) * lpModel->getConstant(objectiveHelper[objIndex].getUpperValueBoundAtState(env, state)));
                                     } else {
                                         lpModel->addConstraint("", stateVars[state] <= (one - ecVar) * lpModel->getConstant(objectiveHelper[objIndex].getUpperValueBoundAtState(env, state)));
