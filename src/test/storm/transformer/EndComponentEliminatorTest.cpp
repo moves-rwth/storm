@@ -98,7 +98,7 @@ TEST(NeutralECRemover, SimpleModelTest) {
             ASSERT_LT(expectedNewState, std::numeric_limits<uint_fast64_t>::max()) << " Mapping does not match for oldState " << oldState;
             actualToExpectedStateMapping[actualNewState] = expectedNewState;
         } else {
-            ASSERT_LT(expectedNewState, actualNewState) << " Mapping does not match for oldState " << oldState;
+            ASSERT_EQ(expectedNewState, actualNewState) << " Mapping does not match for oldState " << oldState;
         }
     }
     std::vector<uint64_t> actualToExpectedRowMapping;
