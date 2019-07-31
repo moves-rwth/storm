@@ -748,10 +748,14 @@ namespace storm {
         template <typename ValueType>
         void verifyWithSparseEngine(std::shared_ptr<storm::models::ModelBase> const& model, SymbolicInput const& input) {
             auto sparseModel = model->as<storm::models::sparse::Model<ValueType>>();
+            auto const& ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
             verifyProperties<ValueType>(input,
-                                        [&sparseModel] (std::shared_ptr<storm::logic::Formula const> const& formula, std::shared_ptr<storm::logic::Formula const> const& states) {
+                                        [&sparseModel,&ioSettings] (std::shared_ptr<storm::logic::Formula const> const& formula, std::shared_ptr<storm::logic::Formula const> const& states) {
                                             bool filterForInitialStates = states->isInitialFormula();
                                             auto task = storm::api::createTask<ValueType>(formula, filterForInitialStates);
+                                            if (ioSettings.isExportSchedulerSet()) {
+                                                task.setProduceSchedulers(true);
+                                            }
                                             std::unique_ptr<storm::modelchecker::CheckResult> result = storm::api::verifyWithSparseEngine<ValueType>(sparseModel, task);
                                             
                                             std::unique_ptr<storm::modelchecker::CheckResult> filter;
@@ -764,6 +768,17 @@ namespace storm {
                                                 result->filter(filter->asQualitativeCheckResult());
                                             }
                                             return result;
+                                        },
+                                        [&sparseModel,&ioSettings] (std::unique_ptr<storm::modelchecker::CheckResult> const& result) {
+                                            if (ioSettings.isExportSchedulerSet()) {
+                                                if (result->template asExplicitQuantitativeCheckResult<ValueType>().hasScheduler()) {
+                                                    auto const& scheduler = result->template asExplicitQuantitativeCheckResult<ValueType>().getScheduler();
+                                                    STORM_PRINT_AND_LOG("Exporting scheduler to '" << ioSettings.getExportSchedulerFilename())
+                                                    storm::api::exportScheduler(sparseModel, scheduler, ioSettings.getExportSchedulerFilename());
+                                                } else {
+                                                    STORM_LOG_ERROR("Scheduler requested but could not be generated.");
+                                                }
+                                            }
                                         });
         }
         
