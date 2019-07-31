@@ -1467,7 +1467,7 @@ namespace storm {
                         }
                     }
                     if (scheduler) {
-                        scheduler->setChoice(*choiceIt - transitionMatrix.getRowGroupIndices()[state], state);
+                        scheduler->setChoice(bestChoice - transitionMatrix.getRowGroupIndices()[state], state);
                     }
                     return result;
                 }
