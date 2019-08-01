@@ -113,12 +113,12 @@ namespace storm {
                         } else if (type == "or") {
                             success = builder.addOrElement(name, childNames);
                         } else if (boost::starts_with(type, "vot")) {
-                            unsigned threshold = NumberParser<unsigned>::parse(type.substr(3));
+                            unsigned threshold = storm::parser::parseNumber<unsigned>(type.substr(3));
                             success = builder.addVotElement(name, threshold, childNames);
                         } else if (type.find("of") != std::string::npos) {
                             size_t pos = type.find("of");
-                            unsigned threshold = NumberParser<unsigned>::parse(type.substr(0, pos));
-                            unsigned count = NumberParser<unsigned>::parse(type.substr(pos + 2));
+                            unsigned threshold = storm::parser::parseNumber<unsigned>(type.substr(0, pos));
+                            unsigned count = storm::parser::parseNumber<unsigned>(type.substr(pos + 2));
                             STORM_LOG_THROW(count == childNames.size(), storm::exceptions::WrongFormatException, "Voting gate number " << count << " does not correspond to number of children " << childNames.size() << " in line " << lineNo << ".");
                             success = builder.addVotElement(name, threshold, childNames);
                         } else if (type == "pand") {
@@ -198,7 +198,7 @@ namespace storm {
                 std::string value = match.str(1);
                 // Remove matched part
                 line = std::regex_replace(line, nameRegex, "");
-                return std::make_pair(true, NumberParser<unsigned>::parse(value));
+                return std::make_pair(true, storm::parser::parseNumber<unsigned>(value));
             } else {
                 // No match found
                 return std::make_pair(false, 0);

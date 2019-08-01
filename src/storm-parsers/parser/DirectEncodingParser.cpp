@@ -82,7 +82,7 @@ namespace storm {
                     // Parse no. of states
                     STORM_LOG_THROW(nrStates == 0, storm::exceptions::WrongFormatException, "Number states declared twice");
                     std::getline(file, line);
-                    nrStates = NumberParser<size_t>::parse(line);
+                    nrStates = parseNumber<size_t>(line);
                 } else if (line == "@model") {
                     // Parse rest of the model
                     STORM_LOG_THROW(sawType, storm::exceptions::WrongFormatException, "Type has to be declared before model.");
@@ -154,7 +154,7 @@ namespace storm {
                     } else {
                         line = "";
                     }
-                    size_t parsedId = NumberParser<size_t>::parse(curString);
+                    size_t parsedId = parseNumber<size_t>(curString);
                     STORM_LOG_ASSERT(state == parsedId, "State ids do not correspond.");
                     if (nonDeterministic) {
                         STORM_LOG_TRACE("new Row Group starts at " << row << ".");
@@ -275,7 +275,7 @@ namespace storm {
                     // New transition
                     size_t posColon = line.find(":");
                     STORM_LOG_THROW(posColon != std::string::npos, storm::exceptions::WrongFormatException, "':' not found.");
-                    size_t target = NumberParser<size_t>::parse(line.substr(2, posColon-3));
+                    size_t target = parseNumber<size_t>(line.substr(2, posColon-3));
                     std::string valueStr = line.substr(posColon+2);
                     ValueType value = valueParser.parseValue(valueStr);
                     STORM_LOG_TRACE("Transition " << row << " -> " << target << ": " << value);
@@ -302,6 +302,7 @@ namespace storm {
 
         // Template instantiations.
         template class DirectEncodingParser<double>;
+        template class DirectEncodingParser<storm::RationalNumber>;
         template class DirectEncodingParser<storm::RationalFunction>;
 
     } // namespace parser
