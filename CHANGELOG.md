@@ -15,9 +15,11 @@ Version 1.3.x
 - Flagged several options as 'advanced' to clean up the `--help`-message. Use `--help all` to display a complete list of options.
 - Support for the new `round` operator in the PRISM language
 - Support for parsing of exact time bounds for properties, e.g., `P=? [F=27 "goal"]`
+- Export of optimal schedulers when checking MDPs with the sparse engine (experimental). Use  `--exportscheduler <filename>` 
 - JANI: Allow bounded types for constants
 - JANI: Support for non-trivial reward accumulations.
 - JANI: Fixed support for reward expressions over non-transient variables.
+- DRN: Added support for exact parsing and action-based rewards
 - Fixed sparse bisimulation of MDPs (which failed if all non-absorbing states in the quotient are initial)
 - Fixed linking with Mathsat on macOS
 - Fixed compilation for macOS mojave
