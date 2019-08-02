@@ -11,6 +11,7 @@
 
 namespace carl {
     // Define hash values for all polynomials and rational function.
+    // Needed for boost::hash_combine() and other functions
     template<typename C, typename O, typename P>
     inline size_t hash_value(carl::MultivariatePolynomial<C,O,P> const& p) {
         std::hash<carl::MultivariatePolynomial<C,O,P>> h;
@@ -19,19 +20,19 @@ namespace carl {
     
     template<typename Pol>
     inline size_t hash_value(carl::FactorizedPolynomial<Pol> const& p) {
-        std::hash<FactorizedPolynomial<Pol>> h;
+        std::hash<carl::FactorizedPolynomial<Pol>> h;
         return h(p);
     }
 
     template<typename Pol, bool AutoSimplify>
     inline size_t hash_value(carl::RationalFunction<Pol, AutoSimplify> const& f)  {
-        std::hash<Pol> h;
-        return h(f.nominator()) ^ h(f.denominator());
+        std::hash<carl::RationalFunction<Pol, AutoSimplify>> h;
+        return h(f);
     }
     
     template<typename Number>
     inline size_t hash_value(carl::Interval<Number> const& i) {
-        std::hash<Interval<Number>> h;
+        std::hash<carl::Interval<Number>> h;
         return h(i);
     }
 
@@ -52,7 +53,7 @@ namespace storm {
     
     typedef carl::MultivariatePolynomial<RationalFunctionCoefficient> RawPolynomial;
     typedef carl::FactorizedPolynomial<RawPolynomial> Polynomial;
-	typedef carl::Cache<carl::PolynomialFactorizationPair<RawPolynomial>> RawPolynomialCache;
+    typedef carl::Cache<carl::PolynomialFactorizationPair<RawPolynomial>> RawPolynomialCache;
     typedef carl::Relation CompareRelation;
     
     typedef carl::RationalFunction<Polynomial, true> RationalFunction;

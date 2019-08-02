@@ -481,7 +481,7 @@ uint64_t storm_rational_function_hash(storm_rational_function_ptr const a, uint6
     storm::RationalFunction const& srf_a = *(storm::RationalFunction const*)a;
     
     // Taken from boost::hash_combine that we do not call here for the lack of boost headers.
-    return seed ^ (carl::hash_value(srf_a) + 0x9e3779b9 + (seed<<6) + (seed>>2));
+    return seed ^ (std::hash<storm::RationalFunction>()(srf_a) + 0x9e3779b9 + (seed<<6) + (seed>>2));
 }
 
 double storm_rational_function_get_value_double(storm_rational_function_ptr a) {
