@@ -49,14 +49,14 @@ namespace storm {
         template <storm::dd::DdType Type>
         class ParameterCreator<Type, storm::RationalFunction> {
         public:
-            ParameterCreator() : cache(std::make_shared<carl::Cache<carl::PolynomialFactorizationPair<RawPolynomial>>>()) {
+            ParameterCreator() : cache(std::make_shared<storm::RawPolynomialCache>()) {
                 // Intentionally left empty.
             }
             
             void create(storm::prism::Program const& program, storm::adapters::AddExpressionAdapter<Type, storm::RationalFunction>& rowExpressionAdapter) {
                 for (auto const& constant : program.getConstants()) {
                     if (!constant.isDefined()) {
-                        carl::Variable carlVariable = carl::freshRealVariable(constant.getExpressionVariable().getName());
+                        storm::RationalFunctionVariable carlVariable = carl::freshRealVariable(constant.getExpressionVariable().getName());
                         parameters.insert(carlVariable);
                         auto rf = convertVariableToPolynomial(carlVariable);
                         rowExpressionAdapter.setValue(constant.getExpressionVariable(), rf);
@@ -65,12 +65,12 @@ namespace storm {
             }
             
             template<typename RationalFunctionType = storm::RationalFunction, typename TP = typename RationalFunctionType::PolyType, carl::EnableIf<carl::needs_cache<TP>> = carl::dummy>
-            RationalFunctionType convertVariableToPolynomial(carl::Variable const& variable) {
+            RationalFunctionType convertVariableToPolynomial(storm::RationalFunctionVariable const& variable) {
                 return RationalFunctionType(typename RationalFunctionType::PolyType(typename RationalFunctionType::PolyType::PolyType(variable), cache));
             }
             
             template<typename RationalFunctionType = storm::RationalFunction, typename TP = typename RationalFunctionType::PolyType, carl::DisableIf<carl::needs_cache<TP>> = carl::dummy>
-            RationalFunctionType convertVariableToPolynomial(carl::Variable const& variable) {
+            RationalFunctionType convertVariableToPolynomial(storm::RationalFunctionVariable const& variable) {
                 return RationalFunctionType(variable);
             }
             
@@ -80,10 +80,10 @@ namespace storm {
             
         private:
             // A mapping from our variables to carl's.
-            std::unordered_map<storm::expressions::Variable, carl::Variable> variableToVariableMap;
+            std::unordered_map<storm::expressions::Variable, storm::RationalFunctionVariable> variableToVariableMap;
             
             // The cache that is used in case the underlying type needs a cache.
-            std::shared_ptr<carl::Cache<carl::PolynomialFactorizationPair<RawPolynomial>>> cache;
+            std::shared_ptr<storm::RawPolynomialCache> cache;
             
             // All created parameters.
             std::set<storm::RationalFunctionVariable> parameters;
