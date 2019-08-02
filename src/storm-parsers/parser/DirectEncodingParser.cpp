@@ -66,7 +66,7 @@ namespace storm {
                     if (line != "") {
                         std::vector<std::string> parameters;
                         boost::split(parameters, line, boost::is_any_of(" "));
-                        for (std::string parameter : parameters) {
+                        for (std::string const& parameter : parameters) {
                             STORM_LOG_TRACE("New parameter: " << parameter);
                             valueParser.addParameter(parameter);
                         }
@@ -75,7 +75,7 @@ namespace storm {
 
                 } else if (line == "@reward_models") {
                     // Parse reward models
-                    STORM_LOG_THROW(rewardModelNames.size() == 0, storm::exceptions::WrongFormatException, "Reward model names declared twice");
+                    STORM_LOG_THROW(rewardModelNames.empty(), storm::exceptions::WrongFormatException, "Reward model names declared twice");
                     std::getline(file, line);
                     boost::split(rewardModelNames, line, boost::is_any_of("\t "));
                 } else if (line == "@nr_states") {
@@ -164,7 +164,7 @@ namespace storm {
                     }
                     firstRowOfState = row;
 
-                    if (type == storm::models::ModelType::Ctmc || type == storm::models::ModelType::MarkovAutomaton) {
+                    if (continuousTime) {
                         // Parse exit rate for CTMC or MA
                         STORM_LOG_THROW(boost::starts_with(line, "!"), storm::exceptions::WrongFormatException, "Exit rate missing.");
                         line = line.substr(1); //Remove "!"
@@ -248,7 +248,7 @@ namespace storm {
                             }
                         }
 
-                        for (std::string label : labels) {
+                        for (std::string const& label : labels) {
                             if (!modelComponents->stateLabeling.containsLabel(label)) {
                                 modelComponents->stateLabeling.addLabel(label);
                             }
@@ -305,7 +305,7 @@ namespace storm {
 
                 } else {
                     // New transition
-                    size_t posColon = line.find(":");
+                    size_t posColon = line.find(':');
                     STORM_LOG_THROW(posColon != std::string::npos, storm::exceptions::WrongFormatException, "':' not found.");
                     size_t target = parseNumber<size_t>(line.substr(2, posColon-3));
                     std::string valueStr = line.substr(posColon+2);
@@ -314,12 +314,14 @@ namespace storm {
                     STORM_LOG_THROW(target < stateSize, storm::exceptions::WrongFormatException, "Target state " << target << " is greater than state size " << stateSize);
                     builder.addNextValue(row, target, value);
                 }
-            }
-
+            } // end state iteration
             STORM_LOG_TRACE("Finished parsing");
+
+            // Build transition matrix
             modelComponents->transitionMatrix = builder.build(row + 1, stateSize, nonDeterministic ? stateSize : 0);
             STORM_LOG_TRACE("Built matrix");
 
+            // Build reward models
             uint64_t numRewardModels = std::max(stateRewards.size(), actionRewards.size());
             for (uint64_t i = 0; i < numRewardModels; ++i) {
                 std::string rewardModelName;
@@ -329,10 +331,10 @@ namespace storm {
                     rewardModelName = rewardModelNames[i];
                 }
                 boost::optional<std::vector<ValueType>> stateRewardVector, actionRewardVector;
-                if (!stateRewards[i].empty()) {
+                if (i < stateRewards.size() && !stateRewards[i].empty()) {
                     stateRewardVector = std::move(stateRewards[i]);
                 }
-                if (!actionRewards[i].empty()) {
+                if (i < actionRewards.size() && !actionRewards[i].empty()) {
                     actionRewards[i].resize(row + 1, storm::utility::zero<ValueType>());
                     actionRewardVector = std::move(actionRewards[i]);
                 }
