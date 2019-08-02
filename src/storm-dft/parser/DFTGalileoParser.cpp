@@ -101,7 +101,7 @@ namespace storm {
                         std::string name = parseName(tokens[0]);
 
                         std::vector<std::string> childNames;
-                        for(unsigned i = 2; i < tokens.size(); ++i) {
+                        for(size_t i = 2; i < tokens.size(); ++i) {
                             childNames.push_back(parseName(tokens[i]));
                         }
                         bool success = true;
@@ -113,12 +113,12 @@ namespace storm {
                         } else if (type == "or") {
                             success = builder.addOrElement(name, childNames);
                         } else if (boost::starts_with(type, "vot")) {
-                            unsigned threshold = storm::parser::parseNumber<unsigned>(type.substr(3));
+                            size_t threshold = storm::parser::parseNumber<size_t>(type.substr(3));
                             success = builder.addVotElement(name, threshold, childNames);
                         } else if (type.find("of") != std::string::npos) {
                             size_t pos = type.find("of");
-                            unsigned threshold = storm::parser::parseNumber<unsigned>(type.substr(0, pos));
-                            unsigned count = storm::parser::parseNumber<unsigned>(type.substr(pos + 2));
+                            size_t threshold = storm::parser::parseNumber<size_t>(type.substr(0, pos));
+                            size_t count = storm::parser::parseNumber<size_t>(type.substr(pos + 2));
                             STORM_LOG_THROW(count == childNames.size(), storm::exceptions::WrongFormatException, "Voting gate number " << count << " does not correspond to number of children " << childNames.size() << " in line " << lineNo << ".");
                             success = builder.addVotElement(name, threshold, childNames);
                         } else if (type == "pand") {
@@ -190,7 +190,7 @@ namespace storm {
         }
 
         template<typename ValueType>
-        std::pair<bool, unsigned> DFTGalileoParser<ValueType>::parseNumber(std::string name, std::string& line) {
+        std::pair<bool, size_t> DFTGalileoParser<ValueType>::parseNumber(std::string name, std::string& line) {
             // Build regex for: name=(number)
             std::regex nameRegex(name + "\\s*=\\s*([[:digit:]]+)");
             std::smatch match;
@@ -198,7 +198,7 @@ namespace storm {
                 std::string value = match.str(1);
                 // Remove matched part
                 line = std::regex_replace(line, nameRegex, "");
-                return std::make_pair(true, storm::parser::parseNumber<unsigned>(value));
+                return std::make_pair(true, storm::parser::parseNumber<size_t>(value));
             } else {
                 // No match found
                 return std::make_pair(false, 0);
@@ -236,7 +236,7 @@ namespace storm {
                 }
             }
             // Erlang distribution
-            std::pair<bool, unsigned> resultNum = parseNumber("phases", line);
+            std::pair<bool, size_t> resultNum = parseNumber("phases", line);
             if (resultNum.first) {
                 STORM_LOG_THROW(distribution == Distribution::None || distribution == Distribution::Exponential, storm::exceptions::WrongFormatException, "A different distribution was already defined for basic element '" << name << "' in line " << lineNo << ".");
                 erlangPhases = resultNum.second;

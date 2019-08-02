@@ -33,8 +33,7 @@ namespace storm {
          */
         template<typename ValueType>
         std::shared_ptr<storm::storage::DFT<ValueType>> loadDFTJsonString(std::string const& jsonString) {
-            storm::parser::DFTJsonParser<ValueType> parser;
-            return std::make_shared<storm::storage::DFT<ValueType>>(parser.parseJsonFromString(jsonString));
+            return std::make_shared<storm::storage::DFT<ValueType>>(storm::parser::DFTJsonParser<ValueType>::parseJsonFromString(jsonString));
         }
 
         /*!
@@ -45,8 +44,7 @@ namespace storm {
          */
         template<typename ValueType>
         std::shared_ptr<storm::storage::DFT<ValueType>> loadDFTJsonFile(std::string const& file) {
-            storm::parser::DFTJsonParser<ValueType> parser;
-            return std::make_shared<storm::storage::DFT<ValueType>>(parser.parseJsonFromFile(file));
+            return std::make_shared<storm::storage::DFT<ValueType>>(storm::parser::DFTJsonParser<ValueType>::parseJsonFromFile(file));
         }
 
         /*!
