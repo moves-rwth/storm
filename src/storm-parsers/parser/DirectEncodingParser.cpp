@@ -202,7 +202,7 @@ namespace storm {
                                 if (stateRewardsIt->empty()) {
                                     stateRewardsIt->resize(stateSize, storm::utility::zero<ValueType>());
                                 }
-                                (*stateRewardsIt)[row] = std::move(rewardValue);
+                                (*stateRewardsIt)[state] = std::move(rewardValue);
                             }
                             ++stateRewardsIt;
                         }
@@ -293,7 +293,7 @@ namespace storm {
                             auto rewardValue = valueParser.parseValue(rew);
                             if (!storm::utility::isZero(rewardValue)) {
                                 if (actionRewardsIt->size() <= row) {
-                                    actionRewardsIt->resize(row + 1, storm::utility::zero<ValueType>());
+                                    actionRewardsIt->resize(std::max(row + 1, stateSize), storm::utility::zero<ValueType>());
                                 }
                                 (*actionRewardsIt)[row] = std::move(rewardValue);
                             }
