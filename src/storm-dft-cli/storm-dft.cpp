@@ -56,6 +56,11 @@ void processOptions() {
         storm::api::exportDFTToJsonFile<ValueType>(*dft, dftIOSettings.getExportJsonFilename());
     }
 
+    // Limit to one constantly failed BE
+    if (faultTreeSettings.isUniqueFailedBE()) {
+        dft = dftTransformator.transformUniqueFailedBe(*dft);
+    }
+
     // Eliminate non-binary dependencies
     if (!dft->getDependencies().empty()) {
         dft = dftTransformator.transformBinaryFDEPs(*dft);
@@ -82,10 +87,6 @@ void processOptions() {
 
     // SMT
     if (dftIOSettings.isExportToSmt()) {
-        dft = dftTransformator.transformUniqueFailedBe(*dft);
-        if (!dft->getDependencies().empty()) {
-            dft = dftTransformator.transformBinaryFDEPs(*dft);
-        }
         // Export to smtlib2
         storm::api::exportDFTToSMT<ValueType>(*dft, dftIOSettings.getExportSmtFilename());
         return;
@@ -98,11 +99,6 @@ void processOptions() {
     if (faultTreeSettings.solveWithSMT()) {
         useSMT = true;
         STORM_PRINT("Use SMT for preprocessing" << std::endl)
-        dft = dftTransformator.transformUniqueFailedBe(*dft);
-        if (!dft->getDependencies().empty()) {
-            // Making the constantly failed BE unique may introduce non-binary FDEPs
-            dft = dftTransformator.transformBinaryFDEPs(*dft);
-        }
     }
 #endif
 
