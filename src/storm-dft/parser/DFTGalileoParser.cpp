@@ -302,6 +302,24 @@ namespace storm {
                 case Constant:
                     if (storm::utility::isZero(firstValDistribution) || storm::utility::isOne(firstValDistribution)) {
                         return builder.addBasicElementProbability(parseName(name), firstValDistribution, dormancyFactor, false); // TODO set transient BEs
+                    } else {
+                        // Model constant BEs with probability 0 < p < 1
+                        bool success = true;
+                        if (!builder.nameInUse("constantBeTrigger")) {
+                            // Use a unique constantly failed element that triggers failsafe elements probabilistically
+                            success = success && builder.addBasicElementProbability("constantBeTrigger",
+                                                                                    storm::utility::one<ValueType>(),
+                                                                                    storm::utility::one<ValueType>(),
+                                                                                    false);
+                        }
+                        std::vector<std::string> childNames;
+                        childNames.push_back("constantBeTrigger");
+                        success = success &&
+                                  builder.addBasicElementProbability(parseName(name), storm::utility::zero<ValueType>(),
+                                                                     storm::utility::one<ValueType>(), false);
+                        childNames.push_back(parseName(name));
+                        return success &&
+                               builder.addDepElement(parseName(name) + "_pdep", childNames, firstValDistribution);
                     }
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Constant distribution is not supported for basic element '" << name << "' in line " << lineNo << ".");
                     break;
