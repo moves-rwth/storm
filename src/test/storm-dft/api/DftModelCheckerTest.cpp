@@ -152,17 +152,28 @@ namespace {
     }
 
     TYPED_TEST(DftModelCheckerTest, FdepMTTF) {
-        double result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep2.dft");
-        EXPECT_FLOAT_EQ(result, 2);
-        result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep3.dft");
-        EXPECT_FLOAT_EQ(result, 2.5);
         if (this->getConfig().useMod) {
             EXPECT_THROW(this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep.dft"), storm::exceptions::NotSupportedException);
+EXPECT_THROW(this->
+analyzeMTTF(STORM_TEST_RESOURCES_DIR
+"/dft/fdep2.dft"), storm::exceptions::NotSupportedException);
+EXPECT_THROW(this->
+analyzeMTTF(STORM_TEST_RESOURCES_DIR
+"/dft/fdep3.dft"), storm::exceptions::NotSupportedException);
             EXPECT_THROW(this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep4.dft"), storm::exceptions::NotSupportedException);
             EXPECT_THROW(this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep5.dft"), storm::exceptions::NotSupportedException);
         } else {
-            result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep.dft");
+double result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR
+"/dft/fdep.dft");
             EXPECT_FLOAT_EQ(result, 2 / 3.0);
+result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR
+"/dft/fdep2.dft");
+EXPECT_FLOAT_EQ(result,
+2);
+result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR
+"/dft/fdep3.dft");
+EXPECT_FLOAT_EQ(result,
+2.5);
             result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep4.dft");
             EXPECT_FLOAT_EQ(result, 1);
             result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep5.dft");
@@ -173,13 +184,24 @@ namespace {
     TYPED_TEST(DftModelCheckerTest, PdepMTTF) {
         double result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/pdep.dft");
         EXPECT_FLOAT_EQ(result, 8 / 3.0);
-        result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/pdep3.dft");
-        EXPECT_FLOAT_EQ(result, 67 / 24.0);
+
         if (this->getConfig().useMod) {
-            result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/pdep2.dft");
-            EXPECT_FLOAT_EQ(result, 38 / 15.0);
+EXPECT_THROW(this->
+analyzeMTTF(STORM_TEST_RESOURCES_DIR
+"/dft/pdep2.dft"), storm::exceptions::NotSupportedException);
+EXPECT_THROW(this->
+analyzeMTTF(STORM_TEST_RESOURCES_DIR
+"/dft/pdep3.dft"), storm::exceptions::NotSupportedException);
             EXPECT_THROW(this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/pdep4.dft"), storm::exceptions::NotSupportedException);
         } else {
+result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR
+"/dft/pdep2.dft");
+EXPECT_FLOAT_EQ(result,
+38 / 15.0);
+result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR
+"/dft/pdep3.dft");
+EXPECT_FLOAT_EQ(result,
+67 / 24.0);
             result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/pdep4.dft");
             EXPECT_EQ(result, storm::utility::infinity<double>());
         }
@@ -215,8 +237,6 @@ namespace {
         EXPECT_FLOAT_EQ(result, 6);
         result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/seq5.dft");
         EXPECT_EQ(result, storm::utility::infinity<double>());
-        result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/seq6.dft");
-        EXPECT_FLOAT_EQ(result, 30000);
 
         result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/mutex.dft");
         EXPECT_FLOAT_EQ(result, 0.5);
@@ -224,6 +244,21 @@ namespace {
         EXPECT_FLOAT_EQ(result, storm::utility::infinity<double>());
         result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/mutex3.dft");
         EXPECT_FLOAT_EQ(result, storm::utility::infinity<double>());
+if (this->
+
+getConfig()
+
+.useMod){
+EXPECT_THROW(this->
+analyzeMTTF(STORM_TEST_RESOURCES_DIR
+"/dft/seq6.dft"), storm::exceptions::NotSupportedException);
+}
+else {
+result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR
+"/dft/seq6.dft");
+EXPECT_FLOAT_EQ(result,
+30000);
+}
     }
 
     TYPED_TEST(DftModelCheckerTest, HecsReliability) {
