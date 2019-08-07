@@ -22,11 +22,53 @@ namespace storm {
         template<typename ValueType, typename StateType>
         std::vector<StateType> DftNextStateGenerator<ValueType, StateType>::getInitialStates(StateToIdCallback const& stateToIdCallback) {
             DFTStatePointer initialState = std::make_shared<storm::storage::DFTState<ValueType>>(mDft, mStateGenerationInfo, 0);
+            size_t constFailedBeCounter = 0;
+            std::shared_ptr<storm::storage::DFTBE<ValueType> const> constFailedBE = nullptr;
+            for (auto &be : mDft.getBasicElements()) {
+                if (be->type() == storm::storage::DFTElementType::BE_CONST) {
+                    auto constBe = std::static_pointer_cast<storm::storage::BEConst<ValueType> const>(be);
+                    if (constBe->failed()) {
+                        constFailedBeCounter++;
+                        STORM_LOG_THROW(constFailedBeCounter < 2, storm::exceptions::NotSupportedException,
+                                        "DFTs with more than one constantly failed BE are not supported");
+                        constFailedBE = constBe;
+                    }
+                }
+            }
+            StateType id;
+            if (constFailedBeCounter == 0) {
+                // Register initial state
+                id = stateToIdCallback(initialState);
+            } else {
+                initialState->letNextBEFail(constFailedBE->id(), false);
+                // Propagate the constant failure to reach the real initial state
+                storm::storage::DFTStateSpaceGenerationQueues<ValueType> queues;
+                propagateFailure(initialState, constFailedBE, queues);
 
-            // Register initial state
-            StateType id = stateToIdCallback(initialState);
+                if (initialState->hasFailed(mDft.getTopLevelIndex()) && uniqueFailedState) {
+                    propagateFailsafe(initialState, constFailedBE, queues);
+
+                    // Update failable dependencies
+                    initialState->updateFailableDependencies(constFailedBE->id());
+                    initialState->updateDontCareDependencies(constFailedBE->id());
+                    initialState->updateFailableInRestrictions(constFailedBE->id());
+
+                    // Unique failed state
+                    id = 0;
+                } else {
+                    propagateFailsafe(initialState, constFailedBE, queues);
+
+                    // Update failable dependencies
+                    initialState->updateFailableDependencies(constFailedBE->id());
+                    initialState->updateDontCareDependencies(constFailedBE->id());
+                    initialState->updateFailableInRestrictions(constFailedBE->id());
+
+                    id = stateToIdCallback(initialState);
+                }
+            }
 
             initialState->setId(id);
+
             return {id};
         }
 
@@ -90,31 +132,7 @@ namespace storm {
                 // Propagate
                 storm::storage::DFTStateSpaceGenerationQueues<ValueType> queues;
 
-                // Propagate failure
-                for (DFTGatePointer parent : nextBE->parents()) {
-                    if (newState->isOperational(parent->id())) {
-                        queues.propagateFailure(parent);
-                    }
-                }
-                // Propagate failures
-                while (!queues.failurePropagationDone()) {
-                    DFTGatePointer next = queues.nextFailurePropagation();
-                    next->checkFails(*newState, queues);
-                    newState->updateFailableDependencies(next->id());
-                    newState->updateFailableInRestrictions(next->id());
-                }
-
-                // Check restrictions
-                for (DFTRestrictionPointer restr : nextBE->restrictions()) {
-                    queues.checkRestrictionLater(restr);
-                }
-                // Check restrictions
-                while(!queues.restrictionChecksDone()) {
-                    DFTRestrictionPointer next = queues.nextRestrictionCheck();
-                    next->checkFails(*newState, queues);
-                    newState->updateFailableDependencies(next->id());
-                    newState->updateFailableInRestrictions(next->id());
-                }
+                propagateFailure(newState, nextBE, queues);
 
                 newState->updateRemainingRelevantEvents();
 
@@ -137,18 +155,7 @@ namespace storm {
                     // Use unique failed state
                     newStateId = 0;
                 } else {
-                    // Propagate failsafe
-                    while (!queues.failsafePropagationDone()) {
-                        DFTGatePointer next = queues.nextFailsafePropagation();
-                        next->checkFailsafe(*newState, queues);
-                    }
-
-                    // Propagate dont cares
-                    // Relevance is considered for each element independently
-                    while (!queues.dontCarePropagationDone()) {
-                        DFTElementPointer next = queues.nextDontCarePropagation();
-                        next->checkDontCareAnymore(*newState, queues);
-                    }
+                    propagateFailsafe(newState, nextBE, queues);
 
                     // Update failable dependencies
                     newState->updateFailableDependencies(nextBE->id());
@@ -220,6 +227,56 @@ namespace storm {
             STORM_LOG_TRACE("Finished exploring state: " << mDft.getStateString(state));
             result.setExpanded();
             return result;
+        }
+
+        template<typename ValueType, typename StateType>
+        void DftNextStateGenerator<ValueType, StateType>::propagateFailure(DFTStatePointer newState,
+                                                                           std::shared_ptr<storm::storage::DFTBE<ValueType> const> &nextBE,
+                                                                           storm::storage::DFTStateSpaceGenerationQueues<ValueType> &queues) {
+            // Propagate failure
+            for (DFTGatePointer parent : nextBE->parents()) {
+                if (newState->isOperational(parent->id())) {
+                    queues.propagateFailure(parent);
+                }
+            }
+            // Propagate failures
+            while (!queues.failurePropagationDone()) {
+                DFTGatePointer next = queues.nextFailurePropagation();
+                next->checkFails(*newState, queues);
+                newState->updateFailableDependencies(next->id());
+                newState->updateFailableInRestrictions(next->id());
+            }
+
+            // Check restrictions
+            for (DFTRestrictionPointer restr : nextBE->restrictions()) {
+                queues.checkRestrictionLater(restr);
+            }
+            // Check restrictions
+            while (!queues.restrictionChecksDone()) {
+                DFTRestrictionPointer next = queues.nextRestrictionCheck();
+                next->checkFails(*newState, queues);
+                newState->updateFailableDependencies(next->id());
+                newState->updateFailableInRestrictions(next->id());
+            }
+
+        }
+
+        template<typename ValueType, typename StateType>
+        void DftNextStateGenerator<ValueType, StateType>::propagateFailsafe(DFTStatePointer newState,
+                                                                            std::shared_ptr<storm::storage::DFTBE<ValueType> const> &nextBE,
+                                                                            storm::storage::DFTStateSpaceGenerationQueues<ValueType> &queues) {
+            // Propagate failsafe
+            while (!queues.failsafePropagationDone()) {
+                DFTGatePointer next = queues.nextFailsafePropagation();
+                next->checkFailsafe(*newState, queues);
+            }
+
+            // Propagate dont cares
+            // Relevance is considered for each element independently
+            while (!queues.dontCarePropagationDone()) {
+                DFTElementPointer next = queues.nextDontCarePropagation();
+                next->checkDontCareAnymore(*newState, queues);
+            }
         }
 
         template<typename ValueType, typename StateType>

@@ -42,6 +42,26 @@ namespace storm {
              */
             StateBehavior<ValueType, StateType> createMergeFailedState(StateToIdCallback const& stateToIdCallback);
 
+            /**
+             * Propagate the failures in a given state if the given BE fails
+             *
+             * @param newState starting state of the propagation
+             * @param nextBE BE whose failure is propagated
+             */
+            void
+            propagateFailure(DFTStatePointer newState, std::shared_ptr<storm::storage::DFTBE<ValueType> const> &nextBE,
+                             storm::storage::DFTStateSpaceGenerationQueues<ValueType> &queues);
+
+            /**
+             * Propagate the failsafe state in a given state if the given BE fails
+             *
+             * @param newState starting state of the propagation
+             * @param nextBE BE whose failure is propagated
+             */
+            void
+            propagateFailsafe(DFTStatePointer newState, std::shared_ptr<storm::storage::DFTBE<ValueType> const> &nextBE,
+                              storm::storage::DFTStateSpaceGenerationQueues<ValueType> &queues);
+
         private:
 
             StateBehavior<ValueType, StateType> exploreState(StateToIdCallback const& stateToIdCallback, bool exploreDependencies);

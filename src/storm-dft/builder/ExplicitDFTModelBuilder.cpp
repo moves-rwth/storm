@@ -167,6 +167,26 @@ namespace storm {
                 STORM_LOG_ASSERT(stateStorage.initialStateIndices.size() == 1, "Only one initial state assumed.");
                 initialStateIndex = stateStorage.initialStateIndices[0];
                 STORM_LOG_TRACE("Initial state: " << initialStateIndex);
+
+                // DFT may be instantly failed due to a constant failure
+                // in this case a model only consisting of the uniqueFailedState suffices
+                if (initialStateIndex == 0 && this->uniqueFailedState) {
+                    modelComponents.markovianStates.resize(1);
+                    modelComponents.deterministicModel = generator.isDeterministicModel();
+
+                    STORM_LOG_TRACE("Markovian states: " << modelComponents.markovianStates);
+                    STORM_LOG_DEBUG("Model has 1 state");
+                    STORM_LOG_DEBUG(
+                            "Model is " << (generator.isDeterministicModel() ? "deterministic" : "non-deterministic"));
+
+                    // Build transition matrix
+                    modelComponents.transitionMatrix = matrixBuilder.builder.build(1, 1);
+                    STORM_LOG_TRACE("Transition matrix: " << std::endl << modelComponents.transitionMatrix);
+
+                    buildLabeling();
+                    return;
+                }
+
                 // Initialize heuristic values for inital state
                 STORM_LOG_ASSERT(!statesNotExplored.at(initialStateIndex).second, "Heuristic for initial state is already initialized");
                 ExplorationHeuristicPointer heuristic;
