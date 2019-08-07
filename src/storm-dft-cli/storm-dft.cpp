@@ -117,13 +117,17 @@ void processOptions() {
                                         "Lower bound: " << std::to_string(preResults.lowerBEBound) << std::endl <<
                                         "Upper bound: " << std::to_string(preResults.upperBEBound) << std::endl);
 
-    preResults.fdepConflicts = storm::dft::utility::FDEPConflictFinder::getDependencyConflicts(*dft, true,
+    preResults.fdepConflicts = storm::dft::utility::FDEPConflictFinder::getDependencyConflicts(*dft, useSMT,
                                                                                                solverTimeout);
 
-    STORM_LOG_DEBUG("========================================" << std::endl <<
-                                                               "FDEP CONFLICTS" << std::endl <<
-                                                               "========================================"
-                                                               << std::endl);
+    if (preResults.fdepConflicts.empty()) {
+        STORM_LOG_DEBUG("No FDEP conflicts found" << std::endl);
+    } else {
+        STORM_LOG_DEBUG("========================================" << std::endl <<
+                                                                   "FDEP CONFLICTS" << std::endl <<
+                                                                   "========================================"
+                                                                   << std::endl);
+    }
     for (auto pair: preResults.fdepConflicts) {
         STORM_LOG_DEBUG("Conflict between " << dft->getElement(pair.first)->name() << " and "
                                             << dft->getElement(pair.second)->name() << std::endl);
