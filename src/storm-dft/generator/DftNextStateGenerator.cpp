@@ -30,7 +30,7 @@ namespace storm {
                     if (constBe->failed()) {
                         constFailedBeCounter++;
                         STORM_LOG_THROW(constFailedBeCounter < 2, storm::exceptions::NotSupportedException,
-                                        "DFTs with more than one constantly failed BE are not supported");
+                                        "DFTs with more than one constantly failed BE are not supported. Try using the option '--uniquefailedbe'.");
                         constFailedBE = constBe;
                     }
                 }
