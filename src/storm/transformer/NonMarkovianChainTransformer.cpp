@@ -166,10 +166,11 @@ namespace storm {
                 }
             }
 
+            uint64_t newStateCount = ma->getNumberOfStates() - eliminationMapping.size();
             // Build the new MA
             storm::storage::SparseMatrix<ValueType> newTransitionMatrix;
             storm::models::sparse::StateLabeling newStateLabeling(
-                    ma->getNumberOfStates() - eliminationMapping.size());
+                    newStateCount);
             storm::storage::BitVector newMarkovianStates(ma->getNumberOfStates() - eliminationMapping.size(),
                                                          false);
             std::vector<ValueType> newExitRates;
@@ -230,7 +231,8 @@ namespace storm {
                     ++currentRow;
                 }
             }
-            newTransitionMatrix = matrixBuilder.build();
+            // explicitly force dimensions of the matrix in case a column is missing
+            newTransitionMatrix = matrixBuilder.build(newStateCount, newStateCount, newStateCount);
 
             storm::storage::sparse::ModelComponents<ValueType, RewardModelType> newComponents = storm::storage::sparse::ModelComponents<ValueType, RewardModelType>(
                     std::move(newTransitionMatrix), std::move(newStateLabeling));
