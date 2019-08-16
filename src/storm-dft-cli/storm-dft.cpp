@@ -92,7 +92,6 @@ void processOptions() {
         return;
     }
 
-    // TODO introduce some flags
     bool useSMT = false;
     uint64_t solverTimeout = 10;
 #ifdef STORM_HAVE_Z3
