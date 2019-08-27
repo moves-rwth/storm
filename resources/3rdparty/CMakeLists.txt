@@ -241,7 +241,7 @@ if (NOT STORM_FORCE_SHIPPED_CARL)
 endif()
 if(carl_FOUND AND NOT STORM_FORCE_SHIPPED_CARL)
     get_target_property(carlLOCATION lib_carl LOCATION)
-    if(${carlLOCATION} STREQUAL "carlLOCATION-NOTFOUND")
+    if("${carlLOCATION}" STREQUAL "carlLOCATION-NOTFOUND")
         message(SEND_ERROR "Library location for carl is not found, did you build carl?")
     elseif(EXISTS ${carlLOCATION})
         #empty on purpose
