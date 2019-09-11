@@ -114,6 +114,7 @@ int main(const int argc, const char** argv) {
 
         // For ease of testing
         storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<storm::RationalNumber> checker = storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<storm::RationalNumber>();
+        checker.computeReachabilityProbability(*pomdp, std::set<uint32_t>({7}), false, 10);
 
         std::shared_ptr<storm::logic::Formula const> formula;
         if (!symbolicInput.properties.empty()) {

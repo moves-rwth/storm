@@ -68,27 +68,31 @@ namespace storm {
                     }
                 }
 
+                STORM_LOG_DEBUG("End of Section 1");
                 // Value Iteration
+                auto cc = storm::utility::ConstantsComparator<ValueType>();
                 while (!finished && iteration < maxIterations) {
-                    STORM_LOG_DEBUG("Iteration " << std::to_string(iteration));
+                    STORM_PRINT("Iteration " << std::to_string(iteration) << std::endl);
                     bool improvement = false;
                     for (size_t i = 0; i < beliefGrid.size(); ++i) {
                         bool isTarget = beliefIsKnown[i];
                         if (!isTarget) {
                             Belief<ValueType> currentBelief = beliefGrid[i];
+                            STORM_LOG_DEBUG(
+                                    "Check Belief " << currentBelief.id << ": ||" << currentBelief.observation << "|"
+                                                    << currentBelief.probabilities << "||");
                             // we can take any state with the observation as they have the same number of choices
                             uint64_t numChoices = pomdp.getNumberOfChoices(
                                     pomdp.getStatesWithObservation(currentBelief.observation).front());
-
+                            STORM_LOG_DEBUG("Number choices: " << std::to_string(numChoices));
                             // Initialize the values for the value iteration
-                            ValueType bestValue = min ? storm::utility::infinity<ValueType>()
-                                                      : -storm::utility::infinity<ValueType>();
+                            ValueType chosenValue = min ? storm::utility::infinity<ValueType>()
+                                                        : -storm::utility::infinity<ValueType>();
                             uint64_t chosenActionIndex = std::numeric_limits<uint64_t>::infinity();
                             ValueType currentValue;
 
                             for (uint64_t action = 0; action < numChoices; ++action) {
                                 currentValue = storm::utility::zero<ValueType>(); // simply change this for rewards?
-
                                 for (auto iter = observationProbabilities[i][action].begin();
                                      iter != observationProbabilities[i][action].end(); ++iter) {
                                     uint32_t observation = iter->first;
@@ -96,7 +100,7 @@ namespace storm {
 
                                     // compute subsimplex and lambdas according to the Lovejoy paper to approximate the next belief
                                     std::pair<std::vector<std::vector<ValueType>>, std::vector<ValueType>> temp = computeSubSimplexAndLambdas(
-                                            currentBelief.probabilities, gridResolution);
+                                            nextBelief.probabilities, gridResolution);
                                     std::vector<std::vector<ValueType>> subSimplex = temp.first;
                                     std::vector<ValueType> lambdas = temp.second;
 
@@ -107,21 +111,37 @@ namespace storm {
                                                     getBeliefIdInGrid(beliefGrid, observation, subSimplex[j]));
                                         }
                                     }
-
                                     currentValue += iter->second * sum;
                                 }
 
                                 // Update the selected actions
-                                auto cc = storm::utility::ConstantsComparator<ValueType>();
-                                if ((min && cc.isLess(storm::utility::zero<ValueType>(), bestValue - currentValue)) ||
-                                    (!min && cc.isLess(storm::utility::zero<ValueType>(), currentValue - bestValue))) {
-                                    improvement = true;
-                                    bestValue = currentValue;
+                                if ((min && cc.isLess(storm::utility::zero<ValueType>(), chosenValue - currentValue)) ||
+                                    (!min &&
+                                     cc.isLess(storm::utility::zero<ValueType>(), currentValue - chosenValue))) {
+                                    chosenValue = currentValue;
                                     chosenActionIndex = action;
                                 }
                                 // TODO tie breaker?
                             }
-                            result[currentBelief.id] = bestValue;
+                            result[currentBelief.id] = chosenValue;
+                            // Check if the iteration brought an improvement
+                            if ((min && cc.isLess(storm::utility::zero<ValueType>(),
+                                                  result_backup[currentBelief.id] - result[currentBelief.id])) ||
+                                (!min && cc.isLess(storm::utility::zero<ValueType>(),
+                                                   result[currentBelief.id] - result_backup[currentBelief.id]))) {
+                                if (min) {
+                                    STORM_PRINT("Old: " << result_backup[currentBelief.id] << ", New: "
+                                                        << result[currentBelief.id] << std::endl << "Delta: "
+                                                        << result_backup[currentBelief.id] - result[currentBelief.id]
+                                                        << std::endl);
+                                } else {
+                                    STORM_PRINT("Old: " << result_backup[currentBelief.id] << ", New: "
+                                                        << result[currentBelief.id] << std::endl << "Delta: "
+                                                        << result_backup[currentBelief.id] - result[currentBelief.id]
+                                                        << std::endl);
+                                }
+                                improvement = true;
+                            }
                         }
                     }
                     finished = !improvement;
@@ -150,7 +170,7 @@ namespace storm {
                     }
                 }
 
-                STORM_LOG_DEBUG("Over-Approximation Result: " << overApprox);
+                STORM_PRINT("Over-Approximation Result: " << overApprox << std::endl);
             }
 
             template<typename ValueType, typename RewardModelType>
@@ -171,8 +191,10 @@ namespace storm {
             template<typename ValueType, typename RewardModelType>
             Belief<ValueType> ApproximatePOMDPModelchecker<ValueType, RewardModelType>::getInitialBelief(
                     storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp, uint64_t id) {
-                STORM_LOG_ASSERT(pomdp.getInitialStates().getNumberOfSetBits() > 1,
+                STORM_LOG_ASSERT(pomdp.getInitialStates().getNumberOfSetBits() < 2,
                                  "POMDP contains more than one initial state");
+                STORM_LOG_ASSERT(pomdp.getInitialStates().getNumberOfSetBits() == 1,
+                                 "POMDP does not contain an initial state");
                 std::vector<ValueType> distribution(pomdp.getNumberOfStates(), storm::utility::zero<ValueType>());
                 uint32_t observation = 0;
                 for (uint64_t state = 0; state < pomdp.getNumberOfStates(); ++state) {
@@ -212,8 +234,8 @@ namespace storm {
                     } else {
                         // Otherwise we have to enumerate all possible distributions with regards to the grid
                         // helper is used to derive the distribution of the belief
-                        std::vector<uint64_t> helper(statesWithObservation.size(), 0);
-                        helper[0] = gridResolution;
+                        std::vector<ValueType> helper(statesWithObservation.size(), ValueType(0));
+                        helper[0] = storm::utility::convertNumber<ValueType>(gridResolution);
                         bool done = false;
                         uint64_t index = 0;
 
@@ -221,11 +243,13 @@ namespace storm {
                             std::vector<ValueType> distribution(pomdp.getNumberOfStates(),
                                                                 storm::utility::zero<ValueType>());
                             for (size_t i = 0; i < statesWithObservation.size() - 1; ++i) {
-                                distribution[statesWithObservation[i]] = ValueType(
-                                        double(helper[i] - helper[i + 1]) / gridResolution);
+                                distribution[statesWithObservation[i]] = (helper[i] - helper[i + 1]) /
+                                                                         storm::utility::convertNumber<ValueType>(
+                                                                                 gridResolution);
                             }
-                            distribution[statesWithObservation.back()] = ValueType(
-                                    double(helper[statesWithObservation.size() - 1]) / gridResolution);
+                            distribution[statesWithObservation.back()] =
+                                    helper[statesWithObservation.size() - 1] /
+                                    storm::utility::convertNumber<ValueType>(gridResolution);
 
                             Belief<ValueType> belief = {newId, observation, distribution};
                             STORM_LOG_TRACE(
@@ -233,7 +257,8 @@ namespace storm {
                                                   << ")," << distribution << "]");
                             grid.push_back(belief);
                             beliefIsKnown.push_back(isTarget);
-                            if (helper[statesWithObservation.size() - 1] == gridResolution) {
+                            if (helper[statesWithObservation.size() - 1] ==
+                                storm::utility::convertNumber<ValueType>(gridResolution)) {
                                 // If the last entry of helper is the gridResolution, we have enumerated all necessary distributions
                                 done = true;
                             } else {
@@ -281,10 +306,10 @@ namespace storm {
 
                 std::vector<std::vector<ValueType>> qs;
                 for (size_t i = 0; i < probabilities.size(); ++i) {
-                    std::vector<ValueType> q;
+                    std::vector<ValueType> q(probabilities.size(), storm::utility::zero<ValueType>());
                     if (i == 0) {
                         for (size_t j = 0; j < probabilities.size(); ++j) {
-                            q[i] = v[i];
+                            q[j] = v[j];
                         }
                         qs.push_back(q);
                     } else {
