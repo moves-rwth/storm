@@ -61,7 +61,7 @@ namespace storm {
 
                 std::vector<uint32_t> const& getObservations() const;
 
-
+                std::vector<uint64_t> getStatesWithObservation(uint32_t observation) const;
 
             protected:
                 // TODO: consider a bitvector based presentation (depending on our needs).

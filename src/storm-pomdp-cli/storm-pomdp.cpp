@@ -38,6 +38,7 @@
 #include "storm-pomdp/transformer/BinaryPomdpTransformer.h"
 #include "storm-pomdp/analysis/UniqueObservationStates.h"
 #include "storm-pomdp/analysis/QualitativeAnalysis.h"
+#include "storm-pomdp/modelchecker/ApproximatePOMDPModelchecker.h"
 #include "storm/api/storm.h"
 
 /*!
@@ -89,6 +90,18 @@ int main(const int argc, const char** argv) {
 
         auto const& coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
         auto const& pomdpSettings = storm::settings::getModule<storm::settings::modules::POMDPSettings>();
+        auto const &general = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
+        auto const &debug = storm::settings::getModule<storm::settings::modules::DebugSettings>();
+
+        if (general.isVerboseSet()) {
+            storm::utility::setLogLevel(l3pp::LogLevel::INFO);
+        }
+        if (debug.isDebugSet()) {
+            storm::utility::setLogLevel(l3pp::LogLevel::DEBUG);
+        }
+        if (debug.isTraceSet()) {
+            storm::utility::setLogLevel(l3pp::LogLevel::TRACE);
+        }
 
         // For several engines, no model building step is performed, but the verification is started right away.
         storm::settings::modules::CoreSettings::Engine engine = coreSettings.getEngine();
@@ -98,7 +111,10 @@ int main(const int argc, const char** argv) {
         auto model = storm::cli::buildPreprocessExportModelWithValueTypeAndDdlib<storm::dd::DdType::Sylvan, storm::RationalNumber>(symbolicInput, engine);
         STORM_LOG_THROW(model && model->getType() == storm::models::ModelType::Pomdp, storm::exceptions::WrongFormatException, "Expected a POMDP.");
         std::shared_ptr<storm::models::sparse::Pomdp<storm::RationalNumber>> pomdp = model->template as<storm::models::sparse::Pomdp<storm::RationalNumber>>();
-        
+
+        // For ease of testing
+        storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<storm::RationalNumber> checker = storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<storm::RationalNumber>();
+
         std::shared_ptr<storm::logic::Formula const> formula;
         if (!symbolicInput.properties.empty()) {
             formula = symbolicInput.properties.front().getRawFormula();

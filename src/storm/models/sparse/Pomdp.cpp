@@ -59,8 +59,17 @@ namespace storm {
                 return observations;
             }
 
-
-
+            template<typename ValueType, typename RewardModelType>
+            std::vector<uint64_t>
+            Pomdp<ValueType, RewardModelType>::getStatesWithObservation(uint32_t observation) const {
+                std::vector<uint64_t> result;
+                for (uint64_t state = 0; state < this->getNumberOfStates(); ++state) {
+                    if (this->getObservation(state) == observation) {
+                        result.push_back(state);
+                    }
+                }
+                return result;
+            }
 
             template class Pomdp<double>;
             template class Pomdp<storm::RationalNumber>;
