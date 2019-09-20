@@ -1,0 +1,74 @@
+mdp
+
+module server
+
+	s:[0..3];
+	i:[0..3];
+	j:[0..3];
+
+	// initial cancel loops
+	[client1_cancel] s=0 -> true;
+	[client2_cancel] s=0 -> true;
+	[client3_cancel] s=0 -> true;
+	
+	// client i request/grant/cancel
+	[client1_request] s=0 -> (s'=1) & (i'=1);
+	[client1_grant] s=1 & i=1 -> (s'=2);
+	[client1_cancel] s=2 & i=1 -> (s'=0) & (i'=0);
+	[client2_request] s=0 -> (s'=1) & (i'=2);
+	[client2_grant] s=1 & i=2 -> (s'=2);
+	[client2_cancel] s=2 & i=2 -> (s'=0) & (i'=0);
+	[client3_request] s=0 -> (s'=1) & (i'=3);
+	[client3_grant] s=1 & i=3 -> (s'=2);
+	[client3_cancel] s=2 & i=3 -> (s'=0) & (i'=0);
+	
+	// deny other requests when serving
+	[client1_request] s=2 -> (s'=3) & (j'=1);
+	[client1_deny] s=3 & j=1 -> (s'=2) & (j'=0);
+	[client2_request] s=2 -> (s'=3) & (j'=2);
+	[client2_deny] s=3 & j=2 -> (s'=2) & (j'=0);
+	[client3_request] s=2 -> (s'=3) & (j'=3);
+	[client3_deny] s=3 & j=3 -> (s'=2) & (j'=0);
+	
+	// cancel loops when serving
+	[client1_cancel] s=2 & i!=1 -> true;
+	[client2_cancel] s=2 & i!=2 -> true;
+	[client3_cancel] s=2 & i!=3 -> true;
+		
+endmodule
+
+module client1
+
+	c1:[-1..3];
+
+	[client1_ch_mind] c1=-1 -> 0.9:(c1'=0)+0.1:(c1'=3);
+		// change mind with probability 0.1
+	[client1_request] c1=0 -> (c1'=1);
+	[client1_deny] c1=1 -> (c1'=0);
+	[client1_grant] c1=1 -> (c1'=2);
+	[client1_useResource] c1=2 -> (c1'=2);
+	[client1_cancel] c1=2 -> (c1'=0);
+	[client1_cancel] c1=3 -> (c1'=1);	
+
+endmodule
+
+module client2 = client1[ c1=c2, client1_ch_mind=client2_ch_mind, client1_request=client2_request,
+client1_deny=client2_deny, client1_grant=client2_grant,
+client1_useResource=client2_useResource, client1_cancel=client2_cancel]
+
+endmodule
+
+module client3 = client1[ c1=c3, client1_ch_mind=client3_ch_mind, client1_request=client3_request,
+client1_deny=client3_deny, client1_grant=client3_grant,
+client1_useResource=client3_useResource, client1_cancel=client3_cancel]
+
+endmodule
+
+
+rewards "grants"
+	[client1_grant] true : 1;
+	[client2_grant] true : 1;
+	[client3_grant] true : 1;
+endrewards
+
+

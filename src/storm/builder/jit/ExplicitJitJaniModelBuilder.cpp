@@ -99,6 +99,16 @@ namespace storm {
                 } else {
                     carlIncludeDirectory = STORM_CARL_INCLUDE_DIR;
                 }
+#ifdef STORM_HAVE_CLN
+                clnIncludeDirectory = CLN_INCLUDE_DIR;
+#else
+                clnIncludeDirectory = "";
+#endif
+#ifdef STORM_HAVE_GMP
+                gmpIncludeDirectory = GMP_INCLUDE_DIR;
+#else
+                gmpIncludeDirectory = "";
+#endif
                 sparseppIncludeDirectory = STORM_BUILD_DIR "/include/resources/3rdparty/sparsepp/";
                 
                 // Register all transient variables as transient.
@@ -393,7 +403,13 @@ namespace storm {
                     boost::filesystem::path outputFile = temporaryFile;
                     outputFile += ".out";
                     std::string outputFilename = boost::filesystem::absolute(outputFile).string();
-                    boost::optional<std::string> error = execute(compiler + " " + compilerFlags + " " + temporaryFilename + " -I" + stormIncludeDirectory + " -I" + carlIncludeDirectory + " -o " + outputFilename);
+                    std::string includes = "";
+                    for (std::string const& dir : {stormIncludeDirectory, carlIncludeDirectory, clnIncludeDirectory, gmpIncludeDirectory}) {
+                        if (dir != "") {
+                            includes += " -I" + dir;
+                        }
+                    }
+                    boost::optional<std::string> error = execute(compiler + " " + compilerFlags + " " + temporaryFilename + includes + " -o " + outputFilename);
                     
                     if (error) {
                         result = false;
@@ -2488,8 +2504,13 @@ namespace storm {
                 auto dynamicLibraryPath = sourceFile;
                 dynamicLibraryPath += DYLIB_EXTENSION;
                 std::string dynamicLibraryFilename = boost::filesystem::absolute(dynamicLibraryPath).string();
-                
-                std::string command = compiler + " " + sourceFilename + " " + compilerFlags + " -I" + stormIncludeDirectory + " -I" + sparseppIncludeDirectory + " -I" + boostIncludeDirectory + " -I" + carlIncludeDirectory + " -o " + dynamicLibraryFilename;
+                std::string includes = "";
+                for (std::string const& dir : {stormIncludeDirectory, sparseppIncludeDirectory, boostIncludeDirectory, carlIncludeDirectory, clnIncludeDirectory, gmpIncludeDirectory}) {
+                    if (dir != "") {
+                        includes += " -I" + dir;
+                    }
+                }
+                std::string command = compiler + " " + sourceFilename + " " + compilerFlags + includes + " -o " + dynamicLibraryFilename;
                 boost::optional<std::string> error = execute(command);
                 
                 if (error) {
@@ -2501,22 +2522,22 @@ namespace storm {
             }
             
             template<typename RationalFunctionType, typename TP = typename RationalFunctionType::PolyType, carl::EnableIf<carl::needs_cache<TP>> = carl::dummy>
-            RationalFunctionType convertVariableToPolynomial(carl::Variable const& variable, std::shared_ptr<carl::Cache<carl::PolynomialFactorizationPair<RawPolynomial>>> cache) {
+            RationalFunctionType convertVariableToPolynomial(storm::RationalFunctionVariable const& variable, std::shared_ptr<storm::RawPolynomialCache> cache) {
                 return RationalFunctionType(typename RationalFunctionType::PolyType(typename RationalFunctionType::PolyType::PolyType(variable), cache));
             }
                 
             template<typename RationalFunctionType, typename TP = typename RationalFunctionType::PolyType, carl::DisableIf<carl::needs_cache<TP>> = carl::dummy>
-            RationalFunctionType convertVariableToPolynomial(carl::Variable const& variable, std::shared_ptr<carl::Cache<carl::PolynomialFactorizationPair<RawPolynomial>>>) {
+            RationalFunctionType convertVariableToPolynomial(storm::RationalFunctionVariable const& variable, std::shared_ptr<storm::RawPolynomialCache>) {
                 return RationalFunctionType(variable);
             }
             
             template<typename ValueType>
-            std::vector<storm::RationalFunction> getParameters(storm::jani::Model const&, std::shared_ptr<carl::Cache<carl::PolynomialFactorizationPair<RawPolynomial>>>) {
+            std::vector<storm::RationalFunction> getParameters(storm::jani::Model const&, std::shared_ptr<storm::RawPolynomialCache>) {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidStateException, "This function must not be called for this type.");
             }
                 
             template<>
-            std::vector<storm::RationalFunction> getParameters<storm::RationalFunction>(storm::jani::Model const& model, std::shared_ptr<carl::Cache<carl::PolynomialFactorizationPair<RawPolynomial>>> cache) {
+            std::vector<storm::RationalFunction> getParameters<storm::RationalFunction>(storm::jani::Model const& model, std::shared_ptr<storm::RawPolynomialCache> cache) {
                 std::vector<storm::RationalFunction> parameters;
                 for (auto const& constant : model.getConstants()) {
                     if (!constant.isDefined() && constant.isRealConstant()) {
@@ -2536,7 +2557,7 @@ namespace storm {
                     typedef boost::function<InitializeParametersFunctionType> ImportInitializeParametersFunctionType;
 
                     // Create the carl cache if we are building a parametric model.
-                    cache = std::make_shared<carl::Cache<carl::PolynomialFactorizationPair<RawPolynomial>>>();
+                    cache = std::make_shared<storm::RawPolynomialCache>();
 
                     ImportInitializeParametersFunctionType initializeParametersFunction = boost::dll::import_alias<InitializeParametersFunctionType>(dynamicLibraryPath, "initialize_parameters");
                     std::vector<storm::RationalFunction> parameters = getParameters<ValueType>(this->model, cache);

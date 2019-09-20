@@ -726,6 +726,11 @@ namespace storm {
              */
             SparseMatrix filterEntries(storm::storage::BitVector const& rowFilter) const;
             
+            /*!
+             * Removes all zero entries from this.
+             */
+            void dropZeroEntries();
+
             /**
              * Compares two rows.
              * @param i1 Index of first row

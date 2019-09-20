@@ -241,7 +241,7 @@ namespace storm {
                 if (!this->hasUniqueSolution()) { // Traditional value iteration has no requirements if the solution is unique.
                     // Computing a scheduler is only possible if the solution is unique
                     if (this->isTrackSchedulerSet()) {
-                        requirements.requireNoEndComponents();
+                        requirements.requireUniqueSolution();
                     } else {
                         // As we want the smallest (largest) solution for maximizing (minimizing) equation systems, we have to approach the solution from below (above).
                         if (!direction || direction.get() == OptimizationDirection::Maximize) {
@@ -255,7 +255,7 @@ namespace storm {
             } else if (method == MinMaxMethod::IntervalIteration) {
                 // Interval iteration requires a unique solution and lower+upper bounds
                 if (!this->hasUniqueSolution()) {
-                    requirements.requireNoEndComponents();
+                    requirements.requireUniqueSolution();
                 }
                 requirements.requireBounds();
             } else if (method == MinMaxMethod::RationalSearch) {
@@ -263,22 +263,22 @@ namespace storm {
                 requirements.requireLowerBounds();
                 // The solution needs to be unique in case of minimizing or in cases where we want a scheduler.
                 if (!this->hasUniqueSolution() && (!direction || direction.get() == OptimizationDirection::Minimize || this->isTrackSchedulerSet())) {
-                    requirements.requireNoEndComponents();
+                    requirements.requireUniqueSolution();
                 }
             } else if (method == MinMaxMethod::PolicyIteration) {
-                if (!this->hasUniqueSolution()) {
+                // The initial scheduler shall not select an end component
+                if (!this->hasNoEndComponents()) {
                     requirements.requireValidInitialScheduler();
                 }
             } else if (method == MinMaxMethod::SoundValueIteration) {
                 if (!this->hasUniqueSolution()) {
-                    requirements.requireNoEndComponents();
+                    requirements.requireUniqueSolution();
                 }
                 requirements.requireBounds(false);
             } else if (method == MinMaxMethod::ViToPi) {
-                // Since we want to use value iteration to extract an initial scheduler, it helps to eliminate all end components first.
-                // TODO: We might get around this, as the initial value iteration scheduler is only a heuristic.
+                // Since we want to use value iteration to extract an initial scheduler, the solution has to be unique.
                 if (!this->hasUniqueSolution()) {
-                    requirements.requireNoEndComponents();
+                    requirements.requireUniqueSolution();
                 }
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidEnvironmentException, "Unsupported technique for iterative MinMax linear equation solver.");

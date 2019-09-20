@@ -37,20 +37,20 @@ namespace storm {
             
         private:
             template<typename TP = typename RationalFunctionType::PolyType, carl::EnableIf<carl::needs_cache<TP>> = carl::dummy>
-            RationalFunctionType convertVariableToPolynomial(carl::Variable const& variable) {
+            RationalFunctionType convertVariableToPolynomial(storm::RationalFunctionVariable const& variable) {
                 return RationalFunctionType(typename RationalFunctionType::PolyType(typename RationalFunctionType::PolyType::PolyType(variable), cache));
             }
             
             template<typename TP = typename RationalFunctionType::PolyType, carl::DisableIf<carl::needs_cache<TP>> = carl::dummy>
-            RationalFunctionType convertVariableToPolynomial(carl::Variable const& variable) {
+            RationalFunctionType convertVariableToPolynomial(storm::RationalFunctionVariable const& variable) {
                 return RationalFunctionType(variable);
             }
             
             // A mapping from our variables to carl's.
-            std::unordered_map<storm::expressions::Variable, carl::Variable> variableToVariableMap;
+            std::unordered_map<storm::expressions::Variable, storm::RationalFunctionVariable> variableToVariableMap;
             
             // The cache that is used in case the underlying type needs a cache.
-            std::shared_ptr<carl::Cache<carl::PolynomialFactorizationPair<RawPolynomial>>> cache;
+            std::shared_ptr<storm::RawPolynomialCache> cache;
             
             // A mapping from variables to their values.
             std::unordered_map<storm::expressions::Variable, RationalFunctionType> valueMapping;

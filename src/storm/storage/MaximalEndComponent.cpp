@@ -4,7 +4,7 @@
 namespace storm {
     namespace storage {
         
-        std::ostream& operator<<(std::ostream& out, boost::container::flat_set<uint_fast64_t> const& block);
+        std::ostream& operator<<(std::ostream& out, storm::storage::FlatSet<uint_fast64_t> const& block);
         
         MaximalEndComponent::MaximalEndComponent() : stateToChoicesMapping() {
             // Intentionally left empty.

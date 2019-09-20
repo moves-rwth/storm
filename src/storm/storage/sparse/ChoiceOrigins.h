@@ -69,6 +69,11 @@ namespace storm {
                 std::shared_ptr<ChoiceOrigins> selectChoices(storm::storage::BitVector const& selectedChoices) const;
                 
                 /*
+                 * Removes origin information of the given choice.
+                 */
+                void clearOriginOfChoice(uint_fast64_t choiceIndex);
+                
+                /*
                  * Derive new choice origins from this by selecting the given choices.
                  * If an invalid choice index is selected, the corresponding choice will get the identifier for choices with no origin.
                  */
@@ -90,7 +95,7 @@ namespace storm {
                  */
                 virtual void computeIdentifierInfos() const = 0;
                 
-                std::vector<uint_fast64_t> const indexToIdentifier;
+                std::vector<uint_fast64_t> indexToIdentifier;
                 
                 // cached identifier infos might be empty if identifiers have not been generated yet.
                 mutable std::vector<std::string> identifierToInfo;

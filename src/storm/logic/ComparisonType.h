@@ -3,6 +3,9 @@
 
 #include <iostream>
 
+#include "storm/utility/macros.h"
+#include "storm/exceptions/IllegalArgumentException.h"
+
 namespace storm {
     namespace logic {
         enum class ComparisonType { Less, LessEqual, Greater, GreaterEqual };
@@ -26,6 +29,7 @@ namespace storm {
                 case ComparisonType::GreaterEqual:
                     return ComparisonType::Less;
             }
+            STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unknown ComparisonType");
         }
         
         inline ComparisonType invertPreserveStrictness(ComparisonType t) {
@@ -39,6 +43,7 @@ namespace storm {
                 case ComparisonType::GreaterEqual:
                     return ComparisonType::LessEqual;
             }
+            STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unknown ComparisonType");
         }
         
         std::ostream& operator<<(std::ostream& out, ComparisonType const& comparisonType);

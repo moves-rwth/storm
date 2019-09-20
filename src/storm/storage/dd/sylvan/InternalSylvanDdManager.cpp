@@ -80,7 +80,8 @@ namespace storm {
                 
                 uint64_t cur = max_t * 24 + max_c * 36;
                 STORM_LOG_THROW(cur <= memorycap, storm::exceptions::InvalidSettingsException, "Memory cap incompatible with default table ratio.");
-                
+                STORM_LOG_WARN_COND(memorycap < 60 * 0x0000040000000000, "Sylvan only supports tablesizes <= 42 bits. Memory limit is changed accordingly.");
+
                 while (2*cur < memorycap && max_t < 0x0000040000000000) {
                     max_t *= 2;
                     max_c *= 2;

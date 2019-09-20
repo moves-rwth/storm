@@ -12,6 +12,7 @@
 #include "storm/exceptions/InvalidJaniException.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/InvalidPropertyException.h"
+#include "storm/exceptions/IllegalArgumentException.h"
 
 #include "storm/storage/expressions/RationalLiteralExpression.h"
 #include "storm/storage/expressions/IntegerLiteralExpression.h"
@@ -120,9 +121,8 @@ namespace storm {
                     return ">";
                 case storm::logic::ComparisonType::GreaterEqual:
                     return "≥";
-                default:
-                    assert(false);
             }
+            STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unknown ComparisonType");
         }
         
         modernjson::json numberToJson(storm::RationalNumber rn) {
@@ -796,7 +796,7 @@ namespace storm {
                 typeDescr["kind"] = "array";
                 typeDescr["base"] = buildTypeDescription(type.getElementType());
             } else {
-                assert(false);
+                STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unknown expression type.");
             }
             return typeDescr;
         }
@@ -1104,10 +1104,8 @@ namespace storm {
                     return "argmax";
                 case storm::modelchecker::FilterType::VALUES:
                     return "values";
-                default:
-                    assert(false);
-                    
             }
+            STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unknown FilterType");
         }
         
         modernjson::json convertFilterExpression(storm::jani::FilterExpression const& fe, storm::jani::Model const& model, storm::jani::ModelFeatures& modelFeatures) {

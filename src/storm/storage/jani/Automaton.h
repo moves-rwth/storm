@@ -4,12 +4,12 @@
 #include <cstdint>
 #include <vector>
 #include <unordered_map>
-#include <boost/container/flat_set.hpp>
 
 #include "storm/storage/jani/VariableSet.h"
 #include "storm/storage/jani/TemplateEdgeContainer.h"
 #include "storm/storage/jani/EdgeContainer.h"
 #include "storm/storage/jani/FunctionDefinition.h"
+#include "storm/storage/BoostTypes.h"
 
 namespace storm {
     namespace jani {
@@ -375,7 +375,7 @@ namespace storm {
             /*!
              * Restricts the automaton to the edges given by the indices. All other edges are deleted.
              */
-            void restrictToEdges(boost::container::flat_set<uint_fast64_t> const& edgeIndices);
+            void restrictToEdges(storm::storage::FlatSet<uint_fast64_t> const& edgeIndices);
             
         private:
             /// The name of the automaton.

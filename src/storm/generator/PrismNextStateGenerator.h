@@ -1,11 +1,10 @@
 #ifndef STORM_GENERATOR_PRISMNEXTSTATEGENERATOR_H_
 #define STORM_GENERATOR_PRISMNEXTSTATEGENERATOR_H_
 
-#include <boost/container/flat_set.hpp>
-
 #include "storm/generator/NextStateGenerator.h"
 
 #include "storm/storage/prism/Program.h"
+#include "storm/storage/BoostTypes.h"
 
 namespace storm {
     namespace builder {
@@ -21,7 +20,7 @@ namespace storm {
         class PrismNextStateGenerator : public NextStateGenerator<ValueType, StateType> {
         public:
             typedef typename NextStateGenerator<ValueType, StateType>::StateToIdCallback StateToIdCallback;
-            typedef boost::container::flat_set<uint_fast64_t> CommandSet;
+            typedef storm::storage::FlatSet<uint_fast64_t> CommandSet;
             enum class CommandFilter {All, Markovian, Probabilistic};
 
             PrismNextStateGenerator(storm::prism::Program const& program, NextStateGeneratorOptions const& options = NextStateGeneratorOptions());

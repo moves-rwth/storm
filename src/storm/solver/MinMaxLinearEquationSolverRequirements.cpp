@@ -1,5 +1,8 @@
 #include "storm/solver/MinMaxLinearEquationSolverRequirements.h"
 
+#include "storm/utility/macros.h"
+#include "storm/exceptions/IllegalArgumentException.h"
+
 namespace storm {
     namespace solver {
         
@@ -7,8 +10,8 @@ namespace storm {
             // Intentionally left empty.
         }
         
-        MinMaxLinearEquationSolverRequirements& MinMaxLinearEquationSolverRequirements::requireNoEndComponents(bool critical) {
-            noEndComponentsRequirement.enable(critical);
+        MinMaxLinearEquationSolverRequirements& MinMaxLinearEquationSolverRequirements::requireUniqueSolution(bool critical) {
+            uniqueSolutionRequirement.enable(critical);
             return *this;
         }
         
@@ -33,8 +36,8 @@ namespace storm {
             return *this;
         }
         
-        SolverRequirement const&  MinMaxLinearEquationSolverRequirements::noEndComponents() const {
-            return noEndComponentsRequirement;
+        SolverRequirement const&  MinMaxLinearEquationSolverRequirements::uniqueSolution() const {
+            return uniqueSolutionRequirement;
         }
         
         SolverRequirement const&  MinMaxLinearEquationSolverRequirements::validInitialScheduler() const {
@@ -51,16 +54,16 @@ namespace storm {
         
         SolverRequirement const&  MinMaxLinearEquationSolverRequirements::get(Element const& element) const {
             switch (element) {
-                case Element::NoEndComponents: return noEndComponents(); break;
+                case Element::UniqueSolution: return uniqueSolution(); break;
                 case Element::ValidInitialScheduler: return validInitialScheduler(); break;
                 case Element::LowerBounds: return lowerBounds(); break;
                 case Element::UpperBounds: return upperBounds(); break;
             }
+            STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unknown ElementType");
         }
         
-        void MinMaxLinearEquationSolverRequirements::clearNoEndComponents() {
-            noEndComponentsRequirement.clear();
-            validInitialSchedulerRequirement.clear();
+        void MinMaxLinearEquationSolverRequirements::clearUniqueSolution() {
+            uniqueSolutionRequirement.clear();
         }
         
         void MinMaxLinearEquationSolverRequirements::clearValidInitialScheduler() {
@@ -81,20 +84,20 @@ namespace storm {
         }
         
         bool MinMaxLinearEquationSolverRequirements::hasEnabledRequirement() const {
-            return noEndComponentsRequirement || validInitialSchedulerRequirement || lowerBoundsRequirement || upperBoundsRequirement;
+            return uniqueSolutionRequirement || validInitialSchedulerRequirement || lowerBoundsRequirement || upperBoundsRequirement;
         }
         
         bool MinMaxLinearEquationSolverRequirements::hasEnabledCriticalRequirement() const {
-            return noEndComponentsRequirement.isCritical() || validInitialSchedulerRequirement.isCritical() || lowerBoundsRequirement.isCritical() || upperBoundsRequirement.isCritical();
+            return uniqueSolutionRequirement.isCritical() || validInitialSchedulerRequirement.isCritical() || lowerBoundsRequirement.isCritical() || upperBoundsRequirement.isCritical();
         }
         
         std::string MinMaxLinearEquationSolverRequirements::getEnabledRequirementsAsString() const {
             std::string res = "[";
             bool first = true;
-            if (noEndComponents()) {
+            if (uniqueSolution()) {
                 if (!first) { res += ", "; } else {first = false;}
-                res += "NoEndComponents";
-                if (noEndComponents().isCritical()) {
+                res += "UniqueSolution";
+                if (uniqueSolution().isCritical()) {
                     res += "(mandatory)";
                 }
             }

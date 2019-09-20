@@ -39,7 +39,10 @@ namespace storm {
         storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> createTask(std::shared_ptr<const storm::logic::Formula> const& formula, bool onlyInitialStatesRelevant = false) {
             return storm::modelchecker::CheckTask<storm::logic::Formula, ValueType>(*formula, onlyInitialStatesRelevant);
         }
-        
+
+        //
+        // Verifying with Abstraction Refinement engine
+        //
         struct AbstractionRefinementOptions {
             AbstractionRefinementOptions() = default;
             AbstractionRefinementOptions(std::vector<storm::expressions::Expression>&& constraints, std::vector<std::vector<storm::expressions::Expression>>&& injectedRefinementPredicates) : constraints(std::move(constraints)), injectedRefinementPredicates(std::move(injectedRefinementPredicates)) {
@@ -51,13 +54,10 @@ namespace storm {
         };
 
         template<storm::dd::DdType DdType, typename ValueType>
-        typename std::enable_if<std::is_same<ValueType, double>::value || std::is_same<ValueType, storm::RationalNumber>::value, std::unique_ptr<storm::modelchecker::CheckResult>>::type verifyWithAbstractionRefinementEngine(storm::Environment const& env, storm::storage::SymbolicModelDescription const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, AbstractionRefinementOptions const& options = AbstractionRefinementOptions()) {
-            STORM_LOG_THROW(model.getModelType() == storm::storage::SymbolicModelDescription::ModelType::DTMC || model.getModelType() == storm::storage::SymbolicModelDescription::ModelType::MDP, storm::exceptions::NotSupportedException, "Can only treat DTMCs/MDPs using the abstraction refinement engine.");
-            
-            std::unique_ptr<storm::modelchecker::CheckResult> result;
-            
+        typename std::enable_if<!std::is_same<ValueType, storm::RationalFunction>::value, std::unique_ptr<storm::modelchecker::CheckResult>>::type verifyWithAbstractionRefinementEngine(storm::Environment const& env, storm::storage::SymbolicModelDescription const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, AbstractionRefinementOptions const& options = AbstractionRefinementOptions()) {
             storm::modelchecker::GameBasedMdpModelCheckerOptions modelCheckerOptions(options.constraints, options.injectedRefinementPredicates);
-            
+
+            std::unique_ptr<storm::modelchecker::CheckResult> result;
             if (model.getModelType() == storm::storage::SymbolicModelDescription::ModelType::DTMC) {
                 storm::modelchecker::GameBasedMdpModelChecker<DdType, storm::models::symbolic::Dtmc<DdType, ValueType>> modelchecker(model, modelCheckerOptions);
                 if (modelchecker.canHandle(task)) {
@@ -69,28 +69,21 @@ namespace storm {
                     result = modelchecker.check(env, task);
                 }
             } else {
-                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The model type is currently not supported.");
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The model type " << model.getModelType() << " is not supported by the abstraction refinement engine.");
             }
             return result;
         }
 
         template<storm::dd::DdType DdType, typename ValueType>
-        typename std::enable_if<std::is_same<ValueType, double>::value || std::is_same<ValueType, storm::RationalNumber>::value, std::unique_ptr<storm::modelchecker::CheckResult>>::type verifyWithAbstractionRefinementEngine(storm::storage::SymbolicModelDescription const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, AbstractionRefinementOptions const& options = AbstractionRefinementOptions()) {
-            Environment env;
-            return verifyWithAbstractionRefinementEngine<DdType, ValueType>(env, model, task, options);
-        }
-
-        template<storm::dd::DdType DdType, typename ValueType>
-        typename std::enable_if<!std::is_same<ValueType, double>::value && !std::is_same<ValueType, storm::RationalNumber>::value, std::unique_ptr<storm::modelchecker::CheckResult>>::type verifyWithAbstractionRefinementEngine(storm::Environment const& env, storm::storage::SymbolicModelDescription const&, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const&, AbstractionRefinementOptions const& = AbstractionRefinementOptions()) {
+        typename std::enable_if<std::is_same<ValueType, storm::RationalFunction>::value, std::unique_ptr<storm::modelchecker::CheckResult>>::type verifyWithAbstractionRefinementEngine(storm::Environment const& env, storm::storage::SymbolicModelDescription const&, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const&, AbstractionRefinementOptions const& = AbstractionRefinementOptions()) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Abstraction-refinement engine does not support data type.");
         }
 
         template<storm::dd::DdType DdType, typename ValueType>
-        typename std::enable_if<!std::is_same<ValueType, double>::value && !std::is_same<ValueType, storm::RationalNumber>::value, std::unique_ptr<storm::modelchecker::CheckResult>>::type verifyWithAbstractionRefinementEngine(storm::storage::SymbolicModelDescription const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, AbstractionRefinementOptions const& options = AbstractionRefinementOptions()) {
+        std::unique_ptr<storm::modelchecker::CheckResult> verifyWithAbstractionRefinementEngine(storm::storage::SymbolicModelDescription const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, AbstractionRefinementOptions const& options = AbstractionRefinementOptions()) {
             Environment env;
             return verifyWithAbstractionRefinementEngine<DdType, ValueType>(env, model, task, options);
         }
-
 
         template<storm::dd::DdType DdType, typename ValueType>
         typename std::enable_if<std::is_same<ValueType, double>::value, std::unique_ptr<storm::modelchecker::CheckResult>>::type verifyWithAbstractionRefinementEngine(storm::Environment const& env, std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
@@ -106,15 +99,9 @@ namespace storm {
                     result = modelchecker.check(env, task);
                 }
             } else {
-                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The model type is not supported by the dd engine.");
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The model type " << model->getType() << " is not supported by the abstraction refinement engine.");
             }
             return result;
-        }
-
-        template<storm::dd::DdType DdType, typename ValueType>
-        typename std::enable_if<std::is_same<ValueType, double>::value, std::unique_ptr<storm::modelchecker::CheckResult>>::type verifyWithAbstractionRefinementEngine(std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
-            Environment env;
-            return verifyWithAbstractionRefinementEngine<DdType, ValueType>(env, model, task);
         }
 
         template<storm::dd::DdType DdType, typename ValueType>
@@ -123,36 +110,35 @@ namespace storm {
         }
 
         template<storm::dd::DdType DdType, typename ValueType>
-        typename std::enable_if<!std::is_same<ValueType, double>::value, std::unique_ptr<storm::modelchecker::CheckResult>>::type verifyWithAbstractionRefinementEngine(std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
+        std::unique_ptr<storm::modelchecker::CheckResult> verifyWithAbstractionRefinementEngine(std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
             Environment env;
             return verifyWithAbstractionRefinementEngine<DdType, ValueType>(env, model, task);
         }
 
+        //
+        // Verifying with Exploration engine
+        //
         template<typename ValueType>
         typename std::enable_if<std::is_same<ValueType, double>::value, std::unique_ptr<storm::modelchecker::CheckResult>>::type verifyWithExplorationEngine(storm::Environment const& env, storm::storage::SymbolicModelDescription const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
             STORM_LOG_THROW(model.isPrismProgram(), storm::exceptions::NotSupportedException, "Exploration engine is currently only applicable to PRISM models.");
             storm::prism::Program const& program = model.asPrismProgram();
-            STORM_LOG_THROW(program.getModelType() == storm::prism::Program::ModelType::DTMC || program.getModelType() == storm::prism::Program::ModelType::MDP, storm::exceptions::NotSupportedException, "Currently exploration-based verification is only available for DTMCs and MDPs.");
-            
+
             std::unique_ptr<storm::modelchecker::CheckResult> result;
             if (program.getModelType() == storm::prism::Program::ModelType::DTMC) {
                 storm::modelchecker::SparseExplorationModelChecker<storm::models::sparse::Dtmc<ValueType>> checker(program);
                 if (checker.canHandle(task)) {
                     result = checker.check(env, task);
                 }
-            } else {
+            } else if (program.getModelType() == storm::prism::Program::ModelType::MDP) {
                 storm::modelchecker::SparseExplorationModelChecker<storm::models::sparse::Mdp<ValueType>> checker(program);
                 if (checker.canHandle(task)) {
                     result = checker.check(env, task);
                 }
+            } else {
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The model type " << program.getModelType() << " is not supported by the exploration engine.");
             }
-            return result;
-        }
 
-        template<typename ValueType>
-        typename std::enable_if<std::is_same<ValueType, double>::value, std::unique_ptr<storm::modelchecker::CheckResult>>::type verifyWithExplorationEngine(storm::storage::SymbolicModelDescription const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
-            Environment env;
-            return verifyWithExplorationEngine(env, model, task);
+            return result;
         }
 
         template<typename ValueType>
@@ -161,11 +147,14 @@ namespace storm {
         }
 
         template<typename ValueType>
-        typename std::enable_if<!std::is_same<ValueType, double>::value, std::unique_ptr<storm::modelchecker::CheckResult>>::type verifyWithExplorationEngine(storm::storage::SymbolicModelDescription const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
+        std::unique_ptr<storm::modelchecker::CheckResult> verifyWithExplorationEngine(storm::storage::SymbolicModelDescription const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
             Environment env;
             return verifyWithExplorationEngine(env, model, task);
         }
 
+        //
+        // Verifying with Sparse engine
+        //
         template<typename ValueType>
         std::unique_ptr<storm::modelchecker::CheckResult> verifyWithSparseEngine(storm::Environment const& env, std::shared_ptr<storm::models::sparse::Dtmc<ValueType>> const& dtmc, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
             std::unique_ptr<storm::modelchecker::CheckResult> result;
@@ -216,12 +205,6 @@ namespace storm {
         }
 
         template<typename ValueType>
-        typename std::enable_if<!std::is_same<ValueType, storm::RationalFunction>::value, std::unique_ptr<storm::modelchecker::CheckResult>>::type verifyWithSparseEngine(std::shared_ptr<storm::models::sparse::Mdp<ValueType>> const& mdp, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
-            Environment env;
-            return verifyWithSparseEngine(env, mdp, task);
-        }
-
-        template<typename ValueType>
         typename std::enable_if<std::is_same<ValueType, storm::RationalFunction>::value, std::unique_ptr<storm::modelchecker::CheckResult>>::type verifyWithSparseEngine(storm::Environment const& env, std::shared_ptr<storm::models::sparse::Mdp<ValueType>> const& mdp, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
             std::unique_ptr<storm::modelchecker::CheckResult> result;
             storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Mdp<ValueType>> modelchecker(*mdp);
@@ -232,7 +215,7 @@ namespace storm {
         }
 
         template<typename ValueType>
-        typename std::enable_if<std::is_same<ValueType, storm::RationalFunction>::value, std::unique_ptr<storm::modelchecker::CheckResult>>::type verifyWithSparseEngine(std::shared_ptr<storm::models::sparse::Mdp<ValueType>> const& mdp, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
+        std::unique_ptr<storm::modelchecker::CheckResult> verifyWithSparseEngine(std::shared_ptr<storm::models::sparse::Mdp<ValueType>> const& mdp, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
             Environment env;
             return verifyWithSparseEngine(env, mdp, task);
         }
@@ -255,18 +238,12 @@ namespace storm {
         }
 
         template<typename ValueType>
-        typename std::enable_if<!std::is_same<ValueType, storm::RationalFunction>::value, std::unique_ptr<storm::modelchecker::CheckResult>>::type verifyWithSparseEngine(std::shared_ptr<storm::models::sparse::MarkovAutomaton<ValueType>> const& ma, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
-            Environment env;
-            return verifyWithSparseEngine(env, ma, task);
-        }
-
-        template<typename ValueType>
         typename std::enable_if<std::is_same<ValueType, storm::RationalFunction>::value, std::unique_ptr<storm::modelchecker::CheckResult>>::type verifyWithSparseEngine(storm::Environment const&, std::shared_ptr<storm::models::sparse::MarkovAutomaton<ValueType>> const& , storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& ) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Sparse engine cannot verify MAs with this data type.");
         }
 
         template<typename ValueType>
-        typename std::enable_if<std::is_same<ValueType, storm::RationalFunction>::value, std::unique_ptr<storm::modelchecker::CheckResult>>::type verifyWithSparseEngine(std::shared_ptr<storm::models::sparse::MarkovAutomaton<ValueType>> const& ma, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
+        std::unique_ptr<storm::modelchecker::CheckResult> verifyWithSparseEngine(std::shared_ptr<storm::models::sparse::MarkovAutomaton<ValueType>> const& ma, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
             Environment env;
             return verifyWithSparseEngine(env, ma, task);
         }
@@ -283,7 +260,7 @@ namespace storm {
             } else if (model->getType() == storm::models::ModelType::MarkovAutomaton) {
                 result = verifyWithSparseEngine(env, model->template as<storm::models::sparse::MarkovAutomaton<ValueType>>(), task);
             } else {
-                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The model type " << model->getType() << " is not supported.");
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The model type " << model->getType() << " is not supported by the sparse engine.");
             }
             return result;
         }
@@ -294,6 +271,9 @@ namespace storm {
             return verifyWithSparseEngine(env, model, task);
         }
 
+        //
+        // Verifying with Hybrid engine
+        //
         template<storm::dd::DdType DdType, typename ValueType>
         std::unique_ptr<storm::modelchecker::CheckResult> verifyWithHybridEngine(storm::Environment const& env, std::shared_ptr<storm::models::symbolic::Dtmc<DdType, ValueType>> const& dtmc, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
             std::unique_ptr<storm::modelchecker::CheckResult> result;
@@ -337,18 +317,12 @@ namespace storm {
         }
 
         template<storm::dd::DdType DdType, typename ValueType>
-        typename std::enable_if<!std::is_same<ValueType, storm::RationalFunction>::value, std::unique_ptr<storm::modelchecker::CheckResult>>::type verifyWithHybridEngine(std::shared_ptr<storm::models::symbolic::Mdp<DdType, ValueType>> const& mdp, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
-            Environment env;
-            return verifyWithHybridEngine(env, mdp, task);
-        }
-
-        template<storm::dd::DdType DdType, typename ValueType>
         typename std::enable_if<std::is_same<ValueType, storm::RationalFunction>::value, std::unique_ptr<storm::modelchecker::CheckResult>>::type verifyWithHybridEngine(storm::Environment const& , std::shared_ptr<storm::models::symbolic::Mdp<DdType, ValueType>> const&, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const&) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Hybrid engine cannot verify MDPs with this data type.");
         }
 
         template<storm::dd::DdType DdType, typename ValueType>
-        typename std::enable_if<std::is_same<ValueType, storm::RationalFunction>::value, std::unique_ptr<storm::modelchecker::CheckResult>>::type verifyWithHybridEngine(std::shared_ptr<storm::models::symbolic::Mdp<DdType, ValueType>> const& mdp, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
+        std::unique_ptr<storm::modelchecker::CheckResult> verifyWithHybridEngine(std::shared_ptr<storm::models::symbolic::Mdp<DdType, ValueType>> const& mdp, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
             Environment env;
             return verifyWithHybridEngine(env, mdp, task);
         }
@@ -363,7 +337,7 @@ namespace storm {
             } else if (model->getType() == storm::models::ModelType::Mdp) {
                 result = verifyWithHybridEngine(env, model->template as<storm::models::symbolic::Mdp<DdType, ValueType>>(), task);
             } else {
-                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The model type is not supported by the hybrid engine.");
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The model type " << model->getType() << " is not supported by the hybrid engine.");
             }
             return result;
         }
@@ -374,6 +348,9 @@ namespace storm {
             return verifyWithHybridEngine(env, model, task);
         }
 
+        //
+        // Verifying with DD engine
+        //
         template<storm::dd::DdType DdType, typename ValueType>
         std::unique_ptr<storm::modelchecker::CheckResult> verifyWithDdEngine(storm::Environment const& env, std::shared_ptr<storm::models::symbolic::Dtmc<DdType, ValueType>> const& dtmc, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
             std::unique_ptr<storm::modelchecker::CheckResult> result;
@@ -401,18 +378,12 @@ namespace storm {
         }
 
         template<storm::dd::DdType DdType, typename ValueType>
-        typename std::enable_if<!std::is_same<ValueType, storm::RationalFunction>::value, std::unique_ptr<storm::modelchecker::CheckResult>>::type verifyWithDdEngine(std::shared_ptr<storm::models::symbolic::Mdp<DdType, ValueType>> const& mdp, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
-            Environment env;
-            return verifyWithDdEngine(env, mdp, task);
-        }
-
-        template<storm::dd::DdType DdType, typename ValueType>
         typename std::enable_if<std::is_same<ValueType, storm::RationalFunction>::value, std::unique_ptr<storm::modelchecker::CheckResult>>::type verifyWithDdEngine(storm::Environment const&, std::shared_ptr<storm::models::symbolic::Mdp<DdType, ValueType>> const&, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const&) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Dd engine cannot verify MDPs with this data type.");
         }
 
         template<storm::dd::DdType DdType, typename ValueType>
-        typename std::enable_if<std::is_same<ValueType, storm::RationalFunction>::value, std::unique_ptr<storm::modelchecker::CheckResult>>::type verifyWithDdEngine(std::shared_ptr<storm::models::symbolic::Mdp<DdType, ValueType>> const& mdp, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
+        std::unique_ptr<storm::modelchecker::CheckResult> verifyWithDdEngine(std::shared_ptr<storm::models::symbolic::Mdp<DdType, ValueType>> const& mdp, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
             Environment env;
             return verifyWithDdEngine(env, mdp, task);
         }
@@ -425,7 +396,7 @@ namespace storm {
             } else if (model->getType() == storm::models::ModelType::Mdp) {
                 result = verifyWithDdEngine(env, model->template as<storm::models::symbolic::Mdp<DdType, ValueType>>(), task);
             } else {
-                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The model type is not supported by the dd engine.");
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The model type " << model->getType() << " is not supported by the dd engine.");
             }
             return result;
         }

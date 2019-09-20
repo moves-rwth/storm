@@ -148,11 +148,6 @@ namespace storm {
             return storm::parser::DirectEncodingParser<ValueType>::parseModel(drnFile);
         }
         
-        template<>
-        inline std::shared_ptr<storm::models::sparse::Model<storm::RationalNumber>> buildExplicitDRNModel(std::string const&) {
-            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Exact models with direct encoding are not supported.");
-        }
-        
         template<typename ValueType>
         std::shared_ptr<storm::models::sparse::Model<ValueType>> buildExplicitIMCAModel(std::string const&) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Exact models with direct encoding are not supported.");

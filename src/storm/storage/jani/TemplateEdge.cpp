@@ -43,7 +43,7 @@ namespace storm {
             }
         }
         
-        boost::container::flat_set<storm::expressions::Variable> const& TemplateEdge::getWrittenGlobalVariables() const {
+        storm::storage::FlatSet<storm::expressions::Variable> const& TemplateEdge::getWrittenGlobalVariables() const {
             return writtenGlobalVariables;
         }
         

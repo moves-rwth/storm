@@ -3,9 +3,9 @@
 
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm-parsers/parser/ExpressionParser.h"
+#include "storm/utility/constants.h"
 #include "storm/storage/expressions/ExpressionEvaluator.h"
 #include "storm/exceptions/WrongFormatException.h"
-
 namespace storm {
     namespace parser {
         /*!
@@ -45,25 +45,39 @@ namespace storm {
             std::unordered_map<std::string, storm::expressions::Expression> identifierMapping;
         };
 
+        
+        /*!
+         * Parse number from string.
+         *
+         * @param value String containing the value.
+         *
+         * @return NumberType.
+         */
         template<typename NumberType>
-        class NumberParser {
-        public:
-            /*!
-             * Parse number from string.
-             *
-             * @param value String containing the value.
-             *
-             * @return NumberType.
-             */
-            static NumberType parse(std::string const& value) {
-                try {
-                    return boost::lexical_cast<NumberType>(value);
-                }
-                catch(boost::bad_lexical_cast &) {
-                    STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Could not parse value '" << value << "' into " << typeid(NumberType).name() << ".");
-                }
+        inline NumberType parseNumber(std::string const& value) {
+            try {
+                return boost::lexical_cast<NumberType>(value);
             }
-        };
+            catch(boost::bad_lexical_cast &) {
+                STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Could not parse value '" << value << "' into " << typeid(NumberType).name() << ".");
+            }
+        }
+
+        template<>
+        inline storm::RationalNumber parseNumber(std::string const& value) {
+            return storm::utility::convertNumber<storm::RationalNumber>(value);
+        }
+
+        template<>
+        inline double parseNumber(std::string const& value) {
+            try {
+                return boost::lexical_cast<double>(value);
+            }
+            catch(boost::bad_lexical_cast &) {
+                return storm::utility::convertNumber<double>(parseNumber<storm::RationalNumber>(value));
+            }
+        }
+
 
     } // namespace parser
 } // namespace storm

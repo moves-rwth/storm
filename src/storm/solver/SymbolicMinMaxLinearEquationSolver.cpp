@@ -455,7 +455,7 @@ namespace storm {
             } else if (method == MinMaxMethod::RationalSearch) {
                 requirements.requireLowerBounds();
                 if (!this->hasUniqueSolution() && (!direction || direction.get() == storm::solver::OptimizationDirection::Minimize)) {
-                    requirements.requireNoEndComponents();
+                    requirements.requireUniqueSolution();
                 }
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidEnvironmentException, "The selected min max technique is not supported by this solver.");

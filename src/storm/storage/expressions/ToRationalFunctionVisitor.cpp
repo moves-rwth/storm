@@ -11,7 +11,7 @@ namespace storm {
 
 #ifdef STORM_HAVE_CARL
         template<typename RationalFunctionType>
-        ToRationalFunctionVisitor<RationalFunctionType>::ToRationalFunctionVisitor(ExpressionEvaluatorBase<RationalFunctionType> const& evaluator) : ExpressionVisitor(), cache(new carl::Cache<carl::PolynomialFactorizationPair<RawPolynomial>>()), evaluator(evaluator) {
+        ToRationalFunctionVisitor<RationalFunctionType>::ToRationalFunctionVisitor(ExpressionEvaluatorBase<RationalFunctionType> const& evaluator) : ExpressionVisitor(), cache(new storm::RawPolynomialCache()), evaluator(evaluator) {
             // Intentionally left empty.
         }
         
@@ -54,7 +54,7 @@ namespace storm {
                     return firstOperandAsRationalFunction / secondOperandAsRationalFunction;
                     break;
                 case BinaryNumericalFunctionExpression::OperatorType::Power:
-                    STORM_LOG_THROW(storm::utility::isInteger(secondOperandAsRationalFunction), storm::exceptions::InvalidArgumentException, "Exponent of power operator must be a positive integer.");
+                    STORM_LOG_THROW(storm::utility::isInteger(secondOperandAsRationalFunction), storm::exceptions::InvalidArgumentException, "Exponent of power operator must be a positive integer but is " << secondOperandAsRationalFunction << ".");
                     exponentAsInteger = storm::utility::convertNumber<uint_fast64_t>(secondOperandAsRationalFunction);
                     return storm::utility::pow(firstOperandAsRationalFunction, exponentAsInteger);
                     break;
@@ -82,7 +82,7 @@ namespace storm {
             if (variablePair != variableToVariableMap.end()) {
                 return convertVariableToPolynomial(variablePair->second);
             } else {
-                carl::Variable carlVariable = carl::freshRealVariable(expression.getVariableName());
+                storm::RationalFunctionVariable carlVariable = carl::freshRealVariable(expression.getVariableName());
                 variableToVariableMap.emplace(expression.getVariable(), carlVariable);
                 return convertVariableToPolynomial(carlVariable);
             }

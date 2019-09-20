@@ -317,7 +317,14 @@ namespace storm {
              * @param ddVariableNamesAsStrings The names of the variables to display in the dot file.
              */
             void exportToDot(std::string const& filename, std::vector<std::string> const& ddVariableNamesAsStrings, bool showVariablesIfPossible = true) const;
-            
+
+            /*!
+            * Exports the DD to the given file in a textual format as specified in Sylvan.
+            *
+            * @param filename The name of the file to which the DD is to be exported.
+            */
+            void exportToText(std::string const& filename) const;
+
             /*!
              * Converts a BDD to an equivalent ADD.
              *

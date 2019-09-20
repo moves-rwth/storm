@@ -60,6 +60,7 @@ namespace storm {
              * Performs a forward depth-first search through the underlying graph structure to identify the states that
              * are reachable from the given set only passing through a constrained set of states until some target
              * have been reached.
+             * If an initial state or a (constrained-reachable) target state is not in the constrained set, it will be added to the reachable states but not explored.
              *
              * @param transitionMatrix The transition relation of the graph structure to search.
              * @param initialStates The set of states from which to start the search.

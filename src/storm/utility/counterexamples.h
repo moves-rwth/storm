@@ -18,7 +18,7 @@ namespace storm {
              * @return The set of labels that is visited on all paths from any state to a target state.
              */
             template <typename T>
-            std::vector<boost::container::flat_set<uint_fast64_t>> getGuaranteedLabelSets(storm::models::sparse::Model<T> const& model, std::vector<boost::container::flat_set<uint_fast64_t>> const& labelSets, storm::storage::BitVector const& psiStates, boost::container::flat_set<uint_fast64_t> const& relevantLabels) {
+            std::vector<storm::storage::FlatSet<uint_fast64_t>> getGuaranteedLabelSets(storm::models::sparse::Model<T> const& model, std::vector<storm::storage::FlatSet<uint_fast64_t>> const& labelSets, storm::storage::BitVector const& psiStates, storm::storage::FlatSet<uint_fast64_t> const& relevantLabels) {
                 STORM_LOG_THROW(model.getNumberOfChoices() == labelSets.size(), storm::exceptions::InvalidArgumentException, "The given number of labels does not match the number of choices.");
                 
                 // Get some data from the model for convenient access.
@@ -27,7 +27,7 @@ namespace storm {
                 storm::storage::SparseMatrix<T> backwardTransitions = model.getBackwardTransitions();
 
                 // Now we compute the set of labels that is present on all paths from the initial to the target states.
-                std::vector<boost::container::flat_set<uint_fast64_t>> analysisInformation(model.getNumberOfStates(), relevantLabels);
+                std::vector<storm::storage::FlatSet<uint_fast64_t>> analysisInformation(model.getNumberOfStates(), relevantLabels);
                 
                 std::queue<uint_fast64_t> worklist;
                 storm::storage::BitVector statesInWorkList(model.getNumberOfStates());
@@ -35,7 +35,7 @@ namespace storm {
                 
                 // Initially, put all predecessors of target states in the worklist and empty the analysis information them.
                 for (auto state : psiStates) {
-                    analysisInformation[state] = boost::container::flat_set<uint_fast64_t>();
+                    analysisInformation[state] = storm::storage::FlatSet<uint_fast64_t>();
                     for (auto const& predecessorEntry : backwardTransitions.getRow(state)) {
                         if (predecessorEntry.getColumn() != state && !statesInWorkList.get(predecessorEntry.getColumn()) && !psiStates.get(predecessorEntry.getColumn())) {
                             worklist.push(predecessorEntry.getColumn());
@@ -69,7 +69,7 @@ namespace storm {
                         if (modifiedChoice) {
                             for (auto const& entry : transitionMatrix.getRow(currentChoice)) {
                                 if (markedStates.get(entry.getColumn())) {
-                                    boost::container::flat_set<uint_fast64_t> tmpIntersection;
+                                    storm::storage::FlatSet<uint_fast64_t> tmpIntersection;
                                     std::set_intersection(analysisInformation[currentState].begin(), analysisInformation[currentState].end(), analysisInformation[entry.getColumn()].begin(), analysisInformation[entry.getColumn()].end(), std::inserter(tmpIntersection, tmpIntersection.begin()));
                                     std::set_intersection(analysisInformation[currentState].begin(), analysisInformation[currentState].end(), labelSets[currentChoice].begin(), labelSets[currentChoice].end(), std::inserter(tmpIntersection, tmpIntersection.begin()));
                                     analysisInformation[currentState] = std::move(tmpIntersection);
@@ -108,11 +108,11 @@ namespace storm {
              * @return The set of labels that is executed on all paths from an initial state to a target state.
              */
             template <typename T>
-            boost::container::flat_set<uint_fast64_t> getGuaranteedLabelSet(storm::models::sparse::Model<T> const& model, std::vector<boost::container::flat_set<uint_fast64_t>> const& labelSets, storm::storage::BitVector const& psiStates, boost::container::flat_set<uint_fast64_t> const& relevantLabels) {
-                std::vector<boost::container::flat_set<uint_fast64_t>> guaranteedLabels = getGuaranteedLabelSets(model, labelSets, psiStates, relevantLabels);
+            storm::storage::FlatSet<uint_fast64_t> getGuaranteedLabelSet(storm::models::sparse::Model<T> const& model, std::vector<storm::storage::FlatSet<uint_fast64_t>> const& labelSets, storm::storage::BitVector const& psiStates, storm::storage::FlatSet<uint_fast64_t> const& relevantLabels) {
+                std::vector<storm::storage::FlatSet<uint_fast64_t>> guaranteedLabels = getGuaranteedLabelSets(model, labelSets, psiStates, relevantLabels);
                 
-                boost::container::flat_set<uint_fast64_t> knownLabels(relevantLabels);
-                boost::container::flat_set<uint_fast64_t> tempIntersection;
+                storm::storage::FlatSet<uint_fast64_t> knownLabels(relevantLabels);
+                storm::storage::FlatSet<uint_fast64_t> tempIntersection;
                 for (auto initialState : model.getInitialStates()) {
                     std::set_intersection(knownLabels.begin(), knownLabels.end(), guaranteedLabels[initialState].begin(), guaranteedLabels[initialState].end(), std::inserter(tempIntersection, tempIntersection.end()));
                     std::swap(knownLabels, tempIntersection);

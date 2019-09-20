@@ -16,173 +16,177 @@
 namespace storm {
     namespace dd {
         template<typename ValueType>
-        InternalAdd<DdType::CUDD, ValueType>::InternalAdd(InternalDdManager<DdType::CUDD> const* ddManager, cudd::ADD cuddAdd) : ddManager(ddManager), cuddAdd(cuddAdd) {
+        InternalAdd<DdType::CUDD, ValueType>::InternalAdd(InternalDdManager <DdType::CUDD> const *ddManager, cudd::ADD cuddAdd) : ddManager(ddManager), cuddAdd(cuddAdd) {
             // Intentionally left empty.
         }
-                
+
         template<typename ValueType>
-        bool InternalAdd<DdType::CUDD, ValueType>::operator==(InternalAdd<DdType::CUDD, ValueType> const& other) const {
+        bool InternalAdd<DdType::CUDD, ValueType>::operator==(InternalAdd <DdType::CUDD, ValueType> const &other) const {
             return this->getCuddAdd() == other.getCuddAdd();
         }
-        
+
         template<typename ValueType>
-        bool InternalAdd<DdType::CUDD, ValueType>::operator!=(InternalAdd<DdType::CUDD, ValueType> const& other) const {
+        bool InternalAdd<DdType::CUDD, ValueType>::operator!=(InternalAdd <DdType::CUDD, ValueType> const &other) const {
             return !(*this == other);
         }
-                        
+
         template<typename ValueType>
-        InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::operator+(InternalAdd<DdType::CUDD, ValueType> const& other) const {
+        InternalAdd <DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::operator+(InternalAdd <DdType::CUDD, ValueType> const &other) const {
             return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd() + other.getCuddAdd());
         }
-        
+
         template<typename ValueType>
-        InternalAdd<DdType::CUDD, ValueType>& InternalAdd<DdType::CUDD, ValueType>::operator+=(InternalAdd<DdType::CUDD, ValueType> const& other) {
+        InternalAdd <DdType::CUDD, ValueType> &InternalAdd<DdType::CUDD, ValueType>::operator+=(InternalAdd <DdType::CUDD, ValueType> const &other) {
             this->cuddAdd = this->getCuddAdd() + other.getCuddAdd();
             return *this;
         }
-        
+
         template<typename ValueType>
-        InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::operator*(InternalAdd<DdType::CUDD, ValueType> const& other) const {
+        InternalAdd <DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::operator*(InternalAdd <DdType::CUDD, ValueType> const &other) const {
             return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd() * other.getCuddAdd());
         }
-        
+
         template<typename ValueType>
-        InternalAdd<DdType::CUDD, ValueType>& InternalAdd<DdType::CUDD, ValueType>::operator*=(InternalAdd<DdType::CUDD, ValueType> const& other) {
+        InternalAdd <DdType::CUDD, ValueType> &InternalAdd<DdType::CUDD, ValueType>::operator*=(InternalAdd <DdType::CUDD, ValueType> const &other) {
             this->cuddAdd = this->getCuddAdd() * other.getCuddAdd();
             return *this;
         }
-        
+
         template<typename ValueType>
-        InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::operator-(InternalAdd<DdType::CUDD, ValueType> const& other) const {
+        InternalAdd <DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::operator-(InternalAdd <DdType::CUDD, ValueType> const &other) const {
             return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd() - other.getCuddAdd());
         }
-        
+
         template<typename ValueType>
-        InternalAdd<DdType::CUDD, ValueType>& InternalAdd<DdType::CUDD, ValueType>::operator-=(InternalAdd<DdType::CUDD, ValueType> const& other) {
+        InternalAdd <DdType::CUDD, ValueType> &InternalAdd<DdType::CUDD, ValueType>::operator-=(InternalAdd <DdType::CUDD, ValueType> const &other) {
             this->cuddAdd = this->getCuddAdd() - other.getCuddAdd();
             return *this;
         }
-        
+
         template<typename ValueType>
-        InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::operator/(InternalAdd<DdType::CUDD, ValueType> const& other) const {
+        InternalAdd <DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::operator/(InternalAdd <DdType::CUDD, ValueType> const &other) const {
             return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd().Divide(other.getCuddAdd()));
         }
-        
+
         template<typename ValueType>
-        InternalAdd<DdType::CUDD, ValueType>& InternalAdd<DdType::CUDD, ValueType>::operator/=(InternalAdd<DdType::CUDD, ValueType> const& other) {
+        InternalAdd <DdType::CUDD, ValueType> &InternalAdd<DdType::CUDD, ValueType>::operator/=(InternalAdd <DdType::CUDD, ValueType> const &other) {
             this->cuddAdd = this->getCuddAdd().Divide(other.getCuddAdd());
             return *this;
         }
-        
+
         template<typename ValueType>
-        InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::equals(InternalAdd<DdType::CUDD, ValueType> const& other) const {
+        InternalBdd <DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::equals(InternalAdd <DdType::CUDD, ValueType> const &other) const {
             return InternalBdd<DdType::CUDD>(ddManager, this->getCuddAdd().EqualsBdd(other.getCuddAdd()));
         }
-        
+
         template<typename ValueType>
-        InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::notEquals(InternalAdd<DdType::CUDD, ValueType> const& other) const {
+        InternalBdd <DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::notEquals(InternalAdd <DdType::CUDD, ValueType> const &other) const {
             return InternalBdd<DdType::CUDD>(ddManager, this->getCuddAdd().NotEqualsBdd(other.getCuddAdd()));
         }
-        
+
         template<typename ValueType>
-        InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::less(InternalAdd<DdType::CUDD, ValueType> const& other) const {
+        InternalBdd <DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::less(InternalAdd <DdType::CUDD, ValueType> const &other) const {
             return InternalBdd<DdType::CUDD>(ddManager, this->getCuddAdd().LessThanBdd(other.getCuddAdd()));
         }
-        
+
         template<typename ValueType>
-        InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::lessOrEqual(InternalAdd<DdType::CUDD, ValueType> const& other) const {
+        InternalBdd <DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::lessOrEqual(InternalAdd <DdType::CUDD, ValueType> const &other) const {
             return InternalBdd<DdType::CUDD>(ddManager, this->getCuddAdd().LessThanOrEqualBdd(other.getCuddAdd()));
         }
-        
+
         template<typename ValueType>
-        InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::greater(InternalAdd<DdType::CUDD, ValueType> const& other) const {
+        InternalBdd <DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::greater(InternalAdd <DdType::CUDD, ValueType> const &other) const {
             return InternalBdd<DdType::CUDD>(ddManager, this->getCuddAdd().GreaterThanBdd(other.getCuddAdd()));
         }
-        
+
         template<typename ValueType>
-        InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::greaterOrEqual(InternalAdd<DdType::CUDD, ValueType> const& other) const {
+        InternalBdd <DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::greaterOrEqual(InternalAdd <DdType::CUDD, ValueType> const &other) const {
             return InternalBdd<DdType::CUDD>(ddManager, this->getCuddAdd().GreaterThanOrEqualBdd(other.getCuddAdd()));
         }
-        
+
         template<typename ValueType>
-        InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::pow(InternalAdd<DdType::CUDD, ValueType> const& other) const {
+        InternalAdd <DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::pow(InternalAdd <DdType::CUDD, ValueType> const &other) const {
             return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd().Pow(other.getCuddAdd()));
         }
-        
+
         template<typename ValueType>
-        InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::mod(InternalAdd<DdType::CUDD, ValueType> const& other) const {
+        InternalAdd <DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::mod(InternalAdd <DdType::CUDD, ValueType> const &other) const {
             return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd().Mod(other.getCuddAdd()));
         }
-        
+
         template<typename ValueType>
-        InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::logxy(InternalAdd<DdType::CUDD, ValueType> const& other) const {
+        InternalAdd <DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::logxy(InternalAdd <DdType::CUDD, ValueType> const &other) const {
             return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd().LogXY(other.getCuddAdd()));
         }
-        
+
         template<typename ValueType>
-        InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::floor() const {
+        InternalAdd <DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::floor() const {
             return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd().Floor());
         }
-        
+
         template<typename ValueType>
-        InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::ceil() const {
+        InternalAdd <DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::ceil() const {
             return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd().Ceil());
         }
-        
+
         template<typename ValueType>
-        InternalAdd<DdType::CUDD, storm::RationalNumber> InternalAdd<DdType::CUDD, ValueType>::sharpenKwekMehlhorn(size_t precision) const {
+        InternalAdd <DdType::CUDD, storm::RationalNumber> InternalAdd<DdType::CUDD, ValueType>::sharpenKwekMehlhorn(size_t precision) const {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported");
         }
-        
+
         template<typename ValueType>
-        InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::minimum(InternalAdd<DdType::CUDD, ValueType> const& other) const {
+        InternalAdd <DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::minimum(InternalAdd <DdType::CUDD, ValueType> const &other) const {
             return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd().Minimum(other.getCuddAdd()));
         }
-        
+
         template<typename ValueType>
-        InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::maximum(InternalAdd<DdType::CUDD, ValueType> const& other) const {
+        InternalAdd <DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::maximum(InternalAdd <DdType::CUDD, ValueType> const &other) const {
             return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd().Maximum(other.getCuddAdd()));
         }
-        
+
         template<typename ValueType>
         template<typename TargetValueType>
-        typename std::enable_if<std::is_same<ValueType, TargetValueType>::value, InternalAdd<DdType::CUDD, TargetValueType>>::type InternalAdd<DdType::CUDD, ValueType>::toValueType() const {
+        typename std::enable_if<std::is_same<ValueType, TargetValueType>::value, InternalAdd < DdType::CUDD, TargetValueType>>
+
+        ::type InternalAdd<DdType::CUDD, ValueType>::toValueType() const {
             return *this;
         }
 
         template<typename ValueType>
         template<typename TargetValueType>
-        typename std::enable_if<!std::is_same<ValueType, TargetValueType>::value, InternalAdd<DdType::CUDD, TargetValueType>>::type InternalAdd<DdType::CUDD, ValueType>::toValueType() const {
+        typename std::enable_if<!std::is_same<ValueType, TargetValueType>::value, InternalAdd < DdType::CUDD, TargetValueType>>
+
+        ::type InternalAdd<DdType::CUDD, ValueType>::toValueType() const {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported");
         }
 
         template<typename ValueType>
-        InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::sumAbstract(InternalBdd<DdType::CUDD> const& cube) const {
+        InternalAdd <DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::sumAbstract(InternalBdd <DdType::CUDD> const &cube) const {
             return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd().ExistAbstract(cube.toAdd<ValueType>().getCuddAdd()));
         }
-        
+
         template<typename ValueType>
-        InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::minAbstract(InternalBdd<DdType::CUDD> const& cube) const {
+        InternalAdd <DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::minAbstract(InternalBdd <DdType::CUDD> const &cube) const {
             return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd().MinAbstract(cube.toAdd<ValueType>().getCuddAdd()));
         }
-		
-		template<typename ValueType>
-        InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::minAbstractRepresentative(InternalBdd<DdType::CUDD> const& cube) const {
-			return InternalBdd<DdType::CUDD>(ddManager, this->getCuddAdd().MinAbstractRepresentative(cube.toAdd<ValueType>().getCuddAdd()));
-        }
-        
+
         template<typename ValueType>
-        InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::maxAbstract(InternalBdd<DdType::CUDD> const& cube) const {
+        InternalBdd <DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::minAbstractRepresentative(InternalBdd <DdType::CUDD> const &cube) const {
+            return InternalBdd<DdType::CUDD>(ddManager, this->getCuddAdd().MinAbstractRepresentative(cube.toAdd<ValueType>().getCuddAdd()));
+        }
+
+        template<typename ValueType>
+        InternalAdd <DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::maxAbstract(InternalBdd <DdType::CUDD> const &cube) const {
             return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd().MaxAbstract(cube.toAdd<ValueType>().getCuddAdd()));
         }
-		
-		template<typename ValueType>
-        InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::maxAbstractRepresentative(InternalBdd<DdType::CUDD> const& cube) const {
-			return InternalBdd<DdType::CUDD>(ddManager, this->getCuddAdd().MaxAbstractRepresentative(cube.toAdd<ValueType>().getCuddAdd()));
-        }
-        
+
         template<typename ValueType>
-        bool InternalAdd<DdType::CUDD, ValueType>::equalModuloPrecision(InternalAdd<DdType::CUDD, ValueType> const& other, ValueType const& precision, bool relative) const {
+        InternalBdd <DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::maxAbstractRepresentative(InternalBdd <DdType::CUDD> const &cube) const {
+            return InternalBdd<DdType::CUDD>(ddManager, this->getCuddAdd().MaxAbstractRepresentative(cube.toAdd<ValueType>().getCuddAdd()));
+        }
+
+        template<typename ValueType>
+        bool InternalAdd<DdType::CUDD, ValueType>::equalModuloPrecision(InternalAdd <DdType::CUDD, ValueType> const &other, ValueType const &precision, bool relative) const {
             if (relative) {
                 return this->getCuddAdd().EqualSupNormRel(other.getCuddAdd(), precision);
             } else {
@@ -191,14 +195,14 @@ namespace storm {
         }
 
         template<>
-        bool InternalAdd<DdType::CUDD, storm::RationalNumber>::equalModuloPrecision(InternalAdd<DdType::CUDD, storm::RationalNumber> const& other, storm::RationalNumber const& precision, bool relative) const {
+        bool InternalAdd<DdType::CUDD, storm::RationalNumber>::equalModuloPrecision(InternalAdd <DdType::CUDD, storm::RationalNumber> const &other, storm::RationalNumber const &precision, bool relative) const {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported.");
         }
-        
+
         template<typename ValueType>
-        InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::swapVariables(std::vector<InternalBdd<DdType::CUDD>> const& from, std::vector<InternalBdd<DdType::CUDD>> const& to) const {
-            std::vector<cudd::ADD> fromAdd;
-            std::vector<cudd::ADD> toAdd;
+        InternalAdd <DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::swapVariables(std::vector <InternalBdd<DdType::CUDD>> const &from, std::vector <InternalBdd<DdType::CUDD>> const &to) const {
+            std::vector <cudd::ADD> fromAdd;
+            std::vector <cudd::ADD> toAdd;
             STORM_LOG_ASSERT(fromAdd.size() == toAdd.size(), "Sizes of vectors do not match.");
             for (auto it1 = from.begin(), ite1 = from.end(), it2 = to.begin(); it1 != ite1; ++it1, ++it2) {
                 fromAdd.push_back(it1->getCuddBdd().Add());
@@ -206,30 +210,30 @@ namespace storm {
             }
             return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd().SwapVariables(fromAdd, toAdd));
         }
-        
+
         template<typename ValueType>
-        InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::permuteVariables(std::vector<InternalBdd<DdType::CUDD>> const& from, std::vector<InternalBdd<DdType::CUDD>> const& to) const {
+        InternalAdd <DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::permuteVariables(std::vector <InternalBdd<DdType::CUDD>> const &from, std::vector <InternalBdd<DdType::CUDD>> const &to) const {
             // Build the full permutation.
             uint64_t numberOfVariables = ddManager->getCuddManager().ReadSize();
-            int* permutation = new int[numberOfVariables];
+            int *permutation = new int[numberOfVariables];
             for (uint64_t variable = 0; variable < numberOfVariables; ++variable) {
                 permutation[variable] = variable;
             }
-            
+
             for (auto it1 = from.begin(), ite1 = from.end(), it2 = to.begin(); it1 != ite1; ++it1, ++it2) {
                 permutation[it1->getIndex()] = it2->getIndex();
             }
-            InternalAdd<DdType::CUDD, ValueType> result(ddManager, this->getCuddAdd().Permute(permutation));
-            
+            InternalAdd <DdType::CUDD, ValueType> result(ddManager, this->getCuddAdd().Permute(permutation));
+
             delete[] permutation;
             return result;
         }
-        
+
         template<typename ValueType>
-        InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::multiplyMatrix(InternalAdd<DdType::CUDD, ValueType> const& otherMatrix, std::vector<InternalBdd<DdType::CUDD>> const& summationDdVariables) const {
+        InternalAdd <DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::multiplyMatrix(InternalAdd <DdType::CUDD, ValueType> const &otherMatrix, std::vector <InternalBdd<DdType::CUDD>> const &summationDdVariables) const {
             // Create the CUDD summation variables.
-            std::vector<cudd::ADD> summationAdds;
-            for (auto const& ddVariable : summationDdVariables) {
+            std::vector <cudd::ADD> summationAdds;
+            for (auto const &ddVariable : summationDdVariables) {
                 summationAdds.push_back(ddVariable.toAdd<ValueType>().getCuddAdd());
             }
 
@@ -237,72 +241,72 @@ namespace storm {
 //            return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd().Triangle(otherMatrix.getCuddAdd(), summationAdds));
             return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd().MatrixMultiply(otherMatrix.getCuddAdd(), summationAdds));
         }
-        
+
         template<typename ValueType>
-        InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::multiplyMatrix(InternalBdd<DdType::CUDD> const& otherMatrix, std::vector<InternalBdd<DdType::CUDD>> const& summationDdVariables) const {
+        InternalAdd <DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::multiplyMatrix(InternalBdd <DdType::CUDD> const &otherMatrix, std::vector <InternalBdd<DdType::CUDD>> const &summationDdVariables) const {
             return this->multiplyMatrix(otherMatrix.template toAdd<ValueType>(), summationDdVariables);
         }
-        
+
         template<typename ValueType>
-        InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::greater(ValueType const& value) const {
+        InternalBdd <DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::greater(ValueType const &value) const {
             return InternalBdd<DdType::CUDD>(ddManager, this->getCuddAdd().BddStrictThreshold(value));
         }
 
         template<>
-        InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, storm::RationalNumber>::greater(storm::RationalNumber const& value) const {
+        InternalBdd <DdType::CUDD> InternalAdd<DdType::CUDD, storm::RationalNumber>::greater(storm::RationalNumber const &value) const {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported.");
         }
 
         template<typename ValueType>
-        InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::greaterOrEqual(ValueType const& value) const {
+        InternalBdd <DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::greaterOrEqual(ValueType const &value) const {
             return InternalBdd<DdType::CUDD>(ddManager, this->getCuddAdd().BddThreshold(value));
         }
 
         template<>
-        InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, storm::RationalNumber>::greaterOrEqual(storm::RationalNumber const& value) const {
+        InternalBdd <DdType::CUDD> InternalAdd<DdType::CUDD, storm::RationalNumber>::greaterOrEqual(storm::RationalNumber const &value) const {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported.");
         }
-        
+
         template<typename ValueType>
-        InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::less(ValueType const& value) const {
+        InternalBdd <DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::less(ValueType const &value) const {
             return InternalBdd<DdType::CUDD>(ddManager, ~this->getCuddAdd().BddThreshold(value));
         }
-        
+
         template<>
-        InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, storm::RationalNumber>::less(storm::RationalNumber const& value) const {
+        InternalBdd <DdType::CUDD> InternalAdd<DdType::CUDD, storm::RationalNumber>::less(storm::RationalNumber const &value) const {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported.");
         }
-        
+
         template<typename ValueType>
-        InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::lessOrEqual(ValueType const& value) const {
+        InternalBdd <DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::lessOrEqual(ValueType const &value) const {
             return InternalBdd<DdType::CUDD>(ddManager, ~this->getCuddAdd().BddStrictThreshold(value));
         }
-        
+
         template<>
-        InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, storm::RationalNumber>::lessOrEqual(storm::RationalNumber const& value) const {
+        InternalBdd <DdType::CUDD> InternalAdd<DdType::CUDD, storm::RationalNumber>::lessOrEqual(storm::RationalNumber const &value) const {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported.");
         }
-        
+
         template<typename ValueType>
-        InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::notZero() const {
+        InternalBdd <DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::notZero() const {
             return InternalBdd<DdType::CUDD>(ddManager, this->getCuddAdd().BddPattern());
         }
-        
+
         template<typename ValueType>
-        InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::constrain(InternalAdd<DdType::CUDD, ValueType> const& constraint) const {
+        InternalAdd <DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::constrain(InternalAdd <DdType::CUDD, ValueType> const &constraint) const {
             return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd().Constrain(constraint.getCuddAdd()));
         }
-        
+
         template<typename ValueType>
-        InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::restrict(InternalAdd<DdType::CUDD, ValueType> const& constraint) const {
+        InternalAdd <DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::restrict(InternalAdd <DdType::CUDD, ValueType> const &constraint) const {
             return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd().Restrict(constraint.getCuddAdd()));
         }
-        
+
         template<typename ValueType>
-        InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::getSupport() const {
+        InternalBdd <DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::getSupport() const {
             return InternalBdd<DdType::CUDD>(ddManager, this->getCuddAdd().Support());
         }
-        
+
         template<typename ValueType>
         uint_fast64_t InternalAdd<DdType::CUDD, ValueType>::getNonZeroCount(uint_fast64_t numberOfDdVariables) const {
             // If the number of DD variables is zero, CUDD returns a number greater 0 for constant nodes different from
@@ -312,93 +316,98 @@ namespace storm {
             }
             return static_cast<uint_fast64_t>(this->getCuddAdd().CountMinterm(static_cast<int>(numberOfDdVariables)));
         }
-        
+
         template<typename ValueType>
         uint_fast64_t InternalAdd<DdType::CUDD, ValueType>::getLeafCount() const {
             return static_cast<uint_fast64_t>(this->getCuddAdd().CountLeaves());
         }
-        
+
         template<typename ValueType>
         uint_fast64_t InternalAdd<DdType::CUDD, ValueType>::getNodeCount() const {
             return static_cast<uint_fast64_t>(this->getCuddAdd().nodeCount());
         }
-        
+
         template<typename ValueType>
         ValueType InternalAdd<DdType::CUDD, ValueType>::getMin() const {
             cudd::ADD constantMinAdd = this->getCuddAdd().FindMin();
             return storm::utility::convertNumber<ValueType>(Cudd_V(constantMinAdd.getNode()));
         }
-        
+
         template<typename ValueType>
         ValueType InternalAdd<DdType::CUDD, ValueType>::getMax() const {
             cudd::ADD constantMaxAdd = this->getCuddAdd().FindMax();
             return storm::utility::convertNumber<ValueType>(Cudd_V(constantMaxAdd.getNode()));
         }
-        
+
         template<typename ValueType>
         ValueType InternalAdd<DdType::CUDD, ValueType>::getValue() const {
             return storm::utility::convertNumber<ValueType>(Cudd_V(this->getCuddAdd().getNode()));
         }
-        
+
         template<typename ValueType>
         bool InternalAdd<DdType::CUDD, ValueType>::isOne() const {
             return this->getCuddAdd().IsOne();
         }
-        
+
         template<typename ValueType>
         bool InternalAdd<DdType::CUDD, ValueType>::isZero() const {
             return this->getCuddAdd().IsZero();
         }
-        
+
         template<typename ValueType>
         bool InternalAdd<DdType::CUDD, ValueType>::isConstant() const {
             return Cudd_IsConstant(this->getCuddAdd().getNode());
         }
-        
+
         template<typename ValueType>
         uint_fast64_t InternalAdd<DdType::CUDD, ValueType>::getIndex() const {
             return static_cast<uint_fast64_t>(this->getCuddAdd().NodeReadIndex());
         }
-        
+
         template<typename ValueType>
         uint_fast64_t InternalAdd<DdType::CUDD, ValueType>::getLevel() const {
             return static_cast<uint_fast64_t>(ddManager->getCuddManager().ReadPerm(this->getIndex()));
         }
-        
+
         template<typename ValueType>
-        void InternalAdd<DdType::CUDD, ValueType>::exportToDot(std::string const& filename, std::vector<std::string> const& ddVariableNamesAsStrings, bool showVariablesIfPossible) const {
+        void InternalAdd<DdType::CUDD, ValueType>::exportToDot(std::string const &filename, std::vector <std::string> const &ddVariableNamesAsStrings, bool showVariablesIfPossible) const {
             // Build the name input of the DD.
-            std::vector<char*> ddNames;
+            std::vector<char *> ddNames;
             std::string ddName("f");
             ddNames.push_back(new char[ddName.size() + 1]);
             std::copy(ddName.c_str(), ddName.c_str() + 2, ddNames.back());
-            
+
             // Now build the variables names.
-            std::vector<char*> ddVariableNames;
-            for (auto const& element : ddVariableNamesAsStrings) {
+            std::vector<char *> ddVariableNames;
+            for (auto const &element : ddVariableNamesAsStrings) {
                 ddVariableNames.push_back(new char[element.size() + 1]);
                 std::copy(element.c_str(), element.c_str() + element.size() + 1, ddVariableNames.back());
             }
-            
+
             // Open the file, dump the DD and close it again.
-            FILE* filePointer = fopen(filename.c_str() , "w");
-            std::vector<cudd::ADD> cuddAddVector = { this->getCuddAdd() };
+            FILE *filePointer = fopen(filename.c_str(), "w");
+            std::vector <cudd::ADD> cuddAddVector = {this->getCuddAdd()};
             if (showVariablesIfPossible) {
                 ddManager->getCuddManager().DumpDot(cuddAddVector, ddVariableNames.data(), &ddNames[0], filePointer);
             } else {
                 ddManager->getCuddManager().DumpDot(cuddAddVector, nullptr, &ddNames[0], filePointer);
             }
             fclose(filePointer);
-            
+
             // Finally, delete the names.
-            for (char* element : ddNames) {
+            for (char *element : ddNames) {
                 delete[] element;
             }
-            for (char* element : ddVariableNames) {
+            for (char *element : ddVariableNames) {
                 delete[] element;
             }
         }
-        
+
+        template<typename ValueType>
+        void InternalAdd<DdType::CUDD, ValueType>::exportToText(std::string const &) const {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported");
+        }
+
         template<typename ValueType>
         AddIterator<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::begin(DdManager<DdType::CUDD> const& fullDdManager, InternalBdd<DdType::CUDD> const&, uint_fast64_t, std::set<storm::expressions::Variable> const& metaVariables, bool enumerateDontCareMetaVariables) const {
             int* cube;

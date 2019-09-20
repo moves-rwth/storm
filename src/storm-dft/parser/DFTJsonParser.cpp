@@ -11,6 +11,7 @@
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/file.h"
+#include "storm-parsers/parser/ValueParser.h"
 
 namespace storm {
     namespace parser {
@@ -35,6 +36,10 @@ namespace storm {
 
         template<typename ValueType>
         storm::storage::DFT<ValueType> DFTJsonParser<ValueType>::parseJson(json const& jsonInput) {
+            // Init DFT builder and value parser
+            storm::builder::DFTBuilder<ValueType> builder;
+            ValueParser<ValueType> valueParser;
+
             // Try to parse parameters
             if (jsonInput.find("parameters") != jsonInput.end()) {
                 json parameters = jsonInput.at("parameters");
@@ -42,10 +47,8 @@ namespace storm {
                                 "Parameters only allowed when using rational functions.");
                 for (auto it = parameters.begin(); it != parameters.end(); ++it) {
                     std::string parameter = it.key();
-                    storm::expressions::Variable var = manager->declareRationalVariable(parameter);
-                    identifierMapping.emplace(var.getName(), var);
-                    parser.setIdentifierMapping(identifierMapping);
-                    STORM_LOG_TRACE("Added parameter: " << var.getName());
+                    valueParser.addParameter(parameter);
+                    STORM_LOG_TRACE("Added parameter: " << parameter);
                 }
             }
 
@@ -84,7 +87,7 @@ namespace storm {
                     success = builder.addOrElement(name, childNames);
                 } else if (type == "vot") {
                     std::string votThreshold = parseJsonNumber(data.at("voting"));
-                    success = builder.addVotElement(name, boost::lexical_cast<unsigned>(votThreshold), childNames);
+                    success = builder.addVotElement(name, storm::parser::parseNumber<size_t>(votThreshold), childNames);
                 } else if (type == "pand") {
                     success = builder.addPandElement(name, childNames);
                 } else if (type == "por") {
@@ -98,7 +101,7 @@ namespace storm {
                 } else if (type == "fdep") {
                     success = builder.addDepElement(name, childNames, storm::utility::one<ValueType>());
                 } else if (type == "pdep") {
-                    ValueType probability = parseRationalExpression(parseJsonNumber(data.at("probability")));
+                    ValueType probability = valueParser.parseValue(parseJsonNumber(data.at("probability")));
                     success = builder.addDepElement(name, childNames, probability);
                 } else if (boost::starts_with(type, "be")) {
                     std::string distribution = "exp"; // Set default of exponential distribution
@@ -108,8 +111,8 @@ namespace storm {
                     STORM_LOG_THROW(type == "be" || "be_" + distribution == type, storm::exceptions::WrongFormatException,
                                     "BE type '" << type << "' and distribution '" << distribution << " do not agree.");
                     if (distribution == "exp") {
-                        ValueType failureRate = parseRationalExpression(parseJsonNumber(data.at("rate")));
-                        ValueType dormancyFactor = parseRationalExpression(parseJsonNumber(data.at("dorm")));
+                        ValueType failureRate = valueParser.parseValue(parseJsonNumber(data.at("rate")));
+                        ValueType dormancyFactor = valueParser.parseValue(parseJsonNumber(data.at("dorm")));
                         bool transient = false;
                         if (data.count("transient") > 0) {
                             transient = data.at("transient");
@@ -177,28 +180,6 @@ namespace storm {
                 return stream.str();
             }
         }
-
-        template<typename ValueType>
-        ValueType DFTJsonParser<ValueType>::parseRationalExpression(std::string const& expr) {
-            STORM_LOG_ASSERT(false, "Specialized method should be called.");
-            return 0;
-        }
-
-        template<>
-        double DFTJsonParser<double>::parseRationalExpression(std::string const& expr) {
-            return boost::lexical_cast<double>(expr);
-        }
-
-        template<>
-        storm::RationalFunction DFTJsonParser<storm::RationalFunction>::parseRationalExpression(std::string const& expr) {
-            STORM_LOG_TRACE("Translating expression: " << expr);
-            storm::expressions::Expression expression = parser.parseFromString(expr);
-            STORM_LOG_TRACE("Expression: " << expression);
-            storm::RationalFunction rationalFunction = evaluator.asRational(expression);
-            STORM_LOG_TRACE("Parsed expression: " << rationalFunction);
-            return rationalFunction;
-        }
-
 
         // Explicitly instantiate the class.
         template class DFTJsonParser<double>;
