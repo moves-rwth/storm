@@ -82,7 +82,7 @@ namespace storm {
                 STORM_LOG_ASSERT(dependencyId == dependency->id(), "Ids do not match.");
                 assert(dependency->dependentEvents().size() == 1);
                 if (hasFailed(dependency->triggerEvent()->id()) && getElementState(dependency->dependentEvents()[0]->id()) == DFTElementState::Operational) {
-                    failableElements.addDependency(dependencyId);
+                    failableElements.addDependency(dependency->id(), mDft.isDependencyInConflict(dependency->id()));
                     STORM_LOG_TRACE("New dependency failure: " << *dependency);
                 }
             }
@@ -239,7 +239,7 @@ namespace storm {
                     // Check if restriction prevents failure of dependent event
                     if (!isEventDisabledViaRestriction(dependency->dependentEvents()[0]->id())) {
                         // Add dependency as possible failure
-                        failableElements.addDependency(dependency->id());
+                        failableElements.addDependency(dependency->id(), mDft.isDependencyInConflict(dependency->id()));
                         STORM_LOG_TRACE("New dependency failure: " << *dependency);
                         addedFailableDependency = true;
                     }

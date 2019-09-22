@@ -31,45 +31,32 @@ namespace storm {
         }
 
         template<>
-        void exportDFTToSMT(storm::storage::DFT<double> const& dft, std::string const& file) {
+        void exportDFTToSMT(storm::storage::DFT<double> const &dft, std::string const &file) {
             storm::modelchecker::DFTASFChecker asfChecker(dft);
             asfChecker.convert();
             asfChecker.toFile(file);
         }
 
         template<>
-        void exportDFTToSMT(storm::storage::DFT<storm::RationalFunction> const& dft, std::string const& file) {
+        void exportDFTToSMT(storm::storage::DFT<storm::RationalFunction> const &dft, std::string const &file) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Export to SMT does not support this data type.");
         }
 
         template<>
-        std::vector<storm::solver::SmtSolver::CheckResult>
+        void
         analyzeDFTSMT(storm::storage::DFT<double> const &dft, bool printOutput) {
+            uint64_t solverTimeout = 10;
+
             storm::modelchecker::DFTASFChecker smtChecker(dft);
             smtChecker.toSolver();
-            std::vector<storm::solver::SmtSolver::CheckResult> results;
-
-            results.push_back(smtChecker.checkTleNeverFailed());
-            uint64_t lower_bound = smtChecker.getLeastFailureBound();
-            uint64_t upper_bound = smtChecker.getAlwaysFailedBound();
-            if (printOutput) {
-                // TODO add suitable output function, maybe add query descriptions for better readability
-                for (size_t i = 0; i < results.size(); ++i) {
-                    std::string tmp = "unknown";
-                    if (results.at(i) == storm::solver::SmtSolver::CheckResult::Sat) {
-                        tmp = "SAT";
-                    } else if (results.at(i) == storm::solver::SmtSolver::CheckResult::Unsat) {
-                        tmp = "UNSAT";
-                    }
-                }
-                std::cout << "Lower bound: " << std::to_string(lower_bound) << std::endl;
-                std::cout << "Upper bound: " << std::to_string(upper_bound) << std::endl;
-            }
-            return results;
+            // Removed bound computation etc. here
+            smtChecker.setSolverTimeout(solverTimeout);
+            smtChecker.checkTleNeverFailed();
+            smtChecker.unsetSolverTimeout();
         }
 
         template<>
-        std::vector<storm::solver::SmtSolver::CheckResult>
+        void
         analyzeDFTSMT(storm::storage::DFT<storm::RationalFunction> const &dft, bool printOutput) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
                             "Analysis by SMT not supported for this data type.");

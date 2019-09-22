@@ -77,7 +77,6 @@ namespace storm {
                         childElement->addOutgoingDependency(elem.first);
                     }
                 }
-                STORM_LOG_ASSERT(!binaryDependencies || dependencies.size() == 1, "Dependency '" << elem.first->name() << "' should only have one dependent element.");
                 for (auto& be : dependencies) {
                     elem.first->addDependentEvent(be);
                     be->addIngoingDependency(elem.first);

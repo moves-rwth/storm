@@ -69,9 +69,11 @@ namespace storm {
             std::vector<std::vector<size_t>> mSymmetries;
             std::map<size_t, DFTLayoutInfo> mLayoutInfo;
             mutable std::vector<size_t> mRelevantEvents;
+            std::vector<bool> mDynamicBehavior;
+            std::map<size_t, bool> mDependencyInConflict;
 
         public:
-            DFT(DFTElementVector const& elements, DFTElementPointer const& tle);
+            DFT(DFTElementVector const &elements, DFTElementPointer const &tle);
             
             DFTStateGenerationInfo buildStateGenerationInfo(storm::storage::DFTIndependentSymmetries const& symmetries) const;
             
@@ -82,6 +84,8 @@ namespace storm {
             DFT<ValueType> optimize() const;
             
             void copyElements(std::vector<size_t> elements, storm::builder::DFTBuilder<ValueType> builder) const;
+
+            void setDynamicBehaviorInfo();
             
             size_t stateBitVectorSize() const {
                 // Ensure multiple of 64
@@ -130,9 +134,24 @@ namespace storm {
                     return mSpareModules.find(representativeId)->second;
                 }
             }
+
+            bool isDependencyInConflict(size_t id) const {
+                STORM_LOG_ASSERT(isDependency(id), "Not a dependency.");
+                return mDependencyInConflict.at(id);
+            }
+
+
+            void setDependencyNotInConflict(size_t id) {
+                STORM_LOG_ASSERT(isDependency(id), "Not a dependency.");
+                mDependencyInConflict.at(id) = false;
+            }
             
             std::vector<size_t> const& getDependencies() const {
                 return mDependencies;
+            }
+
+            std::vector<bool> const &getDynamicBehavior() const {
+                return mDynamicBehavior;
             }
 
             std::vector<size_t> nonColdBEs() const {

@@ -7,11 +7,14 @@
 #include "storm-dft/settings/modules/FaultTreeSettings.h"
 #include <storm/exceptions/UnmetRequirementException.h>
 #include "storm/settings/modules/GeneralSettings.h"
+#include "storm/settings/modules/DebugSettings.h"
 #include "storm/settings/modules/IOSettings.h"
 #include "storm/settings/modules/ResourceSettings.h"
+#include "storm/settings/modules/TransformationSettings.h"
 #include "storm/utility/initialize.h"
 #include "storm-cli-utilities/cli.h"
 #include "storm-parsers/api/storm-parsers.h"
+#include "storm-dft/transformations/DftTransformator.h"
 
 
 /*!
@@ -26,7 +29,9 @@ void processOptions() {
     storm::settings::modules::FaultTreeSettings const& faultTreeSettings = storm::settings::getModule<storm::settings::modules::FaultTreeSettings>();
     storm::settings::modules::IOSettings const& ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
     storm::settings::modules::DftGspnSettings const& dftGspnSettings = storm::settings::getModule<storm::settings::modules::DftGspnSettings>();
+    storm::settings::modules::TransformationSettings const &transformationSettings = storm::settings::getModule<storm::settings::modules::TransformationSettings>();
 
+    auto dftTransformator = storm::transformations::dft::DftTransformator<ValueType>();
 
     if (!dftIOSettings.isDftFileSet() && !dftIOSettings.isDftJsonFileSet()) {
         STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "No input model given.");
@@ -51,12 +56,15 @@ void processOptions() {
         storm::api::exportDFTToJsonFile<ValueType>(*dft, dftIOSettings.getExportJsonFilename());
     }
 
-    if (dftIOSettings.isExportToSmt()) {
-        // Export to json
-        storm::api::exportDFTToSMT<ValueType>(*dft, dftIOSettings.getExportSmtFilename());
-        return;
+    // Limit to one constantly failed BE
+    if (faultTreeSettings.isUniqueFailedBE()) {
+        dft = dftTransformator.transformUniqueFailedBe(*dft);
     }
 
+    // Eliminate non-binary dependencies
+    if (!dft->getDependencies().empty()) {
+        dft = dftTransformator.transformBinaryFDEPs(*dft);
+    }
     // Check well-formedness of DFT
     std::stringstream stream;
     if (!dft->checkWellFormedness(stream)) {
@@ -77,15 +85,71 @@ void processOptions() {
         return;
     }
 
+    // SMT
+    if (dftIOSettings.isExportToSmt()) {
+        // Export to smtlib2
+        storm::api::exportDFTToSMT<ValueType>(*dft, dftIOSettings.getExportSmtFilename());
+        return;
+    }
+
+    bool useSMT = false;
+    uint64_t solverTimeout = 10;
+#ifdef STORM_HAVE_Z3
+    if (faultTreeSettings.solveWithSMT()) {
+        useSMT = true;
+        STORM_PRINT("Use SMT for preprocessing" << std::endl)
+    }
+#endif
+
+    dft->setDynamicBehaviorInfo();
+
+    storm::api::PreprocessingResult preResults;
+    preResults.lowerBEBound = storm::dft::utility::FailureBoundFinder::getLeastFailureBound(*dft, useSMT,
+                                                                                            solverTimeout);
+    preResults.upperBEBound = storm::dft::utility::FailureBoundFinder::getAlwaysFailedBound(*dft, useSMT,
+                                                                                            solverTimeout);
+    STORM_LOG_DEBUG("BE FAILURE BOUNDS" << std::endl << "========================================" << std::endl <<
+                                        "Lower bound: " << std::to_string(preResults.lowerBEBound) << std::endl <<
+                                        "Upper bound: " << std::to_string(preResults.upperBEBound) << std::endl);
+
+    preResults.fdepConflicts = storm::dft::utility::FDEPConflictFinder::getDependencyConflicts(*dft, useSMT,
+                                                                                               solverTimeout);
+
+    if (preResults.fdepConflicts.empty()) {
+        STORM_LOG_DEBUG("No FDEP conflicts found" << std::endl);
+    } else {
+        STORM_LOG_DEBUG("========================================" << std::endl <<
+                                                                   "FDEP CONFLICTS" << std::endl <<
+                                                                   "========================================"
+                                                                   << std::endl);
+    }
+    for (auto pair: preResults.fdepConflicts) {
+        STORM_LOG_DEBUG("Conflict between " << dft->getElement(pair.first)->name() << " and "
+                                            << dft->getElement(pair.second)->name() << std::endl);
+    }
+
+    // Set the conflict map of the dft
+    std::set<size_t> conflict_set;
+    for (auto conflict : preResults.fdepConflicts) {
+        conflict_set.insert(size_t(conflict.first));
+        conflict_set.insert(size_t(conflict.second));
+    }
+    for (size_t depId : dft->getDependencies()) {
+        if (!conflict_set.count(depId)) {
+            dft->setDependencyNotInConflict(depId);
+        }
+    }
+
 
 #ifdef STORM_HAVE_Z3
     if (faultTreeSettings.solveWithSMT()) {
         // Solve with SMT
-        STORM_LOG_DEBUG("Running DFT analysis with use of SMT");
+        STORM_LOG_DEBUG("Running DFT analysis with use of SMT" << std::endl);
+        // Set dynamic behavior vector
         storm::api::analyzeDFTSMT(*dft, true);
-        return;
     }
 #endif
+
 
     // From now on we analyse DFT via model checking
 
@@ -184,7 +248,6 @@ void processOptions() {
         }
     }
 
-
     // Analyze DFT
     // TODO allow building of state space even without properties
     if (props.empty()) {
@@ -195,7 +258,10 @@ void processOptions() {
             approximationError = faultTreeSettings.getApproximationError();
         }
         storm::api::analyzeDFT<ValueType>(*dft, props, faultTreeSettings.useSymmetryReduction(), faultTreeSettings.useModularisation(), relevantEvents,
-                                          faultTreeSettings.isAllowDCForRelevantEvents(), approximationError, faultTreeSettings.getApproximationHeuristic(), true);
+                                          faultTreeSettings.isAllowDCForRelevantEvents(), approximationError,
+                                          faultTreeSettings.getApproximationHeuristic(),
+                                          transformationSettings.isChainEliminationSet(),
+                                          transformationSettings.isIgnoreLabelingSet(), true);
     }
 }
 

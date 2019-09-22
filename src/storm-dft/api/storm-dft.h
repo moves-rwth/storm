@@ -8,11 +8,19 @@
 #include "storm-dft/modelchecker/dft/DFTModelChecker.h"
 #include "storm-dft/modelchecker/dft/DFTASFChecker.h"
 #include "storm-dft/transformations/DftToGspnTransformator.h"
+#include "storm-dft/utility/FDEPConflictFinder.h"
+#include "storm-dft/utility/FailureBoundFinder.h"
 
 #include "storm-gspn/api/storm-gspn.h"
 
 namespace storm {
     namespace api {
+        struct PreprocessingResult {
+            uint64_t lowerBEBound;
+            uint64_t upperBEBound;
+            std::vector<std::pair<uint64_t, uint64_t>> fdepConflicts;
+        };
+
 
         /*!
          * Load DFT from Galileo file.
@@ -71,6 +79,8 @@ namespace storm {
          * @param allowDCForRelevantEvents If true, Don't Care propagation is allowed even for relevant events.
          * @param approximationError Allowed approximation error.  Value 0 indicates no approximation.
          * @param approximationHeuristic Heuristic used for state space exploration.
+         * @param eliminateChains If true, chains of non-Markovian states are elimianted from the resulting MA
+         * @param ignoreLabeling If true, the labeling of states is ignored during state elimination
          * @param printOutput If true, model information, timings, results, etc. are printed.
          * @return Results.
          */
@@ -78,11 +88,14 @@ namespace storm {
         typename storm::modelchecker::DFTModelChecker<ValueType>::dft_results
         analyzeDFT(storm::storage::DFT<ValueType> const& dft, std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties, bool symred = true,
                    bool allowModularisation = true, std::set<size_t> const& relevantEvents = {}, bool allowDCForRelevantEvents = true, double approximationError = 0.0,
-                   storm::builder::ApproximationHeuristic approximationHeuristic = storm::builder::ApproximationHeuristic::DEPTH, bool printOutput = false) {
+                   storm::builder::ApproximationHeuristic approximationHeuristic = storm::builder::ApproximationHeuristic::DEPTH,
+                   bool eliminateChains = false, bool ignoreLabeling = false, bool printOutput = false) {
             storm::modelchecker::DFTModelChecker<ValueType> modelChecker(printOutput);
             typename storm::modelchecker::DFTModelChecker<ValueType>::dft_results results = modelChecker.check(dft, properties, symred, allowModularisation, relevantEvents,
                                                                                                                allowDCForRelevantEvents, approximationError,
-                                                                                                               approximationHeuristic);
+                                                                                                               approximationHeuristic,
+                                                                                                               eliminateChains,
+                                                                                                               ignoreLabeling);
             if (printOutput) {
                 modelChecker.printTimings();
                 modelChecker.printResults(results);
@@ -98,7 +111,7 @@ namespace storm {
          * @return Result result vector
          */
         template<typename ValueType>
-        std::vector<storm::solver::SmtSolver::CheckResult>
+        void
         analyzeDFTSMT(storm::storage::DFT<ValueType> const &dft, bool printOutput);
 
         /*!
@@ -126,7 +139,7 @@ namespace storm {
          * @param file File.
          */
         template<typename ValueType>
-        void exportDFTToSMT(storm::storage::DFT<ValueType> const& dft, std::string const& file);
+        void exportDFTToSMT(storm::storage::DFT<ValueType> const &dft, std::string const &file);
 
         /*!
          * Transform DFT to GSPN.
