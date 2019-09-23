@@ -25,7 +25,6 @@ namespace storm {
             // We don't directly call setDynamicBehaviorInfo to not slow down DFT generation if possible
             mDynamicBehavior = std::vector<bool>(mElements.size());
             std::fill(mDynamicBehavior.begin(), mDynamicBehavior.end(), true);
-            size_t nrRepresentatives = 0;
 
             for (auto& elem : mElements) {
                 if (isRepresentative(elem->id())) {
