@@ -23,6 +23,7 @@
 #include "storm/settings/modules/AbstractionSettings.h"
 #include "storm/settings/modules/BuildSettings.h"
 #include "storm/settings/modules/JitBuilderSettings.h"
+#include "storm/settings/modules/TopologicalEquationSolverSettings.h"
 #include "storm/settings/modules/MultiObjectiveSettings.h"
 #include "storm-pomdp-cli/settings/modules/POMDPSettings.h"
 
@@ -63,7 +64,7 @@ void initializeSettings() {
     storm::settings::addModule<storm::settings::modules::ExplorationSettings>();
     storm::settings::addModule<storm::settings::modules::ResourceSettings>();
     storm::settings::addModule<storm::settings::modules::JitBuilderSettings>();
-
+    storm::settings::addModule<storm::settings::modules::TopologicalEquationSolverSettings>();
 
 
     storm::settings::addModule<storm::settings::modules::POMDPSettings>();
