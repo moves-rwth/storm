@@ -14,6 +14,7 @@ namespace storm {
             
             const std::string POMDPSettings::moduleName = "pomdp";
             const std::string exportAsParametricModelOption = "parametric-drn";
+            const std::string gridApproximationOption = "gridapproximation";
             const std::string qualitativeReductionOption = "qualitativereduction";
             const std::string analyzeUniqueObservationsOption = "uniqueobservations";
             const std::string mecReductionOption = "mecreduction";
@@ -37,6 +38,13 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, fscmode, false, "Sets the way the pMC is obtained").addArgument(storm::settings::ArgumentBuilder::createStringArgument("type", "type name").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(fscModes)).setDefaultValueString("standard").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, transformBinaryOption, false, "Transforms the pomdp to a binary pomdp.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, transformSimpleOption, false, "Transforms the pomdp to a binary and simple pomdp.").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, gridApproximationOption, false,
+                                                               "Analyze the POMDP using grid approximation.").addArgument(
+                        storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("resolution",
+                                                                                        "the resolution of the grid").setDefaultValueUnsignedInteger(
+                                10).addValidatorUnsignedInteger(
+                                storm::settings::ArgumentValidatorFactory::createUnsignedGreaterValidator(
+                                        0)).build()).build());
             }
 
             bool POMDPSettings::isExportToParametricSet() const {
@@ -61,6 +69,15 @@ namespace storm {
             
             bool POMDPSettings::isSelfloopReductionSet() const {
                 return this->getOption(selfloopReductionOption).getHasOptionBeenSet();
+            }
+
+            bool POMDPSettings::isGridApproximationSet() const {
+                return this->getOption(gridApproximationOption).getHasOptionBeenSet();
+            }
+
+            uint64_t POMDPSettings::getGridResolution() const {
+                return this->getOption(gridApproximationOption).getArgumentByName(
+                        "resolution").getValueAsUnsignedInteger();
             }
             
             uint64_t POMDPSettings::getMemoryBound() const {

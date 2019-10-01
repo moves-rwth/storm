@@ -25,6 +25,8 @@ namespace storm {
                 std::string getExportToParametricFilename() const;
                 
                 bool isQualitativeReductionSet() const;
+
+                bool isGridApproximationSet() const;
                 bool isAnalyzeUniqueObservationsSet() const;
                 bool isMecReductionSet() const;
                 bool isSelfloopReductionSet() const;
@@ -32,6 +34,8 @@ namespace storm {
                 bool isTransformBinarySet() const;
                 std::string getFscApplicationTypeString() const;
                 uint64_t getMemoryBound() const;
+
+                uint64_t getGridResolution() const;
                 storm::storage::PomdpMemoryPattern getMemoryPattern() const;
                 
                 bool check() const override;

@@ -9,19 +9,23 @@
 namespace storm {
     namespace pomdp {
         namespace modelchecker {
-            class POMDPCheckResult;
+            template<class ValueType>
+            struct POMDPCheckResult {
+                ValueType OverapproximationValue;
+                ValueType UnderapproximationValue;
+            };
 
             template<class ValueType, typename RewardModelType = models::sparse::StandardRewardModel<ValueType>>
             class ApproximatePOMDPModelchecker {
             public:
                 explicit ApproximatePOMDPModelchecker();
 
-                /*std::unique_ptr<POMDPCheckResult>*/ void
+                std::unique_ptr<POMDPCheckResult<ValueType>>
                 computeReachabilityProbability(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
                                                std::set<uint32_t> targetObservations, bool min,
                                                uint64_t gridResolution);
 
-                std::unique_ptr<POMDPCheckResult>
+                std::unique_ptr<POMDPCheckResult<ValueType>>
                 computeReachabilityReward(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
                                           std::set<uint32_t> target_observations, uint64_t gridResolution);
 

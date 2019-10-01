@@ -42,6 +42,8 @@
 #include "storm-pomdp/modelchecker/ApproximatePOMDPModelchecker.h"
 #include "storm/api/storm.h"
 
+#include <typeinfo>
+
 /*!
  * Initialize the settings manager.
  */
@@ -113,10 +115,6 @@ int main(const int argc, const char** argv) {
         STORM_LOG_THROW(model && model->getType() == storm::models::ModelType::Pomdp, storm::exceptions::WrongFormatException, "Expected a POMDP.");
         std::shared_ptr<storm::models::sparse::Pomdp<storm::RationalNumber>> pomdp = model->template as<storm::models::sparse::Pomdp<storm::RationalNumber>>();
 
-        // For ease of testing
-        storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<storm::RationalNumber> checker = storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<storm::RationalNumber>();
-        checker.computeReachabilityProbability(*pomdp, std::set<uint32_t>({7}), false, 10);
-
         std::shared_ptr<storm::logic::Formula const> formula;
         if (!symbolicInput.properties.empty()) {
             formula = symbolicInput.properties.front().getRawFormula();
@@ -148,6 +146,42 @@ int main(const int argc, const char** argv) {
                     std::cout << qualitativeAnalysis.analyseProb1(formula->asProbabilityOperatorFormula()) << std::endl;
                     STORM_PRINT_AND_LOG(" done." << std::endl);
                     std::cout << "actual reduction not yet implemented..." << std::endl;
+                }
+                if (pomdpSettings.isGridApproximationSet()) {
+                    storm::logic::ProbabilityOperatorFormula const &probFormula = formula->asProbabilityOperatorFormula();
+                    storm::logic::Formula const &subformula1 = probFormula.getSubformula();
+
+                    std::set<uint32_t> targetObservationSet;
+                    //TODO refactor
+                    bool validFormula = false;
+                    if (subformula1.isEventuallyFormula()) {
+                        storm::logic::EventuallyFormula const &eventuallyFormula = subformula1.asEventuallyFormula();
+                        storm::logic::Formula const &subformula2 = eventuallyFormula.getSubformula();
+                        if (subformula2.isAtomicLabelFormula()) {
+                            storm::logic::AtomicLabelFormula const &alFormula = subformula2.asAtomicLabelFormula();
+                            validFormula = true;
+                            std::string targetLabel = alFormula.getLabel();
+                            auto labeling = pomdp->getStateLabeling();
+                            for (size_t state = 0; state < pomdp->getNumberOfStates(); ++state) {
+                                if (labeling.getStateHasLabel(targetLabel, state)) {
+                                    targetObservationSet.insert(pomdp->getObservation(state));
+                                }
+                            }
+                        }
+                    }
+                    STORM_LOG_THROW(validFormula, storm::exceptions::InvalidPropertyException,
+                                    "The formula is not supported by the grid approximation");
+
+                    storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<storm::RationalNumber> checker = storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<storm::RationalNumber>();
+                    storm::RationalNumber overRes = storm::utility::one<storm::RationalNumber>();
+                    storm::RationalNumber underRes = storm::utility::zero<storm::RationalNumber>();
+                    std::unique_ptr<storm::pomdp::modelchecker::POMDPCheckResult<storm::RationalNumber>> result;
+                    result = checker.computeReachabilityProbability(*pomdp, targetObservationSet,
+                                                                    probFormula.getOptimalityType() ==
+                                                                    storm::OptimizationDirection::Minimize,
+                                                                    pomdpSettings.getGridResolution() + gridIncrease);
+                    overRes = result->OverapproximationValue;
+                    underRes = result->UnderapproximationValue;
                 }
             } else if (formula->isRewardOperatorFormula()) {
                 if (pomdpSettings.isSelfloopReductionSet() && storm::solver::minimize(formula->asRewardOperatorFormula().getOptimalityType())) {
