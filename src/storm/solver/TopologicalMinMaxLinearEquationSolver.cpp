@@ -81,6 +81,7 @@ namespace storm {
                     if (scc.size() == 1) {
                         returnValue = solveTrivialScc(*scc.begin(), dir, x, b) && returnValue;
                     } else {
+                        STORM_LOG_TRACE("Solving SCC of size " << scc.size() << ".");
                         sccRowGroupsAsBitVector.clear();
                         sccRowsAsBitVector.clear();
                         for (auto const& group : scc) {
