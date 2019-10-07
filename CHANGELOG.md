@@ -20,6 +20,7 @@ Version 1.3.x
 - JANI: Support for non-trivial reward accumulations.
 - JANI: Fixed support for reward expressions over non-transient variables.
 - DRN: Added support for exact parsing and action-based rewards
+- storm-conv can now apply transformations on a prism file
 - Fixed sparse bisimulation of MDPs (which failed if all non-absorbing states in the quotient are initial)
 - Fixed linking with Mathsat on macOS
 - Fixed compilation for macOS mojave
