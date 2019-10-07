@@ -22,6 +22,7 @@
 #include "storm/settings/modules/ResourceSettings.h"
 #include "storm/settings/modules/JitBuilderSettings.h"
 #include "storm/settings/modules/MultiplierSettings.h"
+#include "storm/settings/modules/TransformationSettings.h"
 
 
 namespace storm {
@@ -50,6 +51,7 @@ namespace storm {
             storm::settings::addModule<storm::settings::modules::ResourceSettings>();
             storm::settings::addModule<storm::settings::modules::JitBuilderSettings>();
             storm::settings::addModule<storm::settings::modules::MultiplierSettings>();
+            storm::settings::addModule<storm::settings::modules::TransformationSettings>();
         }
     
     }
