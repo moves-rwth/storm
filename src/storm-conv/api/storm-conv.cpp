@@ -131,7 +131,8 @@ namespace storm {
             if (!properties.empty()) {
                 storm::utility::openFile(filename + ".props", stream);
                 for (auto const& prop : properties) {
-                    stream << prop << std::endl;
+                    stream << prop.asPrismSyntax() << std::endl;
+                    STORM_LOG_WARN_COND(!prop.containsUndefinedConstants(), "A property contains undefined constants. These might not be exported correctly.");
                 }
                 storm::utility::closeFile(stream);
             }
@@ -139,11 +140,10 @@ namespace storm {
         void printPrismToStream(storm::prism::Program const& program, std::vector<storm::jani::Property> const& properties, std::ostream& ostream) {
             ostream << program << std::endl;
             for (auto const& prop : properties) {
-                ostream << prop << std::endl;
+                STORM_LOG_WARN_COND(!prop.containsUndefinedConstants(), "A property contains undefined constants. These might not be exported correctly.");
+                ostream << prop.asPrismSyntax() << std::endl;
             }
         }
-
-
         
     }
 }

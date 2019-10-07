@@ -53,6 +53,10 @@ namespace storm {
                 return ft;
             }
             
+            bool isDefault() const {
+                return (ft == storm::modelchecker::FilterType::VALUES) && statesFormula && statesFormula->isInitialFormula();
+            }
+            
             FilterExpression substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
                 return FilterExpression(formula->substitute(substitution), ft, statesFormula->substitute(substitution));
             }
@@ -126,6 +130,8 @@ namespace storm {
             Property clone() const;
             
             FilterExpression const& getFilter() const;
+            
+            std::string asPrismSyntax() const;
             
             std::set<storm::expressions::Variable> const& getUndefinedConstants() const;
             bool containsUndefinedConstants() const;
