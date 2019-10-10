@@ -349,7 +349,7 @@ namespace storm {
                         bool foundActionSet = false;
                         std::vector<std::string> actionNames;
                         bool addedAnonymousAction = false;
-                        for (uint64 choice = modelComponents.transitionMatrix.getRowGroupIndices()[bitVectorIndexPair.second];
+                        for (uint64_t choice = modelComponents.transitionMatrix.getRowGroupIndices()[bitVectorIndexPair.second];
                              choice < modelComponents.transitionMatrix.getRowGroupIndices()[bitVectorIndexPair.second +
                                                                                             1]; ++choice) {
                             if (modelComponents.choiceLabeling.get().getLabelsOfChoice(choice).empty()) {
