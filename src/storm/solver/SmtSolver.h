@@ -73,8 +73,8 @@ namespace storm {
 			SmtSolver(SmtSolver const& other) = default;
 
 			SmtSolver(SmtSolver&& other) = default;
-			SmtSolver& operator=(SmtSolver const& other) = default;
-			SmtSolver& operator=(SmtSolver&& other) = default;
+			SmtSolver& operator=(SmtSolver const& other) = delete;
+			SmtSolver& operator=(SmtSolver&& other) = delete;
    
 			/*!
              * Pushes a backtracking point on the solver's stack. A following call to pop() deletes exactly those

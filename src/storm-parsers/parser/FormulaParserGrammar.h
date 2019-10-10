@@ -25,8 +25,8 @@ namespace storm {
             FormulaParserGrammar(std::shared_ptr<storm::expressions::ExpressionManager const> const& manager);
             FormulaParserGrammar(std::shared_ptr<storm::expressions::ExpressionManager> const& manager);
             
-            FormulaParserGrammar(FormulaParserGrammar const& other) = default;
-            FormulaParserGrammar& operator=(FormulaParserGrammar const& other) = default;
+            FormulaParserGrammar(FormulaParserGrammar const& other) = delete;
+            FormulaParserGrammar& operator=(FormulaParserGrammar const& other) = delete;
             
             /*!
              * Adds an identifier and the expression it is supposed to be replaced with. This can, for example be used
