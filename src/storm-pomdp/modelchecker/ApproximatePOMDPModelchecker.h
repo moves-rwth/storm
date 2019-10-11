@@ -54,6 +54,41 @@ namespace storm {
                                            bool min);
 
                 /**
+                 * TODO
+                 * @param pomdp
+                 * @param beliefList
+                 * @param beliefIsTarget
+                 * @param targetObservations
+                 * @param observationProbabilities
+                 * @param nextBelieves
+                 * @param result
+                 * @param chosenActions
+                 * @param gridResolution
+                 * @param initialBeliefId
+                 * @param min
+                 * @return
+                 */
+                ValueType computeUnderapproximationWithDTMC(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
+                                                            std::vector<storm::pomdp::Belief<ValueType>> &beliefList,
+                                                            std::vector<bool> &beliefIsTarget,
+                                                            std::set<uint32_t> &targetObservations,
+                                                            std::map<uint64_t, std::vector<std::map<uint32_t, ValueType>>> &observationProbabilities,
+                                                            std::map<uint64_t, std::vector<std::map<uint32_t, uint64_t>>> &nextBelieves,
+                                                            std::map<uint64_t, ValueType> &result,
+                                                            std::map<uint64_t, uint64_t> chosenActions,
+                                                            uint64_t gridResolution, uint64_t initialBeliefId, bool min);
+
+                ValueType computeUnderapproximationWithMDP(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
+                                                           std::vector<storm::pomdp::Belief<ValueType>> &beliefList,
+                                                           std::vector<bool> &beliefIsTarget,
+                                                           std::set<uint32_t> &targetObservations,
+                                                           std::map<uint64_t, std::vector<std::map<uint32_t, ValueType>>> &observationProbabilities,
+                                                           std::map<uint64_t, std::vector<std::map<uint32_t, uint64_t>>> &nextBelieves,
+                                                           std::map<uint64_t, ValueType> &result,
+                                                           std::map<uint64_t, uint64_t> chosenActions,
+                                                           uint64_t gridResolution, uint64_t initialBeliefId, bool min);
+
+                /**
                  *
                  * @param pomdp
                  * @param id
@@ -143,6 +178,9 @@ namespace storm {
 
                 storm::storage::SparseMatrix<ValueType>
                 buildTransitionMatrix(std::vector<std::map<uint64_t, ValueType>> transitions);
+
+                storm::storage::SparseMatrix<ValueType>
+                buildTransitionMatrix(std::vector<std::vector<std::map<uint64_t, ValueType>>> transitions);
             };
 
         }
