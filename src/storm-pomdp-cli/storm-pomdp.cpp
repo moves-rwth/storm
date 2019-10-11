@@ -111,9 +111,9 @@ int main(const int argc, const char** argv) {
 
         storm::cli::SymbolicInput symbolicInput = storm::cli::parseAndPreprocessSymbolicInput();
         // We should not export here if we are going to do some processing first.
-        auto model = storm::cli::buildPreprocessExportModelWithValueTypeAndDdlib<storm::dd::DdType::Sylvan, storm::RationalNumber>(symbolicInput, engine);
+        auto model = storm::cli::buildPreprocessExportModelWithValueTypeAndDdlib<storm::dd::DdType::Sylvan, double>(symbolicInput, engine);
         STORM_LOG_THROW(model && model->getType() == storm::models::ModelType::Pomdp, storm::exceptions::WrongFormatException, "Expected a POMDP.");
-        std::shared_ptr<storm::models::sparse::Pomdp<storm::RationalNumber>> pomdp = model->template as<storm::models::sparse::Pomdp<storm::RationalNumber>>();
+        std::shared_ptr<storm::models::sparse::Pomdp<double>> pomdp = model->template as<storm::models::sparse::Pomdp<double>>();
 
         std::shared_ptr<storm::logic::Formula const> formula;
         if (!symbolicInput.properties.empty()) {
@@ -121,24 +121,24 @@ int main(const int argc, const char** argv) {
             STORM_PRINT_AND_LOG("Analyzing property '" << *formula << "'" << std::endl);
             STORM_LOG_WARN_COND(symbolicInput.properties.size() == 1, "There is currently no support for multiple properties. All other properties will be ignored.");
         }
-        
+
         if (pomdpSettings.isAnalyzeUniqueObservationsSet()) {
             STORM_PRINT_AND_LOG("Analyzing states with unique observation ..." << std::endl);
-            storm::analysis::UniqueObservationStates<storm::RationalNumber> uniqueAnalysis(*pomdp);
+            storm::analysis::UniqueObservationStates<double> uniqueAnalysis(*pomdp);
             std::cout << uniqueAnalysis.analyse() << std::endl;
         }
-        
+
         if (formula) {
             if (formula->isProbabilityOperatorFormula()) {
                 if (pomdpSettings.isSelfloopReductionSet() && !storm::solver::minimize(formula->asProbabilityOperatorFormula().getOptimalityType())) {
                     STORM_PRINT_AND_LOG("Eliminating self-loop choices ...");
                     uint64_t oldChoiceCount = pomdp->getNumberOfChoices();
-                    storm::transformer::GlobalPOMDPSelfLoopEliminator<storm::RationalNumber> selfLoopEliminator(*pomdp);
+                    storm::transformer::GlobalPOMDPSelfLoopEliminator<double> selfLoopEliminator(*pomdp);
                     pomdp = selfLoopEliminator.transform();
                     STORM_PRINT_AND_LOG(oldChoiceCount - pomdp->getNumberOfChoices() << " choices eliminated through self-loop elimination." << std::endl);
                 }
                 if (pomdpSettings.isQualitativeReductionSet()) {
-                    storm::analysis::QualitativeAnalysis<storm::RationalNumber> qualitativeAnalysis(*pomdp);
+                    storm::analysis::QualitativeAnalysis<double> qualitativeAnalysis(*pomdp);
                     STORM_PRINT_AND_LOG("Computing states with probability 0 ...");
                     std::cout << qualitativeAnalysis.analyseProb0(formula->asProbabilityOperatorFormula()) << std::endl;
                     STORM_PRINT_AND_LOG(" done." << std::endl);
@@ -167,19 +167,31 @@ int main(const int argc, const char** argv) {
                                     targetObservationSet.insert(pomdp->getObservation(state));
                                 }
                             }
+                        } else if (subformula2.isAtomicExpressionFormula()) {
+                            validFormula = true;
+                            std::stringstream stream;
+                            stream << subformula2.asAtomicExpressionFormula().getExpression();
+                            storm::logic::AtomicLabelFormula formula3 = storm::logic::AtomicLabelFormula(stream.str());
+                            std::string targetLabel = formula3.getLabel();
+                            auto labeling = pomdp->getStateLabeling();
+                            for (size_t state = 0; state < pomdp->getNumberOfStates(); ++state) {
+                                if (labeling.getStateHasLabel(targetLabel, state)) {
+                                    targetObservationSet.insert(pomdp->getObservation(state));
+                                }
+                            }
                         }
                     }
                     STORM_LOG_THROW(validFormula, storm::exceptions::InvalidPropertyException,
                                     "The formula is not supported by the grid approximation");
 
-                    storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<storm::RationalNumber> checker = storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<storm::RationalNumber>();
-                    storm::RationalNumber overRes = storm::utility::one<storm::RationalNumber>();
-                    storm::RationalNumber underRes = storm::utility::zero<storm::RationalNumber>();
-                    std::unique_ptr<storm::pomdp::modelchecker::POMDPCheckResult<storm::RationalNumber>> result;
+                    storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<double> checker = storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<double>();
+                    double overRes = storm::utility::one<double>();
+                    double underRes = storm::utility::zero<double>();
+                    std::unique_ptr<storm::pomdp::modelchecker::POMDPCheckResult<double>> result;
                     result = checker.computeReachabilityProbability(*pomdp, targetObservationSet,
                                                                     probFormula.getOptimalityType() ==
                                                                     storm::OptimizationDirection::Minimize,
-                                                                    pomdpSettings.getGridResolution() + gridIncrease);
+                                                                    pomdpSettings.getGridResolution());
                     overRes = result->OverapproximationValue;
                     underRes = result->UnderapproximationValue;
                 }
@@ -187,7 +199,7 @@ int main(const int argc, const char** argv) {
                 if (pomdpSettings.isSelfloopReductionSet() && storm::solver::minimize(formula->asRewardOperatorFormula().getOptimalityType())) {
                     STORM_PRINT_AND_LOG("Eliminating self-loop choices ...");
                     uint64_t oldChoiceCount = pomdp->getNumberOfChoices();
-                    storm::transformer::GlobalPOMDPSelfLoopEliminator<storm::RationalNumber> selfLoopEliminator(*pomdp);
+                    storm::transformer::GlobalPOMDPSelfLoopEliminator<double> selfLoopEliminator(*pomdp);
                     pomdp = selfLoopEliminator.transform();
                     STORM_PRINT_AND_LOG(oldChoiceCount - pomdp->getNumberOfChoices() << " choices eliminated through self-loop elimination." << std::endl);
                 }
@@ -196,43 +208,43 @@ int main(const int argc, const char** argv) {
                 STORM_PRINT_AND_LOG("Computing the unfolding for memory bound " << pomdpSettings.getMemoryBound() << " and memory pattern '" << storm::storage::toString(pomdpSettings.getMemoryPattern()) << "' ...");
                 storm::storage::PomdpMemory memory = storm::storage::PomdpMemoryBuilder().build(pomdpSettings.getMemoryPattern(), pomdpSettings.getMemoryBound());
                 std::cout << memory.toString() << std::endl;
-                storm::transformer::PomdpMemoryUnfolder<storm::RationalNumber> memoryUnfolder(*pomdp, memory);
+                storm::transformer::PomdpMemoryUnfolder<double> memoryUnfolder(*pomdp, memory);
                 pomdp = memoryUnfolder.transform();
                 STORM_PRINT_AND_LOG(" done." << std::endl);
                 pomdp->printModelInformationToStream(std::cout);
             } else {
                 STORM_PRINT_AND_LOG("Assumming memoryless schedulers." << std::endl;)
             }
-            
+
             // From now on the pomdp is considered memoryless
-            
+
             if (pomdpSettings.isMecReductionSet()) {
                 STORM_PRINT_AND_LOG("Eliminating mec choices ...");
                 // Note: Elimination of mec choices only preserves memoryless schedulers.
                 uint64_t oldChoiceCount = pomdp->getNumberOfChoices();
-                storm::transformer::GlobalPomdpMecChoiceEliminator<storm::RationalNumber> mecChoiceEliminator(*pomdp);
+                storm::transformer::GlobalPomdpMecChoiceEliminator<double> mecChoiceEliminator(*pomdp);
                 pomdp = mecChoiceEliminator.transform(*formula);
                 STORM_PRINT_AND_LOG(" done." << std::endl);
                 STORM_PRINT_AND_LOG(oldChoiceCount - pomdp->getNumberOfChoices() << " choices eliminated through MEC choice elimination." << std::endl);
                 pomdp->printModelInformationToStream(std::cout);
             }
-            
+
             if (pomdpSettings.isTransformBinarySet() || pomdpSettings.isTransformSimpleSet()) {
                 if (pomdpSettings.isTransformSimpleSet()) {
                     STORM_PRINT_AND_LOG("Transforming the POMDP to a simple POMDP.");
-                    pomdp = storm::transformer::BinaryPomdpTransformer<storm::RationalNumber>().transform(*pomdp, true);
+                    pomdp = storm::transformer::BinaryPomdpTransformer<double>().transform(*pomdp, true);
                 } else {
                     STORM_PRINT_AND_LOG("Transforming the POMDP to a binary POMDP.");
-                    pomdp = storm::transformer::BinaryPomdpTransformer<storm::RationalNumber>().transform(*pomdp, false);
+                    pomdp = storm::transformer::BinaryPomdpTransformer<double>().transform(*pomdp, false);
                 }
                 pomdp->printModelInformationToStream(std::cout);
                 STORM_PRINT_AND_LOG(" done." << std::endl);
             }
 
-            
+
             if (pomdpSettings.isExportToParametricSet()) {
                 STORM_PRINT_AND_LOG("Transforming memoryless POMDP to pMC...");
-                storm::transformer::ApplyFiniteSchedulerToPomdp<storm::RationalNumber> toPMCTransformer(*pomdp);
+                storm::transformer::ApplyFiniteSchedulerToPomdp<double> toPMCTransformer(*pomdp);
                 std::string transformMode = pomdpSettings.getFscApplicationTypeString();
                 auto pmc = toPMCTransformer.transform(storm::transformer::parsePomdpFscApplicationMode(transformMode));
                 STORM_PRINT_AND_LOG(" done." << std::endl);

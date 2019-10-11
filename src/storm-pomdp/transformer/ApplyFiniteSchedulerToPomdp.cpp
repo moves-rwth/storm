@@ -127,5 +127,8 @@ namespace storm {
         }
 
         template class ApplyFiniteSchedulerToPomdp<storm::RationalNumber>;
+
+        template
+        class ApplyFiniteSchedulerToPomdp<double>;
     }
 }

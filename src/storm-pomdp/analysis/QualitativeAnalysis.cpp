@@ -160,6 +160,8 @@ namespace storm {
 
 
         template class QualitativeAnalysis<storm::RationalNumber>;
-        
+
+        template
+        class QualitativeAnalysis<double>;
     }
 }
