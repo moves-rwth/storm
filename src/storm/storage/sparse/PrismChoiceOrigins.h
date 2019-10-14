@@ -2,10 +2,10 @@
 
 #include <memory>
 #include <string>
-#include <boost/container/flat_set.hpp>
 
 #include "storm/storage/sparse/ChoiceOrigins.h"
 #include "storm/storage/prism/Program.h"
+#include "storm/storage/BoostTypes.h"
 
 
 namespace storm {
@@ -19,7 +19,7 @@ namespace storm {
             class PrismChoiceOrigins : public ChoiceOrigins {
             public:
                 
-                typedef boost::container::flat_set<uint_fast64_t> CommandSet;
+                typedef storm::storage::FlatSet<uint_fast64_t> CommandSet;
                 
                 /*!
                  * Creates a new representation of the choice indices to their origin in the prism program

@@ -3,6 +3,7 @@
 
 #include "storm/utility/macros.h"
 #include "storm/exceptions/NotImplementedException.h"
+#include <boost/algorithm/string/join.hpp>
 
 namespace storm {
     namespace storage {
@@ -125,6 +126,7 @@ namespace storm {
             STORM_LOG_THROW(model == nullptr || model->getNumberOfStates() == schedulerChoices.front().size(), storm::exceptions::InvalidOperationException, "The given model is not compatible with this scheduler.");
             
             bool const stateValuationsGiven = model != nullptr && model->hasStateValuations();
+            bool const choiceLabelsGiven = model != nullptr && model->hasChoiceLabeling();
             bool const choiceOriginsGiven = model != nullptr && model->hasChoiceOrigins();
             uint_fast64_t widthOfStates = std::to_string(schedulerChoices.front().size()).length();
             if (stateValuationsGiven) {
@@ -181,6 +183,10 @@ namespace storm {
                                 } else {
                                     out << choice.getDeterministicChoice();
                                 }
+                                if (choiceLabelsGiven) {
+                                    auto choiceLabels = model->getChoiceLabeling().getLabelsOfChoice(model->getTransitionMatrix().getRowGroupIndices()[state] + choice.getDeterministicChoice());
+                                    out << " {" << boost::join(choiceLabels, ", ") << "}";
+                                }
                             } else {
                                 bool firstChoice = true;
                                 for (auto const& choiceProbPair : choice.getChoiceAsDistribution()) {
@@ -194,6 +200,10 @@ namespace storm {
                                         out << model->getChoiceOrigins()->getChoiceInfo(model->getTransitionMatrix().getRowGroupIndices()[state] + choiceProbPair.first);
                                     } else {
                                         out << choiceProbPair.first;
+                                    }
+                                    if (choiceLabelsGiven) {
+                                        auto choiceLabels = model->getChoiceLabeling().getLabelsOfChoice(model->getTransitionMatrix().getRowGroupIndices()[state] + choice.getDeterministicChoice());
+                                        out << " {" << boost::join(choiceLabels, ", ") << "}";
                                     }
                                     out << ")";
                                 }

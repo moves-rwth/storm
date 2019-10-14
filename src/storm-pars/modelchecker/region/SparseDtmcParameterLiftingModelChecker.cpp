@@ -149,8 +149,8 @@ namespace storm {
             lowerResultBound = storm::utility::zero<ConstantType>();
             upperResultBound = storm::utility::one<ConstantType>();
             
-            // The solution of the min-max equation system will always be unique (assuming graph-preserving instantiations).
-            auto req = solverFactory->getRequirements(env, true, boost::none, true);
+            // The solution of the min-max equation system will always be unique (assuming graph-preserving instantiations, every induced DTMC has the same graph structure).
+            auto req = solverFactory->getRequirements(env, true, true, boost::none, true);
             req.clearBounds();
             STORM_LOG_THROW(!req.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + req.getEnabledRequirementsAsString() + " not checked.");
             solverFactory->setRequirementsChecked(true);
@@ -188,8 +188,8 @@ namespace storm {
             // We only know a lower bound for the result
             lowerResultBound = storm::utility::zero<ConstantType>();
         
-            // The solution of the min-max equation system will always be unique (assuming graph-preserving instantiations).
-            auto req = solverFactory->getRequirements(env, true, boost::none, true);
+            // The solution of the min-max equation system will always be unique (assuming graph-preserving instantiations, every induced DTMC has the same graph structure).
+            auto req = solverFactory->getRequirements(env, true, true, boost::none, true);
             req.clearLowerBounds();
             if (req.upperBounds()) {
                 solvingRequiresUpperRewardBounds = true;
@@ -258,6 +258,7 @@ namespace storm {
             } else {
                 auto solver = solverFactory->create(env, parameterLifter->getMatrix());
                 solver->setHasUniqueSolution();
+                solver->setHasNoEndComponents();
                 if (lowerResultBound) solver->setLowerBound(lowerResultBound.get());
                 if (upperResultBound) {
                     solver->setUpperBound(upperResultBound.get());

@@ -22,6 +22,8 @@ namespace storm {
         STORM_LOG_ASSERT(considerRelativeTerminationCriterion || minMaxSettings.getConvergenceCriterion() == storm::settings::modules::MinMaxEquationSolverSettings::ConvergenceCriterion::Absolute, "Unknown convergence criterion");
         multiplicationStyle = minMaxSettings.getValueIterationMultiplicationStyle();
         symmetricUpdates = minMaxSettings.isForceIntervalIterationSymmetricUpdatesSet();
+        lraMethod = minMaxSettings.getLraMethod();
+        lraMethodSetFromDefault = minMaxSettings.isLraMethodSetFromDefaultValue();
     }
 
     MinMaxSolverEnvironment::~MinMaxSolverEnvironment() {
@@ -80,5 +82,20 @@ namespace storm {
     void MinMaxSolverEnvironment::setSymmetricUpdates(bool value) {
         symmetricUpdates = value;
     }
+    
+    storm::solver::LraMethod const& MinMaxSolverEnvironment::getLraMethod() const {
+        return lraMethod;
+    }
+    
+    bool const& MinMaxSolverEnvironment::isLraMethodSetFromDefault() const {
+        return lraMethodSetFromDefault;
+    }
+    
+    void MinMaxSolverEnvironment::setLraMethod(storm::solver::LraMethod value, bool isSetFromDefault) {
+        lraMethod = value;
+        lraMethodSetFromDefault = isSetFromDefault;
+    }
+    
+
     
 }

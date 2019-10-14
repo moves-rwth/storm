@@ -749,7 +749,7 @@ namespace storm {
             this->labels = std::move(newLabels);
         }
         
-        Program Program::restrictCommands(boost::container::flat_set<uint_fast64_t> const& indexSet) const {
+        Program Program::restrictCommands(storm::storage::FlatSet<uint_fast64_t> const& indexSet) const {
             std::vector<storm::prism::Module> newModules;
             newModules.reserve(this->getNumberOfModules());
             
@@ -1447,7 +1447,7 @@ namespace storm {
             std::map<std::string, uint_fast64_t> newActionToIndexMap;
             std::vector<RewardModel> newRewardModels;
             if (!actionIndicesToDelete.empty()) {
-                boost::container::flat_set<uint_fast64_t> actionsToKeep;
+                storm::storage::FlatSet<uint_fast64_t> actionsToKeep;
                 std::set_difference(this->getSynchronizingActionIndices().begin(), this->getSynchronizingActionIndices().end(), actionIndicesToDelete.begin(), actionIndicesToDelete.end(), std::inserter(actionsToKeep, actionsToKeep.begin()));
                 
                 // Insert the silent action as this is not contained in the synchronizing action indices.

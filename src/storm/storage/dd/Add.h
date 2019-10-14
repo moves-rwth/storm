@@ -693,6 +693,8 @@ namespace storm {
              * @param filename The name of the file to which the DD is to be exported.
              */
             void exportToDot(std::string const& filename, bool showVariablesIfPossible = true) const override;
+
+            virtual void exportToText(std::string const& filename) const override;
             
             /*!
              * Retrieves an iterator that points to the first meta variable assignment with a non-zero function value.

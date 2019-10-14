@@ -1,5 +1,7 @@
 #include "FilterType.h"
 
+#include "storm/utility/macros.h"
+#include "storm/exceptions/IllegalArgumentException.h"
 
 namespace storm {
     namespace modelchecker {
@@ -27,6 +29,33 @@ namespace storm {
                 case FilterType::VALUES:
                     return "the values";
             }
+            STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unknown FilterType");
+        }
+        
+        std::string toPrismSyntax(FilterType ft) {
+            switch(ft) {
+                case FilterType::ARGMAX:
+                    return "argmax";
+                case FilterType::ARGMIN:
+                    return "argmin";
+                case FilterType::AVG:
+                    return "avg";
+                case FilterType::COUNT:
+                    return "count";
+                case FilterType::EXISTS:
+                    return "exists";
+                case FilterType::FORALL:
+                    return "forall";
+                case FilterType::MAX:
+                    return "max";
+                case FilterType::MIN:
+                    return "min";
+                case FilterType::SUM:
+                    return "sum";
+                case FilterType::VALUES:
+                    return "printall";
+            }
+            STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unknown FilterType");
         }
     }
 }

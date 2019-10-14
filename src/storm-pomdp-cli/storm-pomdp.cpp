@@ -204,7 +204,11 @@ int main(const int argc, const char** argv) {
                 STORM_PRINT_AND_LOG(" done." << std::endl);
             }
 
+        } else {
+            STORM_LOG_WARN("Nothing to be done. Did you forget to specify a formula?");
         }
+
+
 
         // All operations have now been performed, so we clean up everything and terminate.
         storm::utility::cleanUp();

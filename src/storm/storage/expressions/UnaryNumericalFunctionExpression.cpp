@@ -71,10 +71,13 @@ namespace storm {
                 if (operandSimplified->hasIntegerType()) {
                     int_fast64_t value = operandSimplified->evaluateAsInt();
                     switch (this->getOperatorType()) {
-                        case OperatorType::Minus: value = -value; break;
+                        case OperatorType::Minus:
+                            value = -value;
+                            break;
                         // Nothing to be done for the other cases:
-                        // case OperatorType::Floor:
-                        // case OperatorType::Ceil:
+                        case OperatorType::Floor:
+                        case OperatorType::Ceil:
+                            break;
                     }
                     return std::shared_ptr<BaseExpression>(new IntegerLiteralExpression(this->getManager(), value));
                 } else {

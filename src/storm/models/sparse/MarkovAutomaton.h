@@ -147,6 +147,7 @@ namespace storm {
                  * @return The resulting CTMC.
                  */
                 std::shared_ptr<storm::models::sparse::Ctmc<ValueType, RewardModelType>> convertToCtmc() const;
+
                 
                 virtual void printModelInformationToStream(std::ostream& out) const override;
                 

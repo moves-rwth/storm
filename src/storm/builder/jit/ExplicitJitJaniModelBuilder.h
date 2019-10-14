@@ -195,8 +195,14 @@ namespace storm {
                 /// The include directory of sparsepp.
                 std::string sparseppIncludeDirectory;
                 
+                /// The include directory for cln
+                std::string clnIncludeDirectory;
+                
+                /// The include directory for gmp
+                std::string gmpIncludeDirectory;
+                
                 /// A cache that is used by carl.
-                std::shared_ptr<carl::Cache<carl::PolynomialFactorizationPair<RawPolynomial>>> cache;
+                std::shared_ptr<storm::RawPolynomialCache> cache;
             };
 
         }

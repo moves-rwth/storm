@@ -1,6 +1,5 @@
 #pragma once
 
-#include <boost/container/flat_set.hpp>
 #include <boost/optional/optional.hpp>
 #include <stack>
 #include <unordered_set>

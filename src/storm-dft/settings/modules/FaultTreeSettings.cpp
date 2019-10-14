@@ -24,24 +24,38 @@ namespace storm {
             const std::string FaultTreeSettings::approximationErrorOptionName = "approximation";
             const std::string FaultTreeSettings::approximationErrorOptionShortName = "approx";
             const std::string FaultTreeSettings::approximationHeuristicOptionName = "approximationheuristic";
+            const std::string FaultTreeSettings::maxDepthOptionName = "maxdepth";
             const std::string FaultTreeSettings::firstDependencyOptionName = "firstdep";
+            const std::string FaultTreeSettings::uniqueFailedBEOptionName = "uniquefailedbe";
 #ifdef STORM_HAVE_Z3
             const std::string FaultTreeSettings::solveWithSmtOptionName = "smt";
 #endif
 
             FaultTreeSettings::FaultTreeSettings() : ModuleSettings(moduleName) {
-                this->addOption(storm::settings::OptionBuilder(moduleName, symmetryReductionOptionName, false, "Exploit symmetric structure of model.").setShortName(symmetryReductionOptionShortName).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, symmetryReductionOptionName, false, "Exploit symmetric structure of model.").setShortName(
+                        symmetryReductionOptionShortName).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, modularisationOptionName, false, "Use modularisation (not applicable for expected time).").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, disableDCOptionName, false, "Disable Don't Care propagation.").build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, firstDependencyOptionName, false, "Avoid non-determinism by always taking the first possible dependency.").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, firstDependencyOptionName, false,
+                                                               "Avoid non-determinism by always taking the first possible dependency.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, relevantEventsOptionName, false, "Specifies the relevant events from the DFT.")
-                    .addArgument(storm::settings::ArgumentBuilder::createStringArgument("values", "A comma separated list of names of relevant events. 'all' marks all events as relevant, The default '' or 'none' marks only the top level event as relevant.").setDefaultValueString("").build()).build());
+                                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("values",
+                                                                                                            "A comma separated list of names of relevant events. 'all' marks all events as relevant, The default '' or 'none' marks only the top level event as relevant.").setDefaultValueString(
+                                                "").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, allowDCRelevantOptionName, false, "Allow Don't Care propagation for relevant events.").build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, approximationErrorOptionName, false, "Approximation error allowed.").setShortName(approximationErrorOptionShortName).addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("error", "The relative approximation error to use.").addValidatorDouble(ArgumentValidatorFactory::createDoubleGreaterEqualValidator(0.0)).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, approximationErrorOptionName, false, "Approximation error allowed.").setShortName(
+                        approximationErrorOptionShortName).addArgument(
+                        storm::settings::ArgumentBuilder::createDoubleArgument("error", "The relative approximation error to use.").addValidatorDouble(
+                                ArgumentValidatorFactory::createDoubleGreaterEqualValidator(0.0)).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, approximationHeuristicOptionName, false, "Set the heuristic used for approximation.")
-                    .addArgument(storm::settings::ArgumentBuilder::createStringArgument("heuristic", "The name of the heuristic used for approximation.")
-                    .setDefaultValueString("depth")
-                    .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator({"depth", "probability", "bounddifference"})).build()).build());
+                                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("heuristic", "The name of the heuristic used for approximation.")
+                                                             .setDefaultValueString("depth")
+                                                             .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(
+                                                                     {"depth", "probability", "bounddifference"})).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, maxDepthOptionName, false, "Maximal depth for state space exploration.").addArgument(
+                        storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("depth", "The maximal depth.").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, uniqueFailedBEOptionName, false,
+                                                               "Use a unique constantly failed BE.").build());
 #ifdef STORM_HAVE_Z3
                 this->addOption(storm::settings::OptionBuilder(moduleName, solveWithSmtOptionName, true, "Solve the DFT with SMT.").build());
 #endif
@@ -64,7 +78,8 @@ namespace storm {
             }
 
             bool FaultTreeSettings::areRelevantEventsSet() const {
-                return this->getOption(relevantEventsOptionName).getHasOptionBeenSet() && (this->getOption(relevantEventsOptionName).getArgumentByName("values").getValueAsString() != "");
+                return this->getOption(relevantEventsOptionName).getHasOptionBeenSet() &&
+                       (this->getOption(relevantEventsOptionName).getArgumentByName("values").getValueAsString() != "");
             }
 
             std::vector<std::string> FaultTreeSettings::getRelevantEvents() const {
@@ -91,14 +106,28 @@ namespace storm {
                 STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Illegal value '" << heuristicAsString << "' set as heuristic for approximation.");
             }
 
+            bool FaultTreeSettings::isMaxDepthSet() const {
+                return this->getOption(maxDepthOptionName).getHasOptionBeenSet();
+            }
+
+            uint_fast64_t FaultTreeSettings::getMaxDepth() const {
+                return this->getOption(maxDepthOptionName).getArgumentByName("depth").getValueAsUnsignedInteger();
+            }
+
             bool FaultTreeSettings::isTakeFirstDependency() const {
                 return this->getOption(firstDependencyOptionName).getHasOptionBeenSet();
             }
 
+            bool FaultTreeSettings::isUniqueFailedBE() const {
+                return this->getOption(uniqueFailedBEOptionName).getHasOptionBeenSet();
+            }
+
 #ifdef STORM_HAVE_Z3
+
             bool FaultTreeSettings::solveWithSMT() const {
                 return this->getOption(solveWithSmtOptionName).getHasOptionBeenSet();
             }
+
 #endif
 
             void FaultTreeSettings::finalize() {
@@ -107,6 +136,8 @@ namespace storm {
             bool FaultTreeSettings::check() const {
                 // Ensure that disableDC and relevantEvents are not set at the same time
                 STORM_LOG_THROW(!isDisableDC() || !areRelevantEventsSet(), storm::exceptions::InvalidSettingsException, "DisableDC and relevantSets can not both be set.");
+                STORM_LOG_THROW(!isMaxDepthSet() || getApproximationHeuristic() == storm::builder::ApproximationHeuristic::DEPTH, storm::exceptions::InvalidSettingsException,
+                                "Maximal depth requires approximation heuristic depth.");
                 return true;
             }
 

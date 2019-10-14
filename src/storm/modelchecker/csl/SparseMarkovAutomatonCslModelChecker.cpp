@@ -95,8 +95,13 @@ namespace storm {
             std::unique_ptr<CheckResult> rightResultPointer = this->check(env, pathFormula.getRightSubformula());
             ExplicitQualitativeCheckResult& leftResult = leftResultPointer->asExplicitQualitativeCheckResult();
             ExplicitQualitativeCheckResult& rightResult = rightResultPointer->asExplicitQualitativeCheckResult();
-            std::vector<ValueType> result = storm::modelchecker::helper::SparseMarkovAutomatonCslHelper::computeUntilProbabilities(env, checkTask.getOptimizationDirection(), this->getModel().getTransitionMatrix(), this->getModel().getBackwardTransitions(), leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector(), checkTask.isQualitativeSet());
-            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(result)));
+
+            auto ret = storm::modelchecker::helper::SparseMarkovAutomatonCslHelper::computeUntilProbabilities(env, checkTask.getOptimizationDirection(), this->getModel().getTransitionMatrix(), this->getModel().getBackwardTransitions(), leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector(), checkTask.isQualitativeSet(), checkTask.isProduceSchedulersSet());
+            std::unique_ptr<CheckResult> result(new ExplicitQuantitativeCheckResult<ValueType>(std::move(ret.values)));
+            if (checkTask.isProduceSchedulersSet() && ret.scheduler) {
+                result->asExplicitQuantitativeCheckResult<ValueType>().setScheduler(std::move(ret.scheduler));
+            }
+            return result;
         }
                 
         template<typename SparseMarkovAutomatonModelType>
@@ -106,11 +111,14 @@ namespace storm {
             STORM_LOG_THROW(this->getModel().isClosed(), storm::exceptions::InvalidPropertyException, "Unable to compute reachability rewards in non-closed Markov automaton.");
             std::unique_ptr<CheckResult> subResultPointer = this->check(env, eventuallyFormula.getSubformula());
             ExplicitQualitativeCheckResult const& subResult = subResultPointer->asExplicitQualitativeCheckResult();
-            
             auto rewardModel = storm::utility::createFilteredRewardModel(this->getModel(), checkTask);
-            std::vector<ValueType> result = storm::modelchecker::helper::SparseMarkovAutomatonCslHelper::computeReachabilityRewards(env, checkTask.getOptimizationDirection(), this->getModel().getTransitionMatrix(), this->getModel().getBackwardTransitions(), this->getModel().getExitRates(), this->getModel().getMarkovianStates(), rewardModel.get(), subResult.getTruthValuesVector());
 
-            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(result)));
+            auto ret = storm::modelchecker::helper::SparseMarkovAutomatonCslHelper::computeReachabilityRewards(env, checkTask.getOptimizationDirection(), this->getModel().getTransitionMatrix(), this->getModel().getBackwardTransitions(), this->getModel().getExitRates(), this->getModel().getMarkovianStates(), rewardModel.get(), subResult.getTruthValuesVector(), checkTask.isProduceSchedulersSet());
+            std::unique_ptr<CheckResult> result(new ExplicitQuantitativeCheckResult<ValueType>(std::move(ret.values)));
+            if (checkTask.isProduceSchedulersSet() && ret.scheduler) {
+                result->asExplicitQuantitativeCheckResult<ValueType>().setScheduler(std::move(ret.scheduler));
+            }
+            return result;
         }
         
         template<typename SparseMarkovAutomatonModelType>
@@ -118,9 +126,13 @@ namespace storm {
             STORM_LOG_THROW(checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidPropertyException, "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
             STORM_LOG_THROW(this->getModel().isClosed(), storm::exceptions::InvalidPropertyException, "Unable to compute reachability rewards in non-closed Markov automaton.");
             auto rewardModel = storm::utility::createFilteredRewardModel(this->getModel(), checkTask);
-            std::vector<ValueType> result = storm::modelchecker::helper::SparseMarkovAutomatonCslHelper::computeTotalRewards(env, checkTask.getOptimizationDirection(), this->getModel().getTransitionMatrix(), this->getModel().getBackwardTransitions(), this->getModel().getExitRates(), this->getModel().getMarkovianStates(), rewardModel.get());
 
-            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(result)));
+            auto ret = storm::modelchecker::helper::SparseMarkovAutomatonCslHelper::computeTotalRewards(env, checkTask.getOptimizationDirection(), this->getModel().getTransitionMatrix(), this->getModel().getBackwardTransitions(), this->getModel().getExitRates(), this->getModel().getMarkovianStates(), rewardModel.get(), checkTask.isProduceSchedulersSet());
+            std::unique_ptr<CheckResult> result(new ExplicitQuantitativeCheckResult<ValueType>(std::move(ret.values)));
+            if (checkTask.isProduceSchedulersSet() && ret.scheduler) {
+                result->asExplicitQuantitativeCheckResult<ValueType>().setScheduler(std::move(ret.scheduler));
+            }
+            return result;
         }
         
         template<typename SparseMarkovAutomatonModelType>
@@ -152,8 +164,12 @@ namespace storm {
             std::unique_ptr<CheckResult> subResultPointer = this->check(env, eventuallyFormula.getSubformula());
             ExplicitQualitativeCheckResult& subResult = subResultPointer->asExplicitQualitativeCheckResult();
 
-            std::vector<ValueType> result = storm::modelchecker::helper::SparseMarkovAutomatonCslHelper::computeReachabilityTimes(env, checkTask.getOptimizationDirection(), this->getModel().getTransitionMatrix(), this->getModel().getBackwardTransitions(), this->getModel().getExitRates(), this->getModel().getMarkovianStates(), subResult.getTruthValuesVector());
-            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(result)));
+            auto ret = storm::modelchecker::helper::SparseMarkovAutomatonCslHelper::computeReachabilityTimes(env, checkTask.getOptimizationDirection(), this->getModel().getTransitionMatrix(), this->getModel().getBackwardTransitions(), this->getModel().getExitRates(), this->getModel().getMarkovianStates(), subResult.getTruthValuesVector(), checkTask.isProduceSchedulersSet());
+            std::unique_ptr<CheckResult> result(new ExplicitQuantitativeCheckResult<ValueType>(std::move(ret.values)));
+            if (checkTask.isProduceSchedulersSet() && ret.scheduler) {
+                result->asExplicitQuantitativeCheckResult<ValueType>().setScheduler(std::move(ret.scheduler));
+            }
+            return result;
         }
         
         template<typename SparseMarkovAutomatonModelType>

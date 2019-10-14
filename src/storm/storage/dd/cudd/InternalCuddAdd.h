@@ -515,7 +515,13 @@ namespace storm {
              * @param ddVariableNamesAsString The names of the DD variables to display in the dot file.
              */
             void exportToDot(std::string const& filename, std::vector<std::string> const& ddVariableNamesAsStrings, bool showVariablesIfPossible = true) const;
-            
+
+            /*!
+            * Exports the DD to the given file in a textual format as specified in Sylvan.
+            *
+            * @param filename The name of the file to which the DD is to be exported.
+            */
+            void exportToText(std::string const& filename) const;
             /*!
              * Retrieves an iterator that points to the first meta variable assignment with a non-zero function value.
              *

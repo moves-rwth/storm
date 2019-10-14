@@ -22,7 +22,7 @@ namespace storm {
         class DFTExplorationHeuristic {
 
         public:
-            explicit DFTExplorationHeuristic(size_t id) : id(id), expand(true), lowerBound(storm::utility::zero<ValueType>()), upperBound(storm::utility::infinity<ValueType>()), depth(0), probability(storm::utility::one<ValueType>()) {
+            explicit DFTExplorationHeuristic(size_t id) : id(id), expand(false), lowerBound(storm::utility::zero<ValueType>()), upperBound(storm::utility::infinity<ValueType>()), depth(0), probability(storm::utility::one<ValueType>()) {
                 // Intentionally left empty
             }
 

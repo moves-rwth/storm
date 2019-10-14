@@ -3,8 +3,6 @@
 #include <memory>
 
 
-#include <boost/container/flat_set.hpp>
-
 #include "storm/storage/jani/VariableSet.h"
 #include "storm/storage/jani/Action.h"
 #include "storm/storage/jani/ModelType.h"
@@ -17,6 +15,7 @@
 #include "storm/storage/jani/TemplateEdge.h"
 #include "storm/storage/jani/ModelFeatures.h"
 
+#include "storm/storage/BoostTypes.h"
 #include "storm/utility/solver.h"
 #include "storm/utility/vector.h"
 
@@ -158,7 +157,7 @@ namespace storm {
             /*!
              * Retrieves all non-silent action indices of the model.
              */
-            boost::container::flat_set<uint64_t> const& getNonsilentActionIndices() const;
+            storm::storage::FlatSet<uint64_t> const& getNonsilentActionIndices() const;
             
             /*!
              * Adds the given constant to the model.
@@ -285,9 +284,19 @@ namespace storm {
              * Retrieves the manager responsible for the expressions in the JANI model.
              */
             storm::expressions::ExpressionManager& getExpressionManager() const;
-
+            
             /*!
-             * Adds a (non-trivial) reward model, i.e., a reward model that does not consist of a single, global, numerical variable.
+             * Returns true iff there is a non-trivial reward model, i.e., a reward model that does not consist of a single, global, numerical, transient variable.
+             */
+            bool hasNonTrivialRewardExpression() const;
+            
+            /*!
+             * Returns true iff the given identifier corresponds to a non-trivial reward expression i.e., a reward model that does not consist of a single, global, numerical, transient variable.
+             */
+            bool isNonTrivialRewardModelExpression(std::string const& identifier) const;
+            
+            /*!
+             * Adds a  reward expression, i.e., a reward model that does not consist of a single, global, numerical, transient variable.
              * @return true if a new reward model was added and false if a reward model with this identifier is already present in the model (in which case no reward model is added)
              */
             bool addNonTrivialRewardExpression(std::string const& identifier, storm::expressions::Expression const& rewardExpression);
@@ -577,7 +586,7 @@ namespace storm {
             bool undefinedConstantsAreGraphPreserving() const;
             
             /*!
-             * Lifts the common edge destination assignments to edge assignments.
+             * Lifts the common edge destination assignments of transient variables to edge assignments.
              * @param maxLevel the maximum level of assignments that are to be lifted.
              */
             void liftTransientEdgeDestinationAssignments(int64_t maxLevel = 0);
@@ -620,7 +629,7 @@ namespace storm {
              * Creates a new model that only contains the selected edges. The edge indices encode the automata and
              * (local) indices of the edges within the automata.
              */
-            Model restrictEdges(boost::container::flat_set<uint_fast64_t> const& automataAndEdgeIndices) const;
+            Model restrictEdges(storm::storage::FlatSet<uint_fast64_t> const& automataAndEdgeIndices) const;
             
             void writeDotToStream(std::ostream& outStream = std::cout) const;
             
@@ -662,7 +671,7 @@ namespace storm {
             std::unordered_map<std::string, storm::expressions::Expression> nonTrivialRewardModels;
             
             /// The set of non-silent action indices.
-            boost::container::flat_set<uint64_t> nonsilentActionIndices;
+            storm::storage::FlatSet<uint64_t> nonsilentActionIndices;
             
             /// The constants defined by the model.
             std::vector<Constant> constants;

@@ -16,6 +16,7 @@
 #include "storm/utility/builder.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/UnexpectedException.h"
 
 namespace storm {
@@ -37,6 +38,7 @@ namespace storm {
             } else {
                 STORM_LOG_THROW(originalModel.isOfType(storm::models::ModelType::Dtmc) || originalModel.isOfType(storm::models::ModelType::Mdp), storm::exceptions::UnexpectedException, "Unexpected model type.");
             }
+            // Nothing to be done if the model has deadlock States
         }
         
         template<typename RewardModelType>
@@ -59,6 +61,7 @@ namespace storm {
         template <typename ValueType, typename RewardModelType>
         SubsystemBuilderReturnType<ValueType, RewardModelType> internalBuildSubsystem(storm::models::sparse::Model<ValueType, RewardModelType> const& originalModel, storm::storage::BitVector const& subsystemStates, storm::storage::BitVector const& subsystemActions, SubsystemBuilderOptions const& options ) {
 
+            auto const& groupIndices = originalModel.getTransitionMatrix().getRowGroupIndices();
             SubsystemBuilderReturnType<ValueType, RewardModelType> result;
             uint_fast64_t subsystemStateCount = subsystemStates.getNumberOfSetBits();
             if (options.buildStateMapping) {
@@ -67,21 +70,20 @@ namespace storm {
             if (options.buildActionMapping) {
                 result.newToOldActionIndexMapping.reserve(subsystemActions.getNumberOfSetBits());
             }
-            if (options.buildKeptActions) {
-                result.keptActions = storm::storage::BitVector(originalModel.getTransitionMatrix().getRowCount(), false);
-
+            storm::storage::BitVector deadlockStates;
+            if (options.fixDeadlocks) {
+                deadlockStates.resize(subsystemStates.size(), false);
             }
-
+            // Get the set of actions that stay in the subsystem.
+            // Also establish the mappings if requested.
+            storm::storage::BitVector keptActions(originalModel.getTransitionMatrix().getRowCount(), false);
             for (auto subsysState : subsystemStates) {
                 if (options.buildStateMapping) {
                     result.newToOldStateIndexMapping.push_back(subsysState);
                 }
-                bool keepAtLeastOneAction = !options.checkTransitionsOutside; // For debug mode only.
-                bool atLeastOneActionSelected = false; // For debug mode only.
-                for (uint_fast64_t row = subsystemActions.getNextSetIndex(originalModel.getTransitionMatrix().getRowGroupIndices()[subsysState]); row < originalModel.getTransitionMatrix().getRowGroupIndices()[subsysState+1]; row = subsystemActions.getNextSetIndex(row+1)) {
+                bool hasDeadlock = true;
+                for (uint_fast64_t row = subsystemActions.getNextSetIndex(groupIndices[subsysState]); row < groupIndices[subsysState+1]; row = subsystemActions.getNextSetIndex(row + 1)) {
                     bool allRowEntriesStayInSubsys = true;
-                    atLeastOneActionSelected = true;
-
                     if (options.checkTransitionsOutside) {
                         for (auto const &entry : originalModel.getTransitionMatrix().getRow(row)) {
                             if (!subsystemStates.get(entry.getColumn())) {
@@ -91,42 +93,87 @@ namespace storm {
                         }
                     }
                     if (allRowEntriesStayInSubsys) {
-                        keepAtLeastOneAction = true;
+                        if (options.buildActionMapping) {
+                            result.newToOldActionIndexMapping.push_back(row);
+                        }
+                        keptActions.set(row, true);
+                        hasDeadlock = false;
                     }
+                }
+                if (hasDeadlock) {
+                    STORM_LOG_THROW(options.fixDeadlocks, storm::exceptions::InvalidOperationException, "Expected that in each state, at least one action is selected. Got a deadlock state instead. (violated at " <<  subsysState << ")");
                     if (options.buildActionMapping) {
-                        result.newToOldActionIndexMapping.push_back(row);
+                        result.newToOldActionIndexMapping.push_back(std::numeric_limits<uint64_t>::max());
                     }
-                    if (options.buildKeptActions) {
-                        result.keptActions.set(row, allRowEntriesStayInSubsys);
-                    }
+                    deadlockStates.set(subsysState);
                 }
-                if (!atLeastOneActionSelected && options.fixDeadlocks) {
-
-                }
-                STORM_LOG_ASSERT(atLeastOneActionSelected, "Expected that in each state, at least one action is selected. (violated at " <<  subsysState << ")");
-                STORM_LOG_ASSERT(keepAtLeastOneAction, "Expected that in each state, at least one action is preserved at least one action is selected. (violated at " <<  subsysState <<  ")");
             }
-            
+            // If we have deadlock states we keep an action in each rowgroup of a deadlock states.
+            bool hasDeadlockStates = !deadlockStates.empty();
+            if (options.buildKeptActions) {
+                // store them now, before changing them.
+                result.keptActions = keptActions;
+            }
+            for (auto const& deadlockState : deadlockStates) {
+                keptActions.set(groupIndices[deadlockState], true);
+            }
+
             // Transform the components of the model
             storm::storage::sparse::ModelComponents<ValueType, RewardModelType> components;
-            components.transitionMatrix = originalModel.getTransitionMatrix().getSubmatrix(false, result.keptActions, subsystemStates);
+            if (hasDeadlockStates) {
+                // make deadlock choices a selfloop
+                components.transitionMatrix = originalModel.getTransitionMatrix();
+                components.transitionMatrix.makeRowGroupsAbsorbing(deadlockStates);
+                components.transitionMatrix.dropZeroEntries();
+                components.transitionMatrix = components.transitionMatrix.getSubmatrix(false, keptActions, subsystemStates);
+            } else {
+                components.transitionMatrix = originalModel.getTransitionMatrix().getSubmatrix(false, keptActions, subsystemStates);
+            }
             components.stateLabeling = originalModel.getStateLabeling().getSubLabeling(subsystemStates);
             for (auto const& rewardModel : originalModel.getRewardModels()){
-                components.rewardModels.insert(std::make_pair(rewardModel.first, transformRewardModel(rewardModel.second, subsystemStates, result.keptActions)));
+                components.rewardModels.insert(std::make_pair(rewardModel.first, transformRewardModel(rewardModel.second, subsystemStates, keptActions)));
             }
             if (originalModel.hasChoiceLabeling()) {
-                components.choiceLabeling = originalModel.getChoiceLabeling().getSubLabeling(result.keptActions);
+                components.choiceLabeling = originalModel.getChoiceLabeling().getSubLabeling(keptActions);
             }
             if (originalModel.hasStateValuations()) {
                 components.stateValuations = originalModel.getStateValuations().selectStates(subsystemStates);
             }
             if (originalModel.hasChoiceOrigins()) {
-                components.choiceOrigins = originalModel.getChoiceOrigins()->selectChoices(result.keptActions);
+                components.choiceOrigins = originalModel.getChoiceOrigins()->selectChoices(keptActions);
+            }
+            
+            if (hasDeadlockStates) {
+                auto subDeadlockStates = deadlockStates % subsystemStates;
+                assert(deadlockStates.getNumberOfSetBits() == subDeadlockStates.getNumberOfSetBits());
+                // erase rewards, choice labels, choice origins
+                for (auto& rewModel : components.rewardModels) {
+                    for (auto const& state : subDeadlockStates) {
+                        rewModel.second.clearRewardAtState(state, components.transitionMatrix);
+                    }
+                }
+                if (components.choiceLabeling) {
+                    storm::storage::BitVector nonDeadlockChoices(components.transitionMatrix.getRowCount(), true);
+                    for (auto const& state : subDeadlockStates) {
+                        auto const& choice = components.transitionMatrix.getRowGroupIndices()[state];
+                        nonDeadlockChoices.set(choice, false);
+                    }
+                    for (auto const& label : components.choiceLabeling.get().getLabels()) {
+                        components.choiceLabeling->setChoices(label, components.choiceLabeling->getChoices(label) & nonDeadlockChoices);
+                    }
+                }
+                if (components.choiceOrigins) {
+                    for (auto const& state : subDeadlockStates) {
+                        auto const& choice = components.transitionMatrix.getRowGroupIndices()[state];
+                        components.choiceOrigins.get()->clearOriginOfChoice(choice);
+                    }
+                }
             }
             
             transformModelSpecificComponents<ValueType, RewardModelType>(originalModel, subsystemStates, components);
             
             result.model = storm::utility::builder::buildModelFromComponents(originalModel.getType(), std::move(components));
+
             STORM_LOG_DEBUG("Subsystem Builder is done. Resulting model has " << result.model->getNumberOfStates() << " states.");
             return result;
         }

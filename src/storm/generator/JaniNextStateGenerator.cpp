@@ -40,7 +40,7 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
-        JaniNextStateGenerator<ValueType, StateType>::JaniNextStateGenerator(storm::jani::Model const& model, NextStateGeneratorOptions const& options, bool) : NextStateGenerator<ValueType, StateType>(model.getExpressionManager(), options), model(model), rewardExpressions(), hasStateActionRewards(false) {
+        JaniNextStateGenerator<ValueType, StateType>::JaniNextStateGenerator(storm::jani::Model const& model, NextStateGeneratorOptions const& options, bool) : NextStateGenerator<ValueType, StateType>(model.getExpressionManager(), options), model(model), rewardExpressions(), hasStateActionRewards(false), evaluateRewardExpressionsAtEdges(false), evaluateRewardExpressionsAtDestinations(false) {
             STORM_LOG_THROW(!this->options.isBuildChoiceLabelsSet(), storm::exceptions::InvalidSettingsException, "JANI next-state generator cannot generate choice labels.");
 
             auto features = this->model.getModelFeatures();
@@ -54,11 +54,26 @@ namespace storm {
             }
             STORM_LOG_THROW(features.empty(), storm::exceptions::InvalidSettingsException, "The explicit next-state generator does not support the following model feature(s): " << features.toString() << ".");
 
-            // Preprocess the edge assignments:
-            if (this->model.usesAssignmentLevels()) {
+            // Get the reward expressions to be build. Also find out whether there is a non-trivial one.
+            bool hasNonTrivialRewardExpressions = false;
+            if (this->options.isBuildAllRewardModelsSet()) {
+                rewardExpressions = this->model.getAllRewardModelExpressions();
+                hasNonTrivialRewardExpressions = this->model.hasNonTrivialRewardExpression();
+            } else {
+                // Extract the reward models from the model based on the names we were given.
+                for (auto const& rewardModelName : this->options.getRewardModelNames()) {
+                    rewardExpressions.emplace_back(rewardModelName, this->model.getRewardModelExpression(rewardModelName));
+                    hasNonTrivialRewardExpressions = hasNonTrivialRewardExpressions || this->model.isNonTrivialRewardModelExpression(rewardModelName);
+                }
+            }
+            
+            // We try to lift the edge destination assignments to the edges as this reduces the number of evaluator calls.
+            // However, this will only be helpful if there are no assignment levels and only trivial reward expressions.
+            if (hasNonTrivialRewardExpressions || this->model.usesAssignmentLevels()) {
                 this->model.pushEdgeAssignmentsToDestinations();
             } else {
                 this->model.liftTransientEdgeDestinationAssignments(storm::jani::AssignmentLevelFinder().getLowestAssignmentLevel(this->model));
+                evaluateRewardExpressionsAtEdges = true;
             }
             
             // Create all synchronization-related information, e.g. the automata that are put in parallel.
@@ -71,18 +86,10 @@ namespace storm {
             this->transientVariableInformation = TransientVariableInformation<ValueType>(this->model, this->parallelAutomata);
             this->transientVariableInformation.registerArrayVariableReplacements(arrayEliminatorData);
             
-            // Create a proper evalator.
+            // Create a proper evaluator.
             this->evaluator = std::make_unique<storm::expressions::ExpressionEvaluator<ValueType>>(this->model.getManager());
             this->transientVariableInformation.setDefaultValuesInEvaluator(*this->evaluator);
             
-            if (this->options.isBuildAllRewardModelsSet()) {
-                rewardExpressions = this->model.getAllRewardModelExpressions();
-            } else {
-                // Extract the reward models from the model based on the names we were given.
-                for (auto const& rewardModelName : this->options.getRewardModelNames()) {
-                    rewardExpressions.emplace_back(rewardModelName, this->model.getRewardModelExpression(rewardModelName));
-                }
-            }
             
             // Build the information structs for the reward models.
             buildRewardModelInformation();
@@ -541,18 +548,19 @@ namespace storm {
             }
             
             Choice<ValueType> choice(edge.getActionIndex(), static_cast<bool>(exitRate));
+            std::vector<ValueType> stateActionRewards;
             
             // Perform the transient edge assignments and create the state action rewards
             TransientVariableValuation<ValueType> transientVariableValuation;
-            if (!edge.getAssignments().empty()) {
+            if (!evaluateRewardExpressionsAtEdges || edge.getAssignments().empty()) {
+                stateActionRewards.resize(rewardModelInformation.size(), storm::utility::zero<ValueType>());
+            } else {
                 for (int64_t assignmentLevel = edge.getAssignments().getLowestLevel(true); assignmentLevel <= edge.getAssignments().getHighestLevel(true); ++assignmentLevel) {
                     transientVariableValuation.clear();
                     applyTransientUpdate(transientVariableValuation, edge.getAssignments().getTransientAssignments(assignmentLevel), *this->evaluator);
                     transientVariableValuation.setInEvaluator(*this->evaluator, this->getOptions().isExplorationChecksSet());
                 }
-            }
-            std::vector<ValueType> stateActionRewards = evaluateRewardExpressions();
-            if (!edge.getAssignments().empty()) {
+                stateActionRewards = evaluateRewardExpressions();
                 transientVariableInformation.setDefaultValuesInEvaluator(*this->evaluator);
             }
             
@@ -591,8 +599,11 @@ namespace storm {
                             }
                         }
                     }
-                    
-                    addEvaluatedRewardExpressions(stateActionRewards, probability);
+                    if (evaluateRewardExpressionsAtDestinations) {
+                        unpackStateIntoEvaluator(newState, this->variableInformation, *this->evaluator);
+                        evaluatorChanged = true;
+                        addEvaluatedRewardExpressions(stateActionRewards, probability);
+                    }
                     
                     if (evaluatorChanged) {
                         // Restore the old variable valuation
@@ -650,7 +661,7 @@ namespace storm {
             
             // Perform the edge assignments (if there are any)
             TransientVariableValuation<ValueType> transientVariableValuation;
-            if (lowestEdgeAssignmentLevel <= highestEdgeAssignmentLevel) {
+            if (evaluateRewardExpressionsAtEdges && lowestEdgeAssignmentLevel <= highestEdgeAssignmentLevel) {
                 for (int64_t assignmentLevel = lowestEdgeAssignmentLevel; assignmentLevel <= highestEdgeAssignmentLevel; ++assignmentLevel) {
                     transientVariableValuation.clear();
                     for (uint_fast64_t i = 0; i < iteratorList.size(); ++i) {
@@ -718,7 +729,11 @@ namespace storm {
                         evaluatorChanged = true;
                         transientVariableValuation.setInEvaluator(*this->evaluator, this->getOptions().isExplorationChecksSet());
                     }
-                    addEvaluatedRewardExpressions(stateActionRewards, successorProbability);
+                    if (evaluateRewardExpressionsAtDestinations) {
+                        unpackStateIntoEvaluator(successorState, this->variableInformation, *this->evaluator);
+                        evaluatorChanged = true;
+                        addEvaluatedRewardExpressions(stateActionRewards, successorProbability);
+                    }
                     if (evaluatorChanged) {
                         // Restore the old state information
                         unpackStateIntoEvaluator(state, this->variableInformation, *this->evaluator);
@@ -977,10 +992,17 @@ namespace storm {
                 storm::jani::RewardModelInformation info(this->model, rewardModel.second);
                 rewardModelInformation.emplace_back(rewardModel.first, info.hasStateRewards(), false, false);
                 STORM_LOG_THROW(this->options.isScaleAndLiftTransitionRewardsSet() || !info.hasTransitionRewards(), storm::exceptions::NotSupportedException, "Transition rewards are not supported and a reduction to action-based rewards was not possible.");
+                if (info.hasTransitionRewards()) {
+                    evaluateRewardExpressionsAtDestinations = true;
+                }
                 if (info.hasActionRewards() || (this->options.isScaleAndLiftTransitionRewardsSet() && info.hasTransitionRewards())) {
                     hasStateActionRewards = true;
                     rewardModelInformation.back().setHasStateActionRewards();
                 }
+            }
+            if (!hasStateActionRewards) {
+                evaluateRewardExpressionsAtDestinations = false;
+                evaluateRewardExpressionsAtEdges = false;
             }
         }
         

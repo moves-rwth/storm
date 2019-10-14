@@ -81,6 +81,7 @@ namespace storm {
                     if (scc.size() == 1) {
                         returnValue = solveTrivialScc(*scc.begin(), dir, x, b) && returnValue;
                     } else {
+                        STORM_LOG_TRACE("Solving SCC of size " << scc.size() << ".");
                         sccRowGroupsAsBitVector.clear();
                         sccRowsAsBitVector.clear();
                         for (auto const& group : scc) {
@@ -181,6 +182,7 @@ namespace storm {
             }
             this->sccSolver->setMatrix(*this->A);
             this->sccSolver->setHasUniqueSolution(this->hasUniqueSolution());
+            this->sccSolver->setHasNoEndComponents(this->hasNoEndComponents());
             this->sccSolver->setBoundsFromOtherSolver(*this);
             this->sccSolver->setTrackScheduler(this->isTrackSchedulerSet());
             if (this->hasInitialScheduler()) {
@@ -194,10 +196,12 @@ namespace storm {
             if (req.lowerBounds() && this->hasLowerBound()) {
                 req.clearLowerBounds();
             }
-            
-            // If all requirements of the underlying solver have been passed as requirements to the calling site, we can
-            // assume that the system has no end components if the underlying solver requires this.
-            req.clearNoEndComponents();
+            if (req.validInitialScheduler() && this->hasInitialScheduler()) {
+                req.clearValidInitialScheduler();
+            }
+            if (req.uniqueSolution() && this->hasUniqueSolution()) {
+                req.clearUniqueSolution();
+            }
             STORM_LOG_THROW(!req.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + req.getEnabledRequirementsAsString() + " not checked.");
             this->sccSolver->setRequirementsChecked(true);
             
@@ -217,6 +221,7 @@ namespace storm {
                 this->sccSolver->setCachingEnabled(true);
             }
             this->sccSolver->setHasUniqueSolution(this->hasUniqueSolution());
+            this->sccSolver->setHasNoEndComponents(this->hasNoEndComponents());
             this->sccSolver->setTrackScheduler(this->isTrackSchedulerSet());
             
             // SCC Matrix
@@ -269,6 +274,9 @@ namespace storm {
             if (req.validInitialScheduler() && this->hasInitialScheduler()) {
                 req.clearValidInitialScheduler();
             }
+            if (req.uniqueSolution() && this->hasUniqueSolution()) {
+                req.clearUniqueSolution();
+            }
             STORM_LOG_THROW(!req.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + req.getEnabledRequirementsAsString() + " not checked.");
             this->sccSolver->setRequirementsChecked(true);
 
@@ -291,7 +299,7 @@ namespace storm {
         template<typename ValueType>
         MinMaxLinearEquationSolverRequirements TopologicalMinMaxLinearEquationSolver<ValueType>::getRequirements(Environment const& env, boost::optional<storm::solver::OptimizationDirection> const& direction, bool const& hasInitialScheduler) const {
             // Return the requirements of the underlying solver
-            return GeneralMinMaxLinearEquationSolverFactory<ValueType>().getRequirements(getEnvironmentForUnderlyingSolver(env), this->hasUniqueSolution(), direction, hasInitialScheduler);
+            return GeneralMinMaxLinearEquationSolverFactory<ValueType>().getRequirements(getEnvironmentForUnderlyingSolver(env), this->hasUniqueSolution(), this->hasNoEndComponents(), direction, hasInitialScheduler, this->isTrackSchedulerSet());
         }
         
         template<typename ValueType>

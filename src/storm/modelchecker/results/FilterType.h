@@ -9,6 +9,7 @@ namespace storm {
         enum class FilterType { MIN, MAX, SUM, AVG, COUNT, FORALL, EXISTS, ARGMIN, ARGMAX, VALUES };
         
         std::string toString(FilterType);
+        std::string toPrismSyntax(FilterType);
         bool isStateFilter(FilterType);
     }
 }

@@ -565,7 +565,7 @@ namespace storm {
             return result;
         }
 
-        void Automaton::restrictToEdges(boost::container::flat_set<uint_fast64_t> const& edgeIndices) {
+        void Automaton::restrictToEdges(storm::storage::FlatSet<uint_fast64_t> const& edgeIndices) {
             std::vector<Edge> oldEdges = this->edges.getConcreteEdges();
             
             this->edges.clearConcreteEdges();

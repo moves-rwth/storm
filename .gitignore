@@ -36,7 +36,7 @@ obj/
 CMakeFiles/
 CPackConfig.cmake
 # The build Dir
-build/
+/*build*/
 build//CMakeLists.txt
 /*.vcxproj
 /*.filters

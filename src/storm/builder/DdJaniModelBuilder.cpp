@@ -156,14 +156,14 @@ namespace storm {
         template <storm::dd::DdType Type>
         class ParameterCreator<Type, storm::RationalFunction> {
         public:
-            ParameterCreator() : cache(std::make_shared<carl::Cache<carl::PolynomialFactorizationPair<RawPolynomial>>>()) {
+            ParameterCreator() : cache(std::make_shared<storm::RawPolynomialCache>()) {
                 // Intentionally left empty.
             }
             
             void create(storm::jani::Model const& model, storm::adapters::AddExpressionAdapter<Type, storm::RationalFunction>& rowExpressionAdapter) {
                 for (auto const& constant : model.getConstants()) {
                     if (!constant.isDefined()) {
-                        carl::Variable carlVariable = carl::freshRealVariable(constant.getExpressionVariable().getName());
+                        storm::RationalFunctionVariable carlVariable = carl::freshRealVariable(constant.getExpressionVariable().getName());
                         parameters.insert(carlVariable);
                         auto rf = convertVariableToPolynomial(carlVariable);
                         rowExpressionAdapter.setValue(constant.getExpressionVariable(), rf);
@@ -172,12 +172,12 @@ namespace storm {
             }
             
             template<typename RationalFunctionType = storm::RationalFunction, typename TP = typename RationalFunctionType::PolyType, carl::EnableIf<carl::needs_cache<TP>> = carl::dummy>
-            RationalFunctionType convertVariableToPolynomial(carl::Variable const& variable) {
+            RationalFunctionType convertVariableToPolynomial(storm::RationalFunctionVariable const& variable) {
                 return RationalFunctionType(typename RationalFunctionType::PolyType(typename RationalFunctionType::PolyType::PolyType(variable), cache));
             }
             
             template<typename RationalFunctionType = storm::RationalFunction, typename TP = typename RationalFunctionType::PolyType, carl::DisableIf<carl::needs_cache<TP>> = carl::dummy>
-            RationalFunctionType convertVariableToPolynomial(carl::Variable const& variable) {
+            RationalFunctionType convertVariableToPolynomial(storm::RationalFunctionVariable const& variable) {
                 return RationalFunctionType(variable);
             }
             
@@ -187,10 +187,10 @@ namespace storm {
             
         private:
             // A mapping from our variables to carl's.
-            std::unordered_map<storm::expressions::Variable, carl::Variable> variableToVariableMap;
+            std::unordered_map<storm::expressions::Variable, storm::RationalFunctionVariable> variableToVariableMap;
             
             // The cache that is used in case the underlying type needs a cache.
-            std::shared_ptr<carl::Cache<carl::PolynomialFactorizationPair<RawPolynomial>>> cache;
+            std::shared_ptr<storm::RawPolynomialCache> cache;
             
             // All created parameters.
             std::set<storm::RationalFunctionVariable> parameters;
@@ -733,7 +733,7 @@ namespace storm {
                     // Intentionally left empty.
                 }
                 
-                bool setMarkovian(bool markovian) {
+                void setMarkovian(bool markovian) {
                     this->markovian = markovian;
                 }
                 
@@ -1975,13 +1975,13 @@ namespace storm {
             std::vector<storm::expressions::Variable> rewardVariables;
             if (options.isBuildAllRewardModelsSet()) {
                 for (auto const& rewExpr : model.getAllRewardModelExpressions()) {
-                    STORM_LOG_ERROR_COND(rewExpr.second.isVariable(), "The DD-builder can not build the non-trivial reward expression '" << rewExpr.second << "'.");
+                    STORM_LOG_THROW(!model.isNonTrivialRewardModelExpression(rewExpr.first), storm::exceptions::NotSupportedException, "The DD-builder can not build the non-trivial reward expression '" << rewExpr.second << "'.");
                     rewardVariables.push_back(rewExpr.second.getBaseExpression().asVariableExpression().getVariable());
                 }
             } else {
                 for (auto const& rewardModelName : options.getRewardModelNames()) {
+                    STORM_LOG_THROW(!model.isNonTrivialRewardModelExpression(rewardModelName), storm::exceptions::NotSupportedException, "The DD-builder can not build the non-trivial reward expression '" << rewardModelName << "'.");
                     auto const& rewExpr = model.getRewardModelExpression(rewardModelName);
-                    STORM_LOG_ERROR_COND(rewExpr.isVariable(), "The DD-builder can not build the non-trivial reward expression '" << rewExpr << "'.");
                     rewardVariables.push_back(rewExpr.getBaseExpression().asVariableExpression().getVariable());
                 }
             }
@@ -2070,6 +2070,7 @@ namespace storm {
             
             // Lift the transient edge destinations. We can do so, as we know that there are no assignment levels (because that's not supported anyway).
             if (preparedModel.hasTransientEdgeDestinationAssignments()) {
+                // This operation is correct as we are asserting that there are no assignment levels and no non-trivial reward expressions.
                 preparedModel.liftTransientEdgeDestinationAssignments();
             }
             

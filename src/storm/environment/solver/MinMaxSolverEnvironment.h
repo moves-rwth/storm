@@ -27,6 +27,9 @@ namespace storm {
         void setMultiplicationStyle(storm::solver::MultiplicationStyle value);
         bool isSymmetricUpdatesSet() const;
         void setSymmetricUpdates(bool value);
+        storm::solver::LraMethod const& getLraMethod() const;
+        bool const& isLraMethodSetFromDefault() const;
+        void setLraMethod(storm::solver::LraMethod value, bool isSetFromDefault = false);
         
     private:
         storm::solver::MinMaxMethod minMaxMethod;
@@ -36,6 +39,8 @@ namespace storm {
         bool considerRelativeTerminationCriterion;
         storm::solver::MultiplicationStyle multiplicationStyle;
         bool symmetricUpdates;
+        storm::solver::LraMethod lraMethod;
+        bool lraMethodSetFromDefault;
     };
 }
 

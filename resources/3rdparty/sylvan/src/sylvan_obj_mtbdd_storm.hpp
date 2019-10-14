@@ -7,6 +7,7 @@ double NonZeroCount(size_t variableCount) const;
 bool isValid() const;
 void PrintDot(FILE *out) const;
 std::string GetShaHash() const;
+void PrintText(FILE *out) const;
 
 Mtbdd Minus(const Mtbdd &other) const;
 Mtbdd Divide(const Mtbdd &other) const;

@@ -2,9 +2,9 @@
 #define STORM_STORAGE_MAXIMALENDCOMPONENT_H_
 
 #include <unordered_map>
-#include <boost/container/flat_set.hpp>
 
 #include "storm/storage/sparse/StateType.h"
+#include "storm/storage/BoostTypes.h"
 
 namespace storm {
     namespace storage {
@@ -14,7 +14,7 @@ namespace storm {
          */
         class MaximalEndComponent {
         public:
-            typedef boost::container::flat_set<sparse::state_type> set_type;
+            typedef storm::storage::FlatSet<sparse::state_type> set_type;
             typedef std::unordered_map<uint_fast64_t, set_type> map_type;
             typedef map_type::iterator iterator;
             typedef map_type::const_iterator const_iterator;

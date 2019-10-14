@@ -50,7 +50,7 @@ namespace storm {
                 storm::expressions::ExpressionManager const& getManager() const;
                 
             private:
-                // The expression manager responsible for the variableswhose value can be requested via this model
+                // The expression manager responsible for the variables whose value can be requested via this model
                 // reference.
                 storm::expressions::ExpressionManager const& manager;
 			};
@@ -73,8 +73,8 @@ namespace storm {
 			SmtSolver(SmtSolver const& other) = default;
 
 			SmtSolver(SmtSolver&& other) = default;
-			SmtSolver& operator=(SmtSolver const& other) = default;
-			SmtSolver& operator=(SmtSolver&& other) = default;
+			SmtSolver& operator=(SmtSolver const& other) = delete;
+			SmtSolver& operator=(SmtSolver&& other) = delete;
    
 			/*!
              * Pushes a backtracking point on the solver's stack. A following call to pop() deletes exactly those

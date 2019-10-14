@@ -1,6 +1,5 @@
 #include "DFT.h"
 
-#include <boost/container/flat_set.hpp>
 #include <map>
 
 #include "storm/exceptions/InvalidArgumentException.h"
@@ -17,28 +16,34 @@ namespace storm {
     namespace storage {
 
         template<typename ValueType>
-        DFT<ValueType>::DFT(DFTElementVector const& elements, DFTElementPointer const& tle) : mElements(elements), mNrOfBEs(0), mNrOfSpares(0), mTopLevelIndex(tle->id()), mMaxSpareChildCount(0) {
+        DFT<ValueType>::DFT(DFTElementVector const &elements, DFTElementPointer const &tle) :
+                mElements(elements), mNrOfBEs(0), mNrOfSpares(0), mNrRepresentatives(0), mTopLevelIndex(tle->id()), mMaxSpareChildCount(0) {
             // Check that ids correspond to indices in the element vector
             STORM_LOG_ASSERT(elementIndicesCorrect(), "Ids incorrect.");
-            size_t nrRepresentatives = 0;
+
+            // Initialize dynamic behavior vector with TRUE to preserve correct behavior
+            // We don't directly call setDynamicBehaviorInfo to not slow down DFT generation if possible
+            mDynamicBehavior = std::vector<bool>(mElements.size());
+            std::fill(mDynamicBehavior.begin(), mDynamicBehavior.end(), true);
 
             for (auto& elem : mElements) {
                 if (isRepresentative(elem->id())) {
-                    ++nrRepresentatives;
+                    ++mNrRepresentatives;
                 }
-                if(elem->isBasicElement()) {
+                if (elem->isBasicElement()) {
                     ++mNrOfBEs;
                 } else if (elem->isSpareGate()) {
                     // Build spare modules by setting representatives and representants
                     ++mNrOfSpares;
                     mMaxSpareChildCount = std::max(mMaxSpareChildCount, std::static_pointer_cast<DFTSpare<ValueType>>(elem)->children().size());
-                    for(auto const& spareReprs : std::static_pointer_cast<DFTSpare<ValueType>>(elem)->children()) {
-                        STORM_LOG_THROW(spareReprs->isGate() || spareReprs->isBasicElement(), storm::exceptions::WrongFormatException, "Child '" << spareReprs->name() << "' of spare '" << elem->name() << "' must be gate or BE.");
+                    for (auto const& spareReprs : std::static_pointer_cast<DFTSpare<ValueType>>(elem)->children()) {
+                        STORM_LOG_THROW(spareReprs->isGate() || spareReprs->isBasicElement(), storm::exceptions::WrongFormatException,
+                                        "Child '" << spareReprs->name() << "' of spare '" << elem->name() << "' must be gate or BE.");
                         std::set<size_t> module = {spareReprs->id()};
                         spareReprs->extendSpareModule(module);
                         std::vector<size_t> sparesAndBes;
-                        for(size_t modelem : module) {
-                            if(mElements[modelem]->isSpareGate() || mElements[modelem]->isBasicElement()) {
+                        for (size_t modelem : module) {
+                            if (mElements[modelem]->isSpareGate() || mElements[modelem]->isBasicElement()) {
                                 sparesAndBes.push_back(modelem);
                                 mRepresentants.insert(std::make_pair(modelem, spareReprs->id()));
                             }
@@ -47,20 +52,21 @@ namespace storm {
                     }
                 } else if (elem->isDependency()) {
                     mDependencies.push_back(elem->id());
+                    mDependencyInConflict.insert(std::make_pair(elem->id(), true));
                 }
             }
 
             // For the top module, we assume, contrary to [Jun15], that we have all spare gates and basic elements which are not in another module.
             std::set<size_t> topModuleSet;
             // Initialize with all ids.
-            for(auto const& elem : mElements) {
+            for (auto const& elem : mElements) {
                 if (elem->isBasicElement() || elem->isSpareGate()) {
                     topModuleSet.insert(elem->id());
                 }
             }
             // Erase spare modules
-            for(auto const& module : mSpareModules) {
-                for(auto const& index : module.second) {
+            for (auto const& module : mSpareModules) {
+                for (auto const& index : module.second) {
                     topModuleSet.erase(index);
                 }
             }
@@ -73,7 +79,8 @@ namespace storm {
             if (!mTopModule.empty()) {
                 for (auto& module : mSpareModules) {
                     if (std::find(module.second.begin(), module.second.end(), mTopModule.front()) != module.second.end()) {
-                        STORM_LOG_WARN("Elements of spare module '" << getElement(module.first)->name() << "' also contained in top module. All elements of this spare module will be activated from the beginning on.");
+                        STORM_LOG_WARN("Elements of spare module '" << getElement(module.first)->name()
+                                                                    << "' also contained in top module. All elements of this spare module will be activated from the beginning on.");
                         module.second.clear();
                     }
                 }
@@ -81,17 +88,161 @@ namespace storm {
 
             //Reserve space for failed spares
             ++mMaxSpareChildCount;
-            size_t usageInfoBits = storm::utility::math::uint64_log2(mMaxSpareChildCount) + 1;
-            mStateVectorSize = nrElements() * 2 + mNrOfSpares * usageInfoBits + nrRepresentatives;
+            mStateVectorSize = DFTStateGenerationInfo::getStateVectorSize(nrElements(), mNrOfSpares, mNrRepresentatives, mMaxSpareChildCount);
+        }
+
+        template<typename ValueType>
+        void DFT<ValueType>::setDynamicBehaviorInfo() {
+            std::vector<bool> dynamicBehaviorVector(mElements.size(), false);
+
+            std::queue <DFTElementPointer> elementQueue;
+
+            // deal with all dynamic elements
+            for (auto const &element : mElements) {
+                switch (element->type()) {
+                    case storage::DFTElementType::PAND:
+                    case storage::DFTElementType::POR:
+                    case storage::DFTElementType::MUTEX: {
+                        auto gate = std::static_pointer_cast<storm::storage::DFTChildren<ValueType>>(element);
+                        dynamicBehaviorVector[gate->id()] = true;
+                        for (auto const &child : gate->children()) {
+                            // only enqueue static children
+                            if (!dynamicBehaviorVector.at(child->id())) {
+                                elementQueue.push(child);
+                            }
+                        }
+                        break;
+                    }
+                        // TODO different cases
+                    case storage::DFTElementType::SPARE: {
+                        auto spare = std::static_pointer_cast<storm::storage::DFTSpare<ValueType>>(element);
+
+                        // Iterate over all children (representatives of spare modules)
+                        for (auto const &child : spare->children()) {
+                            // Case 1: Shared Module
+                            // If child only has one parent, it is this SPARE -> nothing to check
+                            if (child->nrParents() > 1) {
+                                // TODO make more efficient by directly setting ALL spares which share a module to be dynamic
+                                for (auto const &parent : child->parents()) {
+                                    if (parent->isSpareGate() and parent->id() != spare->id()) {
+                                        dynamicBehaviorVector[spare->id()] = true;
+                                        break; // inner loop
+                                    }
+                                }
+                            }
+                            // Case 2: Triggering outside events
+                            // If the SPARE was already detected to have dynamic behavior, do not proceed
+                            if (!dynamicBehaviorVector[spare->id()]) {
+                                for (auto const &memberID : module(child->id())) {
+                                    // Iterate over all members of the module child represents
+                                    auto member = getElement(memberID);
+                                    for (auto const dep : member->outgoingDependencies()) {
+                                        // If the member has outgoing dependencies, check if those trigger something outside the module
+                                        for (auto const depEvent : dep->dependentEvents()) {
+                                            // If a dependent event is not found in the module, SPARE is dynamic
+                                            if (std::find(module(child->id()).begin(), module(child->id()).end(),
+                                                          depEvent->id()) == module(child->id()).end()) {
+                                                dynamicBehaviorVector[spare->id()] = true;
+                                                break; //depEvent-loop
+                                            }
+                                        }
+                                        if (dynamicBehaviorVector[spare->id()]) { break; } //dependency-loop
+                                    }
+                                    if (dynamicBehaviorVector[spare->id()]) { break; } //module-loop
+                                }
+
+                            }
+                            if (dynamicBehaviorVector[spare->id()]) { break; } //child-loop
+                        }
+                        // if during the computation, dynamic behavior was detected, add children to queue
+                        if (dynamicBehaviorVector[spare->id()]) {
+                            for (auto const &child : spare->children()) {
+                                // only enqueue static children
+                                if (!dynamicBehaviorVector.at(child->id())) {
+                                    elementQueue.push(child);
+                                }
+                            }
+                        }
+                        break;
+                    }
+                    case storage::DFTElementType::SEQ: {
+                        auto seq = std::static_pointer_cast<storm::storage::DFTSeq<ValueType>>(element);
+                        // A SEQ only has dynamic behavior if not all children are BEs
+                        if (!seq->allChildrenBEs()) {
+                            dynamicBehaviorVector[seq->id()] = true;
+                            for (auto const &child : seq->children()) {
+                                // only enqueue static children
+                                if (!dynamicBehaviorVector.at(child->id())) {
+                                    elementQueue.push(child);
+                                }
+                            }
+                        }
+                        break;
+                    }
+                    default: {
+                        break;
+                    }
+
+                }
+            }
+            // propagate dynamic behavior
+            while (!elementQueue.empty()) {
+                DFTElementPointer currentElement = elementQueue.front();
+                elementQueue.pop();
+                switch (currentElement->type()) {
+                    // Static Gates
+                    case storage::DFTElementType::AND:
+                    case storage::DFTElementType::OR:
+                    case storage::DFTElementType::VOT: {
+                        // check all parents and if one has dynamic behavior, propagate it
+                        dynamicBehaviorVector[currentElement->id()] = true;
+                        auto gate = std::static_pointer_cast<storm::storage::DFTGate<ValueType>>(currentElement);
+                        for (auto const &child : gate->children()) {
+                            // only enqueue static children
+                            if (!dynamicBehaviorVector.at(child->id())) {
+                                elementQueue.push(child);
+                            }
+                        }
+                        break;
+                    }
+                        //BEs
+                    case storage::DFTElementType::BE_EXP:
+                    case storage::DFTElementType::BE_CONST:
+                    case storage::DFTElementType::BE: {
+                        auto be = std::static_pointer_cast<storm::storage::DFTBE<ValueType>>(currentElement);
+                        dynamicBehaviorVector[be->id()] = true;
+                        // add all ingoing dependencies to queue
+                        for (auto const &dep : be->ingoingDependencies()) {
+                            if (!dynamicBehaviorVector.at(dep->id())) {
+                                elementQueue.push(dep);
+                            }
+                        }
+                        break;
+                    }
+                    case storage::DFTElementType::PDEP: {
+                        auto dep = std::static_pointer_cast<storm::storage::DFTDependency<ValueType>>(currentElement);
+                        dynamicBehaviorVector[dep->id()] = true;
+                        // add all ingoing dependencies to queue
+                        auto trigger = dep->triggerEvent();
+                        if (!dynamicBehaviorVector.at(trigger->id())) {
+                            elementQueue.push(trigger);
+                        }
+                        break;
+                    }
+                    default:
+                        break;
+                }
+            }
+            mDynamicBehavior = dynamicBehaviorVector;
         }
 
         template<typename ValueType>
         DFTStateGenerationInfo DFT<ValueType>::buildStateGenerationInfo(storm::storage::DFTIndependentSymmetries const& symmetries) const {
-            DFTStateGenerationInfo generationInfo(nrElements(), mMaxSpareChildCount);
-            
+            DFTStateGenerationInfo generationInfo(nrElements(), mNrOfSpares, mNrRepresentatives, mMaxSpareChildCount);
+
             // Generate Pre and Post info for restrictions, and mutexes
-            for(auto const& elem : mElements) {
-                if(!elem->isDependency() && !elem->isRestriction()) {
+            for (auto const& elem : mElements) {
+                if (!elem->isDependency() && !elem->isRestriction()) {
                     generationInfo.setRestrictionPreElements(elem->id(), elem->seqRestrictionPres());
                     generationInfo.setRestrictionPostElements(elem->id(), elem->seqRestrictionPosts());
                     generationInfo.setMutexElements(elem->id(), elem->mutexRestrictionElements());
@@ -123,7 +274,7 @@ namespace storm {
                         }
                     }
                     size_t offset = stateIndex - groupIndex;
-                    
+
                     // Mirror symmetries
                     size_t noSymmetricElements = symmetryGroup.front().size();
                     STORM_LOG_ASSERT(noSymmetricElements > 1, "No symmetry available.");
@@ -143,7 +294,7 @@ namespace storm {
                         size_t index = generationInfo.getStateIndex(originalElement);
                         size_t activationIndex = isRepresentative(originalElement) ? generationInfo.getSpareActivationIndex(originalElement) : 0;
                         size_t usageIndex = mElements[originalElement]->isSpareGate() ? generationInfo.getSpareUsageIndex(originalElement) : 0;
-                        
+
                         // Mirror symmetry for each element
                         for (size_t i = 1; i < symmetricElements.size(); ++i) {
                             size_t symmetricElement = symmetricElements[i];
@@ -181,7 +332,8 @@ namespace storm {
                 std::shared_ptr<DFTDependency<ValueType> const> dependency = getDependency(idDependency);
                 visitQueue.push(dependency->id());
                 visitQueue.push(dependency->triggerEvent()->id());
-                STORM_LOG_THROW(dependency->dependentEvents().size() == 1, storm::exceptions::NotSupportedException, "Direct state generation does not support n-ary dependencies. Consider rewriting them by setting the binary dependency flag.");
+                STORM_LOG_THROW(dependency->dependentEvents().size() == 1, storm::exceptions::NotSupportedException,
+                                "Direct state generation does not support n-ary dependencies. Consider rewriting them by setting the binary dependency flag.");
                 visitQueue.push(dependency->dependentEvents()[0]->id());
             }
             stateIndex = performStateGenerationInfoDFS(generationInfo, visitQueue, visited, stateIndex);
@@ -193,40 +345,42 @@ namespace storm {
                     stateIndex = performStateGenerationInfoDFS(generationInfo, visitQueue, visited, stateIndex);
                 }
             }
-            
+
             generationInfo.generateSymmetries(symmetries);
 
             STORM_LOG_TRACE(generationInfo);
             STORM_LOG_ASSERT(stateIndex == mStateVectorSize, "Id incorrect.");
             STORM_LOG_ASSERT(visited.full(), "Not all elements considered.");
-            
+            generationInfo.checkSymmetries();
+
             return generationInfo;
         }
-        
+
         template<typename ValueType>
         size_t DFT<ValueType>::generateStateInfo(DFTStateGenerationInfo& generationInfo, size_t id, storm::storage::BitVector& visited, size_t stateIndex) const {
             STORM_LOG_ASSERT(!visited[id], "Element already visited.");
             visited.set(id);
-            
+
             // Reserve bits for element
             generationInfo.addStateIndex(id, stateIndex);
             stateIndex += 2;
-            
+
             if (isRepresentative(id)) {
                 generationInfo.addSpareActivationIndex(id, stateIndex);
                 ++stateIndex;
             }
-            
+
             if (mElements[id]->isSpareGate()) {
                 generationInfo.addSpareUsageIndex(id, stateIndex);
                 stateIndex += generationInfo.usageInfoBits();
             }
-            
+
             return stateIndex;
         }
-        
+
         template<typename ValueType>
-        size_t DFT<ValueType>::performStateGenerationInfoDFS(DFTStateGenerationInfo& generationInfo, std::queue<size_t>& visitQueue, storm::storage::BitVector& visited, size_t stateIndex) const {
+        size_t DFT<ValueType>::performStateGenerationInfoDFS(DFTStateGenerationInfo& generationInfo, std::queue<size_t>& visitQueue, storm::storage::BitVector& visited,
+                                                             size_t stateIndex) const {
             while (!visitQueue.empty()) {
                 size_t id = visitQueue.front();
                 visitQueue.pop();
@@ -235,7 +389,7 @@ namespace storm {
                     continue;
                 }
                 stateIndex = generateStateInfo(generationInfo, id, visited, stateIndex);
-                
+
                 // Insert children
                 if (mElements[id]->isGate()) {
                     for (auto const& child : std::static_pointer_cast<DFTGate<ValueType>>(mElements[id])->children()) {
@@ -245,15 +399,15 @@ namespace storm {
             }
             return stateIndex;
         }
-        
+
         template<typename ValueType>
-        std::vector<DFT<ValueType>>  DFT<ValueType>::topModularisation() const {
+        std::vector<DFT<ValueType>> DFT<ValueType>::topModularisation() const {
             STORM_LOG_ASSERT(isGate(mTopLevelIndex), "Top level element is no gate.");
             auto const& children = getGate(mTopLevelIndex)->children();
             std::map<size_t, std::vector<size_t>> subdfts;
-            for(auto const& child : children) {
+            for (auto const& child : children) {
                 std::vector<size_t> isubdft;
-                if(child->nrParents() > 1 || child->hasOutgoingDependencies() || child->hasRestrictions()) {
+                if (child->nrParents() > 1 || child->hasOutgoingDependencies() || child->hasRestrictions()) {
                     STORM_LOG_TRACE("child " << child->name() << " does not allow modularisation.");
                     return {*this};
                 }
@@ -261,40 +415,40 @@ namespace storm {
                     isubdft = getGate(child->id())->independentSubDft(false);
                 } else {
                     STORM_LOG_ASSERT(isBasicElement(child->id()), "Child is no BE.");
-                    if(getBasicElement(child->id())->hasIngoingDependencies()) {
+                    if (getBasicElement(child->id())->hasIngoingDependencies()) {
                         STORM_LOG_TRACE("child " << child->name() << "does not allow modularisation.");
                         return {*this};
                     } else {
                         isubdft = {child->id()};
                     }
-                    
+
                 }
-                if(isubdft.empty()) {
+                if (isubdft.empty()) {
                     return {*this};
                 } else {
                     subdfts[child->id()] = isubdft;
                 }
             }
-            
+
             std::vector<DFT<ValueType>> res;
-            for(auto const& subdft : subdfts) {
+            for (auto const& subdft : subdfts) {
                 storm::builder::DFTBuilder<ValueType> builder;
-            
-                for(size_t id : subdft.second) {
+
+                for (size_t id : subdft.second) {
                     builder.copyElement(mElements[id]);
                 }
                 builder.setTopLevel(mElements[subdft.first]->name());
                 res.push_back(builder.build());
             }
             return res;
-            
+
         }
-        
+
         template<typename ValueType>
         uint64_t DFT<ValueType>::maxRank() const {
             uint64_t max = 0;
             for (auto const& e : mElements) {
-                if(e->rank() > max) {
+                if (e->rank() > max) {
                     max = e->rank();
                 }
             }
@@ -339,7 +493,8 @@ namespace storm {
                 // Accumulate children names
                 std::vector<std::string> childrenNames;
                 for (size_t i = 1; i < rewrites.size(); ++i) {
-                    STORM_LOG_ASSERT(mElements[rewrites[i]]->parents().front()->id() == originalParent->id(), "Children have not the same father for rewrite " << mElements[rewrites[i]]->name());
+                    STORM_LOG_ASSERT(mElements[rewrites[i]]->parents().front()->id() == originalParent->id(),
+                                     "Children have not the same father for rewrite " << mElements[rewrites[i]]->name());
                     childrenNames.push_back(mElements[rewrites[i]]->name());
                 }
 
@@ -370,7 +525,7 @@ namespace storm {
                 childrenNames.clear();
                 childrenNames.push_back(newParentName);
                 for (auto const& child : originalParent->children()) {
-                    if (std::find(rewrites.begin()+1, rewrites.end(), child->id()) == rewrites.end()) {
+                    if (std::find(rewrites.begin() + 1, rewrites.end(), child->id()) == rewrites.end()) {
                         // Child was not rewritten and must be kept
                         childrenNames.push_back(child->name());
                     }
@@ -467,21 +622,21 @@ namespace storm {
             STORM_LOG_ASSERT(it != mTopModule.end(), "Element not found.");
             stream << mElements[(*it)]->name();
             ++it;
-            while(it != mTopModule.end()) {
-                stream <<  ", " << mElements[(*it)]->name();
+            while (it != mTopModule.end()) {
+                stream << ", " << mElements[(*it)]->name();
                 ++it;
             }
             stream << "}" << std::endl;
 
-            for(auto const& spareModule : mSpareModules) {
+            for (auto const& spareModule : mSpareModules) {
                 stream << "[" << mElements[spareModule.first]->name() << "] = {";
                 if (!spareModule.second.empty()) {
                     std::vector<size_t>::const_iterator it = spareModule.second.begin();
                     STORM_LOG_ASSERT(it != spareModule.second.end(), "Element not found.");
                     stream << mElements[(*it)]->name();
                     ++it;
-                    while(it != spareModule.second.end()) {
-                        stream <<  ", " << mElements[(*it)]->name();
+                    while (it != spareModule.second.end()) {
+                        stream << ", " << mElements[(*it)]->name();
                         ++it;
                     }
                 }
@@ -491,7 +646,7 @@ namespace storm {
         }
 
         template<typename ValueType>
-        std::string DFT<ValueType>::getElementsWithStateString(DFTStatePointer const& state) const{
+        std::string DFT<ValueType>::getElementsWithStateString(DFTStatePointer const& state) const {
             std::stringstream stream;
             for (auto const& elem : mElements) {
                 stream << "[" << elem->id() << "]";
@@ -500,9 +655,9 @@ namespace storm {
                     stream << "\t** " << storm::storage::toChar(state->getDependencyState(elem->id())) << "[dep]";
                 } else {
                     stream << "\t** " << storm::storage::toChar(state->getElementState(elem->id()));
-                    if(elem->isSpareGate()) {
+                    if (elem->isSpareGate()) {
                         size_t useId = state->uses(elem->id());
-                        if(useId == elem->id() || state->isActive(useId)) {
+                        if (useId == elem->id() || state->isActive(useId)) {
                             stream << "actively ";
                         }
                         stream << "using " << useId;
@@ -512,7 +667,7 @@ namespace storm {
             }
             return stream.str();
         }
-        
+
         template<typename ValueType>
         std::string DFT<ValueType>::getStateString(DFTStatePointer const& state) const {
             std::stringstream stream;
@@ -522,10 +677,10 @@ namespace storm {
                     stream << storm::storage::toChar(state->getDependencyState(elem->id())) << "[dep]";
                 } else {
                     stream << storm::storage::toChar(state->getElementState(elem->id()));
-                    if(elem->isSpareGate()) {
+                    if (elem->isSpareGate()) {
                         stream << "[";
                         size_t useId = state->uses(elem->id());
-                        if(useId == elem->id() || state->isActive(useId)) {
+                        if (useId == elem->id() || state->isActive(useId)) {
                             stream << "actively ";
                         }
                         stream << "using " << useId << "]";
@@ -533,7 +688,7 @@ namespace storm {
                 }
             }
             return stream.str();
-        }        
+        }
 
         template<typename ValueType>
         std::string DFT<ValueType>::getStateString(storm::storage::BitVector const& status, DFTStateGenerationInfo const& stateGenerationInfo, size_t id) const {
@@ -544,7 +699,7 @@ namespace storm {
                     stream << storm::storage::toChar(DFTState<ValueType>::getDependencyState(status, stateGenerationInfo, elem->id())) << "[dep]";
                 } else {
                     stream << storm::storage::toChar(DFTState<ValueType>::getElementState(status, stateGenerationInfo, elem->id()));
-                    if(elem->isSpareGate()) {
+                    if (elem->isSpareGate()) {
                         stream << "[";
                         size_t nrUsedChild = status.getAsInt(stateGenerationInfo.getSpareUsageIndex(elem->id()), stateGenerationInfo.usageInfoBits());
                         size_t useId;
@@ -553,7 +708,7 @@ namespace storm {
                         } else {
                             useId = getChild(elem->id(), nrUsedChild);
                         }
-                        if(useId == elem->id() || status[stateGenerationInfo.getSpareActivationIndex(useId)]) {
+                        if (useId == elem->id() || status[stateGenerationInfo.getSpareActivationIndex(useId)]) {
                             stream << "actively ";
                         }
                         stream << "using " << useId << "]";
@@ -562,13 +717,13 @@ namespace storm {
             }
             return stream.str();
         }
-        
+
         template<typename ValueType>
         size_t DFT<ValueType>::getChild(size_t spareId, size_t nrUsedChild) const {
             STORM_LOG_ASSERT(mElements[spareId]->isSpareGate(), "Element is no spare.");
             return getGate(spareId)->children()[nrUsedChild]->id();
         }
-        
+
         template<typename ValueType>
         size_t DFT<ValueType>::getNrChild(size_t spareId, size_t childId) const {
             STORM_LOG_ASSERT(mElements[spareId]->isSpareGate(), "Element is no spare.");
@@ -581,8 +736,8 @@ namespace storm {
             STORM_LOG_ASSERT(false, "Child not found.");
             return 0;
         }
-        
-        template <typename ValueType>
+
+        template<typename ValueType>
         std::vector<size_t> DFT<ValueType>::getIndependentSubDftRoots(size_t index) const {
             auto elem = getElement(index);
             auto ISD = elem->independentSubDft(false);
@@ -609,7 +764,7 @@ namespace storm {
             bool wellformed = true;
             // Check independence of spare modules
             // TODO: comparing one element of each spare module sufficient?
-            for (auto module1 = mSpareModules.begin() ; module1 != mSpareModules.end() ; ++module1) {
+            for (auto module1 = mSpareModules.begin(); module1 != mSpareModules.end(); ++module1) {
                 size_t firstElement = module1->second.front();
                 for (auto module2 = std::next(module1); module2 != mSpareModules.end(); ++module2) {
                     if (std::find(module2->second.begin(), module2->second.end(), firstElement) != module2->second.end()) {
@@ -622,6 +777,7 @@ namespace storm {
                 }
             }
             // TODO check VOT gates
+            // TODO check only one constant failed event
             return wellformed;
         }
 
@@ -635,7 +791,7 @@ namespace storm {
             STORM_LOG_TRACE("Considering ids " << index1 << ", " << index2 << " for isomorphism.");
             bool sharedSpareMode = false;
             std::map<size_t, size_t> bijection;
-            
+
             if (isBasicElement(index1)) {
                 if (!isBasicElement(index2)) {
                     return {};
@@ -647,18 +803,18 @@ namespace storm {
                     return {};
                 }
             }
-            
+
             STORM_LOG_ASSERT(isGate(index1), "Element is no gate.");
             STORM_LOG_ASSERT(isGate(index2), "Element is no gate.");
             std::vector<size_t> isubdft1 = getGate(index1)->independentSubDft(false);
             std::vector<size_t> isubdft2 = getGate(index2)->independentSubDft(false);
-            if(isubdft1.empty() || isubdft2.empty() || isubdft1.size() != isubdft2.size()) {
+            if (isubdft1.empty() || isubdft2.empty() || isubdft1.size() != isubdft2.size()) {
                 if (isubdft1.empty() && isubdft2.empty() && sparesAsLeaves) {
                     // Check again for shared spares
                     sharedSpareMode = true;
                     isubdft1 = getGate(index1)->independentSubDft(false, true);
                     isubdft2 = getGate(index2)->independentSubDft(false, true);
-                    if(isubdft1.empty() || isubdft2.empty() || isubdft1.size() != isubdft2.size()) {
+                    if (isubdft1.empty() || isubdft2.empty() || isubdft1.size() != isubdft2.size()) {
                         return {};
                     }
                 } else {
@@ -669,7 +825,7 @@ namespace storm {
             auto LHS = colouring.colourSubdft(isubdft1);
             auto RHS = colouring.colourSubdft(isubdft2);
             auto IsoCheck = DFTIsomorphismCheck<ValueType>(LHS, RHS, *this);
-            
+
             while (IsoCheck.findNextIsomorphism()) {
                 bijection = IsoCheck.getIsomorphism();
                 if (sharedSpareMode) {
@@ -678,7 +834,7 @@ namespace storm {
                         if (getElement(elementId)->isSpareGate()) {
                             std::shared_ptr<DFTSpare<ValueType>> spareLeft = std::static_pointer_cast<DFTSpare<ValueType>>(mElements[elementId]);
                             std::shared_ptr<DFTSpare<ValueType>> spareRight = std::static_pointer_cast<DFTSpare<ValueType>>(mElements[bijection.at(elementId)]);
-                            
+
                             if (spareLeft->nrChildren() != spareRight->nrChildren()) {
                                 bijectionSpareCompatible = false;
                                 break;
@@ -693,13 +849,13 @@ namespace storm {
                                     // Ignore shared child
                                     continue;
                                 }
-                                
+
                                 // TODO generalize for more than one parent
                                 if (spareLeft->children().at(i)->nrParents() != 1 || spareRight->children().at(i)->nrParents() != 1) {
                                     bijectionSpareCompatible = false;
                                     break;
                                 }
-                                
+
                                 std::map<size_t, size_t> tmpBijection = findBijection(childLeftId, childRightId, colouring, false);
                                 if (!tmpBijection.empty()) {
                                     bijection.insert(tmpBijection.begin(), tmpBijection.end());
@@ -732,12 +888,12 @@ namespace storm {
             std::map<size_t, std::vector<std::vector<size_t>>> res;
 
             // Find symmetries for gates
-            for(auto const& colourClass : completeCategories.gateCandidates) {
+            for (auto const& colourClass : completeCategories.gateCandidates) {
                 findSymmetriesHelper(colourClass.second, colouring, res);
             }
 
             // Find symmetries for BEs
-            for(auto const& colourClass : completeCategories.beCandidates) {
+            for (auto const& colourClass : completeCategories.beCandidates) {
                 findSymmetriesHelper(colourClass.second, colouring, res);
             }
 
@@ -745,41 +901,42 @@ namespace storm {
         }
 
         template<typename ValueType>
-        void DFT<ValueType>::findSymmetriesHelper(std::vector<size_t> const& candidates, DFTColouring<ValueType> const& colouring, std::map<size_t, std::vector<std::vector<size_t>>>& result) const {
-            if(candidates.size() <= 0) {
+        void DFT<ValueType>::findSymmetriesHelper(std::vector<size_t> const& candidates, DFTColouring<ValueType> const& colouring,
+                                                  std::map<size_t, std::vector<std::vector<size_t>>>& result) const {
+            if (candidates.size() <= 0) {
                 return;
             }
 
             std::set<size_t> foundEqClassFor;
-            for(auto it1 = candidates.cbegin(); it1 != candidates.cend(); ++it1) {
+            for (auto it1 = candidates.cbegin(); it1 != candidates.cend(); ++it1) {
                 std::vector<std::vector<size_t>> symClass;
-                if(foundEqClassFor.count(*it1) > 0) {
+                if (foundEqClassFor.count(*it1) > 0) {
                     // This item is already in a class.
                     continue;
                 }
-                if(!getElement(*it1)->hasOnlyStaticParents()) {
+                if (!getElement(*it1)->hasOnlyStaticParents()) {
                     continue;
                 }
 
                 std::tuple<std::vector<size_t>, std::vector<size_t>, std::vector<size_t>> influencedElem1Ids = getSortedParentAndDependencyIds(*it1);
                 auto it2 = it1;
-                for(++it2; it2 != candidates.cend(); ++it2) {
-                    if(!getElement(*it2)->hasOnlyStaticParents()) {
+                for (++it2; it2 != candidates.cend(); ++it2) {
+                    if (!getElement(*it2)->hasOnlyStaticParents()) {
                         continue;
                     }
 
-                    if(influencedElem1Ids == getSortedParentAndDependencyIds(*it2)) {
+                    if (influencedElem1Ids == getSortedParentAndDependencyIds(*it2)) {
                         std::map<size_t, size_t> bijection = findBijection(*it1, *it2, colouring, true);
                         if (!bijection.empty()) {
                             STORM_LOG_TRACE("Subdfts are symmetric");
                             foundEqClassFor.insert(*it2);
-                            if(symClass.empty()) {
-                                for(auto const& i : bijection) {
+                            if (symClass.empty()) {
+                                for (auto const& i : bijection) {
                                     symClass.push_back(std::vector<size_t>({i.first}));
                                 }
                             }
                             auto symClassIt = symClass.begin();
-                            for(auto const& i : bijection) {
+                            for (auto const& i : bijection) {
                                 symClassIt->emplace_back(i.second);
                                 ++symClassIt;
 
@@ -788,7 +945,7 @@ namespace storm {
                     }
                 }
 
-                if(!symClass.empty()) {
+                if (!symClass.empty()) {
                     result.emplace(*it1, symClass);
                 }
             }
@@ -796,31 +953,32 @@ namespace storm {
 
         template<typename ValueType>
         std::vector<size_t> DFT<ValueType>::findModularisationRewrite() const {
-           for(auto const& e : mElements) {
-               if(e->isGate() && (e->type() == DFTElementType::AND || e->type() == DFTElementType::OR) ) {
-                   // suitable parent gate! - Lets check the independent submodules of the children
-                   auto const& children = std::static_pointer_cast<DFTGate<ValueType>>(e)->children();
-                   for(auto const& child : children) {
+            for (auto const& e : mElements) {
+                if (e->isGate() && (e->type() == DFTElementType::AND || e->type() == DFTElementType::OR)) {
+                    // suitable parent gate! - Lets check the independent submodules of the children
+                    auto const& children = std::static_pointer_cast<DFTGate<ValueType>>(e)->children();
+                    for (auto const& child : children) {
 
-                       auto ISD = std::static_pointer_cast<DFTGate<ValueType>>(child)->independentSubDft(true);
-                       // In the ISD, check for other children:
+                        auto ISD = std::static_pointer_cast<DFTGate<ValueType>>(child)->independentSubDft(true);
+                        // In the ISD, check for other children:
 
-                       std::vector<size_t> rewrite = {e->id(), child->id()};
-                       for(size_t isdElemId : ISD) {
-                           if(isdElemId == child->id()) continue;
-                           if(std::find_if(children.begin(), children.end(), [&isdElemId](std::shared_ptr<DFTElement<ValueType>> const& e) { return e->id() == isdElemId; } ) != children.end()) {
-                               // element in subtree is also child
-                               rewrite.push_back(isdElemId);
-                           }
-                       }
-                       if(rewrite.size() > 2 && rewrite.size() < children.size() - 1) {
-                           return rewrite;
-                       }
+                        std::vector<size_t> rewrite = {e->id(), child->id()};
+                        for (size_t isdElemId : ISD) {
+                            if (isdElemId == child->id()) continue;
+                            if (std::find_if(children.begin(), children.end(), [&isdElemId](std::shared_ptr<DFTElement<ValueType>> const& e) { return e->id() == isdElemId; }) !=
+                                children.end()) {
+                                // element in subtree is also child
+                                rewrite.push_back(isdElemId);
+                            }
+                        }
+                        if (rewrite.size() > 2 && rewrite.size() < children.size() - 1) {
+                            return rewrite;
+                        }
 
-                   }
-               }
-           }
-           return {};
+                    }
+                }
+            }
+            return {};
         }
 
 
@@ -832,14 +990,14 @@ namespace storm {
             // Ingoing dependencies
             std::vector<size_t> ingoingDeps;
             if (isBasicElement(index)) {
-                for(auto const& dep : getBasicElement(index)->ingoingDependencies()) {
+                for (auto const& dep : getBasicElement(index)->ingoingDependencies()) {
                     ingoingDeps.push_back(dep->id());
                 }
                 std::sort(ingoingDeps.begin(), ingoingDeps.end());
             }
             // Outgoing dependencies
             std::vector<size_t> outgoingDeps;
-            for(auto const& dep : getElement(index)->outgoingDependencies()) {
+            for (auto const& dep : getElement(index)->outgoingDependencies()) {
                 outgoingDeps.push_back(dep->id());
             }
             std::sort(outgoingDeps.begin(), outgoingDeps.end());
@@ -864,10 +1022,17 @@ namespace storm {
 
         template<typename ValueType>
         void DFT<ValueType>::setRelevantEvents(std::set<size_t> const& relevantEvents, bool allowDCForRelevantEvents) const {
+            mRelevantEvents.clear();
+            // Top level element is first element
+            mRelevantEvents.push_back(this->getTopLevelIndex());
             for (auto const& elem : mElements) {
-                if (relevantEvents.find(elem->id()) != relevantEvents.end()) {
+                if (relevantEvents.find(elem->id()) != relevantEvents.end() || elem->id() == this->getTopLevelIndex()) {
                     elem->setRelevance(true);
                     elem->setAllowDC(allowDCForRelevantEvents);
+                    if (elem->id() != this->getTopLevelIndex()) {
+                        // Top level element was already added
+                        mRelevantEvents.push_back(elem->id());
+                    }
                 } else {
                     elem->setRelevance(false);
                     elem->setAllowDC(true);
@@ -876,30 +1041,21 @@ namespace storm {
         }
 
         template<typename ValueType>
-        std::set<size_t> DFT<ValueType>::getRelevantEvents() const {
-            std::set<size_t> relevantEvents;
-            for (auto const& elem : mElements) {
-                if (elem->isRelevant()) {
-                    relevantEvents.insert(elem->id());
-                }
-            }
-            return relevantEvents;
+        std::vector<size_t> const& DFT<ValueType>::getRelevantEvents() const {
+            return mRelevantEvents;
         }
-
 
         template<typename ValueType>
         std::string DFT<ValueType>::getRelevantEventsString() const {
             std::stringstream stream;
             bool first = true;
-            for (auto const& elem : mElements) {
-                if (elem->isRelevant()) {
-                    if (first) {
-                        first = false;
-                    } else {
-                        stream << ", ";
-                    }
-                    stream << elem->name() << " [" << elem->id() << "]";
+            for (size_t relevant_id : getRelevantEvents()) {
+                if (first) {
+                    first = false;
+                } else {
+                    stream << ", ";
                 }
+                stream << getElement(relevant_id)->name() << " [" << relevant_id << "]";
             }
             return stream.str();
         }
@@ -999,12 +1155,16 @@ namespace storm {
             }
             stream << "=========================================" << std::endl;
         }
-        
+
         // Explicitly instantiate the class.
-        template class DFT<double>;
+        template
+        class DFT<double>;
 
 #ifdef STORM_HAVE_CARL
-        template class DFT<RationalFunction>;
+
+        template
+        class DFT<RationalFunction>;
+
 #endif
 
     }

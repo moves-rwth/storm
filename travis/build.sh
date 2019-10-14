@@ -40,7 +40,7 @@ linux)
     # Install doxygen if necessary
     if [[ "$TASK" == *Doxygen* ]]
     then
-        docker exec storm apt-get install -qq -y doxygen dot
+        docker exec storm apt-get install -qq -y doxygen graphviz
     fi
     # Copy local content into container
     docker exec storm mkdir /opt/storm

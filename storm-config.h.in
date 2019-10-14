@@ -66,8 +66,15 @@
 // Whether CLN is available and to be used (define/undef)
 #cmakedefine STORM_HAVE_CLN
 
+// Include directory for CLN headers
+#cmakedefine CLN_INCLUDE_DIR "@CLN_INCLUDE_DIR@"
+
 // Whether GMP is available  (it is always available nowadays)
 #define STORM_HAVE_GMP
+
+// Include directory for GMP headers
+#cmakedefine GMP_INCLUDE_DIR "@GMP_INCLUDE_DIR@"
+#cmakedefine GMPXX_INCLUDE_DIR "@GMPXX_INCLUDE_DIR@"
 
 // Whether carl is available and to be used.
 #cmakedefine STORM_HAVE_CARL

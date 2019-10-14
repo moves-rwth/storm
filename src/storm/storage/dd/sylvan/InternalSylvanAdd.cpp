@@ -802,8 +802,16 @@ namespace storm {
         template<typename ValueType>
         void InternalAdd<DdType::Sylvan, ValueType>::exportToDot(std::string const& filename, std::vector<std::string> const&, bool) const {
             // Open the file, dump the DD and close it again.
-            FILE* filePointer = fopen(filename.c_str() , "w");
+            FILE* filePointer = fopen(filename.c_str() , "a+");
             this->sylvanMtbdd.PrintDot(filePointer);
+            fclose(filePointer);
+        }
+
+        template<typename ValueType>
+        void InternalAdd<DdType::Sylvan, ValueType>::exportToText(std::string const& filename) const {
+            // Open the file, dump the DD and close it again.
+            FILE* filePointer = fopen(filename.c_str() , "a+");
+            this->sylvanMtbdd.PrintText(filePointer);
             fclose(filePointer);
         }
         

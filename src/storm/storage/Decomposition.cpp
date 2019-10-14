@@ -106,7 +106,7 @@ namespace storm {
                 block_type const& block = this->getBlock(currentBlockIndex);
                 
                 // Now, we determine the blocks which are reachable (in one step) from the current block.
-                boost::container::flat_set<uint_fast64_t> allTargetBlocks;
+                storm::storage::FlatSet<uint_fast64_t> allTargetBlocks;
                 for (auto state : block) {
                     for (auto const& transitionEntry : matrix.getRowGroup(state)) {
                         uint_fast64_t targetBlock = stateToBlockMap[transitionEntry.getColumn()];

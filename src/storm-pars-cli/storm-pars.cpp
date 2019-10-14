@@ -44,6 +44,7 @@
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/settings/modules/IOSettings.h"
 #include "storm/settings/modules/BisimulationSettings.h"
+#include "storm/settings/modules/TransformationSettings.h"
 
 
 namespace storm {
@@ -161,6 +162,7 @@ namespace storm {
             auto generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
             auto bisimulationSettings = storm::settings::getModule<storm::settings::modules::BisimulationSettings>();
             auto parametricSettings = storm::settings::getModule<storm::settings::modules::ParametricSettings>();
+            auto transformationSettings = storm::settings::getModule<storm::settings::modules::TransformationSettings>();
 
             PreprocessResult result(model, false);
             
@@ -174,6 +176,18 @@ namespace storm {
                 result.changed = true;
             }
 
+            if (transformationSettings.isChainEliminationSet() &&
+                model->isOfType(storm::models::ModelType::MarkovAutomaton)) {
+                auto eliminationResult = storm::api::eliminateNonMarkovianChains(
+                        result.model->template as<storm::models::sparse::MarkovAutomaton<ValueType>>(),
+                        storm::api::extractFormulasFromProperties(input.properties),
+                        transformationSettings.isIgnoreLabelingSet());
+                result.model = eliminationResult.first;
+                // Set transformed properties as new properties in input
+                result.formulas = eliminationResult.second;
+                result.changed = true;
+            }
+            
             if (parametricSettings.transformContinuousModel() && (model->isOfType(storm::models::ModelType::Ctmc) || model->isOfType(storm::models::ModelType::MarkovAutomaton))) {
                 auto transformResult = storm::api::transformContinuousToDiscreteTimeSparseModel(std::move(*model->template as<storm::models::sparse::Model<ValueType>>()), storm::api::extractFormulasFromProperties(input.properties));
                 result.model = transformResult.first;

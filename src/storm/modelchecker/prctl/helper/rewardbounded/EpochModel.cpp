@@ -140,6 +140,7 @@ namespace storm {
                         storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType> minMaxLinearEquationSolverFactory;
                         minMaxSolver = minMaxLinearEquationSolverFactory.create(env, epochModel.epochMatrix);
                         minMaxSolver->setHasUniqueSolution();
+                        minMaxSolver->setHasNoEndComponents();
                         minMaxSolver->setOptimizationDirection(dir);
                         minMaxSolver->setCachingEnabled(true);
                         minMaxSolver->setTrackScheduler(true);

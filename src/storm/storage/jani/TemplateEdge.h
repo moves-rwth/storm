@@ -3,11 +3,9 @@
 #include <vector>
 #include <memory>
 
-#include <boost/container/flat_set.hpp>
-
 #include "storm/storage/expressions/Expression.h"
-
 #include "storm/storage/jani/TemplateEdgeDestination.h"
+#include "storm/storage/BoostTypes.h"
 
 namespace storm {
     namespace jani {
@@ -52,7 +50,7 @@ namespace storm {
             /*!
              * Retrieves a set of (global) variables that are written by at least one of the edge's destinations.
              */
-            boost::container::flat_set<storm::expressions::Variable> const& getWrittenGlobalVariables() const;
+            storm::storage::FlatSet<storm::expressions::Variable> const& getWrittenGlobalVariables() const;
 
             /*!
              * Substitutes all variables in all expressions according to the given substitution.
@@ -129,7 +127,7 @@ namespace storm {
             
             /// A set of global variables that is written by at least one of the edge's destinations. This set is
             /// initialized by the call to <code>finalize</code>.
-            boost::container::flat_set<storm::expressions::Variable> writtenGlobalVariables;
+            storm::storage::FlatSet<storm::expressions::Variable> writtenGlobalVariables;
         };
         
     }

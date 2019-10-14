@@ -1,0 +1,5 @@
+toplevel "A";
+"A" and "B";
+"B" and "C";
+"C" and "A" "D";
+"D" lambda=0.5 dorm=0.3;

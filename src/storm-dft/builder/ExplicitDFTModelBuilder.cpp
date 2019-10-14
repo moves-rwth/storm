@@ -14,6 +14,7 @@
 #include "storm/settings/SettingsManager.h"
 #include "storm/logic/AtomicLabelFormula.h"
 #include "storm-dft/settings/modules/FaultTreeSettings.h"
+#include "storm/transformer/NonMarkovianChainTransformer.h"
 
 
 namespace storm {
@@ -42,8 +43,6 @@ namespace storm {
         {
             // Set relevant events
             this->dft.setRelevantEvents(this->relevantEvents, allowDCForRelevantEvents);
-            // Mark top level element as relevant
-            this->dft.getElement(this->dft.getTopLevelIndex())->setRelevance(true);
             STORM_LOG_DEBUG("Relevant events: " << this->dft.getRelevantEventsString());
             if (this->relevantEvents.empty()) {
                 // Only interested in top level event -> introduce unique failed state
@@ -166,6 +165,26 @@ namespace storm {
                 STORM_LOG_ASSERT(stateStorage.initialStateIndices.size() == 1, "Only one initial state assumed.");
                 initialStateIndex = stateStorage.initialStateIndices[0];
                 STORM_LOG_TRACE("Initial state: " << initialStateIndex);
+
+                // DFT may be instantly failed due to a constant failure
+                // in this case a model only consisting of the uniqueFailedState suffices
+                if (initialStateIndex == 0 && this->uniqueFailedState) {
+                    modelComponents.markovianStates.resize(1);
+                    modelComponents.deterministicModel = generator.isDeterministicModel();
+
+                    STORM_LOG_TRACE("Markovian states: " << modelComponents.markovianStates);
+                    STORM_LOG_DEBUG("Model has 1 state");
+                    STORM_LOG_DEBUG(
+                            "Model is " << (generator.isDeterministicModel() ? "deterministic" : "non-deterministic"));
+
+                    // Build transition matrix
+                    modelComponents.transitionMatrix = matrixBuilder.builder.build(1, 1);
+                    STORM_LOG_TRACE("Transition matrix: " << std::endl << modelComponents.transitionMatrix);
+
+                    buildLabeling();
+                    return;
+                }
+
                 // Initialize heuristic values for inital state
                 STORM_LOG_ASSERT(!statesNotExplored.at(initialStateIndex).second, "Heuristic for initial state is already initialized");
                 ExplorationHeuristicPointer heuristic;
@@ -202,6 +221,13 @@ namespace storm {
                         STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Heuristic not known.");
                 }
             }
+
+            auto ftSettings = storm::settings::getModule<storm::settings::modules::FaultTreeSettings>();
+            if (ftSettings.isMaxDepthSet()) {
+                STORM_LOG_ASSERT(usedHeuristic == storm::builder::ApproximationHeuristic::DEPTH, "MaxDepth requires 'depth' exploration heuristic.");
+                approximationThreshold = ftSettings.getMaxDepth();
+            }
+
             exploreStateSpace(approximationThreshold);
 
             size_t stateSize = stateStorage.getNumberOfStates() + (this->uniqueFailedState ? 1 : 0);
@@ -376,7 +402,7 @@ namespace storm {
                     setMarkovian(true);
                     // Add transition to target state with temporary value 0
                     // TODO: what to do when there is no unique target state?
-                    STORM_LOG_ASSERT(this->uniqueFailedState, "Approximation only works with unique failed state");
+                    //STORM_LOG_ASSERT(this->uniqueFailedState, "Approximation only works with unique failed state");
                     matrixBuilder.addTransition(0, storm::utility::zero<ValueType>());
                     // Remember skipped state
                     skippedStates[matrixBuilder.getCurrentRowGroup() - 1] = std::make_pair(currentState, currentExplorationHeuristic);
@@ -418,8 +444,9 @@ namespace storm {
                                     }
 
                                     iter->second.second = heuristic;
-                                    if (state->hasFailed(dft.getTopLevelIndex()) || state->isFailsafe(dft.getTopLevelIndex()) || state->getFailableElements().hasDependencies() || (!state->getFailableElements().hasDependencies() && !state->getFailableElements().hasBEs())) {
-                                        // Do not skip absorbing state or if reached by dependencies
+                                    //if (state->hasFailed(dft.getTopLevelIndex()) || state->isFailsafe(dft.getTopLevelIndex()) || state->getFailableElements().hasDependencies() || (!state->getFailableElements().hasDependencies() && !state->getFailableElements().hasBEs())) {
+                                    if (state->getFailableElements().hasDependencies() || (!state->getFailableElements().hasDependencies() && !state->getFailableElements().hasBEs())) {
+                                            // Do not skip absorbing state or if reached by dependencies
                                         iter->second.second->markExpand();
                                     }
                                     if (usedHeuristic == storm::builder::ApproximationHeuristic::BOUNDDIFFERENCE) {
@@ -469,9 +496,10 @@ namespace storm {
             modelComponents.stateLabeling.addLabel("init");
             STORM_LOG_ASSERT(matrixBuilder.getRemapping(initialStateIndex) == initialStateIndex, "Initial state should not be remapped.");
             modelComponents.stateLabeling.addLabelToState("init", initialStateIndex);
-            // Label all states corresponding to their status (failed, failed/dont care BE)
+            // System failure
             modelComponents.stateLabeling.addLabel("failed");
 
+            // Label all states corresponding to their status (failed, don't care BE)
             // Collect labels for all necessary elements
             for (size_t id = 0; id < dft.nrElements(); ++id) {
                 std::shared_ptr<storage::DFTElement<ValueType> const> element = dft.getElement(id);
@@ -483,6 +511,7 @@ namespace storm {
 
             // Set labels to states
             if (this->uniqueFailedState) {
+                // Unique failed state has label 0
                 modelComponents.stateLabeling.addLabelToState("failed", 0);
             }
             for (auto const& stateIdPair : stateStorage.stateToId) {
@@ -491,7 +520,7 @@ namespace storm {
                 if (dft.hasFailed(state, *stateGenerationInfo)) {
                     modelComponents.stateLabeling.addLabelToState("failed", stateId);
                 }
-                // Set fail/dont care status for each necessary element
+                // Set failed/don't care status for each necessary element
                 for (size_t id = 0; id < dft.nrElements(); ++id) {
                     std::shared_ptr<storage::DFTElement<ValueType> const> element = dft.getElement(id);
                     if (element->isRelevant()){
@@ -519,7 +548,16 @@ namespace storm {
 
         template<typename ValueType, typename StateType>
         std::shared_ptr<storm::models::sparse::Model<ValueType>> ExplicitDFTModelBuilder<ValueType, StateType>::getModel() {
-            STORM_LOG_ASSERT(skippedStates.size() == 0, "Concrete model has skipped states");
+            if (storm::settings::getModule<storm::settings::modules::FaultTreeSettings>().isMaxDepthSet() && skippedStates.size() > 0) {
+                // Give skipped states separate label "skipped"
+                modelComponents.stateLabeling.addLabel("skipped");
+                for (auto it = skippedStates.begin(); it != skippedStates.end(); ++it) {
+                    modelComponents.stateLabeling.addLabelToState("skipped", it->first);
+                }
+            } else{
+                STORM_LOG_ASSERT(skippedStates.size() == 0, "Concrete model has skipped states");
+            }
+
             return createModel(false);
         }
 
@@ -634,9 +672,7 @@ namespace storm {
                     maComponents.exitRates = std::move(modelComponents.exitRates);
                     ma = std::make_shared<storm::models::sparse::MarkovAutomaton<ValueType>>(std::move(maComponents));
                 }
-                if (ma->hasOnlyTrivialNondeterminism()) {
-                    // Markov automaton can be converted into CTMC
-                    // TODO: change components which were not moved accordingly
+                if (ma->isConvertibleToCtmc()) {
                     model = ma->convertToCtmc();
                 } else {
                     model = ma;

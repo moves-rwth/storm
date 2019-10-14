@@ -7,7 +7,7 @@ namespace storm {
 
         template<typename ValueType>
         void ValueParser<ValueType>::addParameter(std::string const& parameter) {
-            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Parameters are not supported in this build.");
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Parameters are not supported in this build (Have you checked storm-pars?).");
         }
 
         template<>
@@ -19,20 +19,21 @@ namespace storm {
         }
 
         template<>
-        double ValueParser<double>::parseValue(std::string const& value) const {
-            return NumberParser<double>::parse(value);
-        }
-
-        template<>
         storm::RationalFunction ValueParser<storm::RationalFunction>::parseValue(std::string const& value) const {
             storm::RationalFunction rationalFunction = evaluator.asRational(parser.parseFromString(value));
             STORM_LOG_TRACE("Parsed expression: " << rationalFunction);
             return rationalFunction;
         }
 
+        template<typename ValueType>
+        ValueType ValueParser<ValueType>::parseValue(std::string const& value) const {
+            return parseNumber<ValueType>(value);
+        }
+        
         // Template instantiations.
         template class ValueParser<double>;
+        template class ValueParser<storm::RationalNumber>;
         template class ValueParser<storm::RationalFunction>;
-
+        
     } // namespace parser
 } // namespace storm

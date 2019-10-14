@@ -343,6 +343,8 @@ namespace storm {
                 template<typename NewValueType>
                 typename std::enable_if<std::is_same<ValueType, NewValueType>::value, std::shared_ptr<Model<Type, NewValueType>>>::type toValueType() const;
 
+                void writeDotToFile(std::string const& filename) const;
+
             protected:
                 /*!
                  * Sets the transition matrix of the model.

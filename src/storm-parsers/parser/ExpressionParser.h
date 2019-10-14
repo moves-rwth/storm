@@ -49,8 +49,8 @@ namespace storm {
             ExpressionParser(storm::expressions::ExpressionManager const& manager, qi::symbols<char, uint_fast64_t> const& invalidIdentifiers_ = qi::symbols<char, uint_fast64_t>(), bool enableErrorHandling = true, bool allowBacktracking = false);
             ~ExpressionParser();
             
-            ExpressionParser(ExpressionParser const& other) = default;
-            ExpressionParser& operator=(ExpressionParser const& other) = default;
+            ExpressionParser(ExpressionParser const& other) = delete;
+            ExpressionParser& operator=(ExpressionParser const& other) = delete;
             
             /*!
              * Sets an identifier mapping that is used to determine valid variables in the expression. The mapped-to

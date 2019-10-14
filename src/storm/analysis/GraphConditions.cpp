@@ -4,6 +4,7 @@
 #include "GraphConditions.h"
 #include "storm/utility/constants.h"
 #include "storm/exceptions/NotImplementedException.h"
+#include "storm/exceptions/UnexpectedException.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 
 namespace storm {
@@ -44,7 +45,7 @@ namespace storm {
                         } else if (entry.denominator().constantPart() < 0) {
                             wellformedConstraintSet.emplace(entry.nominator().polynomialWithCoefficient(), storm::CompareRelation::LEQ);
                         } else {
-                            assert(false); // Should fail before.
+                            STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Should have failed before.");
                         }
                     } else {
                         wellformedConstraintSet.emplace(entry.denominator().polynomialWithCoefficient(), storm::CompareRelation::NEQ);
@@ -111,7 +112,7 @@ namespace storm {
                             } else if (transition.getValue().denominator().constantPart() < 0) {
                                 wellformedConstraintSet.emplace(transition.getValue().nominator().polynomialWithCoefficient(), storm::CompareRelation::LEQ);
                             } else {
-                                assert(false); // Should fail before.
+                                STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Should have failed before.");
                             }
                         } else {
                             wellformedConstraintSet.emplace(transition.getValue().denominator().polynomialWithCoefficient(), storm::CompareRelation::NEQ);
@@ -147,7 +148,7 @@ namespace storm {
                                 } else if (entry.getValue().denominator().constantPart() < 0) {
                                     wellformedConstraintSet.emplace(entry.getValue().nominator().polynomialWithCoefficient(), storm::CompareRelation::LEQ);
                                 } else {
-                                    assert(false); // Should fail before.
+                                    STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Should have failed before.");
                                 }
                             } else {
                                 wellformedConstraintSet.emplace(entry.getValue().denominator().polynomialWithCoefficient(), storm::CompareRelation::NEQ);

@@ -73,6 +73,10 @@ namespace storm {
                 return cloneWithNewIndexToIdentifierMapping(std::move(indexToIdentifierMapping));
             }
             
+            void ChoiceOrigins::clearOriginOfChoice(uint_fast64_t choiceIndex) {
+                indexToIdentifier[choiceIndex] = getIdentifierForChoicesWithNoOrigin();
+            }
+            
             std::shared_ptr<ChoiceOrigins> ChoiceOrigins::selectChoices(std::vector<uint_fast64_t> const& selectedChoices) const {
                 std::vector<uint_fast64_t> indexToIdentifierMapping;
                 indexToIdentifierMapping.reserve(selectedChoices.size());

@@ -1,3 +1,8 @@
+# Enable operator IN_LIST to avoid problems with CMake version 3.12
+if(POLICY CMP0057)
+    cmake_policy(SET CMP0057 NEW)
+endif()
+
 find_package(Doxygen)
 # Add a target to generate API documentation with Doxygen
 if(DOXYGEN_FOUND)

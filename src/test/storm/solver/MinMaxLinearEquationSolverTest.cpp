@@ -149,6 +149,7 @@ namespace {
         auto factory = storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType>();
         auto solver = factory.create(this->env(), A);
         solver->setHasUniqueSolution(true);
+        solver->setHasNoEndComponents(true);
         solver->setBounds(this->parseNumber("0"), this->parseNumber("2"));
         storm::solver::MinMaxLinearEquationSolverRequirements req = solver->getRequirements(this->env());
         req.clearBounds();

@@ -19,7 +19,7 @@ namespace storm {
     namespace solver {
         
         template<typename ValueType>
-        MinMaxLinearEquationSolver<ValueType>::MinMaxLinearEquationSolver(OptimizationDirectionSetting direction) : direction(direction), trackScheduler(false), uniqueSolution(false), cachingEnabled(false), requirementsChecked(false) {
+        MinMaxLinearEquationSolver<ValueType>::MinMaxLinearEquationSolver(OptimizationDirectionSetting direction) : direction(direction), trackScheduler(false), uniqueSolution(false), noEndComponents(false), cachingEnabled(false), requirementsChecked(false) {
             // Intentionally left empty.
         }
         
@@ -57,7 +57,17 @@ namespace storm {
         
         template<typename ValueType>
         bool MinMaxLinearEquationSolver<ValueType>::hasUniqueSolution() const {
-            return uniqueSolution;
+            return uniqueSolution || noEndComponents;
+        }
+        
+        template<typename ValueType>
+        void MinMaxLinearEquationSolver<ValueType>::setHasNoEndComponents(bool value) {
+            noEndComponents = value;
+        }
+        
+        template<typename ValueType>
+        bool MinMaxLinearEquationSolver<ValueType>::hasNoEndComponents() const {
+            return noEndComponents;
         }
         
         template<typename ValueType>
@@ -161,11 +171,12 @@ namespace storm {
         }
 
         template<typename ValueType>
-        MinMaxLinearEquationSolverRequirements MinMaxLinearEquationSolverFactory<ValueType>::getRequirements(Environment const& env, bool hasUniqueSolution, boost::optional<storm::solver::OptimizationDirection> const& direction, bool hasInitialScheduler, bool trackScheduler) const {
+        MinMaxLinearEquationSolverRequirements MinMaxLinearEquationSolverFactory<ValueType>::getRequirements(Environment const& env, bool hasUniqueSolution, bool hasNoEndComponents, boost::optional<storm::solver::OptimizationDirection> const& direction, bool hasInitialScheduler, bool trackScheduler) const {
             // Create dummy solver and ask it for requirements.
             std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> solver = this->create(env);
             solver->setTrackScheduler(trackScheduler);
             solver->setHasUniqueSolution(hasUniqueSolution);
+            solver->setHasNoEndComponents(hasNoEndComponents);
             return solver->getRequirements(env, direction, hasInitialScheduler);
         }
         

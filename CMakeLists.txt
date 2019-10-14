@@ -1,5 +1,12 @@
 cmake_minimum_required (VERSION 3.2)
+
 cmake_policy(VERSION 3.2)
+
+# When searching for packages, we would like to first search in prefixes specified by <PackageName>_ROOT.
+# However, this behavior is only supported since CMake 3.12.
+if(POLICY CMP0074)
+	cmake_policy(SET CMP0074 NEW)
+endif()
 
 # Set project name
 project (storm CXX C)
@@ -183,6 +190,10 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
 	# using AppleClang
 	if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 7.3)
 		message(FATAL_ERROR "AppleClang version must be at least 7.3.")
+	elseif ((CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL 11.0) OR (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 11.0))
+		message(WARNING "Temporarily disabling stack checks for AppleClang 11.0 or higher.")
+		# TODO: In release mode, stack checks currently fail at runtime. Might be a compiler bug as there does not seem to be faulty behavior. 
+		set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fno-stack-check")
 	endif()
 
 	set(STORM_COMPILER_APPLECLANG ON)

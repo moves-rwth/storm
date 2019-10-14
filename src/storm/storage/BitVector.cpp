@@ -1,10 +1,11 @@
-#include <boost/container/flat_set.hpp>
 #include <iostream>
 #include <algorithm>
 
 #include "storm/storage/BitVector.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/OutOfRangeException.h"
+
+#include "storm/storage/BoostTypes.h"
 
 #include "storm/utility/OsDetection.h"
 #include "storm/utility/Hash.h"
@@ -1216,12 +1217,12 @@ namespace storm {
         // All necessary explicit template instantiations.
         template BitVector::BitVector(uint_fast64_t length, std::vector<uint_fast64_t>::iterator begin, std::vector<uint_fast64_t>::iterator end);
         template BitVector::BitVector(uint_fast64_t length, std::vector<uint_fast64_t>::const_iterator begin, std::vector<uint_fast64_t>::const_iterator end);
-        template BitVector::BitVector(uint_fast64_t length, boost::container::flat_set<uint_fast64_t>::iterator begin, boost::container::flat_set<uint_fast64_t>::iterator end);
-        template BitVector::BitVector(uint_fast64_t length, boost::container::flat_set<uint_fast64_t>::const_iterator begin, boost::container::flat_set<uint_fast64_t>::const_iterator end);
+        template BitVector::BitVector(uint_fast64_t length, storm::storage::FlatSet<uint_fast64_t>::iterator begin, storm::storage::FlatSet<uint_fast64_t>::iterator end);
+        template BitVector::BitVector(uint_fast64_t length, storm::storage::FlatSet<uint_fast64_t>::const_iterator begin, storm::storage::FlatSet<uint_fast64_t>::const_iterator end);
         template void BitVector::set(std::vector<uint_fast64_t>::iterator begin, std::vector<uint_fast64_t>::iterator end, bool value);
         template void BitVector::set(std::vector<uint_fast64_t>::const_iterator begin, std::vector<uint_fast64_t>::const_iterator end, bool value);
-        template void BitVector::set(boost::container::flat_set<uint_fast64_t>::iterator begin, boost::container::flat_set<uint_fast64_t>::iterator end, bool value);
-        template void BitVector::set(boost::container::flat_set<uint_fast64_t>::const_iterator begin, boost::container::flat_set<uint_fast64_t>::const_iterator end, bool value);
+        template void BitVector::set(storm::storage::FlatSet<uint_fast64_t>::iterator begin, storm::storage::FlatSet<uint_fast64_t>::iterator end, bool value);
+        template void BitVector::set(storm::storage::FlatSet<uint_fast64_t>::const_iterator begin, storm::storage::FlatSet<uint_fast64_t>::const_iterator end, bool value);
         
         template struct Murmur3BitVectorHash<uint32_t>;
         template struct Murmur3BitVectorHash<uint64_t>;
