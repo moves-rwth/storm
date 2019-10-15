@@ -550,12 +550,16 @@ namespace storm {
             auto matrix = model->getTransitionMatrix();
             std::set<typename utility::parametric::VariableType<ValueType>::type> variables =  storm::models::sparse::getProbabilityParameters(*model);
 
+            // For each of the variables create a model in which we only change the value for this specific variable
             for (auto itr = variables.begin(); itr != variables.end(); ++itr) {
                 double previous = -1;
                 bool monDecr = true;
                 bool monIncr = true;
 
+                // Check monotonicity in variable (*itr) by instantiating the model
+                // all other variables fixed on lb, only increasing (*itr)
                 for (auto i = 0; (monDecr || monIncr) && i < numberOfSamples; ++i) {
+                    // Create valuation
                     auto valuation = storm::utility::parametric::Valuation<ValueType>();
                     for (auto itr2 = variables.begin(); itr2 != variables.end(); ++itr2) {
                         // Only change value for current variable
@@ -563,19 +567,14 @@ namespace storm {
                             auto lb = region.getLowerBoundary(itr->name());
                             auto ub = region.getUpperBoundary(itr->name());
                             // Creates samples between lb and ub, that is: lb, lb + (ub-lb)/(#samples -1), lb + 2* (ub-lb)/(#samples -1), ..., ub
-                            auto val =
-                                    std::pair<typename utility::parametric::VariableType<ValueType>::type, typename utility::parametric::CoefficientType<ValueType>::type>
-                                            (*itr,utility::convertNumber<typename utility::parametric::CoefficientType<ValueType>::type>(lb + i*(ub-lb)/(numberOfSamples-1)));
-                            valuation.insert(val);
-
+                            valuation[*itr2] = utility::convertNumber<typename utility::parametric::CoefficientType<ValueType>::type>(lb + i*(ub-lb)/(numberOfSamples-1));
                         } else {
                             auto lb = region.getLowerBoundary(itr->name());
-                            auto val =
-                                    std::pair<typename utility::parametric::VariableType<ValueType>::type, typename utility::parametric::CoefficientType<ValueType>::type>
-                                            (*itr,utility::convertNumber<typename utility::parametric::CoefficientType<ValueType>::type>(lb));
-                            valuation.insert(val);
+                            valuation[*itr2] = utility::convertNumber<typename utility::parametric::CoefficientType<ValueType>::type>(lb);
                         }
                     }
+
+                    // Instantiate model and get result
                     storm::models::sparse::Dtmc<double> sampleModel = instantiator.instantiate(valuation);
                     auto checker = storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>>(sampleModel);
                     std::unique_ptr<storm::modelchecker::CheckResult> checkResult;
@@ -598,9 +597,11 @@ namespace storm {
                     std::vector<double> values = quantitativeResult.getValueVector();
                     auto initialStates = model->getInitialStates();
                     double initial = 0;
+                    // Get total probability from initial states
                     for (auto j = initialStates.getNextSetIndex(0); j < model->getNumberOfStates(); j = initialStates.getNextSetIndex(j+1)) {
                         initial += values[j];
                     }
+                    // Calculate difference with result for previous valuation
                     assert (initial >= 0-precision && initial <= 1+precision);
                     double diff = previous - initial;
                     assert (previous == -1 || diff >= -1-precision && diff <= 1 + precision);
