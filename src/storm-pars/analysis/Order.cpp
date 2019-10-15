@@ -14,6 +14,7 @@ namespace storm {
             this->numberOfStates = numberOfStates;
             this->addedStates = new storm::storage::BitVector(numberOfStates);
             this->doneBuilding = false;
+            assert (statesSorted != nullptr);
             this->statesSorted = *statesSorted;
             this->statesToHandle = initialMiddleStates;
 
