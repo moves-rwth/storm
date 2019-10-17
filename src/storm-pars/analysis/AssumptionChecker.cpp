@@ -32,9 +32,7 @@ namespace storm {
 
             for (auto i = 0; i < numberOfSamples; ++i) {
                 auto valuation = utility::parametric::Valuation<ValueType>();
-                // TODO: samplen over de region
                 for (auto var: variables) {
-
                     auto lb = region.getLowerBoundary(var.name());
                     auto ub = region.getUpperBoundary(var.name());
                     // Creates samples between lb and ub, that is: lb, lb + (ub-lb)/(#samples -1), lb + 2* (ub-lb)/(#samples -1), ..., ub

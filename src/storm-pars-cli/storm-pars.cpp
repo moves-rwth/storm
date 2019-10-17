@@ -668,66 +668,72 @@ namespace storm {
 
             if (model && monSettings.isSccEliminationSet()) {
                 storm::utility::Stopwatch eliminationWatch(true);
-                // TODO: check for correct Model type
-                STORM_PRINT("Applying scc elimination" << std::endl);
-                auto sparseModel = model->as<storm::models::sparse::Model<ValueType>>();
-                auto matrix = sparseModel->getTransitionMatrix();
-                auto backwardsTransitionMatrix = matrix.transpose();
+                if (model->isOfType(storm::models::ModelType::Dtmc)) {
+                    STORM_PRINT("Applying scc elimination" << std::endl);
+                    auto sparseModel = model->as<storm::models::sparse::Model<ValueType>>();
+                    auto matrix = sparseModel->getTransitionMatrix();
+                    auto backwardsTransitionMatrix = matrix.transpose();
 
-                storm::storage::StronglyConnectedComponentDecompositionOptions const options;
-                auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<ValueType>(matrix, options);
+                    storm::storage::StronglyConnectedComponentDecompositionOptions const options;
+                    auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<ValueType>(matrix, options);
 
-                storm::storage::BitVector selectedStates(matrix.getRowCount());
-                storm::storage::BitVector selfLoopStates(matrix.getRowCount());
-                for (auto i = 0; i < decomposition.size(); ++i) {
-                    auto scc = decomposition.getBlock(i);
-                    if (scc.size() > 1) {
-                        auto nrInitial = 0;
-                        auto statesScc = scc.getStates();
-                        std::vector<uint_fast64_t> entryStates;
-                        for (auto state : statesScc) {
-                            auto row = backwardsTransitionMatrix.getRow(state);
-                            bool found = false;
-                            for (auto backState : row) {
-                                if (!scc.containsState(backState.getColumn())) {
-                                    found = true;
+                    storm::storage::BitVector selectedStates(matrix.getRowCount());
+                    storm::storage::BitVector selfLoopStates(matrix.getRowCount());
+                    for (auto i = 0; i < decomposition.size(); ++i) {
+                        auto scc = decomposition.getBlock(i);
+                        if (scc.size() > 1) {
+                            auto nrInitial = 0;
+                            auto statesScc = scc.getStates();
+                            std::vector<uint_fast64_t> entryStates;
+                            for (auto state : statesScc) {
+                                auto row = backwardsTransitionMatrix.getRow(state);
+                                bool found = false;
+                                for (auto backState : row) {
+                                    if (!scc.containsState(backState.getColumn())) {
+                                        found = true;
+                                    }
+                                }
+                                if (found) {
+                                    entryStates.push_back(state);
+                                    selfLoopStates.set(state);
+                                } else {
+                                    selectedStates.set(state);
                                 }
                             }
-                            if (found) {
-                                entryStates.push_back(state);
-                                selfLoopStates.set(state);
-                            } else {
-                                selectedStates.set(state);
+
+                            if (entryStates.size() != 1) {
+                                STORM_LOG_THROW(entryStates.size() > 1, storm::exceptions::NotImplementedException,
+                                                "state elimination not implemented for scc with more than 1 entry points");
                             }
                         }
-
-                        if (entryStates.size() != 1) {
-                            STORM_LOG_THROW(entryStates.size() > 1, storm::exceptions::NotImplementedException,
-                                            "state elimination not implemented for scc with more than 1 entry points");
-                        }
                     }
+
+                    storm::storage::FlexibleSparseMatrix<ValueType> flexibleMatrix(matrix);
+                    storm::storage::FlexibleSparseMatrix<ValueType> flexibleBackwardTransitions(backwardsTransitionMatrix, true);
+                    auto actionRewards = std::vector<ValueType>(matrix.getRowCount(), storm::utility::zero<ValueType>());
+                    storm::solver::stateelimination::NondeterministicModelStateEliminator<ValueType> stateEliminator(flexibleMatrix, flexibleBackwardTransitions, actionRewards);
+                    for(auto state : selectedStates) {
+                        stateEliminator.eliminateState(state, true);
+                    }
+                    for (auto state : selfLoopStates) {
+                        auto row = flexibleMatrix.getRow(state);
+                        stateEliminator.eliminateLoop(state);
+                    }
+                    selectedStates.complement();
+                    auto keptRows = matrix.getRowFilter(selectedStates);
+                    storm::storage::SparseMatrix<ValueType> newTransitionMatrix = flexibleMatrix.createSparseMatrix(keptRows, selectedStates);
+                    // TODO: note that rewards get lost
+                    model = std::make_shared<storm::models::sparse::Dtmc<ValueType>>(std::move(newTransitionMatrix), sparseModel->getStateLabeling().getSubLabeling(selectedStates));
+
+                    eliminationWatch.stop();
+                    STORM_PRINT(std::endl << "Time for scc elimination: " << eliminationWatch << "." << std::endl << std::endl);
+                    model->printModelInformationToStream(std::cout);
+                } else if (model->isOfType(storm::models::ModelType::Mdp)) {
+                   STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Unable to perform SCC elimination for monotonicity analysis on MDP: Not mplemented");
+                } else {
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Unable to perform monotonicity analysis on the provided model type.");
                 }
 
-                storm::storage::FlexibleSparseMatrix<ValueType> flexibleMatrix(matrix);
-                storm::storage::FlexibleSparseMatrix<ValueType> flexibleBackwardTransitions(backwardsTransitionMatrix, true);
-                auto actionRewards = std::vector<ValueType>(matrix.getRowCount(), storm::utility::zero<ValueType>());
-                storm::solver::stateelimination::NondeterministicModelStateEliminator<ValueType> stateEliminator(flexibleMatrix, flexibleBackwardTransitions, actionRewards);
-                for(auto state : selectedStates) {
-                    stateEliminator.eliminateState(state, true);
-                }
-                for (auto state : selfLoopStates) {
-                    auto row = flexibleMatrix.getRow(state);
-                    stateEliminator.eliminateLoop(state);
-                }
-                selectedStates.complement();
-                auto keptRows = matrix.getRowFilter(selectedStates);
-                storm::storage::SparseMatrix<ValueType> newTransitionMatrix = flexibleMatrix.createSparseMatrix(keptRows, selectedStates);
-                // TODO: rewards get lost
-                model = std::make_shared<storm::models::sparse::Dtmc<ValueType>>(std::move(newTransitionMatrix), sparseModel->getStateLabeling().getSubLabeling(selectedStates));
-
-                eliminationWatch.stop();
-                STORM_PRINT(std::endl << "Time for scc elimination: " << eliminationWatch << "." << std::endl << std::endl);
-                model->printModelInformationToStream(std::cout);
             }
 
             std::vector<storm::storage::ParameterRegion<ValueType>> regions = parseRegions<ValueType>(model);

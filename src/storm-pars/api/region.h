@@ -110,36 +110,6 @@ namespace storm {
             return checker;
         }
 
-        // TODO: make more generic
-        template <typename ParametricType, typename ConstantType>
-        std::shared_ptr<storm::modelchecker::SparseDtmcParameterLiftingModelChecker<storm::models::sparse::Dtmc<ParametricType>, ConstantType>> initializeParameterLiftingDtmcModelChecker(Environment const& env, std::shared_ptr<storm::models::sparse::Model<ParametricType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ParametricType> const& task, bool generateSplitEstimates = false, bool allowModelSimplification = true) {
-
-            STORM_LOG_WARN_COND(storm::utility::parameterlifting::validateParameterLiftingSound(*model, task.getFormula()), "Could not validate whether parameter lifting is applicable. Please validate manually...");
-
-            std::shared_ptr<storm::models::sparse::Model<ParametricType>> consideredModel = model;
-
-            // Treat continuous time models
-            if (consideredModel->isOfType(storm::models::ModelType::Ctmc) || consideredModel->isOfType(storm::models::ModelType::MarkovAutomaton)) {
-                STORM_LOG_WARN("Parameter lifting not supported for continuous time models. Transforming continuous model to discrete model...");
-                std::vector<std::shared_ptr<storm::logic::Formula const>> taskFormulaAsVector { task.getFormula().asSharedPointer() };
-                consideredModel = storm::api::transformContinuousToDiscreteTimeSparseModel(consideredModel, taskFormulaAsVector).first;
-                STORM_LOG_THROW(consideredModel->isOfType(storm::models::ModelType::Dtmc) || consideredModel->isOfType(storm::models::ModelType::Mdp), storm::exceptions::UnexpectedException, "Transformation to discrete time model has failed.");
-            }
-
-            // Obtain the region model checker
-            std::shared_ptr<storm::modelchecker::SparseDtmcParameterLiftingModelChecker<storm::models::sparse::Dtmc<ParametricType>, ConstantType>> checker;
-            if (consideredModel->isOfType(storm::models::ModelType::Dtmc)) {
-                checker = std::make_shared<storm::modelchecker::SparseDtmcParameterLiftingModelChecker<storm::models::sparse::Dtmc<ParametricType>, ConstantType>>();
-            } else {
-                STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Unable to perform parameterLifting on the provided model type.");
-            }
-
-            checker->specify(env, consideredModel, task, generateSplitEstimates, allowModelSimplification);
-
-            return checker;
-        }
-
-        
         template <typename ParametricType, typename ImpreciseType, typename PreciseType>
         std::shared_ptr<storm::modelchecker::RegionModelChecker<ParametricType>> initializeValidatingRegionModelChecker(Environment const& env, std::shared_ptr<storm::models::sparse::Model<ParametricType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ParametricType> const& task, bool generateSplitEstimates = false, bool allowModelSimplification = true) {
             

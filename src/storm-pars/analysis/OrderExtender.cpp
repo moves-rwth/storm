@@ -38,10 +38,8 @@ namespace storm {
             uint_fast64_t numberOfStates = this->model->getNumberOfStates();
 
             // Build stateMap
-            // TODO: is dit wel nodig
             for (uint_fast64_t i = 0; i < numberOfStates; ++i) {
                 stateMap[i] = new storm::storage::BitVector(numberOfStates, false);
-
                 auto row = matrix.getRow(i);
                 for (auto rowItr = row.begin(); rowItr != row.end(); ++rowItr) {
                     // ignore self-loops when there are more transitions
@@ -129,33 +127,6 @@ namespace storm {
         template <typename ValueType>
         std::tuple<Order*, uint_fast64_t, uint_fast64_t> OrderExtender<ValueType>::toOrder(std::vector<std::shared_ptr<storm::logic::Formula const>> formulas, std::vector<double> minValues, std::vector<double> maxValues) {
             uint_fast64_t numberOfStates = this->model->getNumberOfStates();
-//
-//            // Compare min/max for all states
-//            STORM_LOG_THROW((++formulas.begin()) == formulas.end(), storm::exceptions::NotSupportedException, "Only one formula allowed for monotonicity analysis");
-//            STORM_LOG_THROW((*(formulas[0])).isProbabilityOperatorFormula()
-//                            && ((*(formulas[0])).asProbabilityOperatorFormula().getSubformula().isUntilFormula()
-//                                || (*(formulas[0])).asProbabilityOperatorFormula().getSubformula().isEventuallyFormula()), storm::exceptions::NotSupportedException, "Expecting until or eventually formula");
-//
-//            // TODO: dit moet anders kunnen
-//            storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Model<ValueType>> propositionalChecker(*model);
-//            storm::storage::BitVector phiStates;
-//            storm::storage::BitVector psiStates;
-//            if ((*(formulas[0])).asProbabilityOperatorFormula().getSubformula().isUntilFormula()) {
-//                phiStates = propositionalChecker.check((*(formulas[0])).asProbabilityOperatorFormula().getSubformula().asUntilFormula().getLeftSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
-//                psiStates = propositionalChecker.check((*(formulas[0])).asProbabilityOperatorFormula().getSubformula().asUntilFormula().getRightSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
-//            } else {
-//                phiStates = storm::storage::BitVector(numberOfStates, true);
-//                psiStates = propositionalChecker.check((*(formulas[0])).asProbabilityOperatorFormula().getSubformula().asEventuallyFormula().getSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
-//            }
-//
-//            // Get the maybeStates
-//            std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(this->model->getBackwardTransitions(), phiStates, psiStates);
-//            storm::storage::BitVector topStates = statesWithProbability01.second;
-//            storm::storage::BitVector bottomStates = statesWithProbability01.first;
-//
-//            STORM_LOG_THROW(topStates.begin() != topStates.end(), storm::exceptions::NotImplementedException, "Formula yields to no 1 states");
-//            STORM_LOG_THROW(bottomStates.begin() != bottomStates.end(), storm::exceptions::NotImplementedException, "Formula yields to no zero states");
-//
             uint_fast64_t bottom = numberOfStates;
             uint_fast64_t top = numberOfStates;
             std::vector<uint_fast64_t> statesSorted = storm::utility::graph::getTopologicalSort(matrix);
